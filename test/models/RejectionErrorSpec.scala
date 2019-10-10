@@ -16,12 +16,17 @@
 
 package models
 
+import generators.ModelGenerators
+import models.behaviours.JsonBehaviours
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.{FreeSpec, MustMatchers}
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.libs.json.{JsSuccess, Json}
 
-class RejectionErrorSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks {
+class RejectionErrorSpec extends FreeSpec with MustMatchers
+  with ScalaCheckPropertyChecks with ModelGenerators with JsonBehaviours {
+
+  mustHaveDualReadsAndWrites(arbitrary[RejectionError])
 
   "must deserialise with all values present" in {
 

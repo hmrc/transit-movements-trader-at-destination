@@ -17,25 +17,18 @@
 package models
 
 import generators.ModelGenerators
+import models.behaviours.JsonBehaviours
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.{FreeSpec, MustMatchers}
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.libs.json.{JsError, JsSuccess, Json}
 
-class TraderSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with ModelGenerators {
+class TraderSpec extends FreeSpec with MustMatchers
+  with ScalaCheckPropertyChecks with ModelGenerators with JsonBehaviours {
 
   "Trader with EORI" - {
 
-    "must have dual reads and writes" in {
-
-      forAll(arbitrary[TraderWithEori]) {
-        trader =>
-
-          val json = Json.toJson(trader)
-
-          json.validate[TraderWithEori] mustEqual JsSuccess(trader)
-      }
-    }
+    mustHaveDualReadsAndWrites(arbitrary[TraderWithEori])
 
     "must deserialise when address fields are present" in {
 
@@ -123,16 +116,7 @@ class TraderSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyCheck
 
   "Trader without EORI" - {
 
-    "must have dual reads and writes" in {
-
-      forAll(arbitrary[TraderWithoutEori]) {
-        trader =>
-
-          val json = Json.toJson(trader)
-
-          json.validate[TraderWithoutEori] mustEqual JsSuccess(trader)
-      }
-    }
+    mustHaveDualReadsAndWrites(arbitrary[TraderWithoutEori])
 
     "must deserialise" in {
 

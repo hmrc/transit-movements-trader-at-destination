@@ -19,13 +19,17 @@ package models.messages
 import java.time.LocalDate
 
 import generators.ModelGenerators
+import models.behaviours.JsonBehaviours
 import models.Trader
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.{FreeSpec, MustMatchers}
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.libs.json.{JsSuccess, Json}
 
-class GoodsReleaseNotificationSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with ModelGenerators {
+class GoodsReleaseNotificationSpec extends FreeSpec with MustMatchers
+  with ScalaCheckPropertyChecks with ModelGenerators with JsonBehaviours {
+
+  mustHaveDualReadsAndWrites(arbitrary[GoodsReleaseNotification])
 
   "must deserialise" in {
 

@@ -19,15 +19,19 @@ package models.messages
 import java.time.LocalDate
 
 import generators.ModelGenerators
+import models.behaviours.JsonBehaviours
 import models.{EnRouteEvent, ProcedureType, Trader}
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.{FreeSpec, MustMatchers}
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.libs.json.{JsError, JsSuccess, Json}
 
-class ArrivalNotificationSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with ModelGenerators {
+class ArrivalNotificationSpec extends FreeSpec with MustMatchers
+  with ScalaCheckPropertyChecks with ModelGenerators with JsonBehaviours {
 
   "Normal notification" - {
+
+    mustHaveDualReadsAndWrites(arbitrary[NormalNotification])
 
     "must deserialise when no customs sub-place or en-route events are present" in {
 
@@ -161,6 +165,8 @@ class ArrivalNotificationSpec extends FreeSpec with MustMatchers with ScalaCheck
   }
 
   "Simplified notification" - {
+
+    mustHaveDualReadsAndWrites(arbitrary[SimplifiedNotification])
 
     "must deserialise when no approved location or en-route events are present" in {
 

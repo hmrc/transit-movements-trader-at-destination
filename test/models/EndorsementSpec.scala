@@ -19,14 +19,16 @@ package models
 import java.time.LocalDate
 
 import generators.ModelGenerators
+import models.behaviours.JsonBehaviours
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalacheck.Gen
 import org.scalatest.{FreeSpec, MustMatchers}
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import play.api.libs.json.{JsNull, JsString, JsSuccess, Json}
+import play.api.libs.json.{JsSuccess, Json}
 
-class EndorsementSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with ModelGenerators {
+class EndorsementSpec extends FreeSpec with MustMatchers
+  with ScalaCheckPropertyChecks with ModelGenerators with JsonBehaviours {
 
+  mustHaveDualReadsAndWrites(arbitrary[Endorsement])
 
   "must deserialise when nothing is present" in {
 

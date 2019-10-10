@@ -18,11 +18,15 @@ package models
 
 import org.scalacheck.Arbitrary.arbitrary
 import generators.ModelGenerators
+import models.behaviours.JsonBehaviours
 import org.scalatest.{FreeSpec, MustMatchers}
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.libs.json.{JsSuccess, Json}
 
-class EnRouteEventSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with ModelGenerators {
+class EnRouteEventSpec extends FreeSpec with MustMatchers
+  with ScalaCheckPropertyChecks with ModelGenerators with JsonBehaviours {
+
+  mustHaveDualReadsAndWrites(arbitrary[EnRouteEvent])
 
   "must deserialise when no seals are present" in {
 

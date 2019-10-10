@@ -17,14 +17,17 @@
 package models
 
 import generators.ModelGenerators
+import models.behaviours.JsonBehaviours
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.{FreeSpec, MustMatchers}
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.libs.json.{JsSuccess, Json}
 
-class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with ModelGenerators {
+class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with ModelGenerators with JsonBehaviours {
 
   "Incident" - {
+
+    mustHaveDualReadsAndWrites(arbitrary[Incident])
 
     "must deserialise" in {
 
@@ -70,6 +73,8 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
   }
 
   "Container transhipment" - {
+
+    mustHaveDualReadsAndWrites(arbitrary[ContainerTranshipment])
 
     "must fail to construct when given an empty sequence of containers" in {
 
@@ -122,6 +127,8 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
   }
 
   "Vehicular transhipment" - {
+
+    mustHaveDualReadsAndWrites(arbitrary[VehicularTranshipment])
 
     "must deserialise when no containers are present" in {
 

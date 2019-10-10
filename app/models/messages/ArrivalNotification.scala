@@ -41,7 +41,7 @@ object ArrivalNotification {
   }
 
   implicit lazy val writes: Writes[ArrivalNotification] = Writes {
-    case n: NormalNotification      => Json.toJson(n)(NormalNotification.writes)
+    case n: NormalNotification     => Json.toJson(n)(NormalNotification.writes)
     case s: SimplifiedNotification => Json.toJson(s)(SimplifiedNotification.writes)
   }
 }
@@ -150,7 +150,7 @@ object SimplifiedNotification {
           "movementReferenceNumber" -> notification.movementReferenceNumber,
           "notificationPlace"       -> notification.notificationPlace,
           "notificationDate"        -> notification.notificationDate,
-          "approvedLocation"         -> notification.approvedLocation,
+          "approvedLocation"        -> notification.approvedLocation,
           "trader"                  -> Json.toJson(notification.trader),
           "presentationOffice"      -> notification.presentationOffice,
           "enRouteEvents"           -> Json.toJson(notification.enRouteEvents)
