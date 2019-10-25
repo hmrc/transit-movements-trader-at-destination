@@ -14,19 +14,17 @@
  * limitations under the License.
  */
 
-package config
+package utils
 
-import javax.inject.{Inject, Singleton}
-import play.api.Configuration
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import java.time.{LocalDate, LocalDateTime}
+import java.time.format.DateTimeFormatter
 
-@Singleton
-class AppConfig @Inject()(config: Configuration, servicesConfig: ServicesConfig) {
+object Format {
 
-  val authBaseUrl: String = servicesConfig.baseUrl("auth")
+  val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd")
+  def dateFormatted(date: LocalDate) = date.format(dateFormatter)
+  def dateFormatted(date: LocalDateTime) = date.format(dateFormatter)
 
-  val auditingEnabled: Boolean = config.get[Boolean]("auditing.enabled")
-  val graphiteHost: String     = config.get[String]("microservice.metrics.graphite.host")
-
-  val env: String              = config.get[String]("env")
+  val timeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HHMM")
+  def timeFormatted(date: LocalDateTime) = date.format(timeFormatter)
 }
