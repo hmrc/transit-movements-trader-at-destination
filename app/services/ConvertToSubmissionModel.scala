@@ -33,17 +33,18 @@ class ConvertToSubmissionModel @Inject()(appConfig: AppConfig){
     * returns string of xml
     */
 
-  def convert[A](x: A, time: LocalDateTime): ArrivalNotificationXml = x match {
+  def convert[A](x: A, time: LocalDateTime, eori: String): ArrivalNotificationXml = x match {
     case arrivalNotification: NormalNotification => {
 
-      val meta = buildMeta(time)
+      val rootNode = ArrivalNotificationRootNode()
+      val meta = buildMeta(time, eori)
       val header = buildHeader(arrivalNotification)
       val traderDestination = buildTrader(arrivalNotification.trader)
       val customsOffice = CustomsOfficeOfPresentation(
         refNumRES1 = arrivalNotification.presentationOffice
       )
 
-      ArrivalNotificationXml(meta, header, traderDestination, customsOffice)
+      ArrivalNotificationXml(rootNode, meta, header, traderDestination, customsOffice)
     }
     case _ => {
       throw new RuntimeException
@@ -51,19 +52,17 @@ class ConvertToSubmissionModel @Inject()(appConfig: AppConfig){
 
   }
 
-  private def buildMeta(time: LocalDateTime): Meta = {
+  private def buildMeta(time: LocalDateTime, eori: String): Meta = {
 
-    //TODO double check this value
+    //TODO this value isn't used by web channel and is not saved within NCTS web database
+    //TODO: has to be unique - websols uses an auto incrementing number from 100000 to 999999
     val interchangeControlReference = s"WE+${dateFormatted(time)}-1"
 
+    val messageSender = s"${appConfig.env}+$eori"
+
     Meta(
-      rootNode = ArrivalNotificationXml.rootNode,
-      nameSpace = ArrivalNotificationXml.nameSpace,
-      synIdeMES1 = ArrivalNotificationXml.syntaxIdentifier,
-      synVerNumMES2 = ArrivalNotificationXml.syntaxVersionNumber,
-      mesSenMES3 = appConfig.env , //"environment specific id + Trader TURN", //TODO: Get environment id and tag on eori
+      mesSenMES3 = messageSender,
       senIdeCodQuaMES4 = None,
-      mesRecMES6 = ArrivalNotificationXml.messageRecipient,
       recIdeCodQuaMES7 = None,
       datOfPreMES9 = dateFormatted(time),
       timOfPreMES10 = timeFormatted(time),
@@ -87,10 +86,10 @@ class ConvertToSubmissionModel @Inject()(appConfig: AppConfig){
       docNumHEA5 = arrivalNotification.movementReferenceNumber,
       cusSubPlaHEA66 = arrivalNotification.customsSubPlace,
       arrNotPlaHEA60 = arrivalNotification.notificationPlace,
-      arrNotPlaHEA60LNG = None,
+      arrNotPlaHEA60LNG = ArrivalNotificationXml.languageCode,
       arrAgrLocCodHEA62 = None,
       arrAgrLocOfGooHEA63 = None,
-      arrAgrLocOfGooHEA63LNG = None,
+      arrAgrLocOfGooHEA63LNG = ArrivalNotificationXml.languageCode,
       arrAutLocOfGooHEA65 = None,
       simProFlaHEA132 = None,
       arrNotDatHEA141 = dateFormatted(arrivalNotification.notificationDate),
@@ -106,8 +105,7 @@ class ConvertToSubmissionModel @Inject()(appConfig: AppConfig){
         posCodTRD23 = traderWithEori.postCode,
         citTRD24 = traderWithEori.city,
         couTRD25 = traderWithEori.countryCode,
-        nadlngrd = None,
-        tintrd59 = None)
+        tintrd59 = Some(traderWithEori.eori))
     case traderWithoutEori: TraderWithoutEori =>
       TraderDestination(
         namTRD7String = Some(traderWithoutEori.name),
@@ -115,7 +113,6 @@ class ConvertToSubmissionModel @Inject()(appConfig: AppConfig){
         posCodTRD23 = Some(traderWithoutEori.postCode),
         citTRD24 = Some(traderWithoutEori.city),
         couTRD25 = Some(traderWithoutEori.countryCode),
-        nadlngrd = None,
         tintrd59 = None)
   }
 

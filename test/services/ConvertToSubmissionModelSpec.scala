@@ -19,13 +19,18 @@ package services
 import java.time.LocalDateTime
 
 import config.AppConfig
+import generators.ModelGenerators
+import models.messages.NormalNotification
 import models.messages.xml._
+import org.scalacheck.Arbitrary.arbitrary
+import org.scalacheck.Gen
 import org.scalatest.{FreeSpec, MustMatchers}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.inject.Injector
 import utils.Format
 
-class ConvertToSubmissionModelSpec extends FreeSpec with MustMatchers with GuiceOneAppPerSuite  {
+class ConvertToSubmissionModelSpec extends FreeSpec with MustMatchers with GuiceOneAppPerSuite with ModelGenerators with ScalaCheckDrivenPropertyChecks {
 
   import support.TestConstants._
 
@@ -39,73 +44,33 @@ class ConvertToSubmissionModelSpec extends FreeSpec with MustMatchers with Guice
 
     "convert NormalNotification to ArrivalNotificationXml" in {
 
-      val notification = normalArrivalNotification(traderWithoutEori)
+      val localDateTime: Gen[LocalDateTime] = dateTimesBetween(LocalDateTime.of(1900, 1, 1, 0, 0), LocalDateTime.now)
 
-      val localDateTime: LocalDateTime = LocalDateTime.now()
+      val authenticatedUserEori = "NCTS_EU_EXIT"
 
-      val timeFormatted = Format.timeFormatted(localDateTime)
-      val dateFormatted = Format.dateFormatted(localDateTime)
+      forAll(arbitrary[NormalNotification], localDateTime) {
 
-      //TODO double check this value
-      val interchangeControlReference = s"WE+${dateFormatted}-1"
+        (notification, localDateTime) => {
 
-      val meta = Meta(
-        rootNode = "CC007A",
-        nameSpace = Map(
-          "xmlns=" -> "http://ncts.dgtaxud.ec/CC007A",
-          "xmlns:xsi=" -> "http://www.w3.org/2001/XMLSchema-instance",
-          "xmlns:complex_ncts=" -> "http://ncts.dgtaxud.ec/complex_ncts",
-          "xsi:schemaLocation=" -> "http://ncts.dgtaxud.ec/CC007A"),
-        synIdeMES1 = "UNOC",
-        synVerNumMES2 = "3",
-        mesSenMES3 = appConfig.env,
-        senIdeCodQuaMES4 = None,
-        mesRecMES6 = "NCTS",
-        recIdeCodQuaMES7 = None,
-        datOfPreMES9 = dateFormatted,
-        timOfPreMES10 = timeFormatted,
-        intConRefMES11 = interchangeControlReference,
-        recRefMES12 = None,
-        recRefQuaMES13 = None,
-        appRefMES14 = Some("NCTS"),
-        priMES15 = None,
-        ackReqMES16 = None,
-        comAgrIdMES17 = None,
-        tesIndMES18 = Some("0"),
-        mesIdeMES19 = "1",
-        mesTypMES20 = "GB007A",
-        comAccRefMES21 = None,
-        mesSeqNumMES22 = None,
-        firAndLasTraMES23 = None)
+          val timeFormatted = Format.timeFormatted(localDateTime)
+          val dateFormatted = Format.dateFormatted(localDateTime)
 
-      val header = Header(
-        docNumHEA5 = notification.movementReferenceNumber,
-        cusSubPlaHEA66 = None,
-        arrNotPlaHEA60 = notification.notificationPlace,
-        arrNotPlaHEA60LNG = None,
-        arrAgrLocCodHEA62 = None,
-        arrAgrLocOfGooHEA63 = None,
-        arrAgrLocOfGooHEA63LNG = None,
-        arrAutLocOfGooHEA65 = None,
-        simProFlaHEA132 = None,
-        arrNotDatHEA141 = Format.dateFormatted(notification.notificationDate),
-        diaLanIndAtDesHEA255 = None)
+          //TODO: this value isn't used by web channel and is not saved within NCTS web database
+          //TODO: has to be unique - websols uses an auto incrementing number from 100000 to 999999
+          val interchangeControlReference = s"WE+${dateFormatted}-1"
+          val messageSender = s"${appConfig.env}+$authenticatedUserEori"
 
-      val traderDestination = TraderDestination(
-        namTRD7String = Some(traderWithoutEori.name),
-        strAndNumTRD22 = Some(traderWithoutEori.streetAndNumber),
-        posCodTRD23 = Some(traderWithoutEori.postCode),
-        citTRD24 = Some(traderWithoutEori.city),
-        couTRD25 = Some(traderWithoutEori.countryCode),
-        nadlngrd = None,
-        tintrd59 = None)
+          val metaData = meta(messageSender, dateFormatted, timeFormatted, interchangeControlReference)
+          val headerData = header(notification)
+          val traderDestinationData = traderDestination(notification.trader)
+          val customsOfficeData = customsOffice(notification)
 
-      val customsOffice = CustomsOfficeOfPresentation(
-        refNumRES1 = notification.presentationOffice
-      )
+          convertToXml.convert(notification, localDateTime, authenticatedUserEori) mustBe
+            ArrivalNotificationXml(ArrivalNotificationRootNode(), metaData, headerData, traderDestinationData, customsOfficeData)
+        }
 
-      convertToXml.convert(notification, localDateTime) mustBe
-        ArrivalNotificationXml(meta, header, traderDestination, customsOffice)
+      }
+
     }
 
   }

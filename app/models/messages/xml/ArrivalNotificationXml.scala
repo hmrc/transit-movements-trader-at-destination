@@ -16,14 +16,15 @@
 
 package models.messages.xml
 
+sealed trait MetaConstants {
+  val syntaxIdentifier: String = "UNOC"
+  val syntaxVersionNumber: String = "3"
+  val messageRecipient: String = "NCTS"
+
+}
 case class Meta(
-                 rootNode: String,
-                 nameSpace: Map[String, String],
-                 synIdeMES1: String,
-                 synVerNumMES2: String,
                  mesSenMES3: String,
                  senIdeCodQuaMES4: Option[String],
-                 mesRecMES6: String,
                  recIdeCodQuaMES7: Option[String],
                  datOfPreMES9: String,
                  timOfPreMES10: String,
@@ -39,7 +40,7 @@ case class Meta(
                  mesTypMES20: String,
                  comAccRefMES21: Option[String],
                  mesSeqNumMES22: Option[String],
-                 firAndLasTraMES23: Option[String])
+                 firAndLasTraMES23: Option[String]) extends MetaConstants
 
 
 case class Header(
@@ -61,15 +62,25 @@ case class TraderDestination(
                               posCodTRD23: Option[String],
                               citTRD24: Option[String],
                               couTRD25: Option[String],
-                              nadlngrd: Option[String],
                               tintrd59: Option[String]
-                            )
+                            ) {
+  val nadlngrd: String = "EN"
+}
 
 case class CustomsOfficeOfPresentation(
                                         refNumRES1: String
                                       )
 
+case class ArrivalNotificationRootNode(
+                                        key: String = "CC007A",
+                                        nameSpace: Map[String, String] = Map(
+                                          "xmlns=" -> "http://ncts.dgtaxud.ec/CC007A",
+                                          "xmlns:xsi=" -> "http://www.w3.org/2001/XMLSchema-instance",
+                                          "xmlns:complex_ncts=" -> "http://ncts.dgtaxud.ec/complex_ncts",
+                                          "xsi:schemaLocation=" -> "http://ncts.dgtaxud.ec/CC007A"))
+
 case class ArrivalNotificationXml(
+                                   rootNode: ArrivalNotificationRootNode = ArrivalNotificationRootNode(),
                                    meta: Meta,
                                    header: Header,
                                    traderDestination: TraderDestination,
@@ -77,27 +88,18 @@ case class ArrivalNotificationXml(
                                  )
 
 object ArrivalNotificationXml {
-  val rootNode: String = "CC007A"
+//  val rootNode: String = "CC007A"
   val messageCode: String = "GB007A"
   val syntaxIdentifier: String = "UNOC"
-  val syntaxVersionNumber: String = "3"
-  val messageRecipient: String = "NCTS"
+//  val syntaxVersionNumber: String = "3"
+ // val messageRecipient: String = "NCTS"
   val applicationReference: String = "NCTS"
   val testIndicator: String = "0"
   val messageIdentification: String = "1"
-  val nameSpace: Map[String, String] = Map(
-    "xmlns=" -> "http://ncts.dgtaxud.ec/CC007A",
-    "xmlns:xsi=" -> "http://www.w3.org/2001/XMLSchema-instance",
-    "xmlns:complex_ncts=" -> "http://ncts.dgtaxud.ec/complex_ncts",
-    "xsi:schemaLocation=" -> "http://ncts.dgtaxud.ec/CC007A")
-
-//  private def buildXml(nodes: NodeSeq): String = {
-//    s"""<$rootNode
-//       |        xmlns="http://ncts.dgtaxud.ec/CC007A"
-//       |        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-//       |        xmlns:complex_ncts="http://ncts.dgtaxud.ec/complex_ncts"
-//       |        xsi:schemaLocation="http://ncts.dgtaxud.ec/CC007A">
-//       |${nodes.toString()}
-//       </$rootNode>""".stripMargin
-//  }
+  val languageCode: Option[String] = Some("EN")
+//  val nameSpace: Map[String, String] = Map(
+//    "xmlns=" -> "http://ncts.dgtaxud.ec/CC007A",
+//    "xmlns:xsi=" -> "http://www.w3.org/2001/XMLSchema-instance",
+//    "xmlns:complex_ncts=" -> "http://ncts.dgtaxud.ec/complex_ncts",
+//    "xsi:schemaLocation=" -> "http://ncts.dgtaxud.ec/CC007A")
 }

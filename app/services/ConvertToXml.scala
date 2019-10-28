@@ -16,6 +16,20 @@
 
 package services
 
+import models.messages.xml.ArrivalNotificationXml
+
+import scala.xml.NodeSeq
+
+
 class ConvertToXml {
+
+  private[services] def buildNodes(arrivalNotificationXml: ArrivalNotificationXml): NodeSeq = {
+    <SynIdeMES1>{arrivalNotificationXml.meta.syntaxIdentifier}</SynIdeMES1>
+    <SynVerNumMES2>{arrivalNotificationXml.meta.syntaxVersionNumber}</SynVerNumMES2>
+    <MesSenMES3>{arrivalNotificationXml.meta.mesSenMES3}</MesSenMES3>
+    <MesRecMES6>{arrivalNotificationXml.meta.messageRecipient}</MesRecMES6>
+  }
+
+
 
 }

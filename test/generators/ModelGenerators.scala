@@ -16,7 +16,7 @@
 
 package generators
 
-import java.time.{Instant, LocalDate, ZoneOffset}
+import java.time.{Instant, LocalDate, LocalDateTime, ZoneOffset}
 
 import models._
 import models.messages._
@@ -24,6 +24,17 @@ import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.{Arbitrary, Gen}
 
 trait ModelGenerators {
+
+  def dateTimesBetween(min: LocalDateTime, max: LocalDateTime): Gen[LocalDateTime] = {
+
+    def toMillis(date: LocalDateTime): Long =
+      date.atZone(ZoneOffset.UTC).toInstant.toEpochMilli
+
+    Gen.choose(toMillis(min), toMillis(max)).map {
+      millis =>
+        Instant.ofEpochMilli(millis).atOffset(ZoneOffset.UTC).toLocalDateTime
+    }
+  }
 
   def datesBetween(min: LocalDate, max: LocalDate): Gen[LocalDate] = {
 
@@ -206,4 +217,5 @@ trait ModelGenerators {
         presentationOffice <- arbitrary[String]
       } yield GoodsReleaseNotification(mrn, releaseDate, trader, presentationOffice)
     }
+
 }
