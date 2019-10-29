@@ -19,7 +19,7 @@ package services
 import java.time.LocalDateTime
 
 import config.AppConfig
-import models.messages.xml.{ArrivalNotificationRootNode, ArrivalNotificationXml}
+import models.messages.request.{ArrivalNotificationRequest, Root}
 import org.scalatest.{FreeSpec, MustMatchers}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.inject.Injector
@@ -63,7 +63,7 @@ class ConvertToXmlSpec extends FreeSpec with MustMatchers with GuiceOneAppPerSui
       val validXml: NodeSeq = {
             <SynIdeMES1>UNOC</SynIdeMES1>
             <SynVerNumMES2>3</SynVerNumMES2>
-            <MesSenMES3>{metaData.mesSenMES3}</MesSenMES3>
+            <MesSenMES3>{metaData.messageSender}</MesSenMES3>
             <MesRecMES6>NCTS</MesRecMES6>
             <AppRefMES14>NCTS</AppRefMES14>
             <MesIdeMES18>0</MesIdeMES18>
@@ -74,15 +74,15 @@ class ConvertToXmlSpec extends FreeSpec with MustMatchers with GuiceOneAppPerSui
                 <ArrNotPlaHEA60>{notification.notificationPlace}</ArrNotPlaHEA60>
                 <ArrNotPlaHEA60LNG>EN</ArrNotPlaHEA60LNG>
                 <ArrAgrLocOfGooHEA63LNG>EN</ArrAgrLocOfGooHEA63LNG>
-                <SimProFlaHEA132>{headerData.simProFlaHEA132.getOrElse(0)}</SimProFlaHEA132>
-                <ArrNotDatHEA141>{headerData.arrNotDatHEA141}</ArrNotDatHEA141>
+                <SimProFlaHEA132>{headerData.simplifiedProcedureFlag.getOrElse(0)}</SimProFlaHEA132>
+                <ArrNotDatHEA141>{headerData.arrivalNotificationDate}</ArrNotDatHEA141>
               </HEAHEA>
             ) ++
             trim(
               <TRADESTRD>
                 <NADLNGRD>EN</NADLNGRD>
                 {
-                  traderDestinationData.tintrd59.map {
+                  traderDestinationData.eori.map {
                     eori =>
                       <TINTRD59>{eori}</TINTRD59>
                   }.getOrElse(NodeSeq.Empty)
@@ -91,12 +91,12 @@ class ConvertToXmlSpec extends FreeSpec with MustMatchers with GuiceOneAppPerSui
             ) ++
             trim(
               <CUSOFFPREOFFRES>
-                <RefNumRES1>{customsOfficeData.refNumRES1}</RefNumRES1>
+                <RefNumRES1>{customsOfficeData.presentationOffice}</RefNumRES1>
               </CUSOFFPREOFFRES>
             )
       }
 
-      convertToXml.buildNodes(ArrivalNotificationXml(ArrivalNotificationRootNode(), metaData, headerData, traderDestinationData, customsOfficeData)) mustBe
+      convertToXml.buildNodes(ArrivalNotificationRequest(Root(), metaData, headerData, traderDestinationData, customsOfficeData)) mustBe
         validXml
     }
   }

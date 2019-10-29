@@ -21,7 +21,7 @@ import java.time.format.DateTimeFormatter
 
 import models.{Trader, TraderWithEori, TraderWithoutEori}
 import models.messages.NormalNotification
-import models.messages.xml._
+import models.messages.request.{CustomsOfficeOfPresentation, Header, Meta, TraderDestination}
 import utils.Format
 
 object TestConstants {
@@ -43,43 +43,43 @@ object TestConstants {
     enRouteEvents = Seq.empty)
 
   def meta(messageSender: String, dateFormatted: String, timeFormatted: String, interchangeControlReference: String) = Meta(
-    mesSenMES3 = messageSender,
-    datOfPreMES9 = dateFormatted,
-    timOfPreMES10 = timeFormatted,
-    intConRefMES11 = interchangeControlReference,
-    mesTypMES20 = "GB007A")
+    messageSender = messageSender,
+    dateOfPreparation = dateFormatted,
+    timeOfPreparation = timeFormatted,
+    interchangeControlReference = interchangeControlReference,
+    messageType = "GB007A")
 
   def header(notification: NormalNotification) = Header(
-    docNumHEA5 = notification.movementReferenceNumber,
-    cusSubPlaHEA66 = notification.customsSubPlace,
-    arrNotPlaHEA60 = notification.notificationPlace,
-    arrAgrLocCodHEA62 = None,
-    arrAgrLocOfGooHEA63 = None,
-    arrAutLocOfGooHEA65 = None,
-    simProFlaHEA132 = Some("0"),
-    arrNotDatHEA141 = Format.dateFormatted(notification.notificationDate)
+    movementReferenceNumber = notification.movementReferenceNumber,
+    customsSubPlace = notification.customsSubPlace,
+    arrivalNotificationPlace = notification.notificationPlace,
+    arrivalNotificationPlaceLNG = None,
+    arrivalAgreedLocationOfGoods = None,
+    arrivalAgreedLocationOfGoodsLNG = None,
+    simplifiedProcedureFlag = Some("0"),
+    arrivalNotificationDate = Format.dateFormatted(notification.notificationDate)
   )
 
   def traderDestination(trader:Trader) = trader match {
     case traderWithEori: TraderWithEori =>
       TraderDestination(
-        namTRD7String = traderWithEori.name,
-        strAndNumTRD22 = traderWithEori.streetAndNumber,
-        posCodTRD23 = traderWithEori.postCode,
-        citTRD24 = traderWithEori.city,
-        couTRD25 = traderWithEori.countryCode,
-        tintrd59 = Some(traderWithEori.eori))
+        name = traderWithEori.name,
+        streetAndNumber = traderWithEori.streetAndNumber,
+        postCode = traderWithEori.postCode,
+        city = traderWithEori.city,
+        countryCode = traderWithEori.countryCode,
+        eori = Some(traderWithEori.eori))
     case traderWithoutEori: TraderWithoutEori =>
       TraderDestination(
-        namTRD7String = Some(traderWithoutEori.name),
-        strAndNumTRD22 = Some(traderWithoutEori.streetAndNumber),
-        posCodTRD23 = Some(traderWithoutEori.postCode),
-        citTRD24 = Some(traderWithoutEori.city),
-        couTRD25 = Some(traderWithoutEori.countryCode),
-        tintrd59 = None)
+        name = Some(traderWithoutEori.name),
+        streetAndNumber = Some(traderWithoutEori.streetAndNumber),
+        postCode = Some(traderWithoutEori.postCode),
+        city = Some(traderWithoutEori.city),
+        countryCode = Some(traderWithoutEori.countryCode),
+        eori = None)
   }
 
   def customsOffice(notification: NormalNotification) = CustomsOfficeOfPresentation(
-    refNumRES1 = notification.presentationOffice
+    presentationOffice = notification.presentationOffice
   )
 }

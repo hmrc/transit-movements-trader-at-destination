@@ -20,6 +20,7 @@ import java.time.{Instant, LocalDate, LocalDateTime, ZoneOffset}
 
 import models._
 import models.messages._
+import models.messages.request._
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.{Arbitrary, Gen}
 
@@ -217,5 +218,113 @@ trait ModelGenerators {
         presentationOffice <- arbitrary[String]
       } yield GoodsReleaseNotification(mrn, releaseDate, trader, presentationOffice)
     }
+
+  implicit lazy val arbitraryTraderDestination: Arbitrary[TraderDestination] = {
+    Arbitrary {
+
+      for {
+        name              <- Gen.option(arbitrary[String])
+        streetAndNumber   <- Gen.option(arbitrary[String])
+        postCode          <- Gen.option(arbitrary[String])
+        city              <- Gen.option(arbitrary[String])
+        countryCode       <- Gen.option(arbitrary[String])
+        eori              <- Gen.option(arbitrary[String])
+      } yield TraderDestination(name, streetAndNumber, postCode, city, countryCode, eori)
+
+    }
+  }
+
+  implicit lazy val arbitraryCustomsOfficeOfPresentation: Arbitrary[CustomsOfficeOfPresentation] = {
+    Arbitrary {
+
+      for {
+        presentationOffice  <- arbitrary[String]
+      } yield CustomsOfficeOfPresentation(presentationOffice)
+    }
+  }
+
+  implicit lazy val arbitraryHeader: Arbitrary[Header] = {
+    Arbitrary {
+
+      for {
+        name                              <- arbitrary[String]
+        customsSubPlace                   <- Gen.option(arbitrary[String])
+        arrivalNotificationPlace          <- arbitrary[String]
+        arrivalNotificationPlaceLNG       <- Gen.option(arbitrary[String])
+        arrivalAgreedLocationOfGoods      <- Gen.option(arbitrary[String])
+        arrivalAgreedLocationOfGoodsLNG   <- Gen.option(arbitrary[String])
+        simplifiedProcedureFlag           <- Gen.option(arbitrary[String])
+        arrivalNotificationDate           <- arbitrary[String]
+      } yield
+        Header(
+          name,
+          customsSubPlace,
+          arrivalNotificationPlace,
+          arrivalNotificationPlaceLNG,
+          arrivalAgreedLocationOfGoods,
+          arrivalAgreedLocationOfGoodsLNG,
+          simplifiedProcedureFlag,
+          arrivalNotificationDate
+        )
+    }
+  }
+
+  implicit lazy val arbitraryMeta: Arbitrary[Meta] = {
+    Arbitrary {
+
+      for {
+        messageSender                             <- arbitrary[String]
+//        senderIdentificationCodeQualifier         <- Gen.option(arbitrary[String])
+//        recipientIdentificationCodeQualifier      <- Gen.option(arbitrary[String])
+        dateOfPreparation                         <- arbitrary[String]
+        timeOfPreparation                         <- arbitrary[String]
+        interchangeControlReference               <- arbitrary[String]
+//        recipientsReferencePassword               <- Gen.option(arbitrary[String])
+//        recipientsReferencePasswordQualifier      <- Gen.option(arbitrary[String])
+//        priority                                  <- Gen.option(arbitrary[String])
+//        acknowledgementRequest                    <- Gen.option(arbitrary[String])
+//        communicationsAgreementId                 <- Gen.option(arbitrary[String])
+        messageType                               <- arbitrary[String]
+//        commonAccessReference                     <- Gen.option(arbitrary[String])
+//        messageSequenceNumber                     <- Gen.option(arbitrary[String])
+//        firstAndLastTransfer                      <- Gen.option(arbitrary[String])
+      } yield
+        Meta(
+          messageSender,
+          None,
+          None,
+          dateOfPreparation,
+          timeOfPreparation,
+          interchangeControlReference,
+          None,
+          None,
+          None,
+          None,
+          None,
+          messageType,
+          None,
+          None,
+          None
+        )
+    }
+  }
+
+  implicit lazy val arbitraryArrivalNotificationRequest: Arbitrary[ArrivalNotificationRequest] = {
+    Arbitrary {
+
+      for{
+        meta                          <- arbitrary[Meta]
+        header                        <- arbitrary[Header]
+        traderDestination             <- arbitrary[TraderDestination]
+        customsOfficeOfPresentation   <- arbitrary[CustomsOfficeOfPresentation]
+      } yield
+        ArrivalNotificationRequest(
+          meta = meta,
+          header = header,
+          traderDestination = traderDestination,
+          customsOfficeOfPresentation = customsOfficeOfPresentation
+        )
+    }
+  }
 
 }
