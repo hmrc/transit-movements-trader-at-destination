@@ -20,41 +20,47 @@ sealed trait MetaConstants {
   val syntaxIdentifier: String = "UNOC"
   val syntaxVersionNumber: String = "3"
   val messageRecipient: String = "NCTS"
-
+  val applicationReference: String = "NCTS"
+  val messageIndication = "1"
+  val testIndicator = "0"
 }
+
+sealed trait HeaderConstants {
+  val languageCode: String = "EN"
+}
+
+sealed trait TraderConstants {
+  val languageCode: String = "EN"
+}
+
 case class Meta(
                  mesSenMES3: String,
-                 senIdeCodQuaMES4: Option[String],
-                 recIdeCodQuaMES7: Option[String],
+                 senIdeCodQuaMES4: Option[String] = None,
+                 recIdeCodQuaMES7: Option[String] = None,
                  datOfPreMES9: String,
                  timOfPreMES10: String,
                  intConRefMES11: String,
-                 recRefMES12: Option[String],
-                 recRefQuaMES13: Option[String],
-                 appRefMES14: Option[String],
-                 priMES15: Option[String],
-                 ackReqMES16: Option[String],
-                 comAgrIdMES17: Option[String],
-                 tesIndMES18: Option[String],
-                 mesIdeMES19: String,
+                 recRefMES12: Option[String] = None,
+                 recRefQuaMES13: Option[String] = None,
+                 priMES15: Option[String] = None,
+                 ackReqMES16: Option[String] = None,
+                 comAgrIdMES17: Option[String] = None,
                  mesTypMES20: String,
-                 comAccRefMES21: Option[String],
-                 mesSeqNumMES22: Option[String],
-                 firAndLasTraMES23: Option[String]) extends MetaConstants
+                 comAccRefMES21: Option[String] = None,
+                 mesSeqNumMES22: Option[String] = None,
+                 firAndLasTraMES23: Option[String] = None) extends MetaConstants
 
 
 case class Header(
                    docNumHEA5: String,
                    cusSubPlaHEA66: Option[String],
                    arrNotPlaHEA60: String,
-                   arrNotPlaHEA60LNG: Option[String],
                    arrAgrLocCodHEA62: Option[String],
                    arrAgrLocOfGooHEA63: Option[String],
-                   arrAgrLocOfGooHEA63LNG: Option[String],
                    arrAutLocOfGooHEA65: Option[String],
                    simProFlaHEA132: Option[String],
-                   arrNotDatHEA141: String,
-                   diaLanIndAtDesHEA255: Option[String])
+                   arrNotDatHEA141: String
+                 ) extends HeaderConstants
 
 case class TraderDestination(
                               namTRD7String: Option[String],
@@ -63,9 +69,7 @@ case class TraderDestination(
                               citTRD24: Option[String],
                               couTRD25: Option[String],
                               tintrd59: Option[String]
-                            ) {
-  val nadlngrd: String = "EN"
-}
+                            ) extends TraderConstants
 
 case class CustomsOfficeOfPresentation(
                                         refNumRES1: String
@@ -88,18 +92,7 @@ case class ArrivalNotificationXml(
                                  )
 
 object ArrivalNotificationXml {
-//  val rootNode: String = "CC007A"
   val messageCode: String = "GB007A"
   val syntaxIdentifier: String = "UNOC"
-//  val syntaxVersionNumber: String = "3"
- // val messageRecipient: String = "NCTS"
-  val applicationReference: String = "NCTS"
-  val testIndicator: String = "0"
-  val messageIdentification: String = "1"
   val languageCode: Option[String] = Some("EN")
-//  val nameSpace: Map[String, String] = Map(
-//    "xmlns=" -> "http://ncts.dgtaxud.ec/CC007A",
-//    "xmlns:xsi=" -> "http://www.w3.org/2001/XMLSchema-instance",
-//    "xmlns:complex_ncts=" -> "http://ncts.dgtaxud.ec/complex_ncts",
-//    "xsi:schemaLocation=" -> "http://ncts.dgtaxud.ec/CC007A")
 }

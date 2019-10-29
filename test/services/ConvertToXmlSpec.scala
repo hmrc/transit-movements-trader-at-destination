@@ -64,15 +64,40 @@ class ConvertToXmlSpec extends FreeSpec with MustMatchers with GuiceOneAppPerSui
             <SynIdeMES1>UNOC</SynIdeMES1>
             <SynVerNumMES2>3</SynVerNumMES2>
             <MesSenMES3>{metaData.mesSenMES3}</MesSenMES3>
-            <MesRecMES6>{metaData.messageRecipient}</MesRecMES6>
+            <MesRecMES6>NCTS</MesRecMES6>
+            <AppRefMES14>NCTS</AppRefMES14>
+            <MesIdeMES18>0</MesIdeMES18>
+            <MesIdeMES19>1</MesIdeMES19> ++
+            trim(
+              <HEAHEA>
+                <DocNumHEA5>{notification.movementReferenceNumber}</DocNumHEA5>
+                <ArrNotPlaHEA60>{notification.notificationPlace}</ArrNotPlaHEA60>
+                <ArrNotPlaHEA60LNG>EN</ArrNotPlaHEA60LNG>
+                <ArrAgrLocOfGooHEA63LNG>EN</ArrAgrLocOfGooHEA63LNG>
+                <SimProFlaHEA132>{headerData.simProFlaHEA132.getOrElse(0)}</SimProFlaHEA132>
+                <ArrNotDatHEA141>{headerData.arrNotDatHEA141}</ArrNotDatHEA141>
+              </HEAHEA>
+            ) ++
+            trim(
+              <TRADESTRD>
+                <NADLNGRD>EN</NADLNGRD>
+                {
+                  traderDestinationData.tintrd59.map {
+                    eori =>
+                      <TINTRD59>{eori}</TINTRD59>
+                  }.getOrElse(NodeSeq.Empty)
+                }
+              </TRADESTRD>
+            ) ++
+            trim(
+              <CUSOFFPREOFFRES>
+                <RefNumRES1>{customsOfficeData.refNumRES1}</RefNumRES1>
+              </CUSOFFPREOFFRES>
+            )
       }
 
       convertToXml.buildNodes(ArrivalNotificationXml(ArrivalNotificationRootNode(), metaData, headerData, traderDestinationData, customsOfficeData)) mustBe
         validXml
-
-
-
-
     }
   }
 

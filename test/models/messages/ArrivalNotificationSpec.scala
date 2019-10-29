@@ -206,7 +206,7 @@ class ArrivalNotificationSpec extends FreeSpec with MustMatchers
         case  (mrn, place, date, approvedLocation, trader, presentationOffice, events) =>
 
           val json = Json.obj(
-            "procedure"               -> Json.toJson(ProcedureType.Simplified),
+            "procedure"        -> Json.toJson(ProcedureType.Simplified),
             "movementReferenceNumber" -> mrn,
             "notificationPlace"       -> place,
             "notificationDate"        -> date,

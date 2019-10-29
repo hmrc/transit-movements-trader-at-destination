@@ -46,11 +46,9 @@ class ConvertToSubmissionModelSpec extends FreeSpec with MustMatchers with Guice
 
       val localDateTime: Gen[LocalDateTime] = dateTimesBetween(LocalDateTime.of(1900, 1, 1, 0, 0), LocalDateTime.now)
 
-      val authenticatedUserEori = "NCTS_EU_EXIT"
+      forAll(arbitrary[NormalNotification], localDateTime, arbitrary[String]) {
 
-      forAll(arbitrary[NormalNotification], localDateTime) {
-
-        (notification, localDateTime) => {
+        (notification, localDateTime, authenticatedUserEori) => {
 
           val timeFormatted = Format.timeFormatted(localDateTime)
           val dateFormatted = Format.dateFormatted(localDateTime)
@@ -70,9 +68,7 @@ class ConvertToSubmissionModelSpec extends FreeSpec with MustMatchers with Guice
         }
 
       }
-
     }
-
   }
 
 }

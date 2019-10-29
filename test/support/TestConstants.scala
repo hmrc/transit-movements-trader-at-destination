@@ -44,36 +44,21 @@ object TestConstants {
 
   def meta(messageSender: String, dateFormatted: String, timeFormatted: String, interchangeControlReference: String) = Meta(
     mesSenMES3 = messageSender,
-    senIdeCodQuaMES4 = None,
-    recIdeCodQuaMES7 = None,
     datOfPreMES9 = dateFormatted,
     timOfPreMES10 = timeFormatted,
     intConRefMES11 = interchangeControlReference,
-    recRefMES12 = None,
-    recRefQuaMES13 = None,
-    appRefMES14 = Some("NCTS"),
-    priMES15 = None,
-    ackReqMES16 = None,
-    comAgrIdMES17 = None,
-    tesIndMES18 = Some("0"),
-    mesIdeMES19 = "1",
-    mesTypMES20 = "GB007A",
-    comAccRefMES21 = None,
-    mesSeqNumMES22 = None,
-    firAndLasTraMES23 = None)
+    mesTypMES20 = "GB007A")
 
   def header(notification: NormalNotification) = Header(
     docNumHEA5 = notification.movementReferenceNumber,
     cusSubPlaHEA66 = notification.customsSubPlace,
     arrNotPlaHEA60 = notification.notificationPlace,
-    arrNotPlaHEA60LNG = Some("EN"),
     arrAgrLocCodHEA62 = None,
     arrAgrLocOfGooHEA63 = None,
-    arrAgrLocOfGooHEA63LNG = Some("EN"),
     arrAutLocOfGooHEA65 = None,
-    simProFlaHEA132 = None,
-    arrNotDatHEA141 = Format.dateFormatted(notification.notificationDate),
-    diaLanIndAtDesHEA255 = None)
+    simProFlaHEA132 = Some("0"),
+    arrNotDatHEA141 = Format.dateFormatted(notification.notificationDate)
+  )
 
   def traderDestination(trader:Trader) = trader match {
     case traderWithEori: TraderWithEori =>

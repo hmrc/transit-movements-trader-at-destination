@@ -160,7 +160,7 @@ trait ModelGenerators {
         subPlace           <- arbitrary[Option[String]]
         trader             <- arbitrary[Trader]
         presentationOffice <- arbitrary[String]
-        events             <- arbitrary[Seq[EnRouteEvent]]
+        events             <- Gen.listOf(arbitrary[EnRouteEvent])
       } yield NormalNotification(mrn, place, date, subPlace, trader, presentationOffice, events)
     }
 
@@ -174,7 +174,7 @@ trait ModelGenerators {
         approvedLocation   <- arbitrary[Option[String]]
         trader             <- arbitrary[Trader]
         presentationOffice <- arbitrary[String]
-        events             <- arbitrary[Seq[EnRouteEvent]]
+        events             <- Gen.listOf(arbitrary[EnRouteEvent])
       } yield SimplifiedNotification(mrn, place, date, approvedLocation, trader, presentationOffice, events)
     }
 

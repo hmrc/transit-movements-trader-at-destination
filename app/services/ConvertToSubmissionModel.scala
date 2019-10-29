@@ -69,12 +69,9 @@ class ConvertToSubmissionModel @Inject()(appConfig: AppConfig){
       intConRefMES11 = interchangeControlReference,
       recRefMES12 = None,
       recRefQuaMES13 = None,
-      appRefMES14 = Some(ArrivalNotificationXml.applicationReference),
       priMES15 = None,
       ackReqMES16 = None,
       comAgrIdMES17 = None,
-      tesIndMES18 = Some(ArrivalNotificationXml.testIndicator),
-      mesIdeMES19 = ArrivalNotificationXml.messageIdentification,
       mesTypMES20 = ArrivalNotificationXml.messageCode,
       comAccRefMES21 = None,
       mesSeqNumMES22 = None,
@@ -86,14 +83,11 @@ class ConvertToSubmissionModel @Inject()(appConfig: AppConfig){
       docNumHEA5 = arrivalNotification.movementReferenceNumber,
       cusSubPlaHEA66 = arrivalNotification.customsSubPlace,
       arrNotPlaHEA60 = arrivalNotification.notificationPlace,
-      arrNotPlaHEA60LNG = ArrivalNotificationXml.languageCode,
       arrAgrLocCodHEA62 = None,
       arrAgrLocOfGooHEA63 = None,
-      arrAgrLocOfGooHEA63LNG = ArrivalNotificationXml.languageCode,
       arrAutLocOfGooHEA65 = None,
-      simProFlaHEA132 = None,
-      arrNotDatHEA141 = dateFormatted(arrivalNotification.notificationDate),
-      diaLanIndAtDesHEA255 = None
+      simProFlaHEA132 = Some("0"),
+      arrNotDatHEA141 = dateFormatted(arrivalNotification.notificationDate)
     )
   }
 
