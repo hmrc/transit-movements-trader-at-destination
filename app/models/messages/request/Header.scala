@@ -18,12 +18,12 @@ package models.messages.request
 
 case class Header(
                    movementReferenceNumber: String,
-                   customsSubPlace: Option[String],
+                   customsSubPlace: Option[String] = None,
                    arrivalNotificationPlace: String,
-                   arrivalNotificationPlaceLNG: Option[String],
-                   arrivalAgreedLocationOfGoods: Option[String],
-                   arrivalAgreedLocationOfGoodsLNG: Option[String],
-                   simplifiedProcedureFlag: Option[String],
+                   arrivalNotificationPlaceLNG: Option[String] = None,
+                   arrivalAgreedLocationOfGoods: Option[String] = None,
+                   arrivalAgreedLocationOfGoodsLNG: Option[String] = None,
+                   simplifiedProcedureFlag: String,
                    arrivalNotificationDate: String
                  ) extends HeaderConstants
 

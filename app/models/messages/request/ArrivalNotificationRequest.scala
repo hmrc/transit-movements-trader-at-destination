@@ -16,16 +16,23 @@
 
 package models.messages.request
 
+import scala.collection.immutable.ListMap
+
 case class ArrivalNotificationRequest(
-                                       rootNode: Root = Root(),
                                        meta: Meta,
                                        header: Header,
                                        traderDestination: TraderDestination,
                                        customsOfficeOfPresentation: CustomsOfficeOfPresentation
-                                 )
+                                     ) extends ArrivalNotificationRequestConstants
 
-object ArrivalNotificationRequest {
+sealed trait ArrivalNotificationRequestConstants {
   val messageCode: String = "GB007A"
   val syntaxIdentifier: String = "UNOC"
-  val languageCode: Option[String] = Some("EN")
+  val rootKey: String = "CC007A"
+  val nameSpace: Map[String, String] = ListMap(
+    "xmlns" -> "http://ncts.dgtaxud.ec/CC007A",
+    "xmlns:xsi" -> "http://www.w3.org/2001/XMLSchema-instance",
+    "xmlns:complex_ncts" -> "http://ncts.dgtaxud.ec/complex_ncts",
+    "xsi:schemaLocation" -> "http://ncts.dgtaxud.ec/CC007A"
+  )
 }

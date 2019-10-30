@@ -16,10 +16,10 @@
 
 package support
 
-import java.time.LocalDate
+import java.time.{LocalDate, LocalDateTime}
 import java.time.format.DateTimeFormatter
 
-import models.{Trader, TraderWithEori, TraderWithoutEori}
+import models.{InterchangeControlReference, MessageSender, Trader, TraderWithEori, TraderWithoutEori}
 import models.messages.NormalNotification
 import models.messages.request.{CustomsOfficeOfPresentation, Header, Meta, TraderDestination}
 import utils.Format
@@ -42,12 +42,20 @@ object TestConstants {
     presentationOffice = "GB000060",
     enRouteEvents = Seq.empty)
 
-  def meta(messageSender: String, dateFormatted: String, timeFormatted: String, interchangeControlReference: String) = Meta(
-    messageSender = messageSender,
-    dateOfPreparation = dateFormatted,
-    timeOfPreparation = timeFormatted,
-    interchangeControlReference = interchangeControlReference,
-    messageType = "GB007A")
+  def meta(
+            eori: String,
+            environment: String,
+            prefix: String,
+            dateTime: LocalDateTime
+          ): Meta = {
+
+    Meta(
+      messageSender = MessageSender(environment, eori),
+      dateOfPreparation = Format.dateFormatted(dateTime),
+      timeOfPreparation = Format.timeFormatted(dateTime),
+      interchangeControlReference = InterchangeControlReference(prefix, dateTime)
+    )
+  }
 
   def header(notification: NormalNotification) = Header(
     movementReferenceNumber = notification.movementReferenceNumber,
@@ -56,11 +64,11 @@ object TestConstants {
     arrivalNotificationPlaceLNG = None,
     arrivalAgreedLocationOfGoods = None,
     arrivalAgreedLocationOfGoodsLNG = None,
-    simplifiedProcedureFlag = Some("0"),
+    simplifiedProcedureFlag = "0",
     arrivalNotificationDate = Format.dateFormatted(notification.notificationDate)
   )
 
-  def traderDestination(trader:Trader) = trader match {
+  def traderDestination(trader:Trader): TraderDestination = trader match {
     case traderWithEori: TraderWithEori =>
       TraderDestination(
         name = traderWithEori.name,

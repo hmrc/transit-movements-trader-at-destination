@@ -22,29 +22,22 @@ import com.google.inject.Inject
 import config.AppConfig
 import models.messages.NormalNotification
 import models.messages.request._
-import models.{Trader, TraderWithEori, TraderWithoutEori}
+import models.{InterchangeControlReference, MessageSender, Trader, TraderWithEori, TraderWithoutEori}
 import utils.Format._
 
 class ConvertToSubmissionModel @Inject()(appConfig: AppConfig){
 
-  /**
-    * Conversion layer accepts internal case class
-    * converts to xml model
-    * returns string of xml
-    */
-
-  def convert[A](x: A, eori: String): ArrivalNotificationRequest = x match {
+  def convert[A](arrivalNotification: A, eori: String, dateTime: LocalDateTime = LocalDateTime.now(), prefix: String): ArrivalNotificationRequest = arrivalNotification match {
     case arrivalNotification: NormalNotification => {
 
-      val rootNode = Root()
-      val meta = buildMeta(eori)
+      val meta = buildMeta(eori, dateTime, prefix)
       val header = buildHeader(arrivalNotification)
       val traderDestination = buildTrader(arrivalNotification.trader)
       val customsOffice = CustomsOfficeOfPresentation(
         presentationOffice = arrivalNotification.presentationOffice
       )
 
-      ArrivalNotificationRequest(rootNode, meta, header, traderDestination, customsOffice)
+      ArrivalNotificationRequest(meta, header, traderDestination, customsOffice)
     }
     case _ => {
       throw new RuntimeException
@@ -52,31 +45,13 @@ class ConvertToSubmissionModel @Inject()(appConfig: AppConfig){
 
   }
 
-  private def buildMeta(eori: String): Meta = {
-
-    //TODO this value isn't used by web channel and is not saved within NCTS web database
-    //TODO: has to be unique - websols uses an auto incrementing number from 100000 to 999999
-
-    val time = LocalDateTime.now()
-    val interchangeControlReference = s"WE+${dateFormatted(time)}-1"
-    val messageSender = s"${appConfig.env}-$eori"
-
+  private def buildMeta(eori: String, dateTime: LocalDateTime, prefix: String): Meta = {
     Meta(
-      messageSender = messageSender,
-      senderIdentificationCodeQualifier = None,
-      recipientIdentificationCodeQualifier = None,
-      dateOfPreparation = dateFormatted(time),
-      timeOfPreparation = timeFormatted(time),
-      interchangeControlReference = interchangeControlReference,
-      recipientsReferencePassword = None,
-      recipientsReferencePasswordQualifier = None,
-      priority = None,
-      acknowledgementRequest = None,
-      communicationsAgreementId = None,
-      messageType = ArrivalNotificationRequest.messageCode,
-      commonAccessReference = None,
-      messageSequenceNumber = None,
-      firstAndLastTransfer = None)
+      messageSender = MessageSender(appConfig.env, eori),
+      dateOfPreparation = dateFormatted(dateTime),
+      timeOfPreparation = timeFormatted(dateTime),
+      interchangeControlReference = InterchangeControlReference(prefix, dateTime)
+    )
   }
 
   private def buildHeader(arrivalNotification: NormalNotification): Header = {
@@ -84,10 +59,7 @@ class ConvertToSubmissionModel @Inject()(appConfig: AppConfig){
       movementReferenceNumber = arrivalNotification.movementReferenceNumber,
       customsSubPlace = arrivalNotification.customsSubPlace,
       arrivalNotificationPlace = arrivalNotification.notificationPlace,
-      arrivalNotificationPlaceLNG = None,
-      arrivalAgreedLocationOfGoods = None,
-      arrivalAgreedLocationOfGoodsLNG = None,
-      simplifiedProcedureFlag = Some("0"),
+      simplifiedProcedureFlag = "0",
       arrivalNotificationDate = dateFormatted(arrivalNotification.notificationDate)
     )
   }

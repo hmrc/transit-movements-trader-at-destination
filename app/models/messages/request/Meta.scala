@@ -16,19 +16,20 @@
 
 package models.messages.request
 
+import models.{InterchangeControlReference, MessageSender}
+
 case class Meta(
-                 messageSender: String,
+                 messageSender: MessageSender,
                  senderIdentificationCodeQualifier: Option[String] = None,
                  recipientIdentificationCodeQualifier: Option[String] = None,
                  dateOfPreparation: String,
                  timeOfPreparation: String,
-                 interchangeControlReference: String,
+                 interchangeControlReference: InterchangeControlReference,
                  recipientsReferencePassword: Option[String] = None,
                  recipientsReferencePasswordQualifier: Option[String] = None,
                  priority: Option[String] = None,
                  acknowledgementRequest: Option[String] = None,
                  communicationsAgreementId: Option[String] = None,
-                 messageType: String,
                  commonAccessReference: Option[String] = None,
                  messageSequenceNumber: Option[String] = None,
                  firstAndLastTransfer: Option[String] = None) extends MetaConstants

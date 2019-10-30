@@ -19,15 +19,15 @@ package services
 import java.time.LocalDateTime
 
 import config.AppConfig
-import models.messages.request.{ArrivalNotificationRequest, Root}
+import models.messages.request.ArrivalNotificationRequest
 import org.scalatest.{FreeSpec, MustMatchers}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.inject.Injector
 import support.TestConstants._
 import utils.Format
 
-import scala.xml.NodeSeq
 import scala.xml.Utility.trim
+import scala.xml.{Node, NodeSeq}
 
 class ConvertToXmlSpec extends FreeSpec with MustMatchers with GuiceOneAppPerSuite {
 
@@ -45,40 +45,43 @@ class ConvertToXmlSpec extends FreeSpec with MustMatchers with GuiceOneAppPerSui
 
       val localDateTime: LocalDateTime = LocalDateTime.now
 
-      val timeFormatted = Format.timeFormatted(localDateTime)
-      val dateFormatted = Format.dateFormatted(localDateTime)
-
-      //TODO: this value isn't used by web channel and is not saved within NCTS web database
-      //TODO: has to be unique - websols uses an auto incrementing number from 100000 to 999999
-      val interchangeControlReference = s"WE+${dateFormatted}-1"
-      val messageSender = s"${appConfig.env}+$authenticatedUserEori"
-
-
       val notification = normalArrivalNotification(traderWithEori)
-      val metaData = meta(messageSender, dateFormatted, timeFormatted, interchangeControlReference)
+      val metaData = meta(authenticatedUserEori, appConfig.env, "WE", localDateTime)
       val headerData = header(notification)
       val traderDestinationData = traderDestination(notification.trader)
       val customsOfficeData = customsOffice(notification)
 
-      val validXml: NodeSeq = {
-            <SynIdeMES1>UNOC</SynIdeMES1>
-            <SynVerNumMES2>3</SynVerNumMES2>
-            <MesSenMES3>{metaData.messageSender}</MesSenMES3>
-            <MesRecMES6>NCTS</MesRecMES6>
-            <AppRefMES14>NCTS</AppRefMES14>
-            <MesIdeMES18>0</MesIdeMES18>
-            <MesIdeMES19>1</MesIdeMES19> ++
-            trim(
+      val dateOfPreperation = Format.dateFormatted(localDateTime)
+      val timeOfPreperation = Format.timeFormatted(localDateTime)
+
+      val arrivalNotificationRequest = ArrivalNotificationRequest(metaData, headerData, traderDestinationData, customsOfficeData)
+
+      val validXml: Node = {
+        trim(
+          <CC007A
+          xsi:schemaLocation="http://ncts.dgtaxud.ec/CC007A"
+          xmlns="http://ncts.dgtaxud.ec/CC007A"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xmlns:complex_ncts="http://ncts.dgtaxud.ec/complex_ncts">
+              <SynIdeMES1>UNOC</SynIdeMES1>
+              <SynVerNumMES2>3</SynVerNumMES2>
+              <MesSenMES3>{metaData.messageSender.toString}</MesSenMES3>
+              <MesRecMES6>NCTS</MesRecMES6>
+              <DatOfPreMES9>{dateOfPreperation}</DatOfPreMES9>
+              <TimOfPreMES10>{timeOfPreperation}</TimOfPreMES10>
+              <IntConRefMES11>{metaData.interchangeControlReference.toString}</IntConRefMES11>
+              <AppRefMES14>NCTS</AppRefMES14>
+              <MesIdeMES18>0</MesIdeMES18>
+              <MesIdeMES19>1</MesIdeMES19>
+              <MesTypMES20>GB007A</MesTypMES20>
               <HEAHEA>
                 <DocNumHEA5>{notification.movementReferenceNumber}</DocNumHEA5>
                 <ArrNotPlaHEA60>{notification.notificationPlace}</ArrNotPlaHEA60>
                 <ArrNotPlaHEA60LNG>EN</ArrNotPlaHEA60LNG>
                 <ArrAgrLocOfGooHEA63LNG>EN</ArrAgrLocOfGooHEA63LNG>
-                <SimProFlaHEA132>{headerData.simplifiedProcedureFlag.getOrElse(0)}</SimProFlaHEA132>
+                <SimProFlaHEA132>{headerData.simplifiedProcedureFlag}</SimProFlaHEA132>
                 <ArrNotDatHEA141>{headerData.arrivalNotificationDate}</ArrNotDatHEA141>
               </HEAHEA>
-            ) ++
-            trim(
               <TRADESTRD>
                 <NADLNGRD>EN</NADLNGRD>
                 {
@@ -88,16 +91,14 @@ class ConvertToXmlSpec extends FreeSpec with MustMatchers with GuiceOneAppPerSui
                   }.getOrElse(NodeSeq.Empty)
                 }
               </TRADESTRD>
-            ) ++
-            trim(
               <CUSOFFPREOFFRES>
                 <RefNumRES1>{customsOfficeData.presentationOffice}</RefNumRES1>
               </CUSOFFPREOFFRES>
-            )
+          </CC007A>
+        )
       }
 
-      convertToXml.buildNodes(ArrivalNotificationRequest(Root(), metaData, headerData, traderDestinationData, customsOfficeData)) mustBe
-        validXml
+      trim(convertToXml.buildXml(arrivalNotificationRequest)) mustBe validXml
     }
   }
 

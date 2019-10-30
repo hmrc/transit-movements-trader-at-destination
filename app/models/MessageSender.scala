@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package models.messages.request
+package models
 
-case class Root(
-                 key: String = "CC007A",
-                 nameSpace: Map[String, String] = Map(
-                   "xmlns=" -> "http://ncts.dgtaxud.ec/CC007A",
-                   "xmlns:xsi=" -> "http://www.w3.org/2001/XMLSchema-instance",
-                   "xmlns:complex_ncts=" -> "http://ncts.dgtaxud.ec/complex_ncts",
-                   "xsi:schemaLocation=" -> "http://ncts.dgtaxud.ec/CC007A"))
+case class MessageSender(environment: String, eori: String) {
+
+  override def toString: String = {
+    s"$environment-$eori"
+  }
+
+}
