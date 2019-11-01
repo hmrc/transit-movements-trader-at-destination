@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
-package models
+package models.messages.request
 
-case class MessageSender(environment: String, eori: String) {
+import java.time.LocalDateTime
+
+import utils.Format
+
+case class InterchangeControlReference(prefix: String, dateTime: LocalDateTime) {
 
   override def toString: String = {
-    s"$environment-$eori"
+    s"$prefix${Format.dateFormatted(dateTime)}-1"
   }
-
 }

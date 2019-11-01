@@ -16,8 +16,6 @@
 
 package models.messages.request
 
-import models.{InterchangeControlReference, MessageSender}
-
 case class Meta(
                  messageSender: MessageSender,
                  senderIdentificationCodeQualifier: Option[String] = None,

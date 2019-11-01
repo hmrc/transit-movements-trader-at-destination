@@ -18,7 +18,7 @@ package models.messages
 
 import java.time.LocalDate
 
-import generators.ModelGenerators
+import generators.MessageGenerators
 import models._
 import models.behaviours.JsonBehaviours
 import org.scalacheck.Arbitrary.arbitrary
@@ -27,7 +27,7 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.libs.json.{JsSuccess, Json}
 
 class ArrivalNotificationRejectionSpec extends FreeSpec with MustMatchers
-  with ScalaCheckPropertyChecks with ModelGenerators with JsonBehaviours {
+  with ScalaCheckPropertyChecks with MessageGenerators with JsonBehaviours {
 
   mustHaveDualReadsAndWrites(arbitrary[ArrivalNotificationRejection])
 
@@ -117,4 +117,5 @@ class ArrivalNotificationRejectionSpec extends FreeSpec with MustMatchers
         Json.toJson(rejection) mustEqual json
     }
   }
+
 }

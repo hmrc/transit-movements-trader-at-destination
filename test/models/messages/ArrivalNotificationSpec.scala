@@ -18,7 +18,7 @@ package models.messages
 
 import java.time.LocalDate
 
-import generators.ModelGenerators
+import generators.MessageGenerators
 import models.behaviours.JsonBehaviours
 import models.{EnRouteEvent, ProcedureType, Trader}
 import org.scalacheck.Arbitrary.arbitrary
@@ -27,7 +27,7 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.libs.json.{JsError, JsSuccess, Json}
 
 class ArrivalNotificationSpec extends FreeSpec with MustMatchers
-  with ScalaCheckPropertyChecks with ModelGenerators with JsonBehaviours {
+  with ScalaCheckPropertyChecks with MessageGenerators with JsonBehaviours {
 
   "Normal notification" - {
 

@@ -16,12 +16,12 @@
 
 package support
 
-import java.time.{LocalDate, LocalDateTime}
 import java.time.format.DateTimeFormatter
+import java.time.{LocalDate, LocalDateTime}
 
-import models.{InterchangeControlReference, MessageSender, Trader, TraderWithEori, TraderWithoutEori}
 import models.messages.NormalNotification
-import models.messages.request.{CustomsOfficeOfPresentation, Header, Meta, TraderDestination}
+import models.messages.request._
+import models.{Trader, TraderWithEori, TraderWithoutEori}
 import utils.Format
 
 object TestConstants {

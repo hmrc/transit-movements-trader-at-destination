@@ -21,7 +21,7 @@ import java.time.LocalDateTime
 import com.google.inject.Inject
 import config.AppConfig
 import models.messages.NormalNotification
-import models.{InterchangeControlReference, MessageSender, Trader, TraderWithEori, TraderWithoutEori}
+import models.{Trader, TraderWithEori, TraderWithoutEori}
 import utils.Format._
 import models.messages.request._
 

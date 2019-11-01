@@ -19,6 +19,7 @@ package models
 import java.time.LocalDateTime
 
 import generators.ModelGenerators
+import models.messages.request.InterchangeControlReference
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
 import org.scalatest.{FreeSpec, MustMatchers}

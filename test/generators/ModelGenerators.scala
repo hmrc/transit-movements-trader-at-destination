@@ -19,8 +19,6 @@ package generators
 import java.time.{Instant, LocalDate, LocalDateTime, ZoneOffset}
 
 import models._
-import models.messages._
-import models.messages.request._
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.{Arbitrary, Gen}
 
@@ -151,40 +149,6 @@ trait ModelGenerators {
       } yield EnRouteEvent(place, countryCode, alreadyInNcts, eventDetails, seals)
     }
 
-  implicit lazy val arbitraryNormalNotification: Arbitrary[NormalNotification] =
-    Arbitrary {
-
-      for {
-        mrn                <- arbitrary[String]
-        place              <- arbitrary[String]
-        date               <- datesBetween(LocalDate.of(1900, 1, 1), LocalDate.now)
-        subPlace           <- arbitrary[Option[String]]
-        trader             <- arbitrary[Trader]
-        presentationOffice <- arbitrary[String]
-        events             <- Gen.listOf(arbitrary[EnRouteEvent])
-      } yield NormalNotification(mrn, place, date, subPlace, trader, presentationOffice, events)
-    }
-
-  implicit lazy val arbitrarySimplifiedNotification: Arbitrary[SimplifiedNotification] =
-    Arbitrary {
-
-      for {
-        mrn                <- arbitrary[String]
-        place              <- arbitrary[String]
-        date               <- datesBetween(LocalDate.of(1900, 1, 1), LocalDate.now)
-        approvedLocation   <- arbitrary[Option[String]]
-        trader             <- arbitrary[Trader]
-        presentationOffice <- arbitrary[String]
-        events             <- Gen.listOf(arbitrary[EnRouteEvent])
-      } yield SimplifiedNotification(mrn, place, date, approvedLocation, trader, presentationOffice, events)
-    }
-
-  implicit lazy val arbitraryArrivalNotification: Arbitrary[ArrivalNotification] =
-    Arbitrary {
-
-      Gen.oneOf(arbitrary[NormalNotification], arbitrary[SimplifiedNotification])
-    }
-
   implicit lazy  val arbitraryRejectionError: Arbitrary[RejectionError] =
     Arbitrary {
 
@@ -195,52 +159,5 @@ trait ModelGenerators {
         originalValue <- arbitrary[Option[String]]
       } yield RejectionError(errorType, pointer, reason, originalValue)
     }
-
-  implicit lazy val arbitraryArrivalNotificationRejection: Arbitrary[ArrivalNotificationRejection] =
-    Arbitrary {
-
-      for {
-        mrn    <- arbitrary[String]
-        date   <- datesBetween(LocalDate.of(1900, 1, 1), LocalDate.now)
-        action <- arbitrary[Option[String]]
-        reason <- arbitrary[Option[String]]
-        errors <- arbitrary[Seq[RejectionError]]
-      } yield ArrivalNotificationRejection(mrn, date, action, reason, errors)
-    }
-
-  implicit lazy val arbitraryGoodsReleaseNotification: Arbitrary[GoodsReleaseNotification] =
-    Arbitrary {
-
-      for {
-        mrn                <- arbitrary[String]
-        releaseDate        <- datesBetween(LocalDate.of(1900, 1, 1), LocalDate.now)
-        trader             <- arbitrary[Trader]
-        presentationOffice <- arbitrary[String]
-      } yield GoodsReleaseNotification(mrn, releaseDate, trader, presentationOffice)
-    }
-
-  implicit lazy val arbitraryTraderDestination: Arbitrary[TraderDestination] = {
-    Arbitrary {
-
-      for {
-        name              <- Gen.option(arbitrary[String])
-        streetAndNumber   <- Gen.option(arbitrary[String])
-        postCode          <- Gen.option(arbitrary[String])
-        city              <- Gen.option(arbitrary[String])
-        countryCode       <- Gen.option(arbitrary[String])
-        eori              <- Gen.option(arbitrary[String])
-      } yield TraderDestination(name, streetAndNumber, postCode, city, countryCode, eori)
-
-    }
-  }
-
-  implicit lazy val arbitraryCustomsOfficeOfPresentation: Arbitrary[CustomsOfficeOfPresentation] = {
-    Arbitrary {
-
-      for {
-        presentationOffice  <- arbitrary[String]
-      } yield CustomsOfficeOfPresentation(presentationOffice)
-    }
-  }
 
 }

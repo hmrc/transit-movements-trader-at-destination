@@ -19,9 +19,9 @@ package services
 import java.time.LocalDateTime
 
 import config.AppConfig
-import generators.ModelGenerators
+import generators.MessageGenerators
 import models.messages.NormalNotification
-import models.messages.request.{ArrivalNotificationRequest, FailedToConvert, RequestModel, RequestModelError}
+import models.messages.request._
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
 import org.scalatest.{FreeSpec, MustMatchers}
@@ -29,7 +29,7 @@ import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.inject.Injector
 
-class ConvertToSubmissionModelSpec extends FreeSpec with MustMatchers with GuiceOneAppPerSuite with ModelGenerators with ScalaCheckDrivenPropertyChecks {
+class ConvertToSubmissionModelSpec extends FreeSpec with MustMatchers with GuiceOneAppPerSuite with MessageGenerators with ScalaCheckDrivenPropertyChecks {
 
   import support.TestConstants._
 
