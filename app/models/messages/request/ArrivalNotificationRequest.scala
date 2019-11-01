@@ -18,12 +18,21 @@ package models.messages.request
 
 import scala.collection.immutable.ListMap
 
+
+trait RequestModel
+
+trait RequestModelError
+
+
+object FailedToConvert extends RequestModelError
+
+
 case class ArrivalNotificationRequest(
                                        meta: Meta,
                                        header: Header,
                                        traderDestination: TraderDestination,
                                        customsOfficeOfPresentation: CustomsOfficeOfPresentation
-                                     ) extends ArrivalNotificationRequestConstants
+                                     ) extends ArrivalNotificationRequestConstants with RequestModel
 
 sealed trait ArrivalNotificationRequestConstants {
   val messageCode: String = "GB007A"

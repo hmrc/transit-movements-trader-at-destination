@@ -21,7 +21,7 @@ import java.time.LocalDateTime
 import config.AppConfig
 import generators.ModelGenerators
 import models.messages.NormalNotification
-import models.messages.request.ArrivalNotificationRequest
+import models.messages.request.{ArrivalNotificationRequest, FailedToConvert, RequestModel, RequestModelError}
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
 import org.scalatest.{FreeSpec, MustMatchers}
@@ -55,7 +55,28 @@ class ConvertToSubmissionModelSpec extends FreeSpec with MustMatchers with Guice
           val customsOfficeData = customsOffice(notification)
 
           convertToSubmissionModel.convert(notification, authenticatedUserEori, localDateTime, prefix) mustBe
-            ArrivalNotificationRequest(metaData, headerData, traderDestinationData, customsOfficeData)
+            Right(ArrivalNotificationRequest(metaData, headerData, traderDestinationData, customsOfficeData))
+        }
+      }
+    }
+
+    "return FailedToConvert when given an invalid request" in {
+
+      import support.InvalidRequestModel
+
+      forAll(arbitrary[String], arbitrary[String]) {
+
+        (authenticatedUserEori, prefix) => {
+
+          val result: Either[RequestModelError, RequestModel] = {
+            convertToSubmissionModel.convert(
+              arrivalNotification = InvalidRequestModel,
+              eori = authenticatedUserEori,
+              prefix = prefix
+            )
+          }
+
+          result mustBe Left(FailedToConvert)
         }
       }
     }

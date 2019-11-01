@@ -21,28 +21,25 @@ import java.time.LocalDateTime
 import com.google.inject.Inject
 import config.AppConfig
 import models.messages.NormalNotification
-import models.messages.request._
 import models.{InterchangeControlReference, MessageSender, Trader, TraderWithEori, TraderWithoutEori}
 import utils.Format._
+import models.messages.request._
 
 class ConvertToSubmissionModel @Inject()(appConfig: AppConfig){
 
-  def convert[A](arrivalNotification: A, eori: String, dateTime: LocalDateTime = LocalDateTime.now(), prefix: String): ArrivalNotificationRequest = arrivalNotification match {
+  def convert[A](arrivalNotification: A, eori: String, dateTime: LocalDateTime = LocalDateTime.now(), prefix: String): Either[RequestModelError, RequestModel] = arrivalNotification match {
     case arrivalNotification: NormalNotification => {
 
       val meta = buildMeta(eori, dateTime, prefix)
       val header = buildHeader(arrivalNotification)
       val traderDestination = buildTrader(arrivalNotification.trader)
       val customsOffice = CustomsOfficeOfPresentation(
-        presentationOffice = arrivalNotification.presentationOffice
-      )
+        presentationOffice = arrivalNotification.presentationOffice)
 
-      ArrivalNotificationRequest(meta, header, traderDestination, customsOffice)
+      Right(ArrivalNotificationRequest(meta, header, traderDestination, customsOffice))
     }
-    case _ => {
-      throw new RuntimeException
-    }
-
+    case _ =>
+      Left(FailedToConvert)
   }
 
   private def buildMeta(eori: String, dateTime: LocalDateTime, prefix: String): Meta = {
