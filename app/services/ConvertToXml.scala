@@ -16,7 +16,7 @@
 
 package services
 
-import models.messages.request.ArrivalNotificationRequest
+import models.messages.request._
 
 import scala.xml.XML._
 import scala.xml.{Elem, Node, NodeSeq}
@@ -26,7 +26,14 @@ class ConvertToXml {
   def buildXml(arrivalNotificationRequest: ArrivalNotificationRequest): Node = {
 
     val rootNode: Node = buildStartRoot(arrivalNotificationRequest.rootKey, arrivalNotificationRequest.nameSpace)
-    val childNodes: NodeSeq = buildChildNodes(arrivalNotificationRequest)
+
+    val childNodes: NodeSeq = {
+      buildMetaNode(arrivalNotificationRequest.meta, arrivalNotificationRequest.messageCode) ++
+      buildHeaderNode(arrivalNotificationRequest.header) ++
+      buildTraderDestinationNode(arrivalNotificationRequest.traderDestination) ++
+      buildOfficeOfPresentationNode(arrivalNotificationRequest.customsOfficeOfPresentation)
+    }
+
     val createXml: Node = addChildrenToRoot(childNodes, rootNode)
 
     createXml
@@ -59,61 +66,71 @@ class ConvertToXml {
     case _ => NodeSeq.Empty
   }
 
-  private def buildChildNodes(arrivalNotificationXml: ArrivalNotificationRequest): NodeSeq = {
-        <SynIdeMES1>{arrivalNotificationXml.meta.syntaxIdentifier}</SynIdeMES1>
-        <SynVerNumMES2>{arrivalNotificationXml.meta.syntaxVersionNumber}</SynVerNumMES2>
-        <MesSenMES3>{arrivalNotificationXml.meta.messageSender.toString}</MesSenMES3> ++
-        buildOptionalElem(arrivalNotificationXml.meta.senderIdentificationCodeQualifier, "SenIdeCodQuaMES4") ++
-        buildOptionalElem(arrivalNotificationXml.meta.recipientIdentificationCodeQualifier, "RecIdeCodQuaMES7") ++
-        <MesRecMES6>{arrivalNotificationXml.meta.messageRecipient}</MesRecMES6> ++
-        <DatOfPreMES9>{arrivalNotificationXml.meta.dateOfPreparation}</DatOfPreMES9> ++
-        <TimOfPreMES10>{arrivalNotificationXml.meta.timeOfPreparation}</TimOfPreMES10> ++
-        <IntConRefMES11>{arrivalNotificationXml.meta.interchangeControlReference.toString}</IntConRefMES11> ++
-        buildOptionalElem(arrivalNotificationXml.meta.recipientsReferencePassword, "RecRefMES12") ++
-        buildOptionalElem(arrivalNotificationXml.meta.recipientsReferencePasswordQualifier, "RecRefQuaMES13") ++
-        <AppRefMES14>{arrivalNotificationXml.meta.applicationReference}</AppRefMES14> ++
-        buildOptionalElem(arrivalNotificationXml.meta.priority, "PriMES15") ++
-        buildOptionalElem(arrivalNotificationXml.meta.acknowledgementRequest, "AckReqMES16") ++
-        buildOptionalElem(arrivalNotificationXml.meta.communicationsAgreementId, "ComAgrIdMES17") ++
-        <MesIdeMES18>{arrivalNotificationXml.meta.testIndicator}</MesIdeMES18> ++
-        <MesIdeMES19>{arrivalNotificationXml.meta.messageIndication}</MesIdeMES19> ++
-        <MesTypMES20>{arrivalNotificationXml.messageCode}</MesTypMES20> ++
-        buildOptionalElem(arrivalNotificationXml.meta.commonAccessReference, "ComAccRefMES21") ++
-        buildOptionalElem(arrivalNotificationXml.meta.messageSequenceNumber, "MesSeqNumMES22") ++
-        buildOptionalElem(arrivalNotificationXml.meta.firstAndLastTransfer, "FirAndLasTraMES23") ++
-        <HEAHEA>
-          <DocNumHEA5>{arrivalNotificationXml.header.movementReferenceNumber}</DocNumHEA5>
-          {
-            buildOptionalElem(arrivalNotificationXml.header.customsSubPlace, "CusSubPlaHEA66")
-          }
-          <ArrNotPlaHEA60>{arrivalNotificationXml.header.arrivalNotificationPlace}</ArrNotPlaHEA60>
-          <ArrNotPlaHEA60LNG>{arrivalNotificationXml.header.languageCode}</ArrNotPlaHEA60LNG>
-          {
-            buildOptionalElem(arrivalNotificationXml.header.arrivalNotificationPlaceLNG, "ArrAgrLocCodHEA62") ++
-            buildOptionalElem(arrivalNotificationXml.header.arrivalAgreedLocationOfGoods, "ArrAgrLocOfGooHEA63")
-          }
-          <ArrAgrLocOfGooHEA63LNG>{arrivalNotificationXml.header.languageCode}</ArrAgrLocOfGooHEA63LNG>
-          {
-            buildOptionalElem(arrivalNotificationXml.header.arrivalAgreedLocationOfGoodsLNG, "ArrAutLocOfGooHEA65")
-          }
-          <SimProFlaHEA132>{arrivalNotificationXml.header.simplifiedProcedureFlag}</SimProFlaHEA132>
-          <ArrNotDatHEA141>{arrivalNotificationXml.header.arrivalNotificationDate}</ArrNotDatHEA141>
-        </HEAHEA>
-        <TRADESTRD>
-          {
-            buildOptionalElem(arrivalNotificationXml.traderDestination.name, "NamTRD7") ++
-            buildOptionalElem(arrivalNotificationXml.traderDestination.streetAndNumber, "StrAndNumTRD22") ++
-            buildOptionalElem(arrivalNotificationXml.traderDestination.postCode, "PosCodTRD23") ++
-            buildOptionalElem(arrivalNotificationXml.traderDestination.city, "CitTRD24") ++
-            buildOptionalElem(arrivalNotificationXml.traderDestination.countryCode, "CouTRD25")
-          }
-          <NADLNGRD>{arrivalNotificationXml.traderDestination.languageCode}</NADLNGRD>
-          {
-            buildOptionalElem(arrivalNotificationXml.traderDestination.eori, "TINTRD59")
-          }
-        </TRADESTRD>
-        <CUSOFFPREOFFRES>
-          <RefNumRES1>{arrivalNotificationXml.customsOfficeOfPresentation.presentationOffice}</RefNumRES1>
-        </CUSOFFPREOFFRES>
+  private def buildMetaNode(meta: Meta, messageCode: String): NodeSeq = {
+    <SynIdeMES1>{meta.syntaxIdentifier}</SynIdeMES1>
+    <SynVerNumMES2>{meta.syntaxVersionNumber}</SynVerNumMES2>
+    <MesSenMES3>{meta.messageSender.toString}</MesSenMES3> ++
+    buildOptionalElem(meta.senderIdentificationCodeQualifier, "SenIdeCodQuaMES4") ++
+    buildOptionalElem(meta.recipientIdentificationCodeQualifier, "RecIdeCodQuaMES7") ++
+    <MesRecMES6>{meta.messageRecipient}</MesRecMES6> ++
+    <DatOfPreMES9>{meta.dateOfPreparation}</DatOfPreMES9> ++
+    <TimOfPreMES10>{meta.timeOfPreparation}</TimOfPreMES10> ++
+    <IntConRefMES11>{meta.interchangeControlReference.toString}</IntConRefMES11> ++
+    buildOptionalElem(meta.recipientsReferencePassword, "RecRefMES12") ++
+    buildOptionalElem(meta.recipientsReferencePasswordQualifier, "RecRefQuaMES13") ++
+    <AppRefMES14>{meta.applicationReference}</AppRefMES14> ++
+    buildOptionalElem(meta.priority, "PriMES15") ++
+    buildOptionalElem(meta.acknowledgementRequest, "AckReqMES16") ++
+    buildOptionalElem(meta.communicationsAgreementId, "ComAgrIdMES17") ++
+    <MesIdeMES18>{meta.testIndicator}</MesIdeMES18> ++
+    <MesIdeMES19>{meta.messageIndication}</MesIdeMES19> ++
+    <MesTypMES20>{messageCode}</MesTypMES20> ++
+    buildOptionalElem(meta.commonAccessReference, "ComAccRefMES21") ++
+    buildOptionalElem(meta.messageSequenceNumber, "MesSeqNumMES22") ++
+    buildOptionalElem(meta.firstAndLastTransfer, "FirAndLasTraMES23")
   }
+
+  private def buildHeaderNode(header: Header): NodeSeq = {
+    <HEAHEA>
+      <DocNumHEA5>{header.movementReferenceNumber}</DocNumHEA5>
+      {
+        buildOptionalElem(header.customsSubPlace, "CusSubPlaHEA66")
+      }
+      <ArrNotPlaHEA60>{header.arrivalNotificationPlace}</ArrNotPlaHEA60>
+      <ArrNotPlaHEA60LNG>{header.languageCode}</ArrNotPlaHEA60LNG>
+      {
+        buildOptionalElem(header.arrivalNotificationPlaceLNG, "ArrAgrLocCodHEA62") ++
+        buildOptionalElem(header.arrivalAgreedLocationOfGoods, "ArrAgrLocOfGooHEA63")
+      }
+      <ArrAgrLocOfGooHEA63LNG>{header.languageCode}</ArrAgrLocOfGooHEA63LNG>
+      {
+        buildOptionalElem(header.arrivalAgreedLocationOfGoodsLNG, "ArrAutLocOfGooHEA65")
+      }
+      <SimProFlaHEA132>{header.simplifiedProcedureFlag}</SimProFlaHEA132>
+      <ArrNotDatHEA141>{header.arrivalNotificationDate}</ArrNotDatHEA141>
+    </HEAHEA>
+  }
+
+  private def buildTraderDestinationNode(traderDestination: TraderDestination): NodeSeq = {
+    <TRADESTRD>
+      {
+        buildOptionalElem(traderDestination.name, "NamTRD7") ++
+        buildOptionalElem(traderDestination.streetAndNumber, "StrAndNumTRD22") ++
+        buildOptionalElem(traderDestination.postCode, "PosCodTRD23") ++
+        buildOptionalElem(traderDestination.city, "CitTRD24") ++
+        buildOptionalElem(traderDestination.countryCode, "CouTRD25")
+      }
+      <NADLNGRD>{traderDestination.languageCode}</NADLNGRD>
+      {
+        buildOptionalElem(traderDestination.eori, "TINTRD59")
+      }
+    </TRADESTRD>
+  }
+
+  private def buildOfficeOfPresentationNode(customsOfficeOfPresentation: CustomsOfficeOfPresentation): NodeSeq = {
+    <CUSOFFPREOFFRES>
+      <RefNumRES1>{customsOfficeOfPresentation.presentationOffice}</RefNumRES1>
+    </CUSOFFPREOFFRES>
+  }
+
 }
