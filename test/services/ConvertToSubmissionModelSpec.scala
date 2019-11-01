@@ -41,7 +41,7 @@ class ConvertToSubmissionModelSpec extends FreeSpec with MustMatchers with Guice
 
   "ConvertToSubmissionModel" - {
 
-    "convert NormalNotification to ArrivalNotificationRequest" in {
+    "must convert NormalNotification to ArrivalNotificationRequest" in {
 
       val localDateTime: Gen[LocalDateTime] = dateTimesBetween(LocalDateTime.of(1900, 1, 1, 0, 0), LocalDateTime.now)
 
@@ -60,7 +60,7 @@ class ConvertToSubmissionModelSpec extends FreeSpec with MustMatchers with Guice
       }
     }
 
-    "return FailedToConvert when given an invalid request" in {
+    "must return FailedToConvert when given an invalid request" in {
 
       import support.InvalidRequestModel
 

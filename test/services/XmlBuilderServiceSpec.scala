@@ -29,7 +29,7 @@ import utils.Format
 import scala.xml.Utility.trim
 import scala.xml.{Node, NodeSeq}
 
-class ConvertToXmlSpec extends FreeSpec with MustMatchers with GuiceOneAppPerSuite {
+class XmlBuilderServiceSpec extends FreeSpec with MustMatchers with GuiceOneAppPerSuite {
 
   val authenticatedUserEori = "NCTS_EU_EXIT"
 
@@ -37,11 +37,11 @@ class ConvertToXmlSpec extends FreeSpec with MustMatchers with GuiceOneAppPerSui
 
   def appConfig: AppConfig = injector.instanceOf[AppConfig]
 
-  val convertToXml = new ConvertToXml()
+  val convertToXml = new XmlBuilderService()
 
-  "ConvertToXml" - {
+  "XmlBuilderService" - {
 
-    "return correct nodes" in {
+    "must return correct nodes" in {
 
       val localDateTime: LocalDateTime = LocalDateTime.now
 

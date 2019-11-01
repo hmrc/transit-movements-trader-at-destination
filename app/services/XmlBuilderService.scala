@@ -21,7 +21,7 @@ import models.messages.request._
 import scala.xml.XML._
 import scala.xml.{Elem, Node, NodeSeq}
 
-class ConvertToXml {
+class XmlBuilderService {
 
   def buildXml(arrivalNotificationRequest: ArrivalNotificationRequest): Node = {
 
