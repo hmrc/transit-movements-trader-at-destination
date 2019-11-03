@@ -20,8 +20,6 @@ case class Meta(
                  messageSender: MessageSender,
                  senderIdentificationCodeQualifier: Option[String] = None,
                  recipientIdentificationCodeQualifier: Option[String] = None,
-                 dateOfPreparation: String,
-                 timeOfPreparation: String,
                  interchangeControlReference: InterchangeControlReference,
                  recipientsReferencePassword: Option[String] = None,
                  recipientsReferencePasswordQualifier: Option[String] = None,

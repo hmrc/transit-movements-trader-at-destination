@@ -79,8 +79,9 @@ class XmlBuilderServiceSpec extends FreeSpec with MustMatchers with GuiceOneAppP
                 <ArrNotPlaHEA60>{notification.notificationPlace}</ArrNotPlaHEA60>
                 <ArrNotPlaHEA60LNG>EN</ArrNotPlaHEA60LNG>
                 <ArrAgrLocOfGooHEA63LNG>EN</ArrAgrLocOfGooHEA63LNG>
+                <ArrivalAgreedLocationOfGoodsLNG>EN</ArrivalAgreedLocationOfGoodsLNG>
                 <SimProFlaHEA132>{headerData.simplifiedProcedureFlag}</SimProFlaHEA132>
-                <ArrNotDatHEA141>{headerData.arrivalNotificationDate}</ArrNotDatHEA141>
+                <ArrNotDatHEA141>{dateOfPreperation}</ArrNotDatHEA141>
               </HEAHEA>
               <TRADESTRD>
                 <NADLNGRD>EN</NADLNGRD>

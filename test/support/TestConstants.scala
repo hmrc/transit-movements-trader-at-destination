@@ -51,8 +51,8 @@ object TestConstants {
 
     Meta(
       messageSender = MessageSender(environment, eori),
-      dateOfPreparation = Format.dateFormatted(dateTime),
-      timeOfPreparation = Format.timeFormatted(dateTime),
+//      dateOfPreparation = Format.dateFormatted(dateTime),
+//      timeOfPreparation = Format.timeFormatted(dateTime),
       interchangeControlReference = InterchangeControlReference(prefix, dateTime)
     )
   }
@@ -61,11 +61,8 @@ object TestConstants {
     movementReferenceNumber = notification.movementReferenceNumber,
     customsSubPlace = notification.customsSubPlace,
     arrivalNotificationPlace = notification.notificationPlace,
-    arrivalNotificationPlaceLNG = None,
     arrivalAgreedLocationOfGoods = None,
-    arrivalAgreedLocationOfGoodsLNG = None,
-    simplifiedProcedureFlag = "0",
-    arrivalNotificationDate = Format.dateFormatted(notification.notificationDate)
+    simplifiedProcedureFlag = "0"
   )
 
   def traderDestination(trader:Trader): TraderDestination = trader match {

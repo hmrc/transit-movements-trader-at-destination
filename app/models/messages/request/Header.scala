@@ -20,11 +20,8 @@ case class Header(
                    movementReferenceNumber: String,
                    customsSubPlace: Option[String] = None,
                    arrivalNotificationPlace: String,
-                   arrivalNotificationPlaceLNG: Option[String] = None,
                    arrivalAgreedLocationOfGoods: Option[String] = None,
-                   arrivalAgreedLocationOfGoodsLNG: Option[String] = None,
-                   simplifiedProcedureFlag: String,
-                   arrivalNotificationDate: String
+                   simplifiedProcedureFlag: String
                  ) extends HeaderConstants
 
 sealed trait HeaderConstants {

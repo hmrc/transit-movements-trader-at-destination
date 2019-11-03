@@ -16,7 +16,7 @@
 
 package generators
 
-import java.time.LocalDate
+import java.time.{LocalDate, LocalDateTime}
 
 import models.messages._
 import models.messages.request._
@@ -47,21 +47,6 @@ trait MessageGenerators extends ModelGenerators {
         presentationOffice <- arbitrary[String]
       } yield GoodsReleaseNotification(mrn, releaseDate, trader, presentationOffice)
     }
-
-  implicit lazy val arbitraryTraderDestination: Arbitrary[TraderDestination] = {
-    Arbitrary {
-
-      for {
-        name              <- Gen.option(arbitrary[String])
-        streetAndNumber   <- Gen.option(arbitrary[String])
-        postCode          <- Gen.option(arbitrary[String])
-        city              <- Gen.option(arbitrary[String])
-        countryCode       <- Gen.option(arbitrary[String])
-        eori              <- Gen.option(arbitrary[String])
-      } yield TraderDestination(name, streetAndNumber, postCode, city, countryCode, eori)
-
-    }
-  }
 
   implicit lazy val arbitraryArrivalNotificationRejection: Arbitrary[ArrivalNotificationRejection] =
     Arbitrary {
@@ -109,4 +94,86 @@ trait MessageGenerators extends ModelGenerators {
       Gen.oneOf(arbitrary[NormalNotification], arbitrary[SimplifiedNotification])
     }
 
+  implicit lazy val arbitraryTraderDestination: Arbitrary[TraderDestination] = {
+    Arbitrary {
+
+      for {
+        name              <- Gen.option(arbitrary[String])
+        streetAndNumber   <- Gen.option(arbitrary[String])
+        postCode          <- Gen.option(arbitrary[String])
+        city              <- Gen.option(arbitrary[String])
+        countryCode       <- Gen.option(arbitrary[String])
+        eori              <- Gen.option(arbitrary[String])
+      } yield TraderDestination(name, streetAndNumber, postCode, city, countryCode, eori)
+
+    }
+  }
+
+  implicit lazy val arbitraryMessageSender: Arbitrary[MessageSender] = {
+    Arbitrary {
+      for {
+        environment <- arbitrary[String]
+        eori <- arbitrary[String]
+      } yield MessageSender(environment, eori)
+    }
+  }
+
+  implicit lazy val arbitraryInterchangeControlReference: Arbitrary[InterchangeControlReference] = {
+    Arbitrary {
+      for {
+        prefix <- arbitrary[String]
+        dateTime <- dateTimesBetween(LocalDateTime.of(1900, 1, 1, 0, 0), LocalDateTime.now)
+      } yield InterchangeControlReference(prefix, dateTime)
+    }
+  }
+
+  implicit lazy val arbitraryMeta: Arbitrary[Meta] = {
+    Arbitrary {
+      for {
+        messageSender <- arbitrary[MessageSender]
+        interchangeControlReference <- arbitrary[InterchangeControlReference]
+      } yield Meta(
+        messageSender,
+        None,
+        None,
+        interchangeControlReference,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None
+      )
+    }
+  }
+
+  implicit lazy val arbitraryHeader: Arbitrary[Header] = {
+    Arbitrary {
+      for {
+        movementReferenceNumber <- arbitrary[String]
+        customsSubPlace <-  Gen.option(arbitrary[String])
+        arrivalNotificationPlace <- arbitrary[String]
+        simplifiedProcedureFlag <- Gen.oneOf("0", "1")
+      } yield Header(
+        movementReferenceNumber,
+        customsSubPlace,
+        arrivalNotificationPlace,
+        None,
+        simplifiedProcedureFlag)
+    }
+  }
+
+  implicit lazy val arbitraryArrivalNotificationRequest: Arbitrary[ArrivalNotificationRequest] = {
+    Arbitrary {
+      for {
+        meta <- arbitrary[Meta]
+        header <- arbitrary[Header]
+        traderDestination <- arbitrary[TraderDestination]
+        customsOffice <- arbitrary[CustomsOfficeOfPresentation]
+      } yield ArrivalNotificationRequest(meta, header, traderDestination, customsOffice)
+
+    }
+  }
 }

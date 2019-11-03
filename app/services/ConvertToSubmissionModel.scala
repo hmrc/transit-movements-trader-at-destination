@@ -16,49 +16,42 @@
 
 package services
 
-import java.time.LocalDateTime
-
 import com.google.inject.Inject
 import config.AppConfig
 import models.messages.NormalNotification
+import models.messages.request.{InterchangeControlReference, _}
 import models.{Trader, TraderWithEori, TraderWithoutEori}
-import utils.Format._
-import models.messages.request._
 
 class ConvertToSubmissionModel @Inject()(appConfig: AppConfig){
 
-  def convert[A](arrivalNotification: A, eori: String, dateTime: LocalDateTime = LocalDateTime.now(), prefix: String): Either[RequestModelError, RequestModel] = arrivalNotification match {
-    case arrivalNotification: NormalNotification => {
+  def convert[A](arrivalNotification: A,
+                 messageSender: MessageSender,
+                 interchangeControlReference: InterchangeControlReference): Either[RequestModelError, RequestModel] = arrivalNotification match {
+    case arrivalNotification: NormalNotification =>
 
-      val meta = buildMeta(eori, dateTime, prefix)
-      val header = buildHeader(arrivalNotification)
+      val meta              = buildMeta(messageSender: MessageSender, interchangeControlReference)
+      val header            = buildHeader(arrivalNotification, simplifiedProcedureFlag = "0")
       val traderDestination = buildTrader(arrivalNotification.trader)
-      val customsOffice = CustomsOfficeOfPresentation(
-        presentationOffice = arrivalNotification.presentationOffice)
+      val customsOffice     = CustomsOfficeOfPresentation(
+        presentationOffice  = arrivalNotification.presentationOffice)
 
       Right(ArrivalNotificationRequest(meta, header, traderDestination, customsOffice))
-    }
     case _ =>
       Left(FailedToConvert)
   }
 
-  private def buildMeta(eori: String, dateTime: LocalDateTime, prefix: String): Meta = {
+  private def buildMeta(messageSender: MessageSender, interchangeControlReference: InterchangeControlReference): Meta = {
     Meta(
-      messageSender = MessageSender(appConfig.env, eori),
-      dateOfPreparation = dateFormatted(dateTime),
-      timeOfPreparation = timeFormatted(dateTime),
-      interchangeControlReference = InterchangeControlReference(prefix, dateTime)
-    )
+      messageSender = messageSender,
+      interchangeControlReference = interchangeControlReference)
   }
 
-  private def buildHeader(arrivalNotification: NormalNotification): Header = {
+  private def buildHeader(arrivalNotification: NormalNotification, simplifiedProcedureFlag: String): Header = {
     Header(
       movementReferenceNumber = arrivalNotification.movementReferenceNumber,
       customsSubPlace = arrivalNotification.customsSubPlace,
       arrivalNotificationPlace = arrivalNotification.notificationPlace,
-      simplifiedProcedureFlag = "0",
-      arrivalNotificationDate = dateFormatted(arrivalNotification.notificationDate)
-    )
+      simplifiedProcedureFlag = simplifiedProcedureFlag)
   }
 
   private def buildTrader(trader: Trader): TraderDestination = trader match {

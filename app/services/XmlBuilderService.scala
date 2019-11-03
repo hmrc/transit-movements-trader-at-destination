@@ -17,19 +17,21 @@
 package services
 
 import models.messages.request._
+import utils.Format
 
 import scala.xml.XML._
 import scala.xml.{Elem, Node, NodeSeq}
 
 class XmlBuilderService {
 
+  //TODO: Pass in new DateTime object to use for all date times
   def buildXml(arrivalNotificationRequest: ArrivalNotificationRequest): Node = {
 
     val rootNode: Node = buildStartRoot(arrivalNotificationRequest.rootKey, arrivalNotificationRequest.nameSpace)
 
     val childNodes: NodeSeq = {
       buildMetaNode(arrivalNotificationRequest.meta, arrivalNotificationRequest.messageCode) ++
-      buildHeaderNode(arrivalNotificationRequest.header) ++
+      buildHeaderNode(arrivalNotificationRequest.header, Format.dateFormatted(arrivalNotificationRequest.meta.interchangeControlReference.dateTime)) ++
       buildTraderDestinationNode(arrivalNotificationRequest.traderDestination) ++
       buildOfficeOfPresentationNode(arrivalNotificationRequest.customsOfficeOfPresentation)
     }
@@ -73,8 +75,8 @@ class XmlBuilderService {
     buildOptionalElem(meta.senderIdentificationCodeQualifier, "SenIdeCodQuaMES4") ++
     buildOptionalElem(meta.recipientIdentificationCodeQualifier, "RecIdeCodQuaMES7") ++
     <MesRecMES6>{meta.messageRecipient}</MesRecMES6> ++
-    <DatOfPreMES9>{meta.dateOfPreparation}</DatOfPreMES9> ++
-    <TimOfPreMES10>{meta.timeOfPreparation}</TimOfPreMES10> ++
+    <DatOfPreMES9>{Format.dateFormatted(meta.interchangeControlReference.dateTime)}</DatOfPreMES9> ++
+    <TimOfPreMES10>{Format.timeFormatted(meta.interchangeControlReference.dateTime)}</TimOfPreMES10> ++
     <IntConRefMES11>{meta.interchangeControlReference.toString}</IntConRefMES11> ++
     buildOptionalElem(meta.recipientsReferencePassword, "RecRefMES12") ++
     buildOptionalElem(meta.recipientsReferencePasswordQualifier, "RecRefQuaMES13") ++
@@ -90,7 +92,7 @@ class XmlBuilderService {
     buildOptionalElem(meta.firstAndLastTransfer, "FirAndLasTraMES23")
   }
 
-  private def buildHeaderNode(header: Header): NodeSeq = {
+  private def buildHeaderNode(header: Header, arrivalNotificationDate: String): NodeSeq = {
     <HEAHEA>
       <DocNumHEA5>{header.movementReferenceNumber}</DocNumHEA5>
       {
@@ -99,15 +101,16 @@ class XmlBuilderService {
       <ArrNotPlaHEA60>{header.arrivalNotificationPlace}</ArrNotPlaHEA60>
       <ArrNotPlaHEA60LNG>{header.languageCode}</ArrNotPlaHEA60LNG>
       {
-        buildOptionalElem(header.arrivalNotificationPlaceLNG, "ArrAgrLocCodHEA62") ++
+        buildOptionalElem(header.arrivalAgreedLocationOfGoods, "ArrAgrLocCodHEA62") ++
         buildOptionalElem(header.arrivalAgreedLocationOfGoods, "ArrAgrLocOfGooHEA63")
       }
       <ArrAgrLocOfGooHEA63LNG>{header.languageCode}</ArrAgrLocOfGooHEA63LNG>
+      <ArrivalAgreedLocationOfGoodsLNG>{header.languageCode}</ArrivalAgreedLocationOfGoodsLNG>
       {
-        buildOptionalElem(header.arrivalAgreedLocationOfGoodsLNG, "ArrAutLocOfGooHEA65")
+        buildOptionalElem(header.arrivalAgreedLocationOfGoods, "ArrAutLocOfGooHEA65")
       }
       <SimProFlaHEA132>{header.simplifiedProcedureFlag}</SimProFlaHEA132>
-      <ArrNotDatHEA141>{header.arrivalNotificationDate}</ArrNotDatHEA141>
+      <ArrNotDatHEA141>{arrivalNotificationDate}</ArrNotDatHEA141>
     </HEAHEA>
   }
 
