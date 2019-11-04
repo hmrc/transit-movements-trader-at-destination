@@ -17,6 +17,7 @@
 package services
 
 import models.messages.request._
+import play.api.Logger
 import utils.Format
 
 import scala.xml.XML._
@@ -24,21 +25,30 @@ import scala.xml.{Elem, Node, NodeSeq}
 
 class XmlBuilderService {
 
-  //TODO: Pass in new DateTime object to use for all date times
-  def buildXml(arrivalNotificationRequest: ArrivalNotificationRequest): Node = {
+  private val logger = Logger(getClass)
 
-    val rootNode: Node = buildStartRoot(arrivalNotificationRequest.rootKey, arrivalNotificationRequest.nameSpace)
+  def buildXml(arrivalNotificationRequest: ArrivalNotificationRequest): Either[RequestModelError, Node] = {
 
-    val childNodes: NodeSeq = {
-      buildMetaNode(arrivalNotificationRequest.meta, arrivalNotificationRequest.messageCode) ++
-      buildHeaderNode(arrivalNotificationRequest.header, Format.dateFormatted(arrivalNotificationRequest.meta.interchangeControlReference.dateTime)) ++
-      buildTraderDestinationNode(arrivalNotificationRequest.traderDestination) ++
-      buildOfficeOfPresentationNode(arrivalNotificationRequest.customsOfficeOfPresentation)
+    try {
+
+      val rootNode: Node = buildStartRoot(arrivalNotificationRequest.rootKey, arrivalNotificationRequest.nameSpace)
+
+      val childNodes: NodeSeq = {
+        buildMetaNode(arrivalNotificationRequest.meta, arrivalNotificationRequest.messageCode) ++
+          buildHeaderNode(arrivalNotificationRequest.header, Format.dateFormatted(arrivalNotificationRequest.meta.interchangeControlReference.dateTime)) ++
+          buildTraderDestinationNode(arrivalNotificationRequest.traderDestination) ++
+          buildOfficeOfPresentationNode(arrivalNotificationRequest.customsOfficeOfPresentation)
+      }
+
+      val createXml: Node = addChildrenToRoot(rootNode, childNodes)
+
+      Right(createXml)
+    } catch {
+      case e: Exception => {
+        logger.info(s"Failed to create Xml with the following exception: $e")
+        Left(FailedToCreateXml)
+      }
     }
-
-    val createXml: Node = addChildrenToRoot(childNodes, rootNode)
-
-    createXml
   }
 
   private def buildStartRoot[A](key: String, nameSpace: Map[String, String]): Node = {
@@ -52,7 +62,7 @@ class XmlBuilderService {
     loadString(s"<$key $rootWithNameSpace></$key>")
   }
 
-  private def addChildrenToRoot(childNodes: NodeSeq, root: Node): Node = {
+  private def addChildrenToRoot(root: Node, childNodes: NodeSeq): Node = {
     Elem(
       root.prefix,
       root.label,

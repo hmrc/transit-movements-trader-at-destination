@@ -27,15 +27,15 @@ import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.inject.Injector
 
-class ConvertToSubmissionModelSpec extends FreeSpec with MustMatchers with GuiceOneAppPerSuite with MessageGenerators with ScalaCheckDrivenPropertyChecks {
+class SubmissionModelServiceSpec extends FreeSpec with MustMatchers with GuiceOneAppPerSuite with MessageGenerators with ScalaCheckDrivenPropertyChecks {
 
   def injector: Injector = app.injector
 
   def appConfig: AppConfig = injector.instanceOf[AppConfig]
 
-  val convertToSubmissionModel = new ConvertToSubmissionModel(appConfig)
+  val convertToSubmissionModel = new SubmissionModelService(appConfig)
 
-  "ConvertToSubmissionModel" - {
+  "SubmissionModelService" - {
 
     "must convert NormalNotification to ArrivalNotificationRequest" in {
 
@@ -71,7 +71,7 @@ class ConvertToSubmissionModelSpec extends FreeSpec with MustMatchers with Guice
               enRouteEvents = Nil
             )
 
-            convertToSubmissionModel.convert(notification, messageSender, interchangeControlReference) mustBe
+            convertToSubmissionModel.convertFromArrivalNotification(notification, messageSender, interchangeControlReference) mustBe
               Right(arrivalNotificationRequest)
           }
         }
@@ -87,7 +87,7 @@ class ConvertToSubmissionModelSpec extends FreeSpec with MustMatchers with Guice
       (messageSender, interchangeControlReference) => {
 
         val result: Either[RequestModelError, RequestModel] = {
-          convertToSubmissionModel.convert(
+          convertToSubmissionModel.convertFromArrivalNotification(
             arrivalNotification = InvalidRequestModel,
             messageSender = messageSender,
             interchangeControlReference = interchangeControlReference

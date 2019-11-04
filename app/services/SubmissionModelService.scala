@@ -22,11 +22,11 @@ import models.messages.NormalNotification
 import models.messages.request.{InterchangeControlReference, _}
 import models.{Trader, TraderWithEori, TraderWithoutEori}
 
-class ConvertToSubmissionModel @Inject()(appConfig: AppConfig){
+class SubmissionModelService @Inject()(appConfig: AppConfig){
 
-  def convert[A](arrivalNotification: A,
-                 messageSender: MessageSender,
-                 interchangeControlReference: InterchangeControlReference): Either[RequestModelError, RequestModel] = arrivalNotification match {
+  def convertFromArrivalNotification[A](arrivalNotification: A,
+                                        messageSender: MessageSender,
+                                        interchangeControlReference: InterchangeControlReference): Either[RequestModelError, RequestModel] = arrivalNotification match {
     case arrivalNotification: NormalNotification =>
 
       val meta              = buildMeta(messageSender: MessageSender, interchangeControlReference)

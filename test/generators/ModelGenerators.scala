@@ -19,7 +19,6 @@ package generators
 import java.time.{Instant, LocalDate, LocalDateTime, ZoneOffset}
 
 import models._
-import models.messages.request.{ArrivalNotificationRequest, Meta}
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.{Arbitrary, Gen}
 
@@ -160,5 +159,4 @@ trait ModelGenerators {
         originalValue <- arbitrary[Option[String]]
       } yield RejectionError(errorType, pointer, reason, originalValue)
     }
-
 }

@@ -16,23 +16,21 @@
 
 package services
 
-import java.time.LocalDateTime
-
 import config.AppConfig
 import generators.MessageGenerators
-import models.messages.request.ArrivalNotificationRequest
+import models.messages.request.{ArrivalNotificationRequest, CustomsOfficeOfPresentation, FailedToCreateXml}
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalatest.{FreeSpec, MustMatchers}
+import org.scalatest.{FreeSpec, MustMatchers, OptionValues}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.inject.Injector
-import support.TestConstants._
 import utils.Format
 
 import scala.xml.Utility.trim
 import scala.xml.{Node, NodeSeq}
 
-class XmlBuilderServiceSpec extends FreeSpec with MustMatchers with GuiceOneAppPerSuite with MessageGenerators with ScalaCheckDrivenPropertyChecks {
+class XmlBuilderServiceSpec extends FreeSpec
+  with MustMatchers with GuiceOneAppPerSuite with MessageGenerators with ScalaCheckDrivenPropertyChecks with OptionValues {
 
   val authenticatedUserEori = "NCTS_EU_EXIT"
 
@@ -89,16 +87,14 @@ class XmlBuilderServiceSpec extends FreeSpec with MustMatchers with GuiceOneAppP
                   <HEAHEA>
                     <DocNumHEA5>
                       {arrivalNotificationRequest.header.movementReferenceNumber}
-                    </DocNumHEA5>
-                    {arrivalNotificationRequest.header.customsSubPlace.map {
-                      customsSubPlace =>
-                        <CusSubPlaHEA66>
-                          {customsSubPlace}
-                        </CusSubPlaHEA66>
-                    }.getOrElse(NodeSeq.Empty)}
-                    <ArrNotPlaHEA60>
-                      {arrivalNotificationRequest.header.arrivalNotificationPlace}
-                    </ArrNotPlaHEA60>
+                    </DocNumHEA5>{arrivalNotificationRequest.header.customsSubPlace.map {
+                    customsSubPlace =>
+                      <CusSubPlaHEA66>
+                        {customsSubPlace}
+                      </CusSubPlaHEA66>
+                  }.getOrElse(NodeSeq.Empty)}<ArrNotPlaHEA60>
+                    {arrivalNotificationRequest.header.arrivalNotificationPlace}
+                  </ArrNotPlaHEA60>
                     <ArrNotPlaHEA60LNG>EN</ArrNotPlaHEA60LNG>
                     <ArrAgrLocOfGooHEA63LNG>EN</ArrAgrLocOfGooHEA63LNG>
                     <ArrivalAgreedLocationOfGoodsLNG>EN</ArrivalAgreedLocationOfGoodsLNG>
@@ -111,41 +107,31 @@ class XmlBuilderServiceSpec extends FreeSpec with MustMatchers with GuiceOneAppP
                   </HEAHEA>
                   <TRADESTRD>
                     {arrivalNotificationRequest.traderDestination.name.map {
-                      name =>
-                        <NamTRD7>
-                          {name}
-                        </NamTRD7>
-                    }.getOrElse(NodeSeq.Empty)}
-
-                    {arrivalNotificationRequest.traderDestination.streetAndNumber.map {
-                      streetAndNumber =>
-                        <StrAndNumTRD22>
-                          {streetAndNumber}
-                        </StrAndNumTRD22>
-                    }.getOrElse(NodeSeq.Empty)}
-
-                    {arrivalNotificationRequest.traderDestination.postCode.map {
-                      postCode =>
-                        <PosCodTRD23>
-                          {postCode}
-                        </PosCodTRD23>
-                    }.getOrElse(NodeSeq.Empty)}
-
-                    {arrivalNotificationRequest.traderDestination.city.map {
-                      city =>
-                        <CitTRD24>
-                          {city}
-                        </CitTRD24>
-                    }.getOrElse(NodeSeq.Empty)}
-
-                    {arrivalNotificationRequest.traderDestination.countryCode.map {
-                      countryCode =>
-                        <CouTRD25>
-                          {countryCode}
-                        </CouTRD25>
-                    }.getOrElse(NodeSeq.Empty)}
-                    
-                    <NADLNGRD>EN</NADLNGRD>{arrivalNotificationRequest.traderDestination.eori.map {
+                    name =>
+                      <NamTRD7>
+                        {name}
+                      </NamTRD7>
+                  }.getOrElse(NodeSeq.Empty)}{arrivalNotificationRequest.traderDestination.streetAndNumber.map {
+                    streetAndNumber =>
+                      <StrAndNumTRD22>
+                        {streetAndNumber}
+                      </StrAndNumTRD22>
+                  }.getOrElse(NodeSeq.Empty)}{arrivalNotificationRequest.traderDestination.postCode.map {
+                    postCode =>
+                      <PosCodTRD23>
+                        {postCode}
+                      </PosCodTRD23>
+                  }.getOrElse(NodeSeq.Empty)}{arrivalNotificationRequest.traderDestination.city.map {
+                    city =>
+                      <CitTRD24>
+                        {city}
+                      </CitTRD24>
+                  }.getOrElse(NodeSeq.Empty)}{arrivalNotificationRequest.traderDestination.countryCode.map {
+                    countryCode =>
+                      <CouTRD25>
+                        {countryCode}
+                      </CouTRD25>
+                  }.getOrElse(NodeSeq.Empty)}<NADLNGRD>EN</NADLNGRD>{arrivalNotificationRequest.traderDestination.eori.map {
                     eori =>
                       <TINTRD59>
                         {eori}
@@ -161,72 +147,9 @@ class XmlBuilderServiceSpec extends FreeSpec with MustMatchers with GuiceOneAppP
               )
             }
 
-            trim(convertToXml.buildXml(arrivalNotificationRequest)) mustBe validXml
-
+            trim(convertToXml.buildXml(arrivalNotificationRequest).right.toOption.value) mustBe validXml
           }
-
       }
-
-      //    "must return correct nodes" in {
-      //
-      //      val localDateTime: LocalDateTime = LocalDateTime.now
-      //
-      //      val notification = normalArrivalNotification(traderWithEori)
-      //      val metaData = meta(authenticatedUserEori, appConfig.env, "WE", localDateTime)
-      //      val headerData = header(notification)
-      //      val traderDestinationData = traderDestination(notification.trader)
-      //      val customsOfficeData = customsOffice(notification)
-      //
-      //      val dateOfPreperation = Format.dateFormatted(localDateTime)
-      //      val timeOfPreperation = Format.timeFormatted(localDateTime)
-      //
-      //      val arrivalNotificationRequest = ArrivalNotificationRequest(metaData, headerData, traderDestinationData, customsOfficeData)
-      //
-      //      val validXml: Node = {
-      //        trim(
-      //          <CC007A
-      //          xsi:schemaLocation="http://ncts.dgtaxud.ec/CC007A"
-      //          xmlns="http://ncts.dgtaxud.ec/CC007A"
-      //          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-      //          xmlns:complex_ncts="http://ncts.dgtaxud.ec/complex_ncts">
-      //              <SynIdeMES1>UNOC</SynIdeMES1>
-      //              <SynVerNumMES2>3</SynVerNumMES2>
-      //              <MesSenMES3>{metaData.messageSender.toString}</MesSenMES3>
-      //              <MesRecMES6>NCTS</MesRecMES6>
-      //              <DatOfPreMES9>{dateOfPreperation}</DatOfPreMES9>
-      //              <TimOfPreMES10>{timeOfPreperation}</TimOfPreMES10>
-      //              <IntConRefMES11>{metaData.interchangeControlReference.toString}</IntConRefMES11>
-      //              <AppRefMES14>NCTS</AppRefMES14>
-      //              <MesIdeMES18>0</MesIdeMES18>
-      //              <MesIdeMES19>1</MesIdeMES19>
-      //              <MesTypMES20>GB007A</MesTypMES20>
-      //              <HEAHEA>
-      //                <DocNumHEA5>{notification.movementReferenceNumber}</DocNumHEA5>
-      //                <ArrNotPlaHEA60>{notification.notificationPlace}</ArrNotPlaHEA60>
-      //                <ArrNotPlaHEA60LNG>EN</ArrNotPlaHEA60LNG>
-      //                <ArrAgrLocOfGooHEA63LNG>EN</ArrAgrLocOfGooHEA63LNG>
-      //                <ArrivalAgreedLocationOfGoodsLNG>EN</ArrivalAgreedLocationOfGoodsLNG>
-      //                <SimProFlaHEA132>{headerData.simplifiedProcedureFlag}</SimProFlaHEA132>
-      //                <ArrNotDatHEA141>{dateOfPreperation}</ArrNotDatHEA141>
-      //              </HEAHEA>
-      //              <TRADESTRD>
-      //                <NADLNGRD>EN</NADLNGRD>
-      //                {
-      //                  traderDestinationData.eori.map {
-      //                    eori =>
-      //                      <TINTRD59>{eori}</TINTRD59>
-      //                  }.getOrElse(NodeSeq.Empty)
-      //                }
-      //              </TRADESTRD>
-      //              <CUSOFFPREOFFRES>
-      //                <RefNumRES1>{customsOfficeData.presentationOffice}</RefNumRES1>
-      //              </CUSOFFPREOFFRES>
-      //          </CC007A>
-      //        )
-      //      }
-      //
-      //      trim(convertToXml.buildXml(arrivalNotificationRequest)) mustBe validXml
-      //    }
     }
 
   }

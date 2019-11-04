@@ -27,6 +27,14 @@ import org.scalacheck.{Arbitrary, Gen}
 
 trait MessageGenerators extends ModelGenerators {
 
+
+  implicit lazy val validXmlString: Arbitrary[String] =
+    Arbitrary(arbitrary[List[Char]] map {
+      _.mkString
+        .replaceAll("([&<>]|\\p{C})", "")
+    })
+
+
   implicit lazy val arbitraryCustomsOfficeOfPresentation: Arbitrary[CustomsOfficeOfPresentation] = {
     Arbitrary {
 
