@@ -20,7 +20,7 @@ import java.time.{LocalDate, LocalDateTime}
 
 import models.messages._
 import models.messages.request._
-import models.{EnRouteEvent, RejectionError, Trader}
+import models.{EnRouteEvent, RejectionError, Trader, TraderWithEori, TraderWithoutEori}
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.{Arbitrary, Gen}
 
@@ -181,6 +181,52 @@ trait MessageGenerators extends ModelGenerators {
         traderDestination <- arbitrary[TraderDestination]
         customsOffice <- arbitrary[CustomsOfficeOfPresentation]
       } yield ArrivalNotificationRequest(meta, header, traderDestination, customsOffice)
+
+    }
+  }
+
+  implicit lazy val arbitraryArrivalNotificationRequestWithEori: Arbitrary[ArrivalNotificationRequest] = {
+    Arbitrary {
+      for {
+        meta                  <- arbitrary[Meta]
+        header                <- arbitrary[Header]
+        traderWithEori        <- arbitrary[TraderWithEori]
+        customsOffice         <- arbitrary[CustomsOfficeOfPresentation]
+        headerWithProcedure   = header.copy(simplifiedProcedureFlag = "0")
+        traderDestination     = {
+          TraderDestination(
+            traderWithEori.name,
+            traderWithEori.streetAndNumber,
+            traderWithEori.postCode,
+            traderWithEori.city,
+            traderWithEori.countryCode,
+            Some(traderWithEori.eori)
+          )
+        }
+      } yield ArrivalNotificationRequest(meta, headerWithProcedure, traderDestination, customsOffice)
+
+    }
+  }
+
+  implicit lazy val arbitraryArrivalNotificationRequestWithoutEori: Arbitrary[ArrivalNotificationRequest] = {
+    Arbitrary {
+      for {
+        meta                  <- arbitrary[Meta]
+        header                <- arbitrary[Header]
+        traderWithoutEori     <- arbitrary[TraderWithoutEori]
+        customsOffice         <- arbitrary[CustomsOfficeOfPresentation]
+        headerWithProcedure   = header.copy(simplifiedProcedureFlag = "0")
+        traderDestination     = {
+          TraderDestination(
+            Some(traderWithoutEori.name),
+            Some(traderWithoutEori.streetAndNumber),
+            Some(traderWithoutEori.postCode),
+            Some(traderWithoutEori.city),
+            Some(traderWithoutEori.countryCode),
+            None
+          )
+        }
+      } yield ArrivalNotificationRequest(meta, headerWithProcedure, traderDestination, customsOffice)
 
     }
   }

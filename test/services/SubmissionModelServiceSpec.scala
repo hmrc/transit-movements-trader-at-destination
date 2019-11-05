@@ -18,7 +18,7 @@ package services
 
 import config.AppConfig
 import generators.MessageGenerators
-import models.TraderWithEori
+import models.{TraderWithEori, TraderWithoutEori}
 import models.messages.NormalNotification
 import models.messages.request.{InterchangeControlReference, _}
 import org.scalacheck.Arbitrary.arbitrary
@@ -38,19 +38,14 @@ class SubmissionModelServiceSpec extends FreeSpec with MustMatchers with GuiceOn
 
   "SubmissionModelService" - {
 
-    "must convert NormalNotification to ArrivalNotificationRequest" in {
-
-      def hasEoriWithNormalProcedure()(implicit arrivalNotificationRequest: ArrivalNotificationRequest): Boolean = {
-        arrivalNotificationRequest.traderDestination.eori.isDefined &&
-          arrivalNotificationRequest.header.simplifiedProcedureFlag.equals("0")
-      }
+    "must convert NormalNotification to ArrivalNotificationRequest for traders with Eori" in {
 
       val notifications: Gen[(ArrivalNotificationRequest, NormalNotification)] = {
         for {
-          arrivalNotificationRequest <- arbitraryArrivalNotificationRequest.arbitrary
+          arrivalNotificationRequest <- arbitraryArrivalNotificationRequestWithEori.arbitrary
         } yield {
-          val dateTime = arrivalNotificationRequest.meta.interchangeControlReference.dateTime
 
+          val dateTime = arrivalNotificationRequest.meta.interchangeControlReference.dateTime
           val normalNotification: NormalNotification = {
             NormalNotification(
               movementReferenceNumber = arrivalNotificationRequest.header.movementReferenceNumber,
@@ -78,16 +73,56 @@ class SubmissionModelServiceSpec extends FreeSpec with MustMatchers with GuiceOn
 
         case (arrivalNotificationRequest, normalNotification) =>
 
-          whenever(condition = hasEoriWithNormalProcedure()(arrivalNotificationRequest)) {
+          val messageSender: MessageSender = arrivalNotificationRequest.meta.messageSender
+          val interchangeControlReference: InterchangeControlReference = arrivalNotificationRequest.meta.interchangeControlReference
 
-            val messageSender: MessageSender = arrivalNotificationRequest.meta.messageSender
-            val interchangeControlReference: InterchangeControlReference = arrivalNotificationRequest.meta.interchangeControlReference
-
-            convertToSubmissionModel.convertFromArrivalNotification(normalNotification, messageSender, interchangeControlReference) mustBe
-              Right(arrivalNotificationRequest)
-          }
+          convertToSubmissionModel.convertFromArrivalNotification(normalNotification, messageSender, interchangeControlReference) mustBe
+            Right(arrivalNotificationRequest)
       }
     }
+  }
+
+  "must convert NormalNotification to ArrivalNotificationRequest for traders without Eori" in {
+
+    val notifications: Gen[(ArrivalNotificationRequest, NormalNotification)] = {
+      for {
+        arrivalNotificationRequest <- arbitraryArrivalNotificationRequestWithoutEori.arbitrary
+      } yield {
+
+        val dateTime = arrivalNotificationRequest.meta.interchangeControlReference.dateTime
+        val normalNotification: NormalNotification = {
+          NormalNotification(
+            movementReferenceNumber = arrivalNotificationRequest.header.movementReferenceNumber,
+            notificationPlace = arrivalNotificationRequest.header.arrivalNotificationPlace,
+            notificationDate = dateTime.toLocalDate,
+            customsSubPlace = arrivalNotificationRequest.header.customsSubPlace,
+            trader = TraderWithoutEori(
+              name = arrivalNotificationRequest.traderDestination.name.get,
+              streetAndNumber = arrivalNotificationRequest.traderDestination.streetAndNumber.get,
+              postCode = arrivalNotificationRequest.traderDestination.postCode.get,
+              city = arrivalNotificationRequest.traderDestination.city.get,
+              countryCode = arrivalNotificationRequest.traderDestination.countryCode.get
+            ),
+            presentationOffice = arrivalNotificationRequest.customsOfficeOfPresentation.presentationOffice,
+            enRouteEvents = Nil
+          )
+        }
+
+        (arrivalNotificationRequest, normalNotification)
+      }
+    }
+
+    forAll(notifications) {
+
+      case (arrivalNotificationRequest, normalNotification) =>
+
+        val messageSender: MessageSender = arrivalNotificationRequest.meta.messageSender
+        val interchangeControlReference: InterchangeControlReference = arrivalNotificationRequest.meta.interchangeControlReference
+
+        convertToSubmissionModel.convertFromArrivalNotification(normalNotification, messageSender, interchangeControlReference) mustBe
+          Right(arrivalNotificationRequest)
+    }
+  }
 
 
     "must return FailedToConvert when given an invalid request" in {
@@ -110,6 +145,6 @@ class SubmissionModelServiceSpec extends FreeSpec with MustMatchers with GuiceOn
         }
       }
     }
-  }
+
 
 }

@@ -49,7 +49,7 @@ class XmlBuilderServiceSpec extends FreeSpec
           arrivalNotificationRequest.header.simplifiedProcedureFlag.equals("0")
       }
 
-      forAll(arbitrary[ArrivalNotificationRequest]) {
+      forAll(arbitrary[ArrivalNotificationRequest](arbitraryArrivalNotificationRequest)) {
 
         implicit arrivalNotificationRequest: ArrivalNotificationRequest =>
 
