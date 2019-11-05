@@ -65,12 +65,18 @@ class XmlBuilderServiceSpec extends FreeSpec
                 xmlns="http://ncts.dgtaxud.ec/CC007A"
                 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                 xmlns:complex_ncts="http://ncts.dgtaxud.ec/complex_ncts">
-                  <SynIdeMES1>UNOC</SynIdeMES1>
-                  <SynVerNumMES2>3</SynVerNumMES2>
+                  <SynIdeMES1>
+                    {arrivalNotificationRequest.syntaxIdentifier}
+                  </SynIdeMES1>
+                  <SynVerNumMES2>
+                    {arrivalNotificationRequest.meta.syntaxVersionNumber}
+                  </SynVerNumMES2>
                   <MesSenMES3>
                     {arrivalNotificationRequest.meta.messageSender.toString}
                   </MesSenMES3>
-                  <MesRecMES6>NCTS</MesRecMES6>
+                  <MesRecMES6>
+                    {arrivalNotificationRequest.meta.messageRecipient}
+                  </MesRecMES6>
                   <DatOfPreMES9>
                     {dateOfPreperation}
                   </DatOfPreMES9>
@@ -80,10 +86,18 @@ class XmlBuilderServiceSpec extends FreeSpec
                   <IntConRefMES11>
                     {arrivalNotificationRequest.meta.interchangeControlReference.toString}
                   </IntConRefMES11>
-                  <AppRefMES14>NCTS</AppRefMES14>
-                  <MesIdeMES18>0</MesIdeMES18>
-                  <MesIdeMES19>1</MesIdeMES19>
-                  <MesTypMES20>GB007A</MesTypMES20>
+                  <AppRefMES14>
+                    {arrivalNotificationRequest.meta.applicationReference}
+                  </AppRefMES14>
+                  <MesIdeMES18>
+                    {arrivalNotificationRequest.meta.testIndicator}
+                  </MesIdeMES18>
+                  <MesIdeMES19>
+                    {arrivalNotificationRequest.meta.messageIndication}
+                  </MesIdeMES19>
+                  <MesTypMES20>
+                    {arrivalNotificationRequest.messageCode}
+                  </MesTypMES20>
                   <HEAHEA>
                     <DocNumHEA5>
                       {arrivalNotificationRequest.header.movementReferenceNumber}
@@ -95,9 +109,15 @@ class XmlBuilderServiceSpec extends FreeSpec
                   }.getOrElse(NodeSeq.Empty)}<ArrNotPlaHEA60>
                     {arrivalNotificationRequest.header.arrivalNotificationPlace}
                   </ArrNotPlaHEA60>
-                    <ArrNotPlaHEA60LNG>EN</ArrNotPlaHEA60LNG>
-                    <ArrAgrLocOfGooHEA63LNG>EN</ArrAgrLocOfGooHEA63LNG>
-                    <ArrivalAgreedLocationOfGoodsLNG>EN</ArrivalAgreedLocationOfGoodsLNG>
+                    <ArrNotPlaHEA60LNG>
+                      {arrivalNotificationRequest.header.languageCode}
+                    </ArrNotPlaHEA60LNG>
+                    <ArrAgrLocOfGooHEA63LNG>
+                      {arrivalNotificationRequest.header.languageCode}
+                    </ArrAgrLocOfGooHEA63LNG>
+                    <ArrivalAgreedLocationOfGoodsLNG>
+                      {arrivalNotificationRequest.header.languageCode}
+                    </ArrivalAgreedLocationOfGoodsLNG>
                     <SimProFlaHEA132>
                       {arrivalNotificationRequest.header.simplifiedProcedureFlag}
                     </SimProFlaHEA132>
@@ -131,7 +151,11 @@ class XmlBuilderServiceSpec extends FreeSpec
                       <CouTRD25>
                         {countryCode}
                       </CouTRD25>
-                  }.getOrElse(NodeSeq.Empty)}<NADLNGRD>EN</NADLNGRD>{arrivalNotificationRequest.traderDestination.eori.map {
+                  }.getOrElse(NodeSeq.Empty)}
+                    <NADLNGRD>
+                      {arrivalNotificationRequest.header.languageCode}
+                    </NADLNGRD>
+                    {arrivalNotificationRequest.traderDestination.eori.map {
                     eori =>
                       <TINTRD59>
                         {eori}
