@@ -22,6 +22,7 @@ import models.TraderWithEori
 import models.messages.NormalNotification
 import models.messages.request.{InterchangeControlReference, _}
 import org.scalacheck.Arbitrary.arbitrary
+import org.scalacheck.Gen
 import org.scalatest.{FreeSpec, MustMatchers}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
@@ -44,17 +45,14 @@ class SubmissionModelServiceSpec extends FreeSpec with MustMatchers with GuiceOn
           arrivalNotificationRequest.header.simplifiedProcedureFlag.equals("0")
       }
 
-      forAll(arbitrary[ArrivalNotificationRequest]) {
+      val notifications: Gen[(ArrivalNotificationRequest, NormalNotification)] = {
+        for {
+          arrivalNotificationRequest <- arbitraryArrivalNotificationRequest.arbitrary
+        } yield {
+          val dateTime = arrivalNotificationRequest.meta.interchangeControlReference.dateTime
 
-        implicit arrivalNotificationRequest: ArrivalNotificationRequest =>
-
-          whenever(condition = hasEoriWithNormalProcedure) {
-
-            val messageSender: MessageSender = arrivalNotificationRequest.meta.messageSender
-            val interchangeControlReference: InterchangeControlReference = arrivalNotificationRequest.meta.interchangeControlReference
-            val dateTime = arrivalNotificationRequest.meta.interchangeControlReference.dateTime
-
-            val notification = NormalNotification(
+          val normalNotification: NormalNotification = {
+            NormalNotification(
               movementReferenceNumber = arrivalNotificationRequest.header.movementReferenceNumber,
               notificationPlace = arrivalNotificationRequest.header.arrivalNotificationPlace,
               notificationDate = dateTime.toLocalDate,
@@ -70,32 +68,48 @@ class SubmissionModelServiceSpec extends FreeSpec with MustMatchers with GuiceOn
               presentationOffice = arrivalNotificationRequest.customsOfficeOfPresentation.presentationOffice,
               enRouteEvents = Nil
             )
+          }
 
-            convertToSubmissionModel.convertFromArrivalNotification(notification, messageSender, interchangeControlReference) mustBe
+          (arrivalNotificationRequest, normalNotification)
+        }
+      }
+
+      forAll(notifications) {
+
+        case (arrivalNotificationRequest, normalNotification) =>
+
+          whenever(condition = hasEoriWithNormalProcedure()(arrivalNotificationRequest)) {
+
+            val messageSender: MessageSender = arrivalNotificationRequest.meta.messageSender
+            val interchangeControlReference: InterchangeControlReference = arrivalNotificationRequest.meta.interchangeControlReference
+
+            convertToSubmissionModel.convertFromArrivalNotification(normalNotification, messageSender, interchangeControlReference) mustBe
               Right(arrivalNotificationRequest)
           }
-        }
       }
     }
 
-  "must return FailedToConvert when given an invalid request" in {
 
-    import support.InvalidRequestModel
+    "must return FailedToConvert when given an invalid request" in {
 
-    forAll(arbitrary[MessageSender], arbitrary[InterchangeControlReference]) {
+      import support.InvalidRequestModel
 
-      (messageSender, interchangeControlReference) => {
+      forAll(arbitrary[MessageSender], arbitrary[InterchangeControlReference]) {
 
-        val result: Either[RequestModelError, RequestModel] = {
-          convertToSubmissionModel.convertFromArrivalNotification(
-            arrivalNotification = InvalidRequestModel,
-            messageSender = messageSender,
-            interchangeControlReference = interchangeControlReference
-          )
+        (messageSender, interchangeControlReference) => {
+
+          val result: Either[RequestModelError, RequestModel] = {
+            convertToSubmissionModel.convertFromArrivalNotification(
+              arrivalNotification = InvalidRequestModel,
+              messageSender = messageSender,
+              interchangeControlReference = interchangeControlReference
+            )
+          }
+
+          result mustBe Left(FailedToConvert)
         }
-
-        result mustBe Left(FailedToConvert)
       }
     }
   }
+
 }

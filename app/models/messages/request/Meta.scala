@@ -18,9 +18,9 @@ package models.messages.request
 
 case class Meta(
                  messageSender: MessageSender,
+                 interchangeControlReference: InterchangeControlReference,
                  senderIdentificationCodeQualifier: Option[String] = None,
                  recipientIdentificationCodeQualifier: Option[String] = None,
-                 interchangeControlReference: InterchangeControlReference,
                  recipientsReferencePassword: Option[String] = None,
                  recipientsReferencePasswordQualifier: Option[String] = None,
                  priority: Option[String] = None,

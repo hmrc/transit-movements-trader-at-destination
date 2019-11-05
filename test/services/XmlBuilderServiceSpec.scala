@@ -18,7 +18,7 @@ package services
 
 import config.AppConfig
 import generators.MessageGenerators
-import models.messages.request.{ArrivalNotificationRequest, CustomsOfficeOfPresentation, FailedToCreateXml}
+import models.messages.request.ArrivalNotificationRequest
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.{FreeSpec, MustMatchers, OptionValues}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
@@ -175,7 +175,6 @@ class XmlBuilderServiceSpec extends FreeSpec
           }
       }
     }
-
   }
 
 }

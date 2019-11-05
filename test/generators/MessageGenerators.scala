@@ -142,9 +142,9 @@ trait MessageGenerators extends ModelGenerators {
         interchangeControlReference <- arbitrary[InterchangeControlReference]
       } yield Meta(
         messageSender,
-        None,
-        None,
         interchangeControlReference,
+        None,
+        None,
         None,
         None,
         None,
