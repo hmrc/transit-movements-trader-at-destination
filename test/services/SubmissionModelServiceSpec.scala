@@ -43,7 +43,7 @@ class SubmissionModelServiceSpec extends FreeSpec
 
       val notifications: Gen[(ArrivalNotificationRequest, NormalNotification)] = {
         for {
-          arrivalNotificationRequest <- arbitraryArrivalNotificationRequestWithEori.arbitrary
+          arrivalNotificationRequest <- arbitraryArrivalNotificationRequestWithEori
         } yield {
 
           val dateTime = arrivalNotificationRequest.meta.interchangeControlReference.dateTime
@@ -87,7 +87,7 @@ class SubmissionModelServiceSpec extends FreeSpec
 
     val notifications: Gen[(ArrivalNotificationRequest, NormalNotification)] = {
       for {
-        arrivalNotificationRequest <- arbitraryArrivalNotificationRequestWithoutEori.arbitrary
+        arrivalNotificationRequest <- arbitraryArrivalNotificationRequestWithoutEori
       } yield {
 
         val dateTime = arrivalNotificationRequest.meta.interchangeControlReference.dateTime

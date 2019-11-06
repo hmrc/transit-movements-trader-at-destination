@@ -185,49 +185,44 @@ trait MessageGenerators extends ModelGenerators {
     }
   }
 
-  implicit lazy val arbitraryArrivalNotificationRequestWithEori: Arbitrary[ArrivalNotificationRequest] = {
-    Arbitrary {
-      for {
-        meta                  <- arbitrary[Meta]
-        header                <- arbitrary[Header]
-        traderWithEori        <- arbitrary[TraderWithEori]
-        customsOffice         <- arbitrary[CustomsOfficeOfPresentation]
-        headerWithProcedure   = header.copy(simplifiedProcedureFlag = "0")
-        traderDestination     = {
-          TraderDestination(
-            traderWithEori.name,
-            traderWithEori.streetAndNumber,
-            traderWithEori.postCode,
-            traderWithEori.city,
-            traderWithEori.countryCode,
-            Some(traderWithEori.eori)
-          )
-        }
-      } yield ArrivalNotificationRequest(meta, headerWithProcedure, traderDestination, customsOffice)
-
-    }
+  val arbitraryArrivalNotificationRequestWithEori: Gen[ArrivalNotificationRequest] = {
+    for {
+      meta <- arbitrary[Meta]
+      header <- arbitrary[Header]
+      traderWithEori <- arbitrary[TraderWithEori]
+      customsOffice <- arbitrary[CustomsOfficeOfPresentation]
+      headerWithProcedure = header.copy(simplifiedProcedureFlag = "0")
+      traderDestination = {
+        TraderDestination(
+          traderWithEori.name,
+          traderWithEori.streetAndNumber,
+          traderWithEori.postCode,
+          traderWithEori.city,
+          traderWithEori.countryCode,
+          Some(traderWithEori.eori)
+        )
+      }
+    } yield ArrivalNotificationRequest(meta, headerWithProcedure, traderDestination, customsOffice)
   }
 
-  implicit lazy val arbitraryArrivalNotificationRequestWithoutEori: Arbitrary[ArrivalNotificationRequest] = {
-    Arbitrary {
-      for {
-        meta                  <- arbitrary[Meta]
-        header                <- arbitrary[Header]
-        traderWithoutEori     <- arbitrary[TraderWithoutEori]
-        customsOffice         <- arbitrary[CustomsOfficeOfPresentation]
-        headerWithProcedure   = header.copy(simplifiedProcedureFlag = "0")
-        traderDestination     = {
-          TraderDestination(
-            Some(traderWithoutEori.name),
-            Some(traderWithoutEori.streetAndNumber),
-            Some(traderWithoutEori.postCode),
-            Some(traderWithoutEori.city),
-            Some(traderWithoutEori.countryCode),
-            None
-          )
-        }
-      } yield ArrivalNotificationRequest(meta, headerWithProcedure, traderDestination, customsOffice)
-
-    }
+  val arbitraryArrivalNotificationRequestWithoutEori: Gen[ArrivalNotificationRequest] = {
+    for {
+      meta <- arbitrary[Meta]
+      header <- arbitrary[Header]
+      traderWithoutEori <- arbitrary[TraderWithoutEori]
+      customsOffice <- arbitrary[CustomsOfficeOfPresentation]
+      headerWithProcedure = header.copy(simplifiedProcedureFlag = "0")
+      traderDestination = {
+        TraderDestination(
+          Some(traderWithoutEori.name),
+          Some(traderWithoutEori.streetAndNumber),
+          Some(traderWithoutEori.postCode),
+          Some(traderWithoutEori.city),
+          Some(traderWithoutEori.countryCode),
+          None
+        )
+      }
+    } yield ArrivalNotificationRequest(meta, headerWithProcedure, traderDestination, customsOffice)
   }
+
 }
