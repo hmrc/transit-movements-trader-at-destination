@@ -23,12 +23,13 @@ import models.messages.NormalNotification
 import models.messages.request.{InterchangeControlReference, _}
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
-import org.scalatest.{FreeSpec, MustMatchers}
+import org.scalatest.{FreeSpec, MustMatchers, OptionValues}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.inject.Injector
 
-class SubmissionModelServiceSpec extends FreeSpec with MustMatchers with GuiceOneAppPerSuite with MessageGenerators with ScalaCheckDrivenPropertyChecks {
+class SubmissionModelServiceSpec extends FreeSpec
+  with MustMatchers with GuiceOneAppPerSuite with MessageGenerators with ScalaCheckDrivenPropertyChecks with OptionValues {
 
   def injector: Injector = app.injector
 
@@ -58,7 +59,7 @@ class SubmissionModelServiceSpec extends FreeSpec with MustMatchers with GuiceOn
                 postCode = arrivalNotificationRequest.traderDestination.postCode,
                 city = arrivalNotificationRequest.traderDestination.city,
                 countryCode = arrivalNotificationRequest.traderDestination.countryCode,
-                eori = arrivalNotificationRequest.traderDestination.eori.get
+                eori = arrivalNotificationRequest.traderDestination.eori.value
               ),
               presentationOffice = arrivalNotificationRequest.customsOfficeOfPresentation.presentationOffice,
               enRouteEvents = Nil
@@ -97,11 +98,11 @@ class SubmissionModelServiceSpec extends FreeSpec with MustMatchers with GuiceOn
             notificationDate = dateTime.toLocalDate,
             customsSubPlace = arrivalNotificationRequest.header.customsSubPlace,
             trader = TraderWithoutEori(
-              name = arrivalNotificationRequest.traderDestination.name.get,
-              streetAndNumber = arrivalNotificationRequest.traderDestination.streetAndNumber.get,
-              postCode = arrivalNotificationRequest.traderDestination.postCode.get,
-              city = arrivalNotificationRequest.traderDestination.city.get,
-              countryCode = arrivalNotificationRequest.traderDestination.countryCode.get
+              name = arrivalNotificationRequest.traderDestination.name.value,
+              streetAndNumber = arrivalNotificationRequest.traderDestination.streetAndNumber.value,
+              postCode = arrivalNotificationRequest.traderDestination.postCode.value,
+              city = arrivalNotificationRequest.traderDestination.city.value,
+              countryCode = arrivalNotificationRequest.traderDestination.countryCode.value
             ),
             presentationOffice = arrivalNotificationRequest.customsOfficeOfPresentation.presentationOffice,
             enRouteEvents = Nil
