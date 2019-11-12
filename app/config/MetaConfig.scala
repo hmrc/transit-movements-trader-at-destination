@@ -16,17 +16,16 @@
 
 package config
 
-import javax.inject.{Inject, Singleton}
+import com.google.inject.{ImplementedBy, Inject, Singleton}
 import play.api.Configuration
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 @Singleton
-class AppConfig @Inject()(config: Configuration, servicesConfig: ServicesConfig) {
+class MetaConfigImpl @Inject()(config: Configuration) extends MetaConfig {
 
-  val authBaseUrl: String       = servicesConfig.baseUrl("auth")
+  val interchangeControlReferencePrefix: String = config.get[String]("meta.ie007.interchange-control-reference.prefix")
+}
 
-  val auditingEnabled: Boolean  = config.get[Boolean]("auditing.enabled")
-  val graphiteHost: String      = config.get[String]("microservice.metrics.graphite.host")
+trait MetaConfig {
 
-  val env: String               = config.get[String]("env")
+  val interchangeControlReferencePrefix: String
 }

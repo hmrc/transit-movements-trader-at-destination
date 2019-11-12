@@ -130,8 +130,9 @@ trait MessageGenerators extends ModelGenerators {
     Arbitrary {
       for {
         prefix <- arbitrary[String]
-        dateTime <- dateTimesBetween(LocalDateTime.of(1900, 1, 1, 0, 0), LocalDateTime.now)
-      } yield InterchangeControlReference(prefix, dateTime)
+        dateTime <- arbitrary[String]
+        index <- arbitrary[Int]
+      } yield InterchangeControlReference(prefix, dateTime, index)
     }
   }
 

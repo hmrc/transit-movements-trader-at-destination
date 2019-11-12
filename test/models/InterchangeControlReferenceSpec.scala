@@ -16,15 +16,11 @@
 
 package models
 
-import java.time.LocalDateTime
-
 import generators.ModelGenerators
 import models.messages.request.InterchangeControlReference
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalacheck.Gen
 import org.scalatest.{FreeSpec, MustMatchers}
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import utils.Format
 
 class InterchangeControlReferenceSpec extends FreeSpec with MustMatchers
   with ScalaCheckPropertyChecks with ModelGenerators {
@@ -33,12 +29,10 @@ class InterchangeControlReferenceSpec extends FreeSpec with MustMatchers
 
     "must toString in the correct format" in {
 
-      val localDateTime: Gen[LocalDateTime] = dateTimesBetween(LocalDateTime.of(1900, 1, 1, 0, 0), LocalDateTime.now)
+      forAll(arbitrary[String], arbitrary[String], arbitrary[Int]) {
+        (prefix, date, index) =>
 
-      forAll(arbitrary[String], localDateTime) {
-        (prefix, dateTime) =>
-
-          InterchangeControlReference(prefix, dateTime).toString mustBe s"$prefix${Format.dateFormatted(dateTime)}-1"
+          InterchangeControlReference(prefix, date, index).toString mustBe s"$prefix$date$index"
       }
     }
   }

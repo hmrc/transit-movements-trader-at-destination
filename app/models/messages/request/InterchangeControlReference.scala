@@ -16,13 +16,9 @@
 
 package models.messages.request
 
-import java.time.LocalDateTime
-
-import utils.Format
-
-case class InterchangeControlReference(prefix: String, dateTime: LocalDateTime) {
+case class InterchangeControlReference(prefix: String, date: String, index: Int) {
 
   override def toString: String = {
-    s"$prefix${Format.dateFormatted(dateTime)}-1"
+    s"$prefix$date$index"
   }
 }

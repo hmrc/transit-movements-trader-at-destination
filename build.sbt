@@ -6,6 +6,8 @@ val appName = "transit-movements-trader-at-destination"
 
 lazy val microservice = Project(appName, file("."))
   .enablePlugins(play.sbt.PlayScala, SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin, SbtArtifactory)
+  .configs(IntegrationTest)
+  .settings(inConfig(IntegrationTest)(itSettings): _*)
   .settings(
     majorVersion                     := 0,
     libraryDependencies              ++= AppDependencies.compile ++ AppDependencies.test
@@ -25,3 +27,18 @@ lazy val scoverageSettings = {
     parallelExecution in Test := false
   )
 }
+
+lazy val itSettings = Defaults.itSettings ++ Seq(
+  unmanagedSourceDirectories   := Seq(
+    baseDirectory.value / "it"
+  ),
+  unmanagedResourceDirectories := Seq(
+    baseDirectory.value / "it" / "services" / "resources"
+  ),
+  parallelExecution            := false,
+  fork                         := true,
+  javaOptions                  ++= Seq(
+    "-Dconfig.resource=it.application.conf",
+    "-Dlogger.resource=it.logback.xml"
+  )
+)

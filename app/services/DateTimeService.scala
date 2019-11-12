@@ -14,19 +14,26 @@
  * limitations under the License.
  */
 
-package config
+package services
 
-import javax.inject.{Inject, Singleton}
-import play.api.Configuration
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+
+import com.google.inject.{ImplementedBy, Singleton}
 
 @Singleton
-class AppConfig @Inject()(config: Configuration, servicesConfig: ServicesConfig) {
+class DateTimeServiceImpl extends DateTimeService {
 
-  val authBaseUrl: String       = servicesConfig.baseUrl("auth")
+  private val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd")
 
-  val auditingEnabled: Boolean  = config.get[Boolean]("auditing.enabled")
-  val graphiteHost: String      = config.get[String]("microservice.metrics.graphite.host")
+  override def currentDateTime: LocalDateTime = LocalDateTime.now()
 
-  val env: String               = config.get[String]("env")
+  def dateFormatted: String = currentDateTime.format(dateFormatter)
+}
+
+trait DateTimeService {
+
+  def currentDateTime: LocalDateTime
+
+  def dateFormatted: String
 }

@@ -14,19 +14,26 @@
  * limitations under the License.
  */
 
-package config
+package services.mocks
 
-import javax.inject.{Inject, Singleton}
-import play.api.Configuration
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import org.mockito.Mockito._
+import org.scalatest.{BeforeAndAfterEach, Suite}
+import org.scalatestplus.mockito.MockitoSugar
+import services.DateTimeService
 
-@Singleton
-class AppConfig @Inject()(config: Configuration, servicesConfig: ServicesConfig) {
+trait MockDateTimeService extends MockitoSugar with BeforeAndAfterEach {
+  this: Suite =>
 
-  val authBaseUrl: String       = servicesConfig.baseUrl("auth")
+  val mockTimeService: DateTimeService = mock[DateTimeService]
 
-  val auditingEnabled: Boolean  = config.get[Boolean]("auditing.enabled")
-  val graphiteHost: String      = config.get[String]("microservice.metrics.graphite.host")
+  override def beforeEach(): Unit = {
+    super.beforeEach()
+    reset(mockTimeService)
+  }
 
-  val env: String               = config.get[String]("env")
+  def mockDateFormatted(response: String): Unit = {
+    when(mockTimeService.dateFormatted)
+      .thenReturn(response)
+  }
+
 }
