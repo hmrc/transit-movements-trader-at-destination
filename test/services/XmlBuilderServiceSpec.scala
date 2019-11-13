@@ -16,10 +16,13 @@
 
 package services
 
+import java.time.LocalDateTime
+
 import config.AppConfig
 import generators.MessageGenerators
 import models.messages.request.ArrivalNotificationRequest
 import org.scalacheck.Arbitrary.arbitrary
+import org.scalacheck.Gen
 import org.scalatest.{FreeSpec, MustMatchers, OptionValues}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
@@ -31,8 +34,6 @@ import scala.xml.{Node, NodeSeq}
 
 class XmlBuilderServiceSpec extends FreeSpec
   with MustMatchers with GuiceOneAppPerSuite with MessageGenerators with ScalaCheckDrivenPropertyChecks with OptionValues {
-
-  val authenticatedUserEori = "NCTS_EU_EXIT"
 
   def injector: Injector = app.injector
 
@@ -49,14 +50,16 @@ class XmlBuilderServiceSpec extends FreeSpec
           arrivalNotificationRequest.header.simplifiedProcedureFlag.equals("0")
       }
 
-      forAll(arbitrary[ArrivalNotificationRequest](arbitraryArrivalNotificationRequest)) {
+      val localDateTime: Gen[LocalDateTime] = dateTimesBetween(LocalDateTime.of(1900, 1, 1, 0, 0), LocalDateTime.now)
 
-        implicit arrivalNotificationRequest: ArrivalNotificationRequest =>
+      forAll(arbitrary[ArrivalNotificationRequest](arbitraryArrivalNotificationRequest), localDateTime) {
 
-          whenever(condition = hasEoriWithNormalProcedure) {
+        (arrivalNotificationRequest, dateTime) =>
 
-            val dateOfPreperation = Format.dateFormatted(arrivalNotificationRequest.meta.interchangeControlReference.dateTime)
-            val timeOfPreperation = Format.timeFormatted(arrivalNotificationRequest.meta.interchangeControlReference.dateTime)
+          whenever(condition = hasEoriWithNormalProcedure()(arrivalNotificationRequest)) {
+
+            val dateOfPreperation = Format.dateFormatted(dateTime)
+            val timeOfPreperation = Format.timeFormatted(dateTime)
 
             val validXml: Node = {
               trim(
@@ -171,7 +174,7 @@ class XmlBuilderServiceSpec extends FreeSpec
               )
             }
 
-            trim(convertToXml.buildXml(arrivalNotificationRequest).right.toOption.value) mustBe validXml
+            trim(convertToXml.buildXml(arrivalNotificationRequest)(dateTime).right.toOption.value) mustBe validXml
           }
       }
     }

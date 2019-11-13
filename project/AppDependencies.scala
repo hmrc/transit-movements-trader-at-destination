@@ -7,15 +7,16 @@ object AppDependencies {
 
   val compile = Seq(
 
-    "uk.gov.hmrc"             %% "simple-reactivemongo"     % "7.20.0-play-26",
+    "org.reactivemongo"       %% "play2-reactivemongo"      % "0.18.5-play26",
     "uk.gov.hmrc"             %% "bootstrap-play-26"        % "1.1.0"
   )
 
   val test = Seq(
+    "org.mockito"             %  "mockito-all"             % "2.0.2-beta",
     "org.scalatest"           %% "scalatest"                % "3.0.8",
     "com.typesafe.play"       %% "play-test"                % current,
     "org.pegdown"             %  "pegdown"                  % "1.6.0",
     "org.scalatestplus.play"  %% "scalatestplus-play"       % "3.1.2",
     "org.scalacheck"          %% "scalacheck"               % "1.14.1"
-  ).map(_ % "test")
+  ).map(_ % "test, it")
 }

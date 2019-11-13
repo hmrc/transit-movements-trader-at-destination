@@ -16,17 +16,15 @@
 
 package config
 
-import javax.inject.{Inject, Singleton}
-import play.api.Configuration
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import com.google.inject.AbstractModule
+import services.{DateTimeService, DateTimeServiceImpl}
 
-@Singleton
-class AppConfig @Inject()(config: Configuration, servicesConfig: ServicesConfig) {
+class Module extends AbstractModule {
 
-  val authBaseUrl: String       = servicesConfig.baseUrl("auth")
+  override def configure(): Unit = {
 
-  val auditingEnabled: Boolean  = config.get[Boolean]("auditing.enabled")
-  val graphiteHost: String      = config.get[String]("microservice.metrics.graphite.host")
+    bind(classOf[DateTimeService]).to(classOf[DateTimeServiceImpl]).asEagerSingleton()
 
-  val env: String               = config.get[String]("env")
+  }
+
 }

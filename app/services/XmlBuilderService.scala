@@ -16,6 +16,8 @@
 
 package services
 
+import java.time.LocalDateTime
+
 import models.messages.request._
 import play.api.Logger
 import utils.Format
@@ -27,7 +29,8 @@ class XmlBuilderService {
 
   private val logger = Logger(getClass)
 
-  def buildXml(arrivalNotificationRequest: ArrivalNotificationRequest): Either[RequestModelError, Node] = {
+  def buildXml(arrivalNotificationRequest: ArrivalNotificationRequest)
+              (implicit dateTime: LocalDateTime): Either[RequestModelError, Node] = {
 
     try {
 
@@ -35,7 +38,7 @@ class XmlBuilderService {
 
       val childNodes: NodeSeq = {
         buildMetaNode(arrivalNotificationRequest.meta, arrivalNotificationRequest.messageCode) ++
-          buildHeaderNode(arrivalNotificationRequest.header, Format.dateFormatted(arrivalNotificationRequest.meta.interchangeControlReference.dateTime)) ++
+          buildHeaderNode(arrivalNotificationRequest.header, Format.dateFormatted(dateTime)) ++
           buildTraderDestinationNode(arrivalNotificationRequest.traderDestination) ++
           buildOfficeOfPresentationNode(arrivalNotificationRequest.customsOfficeOfPresentation)
       }
@@ -78,15 +81,15 @@ class XmlBuilderService {
     case _ => NodeSeq.Empty
   }
 
-  private def buildMetaNode(meta: Meta, messageCode: String): NodeSeq = {
+  private def buildMetaNode(meta: Meta, messageCode: String)(implicit dateTime: LocalDateTime): NodeSeq = {
     <SynIdeMES1>{meta.syntaxIdentifier}</SynIdeMES1>
     <SynVerNumMES2>{meta.syntaxVersionNumber}</SynVerNumMES2>
     <MesSenMES3>{meta.messageSender.toString}</MesSenMES3> ++
     buildOptionalElem(meta.senderIdentificationCodeQualifier, "SenIdeCodQuaMES4") ++
     buildOptionalElem(meta.recipientIdentificationCodeQualifier, "RecIdeCodQuaMES7") ++
     <MesRecMES6>{meta.messageRecipient}</MesRecMES6> ++
-    <DatOfPreMES9>{Format.dateFormatted(meta.interchangeControlReference.dateTime)}</DatOfPreMES9> ++
-    <TimOfPreMES10>{Format.timeFormatted(meta.interchangeControlReference.dateTime)}</TimOfPreMES10> ++
+      <DatOfPreMES9>{Format.dateFormatted(dateTime)}</DatOfPreMES9> ++
+      <TimOfPreMES10>{Format.timeFormatted(dateTime)}</TimOfPreMES10> ++
     <IntConRefMES11>{meta.interchangeControlReference.toString}</IntConRefMES11> ++
     buildOptionalElem(meta.recipientsReferencePassword, "RecRefMES12") ++
     buildOptionalElem(meta.recipientsReferencePasswordQualifier, "RecRefQuaMES13") ++

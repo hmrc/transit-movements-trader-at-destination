@@ -16,6 +16,8 @@
 
 package services
 
+import java.time.LocalDateTime
+
 import config.AppConfig
 import generators.MessageGenerators
 import models.{TraderWithEori, TraderWithoutEori}
@@ -44,9 +46,9 @@ class SubmissionModelServiceSpec extends FreeSpec
       val notifications: Gen[(ArrivalNotificationRequest, NormalNotification)] = {
         for {
           arrivalNotificationRequest <- arbitraryArrivalNotificationRequestWithEori
+          dateTime <- dateTimesBetween(LocalDateTime.of(1900, 1, 1, 0, 0), LocalDateTime.now)
         } yield {
 
-          val dateTime = arrivalNotificationRequest.meta.interchangeControlReference.dateTime
           val normalNotification: NormalNotification = {
             NormalNotification(
               movementReferenceNumber = arrivalNotificationRequest.header.movementReferenceNumber,
@@ -88,9 +90,9 @@ class SubmissionModelServiceSpec extends FreeSpec
     val notifications: Gen[(ArrivalNotificationRequest, NormalNotification)] = {
       for {
         arrivalNotificationRequest <- arbitraryArrivalNotificationRequestWithoutEori
+        dateTime <- dateTimesBetween(LocalDateTime.of(1900, 1, 1, 0, 0), LocalDateTime.now)
       } yield {
 
-        val dateTime = arrivalNotificationRequest.meta.interchangeControlReference.dateTime
         val normalNotification: NormalNotification = {
           NormalNotification(
             movementReferenceNumber = arrivalNotificationRequest.header.movementReferenceNumber,
