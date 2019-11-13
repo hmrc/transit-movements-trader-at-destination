@@ -36,7 +36,9 @@ class ArrivalNotificationControllerSpec extends
     * SHOULD
     * Return 200 on successful conversion to ArrivalNotification
     * Return 400 when ArrivalNotification could not be built
-    * Return 403 when user isn't authenticated
+    * Return 401 when user isn't authenticated
+    * Return 502 if EIS is down
+    * Return 504 (check this doesn't happen automatically
     */
 
   "post" - {
@@ -52,22 +54,22 @@ class ArrivalNotificationControllerSpec extends
 
     "must return OK when passed Normal Notification" in {
 
-      forAll(arbitrary[NormalNotification]) { normalNotification =>
+//      forAll(arbitrary[NormalNotification]) { normalNotification =>
 
-//        val normalNotification = NormalNotification(
-//          "mrn",
-//          "place",
-//          LocalDate.now(),
-//          None, TraderWithEori("eori", None, None, None, None, None),
-//          "presentation office",
-//          Nil)
+        val normalNotification = NormalNotification(
+          "mrn",
+          "place",
+          LocalDate.now(),
+          None, TraderWithEori("eori", None, None, None, None, None),
+          "presentation office",
+          Nil)
 
         val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
           .withJsonBody(Json.toJson(normalNotification))
         val result = route(app, request).value
 
         status(result) mustEqual OK
-      }
+//      }
     }
   }
 }
