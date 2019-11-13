@@ -21,6 +21,7 @@ import java.net.URL
 
 import javax.xml.parsers.SAXParserFactory
 import javax.xml.validation.Schema
+import models.messages.XSDFile
 import org.xml.sax.InputSource
 import org.xml.sax.helpers.DefaultHandler
 import play.api.Logger
@@ -41,12 +42,11 @@ object ValidateXML {
     saxParser.newSAXParser()
   }
 
-  def validate(xml: String, fileKey: String): Try[String] = {
-
+  def validate(xml: String, xsdFile: XSDFile): Try[String] = {
 
     try {
 
-      val url: URL = getClass.getResource(s"/xsd-iconvert/$fileKey.xsd")
+      val url: URL = getClass.getResource(xsdFile.filePath)
 
       val schema: Schema = javax.xml.validation.SchemaFactory.newInstance(schemaLang).newSchema(url)
 
@@ -72,7 +72,7 @@ object ValidateXML {
 
     } catch {
       case e: NullPointerException =>
-        logger.warn(s"Could not find XSD with the key: $fileKey")
+        logger.warn(s"Could not find XSD with the key: ${xsdFile.filePath}")
         Failure(e)
       case e: Throwable =>
         logger.warn(e.getMessage)
