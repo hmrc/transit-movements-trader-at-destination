@@ -22,11 +22,18 @@ import models.messages._
 import models.messages.request._
 import models.{EnRouteEvent, RejectionError, Trader, TraderWithEori, TraderWithoutEori}
 import org.scalacheck.Arbitrary.arbitrary
+import org.scalacheck.Gen.{choose, listOfN}
 import org.scalacheck.{Arbitrary, Gen}
 
 
 trait MessageGenerators extends ModelGenerators {
 
+
+  def stringsWithMaxLength(maxLength: Int): Gen[String] =
+    for {
+      length <- choose(1, maxLength)
+      chars <- listOfN(length, arbitrary[Char])
+    } yield chars.mkString
 
   implicit lazy val validXmlString: Arbitrary[String] =
     Arbitrary(arbitrary[List[Char]] map {
@@ -72,12 +79,12 @@ trait MessageGenerators extends ModelGenerators {
     Arbitrary {
 
       for {
-        mrn                <- arbitrary[String]
-        place              <- arbitrary[String]
+        mrn                <- stringsWithMaxLength(100)
+        place              <- stringsWithMaxLength(100)
         date               <- datesBetween(LocalDate.of(1900, 1, 1), LocalDate.now)
         subPlace           <- arbitrary[Option[String]]
         trader             <- arbitrary[Trader]
-        presentationOffice <- arbitrary[String]
+        presentationOffice <- stringsWithMaxLength(100)
         events             <- Gen.listOf(arbitrary[EnRouteEvent])
       } yield NormalNotification(mrn, place, date, subPlace, trader, presentationOffice, events)
     }
