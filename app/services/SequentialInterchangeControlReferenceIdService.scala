@@ -17,7 +17,6 @@
 package services
 
 import com.google.inject.{Inject, Singleton}
-import config.MetaConfig
 import models.messages.request.InterchangeControlReference
 import play.api.libs.json.{Json, Reads}
 import play.modules.reactivemongo.ReactiveMongoApi
@@ -30,7 +29,6 @@ import scala.concurrent.Future
 
 @Singleton
 class SequentialInterchangeControlReferenceIdService @Inject()(
-                                                                config: MetaConfig,
                                                                 mongo: ReactiveMongoApi,
                                                                 dateTimeService: DateTimeService
                                                           ) extends InterchangeControlReferenceIdService {
@@ -61,7 +59,7 @@ class SequentialInterchangeControlReferenceIdService @Inject()(
       _.findAndUpdate(selector, update, upsert = true, fetchNewObject = true)
         .map(
           _.result(indexKeyReads)
-            .map(InterchangeControlReference(config.interchangeControlReferencePrefix, date, _))
+            .map(InterchangeControlReference(date, _))
             .getOrElse(throw new Exception(s"Unable to generate InterchangeControlReferenceId for: $date")))
     }
   }

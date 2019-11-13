@@ -51,11 +51,11 @@ class SequentialInterchangeControlReferenceIdServiceSpec
 
       val first = service.nextInterchangeControlReferenceId().futureValue
 
-      first mustBe InterchangeControlReference("WE", "20190101", 1)
+      first mustBe InterchangeControlReference("20190101", 1)
 
       val second = service.nextInterchangeControlReferenceId().futureValue
 
-      second mustBe InterchangeControlReference("WE","20190101", 2)
+      second mustBe InterchangeControlReference("20190101", 2)
     }
 
     "must generate correct InterchangeControlReference when the collection already has a document in the database" in {

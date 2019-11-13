@@ -16,8 +16,8 @@
 
 package models.messages.request
 
-case class InterchangeControlReference(prefix: String, date: String, index: Int) {
-
+case class InterchangeControlReference(date: String, index: Int) {
+private val prefix = "WE"
   override def toString: String = {
     s"$prefix$date$index"
   }

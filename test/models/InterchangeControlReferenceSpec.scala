@@ -29,10 +29,10 @@ class InterchangeControlReferenceSpec extends FreeSpec with MustMatchers
 
     "must toString in the correct format" in {
 
-      forAll(arbitrary[String], arbitrary[String], arbitrary[Int]) {
-        (prefix, date, index) =>
+      forAll(arbitrary[String], arbitrary[Int]) {
+        (date, index) =>
 
-          InterchangeControlReference(prefix, date, index).toString mustBe s"$prefix$date$index"
+          InterchangeControlReference(date, index).toString mustBe s"WE$date$index"
       }
     }
   }

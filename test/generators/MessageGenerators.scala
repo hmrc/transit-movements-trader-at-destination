@@ -129,10 +129,9 @@ trait MessageGenerators extends ModelGenerators {
   implicit lazy val arbitraryInterchangeControlReference: Arbitrary[InterchangeControlReference] = {
     Arbitrary {
       for {
-        prefix <- arbitrary[String]
         dateTime <- arbitrary[String]
         index <- arbitrary[Int]
-      } yield InterchangeControlReference(prefix, dateTime, index)
+      } yield InterchangeControlReference(dateTime, index)
     }
   }
 

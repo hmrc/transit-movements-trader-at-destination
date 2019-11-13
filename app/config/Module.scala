@@ -25,7 +25,6 @@ class Module extends AbstractModule {
 
     bind(classOf[DateTimeService]).to(classOf[DateTimeServiceImpl]).asEagerSingleton()
 
-    bind(classOf[MetaConfig]).to(classOf[MetaConfigImpl]).asEagerSingleton()
   }
 
 }
