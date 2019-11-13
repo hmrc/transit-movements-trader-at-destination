@@ -17,18 +17,16 @@
 package services
 
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 
-import com.google.inject.{ImplementedBy, Singleton}
+import com.google.inject.Singleton
+import utils.Format
 
 @Singleton
 class DateTimeServiceImpl extends DateTimeService {
 
-  private val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd")
-
   override def currentDateTime: LocalDateTime = LocalDateTime.now()
 
-  def dateFormatted: String = currentDateTime.format(dateFormatter)
+  def dateFormatted: String = currentDateTime.format(Format.dateFormatter)
 }
 
 trait DateTimeService {
