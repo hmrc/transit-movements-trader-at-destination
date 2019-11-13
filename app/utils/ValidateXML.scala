@@ -19,69 +19,65 @@ package utils
 import java.io._
 import java.net.URL
 
+import javax.xml.parsers.SAXParserFactory
 import javax.xml.validation.Schema
 import org.xml.sax.InputSource
 import org.xml.sax.helpers.DefaultHandler
+import play.api.Logger
 
 import scala.util.{Failure, Success, Try}
 import scala.xml.factory.XMLLoader
-import scala.xml.{Elem, SAXException, SAXParseException, SAXParser}
-
-/**
-  * TODO: Below we were trying to implement functionality
-  * to validate xml with and xsd document
-  */
+import scala.xml.{Elem, SAXParseException, SAXParser}
 
 object ValidateXML {
 
+  private val logger = Logger(getClass)
+  private val schemaLang = javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI
+
+  private def saxParser(schema: Schema): SAXParser = {
+    val saxParser: SAXParserFactory = javax.xml.parsers.SAXParserFactory.newInstance()
+    saxParser.setNamespaceAware(true)
+    saxParser.setSchema(schema)
+    saxParser.newSAXParser()
+  }
+
   def validate(xml: String, fileKey: String): Try[String] = {
 
-    val schemaLang = javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI
-    val url: URL = getClass.getResource(s"/xsd-iconvert/$fileKey.xsd")
-
-    val schema: Schema = javax.xml.validation.SchemaFactory.newInstance(schemaLang).newSchema(url)
-
-    val factory = javax.xml.parsers.SAXParserFactory.newInstance()
-    factory.setNamespaceAware(true)
-    factory.setSchema(schema)
-    factory.setValidating(true)
-
-    val validatingParser = factory.newSAXParser()
-
-    class CustomParseHandler extends DefaultHandler {
-
-      override def error(e: SAXParseException ): Unit = {
-
-        if(
-          !e.getMessage.contentEquals("Document is invalid: no grammar found.") &&
-            !e.getMessage.contentEquals("Document root element \"CC007A\", must match DOCTYPE root \"null\".")
-        )
-        {
-          println(s"EXCEPTION ${e.getException}")
-          println(s"MESSAGE ${e.getMessage}")
-          throw new SAXException(e)
-        }
-      }
-    }
-
-    val xmlResponse: XMLLoader[Elem] = new scala.xml.factory.XMLLoader[scala.xml.Elem] {
-      override def parser: SAXParser = validatingParser
-      override def adapter =
-        new scala.xml.parsing.NoBindingFactoryAdapter
-          with scala.xml.parsing.ConsoleErrorHandler
-
-    }
 
     try {
+
+      val url: URL = getClass.getResource(s"/xsd-iconvert/$fileKey.xsd")
+
+      val schema: Schema = javax.xml.validation.SchemaFactory.newInstance(schemaLang).newSchema(url)
+
+      class CustomParseHandler extends DefaultHandler {
+
+        override def error(e: SAXParseException): Unit = {
+          logger.warn(e.getMessage)
+          throw new SAXParseException(e.getMessage, e.getPublicId, e.getSystemId, e.getLineNumber, e.getColumnNumber)
+        }
+      }
+
+      val xmlResponse: XMLLoader[Elem] = new scala.xml.factory.XMLLoader[scala.xml.Elem] {
+        override def parser: SAXParser = saxParser(schema)
+
+        override def adapter =
+          new scala.xml.parsing.NoBindingFactoryAdapter
+            with scala.xml.parsing.ConsoleErrorHandler
+      }
 
       xmlResponse.parser.parse(new InputSource(new StringReader(xml)), new CustomParseHandler)
 
       Success("successfully parsed xml")
 
     } catch {
-      case e: Throwable => Failure(e)
+      case e: NullPointerException =>
+        logger.warn(s"Could not find XSD with the key: $fileKey")
+        Failure(e)
+      case e: Throwable =>
+        logger.warn(e.getMessage)
+        Failure(e)
     }
-
   }
 
 }
