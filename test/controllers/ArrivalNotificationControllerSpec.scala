@@ -52,6 +52,15 @@ class ArrivalNotificationControllerSpec extends
       status(result) mustEqual BAD_REQUEST
     }
 
+    "must return 502 when the EIS service is down" ignore {
+
+      val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
+        .withJsonBody(Json.obj("key" -> "value"))
+      val result = route(app, request).value
+
+      status(result) mustEqual BAD_GATEWAY
+    }
+
     "must return OK when passed Normal Notification" in {
 
 //      forAll(arbitrary[NormalNotification]) { normalNotification =>

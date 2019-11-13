@@ -14,18 +14,17 @@
  * limitations under the License.
  */
 
-package config
+package services
 
-import com.google.inject.AbstractModule
-import services.{DateTimeService, DateTimeServiceImpl, SubmissionService, SubmissionServiceImpl}
+import models.messages.ArrivalNotification
 
-class Module extends AbstractModule {
+class SubmissionServiceImpl extends SubmissionService {
 
-  override def configure(): Unit = {
-
-    bind(classOf[DateTimeService]).to(classOf[DateTimeServiceImpl]).asEagerSingleton()
-    bind(classOf[SubmissionService]).to(classOf[SubmissionServiceImpl]).asEagerSingleton()
-
+  def submit(arrivalNotification: ArrivalNotification): Int = {
+    200
   }
+}
 
+trait SubmissionService {
+  def submit(arrivalNotification: ArrivalNotification): Int
 }

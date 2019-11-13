@@ -20,20 +20,24 @@ import javax.inject.Inject
 import models.messages.NormalNotification
 import play.api.libs.json.{JsError, Reads}
 import play.api.mvc._
+import services.SubmissionServiceImpl
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class ArrivalNotificationController @Inject()(cc: ControllerComponents) extends BackendController(cc) {
+class ArrivalNotificationController @Inject()(cc: ControllerComponents, service: SubmissionServiceImpl) extends BackendController(cc) {
 
   def validateJson[A: Reads]: BodyParser[A] = BodyParsers.parse.json.validate(
-    _.validate[A].asEither.left.map (e =>
+    _.validate[A].asEither.left.map(e =>
       BadRequest(JsError.toJson(e)).as("application/json")
-  ))
+    ))
 
   def post() = Action.async(validateJson[NormalNotification]) {
     implicit request =>
-      Future.successful(Ok.as("application/json"))
+      service.submit(request.body) match {
+        case 200 => Future.successful(Ok.as ("application/json") )
+        case _ => Future.successful(BadGateway )
+      }
   }
 }
