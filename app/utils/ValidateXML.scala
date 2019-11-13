@@ -16,7 +16,8 @@
 
 package utils
 
-import java.io.StringReader
+import java.io._
+import java.net.URL
 
 import javax.xml.validation.Schema
 import org.xml.sax.InputSource
@@ -33,13 +34,12 @@ import scala.xml.{Elem, SAXException, SAXParseException, SAXParser}
 
 object ValidateXML {
 
-  def validate(xml: String): Try[String] = {
+  def validate(xml: String, fileKey: String): Try[String] = {
+
     val schemaLang = javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI
-    val xsdFile = java.nio.file.Paths.get("test/resources/xsd-iconvert/cc007a.xsd")
-    val readOnly = java.nio.file.StandardOpenOption.READ
-    val inputStream = java.nio.file.Files.newInputStream(xsdFile, readOnly)
-    val xsdStream = new javax.xml.transform.stream.StreamSource(inputStream)
-    val schema: Schema = javax.xml.validation.SchemaFactory.newInstance(schemaLang).newSchema(xsdStream)
+    val url: URL = getClass.getResource(s"/xsd-iconvert/$fileKey.xsd")
+
+    val schema: Schema = javax.xml.validation.SchemaFactory.newInstance(schemaLang).newSchema(url)
 
     val factory = javax.xml.parsers.SAXParserFactory.newInstance()
     factory.setNamespaceAware(true)
@@ -75,8 +75,6 @@ object ValidateXML {
     try {
 
       xmlResponse.parser.parse(new InputSource(new StringReader(xml)), new CustomParseHandler)
-
-      inputStream.close()
 
       Success("successfully parsed xml")
 

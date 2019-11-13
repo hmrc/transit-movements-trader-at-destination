@@ -463,6 +463,8 @@ class ArrivalNotificationSpec extends FreeSpec with MustMatchers
           |</CC007A>
         """.stripMargin
 
+      println(s"\n\n ${ValidateXML.validate(xml)} \n\n")
+
       ValidateXML.validate(xml).isSuccess mustBe true
     }
 
