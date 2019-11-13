@@ -14,19 +14,26 @@
  * limitations under the License.
  */
 
-package services
+package services.mocks
 
-import com.google.inject.Singleton
 import models.messages.ArrivalNotification
+import org.scalatest.{BeforeAndAfterEach, Suite}
+import org.scalatestplus.mockito.MockitoSugar
+import services.SubmissionService
+import org.mockito.Mockito._
 
-@Singleton
-class SubmissionServiceImpl extends SubmissionService {
+trait MockSubmissionService extends MockitoSugar with BeforeAndAfterEach {
+  this: Suite =>
 
-  def submit(arrivalNotification: ArrivalNotification): Int = {
-    200
+  val mockSubmissionService = mock[SubmissionService]
+
+  override def beforeEach(): Unit = {
+    super.beforeEach()
+    reset(mockSubmissionService)
   }
-}
 
-trait SubmissionService {
-  def submit(arrivalNotification: ArrivalNotification): Int
+  def mockSubmit(response: Int, arrivalNotification: ArrivalNotification): Unit = {
+    when(mockSubmissionService.submit(arrivalNotification))
+      .thenReturn(response)
+  }
 }

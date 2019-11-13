@@ -19,18 +19,27 @@ package controllers
 import java.time.LocalDate
 
 import generators.MessageGenerators
-import models.{Trader, TraderWithEori}
+import models.TraderWithEori
 import models.messages.NormalNotification
-import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.{FreeSpec, MustMatchers, OptionValues}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
+import play.api.inject.bind
+import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
+import services.SubmissionService
+import services.mocks.MockSubmissionService
 
 class ArrivalNotificationControllerSpec extends
-  FreeSpec with MustMatchers with ScalaCheckPropertyChecks with MessageGenerators with GuiceOneAppPerSuite with OptionValues {
+  FreeSpec with
+  MustMatchers with
+  ScalaCheckPropertyChecks with
+  MessageGenerators with
+  GuiceOneAppPerSuite with
+  OptionValues with
+  MockSubmissionService {
 
   /**
     * SHOULD
@@ -40,6 +49,19 @@ class ArrivalNotificationControllerSpec extends
     * Return 502 if EIS is down
     * Return 504 (check this doesn't happen automatically
     */
+
+  override implicit lazy val app = new GuiceApplicationBuilder()
+    .overrides(
+      bind[SubmissionService].toInstance(mockSubmissionService)
+    ).build()
+
+  val normalNotification = NormalNotification(
+    "mrn",
+    "place",
+    LocalDate.now(),
+    None, TraderWithEori("eori", None, None, None, None, None),
+    "presentation office",
+    Nil)
 
   "post" - {
 
@@ -52,33 +74,26 @@ class ArrivalNotificationControllerSpec extends
       status(result) mustEqual BAD_REQUEST
     }
 
-    "must return 502 when the EIS service is down" ignore {
+    "must return 502 when the EIS service is down" in {
+
+      mockSubmit(502, normalNotification)
 
       val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
-        .withJsonBody(Json.obj("key" -> "value"))
+        .withJsonBody(Json.toJson(normalNotification))
       val result = route(app, request).value
 
       status(result) mustEqual BAD_GATEWAY
     }
 
-    "must return OK when passed Normal Notification" in {
+    "must return OK when passed valid NormalNotification" in {
 
-//      forAll(arbitrary[NormalNotification]) { normalNotification =>
+      mockSubmit(200, normalNotification)
 
-        val normalNotification = NormalNotification(
-          "mrn",
-          "place",
-          LocalDate.now(),
-          None, TraderWithEori("eori", None, None, None, None, None),
-          "presentation office",
-          Nil)
+      val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
+        .withJsonBody(Json.toJson(normalNotification))
+      val result = route(app, request).value
 
-        val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
-          .withJsonBody(Json.toJson(normalNotification))
-        val result = route(app, request).value
-
-        status(result) mustEqual OK
-//      }
+      status(result) mustEqual OK
     }
   }
 }
