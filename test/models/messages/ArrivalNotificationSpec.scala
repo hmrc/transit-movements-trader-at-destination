@@ -25,6 +25,7 @@ import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.{FreeSpec, MustMatchers}
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.libs.json.{JsError, JsSuccess, Json}
+import utils.ValidateXML
 
 class ArrivalNotificationSpec extends FreeSpec with MustMatchers
   with ScalaCheckPropertyChecks with MessageGenerators with JsonBehaviours {
@@ -112,8 +113,6 @@ class ArrivalNotificationSpec extends FreeSpec with MustMatchers
             "presentationOffice"      -> presentationOffice,
             "enRouteEvents"           -> Json.toJson(events)
           )
-
-          val expectedResult = NormalNotification(mrn, place, date, subPlace, trader, presentationOffice, events)
 
           json.validate[NormalNotification] mustEqual JsError("procedure must be `normal`")
       }
@@ -247,8 +246,6 @@ class ArrivalNotificationSpec extends FreeSpec with MustMatchers
             "presentationOffice"      -> presentationOffice,
             "enRouteEvents"           -> Json.toJson(events)
           )
-
-          val expectedResult = SimplifiedNotification(mrn, place, date, approvedLocation, trader, presentationOffice, events)
 
           json.validate[SimplifiedNotification] mustEqual JsError("procedure must be `simplified`")
       }
@@ -431,6 +428,75 @@ class ArrivalNotificationSpec extends FreeSpec with MustMatchers
 
           Json.toJson(notification: ArrivalNotification) mustEqual json
       }
+    }
+
+    "must convert to valid xml" in {
+
+      //val xml = normalArrivalNotificationSubmission(traderWithEori).toXml
+
+      val xml =
+        """
+          |<CC007A>
+          |    <SynIdeMES1>UNOC</SynIdeMES1>
+          |    <SynVerNumMES2>3</SynVerNumMES2>
+          |    <MesSenMES3>SYST17B-NCTS_EU_EXIT</MesSenMES3>
+          |    <MesRecMES6>NCTS</MesRecMES6>
+          |    <DatOfPreMES9>20190912</DatOfPreMES9>
+          |    <TimOfPreMES10>1445</TimOfPreMES10>
+          |    <IntConRefMES11>WE190912102534</IntConRefMES11>
+          |    <AppRefMES14>NCTS</AppRefMES14>
+          |    <TesIndMES18>0</TesIndMES18>
+          |    <MesIdeMES19>1</MesIdeMES19>
+          |    <MesTypMES20>GB007A</MesTypMES20>
+          |    <HEAHEA>
+          |        <DocNumHEA5>19IT02110010007827</DocNumHEA5>
+          |        <ArrNotPlaHEA60>DOVER</ArrNotPlaHEA60>
+          |        <SimProFlaHEA132>0</SimProFlaHEA132>
+          |        <ArrNotDatHEA141>20191110</ArrNotDatHEA141>
+          |    </HEAHEA>
+          |    <TRADESTRD>
+          |        <TINTRD59>GB163910077000</TINTRD59>
+          |    </TRADESTRD>
+          |    <CUSOFFPREOFFRES>
+          |        <RefNumRES1>GB000060</RefNumRES1>
+          |    </CUSOFFPREOFFRES>
+          |</CC007A>
+        """.stripMargin
+
+      ValidateXML.validate(xml).isSuccess mustBe true
+    }
+
+    "must return failure if xml couldn't be validated" in {
+
+      val xml =
+        """
+          |<CC007A>
+          |    <SynIdeMES1>UNOC</SynIdeMES1>
+          |    <SynVerNumMES2>3</SynVerNumMES2>
+          |    <MesSenMES3>SYST17B-NCTS_EU_EXIT</MesSenMES3>
+          |    <MesRecMES6>NCTS</MesRecMES6>
+          |    <TimOfPreMES10>1445</TimOfPreMES10>
+          |    <IntConRefMES11>WE190912102534</IntConRefMES11>
+          |    <AppRefMES14>NCTS</AppRefMES14>
+          |    <TesIndMES18>0</TesIndMES18>
+          |    <MesIdeMES19>1</MesIdeMES19>
+          |    <MesTypMES20>GB007A</MesTypMES20>
+          |    <HEAHEA>
+          |        <DocNumHEA5>19IT02110010007827</DocNumHEA5>
+          |        <ArrNotPlaHEA60>DOVER</ArrNotPlaHEA60>
+          |        <SimProFlaHEA132>0</SimProFlaHEA132>
+          |        <ArrNotDatHEA141>20191110</ArrNotDatHEA141>
+          |    </HEAHEA>
+          |    <TRADESTRD>
+          |        <TINTRD59>GB163910077000</TINTRD59>
+          |    </TRADESTRD>
+          |    <CUSOFFPREOFFRES>
+          |        <RefNumRES1>GB000060</RefNumRES1>
+          |    </CUSOFFPREOFFRES>
+          |</CC007A>
+        """.stripMargin
+
+      ValidateXML.validate(xml).isFailure mustBe true
     }
   }
 }
