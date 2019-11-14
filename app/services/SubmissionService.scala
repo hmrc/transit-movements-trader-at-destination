@@ -16,10 +16,8 @@
 
 package services
 
-import com.google.inject.Singleton
 import models.messages.ArrivalNotification
 
-@Singleton
 class SubmissionServiceImpl extends SubmissionService {
 
   def submit(arrivalNotification: ArrivalNotification): Int = {

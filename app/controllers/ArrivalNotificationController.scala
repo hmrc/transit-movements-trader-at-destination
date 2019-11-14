@@ -19,16 +19,19 @@ package controllers
 import javax.inject.Inject
 import models.messages.NormalNotification
 import play.api.libs.json.{JsError, Reads}
-import play.api.mvc._
+import play.api.mvc.{BodyParsers, _}
 import services.SubmissionService
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class ArrivalNotificationController @Inject()(cc: ControllerComponents, service: SubmissionService) extends BackendController(cc) {
+class ArrivalNotificationController @Inject()(
+                                               cc: ControllerComponents,
+                                               service: SubmissionService,
+                                               bodyParsers: PlayBodyParsers) extends BackendController(cc) {
 
-  def validateJson[A: Reads]: BodyParser[A] = BodyParsers.parse.json.validate(
+  def validateJson[A: Reads]: BodyParser[A] = bodyParsers.json.validate(
     _.validate[A].asEither.left.map(e =>
       BadRequest(JsError.toJson(e)).as("application/json")
     ))

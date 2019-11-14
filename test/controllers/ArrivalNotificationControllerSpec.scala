@@ -16,11 +16,9 @@
 
 package controllers
 
-import java.time.LocalDate
-
 import generators.MessageGenerators
-import models.TraderWithEori
 import models.messages.NormalNotification
+import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.{FreeSpec, MustMatchers, OptionValues}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
@@ -55,14 +53,6 @@ class ArrivalNotificationControllerSpec extends
       bind[SubmissionService].toInstance(mockSubmissionService)
     ).build()
 
-  val normalNotification = NormalNotification(
-    "mrn",
-    "place",
-    LocalDate.now(),
-    None, TraderWithEori("eori", None, None, None, None, None),
-    "presentation office",
-    Nil)
-
   "post" - {
 
     "must return BAD_REQUEST when can't be converted to ArrivalNotification" in {
@@ -76,17 +66,25 @@ class ArrivalNotificationControllerSpec extends
 
     "must return BAD_GATEWAY when the EIS service is down" in {
 
-      mockSubmit(502, normalNotification)
+      for (
+        normalNotification <- arbitrary[NormalNotification]
+      ) yield {
+        mockSubmit(502, normalNotification)
 
-      val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
-        .withJsonBody(Json.toJson(normalNotification))
-      val result = route(app, request).value
+        val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
+          .withJsonBody(Json.toJson(normalNotification))
+        val result = route(app, request).value
 
-      status(result) mustEqual BAD_GATEWAY
+        status(result) mustEqual BAD_GATEWAY
+      }
     }
+  }
 
-    "must return OK when passed valid NormalNotification" in {
+  "must return OK when passed valid NormalNotification" in {
 
+    for (
+      normalNotification <- arbitrary[NormalNotification]
+    ) yield {
       mockSubmit(200, normalNotification)
 
       val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
@@ -96,4 +94,5 @@ class ArrivalNotificationControllerSpec extends
       status(result) mustEqual OK
     }
   }
+
 }
