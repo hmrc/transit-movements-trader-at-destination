@@ -16,22 +16,83 @@
 
 package controllers
 
+import generators.MessageGenerators
+import models.messages.NormalNotification
+import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.{FreeSpec, MustMatchers, OptionValues}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
+import play.api.inject.bind
+import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
+import services.SubmissionService
+import services.mocks.MockSubmissionService
 
-class ArrivalNotificationControllerSpec extends FreeSpec with MustMatchers with GuiceOneAppPerSuite with OptionValues {
+class ArrivalNotificationControllerSpec extends
+  FreeSpec with
+  MustMatchers with
+  ScalaCheckPropertyChecks with
+  MessageGenerators with
+  GuiceOneAppPerSuite with
+  OptionValues with
+  MockSubmissionService {
+
+  /**
+    * SHOULD
+    * Return 200 on successful conversion to ArrivalNotification
+    * Return 400 when ArrivalNotification could not be built
+    * Return 401 when user isn't authenticated
+    * Return 502 if EIS is down
+    * Return 504 (check this doesn't happen automatically
+    */
+
+  override implicit lazy val app = new GuiceApplicationBuilder()
+    .overrides(
+      bind[SubmissionService].toInstance(mockSubmissionService)
+    ).build()
 
   "post" - {
 
-    "must return Not Implemented" in {
+    "must return BAD_REQUEST when can't be converted to ArrivalNotification" in {
 
       val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
-
+        .withJsonBody(Json.obj("key" -> "value"))
       val result = route(app, request).value
 
-      status(result) mustEqual NOT_IMPLEMENTED
+      status(result) mustEqual BAD_REQUEST
+    }
+
+    "must return BAD_GATEWAY when the EIS service is down" in {
+
+      for (
+        normalNotification <- arbitrary[NormalNotification]
+      ) yield {
+        mockSubmit(502, normalNotification)
+
+        val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
+          .withJsonBody(Json.toJson(normalNotification))
+        val result = route(app, request).value
+
+        status(result) mustEqual BAD_GATEWAY
+      }
     }
   }
+
+  "must return OK when passed valid NormalNotification" in {
+
+    for (
+      normalNotification <- arbitrary[NormalNotification]
+    ) yield {
+      mockSubmit(200, normalNotification)
+
+      val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
+        .withJsonBody(Json.toJson(normalNotification))
+      val result = route(app, request).value
+
+      status(result) mustEqual OK
+    }
+  }
+
 }

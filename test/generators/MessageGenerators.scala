@@ -16,7 +16,7 @@
 
 package generators
 
-import java.time.{LocalDate, LocalDateTime}
+import java.time.LocalDate
 
 import models.messages._
 import models.messages.request._
@@ -26,7 +26,6 @@ import org.scalacheck.{Arbitrary, Gen}
 
 
 trait MessageGenerators extends ModelGenerators {
-
 
   implicit lazy val validXmlString: Arbitrary[String] =
     Arbitrary(arbitrary[List[Char]] map {
