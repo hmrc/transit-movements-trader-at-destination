@@ -20,11 +20,15 @@ import com.google.inject.Inject
 import models.messages.ArrivalNotification
 import play.api.libs.json.{JsObject, Json}
 import play.modules.reactivemongo.ReactiveMongoApi
-import reactivemongo.api.commands.WriteResult
+import reactivemongo.api.WriteConcern
+import reactivemongo.api.commands.{FindAndModifyCommand, WriteResult}
+import reactivemongo.api.commands.FindAndModifyCommand
+import reactivemongo.bson.{BSONDocument, BSONElement}
 import repositories.CollectionNames
 import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 import reactivemongo.play.json.collection.JSONCollection
 
+import scala.collection.immutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -43,6 +47,23 @@ class ArrivalNotificationService @Inject()(mongo: ReactiveMongoApi) {
     collection.flatMap {
       _.insert(false)
         .one(doc)
+    }
+  }
+
+  def deleteFromMongo(mrn: String) = {
+
+    val selector: JsObject = Json.obj("movementReferenceNumber" -> "mrn")
+
+    collection.flatMap {
+      _.findAndRemove(
+        selector = selector,
+        sort = None,
+        fields = None,
+        writeConcern = WriteConcern.Default,
+        maxTime = None,
+        collation = None,
+        arrayFilters = Seq.empty
+      )
     }
   }
 
