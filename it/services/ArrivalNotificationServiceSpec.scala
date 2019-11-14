@@ -112,15 +112,16 @@ class ArrivalNotificationServiceSpec
 
         simplifiedNotification =>
 
-          database.flatMap(_.drop()).futureValue
-
           val json: JsObject = Json.toJsObject(simplifiedNotification)
 
           database.flatMap {
             db =>
-              db.collection[JSONCollection](CollectionNames.ArrivalNotificationCollection)
-                .insert(false)
-                .one(json)
+              db.drop().flatMap {
+                _ =>
+                  db.collection[JSONCollection](CollectionNames.ArrivalNotificationCollection)
+                    .insert(false)
+                    .one(json)
+              }
           }.futureValue
 
           service.deleteFromMongo(simplifiedNotification.movementReferenceNumber).futureValue
