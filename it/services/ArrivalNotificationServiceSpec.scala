@@ -84,18 +84,19 @@ class ArrivalNotificationServiceSpec
 
         normalNotification =>
 
-          database.flatMap(_.drop()).futureValue
-
           val json: JsObject = Json.toJsObject(normalNotification)
 
           database.flatMap {
             db =>
-              db.collection[JSONCollection](CollectionNames.ArrivalNotificationCollection)
-                .insert(false)
-                .one(json)
+              db.drop().flatMap {
+                _ =>
+                  db.collection[JSONCollection](CollectionNames.ArrivalNotificationCollection)
+                    .insert(false)
+                    .one(json)
+              }
           }.futureValue
 
-          service.deleteFromMongo(normalNotification.movementReferenceNumber)
+          service.deleteFromMongo(normalNotification.movementReferenceNumber).futureValue
 
           val result = database.flatMap(_.collection[JSONCollection](CollectionNames.ArrivalNotificationCollection)
             .find(Json.obj("movementReferenceNumber" -> normalNotification.movementReferenceNumber), None)
@@ -122,7 +123,7 @@ class ArrivalNotificationServiceSpec
                 .one(json)
           }.futureValue
 
-          service.deleteFromMongo(simplifiedNotification.movementReferenceNumber)
+          service.deleteFromMongo(simplifiedNotification.movementReferenceNumber).futureValue
 
           val result = database.flatMap(_.collection[JSONCollection](CollectionNames.ArrivalNotificationCollection)
             .find(Json.obj("movementReferenceNumber" -> simplifiedNotification.movementReferenceNumber), None)
