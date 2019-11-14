@@ -74,7 +74,7 @@ class ArrivalNotificationControllerSpec extends
       status(result) mustEqual BAD_REQUEST
     }
 
-    "must return 502 when the EIS service is down" in {
+    "must return BAD_GATEWAY when the EIS service is down" in {
 
       mockSubmit(502, normalNotification)
 
