@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package models.messages
+package models
 
 trait XSDFile {
   val filePath: String

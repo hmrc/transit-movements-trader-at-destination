@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package utils
+package services
 
 import java.io._
 import java.net.URL
 
 import javax.xml.parsers.SAXParserFactory
 import javax.xml.validation.Schema
-import models.messages.XSDFile
+import models.XSDFile
 import org.xml.sax.InputSource
 import org.xml.sax.helpers.DefaultHandler
 import play.api.Logger
@@ -30,7 +30,7 @@ import scala.util.{Failure, Success, Try}
 import scala.xml.factory.XMLLoader
 import scala.xml.{Elem, SAXParseException, SAXParser}
 
-object ValidateXML {
+class XmlValidationService {
 
   private val logger = Logger(getClass)
   private val schemaLang = javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI
