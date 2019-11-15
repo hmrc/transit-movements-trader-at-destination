@@ -20,11 +20,12 @@ import java.time.LocalDate
 
 import generators.MessageGenerators
 import models.behaviours.JsonBehaviours
-import models.{EnRouteEvent, ProcedureType, Trader}
+import models.{ArrivalNotificationXSD, EnRouteEvent, ProcedureType, Trader}
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.{FreeSpec, MustMatchers}
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.libs.json.{JsError, JsSuccess, Json}
+import services.XmlValidationService
 
 class ArrivalNotificationSpec extends FreeSpec with MustMatchers
   with ScalaCheckPropertyChecks with MessageGenerators with JsonBehaviours {
@@ -112,8 +113,6 @@ class ArrivalNotificationSpec extends FreeSpec with MustMatchers
             "presentationOffice"      -> presentationOffice,
             "enRouteEvents"           -> Json.toJson(events)
           )
-
-          val expectedResult = NormalNotification(mrn, place, date, subPlace, trader, presentationOffice, events)
 
           json.validate[NormalNotification] mustEqual JsError("procedure must be `normal`")
       }
@@ -247,8 +246,6 @@ class ArrivalNotificationSpec extends FreeSpec with MustMatchers
             "presentationOffice"      -> presentationOffice,
             "enRouteEvents"           -> Json.toJson(events)
           )
-
-          val expectedResult = SimplifiedNotification(mrn, place, date, approvedLocation, trader, presentationOffice, events)
 
           json.validate[SimplifiedNotification] mustEqual JsError("procedure must be `simplified`")
       }
@@ -433,4 +430,5 @@ class ArrivalNotificationSpec extends FreeSpec with MustMatchers
       }
     }
   }
+
 }
