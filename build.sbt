@@ -30,7 +30,8 @@ lazy val scoverageSettings = {
 
 lazy val itSettings = Defaults.itSettings ++ Seq(
   unmanagedSourceDirectories   := Seq(
-    baseDirectory.value / "it"
+    baseDirectory.value / "it",
+    baseDirectory.value / "test" / "generators"
   ),
   unmanagedResourceDirectories := Seq(
     baseDirectory.value / "it" / "services" / "resources"

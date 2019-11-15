@@ -18,37 +18,42 @@ package connectors
 
 import com.google.inject.Inject
 import config.AppConfig
+import models.Source
 import play.api.mvc.RequestHeader
-import uk.gov.hmrc.http.{BadRequestException, HeaderCarrier}
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.xml.NodeSeq
+import scala.concurrent.{ExecutionContext, Future}
 
 
 class MessageConnectorImpl @Inject()(config: AppConfig, http: HttpClient) extends MessageConnector {
 
-  def post(xml: String)(implicit  headerCarrier: HeaderCarrier,
+  // TODO consider creating HttpReads to retrieve response status (to prevent the future from failing)
+
+  def post(xml: String, messageCode: String, source: Source)(implicit  headerCarrier: HeaderCarrier,
              ec: ExecutionContext,
              request: RequestHeader): Future[Int] = {
 
+    val customHeaders: Seq[(String, String)] = Seq(
+      "Content-Type" -> "application/xml",
+      "Accept" -> "application/xml",
+      "Source" -> source.channel,
+      "MessageCode" -> messageCode
+    )
+
     val url = config.eisUrl
-    
-    http.POST(url, xml, Seq("Content-Type" -> "application/xml", "Accept" -> "application/xml")).map {
-      response =>
-        response.status match {
-          case 200 => 200
-          case _ @status => status
-        }
-    }.recover {
-      case _: BadRequestException => 502
-    }
+    val response = http.POST(url, xml, customHeaders)
+
+    response.map(_.status)
+      .recover {
+        case _ => 400
+      }
   }
 }
 
 trait MessageConnector {
-  def post(xml: String)(implicit
+  def post(xml: String, messageCode: String, source: Source)(implicit
              headerCarrier: HeaderCarrier,
              ec: ExecutionContext,
              request: RequestHeader): Future[Int]
