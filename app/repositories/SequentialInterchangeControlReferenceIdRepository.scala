@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package services
+package repositories
 
 import com.google.inject.{Inject, Singleton}
 import models.messages.request.InterchangeControlReference
@@ -22,16 +22,16 @@ import play.api.libs.json.{Json, Reads}
 import play.modules.reactivemongo.ReactiveMongoApi
 import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 import reactivemongo.play.json.collection.JSONCollection
-import repositories.CollectionNames
+import services.DateTimeService
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 @Singleton
-class SequentialInterchangeControlReferenceIdService @Inject()(
+class SequentialInterchangeControlReferenceIdRepository @Inject()(
                                                                 mongo: ReactiveMongoApi,
                                                                 dateTimeService: DateTimeService
-                                                          ) extends InterchangeControlReferenceIdService {
+                                                          ) extends InterchangeControlReferenceIdRepository {
 
   private val lastIndexKey = "last-index"
 
@@ -65,6 +65,6 @@ class SequentialInterchangeControlReferenceIdService @Inject()(
   }
 }
 
-trait InterchangeControlReferenceIdService {
+trait InterchangeControlReferenceIdRepository {
   def nextInterchangeControlReferenceId(): Future[InterchangeControlReference]
 }

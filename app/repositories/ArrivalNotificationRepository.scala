@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package services
+package repositories
 
 import com.google.inject.Inject
 import models.messages.ArrivalNotification
@@ -24,12 +24,11 @@ import play.modules.reactivemongo.ReactiveMongoApi
 import reactivemongo.api.commands.WriteResult
 import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 import reactivemongo.play.json.collection.JSONCollection
-import repositories.CollectionNames
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class ArrivalNotificationService @Inject()(cc: ControllerComponents, mongo: ReactiveMongoApi) {
+class ArrivalNotificationRepository @Inject()(cc: ControllerComponents, mongo: ReactiveMongoApi) {
 
   private val collectionName = CollectionNames.ArrivalNotificationCollection
 

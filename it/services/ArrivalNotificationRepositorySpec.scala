@@ -4,19 +4,18 @@ import generators.MessageGenerators
 import models.messages.{ArrivalNotification, NormalNotification, SimplifiedNotification}
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
-import org.scalatest.{FreeSpec, MustMatchers, OptionValues}
+import org.scalatest.{BeforeAndAfterEach, FreeSpec, MustMatchers, OptionValues}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.libs.json.{JsObject, Json}
 import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 import reactivemongo.play.json.collection.JSONCollection
-import repositories.CollectionNames
-import services.ArrivalNotificationService
+import repositories.{ArrivalNotificationRepository, CollectionNames}
 import services.mocks.MockDateTimeService
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class ArrivalNotificationServiceSpec
+class ArrivalNotificationRepositorySpec
   extends FreeSpec
     with MustMatchers
     with MongoSuite
@@ -26,19 +25,23 @@ class ArrivalNotificationServiceSpec
     with MockDateTimeService
     with OptionValues
     with ScalaCheckPropertyChecks
-    with MessageGenerators {
+    with MessageGenerators
+    with BeforeAndAfterEach {
 
-  val service: ArrivalNotificationService = app.injector.instanceOf[ArrivalNotificationService]
+  val service: ArrivalNotificationRepository = app.injector.instanceOf[ArrivalNotificationRepository]
 
-  "ArrivalNotificationService" - {
+  override def beforeEach(): Unit = {
+    super.beforeEach()
+    database.flatMap(_.drop()).futureValue
+  }
+
+  "ArrivalNotificationRepository" - {
 
     "must persist NormalNotification within mongoDB" in {
 
       forAll(arbitrary[NormalNotification]) {
 
         normalNotification =>
-
-          database.flatMap(_.drop()).futureValue
 
           service.persistToMongo(normalNotification).futureValue
 
@@ -60,8 +63,6 @@ class ArrivalNotificationServiceSpec
       forAll(arbitrary[SimplifiedNotification]) {
 
         simplifiedNotification =>
-
-          database.flatMap(_.drop()).futureValue
 
           service.persistToMongo(simplifiedNotification).futureValue
 
@@ -88,12 +89,9 @@ class ArrivalNotificationServiceSpec
 
           database.flatMap {
             db =>
-              db.drop().flatMap {
-                _ =>
-                  db.collection[JSONCollection](CollectionNames.ArrivalNotificationCollection)
-                    .insert(false)
-                    .one(json)
-              }
+              db.collection[JSONCollection](CollectionNames.ArrivalNotificationCollection)
+                .insert(false)
+                .one(json)
           }.futureValue
 
           service.deleteFromMongo(normalNotification.movementReferenceNumber).futureValue
@@ -116,12 +114,9 @@ class ArrivalNotificationServiceSpec
 
           database.flatMap {
             db =>
-              db.drop().flatMap {
-                _ =>
-                  db.collection[JSONCollection](CollectionNames.ArrivalNotificationCollection)
-                    .insert(false)
-                    .one(json)
-              }
+              db.collection[JSONCollection](CollectionNames.ArrivalNotificationCollection)
+                .insert(false)
+                .one(json)
           }.futureValue
 
           service.deleteFromMongo(simplifiedNotification.movementReferenceNumber).futureValue
