@@ -14,22 +14,6 @@
  * limitations under the License.
  */
 
-package config
+package models.messages
 
-import com.google.inject.AbstractModule
-import connectors.{MessageConnector, MessageConnectorImpl}
-import services.{DateTimeService, DateTimeServiceImpl, SubmissionService, SubmissionServiceImpl}
-
-class Module extends AbstractModule {
-
-  override def configure(): Unit = {
-
-    bind(classOf[DateTimeService]).to(classOf[DateTimeServiceImpl]).asEagerSingleton()
-
-    bind(classOf[SubmissionService]).to(classOf[SubmissionServiceImpl]).asEagerSingleton()
-
-    bind(classOf[MessageConnector]).to(classOf[MessageConnectorImpl]).asEagerSingleton()
-
-  }
-
-}
+case class MessageCode(code: String)

@@ -14,22 +14,16 @@
  * limitations under the License.
  */
 
-package config
+package models
 
-import com.google.inject.AbstractModule
-import connectors.{MessageConnector, MessageConnectorImpl}
-import services.{DateTimeService, DateTimeServiceImpl, SubmissionService, SubmissionServiceImpl}
+sealed trait Source {
+  val channel: String
+}
 
-class Module extends AbstractModule {
+case object WebChannel extends Source {
+  val channel = "_web-channel_"
+}
 
-  override def configure(): Unit = {
-
-    bind(classOf[DateTimeService]).to(classOf[DateTimeServiceImpl]).asEagerSingleton()
-
-    bind(classOf[SubmissionService]).to(classOf[SubmissionServiceImpl]).asEagerSingleton()
-
-    bind(classOf[MessageConnector]).to(classOf[MessageConnectorImpl]).asEagerSingleton()
-
-  }
-
+case object XmlChannel extends Source {
+  val channel = "_xml-channel_ "
 }

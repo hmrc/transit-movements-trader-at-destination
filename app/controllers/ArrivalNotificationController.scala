@@ -19,7 +19,7 @@ package controllers
 import javax.inject.Inject
 import models.messages.NormalNotification
 import play.api.libs.json.{JsError, Reads}
-import play.api.mvc.{BodyParsers, _}
+import play.api.mvc._
 import services.SubmissionService
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
@@ -36,7 +36,7 @@ class ArrivalNotificationController @Inject()(
       BadRequest(JsError.toJson(e)).as("application/json")
     ))
 
-  def post() = Action.async(validateJson[NormalNotification]) {
+  def post(): Action[NormalNotification] = Action.async(validateJson[NormalNotification]) {
     implicit request =>
       service.submit(request.body) match {
         case 200 => Future.successful(Ok.as("application/json") )

@@ -99,7 +99,7 @@ class XmlBuilderServiceSpec extends FreeSpec
                     {arrivalNotificationRequest.meta.messageIndication}
                   </MesIdeMES19>
                   <MesTypMES20>
-                    {arrivalNotificationRequest.messageCode}
+                    {arrivalNotificationRequest.messageCode.code}
                   </MesTypMES20>
                   <HEAHEA>
                     <DocNumHEA5>
