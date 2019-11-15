@@ -17,6 +17,7 @@ object AppDependencies {
     "com.typesafe.play"       %% "play-test"                % current,
     "org.pegdown"             %  "pegdown"                  % "1.6.0",
     "org.scalatestplus.play"  %% "scalatestplus-play"       % "3.1.2",
-    "org.scalacheck"          %% "scalacheck"               % "1.14.1"
+    "org.scalacheck"          %% "scalacheck"               % "1.14.1",
+    "com.github.tomakehurst"  %  "wiremock-standalone"      % "2.17.0"
   ).map(_ % "test, it")
 }

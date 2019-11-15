@@ -29,4 +29,8 @@ class AppConfig @Inject()(config: Configuration, servicesConfig: ServicesConfig)
   val graphiteHost: String      = config.get[String]("microservice.metrics.graphite.host")
 
   val env: String               = config.get[String]("env")
+
+  private val eisBaseUrl: String = servicesConfig.baseUrl("eis")
+
+  val eisUrl: String            = eisBaseUrl ++ config.get[String]("microservice.services.eis.uri")
 }
