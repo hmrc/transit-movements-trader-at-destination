@@ -1,8 +1,10 @@
 package connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import generators.ModelGenerators
+import generators.MessageGenerators
+import models.messages.request.ArrivalNotificationRequest
 import models.{Source, WebChannel, XmlChannel}
+import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.{FreeSpec, MustMatchers}
@@ -22,7 +24,7 @@ class MessageConnectorSpec
     with IntegrationPatience
     with WiremockSuite
     with ScalaCheckPropertyChecks
-    with ModelGenerators {
+    with MessageGenerators {
 
   import MessageConnectorSpec._
 
@@ -41,8 +43,8 @@ class MessageConnectorSpec
   "MessageConnector" - {
 
     "return OK when post is successful" in {
-      forAll(genSource, genSuccessfulStatusCodes) {
-        (source, status) =>
+      forAll(genSource, genSuccessfulStatusCodes, arbitrary[ArrivalNotificationRequest]) {
+        (source, status, arrivalNotificationRequest) =>
 
           server.stubFor(
             post(urlEqualTo(url))
@@ -54,7 +56,7 @@ class MessageConnectorSpec
               )
           )
 
-          val result = connector.post("<CC007A>test</CC007A>", "MessageCode", source)
+          val result = connector.post("<CC007A>test</CC007A>", arrivalNotificationRequest.messageCode, source)
 
           whenReady(result) {
             response =>
@@ -65,8 +67,8 @@ class MessageConnectorSpec
     }
 
     "return BadRequest when post is unsuccessful" in {
-      forAll(genSource, genFailedStatusCodes) {
-        (source, status) =>
+      forAll(genSource, genFailedStatusCodes, arbitrary[ArrivalNotificationRequest]) {
+        (source, status, arrivalNotificationRequest) =>
 
           server.stubFor(
             post(urlEqualTo(url))
@@ -77,7 +79,7 @@ class MessageConnectorSpec
               )
           )
 
-          val result = connector.post("<CC007A>test</CC007A>", "MessageCode", source)
+          val result = connector.post("<CC007A>test</CC007A>", arrivalNotificationRequest.messageCode, source)
 
           whenReady(result.failed) {
             response =>

@@ -14,16 +14,13 @@
  * limitations under the License.
  */
 
-package models
+package models.messages.request
 
-sealed trait Source {
-  val channel: String
-}
+import models.messages.MessageCode
 
-case object WebChannel extends Source {
-  val channel = "_web-channel_"
-}
-
-case object XmlChannel extends Source {
-  val channel = "_xml-channel_ "
+trait RequestConstants {
+  val messageCode: MessageCode
+  val syntaxIdentifier: String
+  val rootKey: String
+  val nameSpace: Map[String, String]
 }

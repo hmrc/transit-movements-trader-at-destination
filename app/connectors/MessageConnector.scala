@@ -19,6 +19,7 @@ package connectors
 import com.google.inject.Inject
 import config.AppConfig
 import models.Source
+import models.messages.MessageCode
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
@@ -29,9 +30,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class MessageConnectorImpl @Inject()(config: AppConfig, http: HttpClient) extends MessageConnector {
 
-  // TODO consider creating HttpReads to retrieve response status (to prevent the future from failing)
-
-  def post(xml: String, messageCode: String, source: Source)(implicit  headerCarrier: HeaderCarrier,
+  def post(xml: String, messageCode: MessageCode, source: Source)(implicit  headerCarrier: HeaderCarrier,
              ec: ExecutionContext,
              request: RequestHeader): Future[HttpResponse] = {
 
@@ -40,7 +39,7 @@ class MessageConnectorImpl @Inject()(config: AppConfig, http: HttpClient) extend
       "Content-Type" -> "application/xml",
       "Accept" -> "application/xml",
       "Source" -> source.channel,
-      "MessageCode" -> messageCode
+      "MessageCode" -> messageCode.code
     )
 
     http.POST(url, xml, customHeaders)
@@ -48,7 +47,7 @@ class MessageConnectorImpl @Inject()(config: AppConfig, http: HttpClient) extend
 }
 
 trait MessageConnector {
-  def post(xml: String, messageCode: String, source: Source)(implicit
+  def post(xml: String, messageCode: MessageCode, source: Source)(implicit
              headerCarrier: HeaderCarrier,
              ec: ExecutionContext,
              request: RequestHeader): Future[HttpResponse]

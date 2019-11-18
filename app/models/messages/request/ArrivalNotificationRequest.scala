@@ -16,11 +16,12 @@
 
 package models.messages.request
 
+import models.messages.MessageCode
+
 import scala.collection.immutable.ListMap
 
 
 trait RequestModel
-
 trait RequestModelError
 
 
@@ -33,10 +34,9 @@ case class ArrivalNotificationRequest(
                                        header: Header,
                                        traderDestination: TraderDestination,
                                        customsOfficeOfPresentation: CustomsOfficeOfPresentation
-                                     ) extends ArrivalNotificationRequestConstants with RequestModel
+                                     ) extends RequestConstants with RequestModel {
 
-sealed trait ArrivalNotificationRequestConstants {
-  val messageCode: String = "GB007A"
+  val messageCode: MessageCode = MessageCode("GB007A")
   val syntaxIdentifier: String = "UNOC"
   val rootKey: String = "CC007A"
   val nameSpace: Map[String, String] = ListMap(

@@ -37,7 +37,7 @@ class XmlBuilderService {
       val rootNode: Node = buildStartRoot(arrivalNotificationRequest.rootKey, arrivalNotificationRequest.nameSpace)
 
       val childNodes: NodeSeq = {
-        buildMetaNode(arrivalNotificationRequest.meta, arrivalNotificationRequest.messageCode) ++
+        buildMetaNode(arrivalNotificationRequest.meta, arrivalNotificationRequest.messageCode.code) ++
           buildHeaderNode(arrivalNotificationRequest.header, Format.dateFormatted(dateTime)) ++
           buildTraderDestinationNode(arrivalNotificationRequest.traderDestination) ++
           buildOfficeOfPresentationNode(arrivalNotificationRequest.customsOfficeOfPresentation)

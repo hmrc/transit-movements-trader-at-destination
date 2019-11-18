@@ -14,16 +14,6 @@
  * limitations under the License.
  */
 
-package models
+package models.messages
 
-sealed trait Source {
-  val channel: String
-}
-
-case object WebChannel extends Source {
-  val channel = "_web-channel_"
-}
-
-case object XmlChannel extends Source {
-  val channel = "_xml-channel_ "
-}
+case class MessageCode(code: String)
