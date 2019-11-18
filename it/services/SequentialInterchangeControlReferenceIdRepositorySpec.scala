@@ -20,28 +20,29 @@ import models.messages.request.InterchangeControlReference
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.{FreeSpec, MustMatchers}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import play.api.Application
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import reactivemongo.play.json.ImplicitBSONHandlers._
 import reactivemongo.play.json.collection.JSONCollection
-import repositories.CollectionNames
+import repositories.{CollectionNames, SequentialInterchangeControlReferenceIdRepository}
 import services.mocks.MockDateTimeService
-import services.{DateTimeService, SequentialInterchangeControlReferenceIdService}
+import services.DateTimeService
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class SequentialInterchangeControlReferenceIdServiceSpec
+class SequentialInterchangeControlReferenceIdRepositorySpec
   extends FreeSpec with MustMatchers with MongoSuite with ScalaFutures with GuiceOneAppPerSuite with IntegrationPatience with MockDateTimeService {
 
-  override implicit lazy val app = new GuiceApplicationBuilder()
+  override implicit lazy val app: Application = new GuiceApplicationBuilder()
     .overrides(
       bind[DateTimeService].toInstance(mockTimeService)
     ).build()
 
-  val service = app.injector.instanceOf[SequentialInterchangeControlReferenceIdService]
+  val service: SequentialInterchangeControlReferenceIdRepository = app.injector.instanceOf[SequentialInterchangeControlReferenceIdRepository]
 
-  "SequentialInterchangeControlReferenceIdService" - {
+  "SequentialInterchangeControlReferenceIdRepository" - {
 
     "must generate correct InterchangeControlReference when no record exists within the database" in {
 

@@ -16,7 +16,6 @@
 
 package models
 
-import models._
 import play.api.libs.json._
 
 final case class EnRouteEvent (

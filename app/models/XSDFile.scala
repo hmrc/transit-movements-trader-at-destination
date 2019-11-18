@@ -14,9 +14,13 @@
  * limitations under the License.
  */
 
-package repositories
+package models
 
-object CollectionNames {
-  val InterchangeControlReferenceIdsCollection: String = "icr-ids"
-  val ArrivalNotificationCollection: String = "arrival-notifications"
+trait XSDFile {
+  val filePath: String
 }
+
+object ArrivalNotificationXSD extends XSDFile {
+  val filePath = "/xsd-iconvert/cc007a.xsd"
+}
+
