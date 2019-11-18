@@ -16,6 +16,8 @@
 
 package connectors
 
+import java.util.UUID
+
 import com.google.inject.Inject
 import config.AppConfig
 import models.Source
@@ -39,7 +41,12 @@ class MessageConnectorImpl @Inject()(config: AppConfig, http: HttpClient) extend
       "Content-Type" -> "application/xml",
       "Accept" -> "application/xml",
       "Source" -> source.channel,
-      "MessageCode" -> messageCode.code
+      "MessageCode" -> messageCode.code,
+      "X-Correlation-ID" -> {
+        headerCarrier.sessionId.map(_.value)
+          .getOrElse(UUID.randomUUID().toString)
+      },
+      "X-Forwarded-Host" -> "mdtp"
     )
 
     http.POST(url, xml, customHeaders)
