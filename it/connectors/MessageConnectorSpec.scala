@@ -35,19 +35,22 @@ class MessageConnectorSpec
   private def connector: MessageConnector = app.injector.instanceOf[MessageConnector]
 
   private val genSource: Gen[Source] = Gen.oneOf(Seq(WebChannel, XmlChannel))
-  private val genStatusCodes: Gen[Int] = Gen.choose(400, 500)
+  private val genFailedStatusCodes: Gen[Int] = Gen.choose(400, 599)
+  private val genSuccessfulStatusCodes: Gen[Int] = Gen.choose(200, 299)
 
   "MessageConnector" - {
 
     "return OK when post is successful" in {
-      forAll(genSource) {
-        source =>
+      forAll(genSource, genSuccessfulStatusCodes) {
+        (source, status) =>
 
           server.stubFor(
             post(urlEqualTo(url))
               .withHeader("Content-Type", equalTo("application/xml"))
               .willReturn(
-                ok.withHeader("Content-Type", "application/xml")
+                aResponse()
+                  .withStatus(status)
+                  .withHeader("Content-Type", "application/xml")
               )
           )
 
@@ -55,14 +58,14 @@ class MessageConnectorSpec
 
           whenReady(result) {
             response =>
-              response mustBe 200
+              response.status mustBe status
           }
       }
 
     }
 
     "return BadRequest when post is unsuccessful" in {
-      forAll(genSource, genStatusCodes) {
+      forAll(genSource, genFailedStatusCodes) {
         (source, status) =>
 
           server.stubFor(
@@ -76,9 +79,9 @@ class MessageConnectorSpec
 
           val result = connector.post("<CC007A>test</CC007A>", "MessageCode", source)
 
-          whenReady(result) {
+          whenReady(result.failed) {
             response =>
-              response mustBe 400
+              response mustBe an[Exception]
           }
       }
     }
