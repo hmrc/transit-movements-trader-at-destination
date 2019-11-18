@@ -21,19 +21,24 @@ import org.scalatest.{BeforeAndAfterEach, Suite}
 import org.scalatestplus.mockito.MockitoSugar
 import services.SubmissionService
 import org.mockito.Mockito._
+import uk.gov.hmrc.http.HeaderCarrier
+
+import scala.concurrent.ExecutionContext.Implicits.global
 
 trait MockSubmissionService extends MockitoSugar with BeforeAndAfterEach {
   this: Suite =>
 
-  val mockSubmissionService = mock[SubmissionService]
+  implicit val hc: HeaderCarrier = HeaderCarrier()
+
+  val mockSubmissionService: SubmissionService = mock[SubmissionService]
 
   override def beforeEach(): Unit = {
     super.beforeEach()
     reset(mockSubmissionService)
   }
 
-  def mockSubmit(response: Int, arrivalNotification: ArrivalNotification): Unit = {
-    when(mockSubmissionService.submit(arrivalNotification))
-      .thenReturn(response)
-  }
+//  def mockSubmit(response: Int, arrivalNotification: ArrivalNotification) = {
+//    when(mockSubmissionService.submit(arrivalNotification))
+//      .thenReturn(response)
+//  }
 }

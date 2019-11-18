@@ -18,43 +18,44 @@ package services
 
 import java.time.LocalDateTime
 
+import akka.http.scaladsl.model.HttpHeader.ParsingResult.Ok
 import config.AppConfig
 import connectors.MessageConnector
 import javax.inject.Inject
 import models.messages.ArrivalNotification
-import models.messages.request.{ArrivalNotificationRequest, InterchangeControlReference, MessageSender, RequestModelError}
+import models.messages.request.{InterchangeControlReference, MessageSender, RequestModelError}
 import models.{ArrivalNotificationXSD, WebChannel}
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
 
-class SubmissionService @Inject()(
+class SubmissionServiceImpl @Inject()(
                                    messageConnector: MessageConnector,
                                    submissionModelService: SubmissionModelService,
                                    appConfig: AppConfig,
                                    xmlBuilderService: XmlBuilderService,
                                    xmlValidationService: XmlValidationService
-                                 ) {
+                                 ) extends SubmissionService {
 
   def submit(arrivalNotification: ArrivalNotification)
-            (implicit hc: HeaderCarrier, ec: ExecutionContext): Try[Future[HttpResponse]] = {
+            (implicit hc: HeaderCarrier, ec: ExecutionContext): Either[RequestModelError, Future[HttpResponse]] = {
 
     val messageSender = MessageSender(appConfig.env, "eori")
     val interchangeControllerReference = InterchangeControlReference("11122017", 1)
 
-    val request: Either[RequestModelError, ArrivalNotificationRequest] = {
-      submissionModelService.convertFromArrivalNotification(arrivalNotification, messageSender, interchangeControllerReference)
-    }
-
-    val builder = xmlBuilderService.buildXml(request.right.get)(dateTime = LocalDateTime.now())
-
-    val xmlValidation: Try[String] = xmlValidationService.validate(builder.right.get.toString(), ArrivalNotificationXSD)
-
-    xmlValidation.map {
-      xml =>
-        messageConnector.post(xml, request.right.get.messageCode, WebChannel)
+    for {
+      request   <- submissionModelService.convertFromArrivalNotification(arrivalNotification, messageSender, interchangeControllerReference).right
+      xml       <- xmlBuilderService.buildXml(request)(dateTime = LocalDateTime.now()).right
+      _         <- xmlValidationService.validate(xml.toString(), ArrivalNotificationXSD).right
+    } yield {
+      messageConnector.post(xml.toString, request.messageCode, WebChannel)
     }
   }
+
+}
+
+trait SubmissionService {
+  def submit(arrivalNotification: ArrivalNotification)
+            (implicit hc: HeaderCarrier, ec: ExecutionContext): Either[RequestModelError, Future[HttpResponse]]
 
 }

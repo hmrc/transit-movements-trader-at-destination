@@ -16,19 +16,33 @@
 
 package controllers
 
+import java.time.{LocalDate, LocalDateTime}
+
 import generators.MessageGenerators
-import models.messages.NormalNotification
+import models.TraderWithEori
+import models.messages.request.FailedToValidateXml
+import models.messages.{ArrivalNotification, NormalNotification}
+import org.mockito.Mockito._
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalatest.{FreeSpec, MustMatchers, OptionValues}
+import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.{BeforeAndAfterEach, FreeSpec, MustMatchers, OptionValues}
+import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
+import play.api.Application
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
+import play.api.mvc.Result
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import services.SubmissionService
-import services.mocks.MockSubmissionService
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
+import org.mockito.Matchers._
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+
 
 class ArrivalNotificationControllerSpec extends
   FreeSpec with
@@ -37,7 +51,8 @@ class ArrivalNotificationControllerSpec extends
   MessageGenerators with
   GuiceOneAppPerSuite with
   OptionValues with
-  MockSubmissionService {
+  MockitoSugar with
+  BeforeAndAfterEach with ScalaFutures {
 
   /**
     * SHOULD
@@ -48,50 +63,63 @@ class ArrivalNotificationControllerSpec extends
     * Return 504 (check this doesn't happen automatically
     */
 
-  override implicit lazy val app = new GuiceApplicationBuilder()
+  implicit val hc: HeaderCarrier = HeaderCarrier()
+
+  val mockSubmissionService: SubmissionService = mock[SubmissionService]
+
+  override implicit lazy val app: Application = new GuiceApplicationBuilder()
     .overrides(
       bind[SubmissionService].toInstance(mockSubmissionService)
     ).build()
 
-  "post" - {
-
-    "must return BAD_REQUEST when can't be converted to ArrivalNotification" in {
-
-      val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
-        .withJsonBody(Json.obj("key" -> "value"))
-      val result = route(app, request).value
-
-      status(result) mustEqual BAD_REQUEST
-    }
-
-    "must return BAD_GATEWAY when the EIS service is down" in {
-
-      for (
-        normalNotification <- arbitrary[NormalNotification]
-      ) yield {
-        mockSubmit(502, normalNotification)
-
-        val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
-          .withJsonBody(Json.toJson(normalNotification))
-        val result = route(app, request).value
-
-        status(result) mustEqual BAD_GATEWAY
-      }
-    }
+  override def beforeEach(): Unit = {
+    super.beforeEach()
+    reset(mockSubmissionService)
   }
 
-  "must return OK when passed valid NormalNotification" in {
+  val stuff = NormalNotification("test", "test", LocalDate.now(), None, TraderWithEori("woa", None, None, None, None, None), "sadsf", Seq.empty)
 
-    for (
-      normalNotification <- arbitrary[NormalNotification]
-    ) yield {
-      mockSubmit(200, normalNotification)
+  "post" - {
+    
+    "must return BAD_GATEWAY when the EIS service is down" in {
+
+      when(mockSubmissionService.submit(any())(any(), any()))
+        .thenReturn(Right(Future.failed(new Exception("woa"))))
+
+
+      intercept[Exception] {
+
+        val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
+          .withJsonBody(Json.toJson(stuff))
+
+        route(app, request).value
+      }
+    }
+
+    "must return OK when passed valid NormalNotification" in {
+
+      when(mockSubmissionService.submit(any())(any(), any()))
+        .thenReturn(Right(Future.successful(HttpResponse(OK))))
 
       val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
-        .withJsonBody(Json.toJson(normalNotification))
+        .withJsonBody(Json.toJson(stuff))
+
       val result = route(app, request).value
 
       status(result) mustEqual OK
+    }
+
+    "summit" in {
+
+      when(mockSubmissionService.submit(any())(any(), any()))
+        .thenReturn(Left(FailedToValidateXml))
+
+      val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
+        .withJsonBody(Json.toJson(stuff))
+
+      val result = route(app, request).value
+
+      status(result) mustEqual 400
     }
   }
 

@@ -56,7 +56,7 @@ class XmlValidationServiceSpec extends FreeSpec with MustMatchers {
           |</CC007A>
         """.stripMargin
 
-      xmlValidationService.validate(xml, ArrivalNotificationXSD).isSuccess mustBe true
+      xmlValidationService.validate(xml, ArrivalNotificationXSD) mustBe Right
     }
 
     "must fail when validating a ArrivalNotification xml with missing elements" in {
@@ -79,7 +79,7 @@ class XmlValidationServiceSpec extends FreeSpec with MustMatchers {
           |</CC007A>
         """.stripMargin
 
-      xmlValidationService.validate(xml, ArrivalNotificationXSD).isFailure mustBe true
+      xmlValidationService.validate(xml, ArrivalNotificationXSD) mustBe Left
     }
 
     "must fail when validating a ArrivalNotification xml with invalid fields" in {
@@ -113,7 +113,7 @@ class XmlValidationServiceSpec extends FreeSpec with MustMatchers {
           |</CC007A>
         """.stripMargin
 
-      xmlValidationService.validate(xml, ArrivalNotificationXSD).isFailure mustBe true
+      xmlValidationService.validate(xml, ArrivalNotificationXSD) mustBe Left
     }
   }
 

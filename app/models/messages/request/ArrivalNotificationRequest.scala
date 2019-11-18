@@ -25,8 +25,9 @@ trait RequestModel
 trait RequestModelError
 
 
-object FailedToConvert    extends RequestModelError
-object FailedToCreateXml  extends RequestModelError
+object FailedToConvert      extends RequestModelError
+object FailedToCreateXml    extends RequestModelError
+object FailedToValidateXml  extends RequestModelError
 
 
 case class ArrivalNotificationRequest(
