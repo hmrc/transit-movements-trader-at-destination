@@ -16,15 +16,45 @@
 
 package services
 
+import java.time.LocalDateTime
+
+import config.AppConfig
+import connectors.MessageConnector
+import javax.inject.Inject
 import models.messages.ArrivalNotification
+import models.messages.request.{ArrivalNotificationRequest, InterchangeControlReference, MessageSender, RequestModelError}
+import models.{ArrivalNotificationXSD, WebChannel}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 
-class SubmissionServiceImpl extends SubmissionService {
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
-  def submit(arrivalNotification: ArrivalNotification): Int = {
-    200
+class SubmissionService @Inject()(
+                                   messageConnector: MessageConnector,
+                                   submissionModelService: SubmissionModelService,
+                                   appConfig: AppConfig,
+                                   xmlBuilderService: XmlBuilderService,
+                                   xmlValidationService: XmlValidationService
+                                 ) {
+
+  def submit(arrivalNotification: ArrivalNotification)
+            (implicit hc: HeaderCarrier, ec: ExecutionContext): Try[Future[HttpResponse]] = {
+
+    val messageSender = MessageSender(appConfig.env, "eori")
+    val interchangeControllerReference = InterchangeControlReference("11122017", 1)
+
+    val request: Either[RequestModelError, ArrivalNotificationRequest] = {
+      submissionModelService.convertFromArrivalNotification(arrivalNotification, messageSender, interchangeControllerReference)
+    }
+
+    val builder = xmlBuilderService.buildXml(request.right.get)(dateTime = LocalDateTime.now())
+
+    val xmlValidation: Try[String] = xmlValidationService.validate(builder.right.get.toString(), ArrivalNotificationXSD)
+
+    xmlValidation.map {
+      xml =>
+        messageConnector.post(xml, request.right.get.messageCode, WebChannel)
+    }
   }
-}
 
-trait SubmissionService {
-  def submit(arrivalNotification: ArrivalNotification): Int
 }

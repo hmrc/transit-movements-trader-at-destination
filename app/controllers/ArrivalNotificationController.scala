@@ -39,8 +39,8 @@ class ArrivalNotificationController @Inject()(
   def post(): Action[NormalNotification] = Action.async(validateJson[NormalNotification]) {
     implicit request =>
       service.submit(request.body) match {
-        case 200 => Future.successful(Ok.as("application/json") )
-        case _ => Future.successful(BadGateway)
+        case 200  => Future.successful(Ok.as("application/json") )
+        case _    => Future.successful(BadRequest)
       }
   }
 }
