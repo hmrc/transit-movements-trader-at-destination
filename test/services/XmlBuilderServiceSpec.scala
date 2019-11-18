@@ -63,11 +63,7 @@ class XmlBuilderServiceSpec extends FreeSpec
 
             val validXml: Node = {
               trim(
-                <CC007A
-                xsi:schemaLocation="http://ncts.dgtaxud.ec/CC007A"
-                xmlns="http://ncts.dgtaxud.ec/CC007A"
-                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                xmlns:complex_ncts="http://ncts.dgtaxud.ec/complex_ncts">
+                <CC007A>
                   <SynIdeMES1>
                     {arrivalNotificationRequest.syntaxIdentifier}
                   </SynIdeMES1>
@@ -92,9 +88,9 @@ class XmlBuilderServiceSpec extends FreeSpec
                   <AppRefMES14>
                     {arrivalNotificationRequest.meta.applicationReference}
                   </AppRefMES14>
-                  <MesIdeMES18>
+                  <TesIndMES18>
                     {arrivalNotificationRequest.meta.testIndicator}
-                  </MesIdeMES18>
+                  </TesIndMES18>
                   <MesIdeMES19>
                     {arrivalNotificationRequest.meta.messageIndication}
                   </MesIdeMES19>
@@ -118,9 +114,9 @@ class XmlBuilderServiceSpec extends FreeSpec
                     <ArrAgrLocOfGooHEA63LNG>
                       {arrivalNotificationRequest.header.languageCode}
                     </ArrAgrLocOfGooHEA63LNG>
-                    <ArrivalAgreedLocationOfGoodsLNG>
+                    <ArrAutLocOfGooHEA65>
                       {arrivalNotificationRequest.header.languageCode}
-                    </ArrivalAgreedLocationOfGoodsLNG>
+                    </ArrAutLocOfGooHEA65>
                     <SimProFlaHEA132>
                       {arrivalNotificationRequest.header.simplifiedProcedureFlag}
                     </SimProFlaHEA132>

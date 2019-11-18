@@ -97,7 +97,7 @@ class XmlBuilderService {
     buildOptionalElem(meta.priority, "PriMES15") ++
     buildOptionalElem(meta.acknowledgementRequest, "AckReqMES16") ++
     buildOptionalElem(meta.communicationsAgreementId, "ComAgrIdMES17") ++
-    <MesIdeMES18>{meta.testIndicator}</MesIdeMES18> ++
+    <TesIndMES18>{meta.testIndicator}</TesIndMES18> ++
     <MesIdeMES19>{meta.messageIndication}</MesIdeMES19> ++
     <MesTypMES20>{messageCode}</MesTypMES20> ++
     buildOptionalElem(meta.commonAccessReference, "ComAccRefMES21") ++
@@ -118,7 +118,7 @@ class XmlBuilderService {
         buildOptionalElem(header.arrivalAgreedLocationOfGoods, "ArrAgrLocOfGooHEA63")
       }
       <ArrAgrLocOfGooHEA63LNG>{header.languageCode}</ArrAgrLocOfGooHEA63LNG>
-      <ArrivalAgreedLocationOfGoodsLNG>{header.languageCode}</ArrivalAgreedLocationOfGoodsLNG>
+      <ArrAutLocOfGooHEA65>{header.languageCode}</ArrAutLocOfGooHEA65>
       {
         buildOptionalElem(header.arrivalAgreedLocationOfGoods, "ArrAutLocOfGooHEA65")
       }

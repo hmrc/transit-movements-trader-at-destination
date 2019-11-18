@@ -16,15 +16,46 @@
 
 package services
 
+import java.time.LocalDateTime
+
+import config.AppConfig
+import connectors.MessageConnector
+import javax.inject.Inject
+import models.ArrivalNotificationXSD
 import models.messages.ArrivalNotification
+import models.messages.request.{InterchangeControlReference, MessageSender, RequestModelError}
+import uk.gov.hmrc.http.HeaderCarrier
 
-class SubmissionServiceImpl extends SubmissionService {
+import scala.concurrent.ExecutionContext
+import scala.xml.Node
 
-  def submit(arrivalNotification: ArrivalNotification): Int = {
-    200
+
+class SubmissionServiceImpl @Inject()(
+                                   messageConnector: MessageConnector,
+                                   submissionModelService: SubmissionModelService,
+                                   appConfig: AppConfig,
+                                   xmlBuilderService: XmlBuilderService,
+                                   xmlValidationService: XmlValidationService
+                                 ) extends SubmissionService {
+
+  def buildXml(
+              arrivalNotification: ArrivalNotification,
+              interchangeControllerReference: InterchangeControlReference
+            )(implicit hc: HeaderCarrier, ec: ExecutionContext): Either[RequestModelError, Node] = {
+
+    val messageSender = MessageSender(appConfig.env, "eori")
+
+    for {
+      request   <- submissionModelService.convertFromArrivalNotification(arrivalNotification, messageSender, interchangeControllerReference).right
+      xml       <- xmlBuilderService.buildXml(request)(dateTime = LocalDateTime.now()).right
+      _         <- xmlValidationService.validate(xml.toString(), ArrivalNotificationXSD).right
+    } yield xml
   }
+
 }
 
 trait SubmissionService {
-  def submit(arrivalNotification: ArrivalNotification): Int
+  def buildXml(arrivalNotification: ArrivalNotification, interchangeControllerReference: InterchangeControlReference)
+            (implicit hc: HeaderCarrier, ec: ExecutionContext): Either[RequestModelError, Node]
+
 }

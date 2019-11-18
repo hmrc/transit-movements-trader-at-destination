@@ -26,7 +26,7 @@ class SubmissionModelService @Inject()(appConfig: AppConfig){
 
   def convertFromArrivalNotification[A](arrivalNotification: A,
                                         messageSender: MessageSender,
-                                        interchangeControlReference: InterchangeControlReference): Either[RequestModelError, RequestModel] = arrivalNotification match {
+                                        interchangeControlReference: InterchangeControlReference): Either[RequestModelError, ArrivalNotificationRequest] = arrivalNotification match {
     case arrivalNotification: NormalNotification =>
 
       val meta              = buildMeta(messageSender: MessageSender, interchangeControlReference)

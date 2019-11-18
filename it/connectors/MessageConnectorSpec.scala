@@ -62,7 +62,7 @@ class MessageConnectorSpec
 
           server.stubFor(
             post(urlEqualTo(url))
-              .withHeader("Content-Type", equalTo("application/xml"))
+//              .withHeader("Content-Type", equalTo("application/xml"))
               .withHeader("X-Correlation-ID", headerCarrierPattern)
               .withHeader("X-Forwarded-Host", equalTo("mdtp"))
               .willReturn(
@@ -90,7 +90,7 @@ class MessageConnectorSpec
 
           server.stubFor(
             post(urlEqualTo(url))
-              .withHeader("Content-Type", equalTo("application/xml"))
+//              .withHeader("Content-Type", equalTo("application/xml"))
               .withHeader("X-Correlation-ID", headerCarrierPattern)
               .withHeader("X-Forwarded-Host", equalTo("mdtp"))
               .willReturn(
@@ -113,5 +113,5 @@ class MessageConnectorSpec
 
 object MessageConnectorSpec {
   private implicit val rh: RequestHeader = FakeRequest("", "")
-  private val url = "/message-notification"
+  private val url = "/common-transit-convention-trader-at-destination/message-notification"
 }
