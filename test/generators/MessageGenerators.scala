@@ -20,7 +20,7 @@ import java.time.LocalDate
 
 import models.messages._
 import models.messages.request._
-import models.{EnRouteEvent, RejectionError, Trader, TraderWithEori, TraderWithoutEori}
+import models.{EnRouteEvent, MovementReferenceNumber, RejectionError, Trader, TraderWithEori, TraderWithoutEori}
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.{Arbitrary, Gen}
 
@@ -71,7 +71,7 @@ trait MessageGenerators extends ModelGenerators {
     Arbitrary {
 
       for {
-        mrn                <- arbitrary[String]
+        mrn                <- arbitrary[MovementReferenceNumber].map(_.toString())
         place              <- arbitrary[String]
         date               <- datesBetween(LocalDate.of(1900, 1, 1), LocalDate.now)
         subPlace           <- arbitrary[Option[String]]
@@ -85,7 +85,7 @@ trait MessageGenerators extends ModelGenerators {
     Arbitrary {
 
       for {
-        mrn                <- arbitrary[String]
+        mrn                <- arbitrary[MovementReferenceNumber].map(_.toString())
         place              <- arbitrary[String]
         date               <- datesBetween(LocalDate.of(1900, 1, 1), LocalDate.now)
         approvedLocation   <- arbitrary[Option[String]]
