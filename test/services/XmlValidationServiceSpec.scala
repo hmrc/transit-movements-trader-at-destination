@@ -16,12 +16,12 @@
 
 package services
 
+import base.SpecBase
 import models.ArrivalNotificationXSD
 import models.messages.request._
-import org.scalatest.{FreeSpec, MustMatchers}
 
 
-class XmlValidationServiceSpec extends FreeSpec with MustMatchers {
+class XmlValidationServiceSpec extends SpecBase {
 
   private val xmlValidationService = new XmlValidationService
 
