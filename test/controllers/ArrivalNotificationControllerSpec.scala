@@ -16,83 +16,80 @@
 
 package controllers
 
-import java.time.{LocalDate, LocalDateTime}
-
+import base.SpecBase
 import generators.MessageGenerators
-import models.TraderWithEori
-import models.messages.request.FailedToValidateXml
-import models.messages.{ArrivalNotification, NormalNotification}
+import models.messages.request.{FailedToConvert, FailedToCreateXml, FailedToValidateXml}
+import org.mockito.Matchers._
 import org.mockito.Mockito._
-import org.scalacheck.Arbitrary.arbitrary
-import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.{BeforeAndAfterEach, FreeSpec, MustMatchers, OptionValues}
-import org.scalatestplus.mockito.MockitoSugar
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import play.api.Application
 import play.api.inject.bind
-import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
-import play.api.mvc.Result
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import services.SubmissionService
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
-import org.mockito.Matchers._
+import uk.gov.hmrc.http.{BadGatewayException, GatewayTimeoutException, HttpResponse, UnauthorizedException}
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 
-class ArrivalNotificationControllerSpec extends
-  FreeSpec with
-  MustMatchers with
-  ScalaCheckPropertyChecks with
-  MessageGenerators with
-  GuiceOneAppPerSuite with
-  OptionValues with
-  MockitoSugar with
-  BeforeAndAfterEach with ScalaFutures {
+class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckPropertyChecks with MessageGenerators with BeforeAndAfterEach {
 
-  /**
-    * SHOULD
-    * Return 200 on successful conversion to ArrivalNotification
-    * Return 400 when ArrivalNotification could not be built
-    * Return 401 when user isn't authenticated
-    * Return 502 if EIS is down
-    * Return 504 (check this doesn't happen automatically
-    */
-
-  implicit val hc: HeaderCarrier = HeaderCarrier()
-
-  val mockSubmissionService: SubmissionService = mock[SubmissionService]
-
-  override implicit lazy val app: Application = new GuiceApplicationBuilder()
-    .overrides(
-      bind[SubmissionService].toInstance(mockSubmissionService)
-    ).build()
+  private val mockSubmissionService: SubmissionService = mock[SubmissionService]
+  private val application = {
+    applicationBuilder
+      .overrides(bind[SubmissionService].toInstance(mockSubmissionService)).build()
+  }
 
   override def beforeEach(): Unit = {
     super.beforeEach()
     reset(mockSubmissionService)
   }
 
-  val stuff = NormalNotification("test", "test", LocalDate.now(), None, TraderWithEori("woa", None, None, None, None, None), "sadsf", Seq.empty)
-
   "post" - {
-    
+
     "must return BAD_GATEWAY when the EIS service is down" in {
 
       when(mockSubmissionService.submit(any())(any(), any()))
-        .thenReturn(Right(Future.failed(new Exception("woa"))))
+        .thenReturn(Right(Future.failed(new BadGatewayException(""))))
 
+      val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
+        .withJsonBody(Json.toJson(normalNotification))
 
-      intercept[Exception] {
+      val result = route(application, request).value
 
-        val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
-          .withJsonBody(Json.toJson(stuff))
+      whenReady(result.failed) {
+        _ mustBe an[BadGatewayException]
+      }
+    }
 
-        route(app, request).value
+    "must return UNAUTHORIZED when user is unauthenticated" in {
+
+      when(mockSubmissionService.submit(any())(any(), any()))
+        .thenReturn(Right(Future.failed(new UnauthorizedException(""))))
+
+      val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
+        .withJsonBody(Json.toJson(normalNotification))
+
+      val result = route(application, request).value
+
+      whenReady(result.failed) {
+        _ mustBe an[UnauthorizedException]
+      }
+    }
+
+    "must return GATEWAY_TIMEOUT" in {
+
+      when(mockSubmissionService.submit(any())(any(), any()))
+        .thenReturn(Right(Future.failed(new GatewayTimeoutException(""))))
+
+      val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
+        .withJsonBody(Json.toJson(normalNotification))
+
+      val result = route(application, request).value
+
+      whenReady(result.failed) {
+        _ mustBe an[GatewayTimeoutException]
       }
     }
 
@@ -102,24 +99,50 @@ class ArrivalNotificationControllerSpec extends
         .thenReturn(Right(Future.successful(HttpResponse(OK))))
 
       val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
-        .withJsonBody(Json.toJson(stuff))
+        .withJsonBody(Json.toJson(normalNotification))
 
-      val result = route(app, request).value
+      val result = route(application, request).value
 
       status(result) mustEqual OK
     }
 
-    "summit" in {
+    "must return a BadRequest when conversion to xml has failed" in {
+
+      when(mockSubmissionService.submit(any())(any(), any()))
+        .thenReturn(Left(FailedToCreateXml))
+
+      val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
+        .withJsonBody(Json.toJson(normalNotification))
+
+      val result = route(application, request).value
+
+      status(result) mustEqual BAD_REQUEST
+    }
+
+    "must return a BadRequest when conversion to request model has failed" in {
+
+      when(mockSubmissionService.submit(any())(any(), any()))
+        .thenReturn(Left(FailedToConvert))
+
+      val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
+        .withJsonBody(Json.toJson(normalNotification))
+
+      val result = route(application, request).value
+
+      status(result) mustEqual BAD_REQUEST
+    }
+
+    "must return a BadRequest when xml validation has failed" in {
 
       when(mockSubmissionService.submit(any())(any(), any()))
         .thenReturn(Left(FailedToValidateXml))
 
       val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
-        .withJsonBody(Json.toJson(stuff))
+        .withJsonBody(Json.toJson(normalNotification))
 
-      val result = route(app, request).value
+      val result = route(application, request).value
 
-      status(result) mustEqual 400
+      status(result) mustEqual BAD_REQUEST
     }
   }
 

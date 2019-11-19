@@ -17,7 +17,9 @@
 package services
 
 import models.ArrivalNotificationXSD
+import models.messages.request._
 import org.scalatest.{FreeSpec, MustMatchers}
+
 
 class XmlValidationServiceSpec extends FreeSpec with MustMatchers {
 
@@ -56,7 +58,7 @@ class XmlValidationServiceSpec extends FreeSpec with MustMatchers {
           |</CC007A>
         """.stripMargin
 
-      xmlValidationService.validate(xml, ArrivalNotificationXSD) mustBe Right
+      xmlValidationService.validate(xml, ArrivalNotificationXSD) mustBe a[Right[_, _]]
     }
 
     "must fail when validating a ArrivalNotification xml with missing elements" in {
@@ -79,7 +81,7 @@ class XmlValidationServiceSpec extends FreeSpec with MustMatchers {
           |</CC007A>
         """.stripMargin
 
-      xmlValidationService.validate(xml, ArrivalNotificationXSD) mustBe Left
+      xmlValidationService.validate(xml, ArrivalNotificationXSD) mustBe Left(FailedToValidateXml)
     }
 
     "must fail when validating a ArrivalNotification xml with invalid fields" in {
@@ -113,7 +115,7 @@ class XmlValidationServiceSpec extends FreeSpec with MustMatchers {
           |</CC007A>
         """.stripMargin
 
-      xmlValidationService.validate(xml, ArrivalNotificationXSD) mustBe Left
+      xmlValidationService.validate(xml, ArrivalNotificationXSD) mustBe Left(FailedToValidateXml)
     }
   }
 

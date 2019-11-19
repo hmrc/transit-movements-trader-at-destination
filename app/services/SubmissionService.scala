@@ -18,7 +18,6 @@ package services
 
 import java.time.LocalDateTime
 
-import akka.http.scaladsl.model.HttpHeader.ParsingResult.Ok
 import config.AppConfig
 import connectors.MessageConnector
 import javax.inject.Inject

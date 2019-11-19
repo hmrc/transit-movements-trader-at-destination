@@ -17,7 +17,7 @@
 package controllers
 
 import javax.inject.Inject
-import models.messages.{ArrivalNotification, NormalNotification}
+import models.messages.ArrivalNotification
 import play.api.libs.json.{JsError, Reads}
 import play.api.mvc._
 import services.SubmissionService
@@ -39,16 +39,9 @@ class ArrivalNotificationController @Inject()(
   def post(): Action[ArrivalNotification] = Action.async(validateJson[ArrivalNotification]) {
     implicit request =>
 
-      val test: Future[Status] = service.submit(request.body) match {
+      service.submit(request.body) match {
         case Right(response) => response.map(_ => Ok)
         case Left(_) => Future.successful(BadRequest)
       }
-
-      println(s"\n\n $test")
-      println(s"\n\n ${service.submit(request.body)}")
-
-      test
-
-
   }
 }
