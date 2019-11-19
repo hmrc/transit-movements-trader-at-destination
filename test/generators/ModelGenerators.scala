@@ -46,6 +46,15 @@ trait ModelGenerators {
     }
   }
 
+  implicit lazy  val arbitraryMovementReferenceNumber: Arbitrary[MovementReferenceNumber] =
+    Arbitrary {
+      for {
+        year    <- Gen.choose(0, 99).map(y => f"$y%02d")
+        country <- Gen.pick(2, 'A' to 'Z')
+        serial  <- Gen.pick(13, ('A' to 'Z') ++ ('0' to '9'))
+      } yield MovementReferenceNumber(year, country.mkString, serial.mkString)
+    }
+
   implicit lazy val arbitraryProcedureType: Arbitrary[ProcedureType] =
     Arbitrary {
       Gen.oneOf(ProcedureType.Normal, ProcedureType.Simplified)
