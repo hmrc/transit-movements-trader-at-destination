@@ -26,6 +26,7 @@ import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.inject.bind
+import repositories.ArrivalNotificationRepository
 import uk.gov.hmrc.http.HttpResponse
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -38,6 +39,7 @@ class SubmissionServiceSpec extends SpecBase with BeforeAndAfterEach with ScalaC
   private val mockXmlBuilderService: XmlBuilderService = mock[XmlBuilderService]
   private val mockXmlValidationService: XmlValidationService = mock[XmlValidationService]
   private val mockMessageConnector: MessageConnector = mock[MessageConnector]
+  private val mockArrivalNotificationRepository = mock[ArrivalNotificationRepository]
 
   private val application = {
     applicationBuilder
@@ -45,6 +47,7 @@ class SubmissionServiceSpec extends SpecBase with BeforeAndAfterEach with ScalaC
       .overrides(bind[XmlBuilderService].toInstance(mockXmlBuilderService))
       .overrides(bind[XmlValidationService].toInstance(mockXmlValidationService))
       .overrides(bind[MessageConnector].toInstance(mockMessageConnector))
+      .overrides(bind[ArrivalNotificationRepository].toInstance(mockArrivalNotificationRepository))
       .build()
   }
 
@@ -53,9 +56,12 @@ class SubmissionServiceSpec extends SpecBase with BeforeAndAfterEach with ScalaC
     reset(mockSubmissionModelService)
     reset(mockXmlBuilderService)
     reset(mockXmlValidationService)
+    reset(mockMessageConnector)
+    reset(mockArrivalNotificationRepository)
   }
 
   private val submissionService: SubmissionService = application.injector.instanceOf[SubmissionService]
+  private val interchangeControlReference: InterchangeControlReference = InterchangeControlReference("", 1)
 
   "Submit" - {
 
@@ -64,7 +70,7 @@ class SubmissionServiceSpec extends SpecBase with BeforeAndAfterEach with ScalaC
       when(mockSubmissionModelService.convertFromArrivalNotification(any(), any(), any()))
         .thenReturn(Left(FailedToConvert))
 
-      submissionService.submit(normalNotification) mustBe Left(FailedToConvert)
+      submissionService.submit(normalNotification, interchangeControlReference) mustBe Left(FailedToConvert)
     }
 
     "must return a RequestModelError when xml builder fails" in {
@@ -79,7 +85,7 @@ class SubmissionServiceSpec extends SpecBase with BeforeAndAfterEach with ScalaC
           when(mockXmlBuilderService.buildXml(any())(any()))
             .thenReturn(Left(FailedToCreateXml))
 
-          submissionService.submit(normalNotification) mustBe Left(FailedToCreateXml)
+          submissionService.submit(normalNotification, interchangeControlReference) mustBe Left(FailedToCreateXml)
       }
     }
 
@@ -98,7 +104,7 @@ class SubmissionServiceSpec extends SpecBase with BeforeAndAfterEach with ScalaC
           when(mockXmlValidationService.validate(any(), any()))
             .thenReturn(Left(FailedToValidateXml))
 
-          submissionService.submit(normalNotification) mustBe Left(FailedToValidateXml)
+          submissionService.submit(normalNotification, interchangeControlReference) mustBe Left(FailedToValidateXml)
       }
     }
 
@@ -120,7 +126,7 @@ class SubmissionServiceSpec extends SpecBase with BeforeAndAfterEach with ScalaC
           when(mockMessageConnector.post(any(), any(), any())(any(), any()))
             .thenReturn(Future.successful(HttpResponse(200)))
 
-          val result = submissionService.submit(normalNotification).right.toOption.value
+          val result = submissionService.submit(normalNotification, interchangeControlReference).right.toOption.value
 
           whenReady(result) {
             _.status mustBe 200

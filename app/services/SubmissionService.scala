@@ -28,6 +28,7 @@ import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 
 import scala.concurrent.{ExecutionContext, Future}
 
+
 class SubmissionServiceImpl @Inject()(
                                    messageConnector: MessageConnector,
                                    submissionModelService: SubmissionModelService,
@@ -36,11 +37,12 @@ class SubmissionServiceImpl @Inject()(
                                    xmlValidationService: XmlValidationService
                                  ) extends SubmissionService {
 
-  def submit(arrivalNotification: ArrivalNotification)
-            (implicit hc: HeaderCarrier, ec: ExecutionContext): Either[RequestModelError, Future[HttpResponse]] = {
+  def submit(
+              arrivalNotification: ArrivalNotification,
+              interchangeControllerReference: InterchangeControlReference
+            )(implicit hc: HeaderCarrier, ec: ExecutionContext): Either[RequestModelError, Future[HttpResponse]] = {
 
     val messageSender = MessageSender(appConfig.env, "eori")
-    val interchangeControllerReference = InterchangeControlReference("11122017", 1)
 
     for {
       request   <- submissionModelService.convertFromArrivalNotification(arrivalNotification, messageSender, interchangeControllerReference).right
@@ -54,7 +56,7 @@ class SubmissionServiceImpl @Inject()(
 }
 
 trait SubmissionService {
-  def submit(arrivalNotification: ArrivalNotification)
+  def submit(arrivalNotification: ArrivalNotification, interchangeControllerReference: InterchangeControlReference)
             (implicit hc: HeaderCarrier, ec: ExecutionContext): Either[RequestModelError, Future[HttpResponse]]
 
 }

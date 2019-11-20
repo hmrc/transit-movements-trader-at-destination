@@ -20,6 +20,7 @@ import javax.inject.Inject
 import models.messages.ArrivalNotification
 import play.api.libs.json.{JsError, Reads}
 import play.api.mvc._
+import repositories.{ArrivalNotificationRepository, SequentialInterchangeControlReferenceIdRepository}
 import services.SubmissionService
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
@@ -29,7 +30,11 @@ import scala.concurrent.Future
 class ArrivalNotificationController @Inject()(
                                                cc: ControllerComponents,
                                                service: SubmissionService,
-                                               bodyParsers: PlayBodyParsers) extends BackendController(cc) {
+                                               bodyParsers: PlayBodyParsers,
+                                               sequentialInterchangeControlReferenceIdRepository: SequentialInterchangeControlReferenceIdRepository,
+                                               arrivalNotificationRepository: ArrivalNotificationRepository
+                                             )
+  extends BackendController(cc) {
 
   def validateJson[A: Reads]: BodyParser[A] = bodyParsers.json.validate(
     _.validate[A].asEither.left.map(e =>
@@ -39,9 +44,20 @@ class ArrivalNotificationController @Inject()(
   def post(): Action[ArrivalNotification] = Action.async(validateJson[ArrivalNotification]) {
     implicit request =>
 
-      service.submit(request.body) match {
-        case Right(response) => response.map(_ => Ok)
-        case Left(_) => Future.successful(BadRequest)
+      sequentialInterchangeControlReferenceIdRepository.nextInterchangeControlReferenceId().flatMap {
+        interchangeControlReferenceId =>
+          service.submit(request.body, interchangeControlReferenceId) match {
+            case Right(response) =>
+              response.flatMap {
+                _ =>
+                  arrivalNotificationRepository.persistToMongo(request.body).map {
+                    _ =>
+                      NoContent
+                  }
+              }
+            case Left(error) =>
+              Future.successful(BadRequest(error.toString))
+          }
       }
   }
 }

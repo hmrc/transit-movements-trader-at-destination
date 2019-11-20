@@ -17,18 +17,21 @@
 package controllers
 
 import base.SpecBase
+import connectors.MessageConnector
 import generators.MessageGenerators
-import models.messages.request.{FailedToConvert, FailedToCreateXml, FailedToValidateXml}
+import models.messages.request.{FailedToConvert, FailedToCreateXml, FailedToValidateXml, InterchangeControlReference}
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.inject.bind
 import play.api.libs.json.Json
+import play.api.mvc.Result
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
+import repositories._
 import services.SubmissionService
-import uk.gov.hmrc.http.{BadGatewayException, GatewayTimeoutException, HttpResponse, UnauthorizedException}
+import uk.gov.hmrc.http.{BadRequestException, HttpResponse}
 
 import scala.concurrent.Future
 
@@ -36,79 +39,109 @@ import scala.concurrent.Future
 class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckPropertyChecks with MessageGenerators with BeforeAndAfterEach {
 
   private val mockSubmissionService: SubmissionService = mock[SubmissionService]
+  private val mockSequentialInterchangeControlReferenceIdRepository: SequentialInterchangeControlReferenceIdRepository = mock[SequentialInterchangeControlReferenceIdRepository]
+  private val mockArrivalNotificationRepository: ArrivalNotificationRepository = mock[ArrivalNotificationRepository]
+
   private val application = {
     applicationBuilder
-      .overrides(bind[SubmissionService].toInstance(mockSubmissionService)).build()
+      .overrides(bind[SubmissionService].toInstance(mockSubmissionService))
+      .overrides(bind[SequentialInterchangeControlReferenceIdRepository].toInstance(mockSequentialInterchangeControlReferenceIdRepository))
+      .overrides(bind[ArrivalNotificationRepository].toInstance(mockArrivalNotificationRepository)).build
   }
 
   override def beforeEach(): Unit = {
     super.beforeEach()
     reset(mockSubmissionService)
+    reset(mockSequentialInterchangeControlReferenceIdRepository)
+    reset(mockArrivalNotificationRepository)
   }
 
   "post" - {
 
-    "must return BAD_GATEWAY when the EIS service is down" in {
+    "must return NO_CONTENT when passed valid NormalNotification" in {
 
-      when(mockSubmissionService.submit(any())(any(), any()))
-        .thenReturn(Right(Future.failed(new BadGatewayException(""))))
+      when(mockSequentialInterchangeControlReferenceIdRepository.nextInterchangeControlReferenceId())
+        .thenReturn(Future.successful(InterchangeControlReference("20190101", 1)))
 
-      val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
-        .withJsonBody(Json.toJson(normalNotification))
-
-      val result = route(application, request).value
-
-      whenReady(result.failed) {
-        _ mustBe an[BadGatewayException]
-      }
-    }
-
-    "must return UNAUTHORIZED when user is unauthenticated" in {
-
-      when(mockSubmissionService.submit(any())(any(), any()))
-        .thenReturn(Right(Future.failed(new UnauthorizedException(""))))
-
-      val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
-        .withJsonBody(Json.toJson(normalNotification))
-
-      val result = route(application, request).value
-
-      whenReady(result.failed) {
-        _ mustBe an[UnauthorizedException]
-      }
-    }
-
-    "must return GATEWAY_TIMEOUT" in {
-
-      when(mockSubmissionService.submit(any())(any(), any()))
-        .thenReturn(Right(Future.failed(new GatewayTimeoutException(""))))
-
-      val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
-        .withJsonBody(Json.toJson(normalNotification))
-
-      val result = route(application, request).value
-
-      whenReady(result.failed) {
-        _ mustBe an[GatewayTimeoutException]
-      }
-    }
-
-    "must return OK when passed valid NormalNotification" in {
-
-      when(mockSubmissionService.submit(any())(any(), any()))
+      when(mockSubmissionService.submit(any(), any())(any(), any()))
         .thenReturn(Right(Future.successful(HttpResponse(OK))))
 
+      when(mockArrivalNotificationRepository.persistToMongo(any()))
+        .thenReturn(Future.successful(fakeWriteResult))
+
       val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
         .withJsonBody(Json.toJson(normalNotification))
 
       val result = route(application, request).value
 
-      status(result) mustEqual OK
+      status(result) mustEqual NO_CONTENT
+    }
+
+    "must return a future failed when interchange control reference id cannot be generated" in {
+
+      when(mockSequentialInterchangeControlReferenceIdRepository.nextInterchangeControlReferenceId())
+        .thenReturn(Future.failed(new BadRequestException("")))
+
+      val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
+        .withJsonBody(Json.toJson(normalNotification))
+
+      val result: Future[Result] = route(application, request).value
+
+      whenReady(result.failed) {
+        _ mustBe an[BadRequestException]
+      }
+    }
+
+    "must return a future failed when persist to mongo fails" in {
+
+      when(mockSequentialInterchangeControlReferenceIdRepository.nextInterchangeControlReferenceId())
+        .thenReturn(Future.successful(InterchangeControlReference("20190101", 1)))
+
+      when(mockSubmissionService.submit(any(), any())(any(), any()))
+        .thenReturn(Right(Future.failed(new BadRequestException(""))))
+
+      when(mockArrivalNotificationRepository.persistToMongo(any()))
+        .thenReturn(Future.successful(fakeWriteResult))
+
+      val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
+        .withJsonBody(Json.toJson(normalNotification))
+
+      val result: Future[Result] = route(application, request).value
+
+      whenReady(result.failed) {
+        _ mustBe an[BadRequestException]
+
+      }
+    }
+
+    "must return a future failed when POST fails" in {
+
+      when(mockSequentialInterchangeControlReferenceIdRepository.nextInterchangeControlReferenceId())
+        .thenReturn(Future.successful(InterchangeControlReference("20190101", 1)))
+
+      when(mockSubmissionService.submit(any(), any())(any(), any()))
+        .thenReturn(Right(Future.successful(HttpResponse(OK))))
+
+      when(mockArrivalNotificationRepository.persistToMongo(any()))
+        .thenReturn(Future.failed(new BadRequestException("")))
+
+      val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
+        .withJsonBody(Json.toJson(normalNotification))
+
+      val result: Future[Result] = route(application, request).value
+
+      whenReady(result.failed) {
+        _ mustBe an[BadRequestException]
+
+      }
     }
 
     "must return a BadRequest when conversion to xml has failed" in {
 
-      when(mockSubmissionService.submit(any())(any(), any()))
+      when(mockSequentialInterchangeControlReferenceIdRepository.nextInterchangeControlReferenceId())
+        .thenReturn(Future.successful(InterchangeControlReference("20190101", 1)))
+
+      when(mockSubmissionService.submit(any(), any())(any(), any()))
         .thenReturn(Left(FailedToCreateXml))
 
       val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
@@ -121,7 +154,10 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
 
     "must return a BadRequest when conversion to request model has failed" in {
 
-      when(mockSubmissionService.submit(any())(any(), any()))
+      when(mockSequentialInterchangeControlReferenceIdRepository.nextInterchangeControlReferenceId())
+        .thenReturn(Future.successful(InterchangeControlReference("20190101", 1)))
+
+      when(mockSubmissionService.submit(any(), any())(any(), any()))
         .thenReturn(Left(FailedToConvert))
 
       val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
@@ -134,7 +170,10 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
 
     "must return a BadRequest when xml validation has failed" in {
 
-      when(mockSubmissionService.submit(any())(any(), any()))
+      when(mockSequentialInterchangeControlReferenceIdRepository.nextInterchangeControlReferenceId())
+        .thenReturn(Future.successful(InterchangeControlReference("20190101", 1)))
+
+      when(mockSubmissionService.submit(any(), any())(any(), any()))
         .thenReturn(Left(FailedToValidateXml))
 
       val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)

@@ -25,6 +25,7 @@ import org.scalatest.{FreeSpec, MustMatchers, OptionValues}
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.inject.guice.GuiceApplicationBuilder
+import reactivemongo.api.commands.{UpdateWriteResult, WriteResult}
 import uk.gov.hmrc.http.HeaderCarrier
 
 trait SpecBase
@@ -49,5 +50,18 @@ trait SpecBase
     presentationOffice = "sadsf",
     enRouteEvents = Seq.empty
   )
+
+  lazy val fakeWriteResult: WriteResult = {
+    UpdateWriteResult(
+      ok = true,
+      n = 1,
+      nModified = 1,
+      upserted = Seq.empty,
+      writeErrors = Seq.empty,
+      writeConcernError = None,
+      code = None,
+      errmsg = None
+    )
+  }
 
 }
