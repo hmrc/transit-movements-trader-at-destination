@@ -21,24 +21,28 @@ import java.time.LocalDateTime
 import config.AppConfig
 import connectors.MessageConnector
 import javax.inject.Inject
-import models.ArrivalNotificationXSD
-import models.messages.ArrivalNotification
 import models.messages.request.{InterchangeControlReference, MessageSender, RequestModelError}
+import models.messages.{ArrivalNotification, MessageCode}
+import models.{ArrivalNotificationXSD, Source}
+import play.api.mvc.Result
+import repositories.ArrivalNotificationRepository
 import uk.gov.hmrc.http.HeaderCarrier
+import play.api.mvc.Results.NoContent
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 import scala.xml.Node
+import scala.xml.Utility.trim
 
-
-class SubmissionServiceImpl @Inject()(
+class XmlSubmissionServiceImpl @Inject()(
                                    messageConnector: MessageConnector,
                                    submissionModelService: SubmissionModelService,
                                    appConfig: AppConfig,
                                    xmlBuilderService: XmlBuilderService,
-                                   xmlValidationService: XmlValidationService
-                                 ) extends SubmissionService {
+                                   xmlValidationService: XmlValidationService,
+                                   arrivalNotificationRepository: ArrivalNotificationRepository
+                                 ) extends XmlSubmissionService {
 
-  def buildXml(
+  def buildAndValidateXml(
               arrivalNotification: ArrivalNotification,
               interchangeControllerReference: InterchangeControlReference
             )(implicit hc: HeaderCarrier, ec: ExecutionContext): Either[RequestModelError, Node] = {
@@ -52,10 +56,21 @@ class SubmissionServiceImpl @Inject()(
     } yield xml
   }
 
+  def saveAndSubmitXml(xml: Node, messageCode: MessageCode, channel: Source, arrivalNotification: ArrivalNotification)
+                      (implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Result] = {
+    for {
+      _ <- messageConnector.post(trim(xml).toString(), messageCode, channel)
+      _ <- arrivalNotificationRepository.persistToMongo(arrivalNotification)
+    } yield NoContent
+  }
+
 }
 
-trait SubmissionService {
-  def buildXml(arrivalNotification: ArrivalNotification, interchangeControllerReference: InterchangeControlReference)
-            (implicit hc: HeaderCarrier, ec: ExecutionContext): Either[RequestModelError, Node]
+trait XmlSubmissionService {
+  def buildAndValidateXml(arrivalNotification: ArrivalNotification, interchangeControllerReference: InterchangeControlReference)
+              (implicit hc: HeaderCarrier, ec: ExecutionContext): Either[RequestModelError, Node]
 
-}
+  def saveAndSubmitXml(xml: Node, messageCode: MessageCode, channel: Source, arrivalNotification: ArrivalNotification)
+              (implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Result]
+
+  }
