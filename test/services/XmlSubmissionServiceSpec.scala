@@ -27,13 +27,14 @@ import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.inject.bind
 import repositories.ArrivalNotificationRepository
+import play.api.mvc.Results.NoContent
 import uk.gov.hmrc.http.HttpResponse
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.xml.Node
 
-class SubmissionServiceSpec extends SpecBase with BeforeAndAfterEach with ScalaCheckPropertyChecks with MessageGenerators {
+class XmlSubmissionServiceSpec extends SpecBase with BeforeAndAfterEach with ScalaCheckPropertyChecks with MessageGenerators {
 
   private val mockSubmissionModelService: SubmissionModelService = mock[SubmissionModelService]
   private val mockXmlBuilderService: XmlBuilderService = mock[XmlBuilderService]
@@ -60,7 +61,7 @@ class SubmissionServiceSpec extends SpecBase with BeforeAndAfterEach with ScalaC
     reset(mockArrivalNotificationRepository)
   }
 
-  private val submissionService: SubmissionService = application.injector.instanceOf[SubmissionService]
+  private val submissionService: XmlSubmissionService = application.injector.instanceOf[XmlSubmissionService]
   private val interchangeControlReference: InterchangeControlReference = InterchangeControlReference("", 1)
 
   "Submit" - {
@@ -70,7 +71,7 @@ class SubmissionServiceSpec extends SpecBase with BeforeAndAfterEach with ScalaC
       when(mockSubmissionModelService.convertFromArrivalNotification(any(), any(), any()))
         .thenReturn(Left(FailedToConvert))
 
-      submissionService.buildXml(normalNotification, interchangeControlReference) mustBe Left(FailedToConvert)
+      submissionService.buildAndValidateXml(normalNotification, interchangeControlReference) mustBe Left(FailedToConvert)
     }
 
     "must return a RequestModelError when xml builder fails" in {
@@ -85,7 +86,7 @@ class SubmissionServiceSpec extends SpecBase with BeforeAndAfterEach with ScalaC
           when(mockXmlBuilderService.buildXml(any())(any()))
             .thenReturn(Left(FailedToCreateXml))
 
-          submissionService.buildXml(normalNotification, interchangeControlReference) mustBe Left(FailedToCreateXml)
+          submissionService.buildAndValidateXml(normalNotification, interchangeControlReference) mustBe Left(FailedToCreateXml)
       }
     }
 
@@ -104,7 +105,7 @@ class SubmissionServiceSpec extends SpecBase with BeforeAndAfterEach with ScalaC
           when(mockXmlValidationService.validate(any(), any()))
             .thenReturn(Left(FailedToValidateXml))
 
-          submissionService.buildXml(normalNotification, interchangeControlReference) mustBe Left(FailedToValidateXml)
+          submissionService.buildAndValidateXml(normalNotification, interchangeControlReference) mustBe Left(FailedToValidateXml)
       }
     }
 
@@ -124,9 +125,9 @@ class SubmissionServiceSpec extends SpecBase with BeforeAndAfterEach with ScalaC
             .thenReturn(Right((): Unit))
 
           when(mockMessageConnector.post(any(), any(), any())(any(), any()))
-            .thenReturn(Future.successful(HttpResponse(200)))
+            .thenReturn(Future.successful(NoContent))
 
-          val result = submissionService.buildXml(normalNotification, interchangeControlReference).right.toOption.value
+          val result = submissionService.buildAndValidateXml(normalNotification, interchangeControlReference).right.toOption.value
 
             result mustBe a[Node]
 

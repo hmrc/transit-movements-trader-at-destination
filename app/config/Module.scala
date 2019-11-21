@@ -18,7 +18,7 @@ package config
 
 import com.google.inject.AbstractModule
 import connectors.{MessageConnector, MessageConnectorImpl}
-import services.{DateTimeService, DateTimeServiceImpl, SubmissionService, SubmissionServiceImpl}
+import services._
 
 class Module extends AbstractModule {
 
@@ -26,9 +26,11 @@ class Module extends AbstractModule {
 
     bind(classOf[DateTimeService]).to(classOf[DateTimeServiceImpl]).asEagerSingleton()
 
-    bind(classOf[SubmissionService]).to(classOf[SubmissionServiceImpl]).asEagerSingleton()
+    bind(classOf[XmlSubmissionService]).to(classOf[XmlSubmissionServiceImpl]).asEagerSingleton()
 
     bind(classOf[MessageConnector]).to(classOf[MessageConnectorImpl]).asEagerSingleton()
+
+    bind(classOf[InterchangeControlReferenceService]).to(classOf[InterchangeControlReferenceServiceImpl]).asEagerSingleton()
 
   }
 

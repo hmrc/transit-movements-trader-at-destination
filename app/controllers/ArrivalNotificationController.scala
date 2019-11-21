@@ -16,38 +16,37 @@
 
 package controllers
 
+import java.time.LocalDateTime
+
+import config.AppConfig
 import connectors.MessageConnector
 import javax.inject.Inject
-import models.WebChannel
 import models.messages.ArrivalNotification
-import models.messages.request.ArrivalNotificationRequest
+import models.messages.request.{ArrivalNotificationRequest, MessageSender, RequestModelError}
+import models.{ArrivalNotificationXSD, Source, WebChannel}
 import play.api.libs.json.{JsError, Reads}
 import play.api.mvc._
-import repositories.{ArrivalNotificationRepository, SequentialInterchangeControlReferenceIdRepository}
-import services.SubmissionService
+import repositories.ArrivalNotificationRepository
+import services._
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
-import scala.xml.Utility.trim
+import scala.concurrent.{ExecutionContext, Future}
 
 class ArrivalNotificationController @Inject()(
                                                cc: ControllerComponents,
-                                               service: SubmissionService,
+                                               xmlSubmissionService: XmlSubmissionService,
                                                bodyParsers: PlayBodyParsers,
-                                               sequentialInterchangeControlReferenceIdRepository: SequentialInterchangeControlReferenceIdRepository,
+                                               interchangeControlReferenceService: InterchangeControlReferenceService,
                                                arrivalNotificationRepository: ArrivalNotificationRepository,
-                                               messageConnector: MessageConnector
+                                               messageConnector: MessageConnector,
+                                               appConfig: AppConfig,
+                                               submissionModelService: SubmissionModelService,
+                                               xmlBuilderService: XmlBuilderService,
+                                               xmlValidationService: XmlValidationService
                                              )
   extends BackendController(cc) {
-
-  /**
-    * TODO: -
-    * Should nextInterchangeControlReferenceId be within it's own service? persistToMongo could also be accessed through it?
-    * Should we use MessageConnector directly or inject a service?
-    * SubmissionService - does this need renaming?
-    * Change saving to mongo order
-    */
 
   def validateJson[A: Reads]: BodyParser[A] = bodyParsers.json.validate(
     _.validate[A].asEither.left.map(e =>
@@ -57,19 +56,54 @@ class ArrivalNotificationController @Inject()(
   def post(): Action[ArrivalNotification] = Action.async(validateJson[ArrivalNotification]) {
     implicit request =>
 
-      sequentialInterchangeControlReferenceIdRepository.nextInterchangeControlReferenceId().flatMap {
-        interchangeControlReferenceId =>
-          service.buildXml(request.body, interchangeControlReferenceId) match {
-            case Right(xml) =>
+      val messageSender = MessageSender(appConfig.env, "eori")
+      val arrivalNotification = request.body
 
-              for {
-                _ <- messageConnector.post(trim(xml).toString(), ArrivalNotificationRequest.messageCode, WebChannel)
-                _ <- arrivalNotificationRepository.persistToMongo(request.body)
-              } yield NoContent
+      implicit val localDateTime: LocalDateTime = LocalDateTime.now()
 
-            case Left(error) =>
-              Future.successful(BadRequest(error.toString))
+      interchangeControlReferenceService.getInterchangeControlReferenceId.flatMap {
+        case Right(interchangeControlReferenceId) => {
+          submissionModelService.convertFromArrivalNotification(arrivalNotification, messageSender, interchangeControlReferenceId) match {
+            case Right(arrivalNotificationRequest) => {
+              xmlBuilderService.buildXml(arrivalNotificationRequest) match {
+                case Right(node) => {
+                  xmlValidationService.validate(node.toString(), ArrivalNotificationXSD) match {
+                    case Right(_) => {
+                      saveAndSubmit(arrivalNotification, arrivalNotificationRequest, node.toString(), WebChannel)
+                    }
+                    case Left(_: RequestModelError) => Future.successful(InternalServerError)
+                  }
+                }
+                case Left(_: RequestModelError) => {
+                  Future.successful(InternalServerError)
+                }
+              }
+            }
+            case Left(_: RequestModelError) => {
+              Future.successful(BadRequest)
+            }
           }
+        }
+        case Left(FailedCreatingInterchangeControlReference) => {
+          Future.successful(InternalServerError)
+        }
+        case _ => {
+          Future.successful(InternalServerError)
+        }
       }
   }
+
+  private def saveAndSubmit(
+                             arrivalNotification: ArrivalNotification,
+                             arrivalNotificationRequest: ArrivalNotificationRequest,
+                             xml: String,
+                             channel: Source
+                           )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Result] = {
+
+    arrivalNotificationRepository.persistToMongo(arrivalNotification).flatMap {
+      _ =>
+        messageConnector.post(xml.toString, arrivalNotificationRequest.messageCode, WebChannel)
+    }
+  }
+
 }

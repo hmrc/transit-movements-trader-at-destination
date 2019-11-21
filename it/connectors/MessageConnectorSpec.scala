@@ -76,7 +76,7 @@ class MessageConnectorSpec
 
           whenReady(result) {
             response =>
-              response.status mustBe status
+              response mustBe 204
           }
       }
 
