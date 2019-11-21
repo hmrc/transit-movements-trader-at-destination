@@ -70,7 +70,7 @@ class SubmissionServiceSpec extends SpecBase with BeforeAndAfterEach with ScalaC
       when(mockSubmissionModelService.convertFromArrivalNotification(any(), any(), any()))
         .thenReturn(Left(FailedToConvert))
 
-      submissionService.submit(normalNotification, interchangeControlReference) mustBe Left(FailedToConvert)
+      submissionService.buildXml(normalNotification, interchangeControlReference) mustBe Left(FailedToConvert)
     }
 
     "must return a RequestModelError when xml builder fails" in {
@@ -85,7 +85,7 @@ class SubmissionServiceSpec extends SpecBase with BeforeAndAfterEach with ScalaC
           when(mockXmlBuilderService.buildXml(any())(any()))
             .thenReturn(Left(FailedToCreateXml))
 
-          submissionService.submit(normalNotification, interchangeControlReference) mustBe Left(FailedToCreateXml)
+          submissionService.buildXml(normalNotification, interchangeControlReference) mustBe Left(FailedToCreateXml)
       }
     }
 
@@ -104,7 +104,7 @@ class SubmissionServiceSpec extends SpecBase with BeforeAndAfterEach with ScalaC
           when(mockXmlValidationService.validate(any(), any()))
             .thenReturn(Left(FailedToValidateXml))
 
-          submissionService.submit(normalNotification, interchangeControlReference) mustBe Left(FailedToValidateXml)
+          submissionService.buildXml(normalNotification, interchangeControlReference) mustBe Left(FailedToValidateXml)
       }
     }
 
@@ -126,11 +126,9 @@ class SubmissionServiceSpec extends SpecBase with BeforeAndAfterEach with ScalaC
           when(mockMessageConnector.post(any(), any(), any())(any(), any()))
             .thenReturn(Future.successful(HttpResponse(200)))
 
-          val result = submissionService.submit(normalNotification, interchangeControlReference).right.toOption.value
+          val result = submissionService.buildXml(normalNotification, interchangeControlReference).right.toOption.value
 
-          whenReady(result) {
-            _.status mustBe 200
-          }
+            result mustBe a[Node]
 
       }
     }

@@ -34,6 +34,7 @@ import services.SubmissionService
 import uk.gov.hmrc.http.{BadRequestException, HttpResponse}
 
 import scala.concurrent.Future
+import scala.xml.{Node, NodeSeq}
 
 
 class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckPropertyChecks with MessageGenerators with BeforeAndAfterEach {
@@ -41,12 +42,15 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
   private val mockSubmissionService: SubmissionService = mock[SubmissionService]
   private val mockSequentialInterchangeControlReferenceIdRepository: SequentialInterchangeControlReferenceIdRepository = mock[SequentialInterchangeControlReferenceIdRepository]
   private val mockArrivalNotificationRepository: ArrivalNotificationRepository = mock[ArrivalNotificationRepository]
+  private val mockMessageConnector: MessageConnector = mock[MessageConnector]
 
   private val application = {
     applicationBuilder
       .overrides(bind[SubmissionService].toInstance(mockSubmissionService))
       .overrides(bind[SequentialInterchangeControlReferenceIdRepository].toInstance(mockSequentialInterchangeControlReferenceIdRepository))
-      .overrides(bind[ArrivalNotificationRepository].toInstance(mockArrivalNotificationRepository)).build
+      .overrides(bind[ArrivalNotificationRepository].toInstance(mockArrivalNotificationRepository))
+      .overrides(bind[MessageConnector].toInstance(mockMessageConnector)
+      ).build
   }
 
   override def beforeEach(): Unit = {
@@ -54,7 +58,10 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
     reset(mockSubmissionService)
     reset(mockSequentialInterchangeControlReferenceIdRepository)
     reset(mockArrivalNotificationRepository)
+    reset(mockMessageConnector)
   }
+
+  private val testNode: Node = <element1>test</element1>
 
   "post" - {
 
@@ -63,11 +70,14 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
       when(mockSequentialInterchangeControlReferenceIdRepository.nextInterchangeControlReferenceId())
         .thenReturn(Future.successful(InterchangeControlReference("20190101", 1)))
 
-      when(mockSubmissionService.submit(any(), any())(any(), any()))
-        .thenReturn(Right(Future.successful(HttpResponse(OK))))
+      when(mockSubmissionService.buildXml(any(), any())(any(), any()))
+        .thenReturn(Right(testNode))
 
       when(mockArrivalNotificationRepository.persistToMongo(any()))
         .thenReturn(Future.successful(fakeWriteResult))
+
+      when(mockMessageConnector.post(any(), any(), any())(any(), any()))
+        .thenReturn(Future.successful(HttpResponse(200)))
 
       val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
         .withJsonBody(Json.toJson(normalNotification))
@@ -97,11 +107,14 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
       when(mockSequentialInterchangeControlReferenceIdRepository.nextInterchangeControlReferenceId())
         .thenReturn(Future.successful(InterchangeControlReference("20190101", 1)))
 
-      when(mockSubmissionService.submit(any(), any())(any(), any()))
-        .thenReturn(Right(Future.failed(new BadRequestException(""))))
+      when(mockSubmissionService.buildXml(any(), any())(any(), any()))
+        .thenReturn(Right(testNode))
+
+      when(mockMessageConnector.post(any(), any(), any())(any(), any()))
+        .thenReturn(Future.successful(HttpResponse(200)))
 
       when(mockArrivalNotificationRepository.persistToMongo(any()))
-        .thenReturn(Future.successful(fakeWriteResult))
+        .thenReturn(Future.failed(new BadRequestException("")))
 
       val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
         .withJsonBody(Json.toJson(normalNotification))
@@ -119,10 +132,13 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
       when(mockSequentialInterchangeControlReferenceIdRepository.nextInterchangeControlReferenceId())
         .thenReturn(Future.successful(InterchangeControlReference("20190101", 1)))
 
-      when(mockSubmissionService.submit(any(), any())(any(), any()))
-        .thenReturn(Right(Future.successful(HttpResponse(OK))))
+      when(mockSubmissionService.buildXml(any(), any())(any(), any()))
+        .thenReturn(Right(testNode))
 
-      when(mockArrivalNotificationRepository.persistToMongo(any()))
+//      when(mockArrivalNotificationRepository.persistToMongo(any()))
+//        .thenReturn(Future.failed(new BadRequestException("")))
+
+      when(mockMessageConnector.post(any(), any(), any())(any(), any()))
         .thenReturn(Future.failed(new BadRequestException("")))
 
       val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
@@ -141,7 +157,7 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
       when(mockSequentialInterchangeControlReferenceIdRepository.nextInterchangeControlReferenceId())
         .thenReturn(Future.successful(InterchangeControlReference("20190101", 1)))
 
-      when(mockSubmissionService.submit(any(), any())(any(), any()))
+      when(mockSubmissionService.buildXml(any(), any())(any(), any()))
         .thenReturn(Left(FailedToCreateXml))
 
       val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
@@ -157,7 +173,7 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
       when(mockSequentialInterchangeControlReferenceIdRepository.nextInterchangeControlReferenceId())
         .thenReturn(Future.successful(InterchangeControlReference("20190101", 1)))
 
-      when(mockSubmissionService.submit(any(), any())(any(), any()))
+      when(mockSubmissionService.buildXml(any(), any())(any(), any()))
         .thenReturn(Left(FailedToConvert))
 
       val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
@@ -173,7 +189,7 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
       when(mockSequentialInterchangeControlReferenceIdRepository.nextInterchangeControlReferenceId())
         .thenReturn(Future.successful(InterchangeControlReference("20190101", 1)))
 
-      when(mockSubmissionService.submit(any(), any())(any(), any()))
+      when(mockSubmissionService.buildXml(any(), any())(any(), any()))
         .thenReturn(Left(FailedToValidateXml))
 
       val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)

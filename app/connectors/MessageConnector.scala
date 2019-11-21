@@ -37,7 +37,6 @@ class MessageConnectorImpl @Inject()(config: AppConfig, http: HttpClient) extend
     val url = config.eisUrl
     val customHeaders: Seq[(String, String)] = Seq(
       "Content-Type" -> "application/xml",
-      "Accept" -> "application/xml",
       "Source" -> source.channel,
       "MessageCode" -> messageCode.code,
       "X-Correlation-ID" -> {
@@ -48,7 +47,7 @@ class MessageConnectorImpl @Inject()(config: AppConfig, http: HttpClient) extend
     )
 
     http.POST(url, xml, customHeaders)
-  }
+    }
 }
 
 trait MessageConnector {

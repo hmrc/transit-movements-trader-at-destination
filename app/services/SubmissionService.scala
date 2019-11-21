@@ -21,12 +21,13 @@ import java.time.LocalDateTime
 import config.AppConfig
 import connectors.MessageConnector
 import javax.inject.Inject
+import models.ArrivalNotificationXSD
 import models.messages.ArrivalNotification
 import models.messages.request.{InterchangeControlReference, MessageSender, RequestModelError}
-import models.{ArrivalNotificationXSD, WebChannel}
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
+import uk.gov.hmrc.http.HeaderCarrier
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.xml.Node
 
 
 class SubmissionServiceImpl @Inject()(
@@ -37,10 +38,10 @@ class SubmissionServiceImpl @Inject()(
                                    xmlValidationService: XmlValidationService
                                  ) extends SubmissionService {
 
-  def submit(
+  def buildXml(
               arrivalNotification: ArrivalNotification,
               interchangeControllerReference: InterchangeControlReference
-            )(implicit hc: HeaderCarrier, ec: ExecutionContext): Either[RequestModelError, Future[HttpResponse]] = {
+            )(implicit hc: HeaderCarrier, ec: ExecutionContext): Either[RequestModelError, Node] = {
 
     val messageSender = MessageSender(appConfig.env, "eori")
 
@@ -48,15 +49,13 @@ class SubmissionServiceImpl @Inject()(
       request   <- submissionModelService.convertFromArrivalNotification(arrivalNotification, messageSender, interchangeControllerReference).right
       xml       <- xmlBuilderService.buildXml(request)(dateTime = LocalDateTime.now()).right
       _         <- xmlValidationService.validate(xml.toString(), ArrivalNotificationXSD).right
-    } yield {
-      messageConnector.post(xml.toString, request.messageCode, WebChannel)
-    }
+    } yield xml
   }
 
 }
 
 trait SubmissionService {
-  def submit(arrivalNotification: ArrivalNotification, interchangeControllerReference: InterchangeControlReference)
-            (implicit hc: HeaderCarrier, ec: ExecutionContext): Either[RequestModelError, Future[HttpResponse]]
+  def buildXml(arrivalNotification: ArrivalNotification, interchangeControllerReference: InterchangeControlReference)
+            (implicit hc: HeaderCarrier, ec: ExecutionContext): Either[RequestModelError, Node]
 
 }
