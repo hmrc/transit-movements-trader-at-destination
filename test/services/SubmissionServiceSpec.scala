@@ -60,7 +60,7 @@ class SubmissionServiceSpec extends SpecBase with BeforeAndAfterEach with ScalaC
     reset(mockArrivalNotificationRepository)
   }
 
-  private val submissionService: SubmissionService = application.injector.instanceOf[SubmissionService]
+  private val submissionService: XmlSubmissionService = application.injector.instanceOf[XmlSubmissionService]
   private val interchangeControlReference: InterchangeControlReference = InterchangeControlReference("", 1)
 
   "Submit" - {
@@ -70,7 +70,7 @@ class SubmissionServiceSpec extends SpecBase with BeforeAndAfterEach with ScalaC
       when(mockSubmissionModelService.convertFromArrivalNotification(any(), any(), any()))
         .thenReturn(Left(FailedToConvert))
 
-      submissionService.buildXml(normalNotification, interchangeControlReference) mustBe Left(FailedToConvert)
+      submissionService.buildAndValidateXml(normalNotification, interchangeControlReference) mustBe Left(FailedToConvert)
     }
 
     "must return a RequestModelError when xml builder fails" in {
@@ -85,7 +85,7 @@ class SubmissionServiceSpec extends SpecBase with BeforeAndAfterEach with ScalaC
           when(mockXmlBuilderService.buildXml(any())(any()))
             .thenReturn(Left(FailedToCreateXml))
 
-          submissionService.buildXml(normalNotification, interchangeControlReference) mustBe Left(FailedToCreateXml)
+          submissionService.buildAndValidateXml(normalNotification, interchangeControlReference) mustBe Left(FailedToCreateXml)
       }
     }
 
@@ -104,7 +104,7 @@ class SubmissionServiceSpec extends SpecBase with BeforeAndAfterEach with ScalaC
           when(mockXmlValidationService.validate(any(), any()))
             .thenReturn(Left(FailedToValidateXml))
 
-          submissionService.buildXml(normalNotification, interchangeControlReference) mustBe Left(FailedToValidateXml)
+          submissionService.buildAndValidateXml(normalNotification, interchangeControlReference) mustBe Left(FailedToValidateXml)
       }
     }
 
@@ -126,7 +126,7 @@ class SubmissionServiceSpec extends SpecBase with BeforeAndAfterEach with ScalaC
           when(mockMessageConnector.post(any(), any(), any())(any(), any()))
             .thenReturn(Future.successful(HttpResponse(200)))
 
-          val result = submissionService.buildXml(normalNotification, interchangeControlReference).right.toOption.value
+          val result = submissionService.buildAndValidateXml(normalNotification, interchangeControlReference).right.toOption.value
 
             result mustBe a[Node]
 

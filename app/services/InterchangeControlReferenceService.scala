@@ -20,12 +20,22 @@ import javax.inject.Inject
 import models.messages.request.InterchangeControlReference
 import repositories.SequentialInterchangeControlReferenceIdRepository
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+
+trait WriteFailure
+
+object FailedCreatingInterchangeControlReference extends WriteFailure
 
 class InterchangeControlReferenceService @Inject()(sequentialInterchangeControlReferenceIdRepository: SequentialInterchangeControlReferenceIdRepository) {
 
-  def getInterchangeControlReferenceId: Future[InterchangeControlReference] = {
-    sequentialInterchangeControlReferenceIdRepository.nextInterchangeControlReferenceId()
+  def getInterchangeControlReferenceId: Future[Either[WriteFailure, InterchangeControlReference]] = {
+
+    sequentialInterchangeControlReferenceIdRepository.nextInterchangeControlReferenceId().map {
+      reference => Right(reference)
+    }.recover {
+      case _ => Left(FailedCreatingInterchangeControlReference)
+    }
   }
 
 }

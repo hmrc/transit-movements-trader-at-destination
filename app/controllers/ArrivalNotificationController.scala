@@ -24,7 +24,7 @@ import models.messages.request.ArrivalNotificationRequest
 import play.api.libs.json.{JsError, Reads}
 import play.api.mvc._
 import repositories.ArrivalNotificationRepository
-import services.{InterchangeControlReferenceService, XmlSubmissionService}
+import services.{FailedCreatingInterchangeControlReference, InterchangeControlReferenceService, XmlSubmissionService}
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -58,13 +58,16 @@ class ArrivalNotificationController @Inject()(
     implicit request =>
 
       interchangeControlReferenceService.getInterchangeControlReferenceId.flatMap {
-        interchangeControlReferenceId =>
-          service.buildAndValidateXml(request.body, interchangeControlReferenceId) match {
+        case Right(interchangeControlReferenceId) =>
+          service buildAndValidateXml(request.body, interchangeControlReferenceId) match {
             case Right(xml) =>
               service.saveAndSubmitXml(xml, ArrivalNotificationRequest.messageCode, WebChannel, request.body)
             case Left(error) =>
               Future.successful(BadRequest(error.toString))
           }
+        case Left(FailedCreatingInterchangeControlReference) => {
+          Future.successful(InternalServerError)
+        }
       }
   }
 }
