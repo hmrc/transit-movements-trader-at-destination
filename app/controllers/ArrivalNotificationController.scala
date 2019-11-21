@@ -23,8 +23,8 @@ import models.messages.ArrivalNotification
 import models.messages.request.ArrivalNotificationRequest
 import play.api.libs.json.{JsError, Reads}
 import play.api.mvc._
-import repositories.{ArrivalNotificationRepository, SequentialInterchangeControlReferenceIdRepository}
-import services.SubmissionService
+import repositories.ArrivalNotificationRepository
+import services.{InterchangeControlReferenceService, XmlSubmissionService}
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -33,9 +33,9 @@ import scala.xml.Utility.trim
 
 class ArrivalNotificationController @Inject()(
                                                cc: ControllerComponents,
-                                               service: SubmissionService,
+                                               service: XmlSubmissionService,
                                                bodyParsers: PlayBodyParsers,
-                                               sequentialInterchangeControlReferenceIdRepository: SequentialInterchangeControlReferenceIdRepository,
+                                               interchangeControlReferenceService: InterchangeControlReferenceService,
                                                arrivalNotificationRepository: ArrivalNotificationRepository,
                                                messageConnector: MessageConnector
                                              )
@@ -57,16 +57,11 @@ class ArrivalNotificationController @Inject()(
   def post(): Action[ArrivalNotification] = Action.async(validateJson[ArrivalNotification]) {
     implicit request =>
 
-      sequentialInterchangeControlReferenceIdRepository.nextInterchangeControlReferenceId().flatMap {
+      interchangeControlReferenceService.getInterchangeControlReferenceId.flatMap {
         interchangeControlReferenceId =>
-          service.buildXml(request.body, interchangeControlReferenceId) match {
+          service.buildAndValidateXml(request.body, interchangeControlReferenceId) match {
             case Right(xml) =>
-
-              for {
-                _ <- messageConnector.post(trim(xml).toString(), ArrivalNotificationRequest.messageCode, WebChannel)
-                _ <- arrivalNotificationRepository.persistToMongo(request.body)
-              } yield NoContent
-
+              service.saveAndSubmitXml(xml, ArrivalNotificationRequest.messageCode, WebChannel, request.body)
             case Left(error) =>
               Future.successful(BadRequest(error.toString))
           }
