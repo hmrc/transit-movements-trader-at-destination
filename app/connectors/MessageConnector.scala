@@ -32,9 +32,10 @@ import scala.concurrent.{ExecutionContext, Future}
 class MessageConnectorImpl @Inject()(config: AppConfig, http: HttpClient) extends MessageConnector {
 
   def post(xml: String, messageCode: MessageCode, source: Source)
-          (implicit  headerCarrier: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse] = {
+          (implicit headerCarrier: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse] = {
 
     val url = config.eisUrl
+
     val customHeaders: Seq[(String, String)] = Seq(
       "Content-Type" -> "application/xml",
       "Source" -> source.channel,
@@ -46,12 +47,12 @@ class MessageConnectorImpl @Inject()(config: AppConfig, http: HttpClient) extend
       "X-Forwarded-Host" -> "mdtp"
     )
 
-    http.POST(url, xml, customHeaders)
-    }
+    http.POSTString(url, xml, customHeaders)
+  }
 }
 
 trait MessageConnector {
   def post(xml: String, messageCode: MessageCode, source: Source)
           (implicit headerCarrier: HeaderCarrier, ec: ExecutionContext
-  ): Future[HttpResponse]
+          ): Future[HttpResponse]
 }
