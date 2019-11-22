@@ -34,7 +34,7 @@ class InterchangeControlReferenceServiceSpec extends
 
     "must return InterchangeControlReference when successful" in {
 
-      val service = new InterchangeControlReferenceService(mockRepository)
+      val service = new InterchangeControlReferenceServiceImpl(mockRepository)
 
       when(mockRepository.nextInterchangeControlReferenceId())
           .thenReturn(Future.successful(InterchangeControlReference("date", 1)))
@@ -46,7 +46,7 @@ class InterchangeControlReferenceServiceSpec extends
 
     "must return FailedCreatingInterchangeControlReference when failed" in {
 
-      val service = new InterchangeControlReferenceService(mockRepository)
+      val service = new InterchangeControlReferenceServiceImpl(mockRepository)
 
       when(mockRepository.nextInterchangeControlReferenceId())
         .thenReturn(Future.failed(new RuntimeException))

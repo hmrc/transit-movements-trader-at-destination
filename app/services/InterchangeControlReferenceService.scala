@@ -27,7 +27,7 @@ trait WriteFailure
 
 object FailedCreatingInterchangeControlReference extends WriteFailure
 
-class InterchangeControlReferenceService @Inject()(sequentialInterchangeControlReferenceIdRepository: SequentialInterchangeControlReferenceIdRepository) {
+class InterchangeControlReferenceServiceImpl @Inject()(sequentialInterchangeControlReferenceIdRepository: SequentialInterchangeControlReferenceIdRepository) extends InterchangeControlReferenceService {
 
   def getInterchangeControlReferenceId: Future[Either[WriteFailure, InterchangeControlReference]] = {
 
@@ -39,3 +39,8 @@ class InterchangeControlReferenceService @Inject()(sequentialInterchangeControlR
   }
 
 }
+
+trait InterchangeControlReferenceService {
+  def getInterchangeControlReferenceId: Future[Either[WriteFailure, InterchangeControlReference]]
+}
+
