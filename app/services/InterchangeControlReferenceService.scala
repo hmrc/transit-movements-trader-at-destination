@@ -34,7 +34,8 @@ class InterchangeControlReferenceServiceImpl @Inject()(sequentialInterchangeCont
     sequentialInterchangeControlReferenceIdRepository.nextInterchangeControlReferenceId().map {
       reference => Right(reference)
     }.recover {
-      case _ => Left(FailedCreatingInterchangeControlReference)
+      case _ =>
+        Left(FailedCreatingInterchangeControlReference)
     }
   }
 

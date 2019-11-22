@@ -27,13 +27,14 @@ import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.inject.bind
 import repositories.ArrivalNotificationRepository
+import play.api.mvc.Results.NoContent
 import uk.gov.hmrc.http.HttpResponse
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.xml.Node
 
-class SubmissionServiceSpec extends SpecBase with BeforeAndAfterEach with ScalaCheckPropertyChecks with MessageGenerators {
+class XmlSubmissionServiceSpec extends SpecBase with BeforeAndAfterEach with ScalaCheckPropertyChecks with MessageGenerators {
 
   private val mockSubmissionModelService: SubmissionModelService = mock[SubmissionModelService]
   private val mockXmlBuilderService: XmlBuilderService = mock[XmlBuilderService]
@@ -124,7 +125,7 @@ class SubmissionServiceSpec extends SpecBase with BeforeAndAfterEach with ScalaC
             .thenReturn(Right((): Unit))
 
           when(mockMessageConnector.post(any(), any(), any())(any(), any()))
-            .thenReturn(Future.successful(HttpResponse(200)))
+            .thenReturn(Future.successful(NoContent))
 
           val result = submissionService.buildAndValidateXml(normalNotification, interchangeControlReference).right.toOption.value
 

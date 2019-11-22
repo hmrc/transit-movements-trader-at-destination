@@ -22,7 +22,9 @@ import com.google.inject.Inject
 import config.AppConfig
 import models.Source
 import models.messages.MessageCode
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
+import play.api.mvc.Result
+import play.api.mvc.Results.NoContent
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -32,7 +34,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class MessageConnectorImpl @Inject()(config: AppConfig, http: HttpClient) extends MessageConnector {
 
   def post(xml: String, messageCode: MessageCode, source: Source)
-          (implicit headerCarrier: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse] = {
+          (implicit headerCarrier: HeaderCarrier, ec: ExecutionContext): Future[Result] = {
 
     val url = config.eisUrl
 
@@ -47,12 +49,15 @@ class MessageConnectorImpl @Inject()(config: AppConfig, http: HttpClient) extend
       "X-Forwarded-Host" -> "mdtp"
     )
 
-    http.POSTString(url, xml, customHeaders)
+    http.POSTString(url, xml, customHeaders).map(
+      _ =>
+        NoContent
+    )
   }
 }
 
 trait MessageConnector {
   def post(xml: String, messageCode: MessageCode, source: Source)
           (implicit headerCarrier: HeaderCarrier, ec: ExecutionContext
-          ): Future[HttpResponse]
+          ): Future[Result]
 }
