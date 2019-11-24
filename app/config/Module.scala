@@ -30,7 +30,7 @@ class Module extends AbstractModule {
 
     bind(classOf[MessageConnector]).to(classOf[MessageConnectorImpl]).asEagerSingleton()
 
-    bind(classOf[InterchangeControlReferenceService]).to(classOf[InterchangeControlReferenceServiceImpl]).asEagerSingleton()
+    bind(classOf[DatabaseService]).to(classOf[DatabaseServiceImpl]).asEagerSingleton()
 
   }
 

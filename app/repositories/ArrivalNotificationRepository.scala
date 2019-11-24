@@ -57,3 +57,8 @@ class ArrivalNotificationRepository @Inject()(cc: ControllerComponents, mongo: R
   }
 
 }
+
+
+sealed trait FailedSavingArrivalNotification
+
+object FailedSavingArrivalNotification extends FailedSavingArrivalNotification

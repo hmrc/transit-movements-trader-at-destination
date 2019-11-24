@@ -79,7 +79,7 @@ class SubmissionModelServiceSpec extends FreeSpec
           val messageSender: MessageSender = arrivalNotificationRequest.meta.messageSender
           val interchangeControlReference: InterchangeControlReference = arrivalNotificationRequest.meta.interchangeControlReference
 
-          convertToSubmissionModel.convertFromArrivalNotification(normalNotification, messageSender, interchangeControlReference) mustBe
+          convertToSubmissionModel.convertToSubmissionModel(normalNotification, messageSender, interchangeControlReference) mustBe
             Right(arrivalNotificationRequest)
       }
     }
@@ -122,7 +122,7 @@ class SubmissionModelServiceSpec extends FreeSpec
         val messageSender: MessageSender = arrivalNotificationRequest.meta.messageSender
         val interchangeControlReference: InterchangeControlReference = arrivalNotificationRequest.meta.interchangeControlReference
 
-        convertToSubmissionModel.convertFromArrivalNotification(normalNotification, messageSender, interchangeControlReference) mustBe
+        convertToSubmissionModel.convertToSubmissionModel(normalNotification, messageSender, interchangeControlReference) mustBe
           Right(arrivalNotificationRequest)
     }
   }
@@ -136,15 +136,15 @@ class SubmissionModelServiceSpec extends FreeSpec
 
         (messageSender, interchangeControlReference) => {
 
-          val result: Either[RequestModelError, RequestModel] = {
-            convertToSubmissionModel.convertFromArrivalNotification(
+          val result: Either[ModelConversionError, RequestModel] = {
+            convertToSubmissionModel.convertToSubmissionModel(
               arrivalNotification = InvalidRequestModel,
               messageSender = messageSender,
               interchangeControlReference = interchangeControlReference
             )
           }
 
-          result mustBe Left(FailedToConvert)
+          result mustBe Left(FailedToConvertModel)
         }
       }
     }

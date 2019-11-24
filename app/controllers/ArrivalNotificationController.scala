@@ -22,88 +22,96 @@ import config.AppConfig
 import connectors.MessageConnector
 import javax.inject.Inject
 import models.messages.ArrivalNotification
-import models.messages.request.{ArrivalNotificationRequest, MessageSender, RequestModelError}
-import models.{ArrivalNotificationXSD, Source, WebChannel}
+import models.messages.request.{ArrivalNotificationRequest, _}
+import models.{ArrivalNotificationXSD, WebChannel}
 import play.api.libs.json.{JsError, Reads}
 import play.api.mvc._
-import repositories.ArrivalNotificationRepository
+import reactivemongo.api.commands.WriteResult
+import repositories.FailedSavingArrivalNotification
 import services._
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
+import scala.xml.Node
 
 class ArrivalNotificationController @Inject()(
                                                cc: ControllerComponents,
-                                               xmlSubmissionService: XmlSubmissionService,
                                                bodyParsers: PlayBodyParsers,
-                                               interchangeControlReferenceService: InterchangeControlReferenceService,
-                                               arrivalNotificationRepository: ArrivalNotificationRepository,
-                                               messageConnector: MessageConnector,
                                                appConfig: AppConfig,
+                                               databaseService: DatabaseService,
+                                               messageConnector: MessageConnector,
                                                submissionModelService: SubmissionModelService,
                                                xmlBuilderService: XmlBuilderService,
                                                xmlValidationService: XmlValidationService
                                              )
   extends BackendController(cc) {
 
-  def validateJson[A: Reads]: BodyParser[A] = bodyParsers.json.validate(
-    _.validate[A].asEither.left.map(e =>
-      BadRequest(JsError.toJson(e)).as("application/json")
-    ))
-
   def post(): Action[ArrivalNotification] = Action.async(validateJson[ArrivalNotification]) {
     implicit request =>
 
       val messageSender = MessageSender(appConfig.env, "eori")
+
       val arrivalNotification = request.body
 
       implicit val localDateTime: LocalDateTime = LocalDateTime.now()
 
-      interchangeControlReferenceService.getInterchangeControlReferenceId.flatMap {
+      databaseService.getInterchangeControlReferenceId.flatMap {
+
         case Right(interchangeControlReferenceId) => {
-          submissionModelService.convertFromArrivalNotification(arrivalNotification, messageSender, interchangeControlReferenceId) match {
-            case Right(arrivalNotificationRequest) => {
-              xmlBuilderService.buildXml(arrivalNotificationRequest) match {
-                case Right(node) => {
-                  xmlValidationService.validate(node.toString(), ArrivalNotificationXSD) match {
-                    case Right(_) => {
-                      saveAndSubmit(arrivalNotification, arrivalNotificationRequest, node.toString(), WebChannel)
+          submissionModelService.convertToSubmissionModel(arrivalNotification, messageSender, interchangeControlReferenceId) match {
+
+            case Right(arrivalNotificationRequestModel) => {
+              xmlBuilderService.buildXml(arrivalNotificationRequestModel) match {
+
+                case Right(xml) => {
+                  xmlValidationService.validate(xml.toString(), ArrivalNotificationXSD) match {
+
+                    case Right(XmlSuccessfullyValidated) => {
+                      databaseService.saveArrivalNotification(arrivalNotification).flatMap {
+
+                        sendMessage(xml, arrivalNotificationRequestModel)
+
+                      }.recover {
+                        case _ => InternalServerError
+                      }
                     }
-                    case Left(_: RequestModelError) => Future.successful(InternalServerError)
+                    case Left(FailedToValidateXml) =>
+                      Future.successful(BadRequest)
+                    case Left(FailedFindingXSDFile) =>
+                      Future.successful(InternalServerError)
                   }
                 }
-                case Left(_: RequestModelError) => {
+                case Left(FailedToCreateXml) =>
                   Future.successful(InternalServerError)
-                }
               }
             }
-            case Left(_: RequestModelError) => {
+            case Left(FailedToConvertModel) =>
               Future.successful(BadRequest)
-            }
           }
         }
-        case Left(FailedCreatingInterchangeControlReference) => {
+        case Left(FailedCreatingInterchangeControlReference) =>
           Future.successful(InternalServerError)
-        }
-        case _ => {
-          Future.successful(InternalServerError)
-        }
       }
   }
 
-  private def saveAndSubmit(
-                             arrivalNotification: ArrivalNotification,
-                             arrivalNotificationRequest: ArrivalNotificationRequest,
-                             xml: String,
-                             channel: Source
-                           )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Result] = {
-
-    arrivalNotificationRepository.persistToMongo(arrivalNotification).flatMap {
-      _ =>
-        messageConnector.post(xml.toString, arrivalNotificationRequest.messageCode, WebChannel)
+  private def sendMessage(xml: Node, arrivalNotificationRequestModel: ArrivalNotificationRequest)(implicit headerCarrier: HeaderCarrier): PartialFunction[Either[FailedSavingArrivalNotification, WriteResult], Future[Result]] = {
+    case Right(_) => {
+      messageConnector.post(xml.toString, arrivalNotificationRequestModel.messageCode, WebChannel).map {
+        _ => NoContent
+      }
+      .recover {
+        case _ => BadGateway
+      }
     }
+    case Left(FailedSavingArrivalNotification) =>
+      Future.successful(InternalServerError)
   }
+
+  private def validateJson[A: Reads]: BodyParser[A] = bodyParsers.json.validate(
+    _.validate[A].asEither.left.map(e =>
+      BadRequest(JsError.toJson(e)).as("application/json")
+    ))
 
 }

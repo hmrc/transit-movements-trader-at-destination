@@ -30,7 +30,7 @@ class XmlBuilderService {
   private val logger = Logger(getClass)
 
   def buildXml(arrivalNotificationRequest: ArrivalNotificationRequest)
-              (implicit dateTime: LocalDateTime): Either[RequestModelError, Node] = {
+              (implicit dateTime: LocalDateTime): Either[XmlBuilderError, Node] = {
 
     try {
 
@@ -150,3 +150,7 @@ class XmlBuilderService {
   }
 
 }
+
+sealed trait XmlBuilderError
+
+object FailedToCreateXml              extends XmlBuilderError

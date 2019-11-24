@@ -42,19 +42,19 @@ class XmlSubmissionServiceImpl @Inject()(
                                    arrivalNotificationRepository: ArrivalNotificationRepository
                                  ) extends XmlSubmissionService {
 
-  def buildAndValidateXml(
-              arrivalNotification: ArrivalNotification,
-              interchangeControllerReference: InterchangeControlReference
-            )(implicit hc: HeaderCarrier, ec: ExecutionContext): Either[RequestModelError, Node] = {
-
-    val messageSender = MessageSender(appConfig.env, "eori")
-
-    for {
-      request   <- submissionModelService.convertFromArrivalNotification(arrivalNotification, messageSender, interchangeControllerReference).right
-      xml       <- xmlBuilderService.buildXml(request)(dateTime = LocalDateTime.now()).right
-      _         <- xmlValidationService.validate(xml.toString(), ArrivalNotificationXSD).right
-    } yield xml
-  }
+//  def buildAndValidateXml(
+//              arrivalNotification: ArrivalNotification,
+//              interchangeControllerReference: InterchangeControlReference
+//            )(implicit hc: HeaderCarrier, ec: ExecutionContext): Either[RequestModelError, Node] = {
+//
+//    val messageSender = MessageSender(appConfig.env, "eori")
+//
+//    for {
+//      request   <- submissionModelService.convertFromArrivalNotification(arrivalNotification, messageSender, interchangeControllerReference).right
+//      xml       <- xmlBuilderService.buildXml(request)(dateTime = LocalDateTime.now()).right
+//      _         <- xmlValidationService.validate(xml.toString(), ArrivalNotificationXSD).right
+//    } yield xml
+//  }
 
   def saveAndSubmitXml(xml: Node, messageCode: MessageCode, channel: Source, arrivalNotification: ArrivalNotification)
                       (implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Result] = {
@@ -67,8 +67,8 @@ class XmlSubmissionServiceImpl @Inject()(
 }
 
 trait XmlSubmissionService {
-  def buildAndValidateXml(arrivalNotification: ArrivalNotification, interchangeControllerReference: InterchangeControlReference)
-              (implicit hc: HeaderCarrier, ec: ExecutionContext): Either[RequestModelError, Node]
+//  def buildAndValidateXml(arrivalNotification: ArrivalNotification, interchangeControllerReference: InterchangeControlReference)
+//              (implicit hc: HeaderCarrier, ec: ExecutionContext): Either[RequestModelError, Node]
 
   def saveAndSubmitXml(xml: Node, messageCode: MessageCode, channel: Source, arrivalNotification: ArrivalNotification)
               (implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Result]
