@@ -22,7 +22,6 @@ import java.net.URL
 import javax.xml.parsers.SAXParserFactory
 import javax.xml.validation.Schema
 import models.XSDFile
-import models.messages.request.{FailedToValidateXml, RequestModelError}
 import org.xml.sax.InputSource
 import org.xml.sax.helpers.DefaultHandler
 import play.api.Logger
@@ -42,7 +41,7 @@ class XmlValidationService {
     saxParser.newSAXParser()
   }
 
-  def validate(xml: String, xsdFile: XSDFile): Either[RequestModelError, Unit] = {
+  def validate(xml: String, xsdFile: XSDFile): Either[XmlError, XmlValid] = {
 
     try {
 
@@ -66,12 +65,11 @@ class XmlValidationService {
             with scala.xml.parsing.ConsoleErrorHandler
       }
 
-      Right(xmlResponse.parser.parse(new InputSource(new StringReader(xml)), new CustomParseHandler))
+      xmlResponse.parser.parse(new InputSource(new StringReader(xml)), new CustomParseHandler)
+
+      Right(XmlSuccessfullyValidated)
 
     } catch {
-      case _: NullPointerException =>
-        logger.warn(s"Could not find XSD with the key: ${xsdFile.filePath}")
-        Left(FailedToValidateXml)
       case e: Throwable =>
         logger.warn(e.getMessage)
         Left(FailedToValidateXml)
@@ -79,3 +77,12 @@ class XmlValidationService {
   }
 
 }
+
+sealed trait XmlValid
+
+object XmlSuccessfullyValidated extends XmlValid
+
+sealed trait XmlError
+
+object FailedToValidateXml            extends XmlError
+object FailedFindingXSDFile           extends XmlError

@@ -18,23 +18,24 @@ package services
 
 import models.messages.request.InterchangeControlReference
 import org.scalatest.{FreeSpec, MustMatchers}
-import repositories.SequentialInterchangeControlReferenceIdRepository
+import repositories.{ArrivalNotificationRepository, SequentialInterchangeControlReferenceIdRepository}
 import org.scalatestplus.mockito.MockitoSugar
 import org.mockito.Mockito._
 import org.scalatest.concurrent.ScalaFutures
 
 import scala.concurrent.Future
 
-class InterchangeControlReferenceServiceSpec extends
+class DatabaseServiceSpec extends
   FreeSpec with MustMatchers with MockitoSugar with ScalaFutures {
 
   val mockRepository = mock[SequentialInterchangeControlReferenceIdRepository]
+  val mockArrivalNotificationRepository = mock[ArrivalNotificationRepository]
 
-  "InterchangeControlReferenceService" - {
+  "DatabaseService" - {
 
     "must return InterchangeControlReference when successful" in {
 
-      val service = new InterchangeControlReferenceServiceImpl(mockRepository)
+      val service = new DatabaseServiceImpl(mockRepository, mockArrivalNotificationRepository)
 
       when(mockRepository.nextInterchangeControlReferenceId())
           .thenReturn(Future.successful(InterchangeControlReference("date", 1)))
@@ -46,7 +47,7 @@ class InterchangeControlReferenceServiceSpec extends
 
     "must return FailedCreatingInterchangeControlReference when failed" in {
 
-      val service = new InterchangeControlReferenceServiceImpl(mockRepository)
+      val service = new DatabaseServiceImpl(mockRepository, mockArrivalNotificationRepository)
 
       when(mockRepository.nextInterchangeControlReferenceId())
         .thenReturn(Future.failed(new RuntimeException))

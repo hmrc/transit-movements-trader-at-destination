@@ -24,9 +24,9 @@ import models.{Trader, TraderWithEori, TraderWithoutEori}
 
 class SubmissionModelService @Inject()(appConfig: AppConfig){
 
-  def convertFromArrivalNotification[A](arrivalNotification: A,
-                                        messageSender: MessageSender,
-                                        interchangeControlReference: InterchangeControlReference): Either[RequestModelError, ArrivalNotificationRequest] = arrivalNotification match {
+  def convertToSubmissionModel[A](arrivalNotification: A,
+                                  messageSender: MessageSender,
+                                  interchangeControlReference: InterchangeControlReference): Either[ModelConversionError, ArrivalNotificationRequest] = arrivalNotification match {
     case arrivalNotification: NormalNotification =>
 
       val meta              = buildMeta(messageSender: MessageSender, interchangeControlReference)
@@ -37,7 +37,7 @@ class SubmissionModelService @Inject()(appConfig: AppConfig){
 
       Right(ArrivalNotificationRequest(meta, header, traderDestination, customsOffice))
     case _ =>
-      Left(FailedToConvert)
+      Left(FailedToConvertModel)
   }
 
   private def buildMeta(messageSender: MessageSender, interchangeControlReference: InterchangeControlReference): Meta = {
@@ -74,3 +74,7 @@ class SubmissionModelService @Inject()(appConfig: AppConfig){
   }
 
 }
+
+sealed trait ModelConversionError
+
+object FailedToConvertModel                extends ModelConversionError

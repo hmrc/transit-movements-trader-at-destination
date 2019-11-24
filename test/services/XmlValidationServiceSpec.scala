@@ -18,7 +18,6 @@ package services
 
 import base.SpecBase
 import models.ArrivalNotificationXSD
-import models.messages.request._
 
 
 class XmlValidationServiceSpec extends SpecBase {

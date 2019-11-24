@@ -30,7 +30,7 @@ class XmlBuilderService {
   private val logger = Logger(getClass)
 
   def buildXml(arrivalNotificationRequest: ArrivalNotificationRequest)
-              (implicit dateTime: LocalDateTime): Either[RequestModelError, Node] = {
+              (implicit dateTime: LocalDateTime): Either[XmlBuilderError, Node] = {
 
     try {
 
@@ -88,8 +88,8 @@ class XmlBuilderService {
     buildOptionalElem(meta.senderIdentificationCodeQualifier, "SenIdeCodQuaMES4") ++
     buildOptionalElem(meta.recipientIdentificationCodeQualifier, "RecIdeCodQuaMES7") ++
     <MesRecMES6>{meta.messageRecipient}</MesRecMES6> ++
-      <DatOfPreMES9>{Format.dateFormatted(dateTime)}</DatOfPreMES9> ++
-      <TimOfPreMES10>{Format.timeFormatted(dateTime)}</TimOfPreMES10> ++
+    <DatOfPreMES9>{Format.dateFormatted(dateTime)}</DatOfPreMES9> ++
+    <TimOfPreMES10>{Format.timeFormatted(dateTime)}</TimOfPreMES10> ++
     <IntConRefMES11>{meta.interchangeControlReference.toString}</IntConRefMES11> ++
     buildOptionalElem(meta.recipientsReferencePassword, "RecRefMES12") ++
     buildOptionalElem(meta.recipientsReferencePasswordQualifier, "RecRefQuaMES13") ++
@@ -118,7 +118,6 @@ class XmlBuilderService {
         buildOptionalElem(header.arrivalAgreedLocationOfGoods, "ArrAgrLocOfGooHEA63")
       }
       <ArrAgrLocOfGooHEA63LNG>{header.languageCode}</ArrAgrLocOfGooHEA63LNG>
-      <ArrAutLocOfGooHEA65>{header.languageCode}</ArrAutLocOfGooHEA65>
       {
         buildOptionalElem(header.arrivalAgreedLocationOfGoods, "ArrAutLocOfGooHEA65")
       }
@@ -150,3 +149,7 @@ class XmlBuilderService {
   }
 
 }
+
+sealed trait XmlBuilderError
+
+object FailedToCreateXml              extends XmlBuilderError

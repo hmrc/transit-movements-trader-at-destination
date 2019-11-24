@@ -26,11 +26,9 @@ class Module extends AbstractModule {
 
     bind(classOf[DateTimeService]).to(classOf[DateTimeServiceImpl]).asEagerSingleton()
 
-    bind(classOf[XmlSubmissionService]).to(classOf[XmlSubmissionServiceImpl]).asEagerSingleton()
-
     bind(classOf[MessageConnector]).to(classOf[MessageConnectorImpl]).asEagerSingleton()
 
-    bind(classOf[InterchangeControlReferenceService]).to(classOf[InterchangeControlReferenceServiceImpl]).asEagerSingleton()
+    bind(classOf[DatabaseService]).to(classOf[DatabaseServiceImpl]).asEagerSingleton()
 
   }
 
