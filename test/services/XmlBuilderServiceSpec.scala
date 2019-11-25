@@ -105,18 +105,22 @@ class XmlBuilderServiceSpec extends FreeSpec
                       <CusSubPlaHEA66>
                         {customsSubPlace}
                       </CusSubPlaHEA66>
-                  }.getOrElse(NodeSeq.Empty)}<ArrNotPlaHEA60>
-                    {arrivalNotificationRequest.header.arrivalNotificationPlace}
-                  </ArrNotPlaHEA60>
+                  }.getOrElse(NodeSeq.Empty)}
+                    <ArrNotPlaHEA60>
+                      {arrivalNotificationRequest.header.arrivalNotificationPlace}
+                    </ArrNotPlaHEA60>
                     <ArrNotPlaHEA60LNG>
                       {arrivalNotificationRequest.header.languageCode}
                     </ArrNotPlaHEA60LNG>
                     <ArrAgrLocOfGooHEA63LNG>
                       {arrivalNotificationRequest.header.languageCode}
                     </ArrAgrLocOfGooHEA63LNG>
-                    <ArrAutLocOfGooHEA65>
-                      {arrivalNotificationRequest.header.languageCode}
-                    </ArrAutLocOfGooHEA65>
+                    {arrivalNotificationRequest.header.arrivalAgreedLocationOfGoods.map {
+                    arrivalAgreedLocationOfGoods =>
+                        <ArrAutLocOfGooHEA65>
+                          {arrivalAgreedLocationOfGoods}
+                        </ArrAutLocOfGooHEA65>
+                    }.getOrElse(NodeSeq.Empty)}
                     <SimProFlaHEA132>
                       {arrivalNotificationRequest.header.simplifiedProcedureFlag}
                     </SimProFlaHEA132>

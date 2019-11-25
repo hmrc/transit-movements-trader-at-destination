@@ -16,18 +16,15 @@
 
 package services
 
-import java.time.LocalDateTime
-
 import config.AppConfig
 import connectors.MessageConnector
 import javax.inject.Inject
-import models.messages.request.{InterchangeControlReference, MessageSender, RequestModelError}
+import models.Source
 import models.messages.{ArrivalNotification, MessageCode}
-import models.{ArrivalNotificationXSD, Source}
 import play.api.mvc.Result
+import play.api.mvc.Results.NoContent
 import repositories.ArrivalNotificationRepository
 import uk.gov.hmrc.http.HeaderCarrier
-import play.api.mvc.Results.NoContent
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.xml.Node

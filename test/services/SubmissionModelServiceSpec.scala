@@ -136,7 +136,7 @@ class SubmissionModelServiceSpec extends FreeSpec
 
         (messageSender, interchangeControlReference) => {
 
-          val result: Either[ModelConversionError, RequestModel] = {
+          val result: Either[ModelConversionError, ArrivalNotificationRequest] = {
             convertToSubmissionModel.convertToSubmissionModel(
               arrivalNotification = InvalidRequestModel,
               messageSender = messageSender,

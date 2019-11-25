@@ -20,22 +20,12 @@ import models.messages.MessageCode
 
 import scala.collection.immutable.ListMap
 
-
-trait RequestModel
-trait RequestModelError
-
-
-object FailedToConvert                extends RequestModelError
-//object FailedToCreateXml              extends RequestModelError
-object FailedToWriteToMongo           extends RequestModelError
-
-
 case class ArrivalNotificationRequest(
                                        meta: Meta,
                                        header: Header,
                                        traderDestination: TraderDestination,
                                        customsOfficeOfPresentation: CustomsOfficeOfPresentation
-                                     ) extends RequestConstants with RequestModel {
+                                     ) extends RequestConstants {
 
   val messageCode: MessageCode = MessageCode("GB007A")
   val syntaxIdentifier: String = "UNOC"
