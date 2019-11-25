@@ -30,12 +30,7 @@ case class ArrivalNotificationRequest(
   val messageCode: MessageCode = MessageCode("GB007A")
   val syntaxIdentifier: String = "UNOC"
   val rootKey: String = "CC007A"
-  val nameSpace: Map[String, String] = ListMap(
-//    "xmlns:xsi" -> "http://www.w3.org/2001/XMLSchema-instance",
-//    "xmlns" -> "http://ncts.dgtaxud.ec/CC007A",
-//    "xmlns:complex_ncts" -> "http://ncts.dgtaxud.ec/complex_ncts",
-//    "xsi:schemaLocation" -> "http://ncts.dgtaxud.ec/CC007A"
-  )
+  val nameSpace: Map[String, String] = ListMap()
 }
 
 object ArrivalNotificationRequest {

@@ -70,9 +70,6 @@ class XmlValidationService {
       Right(XmlSuccessfullyValidated)
 
     } catch {
-      case _: NullPointerException =>
-        logger.warn(s"Could not find XSD with the key: ${xsdFile.filePath}")
-        Left(FailedFindingXSDFile)
       case e: Throwable =>
         logger.warn(e.getMessage)
         Left(FailedToValidateXml)

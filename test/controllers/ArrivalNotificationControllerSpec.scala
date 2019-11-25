@@ -28,12 +28,11 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.inject.bind
 import play.api.libs.json.Json
 import play.api.mvc.Result
-import play.api.mvc.Results.NoContent
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import repositories._
 import services._
-import uk.gov.hmrc.http.BadRequestException
+import uk.gov.hmrc.http.{BadRequestException, HttpResponse}
 
 import scala.concurrent.Future
 import scala.xml.Node
@@ -93,8 +92,8 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
           when(mockInterchangeControlReferenceService.saveArrivalNotification(any()))
             .thenReturn(Future.successful(Right(fakeWriteResult)))
 
-          when(mockMessageConnector.post(any(), any(), any())(any(), any()))
-            .thenReturn(Future.successful(NoContent))
+          when(mockMessageConnector.post(any(), any())(any(), any()))
+            .thenReturn(Future.successful(HttpResponse(200)))
 
           val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
             .withJsonBody(Json.toJson(normalNotification))
@@ -118,7 +117,7 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
       status(result) mustEqual INTERNAL_SERVER_ERROR
     }
 
-    "must return INTERNAL_SERVER_ERROR when persist to mongo fails" in {
+    "must return INTERNAL_SERVER_ERROR when persist to mongo returns a FailedSavingArrivalNotification" in {
 
       forAll(arbitrary[ArrivalNotificationRequest]) {
 
@@ -150,7 +149,42 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
           }
       }
     }
-    "must return BAD_GATEWAY when POST fails" in  {
+
+    "must return INTERNAL_SERVER_ERROR when persist to mongo fails" in {
+
+      forAll(arbitrary[ArrivalNotificationRequest]) {
+
+        arrivalNotificationRequest =>
+
+          when(mockInterchangeControlReferenceService.getInterchangeControlReferenceId)
+            .thenReturn(Future.successful(Right(InterchangeControlReference("20190101", 1))))
+
+          when(mockSubmissionModelService.convertToSubmissionModel(any(), any(), any()))
+            .thenReturn(Right(arrivalNotificationRequest))
+
+          when(mockXmlBuilderService.buildXml(any())(any()))
+            .thenReturn(Right(testNode))
+
+          when(mockXmlValidationService.validate(any(), any()))
+            .thenReturn(Right(XmlSuccessfullyValidated))
+
+          when(mockInterchangeControlReferenceService.saveArrivalNotification(any()))
+            .thenReturn(Future.failed(new BadRequestException("")))
+
+          val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
+            .withJsonBody(Json.toJson(normalNotification))
+
+          val result: Future[Result] = route(application, request).value
+
+          whenReady(result) {
+            result =>
+              result.header.status mustBe INTERNAL_SERVER_ERROR
+          }
+      }
+    }
+
+
+    "must return BAD_GATEWAY when POST fails" in {
 
       forAll(arbitrary[ArrivalNotificationRequest]) {
 
@@ -170,7 +204,7 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
           when(mockInterchangeControlReferenceService.saveArrivalNotification(any()))
             .thenReturn(Future.successful(Right(fakeWriteResult)))
 
-          when(mockMessageConnector.post(any(), any(), any())(any(), any()))
+          when(mockMessageConnector.post(any(), any())(any(), any()))
             .thenReturn(Future.failed(new BadRequestException("")))
 
           val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
@@ -246,9 +280,50 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
 
           status(result) mustEqual BAD_REQUEST
       }
-
     }
 
+    "must return BAD_REQUEST when xml validation has failed finding XSD File" in {
+
+      forAll(arbitrary[ArrivalNotificationRequest]) {
+
+        arrivalNotificationRequest =>
+          when(mockInterchangeControlReferenceService.getInterchangeControlReferenceId)
+            .thenReturn(Future.successful(Right(InterchangeControlReference("20190101", 1))))
+
+          when(mockSubmissionModelService.convertToSubmissionModel(any(), any(), any()))
+            .thenReturn(Right(arrivalNotificationRequest))
+
+          when(mockXmlBuilderService.buildXml(any())(any()))
+            .thenReturn(Right(testNode))
+
+          when(mockXmlValidationService.validate(any(), any()))
+            .thenReturn(Left(FailedFindingXSDFile))
+
+          val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
+            .withJsonBody(Json.toJson(normalNotification))
+
+          val result = route(application, request).value
+
+          status(result) mustEqual INTERNAL_SERVER_ERROR
+      }
+    }
+
+    "must return BAD_REQUEST when given invalid json" in {
+
+      val invalidJson = Json.parse(
+        """{
+          |"invalid" : "json"
+          |}
+        """.stripMargin)
+
+      val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
+        .withJsonBody(Json.toJson(invalidJson))
+
+      val result = route(application, request).value
+
+      status(result) mustEqual BAD_REQUEST
+
+    }
   }
 
 }

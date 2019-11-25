@@ -21,9 +21,9 @@ import java.time.LocalDateTime
 import config.AppConfig
 import connectors.MessageConnector
 import javax.inject.Inject
+import models.ArrivalNotificationXSD
 import models.messages.ArrivalNotification
 import models.messages.request.{ArrivalNotificationRequest, _}
-import models.{ArrivalNotificationXSD, WebChannel}
 import play.api.libs.json.{JsError, Reads}
 import play.api.mvc._
 import reactivemongo.api.commands.WriteResult
@@ -98,7 +98,7 @@ class ArrivalNotificationController @Inject()(
 
   private def sendMessage(xml: Node, arrivalNotificationRequestModel: ArrivalNotificationRequest)(implicit headerCarrier: HeaderCarrier): PartialFunction[Either[FailedSavingArrivalNotification, WriteResult], Future[Result]] = {
     case Right(_) => {
-      messageConnector.post(xml.toString, arrivalNotificationRequestModel.messageCode, WebChannel).map {
+      messageConnector.post(xml.toString, arrivalNotificationRequestModel.messageCode).map {
         _ => NoContent
       }
       .recover {
