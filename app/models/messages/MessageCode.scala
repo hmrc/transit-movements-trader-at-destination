@@ -14,12 +14,6 @@
  * limitations under the License.
  */
 
-package models
+package models.messages
 
-sealed trait XSDFile {
-  val filePath: String
-}
-
-object ArrivalNotificationXSD extends XSDFile {
-  val filePath = "/xsd-iconvert/cc007a.xsd"
-}
+case class MessageCode(code: String)

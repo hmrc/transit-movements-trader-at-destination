@@ -26,7 +26,6 @@ import org.xml.sax.InputSource
 import org.xml.sax.helpers.DefaultHandler
 import play.api.Logger
 
-import scala.util.{Failure, Success, Try}
 import scala.xml.factory.XMLLoader
 import scala.xml.{Elem, SAXParseException, SAXParser}
 
@@ -42,7 +41,7 @@ class XmlValidationService {
     saxParser.newSAXParser()
   }
 
-  def validate(xml: String, xsdFile: XSDFile): Try[String] = {
+  def validate(xml: String, xsdFile: XSDFile): Either[XmlError, XmlValid] = {
 
     try {
 
@@ -68,16 +67,21 @@ class XmlValidationService {
 
       xmlResponse.parser.parse(new InputSource(new StringReader(xml)), new CustomParseHandler)
 
-      Success("successfully parsed xml")
+      Right(XmlSuccessfullyValidated)
 
     } catch {
-      case e: NullPointerException =>
-        logger.warn(s"Could not find XSD with the key: ${xsdFile.filePath}")
-        Failure(e)
       case e: Throwable =>
         logger.warn(e.getMessage)
-        Failure(e)
+        Left(FailedToValidateXml)
     }
   }
 
 }
+
+sealed trait XmlValid
+
+object XmlSuccessfullyValidated extends XmlValid
+
+sealed trait XmlError
+
+object FailedToValidateXml            extends XmlError

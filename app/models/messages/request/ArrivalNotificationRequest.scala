@@ -16,33 +16,23 @@
 
 package models.messages.request
 
+import models.messages.MessageCode
+
 import scala.collection.immutable.ListMap
-
-
-trait RequestModel
-
-trait RequestModelError
-
-
-object FailedToConvert    extends RequestModelError
-object FailedToCreateXml  extends RequestModelError
-
 
 case class ArrivalNotificationRequest(
                                        meta: Meta,
                                        header: Header,
                                        traderDestination: TraderDestination,
                                        customsOfficeOfPresentation: CustomsOfficeOfPresentation
-                                     ) extends ArrivalNotificationRequestConstants with RequestModel
+                                     ) extends RequestConstants {
 
-sealed trait ArrivalNotificationRequestConstants {
-  val messageCode: String = "GB007A"
+  val messageCode: MessageCode = MessageCode("GB007A")
   val syntaxIdentifier: String = "UNOC"
   val rootKey: String = "CC007A"
-  val nameSpace: Map[String, String] = ListMap(
-    "xmlns" -> "http://ncts.dgtaxud.ec/CC007A",
-    "xmlns:xsi" -> "http://www.w3.org/2001/XMLSchema-instance",
-    "xmlns:complex_ncts" -> "http://ncts.dgtaxud.ec/complex_ncts",
-    "xsi:schemaLocation" -> "http://ncts.dgtaxud.ec/CC007A"
-  )
+  val nameSpace: Map[String, String] = ListMap()
+}
+
+object ArrivalNotificationRequest {
+  val messageCode: MessageCode = MessageCode("GB007A")
 }

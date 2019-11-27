@@ -14,17 +14,13 @@
  * limitations under the License.
  */
 
-package services
+package models.messages.request
 
-import models.messages.ArrivalNotification
+import models.messages.MessageCode
 
-class SubmissionServiceImpl extends SubmissionService {
-
-  def submit(arrivalNotification: ArrivalNotification): Int = {
-    200
-  }
-}
-
-trait SubmissionService {
-  def submit(arrivalNotification: ArrivalNotification): Int
+trait RequestConstants {
+  val messageCode: MessageCode
+  val syntaxIdentifier: String
+  val rootKey: String
+  val nameSpace: Map[String, String]
 }

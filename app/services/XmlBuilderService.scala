@@ -30,14 +30,14 @@ class XmlBuilderService {
   private val logger = Logger(getClass)
 
   def buildXml(arrivalNotificationRequest: ArrivalNotificationRequest)
-              (implicit dateTime: LocalDateTime): Either[RequestModelError, Node] = {
+              (implicit dateTime: LocalDateTime): Either[XmlBuilderError, Node] = {
 
     try {
 
       val rootNode: Node = buildStartRoot(arrivalNotificationRequest.rootKey, arrivalNotificationRequest.nameSpace)
 
       val childNodes: NodeSeq = {
-        buildMetaNode(arrivalNotificationRequest.meta, arrivalNotificationRequest.messageCode) ++
+        buildMetaNode(arrivalNotificationRequest.meta, arrivalNotificationRequest.messageCode.code) ++
           buildHeaderNode(arrivalNotificationRequest.header, Format.dateFormatted(dateTime)) ++
           buildTraderDestinationNode(arrivalNotificationRequest.traderDestination) ++
           buildOfficeOfPresentationNode(arrivalNotificationRequest.customsOfficeOfPresentation)
@@ -88,8 +88,8 @@ class XmlBuilderService {
     buildOptionalElem(meta.senderIdentificationCodeQualifier, "SenIdeCodQuaMES4") ++
     buildOptionalElem(meta.recipientIdentificationCodeQualifier, "RecIdeCodQuaMES7") ++
     <MesRecMES6>{meta.messageRecipient}</MesRecMES6> ++
-      <DatOfPreMES9>{Format.dateFormatted(dateTime)}</DatOfPreMES9> ++
-      <TimOfPreMES10>{Format.timeFormatted(dateTime)}</TimOfPreMES10> ++
+    <DatOfPreMES9>{Format.dateFormatted(dateTime)}</DatOfPreMES9> ++
+    <TimOfPreMES10>{Format.timeFormatted(dateTime)}</TimOfPreMES10> ++
     <IntConRefMES11>{meta.interchangeControlReference.toString}</IntConRefMES11> ++
     buildOptionalElem(meta.recipientsReferencePassword, "RecRefMES12") ++
     buildOptionalElem(meta.recipientsReferencePasswordQualifier, "RecRefQuaMES13") ++
@@ -97,7 +97,7 @@ class XmlBuilderService {
     buildOptionalElem(meta.priority, "PriMES15") ++
     buildOptionalElem(meta.acknowledgementRequest, "AckReqMES16") ++
     buildOptionalElem(meta.communicationsAgreementId, "ComAgrIdMES17") ++
-    <MesIdeMES18>{meta.testIndicator}</MesIdeMES18> ++
+    <TesIndMES18>{meta.testIndicator}</TesIndMES18> ++
     <MesIdeMES19>{meta.messageIndication}</MesIdeMES19> ++
     <MesTypMES20>{messageCode}</MesTypMES20> ++
     buildOptionalElem(meta.commonAccessReference, "ComAccRefMES21") ++
@@ -118,7 +118,6 @@ class XmlBuilderService {
         buildOptionalElem(header.arrivalAgreedLocationOfGoods, "ArrAgrLocOfGooHEA63")
       }
       <ArrAgrLocOfGooHEA63LNG>{header.languageCode}</ArrAgrLocOfGooHEA63LNG>
-      <ArrivalAgreedLocationOfGoodsLNG>{header.languageCode}</ArrivalAgreedLocationOfGoodsLNG>
       {
         buildOptionalElem(header.arrivalAgreedLocationOfGoods, "ArrAutLocOfGooHEA65")
       }
@@ -150,3 +149,7 @@ class XmlBuilderService {
   }
 
 }
+
+sealed trait XmlBuilderError
+
+object FailedToCreateXml              extends XmlBuilderError

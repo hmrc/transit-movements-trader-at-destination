@@ -17,14 +17,18 @@
 package config
 
 import com.google.inject.AbstractModule
-import services.{DateTimeService, DateTimeServiceImpl, SubmissionService, SubmissionServiceImpl}
+import connectors.{MessageConnector, MessageConnectorImpl}
+import services._
 
 class Module extends AbstractModule {
 
   override def configure(): Unit = {
 
     bind(classOf[DateTimeService]).to(classOf[DateTimeServiceImpl]).asEagerSingleton()
-    bind(classOf[SubmissionService]).to(classOf[SubmissionServiceImpl]).asEagerSingleton()
+
+    bind(classOf[MessageConnector]).to(classOf[MessageConnectorImpl]).asEagerSingleton()
+
+    bind(classOf[DatabaseService]).to(classOf[DatabaseServiceImpl]).asEagerSingleton()
 
   }
 

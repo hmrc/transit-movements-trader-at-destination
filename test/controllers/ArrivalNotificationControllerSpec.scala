@@ -16,82 +16,287 @@
 
 package controllers
 
+import base.SpecBase
+import connectors.MessageConnector
 import generators.MessageGenerators
-import models.messages.NormalNotification
+import models.messages.request._
+import org.mockito.Matchers._
+import org.mockito.Mockito._
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalatest.{FreeSpec, MustMatchers, OptionValues}
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.inject.bind
-import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
+import play.api.mvc.Result
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import services.SubmissionService
-import services.mocks.MockSubmissionService
+import repositories._
+import services._
+import uk.gov.hmrc.http.{BadRequestException, HttpResponse}
 
-class ArrivalNotificationControllerSpec extends
-  FreeSpec with
-  MustMatchers with
-  ScalaCheckPropertyChecks with
-  MessageGenerators with
-  GuiceOneAppPerSuite with
-  OptionValues with
-  MockSubmissionService {
+import scala.concurrent.Future
+import scala.xml.Node
 
-  /**
-    * SHOULD
-    * Return 200 on successful conversion to ArrivalNotification
-    * Return 400 when ArrivalNotification could not be built
-    * Return 401 when user isn't authenticated
-    * Return 502 if EIS is down
-    * Return 504 (check this doesn't happen automatically
-    */
 
-  override implicit lazy val app = new GuiceApplicationBuilder()
-    .overrides(
-      bind[SubmissionService].toInstance(mockSubmissionService)
-    ).build()
+class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckPropertyChecks with MessageGenerators with BeforeAndAfterEach {
+
+  private val mockMessageConnector: MessageConnector = mock[MessageConnector]
+  private val mockInterchangeControlReferenceService: DatabaseService = mock[DatabaseService]
+  private val mockSubmissionModelService: SubmissionModelService = mock[SubmissionModelService]
+  private val mockXmlBuilderService: XmlBuilderService = mock[XmlBuilderService]
+  private val mockXmlValidationService: XmlValidationService = mock[XmlValidationService]
+
+
+  private val application = {
+    applicationBuilder
+      .overrides(bind[MessageConnector].toInstance(mockMessageConnector))
+      .overrides(bind[DatabaseService].toInstance(mockInterchangeControlReferenceService))
+      .overrides(bind[SubmissionModelService].toInstance(mockSubmissionModelService))
+      .overrides(bind[XmlBuilderService].toInstance(mockXmlBuilderService))
+      .overrides(bind[XmlValidationService].toInstance(mockXmlValidationService)
+      ).build
+  }
+
+  override def beforeEach(): Unit = {
+    super.beforeEach()
+    reset(mockMessageConnector)
+    reset(mockInterchangeControlReferenceService)
+    reset(mockSubmissionModelService)
+    reset(mockXmlBuilderService)
+    reset(mockXmlValidationService)
+
+  }
+
+  private val testNode: Node = <element1>test</element1>
 
   "post" - {
 
-    "must return BAD_REQUEST when can't be converted to ArrivalNotification" in {
+    "must return NO_CONTENT when passed valid NormalNotification" in {
+
+      forAll(arbitrary[ArrivalNotificationRequest]) {
+
+        arrivalNotificationRequest =>
+
+          when(mockInterchangeControlReferenceService.getInterchangeControlReferenceId)
+            .thenReturn(Future.successful(Right(InterchangeControlReference("20190101", 1))))
+
+          when(mockSubmissionModelService.convertToSubmissionModel(any(), any(), any()))
+            .thenReturn(Right(arrivalNotificationRequest))
+
+          when(mockXmlBuilderService.buildXml(any())(any()))
+            .thenReturn(Right(testNode))
+
+          when(mockXmlValidationService.validate(any(), any()))
+            .thenReturn(Right(XmlSuccessfullyValidated))
+
+          when(mockInterchangeControlReferenceService.saveArrivalNotification(any()))
+            .thenReturn(Future.successful(Right(fakeWriteResult)))
+
+          when(mockMessageConnector.post(any(), any())(any()))
+            .thenReturn(Future.successful(HttpResponse(200)))
+
+          val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
+            .withJsonBody(Json.toJson(normalNotification))
+
+          val result = route(application, request).value
+
+          status(result) mustEqual NO_CONTENT
+      }
+    }
+
+    "must return INTERNAL_SERVER_ERROR when interchange control reference id cannot be generated" in {
+
+      when(mockInterchangeControlReferenceService.getInterchangeControlReferenceId)
+        .thenReturn(Future.successful(Left(FailedCreatingInterchangeControlReference)))
 
       val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
-        .withJsonBody(Json.obj("key" -> "value"))
-      val result = route(app, request).value
+        .withJsonBody(Json.toJson(normalNotification))
+
+      val result: Future[Result] = route(application, request).value
+
+      status(result) mustEqual INTERNAL_SERVER_ERROR
+    }
+
+    "must return INTERNAL_SERVER_ERROR when persist to mongo returns a FailedSavingArrivalNotification" in {
+
+      forAll(arbitrary[ArrivalNotificationRequest]) {
+
+        arrivalNotificationRequest =>
+
+          when(mockInterchangeControlReferenceService.getInterchangeControlReferenceId)
+            .thenReturn(Future.successful(Right(InterchangeControlReference("20190101", 1))))
+
+          when(mockSubmissionModelService.convertToSubmissionModel(any(), any(), any()))
+            .thenReturn(Right(arrivalNotificationRequest))
+
+          when(mockXmlBuilderService.buildXml(any())(any()))
+            .thenReturn(Right(testNode))
+
+          when(mockXmlValidationService.validate(any(), any()))
+            .thenReturn(Right(XmlSuccessfullyValidated))
+
+          when(mockInterchangeControlReferenceService.saveArrivalNotification(any()))
+            .thenReturn(Future.successful(Left(FailedSavingArrivalNotification)))
+
+          val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
+            .withJsonBody(Json.toJson(normalNotification))
+
+          val result: Future[Result] = route(application, request).value
+
+          whenReady(result) {
+            result =>
+              result.header.status mustBe INTERNAL_SERVER_ERROR
+          }
+      }
+    }
+
+    "must return INTERNAL_SERVER_ERROR when persist to mongo fails" in {
+
+      forAll(arbitrary[ArrivalNotificationRequest]) {
+
+        arrivalNotificationRequest =>
+
+          when(mockInterchangeControlReferenceService.getInterchangeControlReferenceId)
+            .thenReturn(Future.successful(Right(InterchangeControlReference("20190101", 1))))
+
+          when(mockSubmissionModelService.convertToSubmissionModel(any(), any(), any()))
+            .thenReturn(Right(arrivalNotificationRequest))
+
+          when(mockXmlBuilderService.buildXml(any())(any()))
+            .thenReturn(Right(testNode))
+
+          when(mockXmlValidationService.validate(any(), any()))
+            .thenReturn(Right(XmlSuccessfullyValidated))
+
+          when(mockInterchangeControlReferenceService.saveArrivalNotification(any()))
+            .thenReturn(Future.failed(new BadRequestException("")))
+
+          val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
+            .withJsonBody(Json.toJson(normalNotification))
+
+          val result: Future[Result] = route(application, request).value
+
+          whenReady(result) {
+            result =>
+              result.header.status mustBe INTERNAL_SERVER_ERROR
+          }
+      }
+    }
+
+
+    "must return BAD_GATEWAY when POST fails" in {
+
+      forAll(arbitrary[ArrivalNotificationRequest]) {
+
+        arrivalNotificationRequest =>
+          when(mockInterchangeControlReferenceService.getInterchangeControlReferenceId)
+            .thenReturn(Future.successful(Right(InterchangeControlReference("20190101", 1))))
+
+          when(mockSubmissionModelService.convertToSubmissionModel(any(), any(), any()))
+            .thenReturn(Right(arrivalNotificationRequest))
+
+          when(mockXmlBuilderService.buildXml(any())(any()))
+            .thenReturn(Right(testNode))
+
+          when(mockXmlValidationService.validate(any(), any()))
+            .thenReturn(Right(XmlSuccessfullyValidated))
+
+          when(mockInterchangeControlReferenceService.saveArrivalNotification(any()))
+            .thenReturn(Future.successful(Right(fakeWriteResult)))
+
+          when(mockMessageConnector.post(any(), any())(any()))
+            .thenReturn(Future.failed(new BadRequestException("")))
+
+          val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
+            .withJsonBody(Json.toJson(normalNotification))
+
+          val result: Future[Result] = route(application, request).value
+
+          status(result) mustEqual BAD_GATEWAY
+      }
+    }
+
+    "must return INTERNAL_SERVER_ERROR when conversion to xml has failed" in {
+
+      forAll(arbitrary[ArrivalNotificationRequest]) {
+
+        arrivalNotificationRequest =>
+
+          when(mockInterchangeControlReferenceService.getInterchangeControlReferenceId)
+            .thenReturn(Future.successful(Right(InterchangeControlReference("20190101", 1))))
+
+          when(mockSubmissionModelService.convertToSubmissionModel(any(), any(), any()))
+            .thenReturn(Right(arrivalNotificationRequest))
+
+          when(mockXmlBuilderService.buildXml(any())(any()))
+            .thenReturn(Left(FailedToCreateXml))
+
+          val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
+            .withJsonBody(Json.toJson(normalNotification))
+
+          val result = route(application, request).value
+
+          status(result) mustEqual INTERNAL_SERVER_ERROR
+      }
+    }
+
+    "must return BAD_REQUEST when conversion to request model has failed" in {
+
+      when(mockInterchangeControlReferenceService.getInterchangeControlReferenceId)
+        .thenReturn(Future.successful(Right(InterchangeControlReference("20190101", 1))))
+
+      when(mockSubmissionModelService.convertToSubmissionModel(any(), any(), any()))
+        .thenReturn(Left(FailedToConvertModel))
+
+      val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
+        .withJsonBody(Json.toJson(normalNotification))
+
+      val result = route(application, request).value
 
       status(result) mustEqual BAD_REQUEST
     }
 
-    "must return BAD_GATEWAY when the EIS service is down" in {
+    "must return BAD_REQUEST when xml validation has failed" in {
 
-      for (
-        normalNotification <- arbitrary[NormalNotification]
-      ) yield {
-        mockSubmit(502, normalNotification)
+      forAll(arbitrary[ArrivalNotificationRequest]) {
 
-        val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
-          .withJsonBody(Json.toJson(normalNotification))
-        val result = route(app, request).value
+        arrivalNotificationRequest =>
+          when(mockInterchangeControlReferenceService.getInterchangeControlReferenceId)
+            .thenReturn(Future.successful(Right(InterchangeControlReference("20190101", 1))))
 
-        status(result) mustEqual BAD_GATEWAY
+          when(mockSubmissionModelService.convertToSubmissionModel(any(), any(), any()))
+            .thenReturn(Right(arrivalNotificationRequest))
+
+          when(mockXmlBuilderService.buildXml(any())(any()))
+            .thenReturn(Right(testNode))
+
+          when(mockXmlValidationService.validate(any(), any()))
+            .thenReturn(Left(FailedToValidateXml))
+
+          val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
+            .withJsonBody(Json.toJson(normalNotification))
+
+          val result = route(application, request).value
+
+          status(result) mustEqual BAD_REQUEST
       }
     }
-  }
 
-  "must return OK when passed valid NormalNotification" in {
+   "must return BAD_REQUEST when given invalid json" in {
 
-    for (
-      normalNotification <- arbitrary[NormalNotification]
-    ) yield {
-      mockSubmit(200, normalNotification)
+      val invalidJson = Json.parse(
+        """{
+          |"invalid" : "json"
+          |}
+        """.stripMargin)
 
       val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
-        .withJsonBody(Json.toJson(normalNotification))
-      val result = route(app, request).value
+        .withJsonBody(Json.toJson(invalidJson))
 
-      status(result) mustEqual OK
+      val result = route(application, request).value
+
+      status(result) mustEqual BAD_REQUEST
+
     }
   }
 
