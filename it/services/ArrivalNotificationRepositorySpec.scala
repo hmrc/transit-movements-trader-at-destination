@@ -3,7 +3,9 @@ package it.services
 import generators.MessageGenerators
 import models.messages.{ArrivalNotification, NormalNotification, SimplifiedNotification}
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
+import org.scalatest.concurrent.PatienceConfiguration.Timeout
+import org.scalatest.concurrent.{IntegrationPatience, PatienceConfiguration, ScalaFutures}
+import org.scalatest.time.{Seconds, Span}
 import org.scalatest.{BeforeAndAfterEach, FreeSpec, MustMatchers, OptionValues}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
@@ -28,11 +30,11 @@ class ArrivalNotificationRepositorySpec
     with MessageGenerators
     with BeforeAndAfterEach {
 
-  val service: ArrivalNotificationRepository = app.injector.instanceOf[ArrivalNotificationRepository]
+  private val service: ArrivalNotificationRepository = app.injector.instanceOf[ArrivalNotificationRepository]
 
   override def beforeEach(): Unit = {
     super.beforeEach()
-    database.flatMap(_.drop()).futureValue
+//    database.flatMap(_.drop()).futureValue
   }
 
   "ArrivalNotificationRepository" - {
@@ -47,11 +49,11 @@ class ArrivalNotificationRepositorySpec
 
           val selector = Json.obj("movementReferenceNumber" -> normalNotification.movementReferenceNumber)
 
-          val getValue: Option[ArrivalNotification] = database.flatMap {
+          val getValue: Option[NormalNotification] = database.flatMap {
             result =>
               result.collection[JSONCollection](CollectionNames.ArrivalNotificationCollection)
                 .find(selector, None)
-                .one[ArrivalNotification]
+                .one[NormalNotification]
           }.futureValue
 
           getValue.value mustBe normalNotification
@@ -68,11 +70,11 @@ class ArrivalNotificationRepositorySpec
 
           val selector = Json.obj("movementReferenceNumber" -> simplifiedNotification.movementReferenceNumber)
 
-          val getValue: Option[ArrivalNotification] = database.flatMap {
+          val getValue: Option[SimplifiedNotification] = database.flatMap {
             result =>
               result.collection[JSONCollection](CollectionNames.ArrivalNotificationCollection)
                 .find(selector, None)
-                .one[ArrivalNotification]
+                .one[SimplifiedNotification]
           }.futureValue
 
           getValue.value mustBe simplifiedNotification
@@ -129,5 +131,6 @@ class ArrivalNotificationRepositorySpec
       }
     }
   }
+
 
 }
