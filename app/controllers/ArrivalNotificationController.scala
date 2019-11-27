@@ -79,8 +79,6 @@ class ArrivalNotificationController @Inject()(
                     }
                     case Left(FailedToValidateXml) =>
                       Future.successful(BadRequest)
-                    case Left(FailedFindingXSDFile) =>
-                      Future.successful(InternalServerError)
                   }
                 }
                 case Left(FailedToCreateXml) =>

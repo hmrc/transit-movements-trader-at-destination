@@ -85,4 +85,3 @@ object XmlSuccessfullyValidated extends XmlValid
 sealed trait XmlError
 
 object FailedToValidateXml            extends XmlError
-object FailedFindingXSDFile           extends XmlError

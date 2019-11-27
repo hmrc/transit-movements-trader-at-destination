@@ -282,33 +282,7 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
       }
     }
 
-    "must return BAD_REQUEST when xml validation has failed finding XSD File" in {
-
-      forAll(arbitrary[ArrivalNotificationRequest]) {
-
-        arrivalNotificationRequest =>
-          when(mockInterchangeControlReferenceService.getInterchangeControlReferenceId)
-            .thenReturn(Future.successful(Right(InterchangeControlReference("20190101", 1))))
-
-          when(mockSubmissionModelService.convertToSubmissionModel(any(), any(), any()))
-            .thenReturn(Right(arrivalNotificationRequest))
-
-          when(mockXmlBuilderService.buildXml(any())(any()))
-            .thenReturn(Right(testNode))
-
-          when(mockXmlValidationService.validate(any(), any()))
-            .thenReturn(Left(FailedFindingXSDFile))
-
-          val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
-            .withJsonBody(Json.toJson(normalNotification))
-
-          val result = route(application, request).value
-
-          status(result) mustEqual INTERNAL_SERVER_ERROR
-      }
-    }
-
-    "must return BAD_REQUEST when given invalid json" in {
+   "must return BAD_REQUEST when given invalid json" in {
 
       val invalidJson = Json.parse(
         """{
