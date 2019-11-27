@@ -34,7 +34,7 @@ class ArrivalNotificationRepositorySpec
 
   override def beforeEach(): Unit = {
     super.beforeEach()
-//    database.flatMap(_.drop()).futureValue
+    database.flatMap(_.drop()).futureValue
   }
 
   "ArrivalNotificationRepository" - {
