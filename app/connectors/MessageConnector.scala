@@ -25,13 +25,13 @@ import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
 
 class MessageConnectorImpl @Inject()(config: AppConfig, http: HttpClient) extends MessageConnector {
 
   def post(xml: String, messageCode: MessageCode)
-          (implicit headerCarrier: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse] = {
+          (implicit headerCarrier: HeaderCarrier): Future[HttpResponse] = {
 
     val url = config.eisUrl
 
@@ -51,6 +51,5 @@ class MessageConnectorImpl @Inject()(config: AppConfig, http: HttpClient) extend
 
 trait MessageConnector {
   def post(xml: String, messageCode: MessageCode)
-          (implicit headerCarrier: HeaderCarrier, ec: ExecutionContext
-          ): Future[HttpResponse]
+          (implicit headerCarrier: HeaderCarrier): Future[HttpResponse]
 }
