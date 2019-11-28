@@ -53,13 +53,15 @@ class MessageConnectorSpec
           implicit val headerCarrier: HeaderCarrier = hc
 
           val messageCode: String = arrivalNotificationRequest.messageCode.code
+          val messageSender ="mdtp-userseori"
 
           server.stubFor(
             post(urlEqualTo(url))
               .withHeader("Content-Type", equalTo("application/xml"))
-              .withHeader("MessageCode", equalTo(messageCode))
+              .withHeader("X-Message-Type", equalTo(messageCode))
               .withHeader("X-Correlation-ID", headerCarrierPattern)
               .withHeader("X-Forwarded-Host", equalTo("mdtp"))
+              .withHeader("X-Message-Sender", equalTo(messageSender))
               .willReturn(
                 aResponse()
                   .withStatus(200)
@@ -82,13 +84,15 @@ class MessageConnectorSpec
           implicit val headerCarrier: HeaderCarrier = hc
 
           val messageCode: String = arrivalNotificationRequest.messageCode.code
+          val messageSender ="mdtp-userseori"
 
           server.stubFor(
             post(urlEqualTo(url))
               .withHeader("Content-Type", equalTo("application/xml"))
-              .withHeader("MessageCode", equalTo(messageCode))
+              .withHeader("X-Message-Type", equalTo(messageCode))
               .withHeader("X-Correlation-ID", headerCarrierPattern)
               .withHeader("X-Forwarded-Host", equalTo("mdtp"))
+              .withHeader("X-Message-Sender", equalTo(messageSender))
               .willReturn(
                 aResponse()
                   .withStatus(statusCode)

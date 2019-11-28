@@ -47,8 +47,8 @@ class DatabaseServiceImpl @Inject()(sequentialInterchangeControlReferenceIdRepos
     arrivalNotificationRepository
       .persistToMongo(arrivalNotification)
       .map {
-        x =>
-          Right(x)
+        writeResult =>
+          Right(writeResult)
       }
       .recover {
         case _ =>
