@@ -34,14 +34,16 @@ class MessageConnectorImpl @Inject()(config: AppConfig, http: HttpClient) extend
           (implicit headerCarrier: HeaderCarrier): Future[HttpResponse] = {
 
     val url = config.eisUrl
+    val messageSender ="mdtp-userseori"
 
     val customHeaders: Seq[(String, String)] = Seq(
       "Content-Type" -> "application/xml",
-      "MessageCode" -> messageCode.code,
+      "X-Message-Type" -> messageCode.code,
       "X-Correlation-ID" -> {
         headerCarrier.sessionId.map(_.value)
           .getOrElse(UUID.randomUUID().toString)
       },
+      "X-Message-Sender" -> messageSender,
       "X-Forwarded-Host" -> "mdtp"
     )
 
