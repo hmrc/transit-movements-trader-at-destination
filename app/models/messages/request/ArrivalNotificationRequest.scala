@@ -16,6 +16,7 @@
 
 package models.messages.request
 
+import models.EnRouteEvent
 import models.messages.MessageCode
 
 import scala.collection.immutable.ListMap
@@ -24,7 +25,8 @@ case class ArrivalNotificationRequest(
   meta: Meta,
   header: Header,
   traderDestination: TraderDestination,
-  customsOfficeOfPresentation: CustomsOfficeOfPresentation
+  customsOfficeOfPresentation: CustomsOfficeOfPresentation,
+  enRouteEvents: Seq[EnRouteEvent]
 ) extends RequestConstants {
 
   val messageCode: MessageCode       = MessageCode("GB007A")

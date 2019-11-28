@@ -73,7 +73,7 @@ class SubmissionModelServiceSpec
                 eori = arrivalNotificationRequest.traderDestination.eori.value
               ),
               presentationOffice = arrivalNotificationRequest.customsOfficeOfPresentation.presentationOffice,
-              enRouteEvents = Nil
+              enRouteEvents = arrivalNotificationRequest.enRouteEvents
             )
           }
 
@@ -115,7 +115,7 @@ class SubmissionModelServiceSpec
               countryCode = arrivalNotificationRequest.traderDestination.countryCode.value
             ),
             presentationOffice = arrivalNotificationRequest.customsOfficeOfPresentation.presentationOffice,
-            enRouteEvents = Nil
+            enRouteEvents = arrivalNotificationRequest.enRouteEvents
           )
         }
 
