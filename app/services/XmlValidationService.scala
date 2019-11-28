@@ -27,11 +27,13 @@ import org.xml.sax.helpers.DefaultHandler
 import play.api.Logger
 
 import scala.xml.factory.XMLLoader
-import scala.xml.{Elem, SAXParseException, SAXParser}
+import scala.xml.Elem
+import scala.xml.SAXParseException
+import scala.xml.SAXParser
 
 class XmlValidationService {
 
-  private val logger = Logger(getClass)
+  private val logger     = Logger(getClass)
   private val schemaLang = javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI
 
   private def saxParser(schema: Schema): SAXParser = {
@@ -41,8 +43,7 @@ class XmlValidationService {
     saxParser.newSAXParser()
   }
 
-  def validate(xml: String, xsdFile: XSDFile): Either[XmlError, XmlValid] = {
-
+  def validate(xml: String, xsdFile: XSDFile): Either[XmlError, XmlValid] =
     try {
 
       val url: URL = getClass.getResource(xsdFile.filePath)
@@ -61,8 +62,7 @@ class XmlValidationService {
         override def parser: SAXParser = saxParser(schema)
 
         override def adapter =
-          new scala.xml.parsing.NoBindingFactoryAdapter
-            with scala.xml.parsing.ConsoleErrorHandler
+          new scala.xml.parsing.NoBindingFactoryAdapter with scala.xml.parsing.ConsoleErrorHandler
       }
 
       xmlResponse.parser.parse(new InputSource(new StringReader(xml)), new CustomParseHandler)
@@ -74,7 +74,6 @@ class XmlValidationService {
         logger.warn(e.getMessage)
         Left(FailedToValidateXml)
     }
-  }
 
 }
 
@@ -84,4 +83,4 @@ object XmlSuccessfullyValidated extends XmlValid
 
 sealed trait XmlError
 
-object FailedToValidateXml            extends XmlError
+object FailedToValidateXml extends XmlError

@@ -38,14 +38,14 @@ object EventDetails {
   }
 
   implicit lazy val writes: Writes[EventDetails] = Writes {
-    case i: Incident      => Json.toJson(i)(Incident.format)
-    case t: Transhipment  => Json.toJson(t)(Transhipment.writes)
+    case i: Incident     => Json.toJson(i)(Incident.format)
+    case t: Transhipment => Json.toJson(t)(Transhipment.writes)
   }
 }
 
-final case class Incident (
-    information: Option[String],
-    endorsement: Endorsement
+final case class Incident(
+  information: Option[String],
+  endorsement: Endorsement
 ) extends EventDetails
 
 object Incident {
@@ -79,12 +79,12 @@ object Transhipment {
   }
 }
 
-final case class VehicularTranshipment (
-                                         transportIdentity: String,
-                                         transportCountry: String,
-                                         endorsement: Endorsement,
-                                         containers: Seq[String]
-                                       ) extends Transhipment
+final case class VehicularTranshipment(
+  transportIdentity: String,
+  transportCountry: String,
+  endorsement: Endorsement,
+  containers: Seq[String]
+) extends Transhipment
 
 object VehicularTranshipment {
 
@@ -94,28 +94,29 @@ object VehicularTranshipment {
 
     (
       (__ \ "transportIdentity").read[String] and
-      (__ \ "transportCountry").read[String] and
-      (__ \ "endorsement").read[Endorsement] and
-      ((__ \ "containers").read[Seq[String]] or Reads.pure(Seq[String]()))
+        (__ \ "transportCountry").read[String] and
+        (__ \ "endorsement").read[Endorsement] and
+        ((__ \ "containers").read[Seq[String]] or Reads.pure(Seq[String]()))
     )(VehicularTranshipment(_, _, _, _))
   }
 
   implicit lazy val writes: OWrites[VehicularTranshipment] =
     OWrites[VehicularTranshipment] {
       transhipment =>
-
-        Json.obj(
-          "transportIdentity" -> transhipment.transportIdentity,
-          "transportCountry"  -> transhipment.transportCountry,
-          "endorsement"       -> Json.toJson(transhipment.endorsement),
-          "containers"        -> Json.toJson(transhipment.containers)
-        ).filterNulls
+        Json
+          .obj(
+            "transportIdentity" -> transhipment.transportIdentity,
+            "transportCountry"  -> transhipment.transportCountry,
+            "endorsement"       -> Json.toJson(transhipment.endorsement),
+            "containers"        -> Json.toJson(transhipment.containers)
+          )
+          .filterNulls
     }
 }
 
-final case class ContainerTranshipment (
-    endorsement: Endorsement,
-    containers: Seq[String]
+final case class ContainerTranshipment(
+  endorsement: Endorsement,
+  containers: Seq[String]
 ) extends Transhipment {
 
   require(containers.nonEmpty, "At least one container number must be provided")

@@ -23,8 +23,10 @@ import connectors.MessageConnector
 import javax.inject.Inject
 import models.ArrivalNotificationXSD
 import models.messages.ArrivalNotification
-import models.messages.request.{ArrivalNotificationRequest, _}
-import play.api.libs.json.{JsError, Reads}
+import models.messages.request.ArrivalNotificationRequest
+import models.messages.request._
+import play.api.libs.json.JsError
+import play.api.libs.json.Reads
 import play.api.mvc._
 import reactivemongo.api.commands.WriteResult
 import repositories.FailedSavingArrivalNotification
@@ -37,20 +39,18 @@ import scala.concurrent.Future
 import scala.xml.Node
 
 class ArrivalNotificationController @Inject()(
-                                               cc: ControllerComponents,
-                                               bodyParsers: PlayBodyParsers,
-                                               appConfig: AppConfig,
-                                               databaseService: DatabaseService,
-                                               messageConnector: MessageConnector,
-                                               submissionModelService: SubmissionModelService,
-                                               xmlBuilderService: XmlBuilderService,
-                                               xmlValidationService: XmlValidationService
-                                             )
-  extends BackendController(cc) {
+  cc: ControllerComponents,
+  bodyParsers: PlayBodyParsers,
+  appConfig: AppConfig,
+  databaseService: DatabaseService,
+  messageConnector: MessageConnector,
+  submissionModelService: SubmissionModelService,
+  xmlBuilderService: XmlBuilderService,
+  xmlValidationService: XmlValidationService
+) extends BackendController(cc) {
 
   def post(): Action[ArrivalNotification] = Action.async(validateJson[ArrivalNotification]) {
     implicit request =>
-
       val messageSender = MessageSender(appConfig.env, "eori")
 
       val arrivalNotification = request.body
@@ -69,13 +69,16 @@ class ArrivalNotificationController @Inject()(
                   xmlValidationService.validate(xml.toString(), ArrivalNotificationXSD) match {
 
                     case Right(XmlSuccessfullyValidated) => {
-                      databaseService.saveArrivalNotification(arrivalNotification).flatMap {
+                      databaseService
+                        .saveArrivalNotification(arrivalNotification)
+                        .flatMap {
 
-                        sendMessage(xml, arrivalNotificationRequestModel)
+                          sendMessage(xml, arrivalNotificationRequestModel)
 
-                      }.recover {
-                        case _ => InternalServerError
-                      }
+                        }
+                        .recover {
+                          case _ => InternalServerError
+                        }
                     }
                     case Left(FailedToValidateXml) =>
                       Future.successful(BadRequest)
@@ -94,22 +97,24 @@ class ArrivalNotificationController @Inject()(
       }
   }
 
-  private def sendMessage(xml: Node, arrivalNotificationRequestModel: ArrivalNotificationRequest)(implicit headerCarrier: HeaderCarrier): PartialFunction[Either[FailedSavingArrivalNotification, WriteResult], Future[Result]] = {
+  private def sendMessage(xml: Node, arrivalNotificationRequestModel: ArrivalNotificationRequest)(
+    implicit headerCarrier: HeaderCarrier): PartialFunction[Either[FailedSavingArrivalNotification, WriteResult], Future[Result]] = {
     case Right(_) => {
-      messageConnector.post(xml.toString, arrivalNotificationRequestModel.messageCode).map {
-        _ => NoContent
-      }
-      .recover {
-        case _ => BadGateway
-      }
+      messageConnector
+        .post(xml.toString, arrivalNotificationRequestModel.messageCode)
+        .map {
+          _ =>
+            NoContent
+        }
+        .recover {
+          case _ => BadGateway
+        }
     }
     case Left(FailedSavingArrivalNotification) =>
       Future.successful(InternalServerError)
   }
 
-  private def validateJson[A: Reads]: BodyParser[A] = bodyParsers.json.validate(
-    _.validate[A].asEither.left.map(e =>
-      BadRequest(JsError.toJson(e)).as("application/json")
-    ))
+  private def validateJson[A: Reads]: BodyParser[A] =
+    bodyParsers.json.validate(_.validate[A].asEither.left.map(e => BadRequest(JsError.toJson(e)).as("application/json")))
 
 }

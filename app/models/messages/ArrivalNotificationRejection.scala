@@ -22,12 +22,12 @@ import models._
 import models.RejectionError
 import play.api.libs.json._
 
-final case class ArrivalNotificationRejection (
-    movementReferenceNumber: String,
-    rejectionDate: LocalDate,
-    action: Option[String],
-    reason: Option[String],
-    errors: Seq[RejectionError]
+final case class ArrivalNotificationRejection(
+  movementReferenceNumber: String,
+  rejectionDate: LocalDate,
+  action: Option[String],
+  reason: Option[String],
+  errors: Seq[RejectionError]
 )
 
 object ArrivalNotificationRejection {
@@ -38,23 +38,24 @@ object ArrivalNotificationRejection {
 
     (
       (__ \ "movementReferenceNumber").read[String] and
-      (__ \ "rejectionDate").read[LocalDate] and
-      (__ \ "action").readNullable[String] and
-      (__ \ "reason").readNullable[String] and
-      ((__ \ "errors").read[Seq[RejectionError]] or Reads.pure(Seq[RejectionError]()))
+        (__ \ "rejectionDate").read[LocalDate] and
+        (__ \ "action").readNullable[String] and
+        (__ \ "reason").readNullable[String] and
+        ((__ \ "errors").read[Seq[RejectionError]] or Reads.pure(Seq[RejectionError]()))
     )(ArrivalNotificationRejection(_, _, _, _, _))
   }
 
   implicit lazy val writes: OWrites[ArrivalNotificationRejection] =
     OWrites[ArrivalNotificationRejection] {
       rejection =>
-
-        Json.obj(
-          "movementReferenceNumber" -> rejection.movementReferenceNumber,
-          "rejectionDate"           -> rejection.rejectionDate,
-          "reason"                  -> rejection.reason,
-          "action"                  -> rejection.action,
-          "errors"                  -> rejection.errors
-        ).filterNulls
+        Json
+          .obj(
+            "movementReferenceNumber" -> rejection.movementReferenceNumber,
+            "rejectionDate"           -> rejection.rejectionDate,
+            "reason"                  -> rejection.reason,
+            "action"                  -> rejection.action,
+            "errors"                  -> rejection.errors
+          )
+          .filterNulls
     }
 }

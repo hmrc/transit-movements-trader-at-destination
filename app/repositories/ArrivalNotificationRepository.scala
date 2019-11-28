@@ -18,7 +18,8 @@ package repositories
 
 import com.google.inject.Inject
 import models.messages.ArrivalNotification
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.JsObject
+import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
 import play.modules.reactivemongo.ReactiveMongoApi
 import reactivemongo.api.commands.WriteResult
@@ -32,9 +33,8 @@ class ArrivalNotificationRepository @Inject()(cc: ControllerComponents, mongo: R
 
   private val collectionName = CollectionNames.ArrivalNotificationCollection
 
-  private def collection: Future[JSONCollection] = {
+  private def collection: Future[JSONCollection] =
     mongo.database.map(_.collection[JSONCollection](collectionName))
-  }
 
   def persistToMongo(arrivalNotification: ArrivalNotification): Future[WriteResult] = {
 
@@ -57,7 +57,6 @@ class ArrivalNotificationRepository @Inject()(cc: ControllerComponents, mongo: R
   }
 
 }
-
 
 sealed trait FailedSavingArrivalNotification
 

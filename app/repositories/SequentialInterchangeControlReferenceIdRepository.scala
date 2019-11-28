@@ -16,9 +16,11 @@
 
 package repositories
 
-import com.google.inject.{Inject, Singleton}
+import com.google.inject.Inject
+import com.google.inject.Singleton
 import models.messages.request.InterchangeControlReference
-import play.api.libs.json.{Json, Reads}
+import play.api.libs.json.Json
+import play.api.libs.json.Reads
 import play.modules.reactivemongo.ReactiveMongoApi
 import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 import reactivemongo.play.json.collection.JSONCollection
@@ -29,9 +31,9 @@ import scala.concurrent.Future
 
 @Singleton
 class SequentialInterchangeControlReferenceIdRepository @Inject()(
-                                                                mongo: ReactiveMongoApi,
-                                                                dateTimeService: DateTimeService
-                                                          ) extends InterchangeControlReferenceIdRepository {
+  mongo: ReactiveMongoApi,
+  dateTimeService: DateTimeService
+) extends InterchangeControlReferenceIdRepository {
 
   private val lastIndexKey = "last-index"
 

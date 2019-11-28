@@ -19,40 +19,39 @@ package services
 import com.google.inject.Inject
 import config.AppConfig
 import models.messages.NormalNotification
-import models.messages.request.{InterchangeControlReference, _}
-import models.{Trader, TraderWithEori, TraderWithoutEori}
+import models.messages.request.InterchangeControlReference
+import models.messages.request._
+import models.Trader
+import models.TraderWithEori
+import models.TraderWithoutEori
 
-class SubmissionModelService @Inject()(appConfig: AppConfig){
+class SubmissionModelService @Inject()(appConfig: AppConfig) {
 
   def convertToSubmissionModel[A](arrivalNotification: A,
                                   messageSender: MessageSender,
-                                  interchangeControlReference: InterchangeControlReference): Either[ModelConversionError, ArrivalNotificationRequest] = arrivalNotification match {
-    case arrivalNotification: NormalNotification =>
+                                  interchangeControlReference: InterchangeControlReference): Either[ModelConversionError, ArrivalNotificationRequest] =
+    arrivalNotification match {
+      case arrivalNotification: NormalNotification =>
+        val meta              = buildMeta(messageSender: MessageSender, interchangeControlReference)
+        val header            = buildHeader(arrivalNotification, simplifiedProcedureFlag = "0")
+        val traderDestination = buildTrader(arrivalNotification.trader)
+        val customsOffice     = CustomsOfficeOfPresentation(presentationOffice = arrivalNotification.presentationOffice)
 
-      val meta              = buildMeta(messageSender: MessageSender, interchangeControlReference)
-      val header            = buildHeader(arrivalNotification, simplifiedProcedureFlag = "0")
-      val traderDestination = buildTrader(arrivalNotification.trader)
-      val customsOffice     = CustomsOfficeOfPresentation(
-        presentationOffice  = arrivalNotification.presentationOffice)
+        Right(ArrivalNotificationRequest(meta, header, traderDestination, customsOffice))
+      case _ =>
+        Left(FailedToConvertModel)
+    }
 
-      Right(ArrivalNotificationRequest(meta, header, traderDestination, customsOffice))
-    case _ =>
-      Left(FailedToConvertModel)
-  }
+  private def buildMeta(messageSender: MessageSender, interchangeControlReference: InterchangeControlReference): Meta =
+    Meta(messageSender = messageSender, interchangeControlReference = interchangeControlReference)
 
-  private def buildMeta(messageSender: MessageSender, interchangeControlReference: InterchangeControlReference): Meta = {
-    Meta(
-      messageSender = messageSender,
-      interchangeControlReference = interchangeControlReference)
-  }
-
-  private def buildHeader(arrivalNotification: NormalNotification, simplifiedProcedureFlag: String): Header = {
+  private def buildHeader(arrivalNotification: NormalNotification, simplifiedProcedureFlag: String): Header =
     Header(
       movementReferenceNumber = arrivalNotification.movementReferenceNumber,
       customsSubPlace = arrivalNotification.customsSubPlace,
       arrivalNotificationPlace = arrivalNotification.notificationPlace,
-      simplifiedProcedureFlag = simplifiedProcedureFlag)
-  }
+      simplifiedProcedureFlag = simplifiedProcedureFlag
+    )
 
   private def buildTrader(trader: Trader): TraderDestination = trader match {
     case traderWithEori: TraderWithEori =>
@@ -62,7 +61,8 @@ class SubmissionModelService @Inject()(appConfig: AppConfig){
         postCode = traderWithEori.postCode,
         city = traderWithEori.city,
         countryCode = traderWithEori.countryCode,
-        eori = Some(traderWithEori.eori))
+        eori = Some(traderWithEori.eori)
+      )
     case traderWithoutEori: TraderWithoutEori =>
       TraderDestination(
         name = Some(traderWithoutEori.name),
@@ -70,11 +70,12 @@ class SubmissionModelService @Inject()(appConfig: AppConfig){
         postCode = Some(traderWithoutEori.postCode),
         city = Some(traderWithoutEori.city),
         countryCode = Some(traderWithoutEori.countryCode),
-        eori = None)
+        eori = None
+      )
   }
 
 }
 
 sealed trait ModelConversionError
 
-object FailedToConvertModel                extends ModelConversionError
+object FailedToConvertModel extends ModelConversionError

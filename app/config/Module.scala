@@ -17,7 +17,8 @@
 package config
 
 import com.google.inject.AbstractModule
-import connectors.{MessageConnector, MessageConnectorImpl}
+import connectors.MessageConnector
+import connectors.MessageConnectorImpl
 import services._
 
 class Module extends AbstractModule {

@@ -17,16 +17,18 @@
 package models
 
 import MovementReferenceNumber._
-import play.api.libs.json.{JsString, Reads, Writes}
+import play.api.libs.json.JsString
+import play.api.libs.json.Reads
+import play.api.libs.json.Writes
 import play.api.mvc.PathBindable
 
 import scala.math.pow
 
-final case class MovementReferenceNumber (
-                                           year: String,
-                                           countryCode: String,
-                                           serial: String
-                                         ) {
+final case class MovementReferenceNumber(
+  year: String,
+  countryCode: String,
+  serial: String
+) {
 
   override def toString: String = s"$year$countryCode$serial$checkCharacter"
 
@@ -49,7 +51,6 @@ object MovementReferenceNumber {
 
   def apply(input: String): Option[MovementReferenceNumber] = input match {
     case mrnFormat(year, countryCode, serial, checkCharacter) =>
-
       val mrn = MovementReferenceNumber(year, countryCode, serial)
 
       if (mrn.checkCharacter == checkCharacter) {

@@ -18,8 +18,7 @@ package models.messages.request
 
 case class MessageSender(environment: String, eori: String) {
 
-  override def toString: String = {
+  override def toString: String =
     s"$environment-$eori"
-  }
 
 }

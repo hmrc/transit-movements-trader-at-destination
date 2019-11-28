@@ -37,19 +37,19 @@ object Trader {
       TraderWithoutEori.format
   }
 
-  implicit lazy  val writes: Writes[Trader] = Writes {
+  implicit lazy val writes: Writes[Trader] = Writes {
     case t: TraderWithEori    => Json.toJson(t)(TraderWithEori.format)
     case t: TraderWithoutEori => Json.toJson(t)(TraderWithoutEori.format)
   }
 }
 
-final case class TraderWithEori (
-    eori: String,
-    name: Option[String],
-    streetAndNumber: Option[String],
-    postCode: Option[String],
-    city: Option[String],
-    countryCode: Option[String]
+final case class TraderWithEori(
+  eori: String,
+  name: Option[String],
+  streetAndNumber: Option[String],
+  postCode: Option[String],
+  city: Option[String],
+  countryCode: Option[String]
 ) extends Trader
 
 object TraderWithEori {
@@ -58,12 +58,12 @@ object TraderWithEori {
     Json.format[TraderWithEori]
 }
 
-final case class TraderWithoutEori (
-    name: String,
-    streetAndNumber: String,
-    postCode: String,
-    city: String,
-    countryCode: String
+final case class TraderWithoutEori(
+  name: String,
+  streetAndNumber: String,
+  postCode: String,
+  city: String,
+  countryCode: String
 ) extends Trader
 
 object TraderWithoutEori {

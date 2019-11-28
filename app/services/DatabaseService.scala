@@ -20,33 +20,40 @@ import javax.inject.Inject
 import models.messages.ArrivalNotification
 import models.messages.request.InterchangeControlReference
 import reactivemongo.api.commands.WriteResult
-import repositories.{ArrivalNotificationRepository, FailedSavingArrivalNotification, SequentialInterchangeControlReferenceIdRepository}
+import repositories.ArrivalNotificationRepository
+import repositories.FailedSavingArrivalNotification
+import repositories.SequentialInterchangeControlReferenceIdRepository
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class DatabaseServiceImpl @Inject()(sequentialInterchangeControlReferenceIdRepository: SequentialInterchangeControlReferenceIdRepository,
-                                    arrivalNotificationRepository: ArrivalNotificationRepository) extends DatabaseService {
+                                    arrivalNotificationRepository: ArrivalNotificationRepository)
+    extends DatabaseService {
 
-  def getInterchangeControlReferenceId: Future[Either[FailedCreatingInterchangeControlReference, InterchangeControlReference]] = {
+  def getInterchangeControlReferenceId: Future[Either[FailedCreatingInterchangeControlReference, InterchangeControlReference]] =
+    sequentialInterchangeControlReferenceIdRepository
+      .nextInterchangeControlReferenceId()
+      .map {
+        reference =>
+          Right(reference)
+      }
+      .recover {
+        case _ =>
+          Left(FailedCreatingInterchangeControlReference)
+      }
 
-    sequentialInterchangeControlReferenceIdRepository.nextInterchangeControlReferenceId().map {
-      reference => Right(reference)
-    }.recover {
-      case _ =>
-        Left(FailedCreatingInterchangeControlReference)
-    }
-  }
-
-  def saveArrivalNotification(arrivalNotification: ArrivalNotification): Future[Either[FailedSavingArrivalNotification, WriteResult]] = {
-
-    arrivalNotificationRepository.persistToMongo(arrivalNotification).map {
-      x => Right(x)
-    }.recover {
-      case _ =>
-        Left(FailedSavingArrivalNotification)
-    }
-  }
+  def saveArrivalNotification(arrivalNotification: ArrivalNotification): Future[Either[FailedSavingArrivalNotification, WriteResult]] =
+    arrivalNotificationRepository
+      .persistToMongo(arrivalNotification)
+      .map {
+        x =>
+          Right(x)
+      }
+      .recover {
+        case _ =>
+          Left(FailedSavingArrivalNotification)
+      }
 
 }
 
@@ -58,5 +65,3 @@ trait DatabaseService {
 sealed trait FailedCreatingInterchangeControlReference
 
 object FailedCreatingInterchangeControlReference extends FailedCreatingInterchangeControlReference
-
-
