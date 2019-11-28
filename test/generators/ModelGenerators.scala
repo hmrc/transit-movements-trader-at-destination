@@ -23,9 +23,9 @@ import java.time.ZoneOffset
 
 import models._
 import org.scalacheck.Arbitrary._
+import org.scalacheck.Gen._
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
-import org.scalacheck.Gen._
 
 trait ModelGenerators {
 
@@ -56,6 +56,8 @@ trait ModelGenerators {
       length <- choose(1, maxLength)
       chars  <- listOfN(length, arbitrary[Char])
     } yield chars.mkString.replaceAll("([&<>]|\\p{C})", "")
+
+  //TODO: If all characters are matched with the above regex this method returns an empty string
 
   def seqWithMaxLength[A](maxLength: Int)(implicit a: Arbitrary[A]): Gen[Seq[A]] =
     for {

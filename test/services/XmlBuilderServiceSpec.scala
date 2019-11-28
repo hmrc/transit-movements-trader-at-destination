@@ -16,10 +16,13 @@
 
 package services
 
+import java.time.LocalDate
 import java.time.LocalDateTime
 
-import config.AppConfig
 import generators.MessageGenerators
+import models.EventDetails
+import models.Incident
+import models.Transhipment
 import models.messages.request.ArrivalNotificationRequest
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
@@ -28,12 +31,12 @@ import org.scalatest.MustMatchers
 import org.scalatest.OptionValues
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import play.api.inject.Injector
 import utils.Format
 
-import scala.xml.Utility.trim
 import scala.xml.Node
 import scala.xml.NodeSeq
+import scala.xml.Utility.trim
+import scala.xml.XML.loadString
 
 class XmlBuilderServiceSpec
     extends FreeSpec
@@ -43,139 +46,72 @@ class XmlBuilderServiceSpec
     with ScalaCheckDrivenPropertyChecks
     with OptionValues {
 
-  def injector: Injector = app.injector
+  import XmlBuilderServiceSpec._
 
-  def appConfig: AppConfig = injector.instanceOf[AppConfig]
-
-  val convertToXml = new XmlBuilderService()
+  private val convertToXml = new XmlBuilderService()
 
   "XmlBuilderService" - {
 
     "must return correct nodes" in {
-
-      def hasEoriWithNormalProcedure()(implicit arrivalNotificationRequest: ArrivalNotificationRequest): Boolean =
-        arrivalNotificationRequest.traderDestination.eori.isDefined &&
-          arrivalNotificationRequest.header.simplifiedProcedureFlag.equals("0")
 
       val localDateTime: Gen[LocalDateTime] = dateTimesBetween(LocalDateTime.of(1900, 1, 1, 0, 0), LocalDateTime.now)
 
       forAll(arbitrary[ArrivalNotificationRequest](arbitraryArrivalNotificationRequest), localDateTime) {
 
         (arrivalNotificationRequest, dateTime) =>
-          whenever(condition = hasEoriWithNormalProcedure()(arrivalNotificationRequest)) {
+          whenever(hasEoriWithNormalProcedure()(arrivalNotificationRequest)) {
 
-            val dateOfPreperation = Format.dateFormatted(dateTime)
-            val timeOfPreperation = Format.timeFormatted(dateTime)
+            val dateOfPreparation = Format.dateFormatted(dateTime)
+            val timeOfPreparation = Format.timeFormatted(dateTime)
 
             val validXml: Node = {
               trim(
                 <CC007A>
-                  <SynIdeMES1>
-                    {arrivalNotificationRequest.syntaxIdentifier}
-                  </SynIdeMES1>
-                  <SynVerNumMES2>
-                    {arrivalNotificationRequest.meta.syntaxVersionNumber}
-                  </SynVerNumMES2>
-                  <MesSenMES3>
-                    {arrivalNotificationRequest.meta.messageSender.toString}
-                  </MesSenMES3>
-                  <MesRecMES6>
-                    {arrivalNotificationRequest.meta.messageRecipient}
-                  </MesRecMES6>
-                  <DatOfPreMES9>
-                    {dateOfPreperation}
-                  </DatOfPreMES9>
-                  <TimOfPreMES10>
-                    {timeOfPreperation}
-                  </TimOfPreMES10>
-                  <IntConRefMES11>
-                    {arrivalNotificationRequest.meta.interchangeControlReference.toString}
-                  </IntConRefMES11>
-                  <AppRefMES14>
-                    {arrivalNotificationRequest.meta.applicationReference}
-                  </AppRefMES14>
-                  <TesIndMES18>
-                    {arrivalNotificationRequest.meta.testIndicator}
-                  </TesIndMES18>
-                  <MesIdeMES19>
-                    {arrivalNotificationRequest.meta.messageIndication}
-                  </MesIdeMES19>
-                  <MesTypMES20>
-                    {arrivalNotificationRequest.messageCode.code}
-                  </MesTypMES20>
+                  <SynIdeMES1>{arrivalNotificationRequest.syntaxIdentifier}</SynIdeMES1>
+                  <SynVerNumMES2>{arrivalNotificationRequest.meta.syntaxVersionNumber}</SynVerNumMES2>
+                  <MesSenMES3>{arrivalNotificationRequest.meta.messageSender.toString}</MesSenMES3>
+                  <MesRecMES6>{arrivalNotificationRequest.meta.messageRecipient}</MesRecMES6>
+                  <DatOfPreMES9>{dateOfPreparation}</DatOfPreMES9>
+                  <TimOfPreMES10>{timeOfPreparation}</TimOfPreMES10>
+                  <IntConRefMES11>{arrivalNotificationRequest.meta.interchangeControlReference.toString}</IntConRefMES11>
+                  <AppRefMES14>{arrivalNotificationRequest.meta.applicationReference}</AppRefMES14>
+                  <TesIndMES18>{arrivalNotificationRequest.meta.testIndicator}</TesIndMES18>
+                  <MesIdeMES19>{arrivalNotificationRequest.meta.messageIndication}</MesIdeMES19>
+                  <MesTypMES20>{arrivalNotificationRequest.messageCode.code}</MesTypMES20>
                   <HEAHEA>
-                    <DocNumHEA5>
-                      {arrivalNotificationRequest.header.movementReferenceNumber}
-                    </DocNumHEA5>{arrivalNotificationRequest.header.customsSubPlace.map {
-                    customsSubPlace =>
-                      <CusSubPlaHEA66>
-                        {customsSubPlace}
-                      </CusSubPlaHEA66>
-                  }.getOrElse(NodeSeq.Empty)}
-                    <ArrNotPlaHEA60>
-                      {arrivalNotificationRequest.header.arrivalNotificationPlace}
-                    </ArrNotPlaHEA60>
-                    <ArrNotPlaHEA60LNG>
-                      {arrivalNotificationRequest.header.languageCode}
-                    </ArrNotPlaHEA60LNG>
-                    <ArrAgrLocOfGooHEA63LNG>
-                      {arrivalNotificationRequest.header.languageCode}
-                    </ArrAgrLocOfGooHEA63LNG>
-                    {arrivalNotificationRequest.header.arrivalAgreedLocationOfGoods.map {
-                    arrivalAgreedLocationOfGoods =>
-                        <ArrAutLocOfGooHEA65>
-                          {arrivalAgreedLocationOfGoods}
-                        </ArrAutLocOfGooHEA65>
-                    }.getOrElse(NodeSeq.Empty)}
-                    <SimProFlaHEA132>
-                      {arrivalNotificationRequest.header.simplifiedProcedureFlag}
-                    </SimProFlaHEA132>
-                    <ArrNotDatHEA141>
-                      {dateOfPreperation}
-                    </ArrNotDatHEA141>
+                    <DocNumHEA5>{arrivalNotificationRequest.header.movementReferenceNumber}</DocNumHEA5>
+                    {buildOptionalElem(arrivalNotificationRequest.header.customsSubPlace, "CusSubPlaHEA66")}
+                    <ArrNotPlaHEA60>{arrivalNotificationRequest.header.arrivalNotificationPlace}</ArrNotPlaHEA60>
+                    <ArrNotPlaHEA60LNG>{arrivalNotificationRequest.header.languageCode}</ArrNotPlaHEA60LNG>
+                    <ArrAgrLocOfGooHEA63LNG>{arrivalNotificationRequest.header.languageCode}</ArrAgrLocOfGooHEA63LNG>
+                    {buildOptionalElem(arrivalNotificationRequest.header.arrivalAgreedLocationOfGoods, "ArrAutLocOfGooHEA65")}
+                    <SimProFlaHEA132>{arrivalNotificationRequest.header.simplifiedProcedureFlag}</SimProFlaHEA132>
+                    <ArrNotDatHEA141>{dateOfPreparation}</ArrNotDatHEA141>
                   </HEAHEA>
                   <TRADESTRD>
-                    {arrivalNotificationRequest.traderDestination.name.map {
-                    name =>
-                      <NamTRD7>
-                        {name}
-                      </NamTRD7>
-                  }.getOrElse(NodeSeq.Empty)}{arrivalNotificationRequest.traderDestination.streetAndNumber.map {
-                    streetAndNumber =>
-                      <StrAndNumTRD22>
-                        {streetAndNumber}
-                      </StrAndNumTRD22>
-                  }.getOrElse(NodeSeq.Empty)}{arrivalNotificationRequest.traderDestination.postCode.map {
-                    postCode =>
-                      <PosCodTRD23>
-                        {postCode}
-                      </PosCodTRD23>
-                  }.getOrElse(NodeSeq.Empty)}{arrivalNotificationRequest.traderDestination.city.map {
-                    city =>
-                      <CitTRD24>
-                        {city}
-                      </CitTRD24>
-                  }.getOrElse(NodeSeq.Empty)}{arrivalNotificationRequest.traderDestination.countryCode.map {
-                    countryCode =>
-                      <CouTRD25>
-                        {countryCode}
-                      </CouTRD25>
-                  }.getOrElse(NodeSeq.Empty)}
-                    <NADLNGRD>
-                      {arrivalNotificationRequest.header.languageCode}
-                    </NADLNGRD>
-                    {arrivalNotificationRequest.traderDestination.eori.map {
-                    eori =>
-                      <TINTRD59>
-                        {eori}
-                      </TINTRD59>
-                  }.getOrElse(NodeSeq.Empty)}
+                    {buildOptionalElem(arrivalNotificationRequest.traderDestination.name, "NamTRD7")}
+                    {buildOptionalElem(arrivalNotificationRequest.traderDestination.streetAndNumber, "StrAndNumTRD22")}
+                    {buildOptionalElem(arrivalNotificationRequest.traderDestination.postCode, "PosCodTRD23")}
+                    {buildOptionalElem(arrivalNotificationRequest.traderDestination.city, "CitTRD24")}
+                    {buildOptionalElem(arrivalNotificationRequest.traderDestination.countryCode, "CouTRD25")}
+                    <NADLNGRD>{arrivalNotificationRequest.header.languageCode}</NADLNGRD>
+                    {buildOptionalElem(arrivalNotificationRequest.traderDestination.eori, "TINTRD59")}
                   </TRADESTRD>
                   <CUSOFFPREOFFRES>
-                    <RefNumRES1>
-                      {arrivalNotificationRequest.customsOfficeOfPresentation.presentationOffice}
-                    </RefNumRES1>
+                    <RefNumRES1>{arrivalNotificationRequest.customsOfficeOfPresentation.presentationOffice}</RefNumRES1>
                   </CUSOFFPREOFFRES>
+                  {
+                    arrivalNotificationRequest.enRouteEvents.map {
+                    event =>
+                      <ENROUEVETEV>
+                        <PlaTEV10>{event.place}</PlaTEV10>
+                        <PlaTEV10LNG>{arrivalNotificationRequest.header.languageCode}</PlaTEV10LNG>
+                        <CouTEV13>{event.countryCode}</CouTEV13>
+                        <CTLCTL>{event.alreadyInNcts}</CTLCTL>
+                        {buildIncidentType(event.eventDetails, arrivalNotificationRequest.header.languageCode)}
+                      </ENROUEVETEV>
+                    }
+                  }
                 </CC007A>
               )
             }
@@ -186,4 +122,38 @@ class XmlBuilderServiceSpec
     }
   }
 
+  private def buildIncidentType(event: EventDetails, languageCode: String): NodeSeq = event match {
+    case incident: Incident => {
+      <INCINC>
+        {buildIncidentFlag(incident.information.isDefined)}
+        {buildOptionalElem(incident.information, "IncInfINC4")}
+        <IncInfINC4LNG>{languageCode}</IncInfINC4LNG>
+        {buildOptionalElem(incident.endorsement.date, "EndDatINC6")}
+        {buildOptionalElem(incident.endorsement.authority, "EndAutINC7")}
+        <EndAutINC7LNG>{languageCode}</EndAutINC7LNG>
+        {buildOptionalElem(incident.endorsement.place, "EndPlaINC10")}
+        <EndPlaINC10LNG>{languageCode}</EndPlaINC10LNG>
+        {buildOptionalElem(incident.endorsement.country, "EndCouINC12")}
+      </INCINC>
+    }
+    case _: Transhipment => NodeSeq.Empty //TODO: implement transhipment
+  }
+
+}
+
+object XmlBuilderServiceSpec {
+  private def hasEoriWithNormalProcedure()(implicit arrivalNotificationRequest: ArrivalNotificationRequest): Boolean =
+    arrivalNotificationRequest.traderDestination.eori.isDefined &&
+      arrivalNotificationRequest.header.simplifiedProcedureFlag.equals("0")
+
+  private def buildOptionalElem[A](value: Option[A], elementTag: String): NodeSeq = value match {
+    case Some(result: String)    => loadString(s"<$elementTag>$result</$elementTag>")
+    case Some(result: LocalDate) => loadString(s"<$elementTag>${Format.dateFormatted(result)}</$elementTag>")
+    case _                       => NodeSeq.Empty
+  }
+
+  private def buildIncidentFlag(hasIncidentInformation: Boolean): NodeSeq = hasIncidentInformation match {
+    case false => <IncFlaINC3>1</IncFlaINC3>
+    case true  => NodeSeq.Empty
+  }
 }

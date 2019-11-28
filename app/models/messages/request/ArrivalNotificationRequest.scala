@@ -34,7 +34,3 @@ case class ArrivalNotificationRequest(
   val rootKey: String                = "CC007A"
   val nameSpace: Map[String, String] = ListMap()
 }
-
-object ArrivalNotificationRequest {
-  val messageCode: MessageCode = MessageCode("GB007A")
-}
