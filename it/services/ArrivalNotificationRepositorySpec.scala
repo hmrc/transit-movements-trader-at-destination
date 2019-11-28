@@ -1,10 +1,10 @@
 package it.services
 
 import generators.MessageGenerators
-import models.messages.{ArrivalNotification, NormalNotification, SimplifiedNotification}
+import models.messages.{NormalNotification, SimplifiedNotification}
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
-import org.scalatest.{BeforeAndAfterEach, FreeSpec, MustMatchers, OptionValues}
+import org.scalatest.{FreeSpec, MustMatchers, OptionValues}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.libs.json.{JsObject, Json}
@@ -25,33 +25,28 @@ class ArrivalNotificationRepositorySpec
     with MockDateTimeService
     with OptionValues
     with ScalaCheckPropertyChecks
-    with MessageGenerators
-    with BeforeAndAfterEach {
+    with MessageGenerators {
 
-  val service: ArrivalNotificationRepository = app.injector.instanceOf[ArrivalNotificationRepository]
-
-  override def beforeEach(): Unit = {
-    super.beforeEach()
-    database.flatMap(_.drop()).futureValue
-  }
+  private val service: ArrivalNotificationRepository = app.injector.instanceOf[ArrivalNotificationRepository]
 
   "ArrivalNotificationRepository" - {
 
     "must persist NormalNotification within mongoDB" in {
 
       forAll(arbitrary[NormalNotification]) {
-
         normalNotification =>
+
+          database.flatMap(_.drop()).futureValue
 
           service.persistToMongo(normalNotification).futureValue
 
           val selector = Json.obj("movementReferenceNumber" -> normalNotification.movementReferenceNumber)
 
-          val getValue: Option[ArrivalNotification] = database.flatMap {
+          val getValue: Option[NormalNotification] = database.flatMap {
             result =>
               result.collection[JSONCollection](CollectionNames.ArrivalNotificationCollection)
                 .find(selector, None)
-                .one[ArrivalNotification]
+                .one[NormalNotification]
           }.futureValue
 
           getValue.value mustBe normalNotification
@@ -61,18 +56,19 @@ class ArrivalNotificationRepositorySpec
     "must persist SimplifiedNotification within mongoDB" in {
 
       forAll(arbitrary[SimplifiedNotification]) {
-
         simplifiedNotification =>
+
+          database.flatMap(_.drop()).futureValue
 
           service.persistToMongo(simplifiedNotification).futureValue
 
           val selector = Json.obj("movementReferenceNumber" -> simplifiedNotification.movementReferenceNumber)
 
-          val getValue: Option[ArrivalNotification] = database.flatMap {
+          val getValue: Option[SimplifiedNotification] = database.flatMap {
             result =>
               result.collection[JSONCollection](CollectionNames.ArrivalNotificationCollection)
                 .find(selector, None)
-                .one[ArrivalNotification]
+                .one[SimplifiedNotification]
           }.futureValue
 
           getValue.value mustBe simplifiedNotification
@@ -82,8 +78,9 @@ class ArrivalNotificationRepositorySpec
     "must delete NormalNotification from MongoDB" in {
 
       forAll(arbitrary[NormalNotification]) {
-
         normalNotification =>
+
+          database.flatMap(_.drop()).futureValue
 
           val json: JsObject = Json.toJsObject(normalNotification)
 
@@ -107,8 +104,9 @@ class ArrivalNotificationRepositorySpec
     "must delete SimplifiedNotification from MongoDB" in {
 
       forAll(arbitrary[SimplifiedNotification]) {
-
         simplifiedNotification =>
+
+          database.flatMap(_.drop()).futureValue
 
           val json: JsObject = Json.toJsObject(simplifiedNotification)
 

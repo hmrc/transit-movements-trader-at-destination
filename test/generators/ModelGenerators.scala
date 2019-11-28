@@ -21,6 +21,7 @@ import java.time.{Instant, LocalDate, LocalDateTime, ZoneOffset}
 import models._
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Gen}
+import org.scalacheck.Gen._
 
 trait ModelGenerators {
 
@@ -46,6 +47,18 @@ trait ModelGenerators {
     }
   }
 
+  def stringsWithMaxLength(maxLength: Int): Gen[String] =
+    for {
+      length  <- choose(1, maxLength)
+      chars   <- listOfN(length, arbitrary[Char])
+    } yield chars.mkString.replaceAll("([&<>]|\\p{C})", "")
+
+  def seqWithMaxLength[A](maxLength: Int)(implicit a: Arbitrary[A]): Gen[Seq[A]] =
+    for {
+      length  <- choose(1, maxLength)
+      seq     <- listOfN(length, arbitrary[A])
+    } yield seq
+
   implicit lazy  val arbitraryMovementReferenceNumber: Arbitrary[MovementReferenceNumber] =
     Arbitrary {
       for {
@@ -64,12 +77,12 @@ trait ModelGenerators {
     Arbitrary {
 
       for {
-        eori            <- arbitrary[String]
-        name            <- Gen.option(arbitrary[String])
-        streetAndNumber <- Gen.option(arbitrary[String])
-        postCode        <- Gen.option(arbitrary[String])
-        city            <- Gen.option(arbitrary[String])
-        countryCode     <- Gen.option(arbitrary[String])
+        eori            <- stringsWithMaxLength(17)
+        name            <- Gen.option(stringsWithMaxLength(35))
+        streetAndNumber <- Gen.option(stringsWithMaxLength(35))
+        postCode        <- Gen.option(stringsWithMaxLength(9))
+        city            <- Gen.option(stringsWithMaxLength(35))
+        countryCode     <- Gen.option(stringsWithMaxLength(2))
       } yield TraderWithEori(eori, name, streetAndNumber, postCode, city, countryCode)
     }
 
@@ -77,11 +90,11 @@ trait ModelGenerators {
     Arbitrary {
 
       for {
-        name            <- arbitrary[String]
-        streetAndNumber <- arbitrary[String]
-        postCode        <- arbitrary[String]
-        city            <- arbitrary[String]
-        countryCode     <- arbitrary[String]
+        name            <- stringsWithMaxLength(35)
+        streetAndNumber <- stringsWithMaxLength(35)
+        postCode        <- stringsWithMaxLength(9)
+        city            <- stringsWithMaxLength(35)
+        countryCode     <- stringsWithMaxLength(2)
       } yield TraderWithoutEori(name, streetAndNumber, postCode, city, countryCode)
     }
 
@@ -95,9 +108,9 @@ trait ModelGenerators {
 
       for {
         date      <- Gen.option(datesBetween(LocalDate.of(1900, 1, 1), LocalDate.now))
-        authority <- Gen.option(arbitrary[String])
-        place     <- Gen.option(arbitrary[String])
-        country   <- Gen.option(arbitrary[String])
+        authority <- Gen.option(stringsWithMaxLength(35))
+        place     <- Gen.option(stringsWithMaxLength(35))
+        country   <- Gen.option(stringsWithMaxLength(2))
       } yield Endorsement(date, authority, place, country)
     }
 
@@ -105,7 +118,7 @@ trait ModelGenerators {
     Arbitrary {
 
       for {
-        information <- arbitrary[Option[String]]
+        information <- Gen.option(stringsWithMaxLength(350))
         endorsement <- arbitrary[Endorsement]
       } yield Incident(information, endorsement)
     }
@@ -114,10 +127,11 @@ trait ModelGenerators {
     Arbitrary {
 
       for {
-        transportIdentity <- arbitrary[String]
-        transportCountry  <- arbitrary[String]
-        endorsement       <- arbitrary[Endorsement]
-        containers        <- arbitrary[Seq[String]]
+        transportIdentity  <- stringsWithMaxLength(27)
+        transportCountry   <- stringsWithMaxLength(2)
+        endorsement        <- arbitrary[Endorsement]
+        numberOfContainers <- Gen.choose[Int](1,99)
+        containers         <- Gen.listOfN(numberOfContainers,stringsWithMaxLength(17))
       } yield VehicularTranshipment(transportIdentity, transportCountry, endorsement, containers)
     }
 
@@ -125,8 +139,9 @@ trait ModelGenerators {
     Arbitrary {
 
       for {
-        endorsement       <- arbitrary[Endorsement]
-        containers        <- arbitrary[Seq[String]].suchThat(_.nonEmpty)
+        endorsement        <- arbitrary[Endorsement]
+        numberOfContainers <- Gen.choose[Int](1,99)
+        containers         <- Gen.listOfN(numberOfContainers,stringsWithMaxLength(17))
       } yield ContainerTranshipment(endorsement, containers)
     }
 
@@ -150,11 +165,12 @@ trait ModelGenerators {
     Arbitrary {
 
       for {
-        place         <- arbitrary[String]
-        countryCode   <- arbitrary[String]
+        place         <- stringsWithMaxLength(35)
+        countryCode   <- stringsWithMaxLength(2)
         alreadyInNcts <- arbitrary[Boolean]
         eventDetails  <- arbitrary[EventDetails]
-        seals         <- arbitrary[Seq[String]]
+        numberOfSeals <- Gen.choose[Int](0,99)
+        seals         <- Gen.listOfN(numberOfSeals, stringsWithMaxLength(20))
       } yield EnRouteEvent(place, countryCode, alreadyInNcts, eventDetails, seals)
     }
 
