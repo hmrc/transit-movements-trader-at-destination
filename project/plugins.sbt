@@ -18,3 +18,4 @@ addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.6.20")
 
 addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.6.0")
 
+addSbtPlugin("com.lucidchart" % "sbt-scalafmt" % "1.16")
