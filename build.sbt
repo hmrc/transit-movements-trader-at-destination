@@ -11,7 +11,8 @@ lazy val microservice = Project(appName, file("."))
   .settings(
     majorVersion                     := 0,
     libraryDependencies              ++= AppDependencies.compile ++ AppDependencies.test,
-    scalafmtOnCompile in Compile     := true
+    scalafmtOnCompile in Compile     := true,
+    scalafmtTestOnCompile in Compile := true
   )
   .settings(publishingSettings: _*)
   .settings(resolvers += Resolver.jcenterRepo)

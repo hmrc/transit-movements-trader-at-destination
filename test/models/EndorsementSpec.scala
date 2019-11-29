@@ -21,12 +21,13 @@ import java.time.LocalDate
 import generators.ModelGenerators
 import models.behaviours.JsonBehaviours
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalatest.{FreeSpec, MustMatchers}
+import org.scalatest.FreeSpec
+import org.scalatest.MustMatchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import play.api.libs.json.{JsSuccess, Json}
+import play.api.libs.json.JsSuccess
+import play.api.libs.json.Json
 
-class EndorsementSpec extends FreeSpec with MustMatchers
-  with ScalaCheckPropertyChecks with ModelGenerators with JsonBehaviours {
+class EndorsementSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with ModelGenerators with JsonBehaviours {
 
   mustHaveDualReadsAndWrites(arbitrary[Endorsement])
 
@@ -41,7 +42,6 @@ class EndorsementSpec extends FreeSpec with MustMatchers
 
     forAll(date, arbitrary[String], arbitrary[String], arbitrary[String]) {
       (date, authority, place, country) =>
-
         val json = Json.obj(
           "date"      -> date,
           "authority" -> authority,
@@ -66,7 +66,6 @@ class EndorsementSpec extends FreeSpec with MustMatchers
 
     forAll(date, arbitrary[String], arbitrary[String], arbitrary[String]) {
       (date, authority, place, country) =>
-
         val json = Json.obj(
           "date"      -> date,
           "authority" -> authority,
@@ -80,4 +79,3 @@ class EndorsementSpec extends FreeSpec with MustMatchers
     }
   }
 }
-

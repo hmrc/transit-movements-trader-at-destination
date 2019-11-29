@@ -18,27 +18,28 @@ package models.behaviours
 
 import generators.ModelGenerators
 import org.scalacheck.Gen
-import org.scalatest.{FreeSpec, MustMatchers}
+import org.scalatest.FreeSpec
+import org.scalatest.MustMatchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import play.api.libs.json.{JsSuccess, Json, Reads, Writes}
+import play.api.libs.json.JsSuccess
+import play.api.libs.json.Json
+import play.api.libs.json.Reads
+import play.api.libs.json.Writes
 
 trait JsonBehaviours extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with ModelGenerators {
 
   class DualReadsAndWrites[A] {
 
-    def apply(gen: Gen[A])(implicit ev1: Reads[A], ev2: Writes[A]): Unit = {
-
+    def apply(gen: Gen[A])(implicit ev1: Reads[A], ev2: Writes[A]): Unit =
       "must have dual reads and writes" in {
 
-        forAll(gen)  {
+        forAll(gen) {
           model =>
-
             val json = Json.toJson(model)
 
             json.validate[A] mustEqual JsSuccess(model)
         }
       }
-    }
   }
 
   def mustHaveDualReadsAndWrites[A]: DualReadsAndWrites[A] = new DualReadsAndWrites[A]

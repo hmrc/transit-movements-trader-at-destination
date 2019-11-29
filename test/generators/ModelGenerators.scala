@@ -16,11 +16,15 @@
 
 package generators
 
-import java.time.{Instant, LocalDate, LocalDateTime, ZoneOffset}
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 
 import models._
 import org.scalacheck.Arbitrary._
-import org.scalacheck.{Arbitrary, Gen}
+import org.scalacheck.Arbitrary
+import org.scalacheck.Gen
 import org.scalacheck.Gen._
 
 trait ModelGenerators {
@@ -49,17 +53,17 @@ trait ModelGenerators {
 
   def stringsWithMaxLength(maxLength: Int): Gen[String] =
     for {
-      length  <- choose(1, maxLength)
-      chars   <- listOfN(length, arbitrary[Char])
+      length <- choose(1, maxLength)
+      chars  <- listOfN(length, arbitrary[Char])
     } yield chars.mkString.replaceAll("([&<>]|\\p{C})", "")
 
   def seqWithMaxLength[A](maxLength: Int)(implicit a: Arbitrary[A]): Gen[Seq[A]] =
     for {
-      length  <- choose(1, maxLength)
-      seq     <- listOfN(length, arbitrary[A])
+      length <- choose(1, maxLength)
+      seq    <- listOfN(length, arbitrary[A])
     } yield seq
 
-  implicit lazy  val arbitraryMovementReferenceNumber: Arbitrary[MovementReferenceNumber] =
+  implicit lazy val arbitraryMovementReferenceNumber: Arbitrary[MovementReferenceNumber] =
     Arbitrary {
       for {
         year    <- Gen.choose(0, 99).map(y => f"$y%02d")
@@ -130,8 +134,8 @@ trait ModelGenerators {
         transportIdentity  <- stringsWithMaxLength(27)
         transportCountry   <- stringsWithMaxLength(2)
         endorsement        <- arbitrary[Endorsement]
-        numberOfContainers <- Gen.choose[Int](1,99)
-        containers         <- Gen.listOfN(numberOfContainers,stringsWithMaxLength(17))
+        numberOfContainers <- Gen.choose[Int](1, 99)
+        containers         <- Gen.listOfN(numberOfContainers, stringsWithMaxLength(17))
       } yield VehicularTranshipment(transportIdentity, transportCountry, endorsement, containers)
     }
 
@@ -140,13 +144,13 @@ trait ModelGenerators {
 
       for {
         endorsement        <- arbitrary[Endorsement]
-        numberOfContainers <- Gen.choose[Int](1,99)
-        containers         <- Gen.listOfN(numberOfContainers,stringsWithMaxLength(17))
+        numberOfContainers <- Gen.choose[Int](1, 99)
+        containers         <- Gen.listOfN(numberOfContainers, stringsWithMaxLength(17))
       } yield ContainerTranshipment(endorsement, containers)
     }
 
   implicit lazy val arbitraryTranshipment: Arbitrary[Transhipment] =
-    Arbitrary{
+    Arbitrary {
       Gen.oneOf[Transhipment](
         arbitrary[VehicularTranshipment],
         arbitrary[ContainerTranshipment]
@@ -169,12 +173,12 @@ trait ModelGenerators {
         countryCode   <- stringsWithMaxLength(2)
         alreadyInNcts <- arbitrary[Boolean]
         eventDetails  <- arbitrary[EventDetails]
-        numberOfSeals <- Gen.choose[Int](0,99)
+        numberOfSeals <- Gen.choose[Int](0, 99)
         seals         <- Gen.listOfN(numberOfSeals, stringsWithMaxLength(20))
       } yield EnRouteEvent(place, countryCode, alreadyInNcts, eventDetails, seals)
     }
 
-  implicit lazy  val arbitraryRejectionError: Arbitrary[RejectionError] =
+  implicit lazy val arbitraryRejectionError: Arbitrary[RejectionError] =
     Arbitrary {
 
       for {

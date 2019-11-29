@@ -22,12 +22,13 @@ import generators.MessageGenerators
 import models._
 import models.behaviours.JsonBehaviours
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalatest.{FreeSpec, MustMatchers}
+import org.scalatest.FreeSpec
+import org.scalatest.MustMatchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import play.api.libs.json.{JsSuccess, Json}
+import play.api.libs.json.JsSuccess
+import play.api.libs.json.Json
 
-class ArrivalNotificationRejectionSpec extends FreeSpec with MustMatchers
-  with ScalaCheckPropertyChecks with MessageGenerators with JsonBehaviours {
+class ArrivalNotificationRejectionSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with MessageGenerators with JsonBehaviours {
 
   mustHaveDualReadsAndWrites(arbitrary[ArrivalNotificationRejection])
 
@@ -37,7 +38,6 @@ class ArrivalNotificationRejectionSpec extends FreeSpec with MustMatchers
 
     forAll(arbitrary[String], date) {
       (mrn, rejectionDate) =>
-
         val json = Json.obj(
           "movementReferenceNumber" -> mrn,
           "rejectionDate"           -> rejectionDate
@@ -55,7 +55,6 @@ class ArrivalNotificationRejectionSpec extends FreeSpec with MustMatchers
 
     forAll(arbitrary[String], date, arbitrary[Option[String]], arbitrary[Option[String]], arbitrary[Seq[RejectionError]]) {
       (mrn, rejectionDate, action, reason, errors) =>
-
         val json = Json.obj(
           "movementReferenceNumber" -> mrn,
           "rejectionDate"           -> rejectionDate,
@@ -76,7 +75,6 @@ class ArrivalNotificationRejectionSpec extends FreeSpec with MustMatchers
 
     forAll(arbitrary[String], date) {
       (mrn, rejectionDate) =>
-
         val json = Json.obj(
           "movementReferenceNumber" -> mrn,
           "rejectionDate"           -> rejectionDate
@@ -94,21 +92,20 @@ class ArrivalNotificationRejectionSpec extends FreeSpec with MustMatchers
 
     forAll(arbitrary[String], date, arbitrary[String], arbitrary[String], arbitrary[Seq[RejectionError]]) {
       (mrn, rejectionDate, action, reason, errors) =>
-
         val json = if (errors.isEmpty) {
           Json.obj(
             "movementReferenceNumber" -> mrn,
-            "rejectionDate" -> rejectionDate,
-            "action" -> action,
-            "reason" -> reason
+            "rejectionDate"           -> rejectionDate,
+            "action"                  -> action,
+            "reason"                  -> reason
           )
         } else {
           Json.obj(
             "movementReferenceNumber" -> mrn,
-            "rejectionDate" -> rejectionDate,
-            "action" -> action,
-            "reason" -> reason,
-            "errors" -> Json.toJson(errors)
+            "rejectionDate"           -> rejectionDate,
+            "action"                  -> action,
+            "reason"                  -> reason,
+            "errors"                  -> Json.toJson(errors)
           )
         }
 

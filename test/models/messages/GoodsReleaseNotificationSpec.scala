@@ -22,12 +22,13 @@ import generators.MessageGenerators
 import models.behaviours.JsonBehaviours
 import models.Trader
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalatest.{FreeSpec, MustMatchers}
+import org.scalatest.FreeSpec
+import org.scalatest.MustMatchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import play.api.libs.json.{JsSuccess, Json}
+import play.api.libs.json.JsSuccess
+import play.api.libs.json.Json
 
-class GoodsReleaseNotificationSpec extends FreeSpec with MustMatchers
-  with ScalaCheckPropertyChecks with MessageGenerators with JsonBehaviours {
+class GoodsReleaseNotificationSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with MessageGenerators with JsonBehaviours {
 
   mustHaveDualReadsAndWrites(arbitrary[GoodsReleaseNotification])
 
@@ -37,7 +38,6 @@ class GoodsReleaseNotificationSpec extends FreeSpec with MustMatchers
 
     forAll(arbitrary[String], date, arbitrary[Trader], arbitrary[String]) {
       (mrn, releaseDate, trader, presentationOffice) =>
-
         val json = Json.obj(
           "movementReferenceNumber" -> mrn,
           "releaseDate"             -> releaseDate,
@@ -57,12 +57,11 @@ class GoodsReleaseNotificationSpec extends FreeSpec with MustMatchers
 
     forAll(arbitrary[String], date, arbitrary[Trader], arbitrary[String]) {
       (mrn, releaseDate, trader, presentationOffice) =>
-
         val json = Json.obj(
           "movementReferenceNumber" -> mrn,
-          "releaseDate" -> releaseDate,
-          "trader" -> trader,
-          "presentationOffice" -> presentationOffice
+          "releaseDate"             -> releaseDate,
+          "trader"                  -> trader,
+          "presentationOffice"      -> presentationOffice
         )
 
         val notification = GoodsReleaseNotification(mrn, releaseDate, trader, presentationOffice)

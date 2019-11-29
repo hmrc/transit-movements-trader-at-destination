@@ -32,20 +32,19 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import repositories._
 import services._
-import uk.gov.hmrc.http.{BadRequestException, HttpResponse}
+import uk.gov.hmrc.http.BadRequestException
+import uk.gov.hmrc.http.HttpResponse
 
 import scala.concurrent.Future
 import scala.xml.Node
 
-
 class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckPropertyChecks with MessageGenerators with BeforeAndAfterEach {
 
-  private val mockMessageConnector: MessageConnector = mock[MessageConnector]
+  private val mockMessageConnector: MessageConnector                  = mock[MessageConnector]
   private val mockInterchangeControlReferenceService: DatabaseService = mock[DatabaseService]
-  private val mockSubmissionModelService: SubmissionModelService = mock[SubmissionModelService]
-  private val mockXmlBuilderService: XmlBuilderService = mock[XmlBuilderService]
-  private val mockXmlValidationService: XmlValidationService = mock[XmlValidationService]
-
+  private val mockSubmissionModelService: SubmissionModelService      = mock[SubmissionModelService]
+  private val mockXmlBuilderService: XmlBuilderService                = mock[XmlBuilderService]
+  private val mockXmlValidationService: XmlValidationService          = mock[XmlValidationService]
 
   private val application = {
     applicationBuilder
@@ -53,8 +52,8 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
       .overrides(bind[DatabaseService].toInstance(mockInterchangeControlReferenceService))
       .overrides(bind[SubmissionModelService].toInstance(mockSubmissionModelService))
       .overrides(bind[XmlBuilderService].toInstance(mockXmlBuilderService))
-      .overrides(bind[XmlValidationService].toInstance(mockXmlValidationService)
-      ).build
+      .overrides(bind[XmlValidationService].toInstance(mockXmlValidationService))
+      .build
   }
 
   override def beforeEach(): Unit = {
@@ -76,7 +75,6 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
       forAll(arbitrary[ArrivalNotificationRequest]) {
 
         arrivalNotificationRequest =>
-
           when(mockInterchangeControlReferenceService.getInterchangeControlReferenceId)
             .thenReturn(Future.successful(Right(InterchangeControlReference("20190101", 1))))
 
@@ -122,7 +120,6 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
       forAll(arbitrary[ArrivalNotificationRequest]) {
 
         arrivalNotificationRequest =>
-
           when(mockInterchangeControlReferenceService.getInterchangeControlReferenceId)
             .thenReturn(Future.successful(Right(InterchangeControlReference("20190101", 1))))
 
@@ -155,7 +152,6 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
       forAll(arbitrary[ArrivalNotificationRequest]) {
 
         arrivalNotificationRequest =>
-
           when(mockInterchangeControlReferenceService.getInterchangeControlReferenceId)
             .thenReturn(Future.successful(Right(InterchangeControlReference("20190101", 1))))
 
@@ -182,7 +178,6 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
           }
       }
     }
-
 
     "must return BAD_GATEWAY when POST fails" in {
 
@@ -221,7 +216,6 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
       forAll(arbitrary[ArrivalNotificationRequest]) {
 
         arrivalNotificationRequest =>
-
           when(mockInterchangeControlReferenceService.getInterchangeControlReferenceId)
             .thenReturn(Future.successful(Right(InterchangeControlReference("20190101", 1))))
 
@@ -282,10 +276,9 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
       }
     }
 
-   "must return BAD_REQUEST when given invalid json" in {
+    "must return BAD_REQUEST when given invalid json" in {
 
-      val invalidJson = Json.parse(
-        """{
+      val invalidJson = Json.parse("""{
           |"invalid" : "json"
           |}
         """.stripMargin)

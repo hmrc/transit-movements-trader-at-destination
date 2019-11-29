@@ -21,20 +21,17 @@ import java.time.LocalDate
 import models.TraderWithEori
 import models.messages.NormalNotification
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.{FreeSpec, MustMatchers, OptionValues}
+import org.scalatest.FreeSpec
+import org.scalatest.MustMatchers
+import org.scalatest.OptionValues
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.inject.guice.GuiceApplicationBuilder
-import reactivemongo.api.commands.{UpdateWriteResult, WriteResult}
+import reactivemongo.api.commands.UpdateWriteResult
+import reactivemongo.api.commands.WriteResult
 import uk.gov.hmrc.http.HeaderCarrier
 
-trait SpecBase
-  extends FreeSpec
-    with GuiceOneAppPerSuite
-    with MustMatchers
-    with MockitoSugar
-    with ScalaFutures
-    with OptionValues {
+trait SpecBase extends FreeSpec with GuiceOneAppPerSuite with MustMatchers with MockitoSugar with ScalaFutures with OptionValues {
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 

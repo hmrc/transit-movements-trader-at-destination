@@ -19,9 +19,11 @@ package models
 import generators.ModelGenerators
 import models.behaviours.JsonBehaviours
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalatest.{FreeSpec, MustMatchers}
+import org.scalatest.FreeSpec
+import org.scalatest.MustMatchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import play.api.libs.json.{JsSuccess, Json}
+import play.api.libs.json.JsSuccess
+import play.api.libs.json.Json
 
 class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with ModelGenerators with JsonBehaviours {
 
@@ -33,18 +35,19 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
 
       forAll(arbitrary[Option[String]], arbitrary[Endorsement]) {
         (information, endorsement) =>
-
-          val json = information.map(
-            info =>
+          val json = information
+            .map(
+              info =>
+                Json.obj(
+                  "information" -> info,
+                  "endorsement" -> Json.toJson(endorsement)
+              )
+            )
+            .getOrElse(
               Json.obj(
-                "information" -> info,
                 "endorsement" -> Json.toJson(endorsement)
               )
-          ).getOrElse(
-            Json.obj(
-              "endorsement" -> Json.toJson(endorsement)
             )
-          )
 
           json.validate[Incident] mustEqual JsSuccess(Incident(information, endorsement))
       }
@@ -54,18 +57,19 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
 
       forAll(arbitrary[Option[String]], arbitrary[Endorsement]) {
         (information, endorsement) =>
-
-          val json = information.map(
-            info =>
+          val json = information
+            .map(
+              info =>
+                Json.obj(
+                  "information" -> info,
+                  "endorsement" -> Json.toJson(endorsement)
+              )
+            )
+            .getOrElse(
               Json.obj(
-                "information" -> info,
                 "endorsement" -> Json.toJson(endorsement)
               )
-          ).getOrElse(
-            Json.obj(
-              "endorsement" -> Json.toJson(endorsement)
             )
-          )
 
           Json.toJson(Incident(information, endorsement)) mustEqual json
       }
@@ -80,7 +84,6 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
 
       forAll(arbitrary[Endorsement]) {
         endorsement =>
-
           intercept[IllegalArgumentException] {
             ContainerTranshipment(endorsement, Seq.empty)
           }
@@ -91,7 +94,6 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
 
       forAll(arbitrary[Endorsement], arbitrary[Seq[String]]) {
         (endorsement, containers) =>
-
           whenever(containers.nonEmpty) {
 
             val json = Json.obj(
@@ -110,7 +112,6 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
 
       forAll(arbitrary[Endorsement], arbitrary[Seq[String]]) {
         (endorsement, containers) =>
-
           whenever(containers.nonEmpty) {
 
             val json = Json.obj(
@@ -132,9 +133,8 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
 
     "must deserialise when no containers are present" in {
 
-      forAll(arbitrary[String], arbitrary[String], arbitrary[Endorsement])  {
+      forAll(arbitrary[String], arbitrary[String], arbitrary[Endorsement]) {
         (id, country, endorsement) =>
-
           val json = Json.obj(
             "transportIdentity" -> id,
             "transportCountry"  -> country,
@@ -149,9 +149,8 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
 
     "must deserialise when containers are present" in {
 
-      forAll(arbitrary[String], arbitrary[String], arbitrary[Endorsement], arbitrary[Seq[String]])  {
+      forAll(arbitrary[String], arbitrary[String], arbitrary[Endorsement], arbitrary[Seq[String]]) {
         (id, country, endorsement, containers) =>
-
           val json = Json.obj(
             "transportIdentity" -> id,
             "transportCountry"  -> country,
@@ -167,9 +166,8 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
 
     "must serialise" in {
 
-      forAll(arbitrary[String], arbitrary[String], arbitrary[Endorsement], arbitrary[Seq[String]])  {
+      forAll(arbitrary[String], arbitrary[String], arbitrary[Endorsement], arbitrary[Seq[String]]) {
         (id, country, endorsement, containers) =>
-
           val json = if (containers.isEmpty) {
             Json.obj(
               "transportIdentity" -> id,
@@ -196,9 +194,8 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
 
     "must deserialise to a Vehicular transhipment" in {
 
-      forAll(arbitrary[String], arbitrary[String], arbitrary[Endorsement], arbitrary[Seq[String]])  {
+      forAll(arbitrary[String], arbitrary[String], arbitrary[Endorsement], arbitrary[Seq[String]]) {
         (id, country, endorsement, containers) =>
-
           val json = Json.obj(
             "transportIdentity" -> id,
             "transportCountry"  -> country,
@@ -216,7 +213,6 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
 
       forAll(arbitrary[Endorsement], arbitrary[Seq[String]]) {
         (endorsement, containers) =>
-
           whenever(containers.nonEmpty) {
 
             val json = Json.obj(
@@ -233,9 +229,8 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
 
     "must serialise from a Vehicular transhipment" in {
 
-      forAll(arbitrary[String], arbitrary[String], arbitrary[Endorsement], arbitrary[Seq[String]])  {
+      forAll(arbitrary[String], arbitrary[String], arbitrary[Endorsement], arbitrary[Seq[String]]) {
         (id, country, endorsement, containers) =>
-
           val json = if (containers.isEmpty) {
             Json.obj(
               "transportIdentity" -> id,
@@ -261,7 +256,6 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
 
       forAll(arbitrary[Endorsement], arbitrary[Seq[String]]) {
         (endorsement, containers) =>
-
           whenever(containers.nonEmpty) {
 
             val json = Json.obj(
@@ -283,18 +277,19 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
 
       forAll(arbitrary[Option[String]], arbitrary[Endorsement]) {
         (information, endorsement) =>
-
-          val json = information.map(
-            info =>
+          val json = information
+            .map(
+              info =>
+                Json.obj(
+                  "information" -> info,
+                  "endorsement" -> Json.toJson(endorsement)
+              )
+            )
+            .getOrElse(
               Json.obj(
-                "information" -> info,
                 "endorsement" -> Json.toJson(endorsement)
               )
-          ).getOrElse(
-            Json.obj(
-              "endorsement" -> Json.toJson(endorsement)
             )
-          )
 
           json.validate[EventDetails] mustEqual JsSuccess(Incident(information, endorsement))
       }
@@ -302,9 +297,8 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
 
     "must deserialise to a Vehicular transhipment" in {
 
-      forAll(arbitrary[String], arbitrary[String], arbitrary[Endorsement], arbitrary[Seq[String]])  {
+      forAll(arbitrary[String], arbitrary[String], arbitrary[Endorsement], arbitrary[Seq[String]]) {
         (id, country, endorsement, containers) =>
-
           val json = Json.obj(
             "transportIdentity" -> id,
             "transportCountry"  -> country,
@@ -322,7 +316,6 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
 
       forAll(arbitrary[Endorsement], arbitrary[Seq[String]]) {
         (endorsement, containers) =>
-
           whenever(containers.nonEmpty) {
 
             val json = Json.obj(
@@ -341,18 +334,19 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
 
       forAll(arbitrary[Option[String]], arbitrary[Endorsement]) {
         (information, endorsement) =>
-
-          val json = information.map(
-            info =>
+          val json = information
+            .map(
+              info =>
+                Json.obj(
+                  "information" -> info,
+                  "endorsement" -> Json.toJson(endorsement)
+              )
+            )
+            .getOrElse(
               Json.obj(
-                "information" -> info,
                 "endorsement" -> Json.toJson(endorsement)
               )
-          ).getOrElse(
-            Json.obj(
-              "endorsement" -> Json.toJson(endorsement)
             )
-          )
 
           Json.toJson(Incident(information, endorsement): EventDetails) mustEqual json
       }
@@ -360,9 +354,8 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
 
     "must serialise from a Vehicular transhipment" in {
 
-      forAll(arbitrary[String], arbitrary[String], arbitrary[Endorsement], arbitrary[Seq[String]])  {
+      forAll(arbitrary[String], arbitrary[String], arbitrary[Endorsement], arbitrary[Seq[String]]) {
         (id, country, endorsement, containers) =>
-
           val json = if (containers.isEmpty) {
             Json.obj(
               "transportIdentity" -> id,
@@ -388,7 +381,6 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
 
       forAll(arbitrary[Endorsement], arbitrary[Seq[String]]) {
         (endorsement, containers) =>
-
           whenever(containers.nonEmpty) {
 
             val json = Json.obj(

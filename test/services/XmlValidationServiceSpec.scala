@@ -19,7 +19,6 @@ package services
 import base.SpecBase
 import models.ArrivalNotificationXSD
 
-
 class XmlValidationServiceSpec extends SpecBase {
 
   private val xmlValidationService = new XmlValidationService

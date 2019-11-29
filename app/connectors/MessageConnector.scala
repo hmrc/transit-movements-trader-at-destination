@@ -32,11 +32,11 @@ class MessageConnectorImpl @Inject()(config: AppConfig, http: HttpClient) extend
 
   def post(xml: String, messageCode: MessageCode)(implicit headerCarrier: HeaderCarrier): Future[HttpResponse] = {
 
-    val url = config.eisUrl
-    val messageSender ="mdtp-userseori"
+    val url           = config.eisUrl
+    val messageSender = "mdtp-userseori"
 
     val customHeaders: Seq[(String, String)] = Seq(
-      "Content-Type" -> "application/xml",
+      "Content-Type"   -> "application/xml",
       "X-Message-Type" -> messageCode.code,
       "X-Correlation-ID" -> {
         headerCarrier.sessionId

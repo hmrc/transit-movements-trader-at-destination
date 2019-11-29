@@ -19,12 +19,14 @@ package models
 import generators.ModelGenerators
 import models.behaviours.JsonBehaviours
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalatest.{FreeSpec, MustMatchers}
+import org.scalatest.FreeSpec
+import org.scalatest.MustMatchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import play.api.libs.json.{JsError, JsSuccess, Json}
+import play.api.libs.json.JsError
+import play.api.libs.json.JsSuccess
+import play.api.libs.json.Json
 
-class TraderSpec extends FreeSpec with MustMatchers
-  with ScalaCheckPropertyChecks with ModelGenerators with JsonBehaviours {
+class TraderSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with ModelGenerators with JsonBehaviours {
 
   "Trader with EORI" - {
 
@@ -33,8 +35,7 @@ class TraderSpec extends FreeSpec with MustMatchers
     "must deserialise when address fields are present" in {
 
       forAll(arbitrary[String], arbitrary[String], arbitrary[String], arbitrary[String], arbitrary[String], arbitrary[String]) {
-        (eori, name, streetAndNumber, postCode, city, countryCode)  =>
-
+        (eori, name, streetAndNumber, postCode, city, countryCode) =>
           val json = Json.obj(
             "eori"            -> eori,
             "name"            -> name,
@@ -54,7 +55,6 @@ class TraderSpec extends FreeSpec with MustMatchers
 
       forAll(arbitrary[String]) {
         eori =>
-
           val json = Json.obj("eori" -> eori)
 
           val expectedResult = TraderWithEori(eori, None, None, None, None, None)
@@ -67,7 +67,6 @@ class TraderSpec extends FreeSpec with MustMatchers
 
       forAll(arbitrary[String], arbitrary[String], arbitrary[String], arbitrary[String], arbitrary[String]) {
         (name, streetAndNumber, postCode, city, countryCode) =>
-
           val json = Json.obj(
             "name"            -> name,
             "streetAndNumber" -> streetAndNumber,
@@ -83,8 +82,7 @@ class TraderSpec extends FreeSpec with MustMatchers
     "must serialise when all address fields are present" in {
 
       forAll(arbitrary[String], arbitrary[String], arbitrary[String], arbitrary[String], arbitrary[String], arbitrary[String]) {
-        (eori, name, streetAndNumber, postCode, city, countryCode)  =>
-
+        (eori, name, streetAndNumber, postCode, city, countryCode) =>
           val json = Json.obj(
             "eori"            -> eori,
             "name"            -> name,
@@ -104,7 +102,6 @@ class TraderSpec extends FreeSpec with MustMatchers
 
       forAll(arbitrary[String]) {
         eori =>
-
           val json = Json.obj("eori" -> eori)
 
           val trader = TraderWithEori(eori, None, None, None, None, None)
@@ -122,7 +119,6 @@ class TraderSpec extends FreeSpec with MustMatchers
 
       forAll(arbitrary[String], arbitrary[String], arbitrary[String], arbitrary[String], arbitrary[String]) {
         (name, streetAndNumber, postCode, city, countryCode) =>
-
           val json = Json.obj(
             "name"            -> name,
             "streetAndNumber" -> streetAndNumber,
@@ -141,7 +137,6 @@ class TraderSpec extends FreeSpec with MustMatchers
 
       forAll(arbitrary[String], arbitrary[String], arbitrary[String], arbitrary[String], arbitrary[String]) {
         (name, streetAndNumber, postCode, city, countryCode) =>
-
           val json = Json.obj(
             "name"            -> name,
             "streetAndNumber" -> streetAndNumber,
@@ -164,8 +159,7 @@ class TraderSpec extends FreeSpec with MustMatchers
       "when all address fields are present" in {
 
         forAll(arbitrary[String], arbitrary[String], arbitrary[String], arbitrary[String], arbitrary[String], arbitrary[String]) {
-          (eori, name, streetAndNumber, postCode, city, countryCode)  =>
-
+          (eori, name, streetAndNumber, postCode, city, countryCode) =>
             val json = Json.obj(
               "eori"            -> eori,
               "name"            -> name,
@@ -185,7 +179,6 @@ class TraderSpec extends FreeSpec with MustMatchers
 
         forAll(arbitrary[String]) {
           eori =>
-
             val json = Json.obj("eori" -> eori)
 
             val expectedResult = TraderWithEori(eori, None, None, None, None, None)
@@ -199,7 +192,6 @@ class TraderSpec extends FreeSpec with MustMatchers
 
       forAll(arbitrary[String], arbitrary[String], arbitrary[String], arbitrary[String], arbitrary[String]) {
         (name, streetAndNumber, postCode, city, countryCode) =>
-
           val json = Json.obj(
             "name"            -> name,
             "streetAndNumber" -> streetAndNumber,
@@ -219,8 +211,7 @@ class TraderSpec extends FreeSpec with MustMatchers
       "when all address fields are present" in {
 
         forAll(arbitrary[String], arbitrary[String], arbitrary[String], arbitrary[String], arbitrary[String], arbitrary[String]) {
-          (eori, name, streetAndNumber, postCode, city, countryCode)  =>
-
+          (eori, name, streetAndNumber, postCode, city, countryCode) =>
             val json = Json.obj(
               "eori"            -> eori,
               "name"            -> name,
@@ -240,7 +231,6 @@ class TraderSpec extends FreeSpec with MustMatchers
 
         forAll(arbitrary[String]) {
           eori =>
-
             val json = Json.obj("eori" -> eori)
 
             val trader = TraderWithEori(eori, None, None, None, None, None)
@@ -254,7 +244,6 @@ class TraderSpec extends FreeSpec with MustMatchers
 
       forAll(arbitrary[String], arbitrary[String], arbitrary[String], arbitrary[String], arbitrary[String]) {
         (name, streetAndNumber, postCode, city, countryCode) =>
-
           val json = Json.obj(
             "name"            -> name,
             "streetAndNumber" -> streetAndNumber,

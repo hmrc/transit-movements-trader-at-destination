@@ -19,12 +19,13 @@ package models
 import generators.ModelGenerators
 import models.behaviours.JsonBehaviours
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalatest.{FreeSpec, MustMatchers}
+import org.scalatest.FreeSpec
+import org.scalatest.MustMatchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import play.api.libs.json.{JsSuccess, Json}
+import play.api.libs.json.JsSuccess
+import play.api.libs.json.Json
 
-class RejectionErrorSpec extends FreeSpec with MustMatchers
-  with ScalaCheckPropertyChecks with ModelGenerators with JsonBehaviours {
+class RejectionErrorSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with ModelGenerators with JsonBehaviours {
 
   mustHaveDualReadsAndWrites(arbitrary[RejectionError])
 
@@ -32,11 +33,10 @@ class RejectionErrorSpec extends FreeSpec with MustMatchers
 
     forAll(arbitrary[Int], arbitrary[String], arbitrary[String], arbitrary[String]) {
       (errorType, pointer, reason, original) =>
-
         val json = Json.obj(
-          "errorType" -> errorType,
-          "pointer" -> pointer,
-          "reason" -> reason,
+          "errorType"     -> errorType,
+          "pointer"       -> pointer,
+          "reason"        -> reason,
           "originalValue" -> original
         )
 
@@ -50,10 +50,9 @@ class RejectionErrorSpec extends FreeSpec with MustMatchers
 
     forAll(arbitrary[Int], arbitrary[String]) {
       (errorType, pointer) =>
-
         val json = Json.obj(
-          "errorType"     -> errorType,
-          "pointer"       -> pointer
+          "errorType" -> errorType,
+          "pointer"   -> pointer
         )
 
         val expectedResult = RejectionError(errorType, pointer, None, None)
@@ -66,11 +65,10 @@ class RejectionErrorSpec extends FreeSpec with MustMatchers
 
     forAll(arbitrary[Int], arbitrary[String], arbitrary[String], arbitrary[String]) {
       (errorType, pointer, reason, original) =>
-
         val json = Json.obj(
-          "errorType" -> errorType,
-          "pointer" -> pointer,
-          "reason" -> reason,
+          "errorType"     -> errorType,
+          "pointer"       -> pointer,
+          "reason"        -> reason,
           "originalValue" -> original
         )
 
@@ -84,10 +82,9 @@ class RejectionErrorSpec extends FreeSpec with MustMatchers
 
     forAll(arbitrary[Int], arbitrary[String]) {
       (errorType, pointer) =>
-
         val json = Json.obj(
-          "errorType"     -> errorType,
-          "pointer"       -> pointer
+          "errorType" -> errorType,
+          "pointer"   -> pointer
         )
 
         val error = RejectionError(errorType, pointer, None, None)

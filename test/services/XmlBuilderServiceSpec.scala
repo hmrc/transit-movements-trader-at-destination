@@ -23,17 +23,25 @@ import generators.MessageGenerators
 import models.messages.request.ArrivalNotificationRequest
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
-import org.scalatest.{FreeSpec, MustMatchers, OptionValues}
+import org.scalatest.FreeSpec
+import org.scalatest.MustMatchers
+import org.scalatest.OptionValues
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.inject.Injector
 import utils.Format
 
 import scala.xml.Utility.trim
-import scala.xml.{Node, NodeSeq}
+import scala.xml.Node
+import scala.xml.NodeSeq
 
-class XmlBuilderServiceSpec extends FreeSpec
-  with MustMatchers with GuiceOneAppPerSuite with MessageGenerators with ScalaCheckDrivenPropertyChecks with OptionValues {
+class XmlBuilderServiceSpec
+    extends FreeSpec
+    with MustMatchers
+    with GuiceOneAppPerSuite
+    with MessageGenerators
+    with ScalaCheckDrivenPropertyChecks
+    with OptionValues {
 
   def injector: Injector = app.injector
 
@@ -45,17 +53,15 @@ class XmlBuilderServiceSpec extends FreeSpec
 
     "must return correct nodes" in {
 
-      def hasEoriWithNormalProcedure()(implicit arrivalNotificationRequest: ArrivalNotificationRequest): Boolean = {
+      def hasEoriWithNormalProcedure()(implicit arrivalNotificationRequest: ArrivalNotificationRequest): Boolean =
         arrivalNotificationRequest.traderDestination.eori.isDefined &&
           arrivalNotificationRequest.header.simplifiedProcedureFlag.equals("0")
-      }
 
       val localDateTime: Gen[LocalDateTime] = dateTimesBetween(LocalDateTime.of(1900, 1, 1, 0, 0), LocalDateTime.now)
 
       forAll(arbitrary[ArrivalNotificationRequest](arbitraryArrivalNotificationRequest), localDateTime) {
 
         (arrivalNotificationRequest, dateTime) =>
-
           whenever(condition = hasEoriWithNormalProcedure()(arrivalNotificationRequest)) {
 
             val dateOfPreperation = Format.dateFormatted(dateTime)

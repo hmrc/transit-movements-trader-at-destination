@@ -20,18 +20,27 @@ import java.time.LocalDateTime
 
 import config.AppConfig
 import generators.MessageGenerators
-import models.{TraderWithEori, TraderWithoutEori}
+import models.TraderWithEori
+import models.TraderWithoutEori
 import models.messages.NormalNotification
-import models.messages.request.{InterchangeControlReference, _}
+import models.messages.request.InterchangeControlReference
+import models.messages.request._
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
-import org.scalatest.{FreeSpec, MustMatchers, OptionValues}
+import org.scalatest.FreeSpec
+import org.scalatest.MustMatchers
+import org.scalatest.OptionValues
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.inject.Injector
 
-class SubmissionModelServiceSpec extends FreeSpec
-  with MustMatchers with GuiceOneAppPerSuite with MessageGenerators with ScalaCheckDrivenPropertyChecks with OptionValues {
+class SubmissionModelServiceSpec
+    extends FreeSpec
+    with MustMatchers
+    with GuiceOneAppPerSuite
+    with MessageGenerators
+    with ScalaCheckDrivenPropertyChecks
+    with OptionValues {
 
   def injector: Injector = app.injector
 
@@ -46,7 +55,7 @@ class SubmissionModelServiceSpec extends FreeSpec
       val notifications: Gen[(ArrivalNotificationRequest, NormalNotification)] = {
         for {
           arrivalNotificationRequest <- arbitraryArrivalNotificationRequestWithEori
-          dateTime <- dateTimesBetween(LocalDateTime.of(1900, 1, 1, 0, 0), LocalDateTime.now)
+          dateTime                   <- dateTimesBetween(LocalDateTime.of(1900, 1, 1, 0, 0), LocalDateTime.now)
         } yield {
 
           val normalNotification: NormalNotification = {
@@ -75,8 +84,7 @@ class SubmissionModelServiceSpec extends FreeSpec
       forAll(notifications) {
 
         case (arrivalNotificationRequest, normalNotification) =>
-
-          val messageSender: MessageSender = arrivalNotificationRequest.meta.messageSender
+          val messageSender: MessageSender                             = arrivalNotificationRequest.meta.messageSender
           val interchangeControlReference: InterchangeControlReference = arrivalNotificationRequest.meta.interchangeControlReference
 
           convertToSubmissionModel.convertToSubmissionModel(normalNotification, messageSender, interchangeControlReference) mustBe
@@ -90,7 +98,7 @@ class SubmissionModelServiceSpec extends FreeSpec
     val notifications: Gen[(ArrivalNotificationRequest, NormalNotification)] = {
       for {
         arrivalNotificationRequest <- arbitraryArrivalNotificationRequestWithoutEori
-        dateTime <- dateTimesBetween(LocalDateTime.of(1900, 1, 1, 0, 0), LocalDateTime.now)
+        dateTime                   <- dateTimesBetween(LocalDateTime.of(1900, 1, 1, 0, 0), LocalDateTime.now)
       } yield {
 
         val normalNotification: NormalNotification = {
@@ -118,8 +126,7 @@ class SubmissionModelServiceSpec extends FreeSpec
     forAll(notifications) {
 
       case (arrivalNotificationRequest, normalNotification) =>
-
-        val messageSender: MessageSender = arrivalNotificationRequest.meta.messageSender
+        val messageSender: MessageSender                             = arrivalNotificationRequest.meta.messageSender
         val interchangeControlReference: InterchangeControlReference = arrivalNotificationRequest.meta.interchangeControlReference
 
         convertToSubmissionModel.convertToSubmissionModel(normalNotification, messageSender, interchangeControlReference) mustBe
@@ -127,14 +134,14 @@ class SubmissionModelServiceSpec extends FreeSpec
     }
   }
 
+  "must return FailedToConvert when given an invalid request" in {
 
-    "must return FailedToConvert when given an invalid request" in {
+    import support.InvalidRequestModel
 
-      import support.InvalidRequestModel
+    forAll(arbitrary[MessageSender], arbitrary[InterchangeControlReference]) {
 
-      forAll(arbitrary[MessageSender], arbitrary[InterchangeControlReference]) {
-
-        (messageSender, interchangeControlReference) => {
+      (messageSender, interchangeControlReference) =>
+        {
 
           val result: Either[ModelConversionError, ArrivalNotificationRequest] = {
             convertToSubmissionModel.convertToSubmissionModel(
@@ -146,8 +153,7 @@ class SubmissionModelServiceSpec extends FreeSpec
 
           result mustBe Left(FailedToConvertModel)
         }
-      }
     }
-
+  }
 
 }
