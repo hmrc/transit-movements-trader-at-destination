@@ -17,12 +17,15 @@
 package models
 
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalatest.{FreeSpec, MustMatchers}
+import org.scalatest.FreeSpec
+import org.scalatest.MustMatchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import play.api.libs.json.{JsError, JsString, JsSuccess, Json}
+import play.api.libs.json.JsError
+import play.api.libs.json.JsString
+import play.api.libs.json.JsSuccess
+import play.api.libs.json.Json
 
-class ProcedureTypeSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks  {
-
+class ProcedureTypeSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks {
 
   "must deserialise from normal procedure" in {
 
@@ -38,8 +41,7 @@ class ProcedureTypeSpec extends FreeSpec with MustMatchers with ScalaCheckProper
 
     forAll(arbitrary[String]) {
       value =>
-
-        whenever (value != "normal" && value != "simplified") {
+        whenever(value != "normal" && value != "simplified") {
 
           JsString(value).validate[ProcedureType] mustBe a[JsError]
         }

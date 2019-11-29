@@ -16,25 +16,25 @@
 
 package models.messages.request
 
-case class Meta(
-                 messageSender: MessageSender,
-                 interchangeControlReference: InterchangeControlReference,
-                 senderIdentificationCodeQualifier: Option[String] = None,
-                 recipientIdentificationCodeQualifier: Option[String] = None,
-                 recipientsReferencePassword: Option[String] = None,
-                 recipientsReferencePasswordQualifier: Option[String] = None,
-                 priority: Option[String] = None,
-                 acknowledgementRequest: Option[String] = None,
-                 communicationsAgreementId: Option[String] = None,
-                 commonAccessReference: Option[String] = None,
-                 messageSequenceNumber: Option[String] = None,
-                 firstAndLastTransfer: Option[String] = None) extends MetaConstants
+case class Meta(messageSender: MessageSender,
+                interchangeControlReference: InterchangeControlReference,
+                senderIdentificationCodeQualifier: Option[String] = None,
+                recipientIdentificationCodeQualifier: Option[String] = None,
+                recipientsReferencePassword: Option[String] = None,
+                recipientsReferencePasswordQualifier: Option[String] = None,
+                priority: Option[String] = None,
+                acknowledgementRequest: Option[String] = None,
+                communicationsAgreementId: Option[String] = None,
+                commonAccessReference: Option[String] = None,
+                messageSequenceNumber: Option[String] = None,
+                firstAndLastTransfer: Option[String] = None)
+    extends MetaConstants
 
 sealed trait MetaConstants {
-  val syntaxIdentifier: String = "UNOC"
-  val syntaxVersionNumber: String = "3"
-  val messageRecipient: String = "NCTS"
+  val syntaxIdentifier: String     = "UNOC"
+  val syntaxVersionNumber: String  = "3"
+  val messageRecipient: String     = "NCTS"
   val applicationReference: String = "NCTS"
-  val messageIndication = "1"
-  val testIndicator = "0"
+  val messageIndication            = "1"
+  val testIndicator                = "0"
 }

@@ -21,10 +21,10 @@ sealed trait TraderConstants {
 }
 
 case class TraderDestination(
-                              name: Option[String],
-                              streetAndNumber: Option[String],
-                              postCode: Option[String],
-                              city: Option[String],
-                              countryCode: Option[String],
-                              eori: Option[String]
-                            ) extends TraderConstants
+  name: Option[String],
+  streetAndNumber: Option[String],
+  postCode: Option[String],
+  city: Option[String],
+  countryCode: Option[String],
+  eori: Option[String]
+) extends TraderConstants

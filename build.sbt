@@ -1,3 +1,4 @@
+import sbt.Def
 import uk.gov.hmrc.SbtArtifactory
 import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin.publishingSettings
 import scoverage.ScoverageKeys
@@ -8,9 +9,11 @@ lazy val microservice = Project(appName, file("."))
   .enablePlugins(play.sbt.PlayScala, SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin, SbtArtifactory)
   .configs(IntegrationTest)
   .settings(inConfig(IntegrationTest)(itSettings): _*)
+  .settings(inConfig(IntegrationTest)(scalafmtSettings): _*)
   .settings(
-    majorVersion                     := 0,
-    libraryDependencies              ++= AppDependencies.compile ++ AppDependencies.test
+    majorVersion := 0,
+    libraryDependencies ++= AppDependencies.compile ++ AppDependencies.test,
+    scalafmtOnCompile in ThisBuild := true
   )
   .settings(publishingSettings: _*)
   .settings(resolvers += Resolver.jcenterRepo)
@@ -29,17 +32,18 @@ lazy val scoverageSettings = {
 }
 
 lazy val itSettings = Defaults.itSettings ++ Seq(
-  unmanagedSourceDirectories   := Seq(
+  unmanagedSourceDirectories := Seq(
     baseDirectory.value / "it",
     baseDirectory.value / "test" / "generators"
   ),
   unmanagedResourceDirectories := Seq(
     baseDirectory.value / "it" / "services" / "resources"
   ),
-  parallelExecution            := false,
-  fork                         := true,
-  javaOptions                  ++= Seq(
+  parallelExecution := false,
+  fork := true,
+  javaOptions ++= Seq(
     "-Dconfig.resource=it.application.conf",
     "-Dlogger.resource=it.logback.xml"
-  )
+  ),
+  scalafmtTestOnCompile in ThisBuild := true
 )

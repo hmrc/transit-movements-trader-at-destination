@@ -21,15 +21,15 @@ import models.messages.MessageCode
 import scala.collection.immutable.ListMap
 
 case class ArrivalNotificationRequest(
-                                       meta: Meta,
-                                       header: Header,
-                                       traderDestination: TraderDestination,
-                                       customsOfficeOfPresentation: CustomsOfficeOfPresentation
-                                     ) extends RequestConstants {
+  meta: Meta,
+  header: Header,
+  traderDestination: TraderDestination,
+  customsOfficeOfPresentation: CustomsOfficeOfPresentation
+) extends RequestConstants {
 
-  val messageCode: MessageCode = MessageCode("GB007A")
-  val syntaxIdentifier: String = "UNOC"
-  val rootKey: String = "CC007A"
+  val messageCode: MessageCode       = MessageCode("GB007A")
+  val syntaxIdentifier: String       = "UNOC"
+  val rootKey: String                = "CC007A"
   val nameSpace: Map[String, String] = ListMap()
 }
 

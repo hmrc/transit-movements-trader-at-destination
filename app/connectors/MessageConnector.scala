@@ -21,26 +21,26 @@ import java.util.UUID
 import com.google.inject.Inject
 import config.AppConfig
 import models.messages.MessageCode
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.HttpResponse
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-
 class MessageConnectorImpl @Inject()(config: AppConfig, http: HttpClient) extends MessageConnector {
 
-  def post(xml: String, messageCode: MessageCode)
-          (implicit headerCarrier: HeaderCarrier): Future[HttpResponse] = {
+  def post(xml: String, messageCode: MessageCode)(implicit headerCarrier: HeaderCarrier): Future[HttpResponse] = {
 
-    val url = config.eisUrl
-    val messageSender ="mdtp-userseori"
+    val url           = config.eisUrl
+    val messageSender = "mdtp-userseori"
 
     val customHeaders: Seq[(String, String)] = Seq(
-      "Content-Type" -> "application/xml",
+      "Content-Type"   -> "application/xml",
       "X-Message-Type" -> messageCode.code,
       "X-Correlation-ID" -> {
-        headerCarrier.sessionId.map(_.value)
+        headerCarrier.sessionId
+          .map(_.value)
           .getOrElse(UUID.randomUUID().toString)
       },
       "X-Message-Sender" -> messageSender,
@@ -52,6 +52,5 @@ class MessageConnectorImpl @Inject()(config: AppConfig, http: HttpClient) extend
 }
 
 trait MessageConnector {
-  def post(xml: String, messageCode: MessageCode)
-          (implicit headerCarrier: HeaderCarrier): Future[HttpResponse]
+  def post(xml: String, messageCode: MessageCode)(implicit headerCarrier: HeaderCarrier): Future[HttpResponse]
 }

@@ -23,15 +23,15 @@ import play.api.Logger
 import utils.Format
 
 import scala.xml.XML._
-import scala.xml.{Elem, Node, NodeSeq}
+import scala.xml.Elem
+import scala.xml.Node
+import scala.xml.NodeSeq
 
 class XmlBuilderService {
 
   private val logger = Logger(getClass)
 
-  def buildXml(arrivalNotificationRequest: ArrivalNotificationRequest)
-              (implicit dateTime: LocalDateTime): Either[XmlBuilderError, Node] = {
-
+  def buildXml(arrivalNotificationRequest: ArrivalNotificationRequest)(implicit dateTime: LocalDateTime): Either[XmlBuilderError, Node] =
     try {
 
       val rootNode: Node = buildStartRoot(arrivalNotificationRequest.rootKey, arrivalNotificationRequest.nameSpace)
@@ -52,12 +52,12 @@ class XmlBuilderService {
         Left(FailedToCreateXml)
       }
     }
-  }
 
   private def buildStartRoot[A](key: String, nameSpace: Map[String, String]): Node = {
 
     val concatNameSpace: (String, (String, String)) => String = {
-      (accumulatedStrings, keyValue) => s"$accumulatedStrings ${keyValue._1}='${keyValue._2}'"
+      (accumulatedStrings, keyValue) =>
+        s"$accumulatedStrings ${keyValue._1}='${keyValue._2}'"
     }
 
     val rootWithNameSpace = nameSpace.foldLeft("")(concatNameSpace)
@@ -65,7 +65,7 @@ class XmlBuilderService {
     loadString(s"<$key $rootWithNameSpace></$key>")
   }
 
-  private def addChildrenToRoot(root: Node, childNodes: NodeSeq): Node = {
+  private def addChildrenToRoot(root: Node, childNodes: NodeSeq): Node =
     Elem(
       root.prefix,
       root.label,
@@ -74,38 +74,36 @@ class XmlBuilderService {
       root.child.isEmpty,
       root.child ++ childNodes: _*
     )
-  }
 
   private def buildOptionalElem[A](value: Option[A], elementTag: String): NodeSeq = value match {
     case Some(result) => loadString(s"<$elementTag>$result</$elementTag>")
-    case _ => NodeSeq.Empty
+    case _            => NodeSeq.Empty
   }
 
-  private def buildMetaNode(meta: Meta, messageCode: String)(implicit dateTime: LocalDateTime): NodeSeq = {
+  private def buildMetaNode(meta: Meta, messageCode: String)(implicit dateTime: LocalDateTime): NodeSeq =
     <SynIdeMES1>{meta.syntaxIdentifier}</SynIdeMES1>
     <SynVerNumMES2>{meta.syntaxVersionNumber}</SynVerNumMES2>
     <MesSenMES3>{meta.messageSender.toString}</MesSenMES3> ++
-    buildOptionalElem(meta.senderIdentificationCodeQualifier, "SenIdeCodQuaMES4") ++
-    buildOptionalElem(meta.recipientIdentificationCodeQualifier, "RecIdeCodQuaMES7") ++
-    <MesRecMES6>{meta.messageRecipient}</MesRecMES6> ++
-    <DatOfPreMES9>{Format.dateFormatted(dateTime)}</DatOfPreMES9> ++
-    <TimOfPreMES10>{Format.timeFormatted(dateTime)}</TimOfPreMES10> ++
-    <IntConRefMES11>{meta.interchangeControlReference.toString}</IntConRefMES11> ++
-    buildOptionalElem(meta.recipientsReferencePassword, "RecRefMES12") ++
-    buildOptionalElem(meta.recipientsReferencePasswordQualifier, "RecRefQuaMES13") ++
-    <AppRefMES14>{meta.applicationReference}</AppRefMES14> ++
-    buildOptionalElem(meta.priority, "PriMES15") ++
-    buildOptionalElem(meta.acknowledgementRequest, "AckReqMES16") ++
-    buildOptionalElem(meta.communicationsAgreementId, "ComAgrIdMES17") ++
-    <TesIndMES18>{meta.testIndicator}</TesIndMES18> ++
-    <MesIdeMES19>{meta.messageIndication}</MesIdeMES19> ++
-    <MesTypMES20>{messageCode}</MesTypMES20> ++
-    buildOptionalElem(meta.commonAccessReference, "ComAccRefMES21") ++
-    buildOptionalElem(meta.messageSequenceNumber, "MesSeqNumMES22") ++
-    buildOptionalElem(meta.firstAndLastTransfer, "FirAndLasTraMES23")
-  }
+      buildOptionalElem(meta.senderIdentificationCodeQualifier, "SenIdeCodQuaMES4") ++
+      buildOptionalElem(meta.recipientIdentificationCodeQualifier, "RecIdeCodQuaMES7") ++
+      <MesRecMES6>{meta.messageRecipient}</MesRecMES6> ++
+      <DatOfPreMES9>{Format.dateFormatted(dateTime)}</DatOfPreMES9> ++
+      <TimOfPreMES10>{Format.timeFormatted(dateTime)}</TimOfPreMES10> ++
+      <IntConRefMES11>{meta.interchangeControlReference.toString}</IntConRefMES11> ++
+      buildOptionalElem(meta.recipientsReferencePassword, "RecRefMES12") ++
+      buildOptionalElem(meta.recipientsReferencePasswordQualifier, "RecRefQuaMES13") ++
+      <AppRefMES14>{meta.applicationReference}</AppRefMES14> ++
+      buildOptionalElem(meta.priority, "PriMES15") ++
+      buildOptionalElem(meta.acknowledgementRequest, "AckReqMES16") ++
+      buildOptionalElem(meta.communicationsAgreementId, "ComAgrIdMES17") ++
+      <TesIndMES18>{meta.testIndicator}</TesIndMES18> ++
+      <MesIdeMES19>{meta.messageIndication}</MesIdeMES19> ++
+      <MesTypMES20>{messageCode}</MesTypMES20> ++
+      buildOptionalElem(meta.commonAccessReference, "ComAccRefMES21") ++
+      buildOptionalElem(meta.messageSequenceNumber, "MesSeqNumMES22") ++
+      buildOptionalElem(meta.firstAndLastTransfer, "FirAndLasTraMES23")
 
-  private def buildHeaderNode(header: Header, arrivalNotificationDate: String): NodeSeq = {
+  private def buildHeaderNode(header: Header, arrivalNotificationDate: String): NodeSeq =
     <HEAHEA>
       <DocNumHEA5>{header.movementReferenceNumber}</DocNumHEA5>
       {
@@ -124,9 +122,8 @@ class XmlBuilderService {
       <SimProFlaHEA132>{header.simplifiedProcedureFlag}</SimProFlaHEA132>
       <ArrNotDatHEA141>{arrivalNotificationDate}</ArrNotDatHEA141>
     </HEAHEA>
-  }
 
-  private def buildTraderDestinationNode(traderDestination: TraderDestination): NodeSeq = {
+  private def buildTraderDestinationNode(traderDestination: TraderDestination): NodeSeq =
     <TRADESTRD>
       {
         buildOptionalElem(traderDestination.name, "NamTRD7") ++
@@ -140,16 +137,14 @@ class XmlBuilderService {
         buildOptionalElem(traderDestination.eori, "TINTRD59")
       }
     </TRADESTRD>
-  }
 
-  private def buildOfficeOfPresentationNode(customsOfficeOfPresentation: CustomsOfficeOfPresentation): NodeSeq = {
+  private def buildOfficeOfPresentationNode(customsOfficeOfPresentation: CustomsOfficeOfPresentation): NodeSeq =
     <CUSOFFPREOFFRES>
       <RefNumRES1>{customsOfficeOfPresentation.presentationOffice}</RefNumRES1>
     </CUSOFFPREOFFRES>
-  }
 
 }
 
 sealed trait XmlBuilderError
 
-object FailedToCreateXml              extends XmlBuilderError
+object FailedToCreateXml extends XmlBuilderError

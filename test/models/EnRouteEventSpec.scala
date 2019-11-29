@@ -19,12 +19,13 @@ package models
 import org.scalacheck.Arbitrary.arbitrary
 import generators.ModelGenerators
 import models.behaviours.JsonBehaviours
-import org.scalatest.{FreeSpec, MustMatchers}
+import org.scalatest.FreeSpec
+import org.scalatest.MustMatchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import play.api.libs.json.{JsSuccess, Json}
+import play.api.libs.json.JsSuccess
+import play.api.libs.json.Json
 
-class EnRouteEventSpec extends FreeSpec with MustMatchers
-  with ScalaCheckPropertyChecks with ModelGenerators with JsonBehaviours {
+class EnRouteEventSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with ModelGenerators with JsonBehaviours {
 
   mustHaveDualReadsAndWrites(arbitrary[EnRouteEvent])
 
@@ -32,7 +33,6 @@ class EnRouteEventSpec extends FreeSpec with MustMatchers
 
     forAll(arbitrary[String], arbitrary[String], arbitrary[Boolean], arbitrary[EventDetails]) {
       (place, countryCode, alreadyInNcts, eventDetails) =>
-
         val json = Json.obj(
           "place"         -> place,
           "countryCode"   -> countryCode,
@@ -50,7 +50,6 @@ class EnRouteEventSpec extends FreeSpec with MustMatchers
 
     forAll(arbitrary[String], arbitrary[String], arbitrary[Boolean], arbitrary[EventDetails], arbitrary[Seq[String]]) {
       (place, countryCode, alreadyInNcts, eventDetails, seals) =>
-
         val json = Json.obj(
           "place"         -> place,
           "countryCode"   -> countryCode,
@@ -69,7 +68,6 @@ class EnRouteEventSpec extends FreeSpec with MustMatchers
 
     forAll(arbitrary[String], arbitrary[String], arbitrary[Boolean], arbitrary[EventDetails], arbitrary[Seq[String]]) {
       (place, countryCode, alreadyInNcts, eventDetails, seals) =>
-
         val json = if (seals.isEmpty) {
           Json.obj(
             "place"         -> place,

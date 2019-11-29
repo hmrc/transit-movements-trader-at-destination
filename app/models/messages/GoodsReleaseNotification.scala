@@ -19,13 +19,14 @@ package models.messages
 import java.time.LocalDate
 
 import models.Trader
-import play.api.libs.json.{Format, Json}
+import play.api.libs.json.Format
+import play.api.libs.json.Json
 
-final case class GoodsReleaseNotification (
-    movementReferenceNumber: String,
-    releaseDate: LocalDate,
-    trader: Trader,
-    presentationOffice: String
+final case class GoodsReleaseNotification(
+  movementReferenceNumber: String,
+  releaseDate: LocalDate,
+  trader: Trader,
+  presentationOffice: String
 )
 
 object GoodsReleaseNotification {

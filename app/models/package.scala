@@ -29,7 +29,7 @@ package object models {
     def filterNot(f: (String, JsValue) => Boolean): JsObject =
       JsObject(obj.fields.filterNot(f.tupled))
 
-    def filterNulls: JsObject = {
+    def filterNulls: JsObject =
       map {
         case (k, v: JsObject) =>
           k -> v.filterNulls
@@ -38,7 +38,6 @@ package object models {
         case (k, v) =>
           k -> v
       }.filterNot((_, v) => v == JsNull || v == Json.obj() || v == JsArray())
-    }
   }
 
   implicit class RichJsArray(arr: JsArray) {
@@ -52,12 +51,11 @@ package object models {
     def filterNot(f: JsValue => Boolean): JsArray =
       JsArray(arr.value.filterNot(f))
 
-    def filterNulls: JsArray = {
+    def filterNulls: JsArray =
       map {
         case v: JsObject => v.filterNulls
         case v: JsArray  => v.filterNulls
-        case v => v
+        case v           => v
       }.filterNot(v => v == JsNull || v == Json.obj() || v == JsArray())
-    }
   }
 }

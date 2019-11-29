@@ -19,11 +19,11 @@ package models
 import generators.ModelGenerators
 import models.messages.request.InterchangeControlReference
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalatest.{FreeSpec, MustMatchers}
+import org.scalatest.FreeSpec
+import org.scalatest.MustMatchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
-class InterchangeControlReferenceSpec extends FreeSpec with MustMatchers
-  with ScalaCheckPropertyChecks with ModelGenerators {
+class InterchangeControlReferenceSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with ModelGenerators {
 
   "InterchangeControlReference" - {
 
@@ -31,7 +31,6 @@ class InterchangeControlReferenceSpec extends FreeSpec with MustMatchers
 
       forAll(arbitrary[String], arbitrary[Int]) {
         (date, index) =>
-
           InterchangeControlReference(date, index).toString mustBe s"WE$date$index"
       }
     }

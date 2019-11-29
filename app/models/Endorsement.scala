@@ -18,13 +18,14 @@ package models
 
 import java.time.LocalDate
 
-import play.api.libs.json.{Format, Json}
+import play.api.libs.json.Format
+import play.api.libs.json.Json
 
-final case class Endorsement (
-    date: Option[LocalDate],
-    authority: Option[String],
-    place: Option[String],
-    country: Option[String]
+final case class Endorsement(
+  date: Option[LocalDate],
+  authority: Option[String],
+  place: Option[String],
+  country: Option[String]
 )
 
 object Endorsement {

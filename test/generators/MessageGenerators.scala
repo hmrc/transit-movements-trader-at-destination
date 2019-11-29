@@ -20,15 +20,17 @@ import java.time.LocalDate
 
 import models.messages._
 import models.messages.request._
-import models.{EnRouteEvent, MovementReferenceNumber, RejectionError, Trader, TraderWithEori, TraderWithoutEori}
+import models.EnRouteEvent
+import models.MovementReferenceNumber
+import models.RejectionError
+import models.Trader
+import models.TraderWithEori
+import models.TraderWithoutEori
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalacheck.{Arbitrary, Gen}
-
+import org.scalacheck.Arbitrary
+import org.scalacheck.Gen
 
 trait MessageGenerators extends ModelGenerators {
-
-
-
 
   implicit lazy val validXmlString: Arbitrary[String] =
     Arbitrary(arbitrary[List[Char]] map {
@@ -36,18 +38,16 @@ trait MessageGenerators extends ModelGenerators {
         .replaceAll("([&<>]|\\p{C})", "")
     })
 
-
   implicit lazy val arbitraryCustomsOfficeOfPresentation: Arbitrary[CustomsOfficeOfPresentation] = {
     Arbitrary {
 
       for {
-        presentationOffice  <- stringsWithMaxLength(8)
+        presentationOffice <- stringsWithMaxLength(8)
       } yield CustomsOfficeOfPresentation(presentationOffice)
     }
   }
 
   implicit lazy val arbitraryGoodsReleaseNotification: Arbitrary[GoodsReleaseNotification] =
-
     Arbitrary {
 
       for {
@@ -108,12 +108,12 @@ trait MessageGenerators extends ModelGenerators {
     Arbitrary {
 
       for {
-        name              <- Gen.option(stringsWithMaxLength(35))
-        streetAndNumber   <- Gen.option(stringsWithMaxLength(35))
-        postCode          <- Gen.option(stringsWithMaxLength(9))
-        city              <- Gen.option(stringsWithMaxLength(35))
-        countryCode       <- Gen.option(stringsWithMaxLength(2))
-        eori              <- Gen.option(stringsWithMaxLength(17))
+        name            <- Gen.option(stringsWithMaxLength(35))
+        streetAndNumber <- Gen.option(stringsWithMaxLength(35))
+        postCode        <- Gen.option(stringsWithMaxLength(9))
+        city            <- Gen.option(stringsWithMaxLength(35))
+        countryCode     <- Gen.option(stringsWithMaxLength(2))
+        eori            <- Gen.option(stringsWithMaxLength(17))
       } yield TraderDestination(name, streetAndNumber, postCode, city, countryCode, eori)
 
     }
@@ -123,7 +123,7 @@ trait MessageGenerators extends ModelGenerators {
     Arbitrary {
       for {
         environment <- arbitrary[String]
-        eori <- arbitrary[String]
+        eori        <- arbitrary[String]
       } yield MessageSender(environment, eori)
     }
   }
@@ -132,7 +132,7 @@ trait MessageGenerators extends ModelGenerators {
     Arbitrary {
       for {
         dateTime <- arbitrary[String]
-        index <- arbitrary[Int]
+        index    <- arbitrary[Int]
       } yield InterchangeControlReference(dateTime, index)
     }
   }
@@ -140,48 +140,44 @@ trait MessageGenerators extends ModelGenerators {
   implicit lazy val arbitraryMeta: Arbitrary[Meta] = {
     Arbitrary {
       for {
-        messageSender <- arbitrary[MessageSender]
+        messageSender               <- arbitrary[MessageSender]
         interchangeControlReference <- arbitrary[InterchangeControlReference]
-      } yield Meta(
-        messageSender,
-        interchangeControlReference,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None
-      )
+      } yield
+        Meta(
+          messageSender,
+          interchangeControlReference,
+          None,
+          None,
+          None,
+          None,
+          None,
+          None,
+          None,
+          None,
+          None,
+          None
+        )
     }
   }
 
   implicit lazy val arbitraryHeader: Arbitrary[Header] = {
     Arbitrary {
       for {
-        movementReferenceNumber <- arbitrary[MovementReferenceNumber].map(_.toString())
-        customsSubPlace <-  Gen.option(stringsWithMaxLength(17))
+        movementReferenceNumber  <- arbitrary[MovementReferenceNumber].map(_.toString())
+        customsSubPlace          <- Gen.option(stringsWithMaxLength(17))
         arrivalNotificationPlace <- stringsWithMaxLength(35)
-        simplifiedProcedureFlag <- Gen.oneOf("0", "1")
-      } yield Header(
-        movementReferenceNumber,
-        customsSubPlace,
-        arrivalNotificationPlace,
-        None,
-        simplifiedProcedureFlag)
+        simplifiedProcedureFlag  <- Gen.oneOf("0", "1")
+      } yield Header(movementReferenceNumber, customsSubPlace, arrivalNotificationPlace, None, simplifiedProcedureFlag)
     }
   }
 
   implicit lazy val arbitraryArrivalNotificationRequest: Arbitrary[ArrivalNotificationRequest] = {
     Arbitrary {
       for {
-        meta <- arbitrary[Meta]
-        header <- arbitrary[Header]
+        meta              <- arbitrary[Meta]
+        header            <- arbitrary[Header]
         traderDestination <- arbitrary[TraderDestination]
-        customsOffice <- arbitrary[CustomsOfficeOfPresentation]
+        customsOffice     <- arbitrary[CustomsOfficeOfPresentation]
       } yield ArrivalNotificationRequest(meta, header, traderDestination, customsOffice)
 
     }
@@ -189,10 +185,10 @@ trait MessageGenerators extends ModelGenerators {
 
   val arbitraryArrivalNotificationRequestWithEori: Gen[ArrivalNotificationRequest] = {
     for {
-      meta <- arbitrary[Meta]
-      header <- arbitrary[Header]
+      meta           <- arbitrary[Meta]
+      header         <- arbitrary[Header]
       traderWithEori <- arbitrary[TraderWithEori]
-      customsOffice <- arbitrary[CustomsOfficeOfPresentation]
+      customsOffice  <- arbitrary[CustomsOfficeOfPresentation]
       headerWithProcedure = header.copy(simplifiedProcedureFlag = "0")
       traderDestination = {
         TraderDestination(
@@ -209,10 +205,10 @@ trait MessageGenerators extends ModelGenerators {
 
   val arbitraryArrivalNotificationRequestWithoutEori: Gen[ArrivalNotificationRequest] = {
     for {
-      meta <- arbitrary[Meta]
-      header <- arbitrary[Header]
+      meta              <- arbitrary[Meta]
+      header            <- arbitrary[Header]
       traderWithoutEori <- arbitrary[TraderWithoutEori]
-      customsOffice <- arbitrary[CustomsOfficeOfPresentation]
+      customsOffice     <- arbitrary[CustomsOfficeOfPresentation]
       headerWithProcedure = header.copy(simplifiedProcedureFlag = "0")
       traderDestination = {
         TraderDestination(

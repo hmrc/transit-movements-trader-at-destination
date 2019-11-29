@@ -17,18 +17,19 @@
 package services
 
 import models.messages.request.InterchangeControlReference
-import org.scalatest.{FreeSpec, MustMatchers}
-import repositories.{ArrivalNotificationRepository, SequentialInterchangeControlReferenceIdRepository}
+import org.scalatest.FreeSpec
+import org.scalatest.MustMatchers
+import repositories.ArrivalNotificationRepository
+import repositories.SequentialInterchangeControlReferenceIdRepository
 import org.scalatestplus.mockito.MockitoSugar
 import org.mockito.Mockito._
 import org.scalatest.concurrent.ScalaFutures
 
 import scala.concurrent.Future
 
-class DatabaseServiceSpec extends
-  FreeSpec with MustMatchers with MockitoSugar with ScalaFutures {
+class DatabaseServiceSpec extends FreeSpec with MustMatchers with MockitoSugar with ScalaFutures {
 
-  val mockRepository = mock[SequentialInterchangeControlReferenceIdRepository]
+  val mockRepository                    = mock[SequentialInterchangeControlReferenceIdRepository]
   val mockArrivalNotificationRepository = mock[ArrivalNotificationRepository]
 
   "DatabaseService" - {
@@ -38,7 +39,7 @@ class DatabaseServiceSpec extends
       val service = new DatabaseServiceImpl(mockRepository, mockArrivalNotificationRepository)
 
       when(mockRepository.nextInterchangeControlReferenceId())
-          .thenReturn(Future.successful(InterchangeControlReference("date", 1)))
+        .thenReturn(Future.successful(InterchangeControlReference("date", 1)))
 
       val response = service.getInterchangeControlReferenceId.futureValue
 

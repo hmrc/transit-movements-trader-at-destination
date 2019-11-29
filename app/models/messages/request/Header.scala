@@ -17,12 +17,12 @@
 package models.messages.request
 
 case class Header(
-                   movementReferenceNumber: String,
-                   customsSubPlace: Option[String] = None,
-                   arrivalNotificationPlace: String,
-                   arrivalAgreedLocationOfGoods: Option[String] = None,
-                   simplifiedProcedureFlag: String
-                 ) extends HeaderConstants
+  movementReferenceNumber: String,
+  customsSubPlace: Option[String] = None,
+  arrivalNotificationPlace: String,
+  arrivalAgreedLocationOfGoods: Option[String] = None,
+  simplifiedProcedureFlag: String
+) extends HeaderConstants
 
 sealed trait HeaderConstants {
   val languageCode: String = "EN"

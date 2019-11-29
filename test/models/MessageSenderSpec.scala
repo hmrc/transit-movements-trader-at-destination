@@ -20,11 +20,11 @@ import generators.ModelGenerators
 import models.messages.request.MessageSender
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
-import org.scalatest.{FreeSpec, MustMatchers}
+import org.scalatest.FreeSpec
+import org.scalatest.MustMatchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
-class MessageSenderSpec extends FreeSpec with MustMatchers
-  with ScalaCheckPropertyChecks with ModelGenerators {
+class MessageSenderSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with ModelGenerators {
 
   "MessageSender" - {
 
@@ -34,7 +34,6 @@ class MessageSenderSpec extends FreeSpec with MustMatchers
 
       forAll(environment, arbitrary[String]) {
         (env, eori) =>
-
           MessageSender(env, eori).toString mustBe s"$env-$eori"
       }
     }
