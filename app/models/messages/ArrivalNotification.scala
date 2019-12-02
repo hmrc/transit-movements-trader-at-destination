@@ -83,7 +83,7 @@ object NormalNotification {
             (__ \ "customsSubPlace").readNullable[String] and
             (__ \ "trader").read[Trader] and
             (__ \ "presentationOffice").read[String] and
-            ((__ \ "enRouteEvents").read[Seq[EnRouteEvent]] or Reads.pure(Seq[EnRouteEvent]()))
+            ((__ \ "enRouteEvents").read[Seq[EnRouteEvent]])
         )(NormalNotification(_, _, _, _, _, _, _))
       )
   }
@@ -143,7 +143,7 @@ object SimplifiedNotification {
             (__ \ "approvedLocation").readNullable[String] and
             (__ \ "trader").read[Trader] and
             (__ \ "presentationOffice").read[String] and
-            ((__ \ "enRouteEvents").read[Seq[EnRouteEvent]] or Reads.pure(Seq[EnRouteEvent]()))
+            (__ \ "enRouteEvents").read[Seq[EnRouteEvent]]
         )(SimplifiedNotification(_, _, _, _, _, _, _))
       )
   }
