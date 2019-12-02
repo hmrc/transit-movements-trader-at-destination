@@ -31,7 +31,7 @@ class EnRouteEventSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
 
   "must deserialise when no seals are present" in {
 
-    forAll(arbitrary[String], arbitrary[String], arbitrary[Boolean], arbitrary[EventDetails]) {
+    forAll(arbitrary[String], arbitrary[String], arbitrary[Int], arbitrary[EventDetails]) {
       (place, countryCode, alreadyInNcts, eventDetails) =>
         val json = Json.obj(
           "place"         -> place,
@@ -48,7 +48,7 @@ class EnRouteEventSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
 
   "must deserialise when seals are present" in {
 
-    forAll(arbitrary[String], arbitrary[String], arbitrary[Boolean], arbitrary[EventDetails], arbitrary[Seq[String]]) {
+    forAll(arbitrary[String], arbitrary[String], arbitrary[Int], arbitrary[EventDetails], arbitrary[Seq[String]]) {
       (place, countryCode, alreadyInNcts, eventDetails, seals) =>
         val json = Json.obj(
           "place"         -> place,
@@ -66,7 +66,7 @@ class EnRouteEventSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
 
   "must serialise" in {
 
-    forAll(arbitrary[String], arbitrary[String], arbitrary[Boolean], arbitrary[EventDetails], arbitrary[Seq[String]]) {
+    forAll(arbitrary[String], arbitrary[String], arbitrary[Int], arbitrary[EventDetails], arbitrary[Seq[String]]) {
       (place, countryCode, alreadyInNcts, eventDetails, seals) =>
         val json = if (seals.isEmpty) {
           Json.obj(

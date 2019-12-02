@@ -173,7 +173,7 @@ trait ModelGenerators {
       for {
         place         <- stringsWithMaxLength(35)
         countryCode   <- stringsWithMaxLength(2)
-        alreadyInNcts <- arbitrary[Boolean]
+        alreadyInNcts <- arbitrary[Int]
         eventDetails  <- arbitrary[EventDetails]
         numberOfSeals <- Gen.choose[Int](0, 99)
         seals         <- Gen.listOfN(numberOfSeals, stringsWithMaxLength(20))

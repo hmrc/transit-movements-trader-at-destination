@@ -33,13 +33,13 @@ class SubmissionModelService @Inject()(appConfig: AppConfig) {
                                   interchangeControlReference: InterchangeControlReference): Either[ModelConversionError, ArrivalNotificationRequest] =
     arrivalNotification match {
       case arrivalNotification: NormalNotification =>
-        val meta              = buildMeta(messageSender: MessageSender, interchangeControlReference)
-        val header            = buildHeader(arrivalNotification, simplifiedProcedureFlag = "0")
-        val traderDestination = buildTrader(arrivalNotification.trader)
-        val customsOffice     = CustomsOfficeOfPresentation(presentationOffice = arrivalNotification.presentationOffice)
-        val enRouteEvents     = arrivalNotification.enRouteEvents
+        val meta                                     = buildMeta(messageSender: MessageSender, interchangeControlReference)
+        val header                                   = buildHeader(arrivalNotification, simplifiedProcedureFlag = "0")
+        val traderDestination                        = buildTrader(arrivalNotification.trader)
+        val customsOffice                            = CustomsOfficeOfPresentation(presentationOffice = arrivalNotification.presentationOffice)
+        val enRouteEvents: Option[Seq[EnRouteEvent]] = arrivalNotification.enRouteEvents
 
-        Right(ArrivalNotificationRequest(meta, header, traderDestination, customsOffice, enRouteEvents))
+        Right(ArrivalNotificationRequest(meta, header, traderDestination, customsOffice, enRouteEvents.get))
       case _ =>
         Left(FailedToConvertModel)
     }
