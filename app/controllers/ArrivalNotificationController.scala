@@ -26,6 +26,7 @@ import models.messages.ArrivalNotification
 import models.messages.request.ArrivalNotificationRequest
 import models.messages.request._
 import play.api.libs.json.JsError
+import play.api.libs.json.Json
 import play.api.libs.json.Reads
 import play.api.mvc._
 import reactivemongo.api.commands.WriteResult
@@ -93,7 +94,9 @@ class ArrivalNotificationController @Inject()(
           }
         }
         case Left(FailedCreatingInterchangeControlReference) =>
-          Future.successful(InternalServerError)
+          Future.successful(
+            InternalServerError(Json.obj("message" -> "failed to create InterchangeControlReference")).as("application/json")
+          )
       }
   }
 

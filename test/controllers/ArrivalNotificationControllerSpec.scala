@@ -113,6 +113,8 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
       val result: Future[Result] = route(application, request).value
 
       status(result) mustEqual INTERNAL_SERVER_ERROR
+      contentAsJson(result) mustBe
+        Json.obj("message" -> "failed to create InterchangeControlReference")
     }
 
     "must return INTERNAL_SERVER_ERROR when persist to mongo returns a FailedSavingArrivalNotification" in {
