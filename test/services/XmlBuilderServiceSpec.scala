@@ -20,6 +20,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 import generators.MessageGenerators
+import models.EnRouteEvent
 import models.EventDetails
 import models.Incident
 import models.Transhipment
@@ -100,20 +101,7 @@ class XmlBuilderServiceSpec
                   <CUSOFFPREOFFRES>
                     <RefNumRES1>{arrivalNotificationRequest.customsOfficeOfPresentation.presentationOffice}</RefNumRES1>
                   </CUSOFFPREOFFRES>
-                  {
-                    arrivalNotificationRequest.enRouteEvents.map {
-                    event =>
-                      <ENROUEVETEV>
-                        <PlaTEV10>{event.place}</PlaTEV10>
-                        <PlaTEV10LNG>{arrivalNotificationRequest.header.languageCode}</PlaTEV10LNG>
-                        <CouTEV13>{event.countryCode}</CouTEV13>
-                        <CTLCTL>
-                          <AlrInNCTCTL29>{if (event.alreadyInNcts) 1 else 0}</AlrInNCTCTL29>
-                        </CTLCTL>
-                        {buildIncidentType(event.eventDetails, arrivalNotificationRequest.header.languageCode)}
-                      </ENROUEVETEV>
-                    }
-                  }
+                  {buildEnRouteEvent(arrivalNotificationRequest.enRouteEvents, arrivalNotificationRequest.header.languageCode)}
                 </CC007A>
               )
             }
@@ -122,6 +110,22 @@ class XmlBuilderServiceSpec
           }
       }
     }
+  }
+
+  private def buildEnRouteEvent(enRouteEvents: Option[Seq[EnRouteEvent]], languageCode: String): NodeSeq = enRouteEvents match {
+    case None => NodeSeq.Empty
+    case Some(events) =>
+      events.map {
+        event =>
+          <ENROUEVETEV>
+          <PlaTEV10>{event.place}</PlaTEV10>
+          <PlaTEV10LNG>{languageCode}</PlaTEV10LNG>
+          <CouTEV13>{event.countryCode}</CouTEV13>
+          <CTLCTL>
+            <AlrInNCTCTL29>{if (event.alreadyInNcts) 1 else 0}</AlrInNCTCTL29>
+          </CTLCTL>{buildIncidentType(event.eventDetails, languageCode)}
+        </ENROUEVETEV>
+      }
   }
 
   private def buildIncidentType(event: EventDetails, languageCode: String): NodeSeq = event match {
@@ -140,7 +144,6 @@ class XmlBuilderServiceSpec
     }
     case _: Transhipment => NodeSeq.Empty //TODO: implement transhipment
   }
-
 }
 
 object XmlBuilderServiceSpec {
@@ -158,4 +161,5 @@ object XmlBuilderServiceSpec {
     case false => <IncFlaINC3>1</IncFlaINC3>
     case true  => NodeSeq.Empty
   }
+
 }

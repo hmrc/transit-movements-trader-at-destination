@@ -178,7 +178,7 @@ trait MessageGenerators extends ModelGenerators {
         header            <- arbitrary[Header]
         traderDestination <- arbitrary[TraderDestination]
         customsOffice     <- arbitrary[CustomsOfficeOfPresentation]
-        enRouteEvents     <- arbitrary[Seq[EnRouteEvent]]
+        enRouteEvents     <- Gen.option(arbitrary[Seq[EnRouteEvent]])
       } yield ArrivalNotificationRequest(meta, header, traderDestination, customsOffice, enRouteEvents)
     }
   }
@@ -200,7 +200,7 @@ trait MessageGenerators extends ModelGenerators {
           Some(traderWithEori.eori)
         )
       }
-      enRouteEvents <- arbitrary[Seq[EnRouteEvent]]
+      enRouteEvents <- Gen.option(arbitrary[Seq[EnRouteEvent]])
 
     } yield ArrivalNotificationRequest(meta, headerWithProcedure, traderDestination, customsOffice, enRouteEvents)
   }
@@ -222,7 +222,7 @@ trait MessageGenerators extends ModelGenerators {
           None
         )
       }
-      enRouteEvents <- arbitrary[Seq[EnRouteEvent]]
+      enRouteEvents <- Gen.option(arbitrary[Seq[EnRouteEvent]])
 
     } yield ArrivalNotificationRequest(meta, headerWithProcedure, traderDestination, customsOffice, enRouteEvents)
   }

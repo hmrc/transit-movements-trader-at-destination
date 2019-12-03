@@ -118,8 +118,8 @@ class XmlBuilderService {
 
   private def buildEnRouteEventsNode(arrivalNotificationRequest: ArrivalNotificationRequest): NodeSeq = arrivalNotificationRequest.enRouteEvents match {
 
-    case Nil => NodeSeq.Empty
-    case enRouteEvent =>
+    case None => NodeSeq.Empty
+    case Some(enRouteEvent) =>
       enRouteEvent.map {
         event =>
           <ENROUEVETEV>

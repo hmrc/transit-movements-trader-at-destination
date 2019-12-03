@@ -26,7 +26,7 @@ case class ArrivalNotificationRequest(
   header: Header,
   traderDestination: TraderDestination,
   customsOfficeOfPresentation: CustomsOfficeOfPresentation,
-  enRouteEvents: Seq[EnRouteEvent]
+  enRouteEvents: Option[Seq[EnRouteEvent]]
 ) extends RequestConstants {
 
   val messageCode: MessageCode       = MessageCode("GB007A")

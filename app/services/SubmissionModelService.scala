@@ -39,7 +39,7 @@ class SubmissionModelService @Inject()(appConfig: AppConfig) {
         val customsOffice                            = CustomsOfficeOfPresentation(presentationOffice = arrivalNotification.presentationOffice)
         val enRouteEvents: Option[Seq[EnRouteEvent]] = arrivalNotification.enRouteEvents
 
-        Right(ArrivalNotificationRequest(meta, header, traderDestination, customsOffice, enRouteEvents.get))
+        Right(ArrivalNotificationRequest(meta, header, traderDestination, customsOffice, enRouteEvents))
       case _ =>
         Left(FailedToConvertModel)
     }
