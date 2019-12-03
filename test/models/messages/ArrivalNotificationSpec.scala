@@ -16,280 +16,84 @@
 
 package models.messages
 
-import java.time.LocalDate
-
 import generators.MessageGenerators
-import models.behaviours.JsonBehaviours
-import models.ArrivalNotificationXSD
-import models.EnRouteEvent
 import models.ProcedureType
-import models.Trader
+import models.behaviours.JsonBehaviours
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.libs.json.JsError
+import play.api.libs.json.JsObject
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.Json
-import services.XmlValidationService
 
 class ArrivalNotificationSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with MessageGenerators with JsonBehaviours {
 
   "Normal notification" - {
 
-    mustHaveDualReadsAndWrites(arbitrary[NormalNotification])
+    "must deserialise" in {
 
-    "must deserialise when no customs sub-place or en-route events are present" in {
-
-      val date = datesBetween(LocalDate.of(1900, 1, 1), LocalDate.now)
-
-      forAll(arbitrary[String], arbitrary[String], date, arbitrary[Trader], arbitrary[String]) {
-        (mrn, place, date, trader, presentationOffice) =>
-          val json = Json.obj(
-            "procedure"               -> Json.toJson(ProcedureType.Normal),
-            "movementReferenceNumber" -> mrn,
-            "notificationPlace"       -> place,
-            "notificationDate"        -> date,
-            "trader"                  -> Json.toJson(trader),
-            "presentationOffice"      -> presentationOffice,
-            "enRouteEvents"           -> 0
-          )
-
-          val expectedResult = NormalNotification(mrn, place, date, None, trader, presentationOffice, Option(Seq.empty))
-
-          json.validate[NormalNotification] mustEqual JsSuccess(expectedResult)
-      }
-    }
-
-    "must deserialise when customs sub place and en-route events are present" in {
-
-      val gen = for {
-        mrn                <- arbitrary[String]
-        place              <- arbitrary[String]
-        date               <- datesBetween(LocalDate.of(1900, 1, 1), LocalDate.now)
-        subPlace           <- arbitrary[Option[String]]
-        trader             <- arbitrary[Trader]
-        presentationOffice <- arbitrary[String]
-        events             <- arbitrary[Seq[EnRouteEvent]]
-      } yield (mrn, place, date, subPlace, trader, presentationOffice, events)
-
-      forAll(gen) {
-        case (mrn, place, date, subPlace, trader, presentationOffice, events) =>
-          val json = Json.obj(
-            "procedure"               -> Json.toJson(ProcedureType.Normal),
-            "movementReferenceNumber" -> mrn,
-            "notificationPlace"       -> place,
-            "notificationDate"        -> date,
-            "customsSubPlace"         -> subPlace,
-            "trader"                  -> Json.toJson(trader),
-            "presentationOffice"      -> presentationOffice,
-            "enRouteEvents"           -> Json.toJson(events)
-          )
-
-          val expectedResult = NormalNotification(mrn, place, date, subPlace, trader, presentationOffice, Option(events))
-
-          json.validate[NormalNotification] mustEqual JsSuccess(expectedResult)
+      forAll(arbitrary[NormalNotification]) {
+        normalNotification =>
+          val json = createNormalNotificationJson(normalNotification)
+          json.validate[NormalNotification] mustEqual JsSuccess(normalNotification)
       }
     }
 
     "must fail to deserialise when `procedure` is `simplified`" in {
 
-      val gen = for {
-        mrn                <- arbitrary[String]
-        place              <- arbitrary[String]
-        date               <- datesBetween(LocalDate.of(1900, 1, 1), LocalDate.now)
-        subPlace           <- arbitrary[Option[String]]
-        trader             <- arbitrary[Trader]
-        presentationOffice <- arbitrary[String]
-        events             <- arbitrary[Seq[EnRouteEvent]]
-      } yield (mrn, place, date, subPlace, trader, presentationOffice, events)
+      forAll(arbitrary[NormalNotification]) {
+        normalNotification =>
+          val jsonWithSimplified = {
+            createNormalNotificationJson(normalNotification) ++
+              Json.obj("procedure" -> Json.toJson(ProcedureType.Simplified))
+          }
 
-      forAll(gen) {
-        case (mrn, place, date, subPlace, trader, presentationOffice, events) =>
-          val json = Json.obj(
-            "procedure"               -> Json.toJson(ProcedureType.Simplified),
-            "movementReferenceNumber" -> mrn,
-            "notificationPlace"       -> place,
-            "notificationDate"        -> date,
-            "customsSubPlace"         -> subPlace,
-            "trader"                  -> Json.toJson(trader),
-            "presentationOffice"      -> presentationOffice,
-            "enRouteEvents"           -> Json.toJson(events)
-          )
-
-          json.validate[NormalNotification] mustEqual JsError("procedure must be `normal`")
+          jsonWithSimplified.validate[NormalNotification] mustEqual JsError("procedure must be `normal`")
       }
     }
 
     "must serialise" in {
 
-      val gen = for {
-        mrn                <- arbitrary[String]
-        place              <- arbitrary[String]
-        date               <- datesBetween(LocalDate.of(1900, 1, 1), LocalDate.now)
-        subPlace           <- arbitrary[String]
-        trader             <- arbitrary[Trader]
-        presentationOffice <- arbitrary[String]
-        events             <- arbitrary[Seq[EnRouteEvent]]
-      } yield (mrn, place, date, subPlace, trader, presentationOffice, events)
-
-      forAll(gen) {
-        case (mrn, place, date, subPlace, trader, presentationOffice, events) =>
-          val json = if (events.isEmpty) {
-            Json.obj(
-              "procedure"               -> Json.toJson(ProcedureType.Normal),
-              "movementReferenceNumber" -> mrn,
-              "notificationPlace"       -> place,
-              "notificationDate"        -> date,
-              "customsSubPlace"         -> subPlace,
-              "trader"                  -> Json.toJson(trader),
-              "presentationOffice"      -> presentationOffice
-            )
-          } else {
-            Json.obj(
-              "procedure"               -> Json.toJson(ProcedureType.Normal),
-              "movementReferenceNumber" -> mrn,
-              "notificationPlace"       -> place,
-              "notificationDate"        -> date,
-              "customsSubPlace"         -> subPlace,
-              "trader"                  -> Json.toJson(trader),
-              "presentationOffice"      -> presentationOffice,
-              "enRouteEvents"           -> Json.toJson(events)
-            )
-          }
-
-          val notification = NormalNotification(mrn, place, date, Some(subPlace), trader, presentationOffice, Option(events))
-
-          Json.toJson(notification)(NormalNotification.writes) mustEqual json
+      forAll(arbitrary[NormalNotification]) {
+        normalNotification =>
+          val json = createNormalNotificationJson(normalNotification)
+          Json.toJson(normalNotification)(NormalNotification.writes) mustEqual json
       }
     }
   }
 
   "Simplified notification" - {
 
-    mustHaveDualReadsAndWrites(arbitrary[SimplifiedNotification])
+    "must deserialise" in {
 
-    "must deserialise when no approved location or en-route events are present" in {
-
-      val date = datesBetween(LocalDate.of(1900, 1, 1), LocalDate.now)
-
-      forAll(arbitrary[String], arbitrary[String], date, arbitrary[Trader], arbitrary[String]) {
-        (mrn, place, date, trader, presentationOffice) =>
-          val json = Json.obj(
-            "procedure"               -> Json.toJson(ProcedureType.Simplified),
-            "movementReferenceNumber" -> mrn,
-            "notificationPlace"       -> place,
-            "notificationDate"        -> date,
-            "trader"                  -> Json.toJson(trader),
-            "presentationOffice"      -> presentationOffice
-          )
-
-          val expectedResult = SimplifiedNotification(mrn, place, date, None, trader, presentationOffice, Option(Seq.empty))
-
-          json.validate[SimplifiedNotification] mustEqual JsSuccess(expectedResult)
-      }
-    }
-
-    "must deserialise when approved location and en-route events are present" in {
-
-      val gen = for {
-        mrn                <- arbitrary[String]
-        place              <- arbitrary[String]
-        date               <- datesBetween(LocalDate.of(1900, 1, 1), LocalDate.now)
-        approvedLocation   <- arbitrary[Option[String]]
-        trader             <- arbitrary[Trader]
-        presentationOffice <- arbitrary[String]
-        events             <- arbitrary[Seq[EnRouteEvent]]
-      } yield (mrn, place, date, approvedLocation, trader, presentationOffice, events)
-
-      forAll(gen) {
-        case (mrn, place, date, approvedLocation, trader, presentationOffice, events) =>
-          val json = Json.obj(
-            "procedure"               -> Json.toJson(ProcedureType.Simplified),
-            "movementReferenceNumber" -> mrn,
-            "notificationPlace"       -> place,
-            "notificationDate"        -> date,
-            "approvedLocation"        -> approvedLocation,
-            "trader"                  -> Json.toJson(trader),
-            "presentationOffice"      -> presentationOffice,
-            "enRouteEvents"           -> Json.toJson(events)
-          )
-
-          val expectedResult = SimplifiedNotification(mrn, place, date, approvedLocation, trader, presentationOffice, Option(events))
-
-          json.validate[SimplifiedNotification] mustEqual JsSuccess(expectedResult)
+      forAll(arbitrary[SimplifiedNotification]) {
+        simplifiedNotification =>
+          val json = createSimplifiedNotificationJson(simplifiedNotification)
+          json.validate[SimplifiedNotification] mustEqual JsSuccess(simplifiedNotification)
       }
     }
 
     "must fail to deserialise when `procedure` is `normal`" in {
+      forAll(arbitrary[SimplifiedNotification]) {
 
-      val gen = for {
-        mrn                <- arbitrary[String]
-        place              <- arbitrary[String]
-        date               <- datesBetween(LocalDate.of(1900, 1, 1), LocalDate.now)
-        approvedLocation   <- arbitrary[Option[String]]
-        trader             <- arbitrary[Trader]
-        presentationOffice <- arbitrary[String]
-        events             <- arbitrary[Seq[EnRouteEvent]]
-      } yield (mrn, place, date, approvedLocation, trader, presentationOffice, events)
+        simplifiedNotification =>
+          val jsonWithNormal = {
+            createSimplifiedNotificationJson(simplifiedNotification) ++
+              Json.obj("procedure" -> Json.toJson(ProcedureType.Normal))
+          }
 
-      forAll(gen) {
-        case (mrn, place, date, approvedLocation, trader, presentationOffice, events) =>
-          val json = Json.obj(
-            "procedure"               -> Json.toJson(ProcedureType.Normal),
-            "movementReferenceNumber" -> mrn,
-            "notificationPlace"       -> place,
-            "notificationDate"        -> date,
-            "approvedLocation"        -> approvedLocation,
-            "trader"                  -> Json.toJson(trader),
-            "presentationOffice"      -> presentationOffice,
-            "enRouteEvents"           -> Json.toJson(events)
-          )
-
-          json.validate[SimplifiedNotification] mustEqual JsError("procedure must be `simplified`")
+          jsonWithNormal.validate[SimplifiedNotification] mustEqual JsError("procedure must be `simplified`")
       }
     }
 
     "must serialise" in {
 
-      val gen = for {
-        mrn                <- arbitrary[String]
-        place              <- arbitrary[String]
-        date               <- datesBetween(LocalDate.of(1900, 1, 1), LocalDate.now)
-        approvedLocation   <- arbitrary[String]
-        trader             <- arbitrary[Trader]
-        presentationOffice <- arbitrary[String]
-        events             <- arbitrary[Seq[EnRouteEvent]]
-      } yield (mrn, place, date, approvedLocation, trader, presentationOffice, events)
-
-      forAll(gen) {
-        case (mrn, place, date, approvedLocation, trader, presentationOffice, events) =>
-          val json = if (events.isEmpty) {
-            Json.obj(
-              "procedure"               -> Json.toJson(ProcedureType.Simplified),
-              "movementReferenceNumber" -> mrn,
-              "notificationPlace"       -> place,
-              "notificationDate"        -> date,
-              "approvedLocation"        -> approvedLocation,
-              "trader"                  -> Json.toJson(trader),
-              "presentationOffice"      -> presentationOffice
-            )
-          } else {
-            Json.obj(
-              "procedure"               -> Json.toJson(ProcedureType.Simplified),
-              "movementReferenceNumber" -> mrn,
-              "notificationPlace"       -> place,
-              "notificationDate"        -> date,
-              "approvedLocation"        -> approvedLocation,
-              "trader"                  -> Json.toJson(trader),
-              "presentationOffice"      -> presentationOffice,
-              "enRouteEvents"           -> Json.toJson(events)
-            )
-          }
-
-          val notification = SimplifiedNotification(mrn, place, date, Some(approvedLocation), trader, presentationOffice, Option(events))
-
-          Json.toJson(notification)(SimplifiedNotification.writes) mustEqual json
+      forAll(arbitrary[SimplifiedNotification]) {
+        simplifiedNotification =>
+          val json = createSimplifiedNotificationJson(simplifiedNotification)
+          Json.toJson(simplifiedNotification)(SimplifiedNotification.writes) mustEqual json
       }
     }
   }
@@ -298,129 +102,88 @@ class ArrivalNotificationSpec extends FreeSpec with MustMatchers with ScalaCheck
 
     "must deserialise to a Normal notification" in {
 
-      val date = datesBetween(LocalDate.of(1900, 1, 1), LocalDate.now)
-
-      forAll(arbitrary[String], arbitrary[String], date, arbitrary[Trader], arbitrary[String]) {
-        (mrn, place, date, trader, presentationOffice) =>
-          val json = Json.obj(
-            "procedure"               -> Json.toJson(ProcedureType.Normal),
-            "movementReferenceNumber" -> mrn,
-            "notificationPlace"       -> place,
-            "notificationDate"        -> date,
-            "trader"                  -> Json.toJson(trader),
-            "presentationOffice"      -> presentationOffice
-          )
-
-          val expectedResult = NormalNotification(mrn, place, date, None, trader, presentationOffice, Option(Seq.empty))
-
-          json.validate[ArrivalNotification] mustEqual JsSuccess(expectedResult)
+      forAll(arbitrary[NormalNotification]) {
+        normalNotification =>
+          val json = createNormalNotificationJson(normalNotification)
+          json.validate[ArrivalNotification] mustEqual JsSuccess(normalNotification)
       }
     }
 
     "must deserialise to a Simplified notification" in {
 
-      val date = datesBetween(LocalDate.of(1900, 1, 1), LocalDate.now)
-
-      forAll(arbitrary[String], arbitrary[String], date, arbitrary[Trader], arbitrary[String]) {
-        (mrn, place, date, trader, presentationOffice) =>
-          val json = Json.obj(
-            "procedure"               -> Json.toJson(ProcedureType.Simplified),
-            "movementReferenceNumber" -> mrn,
-            "notificationPlace"       -> place,
-            "notificationDate"        -> date,
-            "trader"                  -> Json.toJson(trader),
-            "presentationOffice"      -> presentationOffice
-          )
-
-          val expectedResult = SimplifiedNotification(mrn, place, date, None, trader, presentationOffice, Option(Seq.empty))
-
-          json.validate[ArrivalNotification] mustEqual JsSuccess(expectedResult)
+      forAll(arbitrary[SimplifiedNotification]) {
+        simplifiedNotification =>
+          val json = createSimplifiedNotificationJson(simplifiedNotification)
+          json.validate[ArrivalNotification] mustEqual JsSuccess(simplifiedNotification)
       }
     }
 
     "must serialise from a Normal notification" in {
 
-      val gen = for {
-        mrn                <- arbitrary[String]
-        place              <- arbitrary[String]
-        date               <- datesBetween(LocalDate.of(1900, 1, 1), LocalDate.now)
-        subPlace           <- arbitrary[String]
-        trader             <- arbitrary[Trader]
-        presentationOffice <- arbitrary[String]
-        events             <- arbitrary[Seq[EnRouteEvent]]
-      } yield (mrn, place, date, subPlace, trader, presentationOffice, events)
-
-      forAll(gen) {
-        case (mrn, place, date, subPlace, trader, presentationOffice, events) =>
-          val json = if (events.isEmpty) {
-            Json.obj(
-              "procedure"               -> Json.toJson(ProcedureType.Normal),
-              "movementReferenceNumber" -> mrn,
-              "notificationPlace"       -> place,
-              "notificationDate"        -> date,
-              "customsSubPlace"         -> subPlace,
-              "trader"                  -> Json.toJson(trader),
-              "presentationOffice"      -> presentationOffice
-            )
-          } else {
-            Json.obj(
-              "procedure"               -> Json.toJson(ProcedureType.Normal),
-              "movementReferenceNumber" -> mrn,
-              "notificationPlace"       -> place,
-              "notificationDate"        -> date,
-              "customsSubPlace"         -> subPlace,
-              "trader"                  -> Json.toJson(trader),
-              "presentationOffice"      -> presentationOffice,
-              "enRouteEvents"           -> Json.toJson(events)
-            )
-          }
-
-          val notification = NormalNotification(mrn, place, date, Some(subPlace), trader, presentationOffice, Option(events))
-
-          Json.toJson(notification: ArrivalNotification) mustEqual json
+      forAll(arbitrary[NormalNotification]) {
+        normalNotification =>
+          val json = createNormalNotificationJson(normalNotification)
+          Json.toJson(normalNotification: ArrivalNotification) mustEqual json
       }
     }
 
     "must serialise from a Simplified notification" in {
 
-      val gen = for {
-        mrn                <- arbitrary[String]
-        place              <- arbitrary[String]
-        date               <- datesBetween(LocalDate.of(1900, 1, 1), LocalDate.now)
-        approvedLocation   <- arbitrary[String]
-        trader             <- arbitrary[Trader]
-        presentationOffice <- arbitrary[String]
-        events             <- arbitrary[Seq[EnRouteEvent]]
-      } yield (mrn, place, date, approvedLocation, trader, presentationOffice, events)
-
-      forAll(gen) {
-        case (mrn, place, date, approvedLocation, trader, presentationOffice, events) =>
-          val json = if (events.isEmpty) {
-            Json.obj(
-              "procedure"               -> Json.toJson(ProcedureType.Simplified),
-              "movementReferenceNumber" -> mrn,
-              "notificationPlace"       -> place,
-              "notificationDate"        -> date,
-              "approvedLocation"        -> approvedLocation,
-              "trader"                  -> Json.toJson(trader),
-              "presentationOffice"      -> presentationOffice
-            )
-          } else {
-            Json.obj(
-              "procedure"               -> Json.toJson(ProcedureType.Simplified),
-              "movementReferenceNumber" -> mrn,
-              "notificationPlace"       -> place,
-              "notificationDate"        -> date,
-              "approvedLocation"        -> approvedLocation,
-              "trader"                  -> Json.toJson(trader),
-              "presentationOffice"      -> presentationOffice,
-              "enRouteEvents"           -> Json.toJson(events)
-            )
-          }
-          val notification = SimplifiedNotification(mrn, place, date, Some(approvedLocation), trader, presentationOffice, Option(events))
-
-          Json.toJson(notification: ArrivalNotification) mustEqual json
+      forAll(arbitrary[SimplifiedNotification]) {
+        simplifiedNotification =>
+          val json = createSimplifiedNotificationJson(simplifiedNotification)
+          Json.toJson(simplifiedNotification: ArrivalNotification) mustEqual json
       }
     }
   }
+
+  private def createNormalNotificationJson(notification: NormalNotification): JsObject =
+    Json.obj(
+      "procedure"               -> notification.procedure,
+      "movementReferenceNumber" -> notification.movementReferenceNumber,
+      "notificationPlace"       -> notification.notificationPlace,
+      "notificationDate"        -> notification.notificationDate
+    ) ++ {
+      notification.customsSubPlace match {
+        case Some(subPlace) =>
+          Json.obj("customsSubPlace" -> Json.toJson(subPlace))
+        case _ =>
+          JsObject.empty
+      }
+    } ++ Json.obj(
+      "trader"             -> Json.toJson(notification.trader),
+      "presentationOffice" -> notification.presentationOffice
+    ) ++ {
+      notification.enRouteEvents match {
+        case Some(enRouteEvents) =>
+          Json.obj("enRouteEvents" -> Json.toJson(notification.enRouteEvents))
+        case _ =>
+          JsObject.empty
+      }
+    }
+
+  private def createSimplifiedNotificationJson(notification: SimplifiedNotification): JsObject =
+    Json.obj(
+      "procedure"               -> notification.procedure,
+      "movementReferenceNumber" -> notification.movementReferenceNumber,
+      "notificationPlace"       -> notification.notificationPlace,
+      "notificationDate"        -> notification.notificationDate
+    ) ++ {
+      notification.approvedLocation match {
+        case Some(approvedLocation) =>
+          Json.obj("approvedLocation" -> approvedLocation)
+        case _ =>
+          JsObject.empty
+      }
+    } ++ Json.obj(
+      "trader"             -> Json.toJson(notification.trader),
+      "presentationOffice" -> notification.presentationOffice
+    ) ++ {
+      notification.enRouteEvents match {
+        case Some(enrouteEvents) =>
+          Json.obj("enRouteEvents" -> Json.toJson(notification.enRouteEvents))
+        case _ =>
+          JsObject.empty
+      }
+    }
 }
