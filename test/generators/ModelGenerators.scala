@@ -173,11 +173,19 @@ trait ModelGenerators {
       for {
         place         <- stringsWithMaxLength(35)
         countryCode   <- stringsWithMaxLength(2)
-        alreadyInNcts <- arbitrary[Int]
+        alreadyInNcts <- arbitrary[Boolean]
         eventDetails  <- arbitrary[EventDetails]
         numberOfSeals <- Gen.choose[Int](0, 99)
-        seals         <- Gen.listOfN(numberOfSeals, stringsWithMaxLength(20))
-      } yield EnRouteEvent(place, countryCode, alreadyInNcts, eventDetails, seals)
+        seals         <- Gen.option(Gen.listOfN(numberOfSeals, stringsWithMaxLength(20)))
+      } yield {
+
+        val removeEmptySealsList = seals match {
+          case Some(seals) if seals.nonEmpty => Some(seals)
+          case _                             => None
+        }
+
+        EnRouteEvent(place, countryCode, alreadyInNcts, eventDetails, removeEmptySealsList)
+      }
     }
 
   implicit lazy val arbitraryRejectionError: Arbitrary[RejectionError] =

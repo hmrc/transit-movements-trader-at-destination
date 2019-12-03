@@ -83,7 +83,7 @@ object NormalNotification {
             (__ \ "customsSubPlace").readNullable[String] and
             (__ \ "trader").read[Trader] and
             (__ \ "presentationOffice").read[String] and
-            ((__ \ "enRouteEvents").readNullable[Seq[EnRouteEvent]])
+            (__ \ "enRouteEvents").readNullable[Seq[EnRouteEvent]]
         )(NormalNotification(_, _, _, _, _, _, _))
       )
   }

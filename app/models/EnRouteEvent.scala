@@ -21,9 +21,9 @@ import play.api.libs.json._
 final case class EnRouteEvent(
   place: String,
   countryCode: String,
-  alreadyInNcts: Int,
+  alreadyInNcts: Boolean,
   eventDetails: EventDetails,
-  seals: Seq[String]
+  seals: Option[Seq[String]]
 )
 
 object EnRouteEvent {
@@ -35,9 +35,9 @@ object EnRouteEvent {
     (
       (__ \ "place").read[String] and
         (__ \ "countryCode").read[String] and
-        (__ \ "alreadyInNcts").read[Int] and
+        (__ \ "alreadyInNcts").read[Boolean] and
         (__ \ "eventDetails").read[EventDetails] and
-        (__ \ "seals").read[Seq[String]]
+        (__ \ "seals").readNullable[Seq[String]]
     )(EnRouteEvent(_, _, _, _, _))
   }
 
