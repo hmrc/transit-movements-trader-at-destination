@@ -127,7 +127,7 @@ class XmlBuilderService {
             <PlaTEV10LNG>{arrivalNotificationRequest.header.languageCode}</PlaTEV10LNG>
             <CouTEV13>{event.countryCode}</CouTEV13>
             <CTLCTL>
-              <AlrInNCTCTL29>{event.alreadyInNcts}</AlrInNCTCTL29>
+              <AlrInNCTCTL29>{if (event.alreadyInNcts) 1 else 0}</AlrInNCTCTL29>
             </CTLCTL>
             {buildIncident(event.eventDetails)(arrivalNotificationRequest)}
           </ENROUEVETEV>
