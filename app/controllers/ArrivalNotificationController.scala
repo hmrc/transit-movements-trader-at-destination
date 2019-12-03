@@ -27,6 +27,7 @@ import models.messages.request.ArrivalNotificationRequest
 import models.messages.request._
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
+import play.api.libs.json.OFormat
 import play.api.libs.json.Reads
 import play.api.mvc._
 import reactivemongo.api.commands.WriteResult
@@ -78,19 +79,21 @@ class ArrivalNotificationController @Inject()(
 
                         }
                         .recover {
-                          case _ => InternalServerError
+                          case _ => {
+                            InternalServerError(Json.obj("message" -> "failed to save an Arrival Notification to Database")).as("application/json")
+                          }
                         }
                     }
                     case Left(FailedToValidateXml) =>
-                      Future.successful(BadRequest)
+                      Future.successful(BadRequest(Json.obj("message" -> "Xml validation failed")).as("application/json"))
                   }
                 }
                 case Left(FailedToCreateXml) =>
-                  Future.successful(InternalServerError)
+                  Future.successful(InternalServerError(Json.obj("message" -> "failed to convert to Xml")).as("application/json"))
               }
             }
             case Left(FailedToConvertModel) =>
-              Future.successful(BadRequest)
+              Future.successful(BadRequest(Json.obj("message" -> "could not create request model")).as("application/json"))
           }
         }
         case Left(FailedCreatingInterchangeControlReference) =>
@@ -110,11 +113,15 @@ class ArrivalNotificationController @Inject()(
             NoContent
         }
         .recover {
-          case _ => BadGateway
+          case _ => BadGateway(Json.obj("message" -> "failed submission to EIS")).as("application/json")
         }
     }
     case Left(FailedSavingArrivalNotification) =>
-      Future.successful(InternalServerError)
+      Future.successful(
+        InternalServerError(
+          Json.obj(
+            "message" -> "failed to save an Arrival Notification to Database"
+          )).as("application/json"))
   }
 
   private def validateJson[A: Reads]: BodyParser[A] =

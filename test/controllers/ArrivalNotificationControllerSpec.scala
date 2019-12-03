@@ -142,10 +142,10 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
 
           val result: Future[Result] = route(application, request).value
 
-          whenReady(result) {
-            result =>
-              result.header.status mustBe INTERNAL_SERVER_ERROR
-          }
+          status(result) mustEqual INTERNAL_SERVER_ERROR
+          contentAsJson(result) mustBe
+            Json.obj("message" -> "failed to save an Arrival Notification to Database")
+
       }
     }
 
@@ -210,6 +210,8 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
           val result: Future[Result] = route(application, request).value
 
           status(result) mustEqual BAD_GATEWAY
+          contentAsJson(result) mustBe
+            Json.obj("message" -> "failed submission to EIS")
       }
     }
 
@@ -233,6 +235,8 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
           val result = route(application, request).value
 
           status(result) mustEqual INTERNAL_SERVER_ERROR
+          contentAsJson(result) mustBe
+            Json.obj("message" -> "failed to convert to Xml")
       }
     }
 
@@ -250,6 +254,8 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
       val result = route(application, request).value
 
       status(result) mustEqual BAD_REQUEST
+      contentAsJson(result) mustBe
+        Json.obj("message" -> "could not create request model")
     }
 
     "must return BAD_REQUEST when xml validation has failed" in {
@@ -275,6 +281,8 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
           val result = route(application, request).value
 
           status(result) mustEqual BAD_REQUEST
+          contentAsJson(result) mustBe
+            Json.obj("message" -> "Xml validation failed")
       }
     }
 
@@ -291,7 +299,6 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
       val result = route(application, request).value
 
       status(result) mustEqual BAD_REQUEST
-
     }
   }
 
