@@ -80,8 +80,8 @@ trait MessageGenerators extends ModelGenerators {
         subPlace           <- Gen.option(stringsWithMaxLength(17))
         trader             <- arbitrary[Trader]
         presentationOffice <- stringsWithMaxLength(8)
-        events             <- seqWithMaxLength[EnRouteEvent](9)
-      } yield NormalNotification(mrn, place, date, subPlace, trader, presentationOffice, Option(events))
+        events             <- Gen.option(seqWithMaxLength[EnRouteEvent](9))
+      } yield NormalNotification(mrn, place, date, subPlace, trader, presentationOffice, events)
     }
 
   implicit lazy val arbitrarySimplifiedNotification: Arbitrary[SimplifiedNotification] =
@@ -94,8 +94,8 @@ trait MessageGenerators extends ModelGenerators {
         approvedLocation   <- Gen.option(stringsWithMaxLength(17))
         trader             <- arbitrary[Trader]
         presentationOffice <- stringsWithMaxLength(8)
-        events             <- seqWithMaxLength[EnRouteEvent](9)
-      } yield SimplifiedNotification(mrn, place, date, approvedLocation, trader, presentationOffice, Option(events))
+        events             <- Gen.option(seqWithMaxLength[EnRouteEvent](9))
+      } yield SimplifiedNotification(mrn, place, date, approvedLocation, trader, presentationOffice, events)
     }
 
   implicit lazy val arbitraryArrivalNotification: Arbitrary[ArrivalNotification] =
