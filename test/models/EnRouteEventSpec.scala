@@ -34,10 +34,7 @@ class EnRouteEventSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
       enrouteEvent =>
         val json = buildEnrouteEvent(enrouteEvent)
 
-        val event =
-          EnRouteEvent(enrouteEvent.place, enrouteEvent.countryCode, enrouteEvent.alreadyInNcts, enrouteEvent.eventDetails, enrouteEvent.seals)
-
-        Json.toJson(event) mustEqual json
+        Json.toJson(enrouteEvent) mustEqual json
     }
   }
 
@@ -47,10 +44,7 @@ class EnRouteEventSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
       enrouteEvent =>
         val json = buildEnrouteEvent(enrouteEvent)
 
-        val expectedResult =
-          EnRouteEvent(enrouteEvent.place, enrouteEvent.countryCode, enrouteEvent.alreadyInNcts, enrouteEvent.eventDetails, enrouteEvent.seals)
-
-        json.validate[EnRouteEvent] mustEqual JsSuccess(expectedResult)
+        json.validate[EnRouteEvent] mustEqual JsSuccess(enrouteEvent)
     }
   }
 
