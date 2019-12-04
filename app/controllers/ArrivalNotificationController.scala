@@ -115,7 +115,7 @@ class ArrivalNotificationController @Inject()(
     implicit headerCarrier: HeaderCarrier): PartialFunction[Either[FailedSavingArrivalNotification, WriteResult], Future[Result]] = {
     case Right(_) => {
       messageConnector
-        .post(xml.toString, arrivalNotificationRequestModel.messageCode)
+        .post(xml.toString, arrivalNotificationRequestModel.xMessageType)
         .map {
           _ =>
             NoContent

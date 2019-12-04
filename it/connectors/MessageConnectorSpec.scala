@@ -52,13 +52,13 @@ class MessageConnectorSpec
 
           implicit val headerCarrier: HeaderCarrier = hc
 
-          val messageCode: String = arrivalNotificationRequest.messageCode.code
+          val xMessageType: String = arrivalNotificationRequest.xMessageType.code
           val messageSender ="mdtp-userseori"
 
           server.stubFor(
             post(urlEqualTo(url))
               .withHeader("Content-Type", equalTo("application/xml"))
-              .withHeader("X-Message-Type", equalTo(messageCode))
+              .withHeader("X-Message-Type", equalTo(xMessageType))
               .withHeader("X-Correlation-ID", headerCarrierPattern)
               .withHeader("X-Forwarded-Host", equalTo("mdtp"))
               .withHeader("X-Message-Sender", equalTo(messageSender))
@@ -68,7 +68,7 @@ class MessageConnectorSpec
               )
           )
 
-          val result = connector.post("<CC007A>test</CC007A>", arrivalNotificationRequest.messageCode)
+          val result = connector.post("<CC007A>test</CC007A>", arrivalNotificationRequest.xMessageType)
 
           whenReady(result) {
             response =>
@@ -83,13 +83,13 @@ class MessageConnectorSpec
 
           implicit val headerCarrier: HeaderCarrier = hc
 
-          val messageCode: String = arrivalNotificationRequest.messageCode.code
+          val xMessageType: String = arrivalNotificationRequest.xMessageType.code
           val messageSender ="mdtp-userseori"
 
           server.stubFor(
             post(urlEqualTo(url))
               .withHeader("Content-Type", equalTo("application/xml"))
-              .withHeader("X-Message-Type", equalTo(messageCode))
+              .withHeader("X-Message-Type", equalTo(xMessageType))
               .withHeader("X-Correlation-ID", headerCarrierPattern)
               .withHeader("X-Forwarded-Host", equalTo("mdtp"))
               .withHeader("X-Message-Sender", equalTo(messageSender))
@@ -99,7 +99,7 @@ class MessageConnectorSpec
               )
           )
 
-          val result = connector.post("<CC007A>test</CC007A>", arrivalNotificationRequest.messageCode)
+          val result = connector.post("<CC007A>test</CC007A>", arrivalNotificationRequest.xMessageType)
 
           whenReady(result.failed) {
             response =>
