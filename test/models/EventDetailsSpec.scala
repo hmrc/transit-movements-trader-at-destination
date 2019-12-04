@@ -85,7 +85,7 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
       forAll(arbitrary[Endorsement]) {
         endorsement =>
           intercept[IllegalArgumentException] {
-            ContainerTranshipment(endorsement, Seq.empty)
+            ContainerTranshipment(endorsement, Option(Seq.empty))
           }
       }
     }
@@ -101,7 +101,7 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
               "containers"  -> Json.toJson(containers)
             )
 
-            val expectedResult = ContainerTranshipment(endorsement, containers)
+            val expectedResult = ContainerTranshipment(endorsement, Option(containers))
 
             json.validate[ContainerTranshipment] mustEqual JsSuccess(expectedResult)
           }
@@ -119,7 +119,7 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
               "containers"  -> Json.toJson(containers)
             )
 
-            val transhipment = ContainerTranshipment(endorsement, containers)
+            val transhipment = ContainerTranshipment(endorsement, Option(containers))
 
             Json.toJson(transhipment) mustEqual json
           }
@@ -141,7 +141,7 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
             "endorsement"       -> Json.toJson(endorsement)
           )
 
-          val expectedResult = VehicularTranshipment(id, country, endorsement, Seq.empty)
+          val expectedResult = VehicularTranshipment(id, country, endorsement, Option(Seq.empty))
 
           json.validate[VehicularTranshipment] mustEqual JsSuccess(expectedResult)
       }
@@ -158,7 +158,7 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
             "containers"        -> Json.toJson(containers)
           )
 
-          val expectedResult = VehicularTranshipment(id, country, endorsement, containers)
+          val expectedResult = VehicularTranshipment(id, country, endorsement, Option(containers))
 
           json.validate[VehicularTranshipment] mustEqual JsSuccess(expectedResult)
       }
@@ -183,7 +183,7 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
             )
           }
 
-          val transhipment = VehicularTranshipment(id, country, endorsement, containers)
+          val transhipment = VehicularTranshipment(id, country, endorsement, Option(containers))
 
           Json.toJson(transhipment)(VehicularTranshipment.writes) mustEqual json
       }
@@ -203,7 +203,7 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
             "containers"        -> Json.toJson(containers)
           )
 
-          val expectedResult = VehicularTranshipment(id, country, endorsement, containers)
+          val expectedResult = VehicularTranshipment(id, country, endorsement, Option(containers))
 
           json.validate[Transhipment] mustEqual JsSuccess(expectedResult)
       }
@@ -220,7 +220,7 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
               "containers"  -> Json.toJson(containers)
             )
 
-            val expectedResult = ContainerTranshipment(endorsement, containers)
+            val expectedResult = ContainerTranshipment(endorsement, Option(containers))
 
             json.validate[Transhipment] mustEqual JsSuccess(expectedResult)
           }
@@ -246,7 +246,7 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
             )
           }
 
-          val transhipment = VehicularTranshipment(id, country, endorsement, containers)
+          val transhipment = VehicularTranshipment(id, country, endorsement, Option(containers))
 
           Json.toJson(transhipment: Transhipment)(Transhipment.writes) mustEqual json
       }
@@ -263,7 +263,7 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
               "containers"  -> Json.toJson(containers)
             )
 
-            val transhipment = ContainerTranshipment(endorsement, containers)
+            val transhipment = ContainerTranshipment(endorsement, Option(containers))
 
             Json.toJson(transhipment: Transhipment)(Transhipment.writes) mustEqual json
           }
@@ -306,7 +306,7 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
             "containers"        -> Json.toJson(containers)
           )
 
-          val expectedResult = VehicularTranshipment(id, country, endorsement, containers)
+          val expectedResult = VehicularTranshipment(id, country, endorsement, Option(containers))
 
           json.validate[EventDetails] mustEqual JsSuccess(expectedResult)
       }
@@ -323,7 +323,7 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
               "containers"  -> Json.toJson(containers)
             )
 
-            val expectedResult = ContainerTranshipment(endorsement, containers)
+            val expectedResult = ContainerTranshipment(endorsement, Option(containers))
 
             json.validate[EventDetails] mustEqual JsSuccess(expectedResult)
           }
@@ -371,7 +371,7 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
             )
           }
 
-          val transhipment = VehicularTranshipment(id, country, endorsement, containers)
+          val transhipment = VehicularTranshipment(id, country, endorsement, Option(containers))
 
           Json.toJson(transhipment: EventDetails) mustEqual json
       }
@@ -388,7 +388,7 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
               "containers"  -> Json.toJson(containers)
             )
 
-            val transhipment = ContainerTranshipment(endorsement, containers)
+            val transhipment = ContainerTranshipment(endorsement, Option(containers))
 
             Json.toJson(transhipment: EventDetails) mustEqual json
           }
