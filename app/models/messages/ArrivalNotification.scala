@@ -53,7 +53,7 @@ final case class NormalNotification(
   customsSubPlace: Option[String],
   trader: Trader,
   presentationOffice: String,
-  enRouteEvents: Seq[EnRouteEvent]
+  enRouteEvents: Option[Seq[EnRouteEvent]]
 ) extends ArrivalNotification {
 
   val procedure: ProcedureType = ProcedureType.Normal
@@ -83,7 +83,7 @@ object NormalNotification {
             (__ \ "customsSubPlace").readNullable[String] and
             (__ \ "trader").read[Trader] and
             (__ \ "presentationOffice").read[String] and
-            ((__ \ "enRouteEvents").read[Seq[EnRouteEvent]] or Reads.pure(Seq[EnRouteEvent]()))
+            (__ \ "enRouteEvents").readNullable[Seq[EnRouteEvent]]
         )(NormalNotification(_, _, _, _, _, _, _))
       )
   }
@@ -113,7 +113,7 @@ final case class SimplifiedNotification(
   approvedLocation: Option[String],
   trader: Trader,
   presentationOffice: String,
-  enRouteEvents: Seq[EnRouteEvent]
+  enRouteEvents: Option[Seq[EnRouteEvent]]
 ) extends ArrivalNotification {
 
   val procedure: ProcedureType = ProcedureType.Simplified
@@ -143,7 +143,7 @@ object SimplifiedNotification {
             (__ \ "approvedLocation").readNullable[String] and
             (__ \ "trader").read[Trader] and
             (__ \ "presentationOffice").read[String] and
-            ((__ \ "enRouteEvents").read[Seq[EnRouteEvent]] or Reads.pure(Seq[EnRouteEvent]()))
+            (__ \ "enRouteEvents").readNullable[Seq[EnRouteEvent]]
         )(SimplifiedNotification(_, _, _, _, _, _, _))
       )
   }

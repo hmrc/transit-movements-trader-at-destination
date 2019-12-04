@@ -45,7 +45,7 @@ trait SpecBase extends FreeSpec with GuiceOneAppPerSuite with MustMatchers with 
     customsSubPlace = None,
     trader = TraderWithEori("eori", None, None, None, None, None),
     presentationOffice = "sadsf",
-    enRouteEvents = Seq.empty
+    enRouteEvents = Option(Seq.empty)
   )
 
   lazy val fakeWriteResult: WriteResult = {

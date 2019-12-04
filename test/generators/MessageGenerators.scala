@@ -80,7 +80,7 @@ trait MessageGenerators extends ModelGenerators {
         subPlace           <- Gen.option(stringsWithMaxLength(17))
         trader             <- arbitrary[Trader]
         presentationOffice <- stringsWithMaxLength(8)
-        events             <- seqWithMaxLength[EnRouteEvent](9)
+        events             <- Gen.option(seqWithMaxLength[EnRouteEvent](9))
       } yield NormalNotification(mrn, place, date, subPlace, trader, presentationOffice, events)
     }
 
@@ -94,7 +94,7 @@ trait MessageGenerators extends ModelGenerators {
         approvedLocation   <- Gen.option(stringsWithMaxLength(17))
         trader             <- arbitrary[Trader]
         presentationOffice <- stringsWithMaxLength(8)
-        events             <- seqWithMaxLength[EnRouteEvent](9)
+        events             <- Gen.option(seqWithMaxLength[EnRouteEvent](9))
       } yield SimplifiedNotification(mrn, place, date, approvedLocation, trader, presentationOffice, events)
     }
 
@@ -178,8 +178,8 @@ trait MessageGenerators extends ModelGenerators {
         header            <- arbitrary[Header]
         traderDestination <- arbitrary[TraderDestination]
         customsOffice     <- arbitrary[CustomsOfficeOfPresentation]
-      } yield ArrivalNotificationRequest(meta, header, traderDestination, customsOffice)
-
+        enRouteEvents     <- Gen.option(arbitrary[Seq[EnRouteEvent]])
+      } yield ArrivalNotificationRequest(meta, header, traderDestination, customsOffice, enRouteEvents)
     }
   }
 
@@ -200,7 +200,9 @@ trait MessageGenerators extends ModelGenerators {
           Some(traderWithEori.eori)
         )
       }
-    } yield ArrivalNotificationRequest(meta, headerWithProcedure, traderDestination, customsOffice)
+      enRouteEvents <- Gen.option(arbitrary[Seq[EnRouteEvent]])
+
+    } yield ArrivalNotificationRequest(meta, headerWithProcedure, traderDestination, customsOffice, enRouteEvents)
   }
 
   val arbitraryArrivalNotificationRequestWithoutEori: Gen[ArrivalNotificationRequest] = {
@@ -220,7 +222,9 @@ trait MessageGenerators extends ModelGenerators {
           None
         )
       }
-    } yield ArrivalNotificationRequest(meta, headerWithProcedure, traderDestination, customsOffice)
+      enRouteEvents <- Gen.option(arbitrary[Seq[EnRouteEvent]])
+
+    } yield ArrivalNotificationRequest(meta, headerWithProcedure, traderDestination, customsOffice, enRouteEvents)
   }
 
 }

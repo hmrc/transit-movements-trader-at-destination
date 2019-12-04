@@ -22,72 +22,44 @@ import models.behaviours.JsonBehaviours
 import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
+import play.api.libs.json.JsObject
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.Json
 
 class EnRouteEventSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with ModelGenerators with JsonBehaviours {
 
-  mustHaveDualReadsAndWrites(arbitrary[EnRouteEvent])
-
-  "must deserialise when no seals are present" in {
-
-    forAll(arbitrary[String], arbitrary[String], arbitrary[Boolean], arbitrary[EventDetails]) {
-      (place, countryCode, alreadyInNcts, eventDetails) =>
-        val json = Json.obj(
-          "place"         -> place,
-          "countryCode"   -> countryCode,
-          "alreadyInNcts" -> alreadyInNcts,
-          "eventDetails"  -> Json.toJson(eventDetails)
-        )
-
-        val expectedResult = EnRouteEvent(place, countryCode, alreadyInNcts, eventDetails, Seq.empty)
-
-        json.validate[EnRouteEvent] mustEqual JsSuccess(expectedResult)
-    }
-  }
-
-  "must deserialise when seals are present" in {
-
-    forAll(arbitrary[String], arbitrary[String], arbitrary[Boolean], arbitrary[EventDetails], arbitrary[Seq[String]]) {
-      (place, countryCode, alreadyInNcts, eventDetails, seals) =>
-        val json = Json.obj(
-          "place"         -> place,
-          "countryCode"   -> countryCode,
-          "alreadyInNcts" -> alreadyInNcts,
-          "eventDetails"  -> Json.toJson(eventDetails),
-          "seals"         -> Json.toJson(seals)
-        )
-
-        val expectedResult = EnRouteEvent(place, countryCode, alreadyInNcts, eventDetails, seals)
-
-        json.validate[EnRouteEvent] mustEqual JsSuccess(expectedResult)
-    }
-  }
-
   "must serialise" in {
 
-    forAll(arbitrary[String], arbitrary[String], arbitrary[Boolean], arbitrary[EventDetails], arbitrary[Seq[String]]) {
-      (place, countryCode, alreadyInNcts, eventDetails, seals) =>
-        val json = if (seals.isEmpty) {
-          Json.obj(
-            "place"         -> place,
-            "countryCode"   -> countryCode,
-            "alreadyInNcts" -> alreadyInNcts,
-            "eventDetails"  -> Json.toJson(eventDetails)
-          )
-        } else {
-          Json.obj(
-            "place"         -> place,
-            "countryCode"   -> countryCode,
-            "alreadyInNcts" -> alreadyInNcts,
-            "eventDetails"  -> Json.toJson(eventDetails),
-            "seals"         -> Json.toJson(seals)
-          )
-        }
+    forAll(arbitrary[EnRouteEvent]) {
+      enrouteEvent =>
+        val json = buildEnrouteEvent(enrouteEvent)
 
-        val event = EnRouteEvent(place, countryCode, alreadyInNcts, eventDetails, seals)
-
-        Json.toJson(event) mustEqual json
+        Json.toJson(enrouteEvent) mustEqual json
     }
   }
+
+  "must deserialise" in {
+
+    forAll(arbitrary[EnRouteEvent]) {
+      enrouteEvent =>
+        val json = buildEnrouteEvent(enrouteEvent)
+
+        json.validate[EnRouteEvent] mustEqual JsSuccess(enrouteEvent)
+    }
+  }
+
+  def buildEnrouteEvent(enrouteEvent: EnRouteEvent): JsObject =
+    Json.obj(
+      "place"         -> enrouteEvent.place,
+      "countryCode"   -> enrouteEvent.countryCode,
+      "alreadyInNcts" -> enrouteEvent.alreadyInNcts,
+      "eventDetails"  -> Json.toJson(enrouteEvent.eventDetails)
+    ) ++ {
+      enrouteEvent.seals match {
+        case Some(seals) =>
+          Json.obj("seals" -> Json.toJson(seals))
+        case _ =>
+          JsObject.empty
+      }
+    }
 }

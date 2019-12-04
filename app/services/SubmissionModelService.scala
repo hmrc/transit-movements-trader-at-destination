@@ -21,6 +21,7 @@ import config.AppConfig
 import models.messages.NormalNotification
 import models.messages.request.InterchangeControlReference
 import models.messages.request._
+import models.EnRouteEvent
 import models.Trader
 import models.TraderWithEori
 import models.TraderWithoutEori
@@ -32,12 +33,13 @@ class SubmissionModelService @Inject()(appConfig: AppConfig) {
                                   interchangeControlReference: InterchangeControlReference): Either[ModelConversionError, ArrivalNotificationRequest] =
     arrivalNotification match {
       case arrivalNotification: NormalNotification =>
-        val meta              = buildMeta(messageSender: MessageSender, interchangeControlReference)
-        val header            = buildHeader(arrivalNotification, simplifiedProcedureFlag = "0")
-        val traderDestination = buildTrader(arrivalNotification.trader)
-        val customsOffice     = CustomsOfficeOfPresentation(presentationOffice = arrivalNotification.presentationOffice)
+        val meta                                     = buildMeta(messageSender: MessageSender, interchangeControlReference)
+        val header                                   = buildHeader(arrivalNotification, simplifiedProcedureFlag = "0")
+        val traderDestination                        = buildTrader(arrivalNotification.trader)
+        val customsOffice                            = CustomsOfficeOfPresentation(presentationOffice = arrivalNotification.presentationOffice)
+        val enRouteEvents: Option[Seq[EnRouteEvent]] = arrivalNotification.enRouteEvents
 
-        Right(ArrivalNotificationRequest(meta, header, traderDestination, customsOffice))
+        Right(ArrivalNotificationRequest(meta, header, traderDestination, customsOffice, enRouteEvents))
       case _ =>
         Left(FailedToConvertModel)
     }
