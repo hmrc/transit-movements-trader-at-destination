@@ -125,8 +125,7 @@ class XmlBuilderServiceSpec
           <CouTEV13>{event.countryCode}</CouTEV13>
           <CTLCTL>
             <AlrInNCTCTL29>{if (event.alreadyInNcts) 1 else 0}</AlrInNCTCTL29>
-          </CTLCTL>
-          {buildIncidentType(event.eventDetails, languageCode)}
+          </CTLCTL>{buildIncidentType(event.eventDetails, languageCode)}
         </ENROUEVETEV>
       }
   }
@@ -162,6 +161,8 @@ class XmlBuilderServiceSpec
         }
       }
       </TRASHP>
+
+    case _ => NodeSeq.Empty
   }
 }
 

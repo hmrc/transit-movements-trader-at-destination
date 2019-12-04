@@ -19,17 +19,17 @@ package services
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-import models.messages.request._
+import models.ContainerTranshipment
 import models.EventDetails
 import models.Incident
-import models.Transhipment
+import models.messages.request._
 import play.api.Logger
 import utils.Format
 
-import scala.xml.XML._
 import scala.xml.Elem
 import scala.xml.Node
 import scala.xml.NodeSeq
+import scala.xml.XML._
 
 class XmlBuilderService {
 
@@ -148,7 +148,25 @@ class XmlBuilderService {
         {buildOptionalElem(incident.endorsement.country, "EndCouINC12")}
       </INCINC>
     }
-    case transhipment: Transhipment => NodeSeq.Empty
+    case containerTranshipment: ContainerTranshipment => {
+      <TRASHP>
+        {buildOptionalElem(containerTranshipment.endorsement.date, "EndDatSHP60")}
+        {buildOptionalElem(containerTranshipment.endorsement.authority, "EndAutSHP61")}
+        <EndAutSHP61LNG>{arrivalNotificationRequest.header.languageCode}</EndAutSHP61LNG>
+        {buildOptionalElem(containerTranshipment.endorsement.place, "EndPlaSHP63")}
+        <EndPlaSHP63LNG>{arrivalNotificationRequest.header.languageCode}</EndPlaSHP63LNG>
+        {buildOptionalElem(containerTranshipment.endorsement.country, "EndCouSHP65")}
+        {
+          containerTranshipment.containers.map {
+            container =>
+              <CONNR3>
+                <ConNumNR31>{container}</ConNumNR31>
+              </CONNR3>
+          }
+        }
+      </TRASHP>
+    }
+    case _ => NodeSeq.Empty
   }
 }
 
