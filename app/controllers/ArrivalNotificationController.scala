@@ -26,6 +26,7 @@ import models.messages.ArrivalNotification
 import models.messages.request.ArrivalNotificationRequest
 import models.messages.request._
 import play.api.libs.json.JsError
+import play.api.libs.json.Json
 import play.api.libs.json.Reads
 import play.api.mvc._
 import reactivemongo.api.commands.WriteResult
@@ -33,6 +34,7 @@ import repositories.FailedSavingArrivalNotification
 import services._
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
+import utils.ErrorResponseBuilder
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -77,23 +79,35 @@ class ArrivalNotificationController @Inject()(
 
                         }
                         .recover {
-                          case _ => InternalServerError
+                          case _ => {
+                            InternalServerError(Json.toJson(ErrorResponseBuilder.failedSavingArrivalNotification))
+                              .as("application/json")
+                          }
                         }
                     }
                     case Left(FailedToValidateXml) =>
-                      Future.successful(BadRequest)
+                      Future.successful(
+                        BadRequest(Json.toJson(ErrorResponseBuilder.failedXmlValidation))
+                          .as("application/json"))
                   }
                 }
                 case Left(FailedToCreateXml) =>
-                  Future.successful(InternalServerError)
+                  Future.successful(
+                    InternalServerError(Json.toJson(ErrorResponseBuilder.failedXmlConversion))
+                      .as("application/json"))
               }
             }
             case Left(FailedToConvertModel) =>
-              Future.successful(BadRequest)
+              Future.successful(
+                BadRequest(Json.toJson(ErrorResponseBuilder.failedToCreateRequestModel))
+                  .as("application/json"))
           }
         }
         case Left(FailedCreatingInterchangeControlReference) =>
-          Future.successful(InternalServerError)
+          Future.successful(
+            InternalServerError(Json.toJson(ErrorResponseBuilder.failedToCreateInterchangeControlRef))
+              .as("application/json")
+          )
       }
   }
 
@@ -107,11 +121,15 @@ class ArrivalNotificationController @Inject()(
             NoContent
         }
         .recover {
-          case _ => BadGateway
+          case _ =>
+            BadGateway(Json.toJson(ErrorResponseBuilder.failedSubmissionToEIS))
+              .as("application/json")
         }
     }
     case Left(FailedSavingArrivalNotification) =>
-      Future.successful(InternalServerError)
+      Future.successful(
+        InternalServerError(Json.toJson(ErrorResponseBuilder.failedSavingToDatabase))
+          .as("application/json"))
   }
 
   private def validateJson[A: Reads]: BodyParser[A] =
