@@ -27,7 +27,6 @@ import models.messages.request.ArrivalNotificationRequest
 import models.messages.request._
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
-import play.api.libs.json.OFormat
 import play.api.libs.json.Reads
 import play.api.mvc._
 import reactivemongo.api.commands.WriteResult
@@ -35,6 +34,7 @@ import repositories.FailedSavingArrivalNotification
 import services._
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
+import utils.ErrorResponseBuilder
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -113,15 +113,15 @@ class ArrivalNotificationController @Inject()(
             NoContent
         }
         .recover {
-          case _ => BadGateway(Json.obj("message" -> "failed submission to EIS")).as("application/json")
+          case _ =>
+            BadGateway(Json.toJson(ErrorResponseBuilder.failedSubmissionToEIS))
+              .as("application/json")
         }
     }
     case Left(FailedSavingArrivalNotification) =>
       Future.successful(
-        InternalServerError(
-          Json.obj(
-            "message" -> "failed to save an Arrival Notification to Database"
-          )).as("application/json"))
+        InternalServerError(Json.toJson(ErrorResponseBuilder.failedSavingToDatabase))
+          .as("application/json"))
   }
 
   private def validateJson[A: Reads]: BodyParser[A] =
