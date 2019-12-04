@@ -155,7 +155,7 @@ class XmlBuilderService {
         <EndAutSHP61LNG>{arrivalNotificationRequest.header.languageCode}</EndAutSHP61LNG>
         {buildOptionalElem(containerTranshipment.endorsement.place, "EndPlaSHP63")}
         <EndPlaSHP63LNG>{arrivalNotificationRequest.header.languageCode}</EndPlaSHP63LNG>
-        {buildOptionalElem(containerTranshipment.endorsement.country, "EndCouSHP65")}
+        {buildOptionalElem(containerTranshipment.endorsement.country, "EndCouSHP65")}containerTranshipmeeeeee
         {
           containerTranshipment.containers.map {
             container =>

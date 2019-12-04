@@ -162,7 +162,27 @@ class XmlBuilderServiceSpec
       }
       </TRASHP>
 
-    case _ => NodeSeq.Empty
+    case vehicularTranshipment: VehicularTranshipment =>
+      <TRASHP>
+        <NewTraMeaIdeSHP26>{vehicularTranshipment.transportIdentity}</NewTraMeaIdeSHP26>
+        <NewTraMeaIdeSHP26LNG>{languageCode}</NewTraMeaIdeSHP26LNG>
+        <NewTraMeaNatSHP54>{vehicularTranshipment.transportCountry}</NewTraMeaNatSHP54>
+        {buildOptionalElem(vehicularTranshipment.endorsement.date, "EndDatSHP60")}
+        {buildOptionalElem(vehicularTranshipment.endorsement.authority, "EndAutSHP61")}
+        <EndAutSHP61LNG>{languageCode}</EndAutSHP61LNG>
+        {buildOptionalElem(vehicularTranshipment.endorsement.place, "EndPlaSHP63")}
+        <EndPlaSHP63LNG>{languageCode}</EndPlaSHP63LNG>
+        {buildOptionalElem(vehicularTranshipment.endorsement.country, "EndCouSHP65")}
+        {
+        vehicularTranshipment.containers.map {
+          container =>
+            <CONNR3>
+              <ConNumNR31>{container}</ConNumNR31>
+            </CONNR3>
+        }
+        }
+      </TRASHP>
+
   }
 }
 
