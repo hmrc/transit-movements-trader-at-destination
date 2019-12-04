@@ -33,4 +33,24 @@ object ErrorResponseBuilder {
   val failedSubmissionToEIS: ErrorResponse = {
     ErrorResponse("failed submission to EIS")
   }
+
+  val failedSavingArrivalNotification: ErrorResponse = {
+    ErrorResponse("failed to save an Arrival Notification to Database")
+  }
+
+  val failedXmlValidation: ErrorResponse = {
+    ErrorResponse("Xml validation failed")
+  }
+
+  val failedXmlConversion: ErrorResponse = {
+    ErrorResponse("failed to convert to Xml")
+  }
+
+  val failedToCreateRequestModel: ErrorResponse = {
+    ErrorResponse("could not create request model")
+  }
+
+  val failedToCreateInterchangeControlRef: ErrorResponse = {
+    ErrorResponse("failed to create InterchangeControlReference")
+  }
 }

@@ -80,25 +80,33 @@ class ArrivalNotificationController @Inject()(
                         }
                         .recover {
                           case _ => {
-                            InternalServerError(Json.obj("message" -> "failed to save an Arrival Notification to Database")).as("application/json")
+                            InternalServerError(Json.toJson(ErrorResponseBuilder.failedSavingArrivalNotification))
+                              .as("application/json")
                           }
                         }
                     }
                     case Left(FailedToValidateXml) =>
-                      Future.successful(BadRequest(Json.obj("message" -> "Xml validation failed")).as("application/json"))
+                      Future.successful(
+                        BadRequest(Json.toJson(ErrorResponseBuilder.failedXmlValidation))
+                          .as("application/json"))
                   }
                 }
                 case Left(FailedToCreateXml) =>
-                  Future.successful(InternalServerError(Json.obj("message" -> "failed to convert to Xml")).as("application/json"))
+                  Future.successful(
+                    InternalServerError(Json.toJson(ErrorResponseBuilder.failedXmlConversion))
+                      .as("application/json"))
               }
             }
             case Left(FailedToConvertModel) =>
-              Future.successful(BadRequest(Json.obj("message" -> "could not create request model")).as("application/json"))
+              Future.successful(
+                BadRequest(Json.toJson(ErrorResponseBuilder.failedToCreateRequestModel))
+                  .as("application/json"))
           }
         }
         case Left(FailedCreatingInterchangeControlReference) =>
           Future.successful(
-            InternalServerError(Json.obj("message" -> "failed to create InterchangeControlReference")).as("application/json")
+            InternalServerError(Json.toJson(ErrorResponseBuilder.failedToCreateInterchangeControlRef))
+              .as("application/json")
           )
       }
   }
