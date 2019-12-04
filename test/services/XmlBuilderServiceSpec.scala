@@ -20,10 +20,12 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 import generators.MessageGenerators
+import models.ContainerTranshipment
 import models.EnRouteEvent
 import models.EventDetails
 import models.Incident
 import models.Transhipment
+import models.VehicularTranshipment
 import models.messages.request.ArrivalNotificationRequest
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
@@ -123,13 +125,14 @@ class XmlBuilderServiceSpec
           <CouTEV13>{event.countryCode}</CouTEV13>
           <CTLCTL>
             <AlrInNCTCTL29>{if (event.alreadyInNcts) 1 else 0}</AlrInNCTCTL29>
-          </CTLCTL>{buildIncidentType(event.eventDetails, languageCode)}
+          </CTLCTL>
+          {buildIncidentType(event.eventDetails, languageCode)}
         </ENROUEVETEV>
       }
   }
 
   private def buildIncidentType(event: EventDetails, languageCode: String): NodeSeq = event match {
-    case incident: Incident => {
+    case incident: Incident =>
       <INCINC>
         {buildIncidentFlag(incident.information.isDefined)}
         {buildOptionalElem(incident.information, "IncInfINC4")}
@@ -141,8 +144,24 @@ class XmlBuilderServiceSpec
         <EndPlaINC10LNG>{languageCode}</EndPlaINC10LNG>
         {buildOptionalElem(incident.endorsement.country, "EndCouINC12")}
       </INCINC>
-    }
-    case _: Transhipment => NodeSeq.Empty //TODO: implement transhipment
+
+    case containerTranshipment: ContainerTranshipment =>
+      <TRASHP>
+        {buildOptionalElem(containerTranshipment.endorsement.date, "EndDatSHP60")}
+        {buildOptionalElem(containerTranshipment.endorsement.authority, "EndAutSHP61")}
+        <EndAutSHP61LNG>{languageCode}</EndAutSHP61LNG>
+        {buildOptionalElem(containerTranshipment.endorsement.place, "EndPlaSHP63")}
+        <EndPlaSHP63LNG>{languageCode}</EndPlaSHP63LNG>
+        {buildOptionalElem(containerTranshipment.endorsement.country, "EndCouSHP65")}
+        {
+        containerTranshipment.containers.map {
+          container =>
+          <CONNR3>
+            <ConNumNR31>{container}</ConNumNR31>
+          </CONNR3>
+        }
+      }
+      </TRASHP>
   }
 }
 
