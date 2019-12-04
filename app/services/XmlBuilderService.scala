@@ -22,6 +22,7 @@ import java.time.LocalDateTime
 import models.ContainerTranshipment
 import models.EventDetails
 import models.Incident
+import models.VehicularTranshipment
 import models.messages.request._
 import play.api.Logger
 import utils.Format
@@ -155,7 +156,7 @@ class XmlBuilderService {
         <EndAutSHP61LNG>{arrivalNotificationRequest.header.languageCode}</EndAutSHP61LNG>
         {buildOptionalElem(containerTranshipment.endorsement.place, "EndPlaSHP63")}
         <EndPlaSHP63LNG>{arrivalNotificationRequest.header.languageCode}</EndPlaSHP63LNG>
-        {buildOptionalElem(containerTranshipment.endorsement.country, "EndCouSHP65")}containerTranshipmeeeeee
+        {buildOptionalElem(containerTranshipment.endorsement.country, "EndCouSHP65")}
         {
           containerTranshipment.containers.map {
             container =>
@@ -166,7 +167,26 @@ class XmlBuilderService {
         }
       </TRASHP>
     }
-    case _ => NodeSeq.Empty
+    case vehicularTranshipment: VehicularTranshipment =>
+      <TRASHP>
+        <NewTraMeaIdeSHP26>{vehicularTranshipment.transportIdentity}</NewTraMeaIdeSHP26>
+        <NewTraMeaIdeSHP26LNG>{arrivalNotificationRequest.header.languageCode}</NewTraMeaIdeSHP26LNG>
+        <NewTraMeaNatSHP54>{vehicularTranshipment.transportCountry}</NewTraMeaNatSHP54>
+        {buildOptionalElem(vehicularTranshipment.endorsement.date, "EndDatSHP60")}
+        {buildOptionalElem(vehicularTranshipment.endorsement.authority, "EndAutSHP61")}
+        <EndAutSHP61LNG>{arrivalNotificationRequest.header.languageCode}</EndAutSHP61LNG>
+        {buildOptionalElem(vehicularTranshipment.endorsement.place, "EndPlaSHP63")}
+        <EndPlaSHP63LNG>{arrivalNotificationRequest.header.languageCode}</EndPlaSHP63LNG>
+        {buildOptionalElem(vehicularTranshipment.endorsement.country, "EndCouSHP65")}
+        {
+        vehicularTranshipment.containers.map {
+          container =>
+              <CONNR3>
+              <ConNumNR31>{container}</ConNumNR31>
+            </CONNR3>
+           }
+        }
+      </TRASHP>
   }
 }
 
