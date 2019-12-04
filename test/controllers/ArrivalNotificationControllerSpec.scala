@@ -135,7 +135,7 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
         Json.obj("message" -> "could not create request model")
     }
 
-    "must return INTERNAL_SERVER_ERROR when saving to database returns FailedSavingArrivalNotification" ignore {
+    "must return INTERNAL_SERVER_ERROR when saving to database returns FailedSavingArrivalNotification" in {
 
       forAll(arbitrary[ArrivalNotificationRequest]) {
 
