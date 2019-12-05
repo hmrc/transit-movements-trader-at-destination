@@ -16,6 +16,9 @@
 
 package connectors
 
+import java.time.LocalDateTime
+import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
 import java.util.UUID
 
 import com.google.inject.Inject
@@ -30,13 +33,17 @@ import scala.concurrent.Future
 
 class MessageConnectorImpl @Inject()(config: AppConfig, http: HttpClient) extends MessageConnector {
 
-  def post(xml: String, xMessageType: XMessageType)(implicit headerCarrier: HeaderCarrier): Future[HttpResponse] = {
+  def post(xml: String, xMessageType: XMessageType, dateTime: OffsetDateTime)(implicit headerCarrier: HeaderCarrier): Future[HttpResponse] = {
 
-    val url           = config.eisUrl
-    val messageSender = "mdtp-userseori"
+    //TODO: Add method to AppConfig to pull back dummy bearer token
+
+    val url                              = config.eisUrl
+    val messageSender                    = "mdtp-userseori"
+    val dateFormatter: DateTimeFormatter = DateTimeFormatter.RFC_1123_DATE_TIME
+    val dateTimeFormatted: String        = dateTime.format(dateFormatter)
 
     val customHeaders: Seq[(String, String)] = Seq(
-      "Content-Type"   -> "application/xml",
+      "Content-Type"   -> "application/xml;charset=UTF-8",
       "X-Message-Type" -> xMessageType.code,
       "X-Correlation-ID" -> {
         headerCarrier.sessionId
@@ -44,7 +51,10 @@ class MessageConnectorImpl @Inject()(config: AppConfig, http: HttpClient) extend
           .getOrElse(UUID.randomUUID().toString)
       },
       "X-Message-Sender" -> messageSender,
-      "X-Forwarded-Host" -> "mdtp"
+      "X-Forwarded-Host" -> "mdtp",
+      "Date"             -> dateTimeFormatted,
+      "Accept"           -> "application/xml",
+      "Authorisation"    -> s"${config.bearerToken}"
     )
 
     http.POSTString(url, xml, customHeaders)
@@ -52,5 +62,5 @@ class MessageConnectorImpl @Inject()(config: AppConfig, http: HttpClient) extend
 }
 
 trait MessageConnector {
-  def post(xml: String, xMessageType: XMessageType)(implicit headerCarrier: HeaderCarrier): Future[HttpResponse]
+  def post(xml: String, xMessageType: XMessageType, dateTime: OffsetDateTime)(implicit headerCarrier: HeaderCarrier): Future[HttpResponse]
 }

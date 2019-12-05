@@ -17,6 +17,7 @@
 package controllers
 
 import java.time.LocalDateTime
+import java.time.OffsetDateTime
 
 import config.AppConfig
 import connectors.MessageConnector
@@ -115,7 +116,7 @@ class ArrivalNotificationController @Inject()(
     implicit headerCarrier: HeaderCarrier): PartialFunction[Either[FailedSavingArrivalNotification, WriteResult], Future[Result]] = {
     case Right(_) => {
       messageConnector
-        .post(xml.toString, arrivalNotificationRequestModel.xMessageType)
+        .post(xml.toString, arrivalNotificationRequestModel.xMessageType, OffsetDateTime.now)
         .map {
           _ =>
             NoContent

@@ -1,5 +1,8 @@
 package connectors
 
+import java.time.format.DateTimeFormatter
+import java.time.{LocalDateTime, OffsetDateTime}
+
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.matching.StringValuePattern
 import generators.MessageGenerators
@@ -12,8 +15,6 @@ import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.logging.SessionId
-
-import scala.concurrent.ExecutionContext.Implicits.global
 
 class MessageConnectorSpec
   extends FreeSpec
@@ -44,31 +45,42 @@ class MessageConnectorSpec
   private val genFailedStatusCodes: Gen[Int] = Gen.choose(400, 599)
   private val genHeaderCarrier = Gen.oneOf(Seq(headerCarrierWithSessionId, headerCarrier))
 
+  private val localDateTime = OffsetDateTime.now
+  val dateFormatter: DateTimeFormatter = DateTimeFormatter.RFC_1123_DATE_TIME
+  val dateTimeFormatted: String = localDateTime.format(dateFormatter)
+
   "MessageConnector" - {
 
     "return OK when post is successful" in {
+
+
       forAll(arbitrary[ArrivalNotificationRequest], genHeaderCarrier) {
         (arrivalNotificationRequest, hc) =>
 
           implicit val headerCarrier: HeaderCarrier = hc
 
           val xMessageType: String = arrivalNotificationRequest.xMessageType.code
-          val messageSender ="mdtp-userseori"
-
+          val messageSender = "mdtp-userseori"
           server.stubFor(
             post(urlEqualTo(url))
-              .withHeader("Content-Type", equalTo("application/xml"))
+
+              .withHeader("Content-Type", equalTo("application/xml;charset=UTF-8"))
               .withHeader("X-Message-Type", equalTo(xMessageType))
               .withHeader("X-Correlation-ID", headerCarrierPattern)
               .withHeader("X-Forwarded-Host", equalTo("mdtp"))
+              .withHeader("Date", equalTo(s"$dateTimeFormatted"))
               .withHeader("X-Message-Sender", equalTo(messageSender))
+              .withHeader("Accept", equalTo("application/xml"))
+              .withHeader("Authorisation", equalTo("TestToken"))
               .willReturn(
+
                 aResponse()
+
                   .withStatus(200)
               )
           )
 
-          val result = connector.post("<CC007A>test</CC007A>", arrivalNotificationRequest.xMessageType)
+          val result = connector.post("<CC007A>test</CC007A>", arrivalNotificationRequest.xMessageType, localDateTime)
 
           whenReady(result) {
             response =>
@@ -77,6 +89,7 @@ class MessageConnectorSpec
       }
     }
 
+
     "return an exception when post is unsuccessful" in {
       forAll(genFailedStatusCodes, arbitrary[ArrivalNotificationRequest], genHeaderCarrier) {
         (statusCode, arrivalNotificationRequest, hc) =>
@@ -84,22 +97,25 @@ class MessageConnectorSpec
           implicit val headerCarrier: HeaderCarrier = hc
 
           val xMessageType: String = arrivalNotificationRequest.xMessageType.code
-          val messageSender ="mdtp-userseori"
+          val messageSender = "mdtp-userseori"
 
           server.stubFor(
             post(urlEqualTo(url))
-              .withHeader("Content-Type", equalTo("application/xml"))
+              .withHeader("Content-Type", equalTo("application/xml;charset=UTF-8"))
               .withHeader("X-Message-Type", equalTo(xMessageType))
               .withHeader("X-Correlation-ID", headerCarrierPattern)
               .withHeader("X-Forwarded-Host", equalTo("mdtp"))
               .withHeader("X-Message-Sender", equalTo(messageSender))
+              .withHeader("Date", equalTo("test"))
+              .withHeader("Accept", equalTo("application/xml"))
+              .withHeader("Authorisation", equalTo("TestToken"))
               .willReturn(
                 aResponse()
                   .withStatus(statusCode)
               )
           )
 
-          val result = connector.post("<CC007A>test</CC007A>", arrivalNotificationRequest.xMessageType)
+          val result = connector.post("<CC007A>test</CC007A>", arrivalNotificationRequest.xMessageType, localDateTime)
 
           whenReady(result.failed) {
             response =>
@@ -110,3 +126,4 @@ class MessageConnectorSpec
   }
 
 }
+
