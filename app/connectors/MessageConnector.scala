@@ -34,9 +34,7 @@ import scala.concurrent.Future
 class MessageConnectorImpl @Inject()(config: AppConfig, http: HttpClient) extends MessageConnector {
 
   def post(xml: String, xMessageType: XMessageType, dateTime: OffsetDateTime)(implicit headerCarrier: HeaderCarrier): Future[HttpResponse] = {
-
-    //TODO: Add method to AppConfig to pull back dummy bearer token
-
+    
     val url                              = config.eisUrl
     val messageSender                    = "mdtp-userseori"
     val dateFormatter: DateTimeFormatter = DateTimeFormatter.RFC_1123_DATE_TIME
@@ -54,7 +52,7 @@ class MessageConnectorImpl @Inject()(config: AppConfig, http: HttpClient) extend
       "X-Forwarded-Host" -> "mdtp",
       "Date"             -> dateTimeFormatted,
       "Accept"           -> "application/xml",
-      "Authorisation"    -> s"${config.bearerToken}"
+      "Authorisation"    -> config.bearerToken
     )
 
     http.POSTString(url, xml, customHeaders)
