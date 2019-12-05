@@ -174,12 +174,16 @@ class XmlBuilderServiceSpec
         <EndPlaSHP63LNG>{languageCode}</EndPlaSHP63LNG>
         {buildOptionalElem(vehicularTranshipment.endorsement.country, "EndCouSHP65")}
         {
-        vehicularTranshipment.containers.map {
-          container =>
-            <CONNR3>
-              <ConNumNR31>{container}</ConNumNR31>
-            </CONNR3>
-        }
+          vehicularTranshipment.containers match {
+            case Some(containers) =>
+              containers.map {
+                container =>
+                  <CONNR3>
+                    <ConNumNR31>{container}</ConNumNR31>
+                  </CONNR3>
+              }
+            case _ => NodeSeq.Empty
+          }
         }
       </TRASHP>
 

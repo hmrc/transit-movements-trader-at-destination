@@ -116,7 +116,7 @@ object VehicularTranshipment {
 
 final case class ContainerTranshipment(
   endorsement: Endorsement,
-  containers: Option[Seq[String]]
+  containers: Seq[String]
 ) extends Transhipment {
 
   require(containers.nonEmpty, "At least one container number must be provided")

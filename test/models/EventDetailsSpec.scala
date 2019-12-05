@@ -22,6 +22,7 @@ import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
+import play.api.libs.json.JsObject
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.Json
 
@@ -29,56 +30,26 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
 
   "Incident" - {
 
-    mustHaveDualReadsAndWrites(arbitrary[Incident])
-
     "must deserialise" in {
 
-      forAll(arbitrary[Option[String]], arbitrary[Endorsement]) {
-        (information, endorsement) =>
-          val json = information
-            .map(
-              info =>
-                Json.obj(
-                  "information" -> info,
-                  "endorsement" -> Json.toJson(endorsement)
-              )
-            )
-            .getOrElse(
-              Json.obj(
-                "endorsement" -> Json.toJson(endorsement)
-              )
-            )
-
-          json.validate[Incident] mustEqual JsSuccess(Incident(information, endorsement))
+      forAll(arbitrary[Incident]) {
+        incident =>
+          val json = incidentJson(incident)
+          json.validate[Incident] mustEqual JsSuccess(incident)
       }
     }
 
     "must serialise" in {
 
-      forAll(arbitrary[Option[String]], arbitrary[Endorsement]) {
-        (information, endorsement) =>
-          val json = information
-            .map(
-              info =>
-                Json.obj(
-                  "information" -> info,
-                  "endorsement" -> Json.toJson(endorsement)
-              )
-            )
-            .getOrElse(
-              Json.obj(
-                "endorsement" -> Json.toJson(endorsement)
-              )
-            )
-
-          Json.toJson(Incident(information, endorsement)) mustEqual json
+      forAll(arbitrary[Incident]) {
+        incident =>
+          val json = incidentJson(incident)
+          Json.toJson(incident) mustEqual json
       }
     }
   }
 
   "Container transhipment" - {
-
-    mustHaveDualReadsAndWrites(arbitrary[ContainerTranshipment])
 
     "must fail to construct when given an empty sequence of containers" in {
 
@@ -92,100 +63,41 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
 
     "must deserialise" in {
 
-      forAll(arbitrary[Endorsement], arbitrary[Seq[String]]) {
-        (endorsement, containers) =>
-          whenever(containers.nonEmpty) {
-
-            val json = Json.obj(
-              "endorsement" -> Json.toJson(endorsement),
-              "containers"  -> Json.toJson(containers)
-            )
-
-            val expectedResult = ContainerTranshipment(endorsement, containers)
-
-            json.validate[ContainerTranshipment] mustEqual JsSuccess(expectedResult)
-          }
+      forAll(arbitrary[ContainerTranshipment]) {
+        containerTranshipment =>
+          val json = containerTranshipmentJson(containerTranshipment)
+          json.validate[ContainerTranshipment] mustEqual JsSuccess(containerTranshipment)
       }
     }
 
     "must serialise" in {
 
-      forAll(arbitrary[Endorsement], arbitrary[Seq[String]]) {
-        (endorsement, containers) =>
-          whenever(containers.nonEmpty) {
-
-            val json = Json.obj(
-              "endorsement" -> Json.toJson(endorsement),
-              "containers"  -> Json.toJson(containers)
-            )
-
-            val transhipment = ContainerTranshipment(endorsement, containers)
-
-            Json.toJson(transhipment) mustEqual json
-          }
+      forAll(arbitrary[ContainerTranshipment]) {
+        containerTranshipment =>
+          val json = containerTranshipmentJson(containerTranshipment)
+          Json.toJson(containerTranshipment) mustEqual json
       }
     }
   }
 
   "Vehicular transhipment" - {
 
-    mustHaveDualReadsAndWrites(arbitrary[VehicularTranshipment])
+    "must deserialise" in {
 
-    "must deserialise when no containers are present" in {
-
-      forAll(arbitrary[String], arbitrary[String], arbitrary[Endorsement]) {
-        (id, country, endorsement) =>
-          val json = Json.obj(
-            "transportIdentity" -> id,
-            "transportCountry"  -> country,
-            "endorsement"       -> Json.toJson(endorsement)
-          )
-
-          val expectedResult = VehicularTranshipment(id, country, endorsement, Seq.empty)
-
-          json.validate[VehicularTranshipment] mustEqual JsSuccess(expectedResult)
-      }
-    }
-
-    "must deserialise when containers are present" in {
-
-      forAll(arbitrary[String], arbitrary[String], arbitrary[Endorsement], arbitrary[Seq[String]]) {
-        (id, country, endorsement, containers) =>
-          val json = Json.obj(
-            "transportIdentity" -> id,
-            "transportCountry"  -> country,
-            "endorsement"       -> Json.toJson(endorsement),
-            "containers"        -> Json.toJson(containers)
-          )
-
-          val expectedResult = VehicularTranshipment(id, country, endorsement, containers)
-
-          json.validate[VehicularTranshipment] mustEqual JsSuccess(expectedResult)
+      forAll(arbitrary[VehicularTranshipment]) {
+        vehicularTranshipment =>
+          val json = vehicularTranshipmentJson(vehicularTranshipment)
+          json.validate[VehicularTranshipment] mustEqual JsSuccess(vehicularTranshipment)
       }
     }
 
     "must serialise" in {
 
-      forAll(arbitrary[String], arbitrary[String], arbitrary[Endorsement], arbitrary[Seq[String]]) {
-        (id, country, endorsement, containers) =>
-          val json = if (containers.isEmpty) {
-            Json.obj(
-              "transportIdentity" -> id,
-              "transportCountry"  -> country,
-              "endorsement"       -> Json.toJson(endorsement)
-            )
-          } else {
-            Json.obj(
-              "transportIdentity" -> id,
-              "transportCountry"  -> country,
-              "endorsement"       -> Json.toJson(endorsement),
-              "containers"        -> Json.toJson(containers)
-            )
-          }
+      forAll(arbitrary[VehicularTranshipment]) {
+        vehicularTranshipment =>
+          val json = vehicularTranshipmentJson(vehicularTranshipment)
 
-          val transhipment = VehicularTranshipment(id, country, endorsement, containers)
-
-          Json.toJson(transhipment)(VehicularTranshipment.writes) mustEqual json
+          Json.toJson(vehicularTranshipment)(VehicularTranshipment.writes) mustEqual json
       }
     }
   }
@@ -194,79 +106,38 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
 
     "must deserialise to a Vehicular transhipment" in {
 
-      forAll(arbitrary[String], arbitrary[String], arbitrary[Endorsement], arbitrary[Seq[String]]) {
-        (id, country, endorsement, containers) =>
-          val json = Json.obj(
-            "transportIdentity" -> id,
-            "transportCountry"  -> country,
-            "endorsement"       -> Json.toJson(endorsement),
-            "containers"        -> Json.toJson(containers)
-          )
-
-          val expectedResult = VehicularTranshipment(id, country, endorsement, containers)
-
-          json.validate[Transhipment] mustEqual JsSuccess(expectedResult)
+      forAll(arbitrary[VehicularTranshipment]) {
+        vehicularTranshipment =>
+          val json = vehicularTranshipmentJson(vehicularTranshipment)
+          json.validate[Transhipment] mustEqual JsSuccess(vehicularTranshipment)
       }
     }
 
     "must deserialise to a Container transhipment" in {
 
-      forAll(arbitrary[Endorsement], arbitrary[Seq[String]]) {
-        (endorsement, containers) =>
-          whenever(containers.nonEmpty) {
+      forAll(arbitrary[ContainerTranshipment]) {
+        containerTranshipment =>
+          val json = containerTranshipmentJson(containerTranshipment)
+          json.validate[Transhipment] mustEqual JsSuccess(containerTranshipment)
 
-            val json = Json.obj(
-              "endorsement" -> Json.toJson(endorsement),
-              "containers"  -> Json.toJson(containers)
-            )
-
-            val expectedResult = ContainerTranshipment(endorsement, containers)
-
-            json.validate[Transhipment] mustEqual JsSuccess(expectedResult)
-          }
       }
     }
 
     "must serialise from a Vehicular transhipment" in {
 
-      forAll(arbitrary[String], arbitrary[String], arbitrary[Endorsement], arbitrary[Seq[String]]) {
-        (id, country, endorsement, containers) =>
-          val json = if (containers.isEmpty) {
-            Json.obj(
-              "transportIdentity" -> id,
-              "transportCountry"  -> country,
-              "endorsement"       -> Json.toJson(endorsement)
-            )
-          } else {
-            Json.obj(
-              "transportIdentity" -> id,
-              "transportCountry"  -> country,
-              "endorsement"       -> Json.toJson(endorsement),
-              "containers"        -> Json.toJson(containers)
-            )
-          }
-
-          val transhipment = VehicularTranshipment(id, country, endorsement, containers)
-
-          Json.toJson(transhipment: Transhipment)(Transhipment.writes) mustEqual json
+      forAll(arbitrary[VehicularTranshipment]) {
+        vehicularTranshipment =>
+          val json = vehicularTranshipmentJson(vehicularTranshipment)
+          Json.toJson(vehicularTranshipment: Transhipment)(Transhipment.writes) mustEqual json
       }
     }
 
     "must serialise from a Container transhipment" in {
 
-      forAll(arbitrary[Endorsement], arbitrary[Seq[String]]) {
-        (endorsement, containers) =>
-          whenever(containers.nonEmpty) {
-
-            val json = Json.obj(
-              "endorsement" -> Json.toJson(endorsement),
-              "containers"  -> Json.toJson(containers)
-            )
-
-            val transhipment = ContainerTranshipment(endorsement, containers)
-
-            Json.toJson(transhipment: Transhipment)(Transhipment.writes) mustEqual json
-          }
+      forAll(arbitrary[ContainerTranshipment]) {
+        containerTranshipment =>
+          val json = containerTranshipmentJson(containerTranshipment)
+          Json.toJson(containerTranshipment: Transhipment)(Transhipment.writes) mustEqual json
       }
     }
   }
@@ -275,124 +146,88 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
 
     "must deserialise to an Incident" in {
 
-      forAll(arbitrary[Option[String]], arbitrary[Endorsement]) {
-        (information, endorsement) =>
-          val json = information
-            .map(
-              info =>
-                Json.obj(
-                  "information" -> info,
-                  "endorsement" -> Json.toJson(endorsement)
-              )
-            )
-            .getOrElse(
-              Json.obj(
-                "endorsement" -> Json.toJson(endorsement)
-              )
-            )
-
-          json.validate[EventDetails] mustEqual JsSuccess(Incident(information, endorsement))
+      forAll(arbitrary[Incident]) {
+        incident =>
+          val json = incidentJson(incident)
+          json.validate[EventDetails] mustEqual JsSuccess(incident)
       }
     }
 
     "must deserialise to a Vehicular transhipment" in {
 
-      forAll(arbitrary[String], arbitrary[String], arbitrary[Endorsement], arbitrary[Seq[String]]) {
-        (id, country, endorsement, containers) =>
-          val json = Json.obj(
-            "transportIdentity" -> id,
-            "transportCountry"  -> country,
-            "endorsement"       -> Json.toJson(endorsement),
-            "containers"        -> Json.toJson(containers)
-          )
-
-          val expectedResult = VehicularTranshipment(id, country, endorsement, containers)
-
-          json.validate[EventDetails] mustEqual JsSuccess(expectedResult)
+      forAll(arbitrary[VehicularTranshipment]) {
+        vehicularTranshipment =>
+          val json = vehicularTranshipmentJson(vehicularTranshipment)
+          json.validate[EventDetails] mustEqual JsSuccess(vehicularTranshipment)
       }
     }
 
     "must deserialise to a Container transhipment" in {
 
-      forAll(arbitrary[Endorsement], arbitrary[Seq[String]]) {
-        (endorsement, containers) =>
-          whenever(containers.nonEmpty) {
-
-            val json = Json.obj(
-              "endorsement" -> Json.toJson(endorsement),
-              "containers"  -> Json.toJson(containers)
-            )
-
-            val expectedResult = ContainerTranshipment(endorsement, containers)
-
-            json.validate[EventDetails] mustEqual JsSuccess(expectedResult)
-          }
+      forAll(arbitrary[ContainerTranshipment]) {
+        containerTranshipment =>
+          val json = containerTranshipmentJson(containerTranshipment)
+          json.validate[EventDetails] mustEqual JsSuccess(containerTranshipment)
       }
     }
 
     "must serialise from an Incident" in {
 
-      forAll(arbitrary[Option[String]], arbitrary[Endorsement]) {
-        (information, endorsement) =>
-          val json = information
-            .map(
-              info =>
-                Json.obj(
-                  "information" -> info,
-                  "endorsement" -> Json.toJson(endorsement)
-              )
-            )
-            .getOrElse(
-              Json.obj(
-                "endorsement" -> Json.toJson(endorsement)
-              )
-            )
-
-          Json.toJson(Incident(information, endorsement): EventDetails) mustEqual json
+      forAll(arbitrary[Incident]) {
+        incident =>
+          val json = incidentJson(incident)
+          Json.toJson(incident: EventDetails) mustEqual json
       }
     }
 
     "must serialise from a Vehicular transhipment" in {
 
-      forAll(arbitrary[String], arbitrary[String], arbitrary[Endorsement], arbitrary[Seq[String]]) {
-        (id, country, endorsement, containers) =>
-          val json = if (containers.isEmpty) {
-            Json.obj(
-              "transportIdentity" -> id,
-              "transportCountry"  -> country,
-              "endorsement"       -> Json.toJson(endorsement)
-            )
-          } else {
-            Json.obj(
-              "transportIdentity" -> id,
-              "transportCountry"  -> country,
-              "endorsement"       -> Json.toJson(endorsement),
-              "containers"        -> Json.toJson(containers)
-            )
-          }
-
-          val transhipment = VehicularTranshipment(id, country, endorsement, containers)
-
-          Json.toJson(transhipment: EventDetails) mustEqual json
+      forAll(arbitrary[VehicularTranshipment]) {
+        vehicularTranshipment =>
+          val json = vehicularTranshipmentJson(vehicularTranshipment)
+          Json.toJson(vehicularTranshipment: EventDetails) mustEqual json
       }
     }
 
     "must serialise from a Container transhipment" in {
 
-      forAll(arbitrary[Endorsement], arbitrary[Seq[String]]) {
-        (endorsement, containers) =>
-          whenever(containers.nonEmpty) {
-
-            val json = Json.obj(
-              "endorsement" -> Json.toJson(endorsement),
-              "containers"  -> Json.toJson(containers)
-            )
-
-            val transhipment = ContainerTranshipment(endorsement, containers)
-
-            Json.toJson(transhipment: EventDetails) mustEqual json
-          }
+      forAll(arbitrary[ContainerTranshipment]) {
+        containerTranshipment =>
+          val json = containerTranshipmentJson(containerTranshipment)
+          Json.toJson(containerTranshipment: EventDetails) mustEqual json
       }
     }
   }
+
+  private def incidentJson(incident: Incident): JsObject = {
+    val information = incident.information match {
+      case Some(information) =>
+        Json.obj("information" -> information)
+      case _ =>
+        JsObject.empty
+    }
+
+    information ++ Json.obj("endorsement" -> Json.toJson(incident.endorsement))
+  }
+
+  private def containerTranshipmentJson(containerTranshipment: ContainerTranshipment): JsObject =
+    Json.obj(
+      "endorsement" -> Json.toJson(containerTranshipment.endorsement),
+      "containers"  -> Json.toJson(containerTranshipment.containers)
+    )
+
+  private def vehicularTranshipmentJson(vehicularTranshipment: VehicularTranshipment): JsObject =
+    Json.obj(
+      "transportIdentity" -> vehicularTranshipment.transportIdentity,
+      "transportCountry"  -> vehicularTranshipment.transportCountry,
+      "endorsement"       -> Json.toJson(vehicularTranshipment.endorsement)
+    ) ++ {
+      vehicularTranshipment.containers match {
+        case Some(containers) =>
+          Json.obj("containers" -> containers)
+        case _ =>
+          JsObject.empty
+      }
+    }
+
 }
