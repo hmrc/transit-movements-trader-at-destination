@@ -273,7 +273,7 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
             .thenReturn(Right(testNode))
 
           when(mockXmlValidationService.validate(any(), any()))
-            .thenReturn(Left(FailedToValidateXml))
+            .thenReturn(Left(FailedToValidateXml("missing element")))
 
           val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
             .withJsonBody(Json.toJson(normalNotification))
@@ -282,7 +282,7 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
 
           status(result) mustEqual BAD_REQUEST
           contentAsJson(result) mustBe
-            Json.obj("message" -> "Xml validation failed")
+            Json.obj("message" -> "Xml validation failed for the following reason: missing element")
       }
     }
 
