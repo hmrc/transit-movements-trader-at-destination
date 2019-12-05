@@ -157,14 +157,7 @@ class XmlBuilderService {
         {buildOptionalElem(containerTranshipment.endorsement.place, "EndPlaSHP63")}
         <EndPlaSHP63LNG>{arrivalNotificationRequest.header.languageCode}</EndPlaSHP63LNG>
         {buildOptionalElem(containerTranshipment.endorsement.country, "EndCouSHP65")}
-        {
-          containerTranshipment.containers.map {
-            container =>
-              <CONNR3>
-                <ConNumNR31>{container}</ConNumNR31>
-              </CONNR3>
-          }
-        }
+        {buildContainers(Some(containerTranshipment.containers))}
       </TRASHP>
     }
     case vehicularTranshipment: VehicularTranshipment =>
@@ -178,19 +171,19 @@ class XmlBuilderService {
         {buildOptionalElem(vehicularTranshipment.endorsement.place, "EndPlaSHP63")}
         <EndPlaSHP63LNG>{arrivalNotificationRequest.header.languageCode}</EndPlaSHP63LNG>
         {buildOptionalElem(vehicularTranshipment.endorsement.country, "EndCouSHP65")}
-        {
-            vehicularTranshipment.containers match {
-              case Some(containers) =>
-                containers.map {
-                  container =>
-                    <CONNR3>
-                      <ConNumNR31>{container}</ConNumNR31>
-                    </CONNR3>
-                }
-              case _ => NodeSeq.Empty
-          }
-        }
+        {buildContainers(vehicularTranshipment.containers)}
       </TRASHP>
+  }
+
+  private def buildContainers(containers: Option[Seq[String]]) = containers match {
+    case Some(containers) =>
+      containers.map {
+        container =>
+          <CONNR3>
+            <ConNumNR31>{container}</ConNumNR31>
+          </CONNR3>
+      }
+    case _ => NodeSeq.Empty
   }
 }
 

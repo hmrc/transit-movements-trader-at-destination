@@ -96,7 +96,6 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
       forAll(arbitrary[VehicularTranshipment]) {
         vehicularTranshipment =>
           val json = vehicularTranshipmentJson(vehicularTranshipment)
-
           Json.toJson(vehicularTranshipment)(VehicularTranshipment.writes) mustEqual json
       }
     }
