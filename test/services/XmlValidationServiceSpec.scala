@@ -25,55 +25,61 @@ class XmlValidationServiceSpec extends SpecBase {
 
   "validate" - {
 
-    "must be successful when validating a valid ArrivalNotification xml with minimal completed fields" in {
-      val xml = buildXml(withEnrouteEvent = false)
+    "must be successful when validating a valid ArrivalNotification xml" - {
 
-      xmlValidationService.validate(xml, ArrivalNotificationXSD) mustBe a[Right[_, _]]
+      "with minimal completed fields" in {
+        val xml = buildXml(withEnrouteEvent = false)
+
+        xmlValidationService.validate(xml, ArrivalNotificationXSD) mustBe a[Right[_, _]]
+      }
+
+      "with an enroute event" in {
+        val xml = buildXml(withEnrouteEvent = true)
+
+        xmlValidationService.validate(xml, ArrivalNotificationXSD) mustBe a[Right[_, _]]
+      }
+
+      "with an enroute event and incident" in {
+        val xml = buildXml(withEnrouteEvent = true, withIncident = true)
+
+        xmlValidationService.validate(xml, ArrivalNotificationXSD) mustBe a[Right[_, _]]
+      }
+
+      "with an enroute event and container transhipment" in {
+        val xml = buildXml(withEnrouteEvent = true, withContainerTranshipment = true)
+
+        xmlValidationService.validate(xml, ArrivalNotificationXSD) mustBe a[Right[_, _]]
+      }
+
+      "with an enroute event and vehicular transhipment" in {
+        val xml = buildXml(withEnrouteEvent = true, withVehicularTranshipment = true)
+
+        xmlValidationService.validate(xml, ArrivalNotificationXSD) mustBe a[Right[_, _]]
+      }
     }
 
-    "must be successful when validating a valid ArrivalNotification xml with an enroute event" in {
-      val xml = buildXml(withEnrouteEvent = true)
+    "must fail when validating an invalid ArrivalNotification xml" - {
 
-      xmlValidationService.validate(xml, ArrivalNotificationXSD) mustBe a[Right[_, _]]
-    }
+      "with missing mandatory elements" in {
+        val xml             = "<CC007A></CC007A>"
+        val expectedMessage = "cvc-complex-type.2.4.b: The content of element 'CC007A' is not complete. One of '{SynIdeMES1}' is expected."
 
-    "must be successful when validating a valid ArrivalNotification xml with an enroute event and incident" in {
-      val xml = buildXml(withEnrouteEvent = true, withIncident = true)
+        xmlValidationService.validate(xml, ArrivalNotificationXSD) mustBe Left(FailedToValidateXml(expectedMessage))
+      }
 
-      xmlValidationService.validate(xml, ArrivalNotificationXSD) mustBe a[Right[_, _]]
-    }
+      "with invalid fields" in {
 
-    "must be successful when validating a valid ArrivalNotification xml with an enroute event and container transhipment" in {
-      val xml = buildXml(withEnrouteEvent = true, withContainerTranshipment = true)
+        val xml =
+          """
+            |<CC007A>
+            |    <SynIdeMES1>11111111111111</SynIdeMES1>
+            |</CC007A>
+          """.stripMargin
 
-      xmlValidationService.validate(xml, ArrivalNotificationXSD) mustBe a[Right[_, _]]
-    }
+        val expectedMessage = "cvc-pattern-valid: Value '11111111111111' is not facet-valid with respect to pattern '[a-zA-Z]{4}' for type 'Alpha_4'."
 
-    "must be successful when validating a valid ArrivalNotification xml with an enroute event and vehicular transhipment" in {
-      val xml = buildXml(withEnrouteEvent = true, withVehicularTranshipment = true)
-
-      xmlValidationService.validate(xml, ArrivalNotificationXSD) mustBe a[Right[_, _]]
-    }
-
-    "must fail when validating a ArrivalNotification xml with missing mandatory elements" in {
-      val xml             = "<CC007A></CC007A>"
-      val expectedMessage = "cvc-complex-type.2.4.b: The content of element 'CC007A' is not complete. One of '{SynIdeMES1}' is expected."
-
-      xmlValidationService.validate(xml, ArrivalNotificationXSD) mustBe Left(FailedToValidateXml(expectedMessage))
-    }
-
-    "must fail when validating a ArrivalNotification xml with invalid fields" in {
-
-      val xml =
-        """
-          |<CC007A>
-          |    <SynIdeMES1>11111111111111</SynIdeMES1>
-          |</CC007A>
-        """.stripMargin
-
-      val expectedMessage = "cvc-pattern-valid: Value '11111111111111' is not facet-valid with respect to pattern '[a-zA-Z]{4}' for type 'Alpha_4'."
-
-      xmlValidationService.validate(xml, ArrivalNotificationXSD) mustBe Left(FailedToValidateXml(expectedMessage))
+        xmlValidationService.validate(xml, ArrivalNotificationXSD) mustBe Left(FailedToValidateXml(expectedMessage))
+      }
     }
   }
 
