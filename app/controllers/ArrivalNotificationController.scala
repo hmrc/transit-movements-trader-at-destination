@@ -85,9 +85,9 @@ class ArrivalNotificationController @Inject()(
                           }
                         }
                     }
-                    case Left(FailedToValidateXml) =>
+                    case Left(FailedToValidateXml(reason)) =>
                       Future.successful(
-                        BadRequest(Json.toJson(ErrorResponseBuilder.failedXmlValidation))
+                        BadRequest(Json.toJson(ErrorResponseBuilder.failedXmlValidation(reason)))
                           .as("application/json"))
                   }
                 }

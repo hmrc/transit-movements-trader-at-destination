@@ -79,7 +79,9 @@ class XmlValidationServiceSpec extends SpecBase {
           |</CC007A>
         """.stripMargin
 
-      xmlValidationService.validate(xml, ArrivalNotificationXSD) mustBe Left(FailedToValidateXml)
+      val expectedMessage = "cvc-complex-type.2.4.a: Invalid content was found starting with element 'HEAHEA'. One of '{SynIdeMES1}' is expected."
+
+      xmlValidationService.validate(xml, ArrivalNotificationXSD) mustBe Left(FailedToValidateXml(expectedMessage))
     }
 
     "must fail when validating a ArrivalNotification xml with invalid fields" in {
@@ -113,7 +115,9 @@ class XmlValidationServiceSpec extends SpecBase {
           |</CC007A>
         """.stripMargin
 
-      xmlValidationService.validate(xml, ArrivalNotificationXSD) mustBe Left(FailedToValidateXml)
+      val expectedMessage = "cvc-pattern-valid: Value '11111111111111' is not facet-valid with respect to pattern '[a-zA-Z]{4}' for type 'Alpha_4'."
+
+      xmlValidationService.validate(xml, ArrivalNotificationXSD) mustBe Left(FailedToValidateXml(expectedMessage))
     }
   }
 
