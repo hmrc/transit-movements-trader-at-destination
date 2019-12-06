@@ -85,9 +85,9 @@ class ArrivalNotificationController @Inject()(
                           }
                         }
                     }
-                    case Left(FailedToValidateXml) =>
+                    case Left(FailedToValidateXml(reason)) =>
                       Future.successful(
-                        BadRequest(Json.toJson(ErrorResponseBuilder.failedXmlValidation))
+                        BadRequest(Json.toJson(ErrorResponseBuilder.failedXmlValidation(reason)))
                           .as("application/json"))
                   }
                 }
@@ -115,7 +115,7 @@ class ArrivalNotificationController @Inject()(
     implicit headerCarrier: HeaderCarrier): PartialFunction[Either[FailedSavingArrivalNotification, WriteResult], Future[Result]] = {
     case Right(_) => {
       messageConnector
-        .post(xml.toString, arrivalNotificationRequestModel.messageCode)
+        .post(xml.toString, arrivalNotificationRequestModel.xMessageType)
         .map {
           _ =>
             NoContent

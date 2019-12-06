@@ -16,22 +16,4 @@
 
 package models.messages.request
 
-import models.EnRouteEvent
-import models.messages.MessageCode
-
-import scala.collection.immutable.ListMap
-
-case class ArrivalNotificationRequest(
-  meta: Meta,
-  header: Header,
-  traderDestination: TraderDestination,
-  customsOfficeOfPresentation: CustomsOfficeOfPresentation,
-  enRouteEvents: Option[Seq[EnRouteEvent]]
-) extends RequestConstants {
-
-  val xMessageType: XMessageType     = XMessageType("IE007")
-  val messageCode: MessageCode       = MessageCode("GB007A")
-  val syntaxIdentifier: String       = "UNOC"
-  val rootKey: String                = "CC007A"
-  val nameSpace: Map[String, String] = ListMap()
-}
+case class XMessageType(code: String)

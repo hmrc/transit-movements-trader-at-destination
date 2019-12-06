@@ -72,7 +72,7 @@ class XmlValidationService {
     } catch {
       case e: Throwable =>
         logger.warn(e.getMessage)
-        Left(FailedToValidateXml)
+        Left(FailedToValidateXml(e.getMessage))
     }
 
 }
@@ -83,4 +83,4 @@ object XmlSuccessfullyValidated extends XmlValid
 
 sealed trait XmlError
 
-object FailedToValidateXml extends XmlError
+case class FailedToValidateXml(reason: String) extends XmlError
