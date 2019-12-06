@@ -1,5 +1,8 @@
 package connectors
 
+import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
+
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.matching.StringValuePattern
 import generators.MessageGenerators
@@ -25,9 +28,87 @@ class MessageConnectorSpec
     with ScalaCheckPropertyChecks
     with MessageGenerators {
 
+  import MessageConnectorSpec._
+
   override protected def portConfigKey: String = "microservice.services.eis.port"
 
   private def connector: MessageConnector = app.injector.instanceOf[MessageConnector]
+
+  "MessageConnector" - {
+
+    "return OK when post is successful" in {
+
+      forAll(arbitrary[ArrivalNotificationRequest], genHeaderCarrier) {
+        (arrivalNotificationRequest, hc) =>
+
+          implicit val headerCarrier: HeaderCarrier = hc
+
+          val xMessageType: String = arrivalNotificationRequest.xMessageType.code
+          val messageSender = "mdtp-userseori"
+          server.stubFor(
+            post(urlEqualTo(url))
+
+              .withHeader("Content-Type", equalTo("application/xml;charset=UTF-8"))
+              .withHeader("X-Message-Type", equalTo(xMessageType))
+              .withHeader("X-Correlation-ID", headerCarrierPattern)
+              .withHeader("X-Forwarded-Host", equalTo("mdtp"))
+              .withHeader("Date", equalTo(s"$dateTimeFormatted"))
+              .withHeader("X-Message-Sender", equalTo(messageSender))
+              .withHeader("Accept", equalTo("application/xml"))
+              .withHeader("Authorization", equalTo("Bearer bearertokenhere"))
+              .willReturn(
+                aResponse()
+                  .withStatus(200)
+              )
+          )
+
+          val result = connector.post("<CC007A>test</CC007A>", arrivalNotificationRequest.xMessageType, localDateTime)
+
+          whenReady(result) {
+            response =>
+              response.status mustBe 200
+          }
+      }
+    }
+
+
+    "return an exception when post is unsuccessful" in {
+      forAll(genFailedStatusCodes, arbitrary[ArrivalNotificationRequest], genHeaderCarrier) {
+        (statusCode, arrivalNotificationRequest, hc) =>
+
+          implicit val headerCarrier: HeaderCarrier = hc
+
+          val xMessageType: String = arrivalNotificationRequest.xMessageType.code
+          val messageSender = "mdtp-userseori"
+
+          server.stubFor(
+            post(urlEqualTo(url))
+              .withHeader("Content-Type", equalTo("application/xml;charset=UTF-8"))
+              .withHeader("X-Message-Type", equalTo(xMessageType))
+              .withHeader("X-Correlation-ID", headerCarrierPattern)
+              .withHeader("X-Forwarded-Host", equalTo("mdtp"))
+              .withHeader("X-Message-Sender", equalTo(messageSender))
+              .withHeader("Date", equalTo("test"))
+              .withHeader("Accept", equalTo("application/xml"))
+              .withHeader("Authorization", equalTo("Bearer bearertokenhere"))
+              .willReturn(
+                aResponse()
+                  .withStatus(statusCode)
+              )
+          )
+
+          val result = connector.post("<CC007A>test</CC007A>", arrivalNotificationRequest.xMessageType, localDateTime)
+
+          whenReady(result.failed) {
+            response =>
+              response mustBe an[Exception]
+          }
+      }
+    }
+  }
+}
+
+object MessageConnectorSpec {
 
   private def headerCarrierPattern()(implicit headerCarrier: HeaderCarrier): StringValuePattern = {
     headerCarrier.sessionId match {
@@ -44,69 +125,7 @@ class MessageConnectorSpec
   private val genFailedStatusCodes: Gen[Int] = Gen.choose(400, 599)
   private val genHeaderCarrier = Gen.oneOf(Seq(headerCarrierWithSessionId, headerCarrier))
 
-  "MessageConnector" - {
-
-    "return OK when post is successful" in {
-      forAll(arbitrary[ArrivalNotificationRequest], genHeaderCarrier) {
-        (arrivalNotificationRequest, hc) =>
-
-          implicit val headerCarrier: HeaderCarrier = hc
-
-          val xMessageType: String = arrivalNotificationRequest.xMessageType.code
-          val messageSender ="mdtp-userseori"
-
-          server.stubFor(
-            post(urlEqualTo(url))
-              .withHeader("Content-Type", equalTo("application/xml"))
-              .withHeader("X-Message-Type", equalTo(xMessageType))
-              .withHeader("X-Correlation-ID", headerCarrierPattern)
-              .withHeader("X-Forwarded-Host", equalTo("mdtp"))
-              .withHeader("X-Message-Sender", equalTo(messageSender))
-              .willReturn(
-                aResponse()
-                  .withStatus(200)
-              )
-          )
-
-          val result = connector.post("<CC007A>test</CC007A>", arrivalNotificationRequest.xMessageType)
-
-          whenReady(result) {
-            response =>
-              response.status mustBe 200
-          }
-      }
-    }
-
-    "return an exception when post is unsuccessful" in {
-      forAll(genFailedStatusCodes, arbitrary[ArrivalNotificationRequest], genHeaderCarrier) {
-        (statusCode, arrivalNotificationRequest, hc) =>
-
-          implicit val headerCarrier: HeaderCarrier = hc
-
-          val xMessageType: String = arrivalNotificationRequest.xMessageType.code
-          val messageSender ="mdtp-userseori"
-
-          server.stubFor(
-            post(urlEqualTo(url))
-              .withHeader("Content-Type", equalTo("application/xml"))
-              .withHeader("X-Message-Type", equalTo(xMessageType))
-              .withHeader("X-Correlation-ID", headerCarrierPattern)
-              .withHeader("X-Forwarded-Host", equalTo("mdtp"))
-              .withHeader("X-Message-Sender", equalTo(messageSender))
-              .willReturn(
-                aResponse()
-                  .withStatus(statusCode)
-              )
-          )
-
-          val result = connector.post("<CC007A>test</CC007A>", arrivalNotificationRequest.xMessageType)
-
-          whenReady(result.failed) {
-            response =>
-              response mustBe an[Exception]
-          }
-      }
-    }
-  }
-
+  private val localDateTime = OffsetDateTime.now
+  private val dateFormatter: DateTimeFormatter = DateTimeFormatter.RFC_1123_DATE_TIME
+  private val dateTimeFormatted: String = localDateTime.format(dateFormatter)
 }
