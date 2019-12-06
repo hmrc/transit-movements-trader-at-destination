@@ -83,7 +83,7 @@ final case class VehicularTranshipment(
   transportIdentity: String,
   transportCountry: String,
   endorsement: Endorsement,
-  containers: Seq[String]
+  containers: Option[Seq[String]]
 ) extends Transhipment
 
 object VehicularTranshipment {
@@ -96,8 +96,8 @@ object VehicularTranshipment {
       (__ \ "transportIdentity").read[String] and
         (__ \ "transportCountry").read[String] and
         (__ \ "endorsement").read[Endorsement] and
-        ((__ \ "containers").read[Seq[String]] or Reads.pure(Seq[String]()))
-    )(VehicularTranshipment(_, _, _, _))
+        (__ \ "containers").readNullable[Seq[String]]
+    )(VehicularTranshipment.apply _)
   }
 
   implicit lazy val writes: OWrites[VehicularTranshipment] =
