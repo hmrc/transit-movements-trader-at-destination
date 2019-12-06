@@ -25,61 +25,39 @@ class XmlValidationServiceSpec extends SpecBase {
 
   "validate" - {
 
-    "must be successful when validating a valid ArrivalNotification xml" in {
-
-      val xml =
-        """
-          |<CC007A>
-          |    <SynIdeMES1>UNOC</SynIdeMES1>
-          |    <SynVerNumMES2>3</SynVerNumMES2>
-          |    <MesSenMES3>SYST17B-NCTS_EU_EXIT</MesSenMES3>
-          |    <MesRecMES6>NCTS</MesRecMES6>
-          |    <DatOfPreMES9>20190912</DatOfPreMES9>
-          |    <TimOfPreMES10>1445</TimOfPreMES10>
-          |    <IntConRefMES11>WE190912102534</IntConRefMES11>
-          |    <AppRefMES14>NCTS</AppRefMES14>
-          |    <TesIndMES18>0</TesIndMES18>
-          |    <MesIdeMES19>1</MesIdeMES19>
-          |    <MesTypMES20>GB007A</MesTypMES20>
-          |    <HEAHEA>
-          |        <DocNumHEA5>19IT02110010007827</DocNumHEA5>
-          |        <ArrNotPlaHEA60>DOVER</ArrNotPlaHEA60>
-          |        <SimProFlaHEA132>0</SimProFlaHEA132>
-          |        <ArrNotDatHEA141>20191110</ArrNotDatHEA141>
-          |    </HEAHEA>
-          |    <TRADESTRD>
-          |        <TINTRD59>GB163910077000</TINTRD59>
-          |    </TRADESTRD>
-          |    <CUSOFFPREOFFRES>
-          |        <RefNumRES1>GB000060</RefNumRES1>
-          |    </CUSOFFPREOFFRES>
-          |</CC007A>
-        """.stripMargin
+    "must be successful when validating a valid ArrivalNotification xml with minimal completed fields" in {
+      val xml = buildXml(withEnrouteEvent = false)
 
       xmlValidationService.validate(xml, ArrivalNotificationXSD) mustBe a[Right[_, _]]
     }
 
-    "must fail when validating a ArrivalNotification xml with missing elements" in {
+    "must be successful when validating a valid ArrivalNotification xml with an enroute event" in {
+      val xml = buildXml(withEnrouteEvent = true)
 
-      val xml =
-        """
-          |<CC007A>
-          |    <HEAHEA>
-          |        <DocNumHEA5>19IT02110010007827</DocNumHEA5>
-          |        <ArrNotPlaHEA60>DOVER</ArrNotPlaHEA60>
-          |        <SimProFlaHEA132>0</SimProFlaHEA132>
-          |        <ArrNotDatHEA141>20191110</ArrNotDatHEA141>
-          |    </HEAHEA>
-          |    <TRADESTRD>
-          |        <TINTRD59>GB163910077000</TINTRD59>
-          |    </TRADESTRD>
-          |    <CUSOFFPREOFFRES>
-          |        <RefNumRES1>GB000060</RefNumRES1>
-          |    </CUSOFFPREOFFRES>
-          |</CC007A>
-        """.stripMargin
+      xmlValidationService.validate(xml, ArrivalNotificationXSD) mustBe a[Right[_, _]]
+    }
 
-      val expectedMessage = "cvc-complex-type.2.4.a: Invalid content was found starting with element 'HEAHEA'. One of '{SynIdeMES1}' is expected."
+    "must be successful when validating a valid ArrivalNotification xml with an enroute event and incident" in {
+      val xml = buildXml(withEnrouteEvent = true, withIncident = true)
+
+      xmlValidationService.validate(xml, ArrivalNotificationXSD) mustBe a[Right[_, _]]
+    }
+
+    "must be successful when validating a valid ArrivalNotification xml with an enroute event and container transhipment" in {
+      val xml = buildXml(withEnrouteEvent = true, withContainerTranshipment = true)
+
+      xmlValidationService.validate(xml, ArrivalNotificationXSD) mustBe a[Right[_, _]]
+    }
+
+    "must be successful when validating a valid ArrivalNotification xml with an enroute event and vehicular transhipment" in {
+      val xml = buildXml(withEnrouteEvent = true, withVehicularTranshipment = true)
+
+      xmlValidationService.validate(xml, ArrivalNotificationXSD) mustBe a[Right[_, _]]
+    }
+
+    "must fail when validating a ArrivalNotification xml with missing mandatory elements" in {
+      val xml             = "<CC007A></CC007A>"
+      val expectedMessage = "cvc-complex-type.2.4.b: The content of element 'CC007A' is not complete. One of '{SynIdeMES1}' is expected."
 
       xmlValidationService.validate(xml, ArrivalNotificationXSD) mustBe Left(FailedToValidateXml(expectedMessage))
     }
@@ -90,28 +68,6 @@ class XmlValidationServiceSpec extends SpecBase {
         """
           |<CC007A>
           |    <SynIdeMES1>11111111111111</SynIdeMES1>
-          |    <SynVerNumMES2>3</SynVerNumMES2>
-          |    <MesSenMES3>SYST17B-NCTS_EU_EXIT</MesSenMES3>
-          |    <MesRecMES6>NCTS</MesRecMES6>
-          |    <DatOfPreMES9>20190912</DatOfPreMES9>
-          |    <TimOfPreMES10>1445</TimOfPreMES10>
-          |    <IntConRefMES11>WE190912102534</IntConRefMES11>
-          |    <AppRefMES14>NCTS</AppRefMES14>
-          |    <TesIndMES18>0</TesIndMES18>
-          |    <MesIdeMES19>1</MesIdeMES19>
-          |    <MesTypMES20>GB007A</MesTypMES20>
-          |    <HEAHEA>
-          |        <DocNumHEA5>19IT02110010007827</DocNumHEA5>
-          |        <ArrNotPlaHEA60>DOVER</ArrNotPlaHEA60>
-          |        <SimProFlaHEA132>0</SimProFlaHEA132>
-          |        <ArrNotDatHEA141>20191110</ArrNotDatHEA141>
-          |    </HEAHEA>
-          |    <TRADESTRD>
-          |        <TINTRD59>GB163910077000</TINTRD59>
-          |    </TRADESTRD>
-          |    <CUSOFFPREOFFRES>
-          |        <RefNumRES1>GB000060</RefNumRES1>
-          |    </CUSOFFPREOFFRES>
           |</CC007A>
         """.stripMargin
 
@@ -121,4 +77,120 @@ class XmlValidationServiceSpec extends SpecBase {
     }
   }
 
+  private def buildXml(withEnrouteEvent: Boolean,
+                       withIncident: Boolean = false,
+                       withContainerTranshipment: Boolean = false,
+                       withVehicularTranshipment: Boolean = false): String = {
+
+    val enrouteEvent = {
+      if (withEnrouteEvent)
+        buildEnrouteEvent(withIncident, withContainerTranshipment, withVehicularTranshipment)
+      else ""
+    }
+
+    s"""
+       |<CC007A>
+       |    <SynIdeMES1>UNOC</SynIdeMES1>
+       |    <SynVerNumMES2>3</SynVerNumMES2>
+       |    <MesSenMES3>SYST17B-NCTS_EU_EXIT</MesSenMES3>
+       |    <MesRecMES6>NCTS</MesRecMES6>
+       |    <DatOfPreMES9>20190912</DatOfPreMES9>
+       |    <TimOfPreMES10>1445</TimOfPreMES10>
+       |    <IntConRefMES11>WE190912102534</IntConRefMES11>
+       |    <AppRefMES14>NCTS</AppRefMES14>
+       |    <TesIndMES18>0</TesIndMES18>
+       |    <MesIdeMES19>1</MesIdeMES19>
+       |    <MesTypMES20>GB007A</MesTypMES20>
+       |    <HEAHEA>
+       |        <DocNumHEA5>19IT02110010007827</DocNumHEA5>
+       |        <ArrNotPlaHEA60>DOVER</ArrNotPlaHEA60>
+       |        <SimProFlaHEA132>0</SimProFlaHEA132>
+       |        <ArrNotDatHEA141>20191110</ArrNotDatHEA141>
+       |    </HEAHEA>
+       |    <TRADESTRD>
+       |        <TINTRD59>GB163910077000</TINTRD59>
+       |    </TRADESTRD>
+       |    <CUSOFFPREOFFRES>
+       |        <RefNumRES1>GB000060</RefNumRES1>
+       |    </CUSOFFPREOFFRES>
+       |    $enrouteEvent
+       |</CC007A>
+        """.stripMargin
+  }
+
+  private val buildIncident: String = {
+    """
+      |<INCINC>
+      | <IncFlaINC3>1</IncFlaINC3>
+      | <IncInfINC4>Incident details</IncInfINC4>
+      | <IncInfINC4LNG>GB</IncInfINC4LNG>
+      | <EndDatINC6>20191110</EndDatINC6>
+      | <EndAutINC7>Authority</EndAutINC7>
+      | <EndAutINC7LNG>GB</EndAutINC7LNG>
+      | <EndPlaINC10>Endorsement place</EndPlaINC10>
+      | <EndPlaINC10LNG>GB</EndPlaINC10LNG>
+      | <EndCouINC12>GB</EndCouINC12>
+      |</INCINC>
+      |""".stripMargin
+  }
+
+  private val buildContainerTranshipment: String = {
+    """
+      |<TRASHP>
+      | <EndDatSHP60>20191110</EndDatSHP60>
+      | <EndAutSHP61>Authority</EndAutSHP61>
+      | <EndAutSHP61LNG>GB</EndAutSHP61LNG>
+      | <EndPlaSHP63>Endorsement place</EndPlaSHP63>
+      | <EndPlaSHP63LNG>GB</EndPlaSHP63LNG>
+      | <EndCouSHP65>GB</EndCouSHP65>
+      | <CONNR3>
+      |   <ConNumNR31>Container id</ConNumNR31>
+      | </CONNR3>
+      |</TRASHP>
+      |""".stripMargin
+  }
+
+  private val buildVehicularTranshipment: String = {
+    """
+      |<TRASHP>
+      | <NewTraMeaIdeSHP26>Transport identity</NewTraMeaIdeSHP26>
+      | <NewTraMeaIdeSHP26LNG>GB</NewTraMeaIdeSHP26LNG>
+      | <NewTraMeaNatSHP54>GB</NewTraMeaNatSHP54>
+      | <EndDatSHP60>20191110</EndDatSHP60>
+      | <EndAutSHP61>Authority</EndAutSHP61>
+      | <EndAutSHP61LNG>GB</EndAutSHP61LNG>
+      | <EndPlaSHP63>Endorsement place</EndPlaSHP63>
+      | <EndPlaSHP63LNG>GB</EndPlaSHP63LNG>
+      | <EndCouSHP65>GB</EndCouSHP65>
+      | <CONNR3>
+      |   <ConNumNR31>Container id</ConNumNR31>
+      | </CONNR3>
+      |</TRASHP>
+      |""".stripMargin
+  }
+
+  private def buildEnrouteEvent(withIncident: Boolean, withContainerTranshipment: Boolean, withVehicularTranshipment: Boolean): String =
+    s"""
+       |<ENROUEVETEV>
+       | <PlaTEV10>eventPlace</PlaTEV10>
+       | <PlaTEV10LNG>GB</PlaTEV10LNG>
+       | <CouTEV13>GB</CouTEV13>
+       | <CTLCTL>
+       |   <AlrInNCTCTL29>1</AlrInNCTCTL29>
+       | </CTLCTL>
+       ${buildEventDetails(withIncident, withContainerTranshipment, withVehicularTranshipment)}
+       |</ENROUEVETEV>
+    """.stripMargin
+
+  private def buildEventDetails(withIncident: Boolean, withContainerTranshipment: Boolean, withVehicularTranshipment: Boolean): String = {
+    val incident: String              = if (withIncident) buildIncident else ""
+    val containerTranshipment: String = if (withContainerTranshipment) buildContainerTranshipment else ""
+    val vehicularTranshipment: String = if (withVehicularTranshipment) buildVehicularTranshipment else ""
+
+    s"""
+       |$incident
+       |$containerTranshipment
+       |$vehicularTranshipment
+       |""".stripMargin
+  }
 }
