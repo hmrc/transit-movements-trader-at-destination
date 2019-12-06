@@ -16,31 +16,39 @@
 
 package connectors
 
-import java.time.LocalDateTime
 import java.time.OffsetDateTime
-import java.time.format.DateTimeFormatter
 import java.util.UUID
 
 import com.google.inject.Inject
 import config.AppConfig
 import models.messages.request.XMessageType
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.HttpReads
 import uk.gov.hmrc.http.HttpResponse
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import utils.Format
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 class MessageConnectorImpl @Inject()(config: AppConfig, http: HttpClient) extends MessageConnector {
 
-  def post(xml: String, xMessageType: XMessageType, dateTime: OffsetDateTime)(implicit headerCarrier: HeaderCarrier): Future[HttpResponse] = {
-    
-    val url                              = config.eisUrl
-    val messageSender                    = "mdtp-userseori"
-    val dateFormatter: DateTimeFormatter = DateTimeFormatter.RFC_1123_DATE_TIME
-    val dateTimeFormatted: String        = dateTime.format(dateFormatter)
+  def post(xml: String, xMessageType: XMessageType, dateTime: OffsetDateTime)(implicit headerCarrier: HeaderCarrier,
+                                                                              ec: ExecutionContext): Future[HttpResponse] = {
 
-    val customHeaders: Seq[(String, String)] = Seq(
+    val url = config.eisUrl
+
+    val newHeaders = headerCarrier.withExtraHeaders(addHeaders(xMessageType, dateTime): _*)
+
+    http.POSTString(url, xml)(rds = HttpReads.readRaw, hc = newHeaders, ec = ec)
+  }
+
+  private def addHeaders(xMessageType: XMessageType, dateTime: OffsetDateTime)(implicit headerCarrier: HeaderCarrier): Seq[(String, String)] = {
+
+    val bearerToken   = config.eisBearerToken
+    val messageSender = "mdtp-userseori" //TODO: This will be a unique message sender i.e. mdtp-0001-1
+
+    Seq(
       "Content-Type"   -> "application/xml;charset=UTF-8",
       "X-Message-Type" -> xMessageType.code,
       "X-Correlation-ID" -> {
@@ -50,15 +58,13 @@ class MessageConnectorImpl @Inject()(config: AppConfig, http: HttpClient) extend
       },
       "X-Message-Sender" -> messageSender,
       "X-Forwarded-Host" -> "mdtp",
-      "Date"             -> dateTimeFormatted,
+      "Date"             -> Format.dateFormattedForHeader(dateTime),
       "Accept"           -> "application/xml",
-      "Authorisation"    -> config.bearerToken
+      "Authorization"    -> s"Bearer $bearerToken"
     )
-
-    http.POSTString(url, xml, customHeaders)
   }
 }
 
 trait MessageConnector {
-  def post(xml: String, xMessageType: XMessageType, dateTime: OffsetDateTime)(implicit headerCarrier: HeaderCarrier): Future[HttpResponse]
+  def post(xml: String, xMessageType: XMessageType, dateTime: OffsetDateTime)(implicit headerCarrier: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse]
 }

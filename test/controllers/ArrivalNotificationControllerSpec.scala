@@ -90,7 +90,7 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
           when(mockInterchangeControlReferenceService.saveArrivalNotification(any()))
             .thenReturn(Future.successful(Right(fakeWriteResult)))
 
-          when(mockMessageConnector.post(any(), any(), any())(any()))
+          when(mockMessageConnector.post(any(), any(), any())(any(), any()))
             .thenReturn(Future.successful(HttpResponse(200)))
 
           val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
@@ -219,7 +219,7 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
           when(mockInterchangeControlReferenceService.saveArrivalNotification(any()))
             .thenReturn(Future.successful(Right(fakeWriteResult)))
 
-          when(mockMessageConnector.post(any(), any(), any())(any()))
+          when(mockMessageConnector.post(any(), any(), any())(any(), any()))
             .thenReturn(Future.failed(new BadRequestException("")))
 
           val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)

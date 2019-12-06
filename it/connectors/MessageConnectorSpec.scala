@@ -1,7 +1,7 @@
 package connectors
 
+import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
-import java.time.{LocalDateTime, OffsetDateTime}
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.matching.StringValuePattern
@@ -16,6 +16,8 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.logging.SessionId
 
+import scala.concurrent.ExecutionContext.Implicits.global
+
 class MessageConnectorSpec
   extends FreeSpec
     with MockitoSugar
@@ -26,33 +28,15 @@ class MessageConnectorSpec
     with ScalaCheckPropertyChecks
     with MessageGenerators {
 
+  import MessageConnectorSpec._
+
   override protected def portConfigKey: String = "microservice.services.eis.port"
 
   private def connector: MessageConnector = app.injector.instanceOf[MessageConnector]
 
-  private def headerCarrierPattern()(implicit headerCarrier: HeaderCarrier): StringValuePattern = {
-    headerCarrier.sessionId match {
-      case Some(_) => equalTo("sessionId")
-      case _ => matching("""\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b""")
-    }
-  }
-
-  private val url = "/common-transit-convention-trader-at-destination/message-notification"
-
-  private val headerCarrierWithSessionId = HeaderCarrier(sessionId = Some(SessionId("sessionId")))
-  private val headerCarrier = HeaderCarrier()
-
-  private val genFailedStatusCodes: Gen[Int] = Gen.choose(400, 599)
-  private val genHeaderCarrier = Gen.oneOf(Seq(headerCarrierWithSessionId, headerCarrier))
-
-  private val localDateTime = OffsetDateTime.now
-  val dateFormatter: DateTimeFormatter = DateTimeFormatter.RFC_1123_DATE_TIME
-  val dateTimeFormatted: String = localDateTime.format(dateFormatter)
-
   "MessageConnector" - {
 
     "return OK when post is successful" in {
-
 
       forAll(arbitrary[ArrivalNotificationRequest], genHeaderCarrier) {
         (arrivalNotificationRequest, hc) =>
@@ -71,11 +55,9 @@ class MessageConnectorSpec
               .withHeader("Date", equalTo(s"$dateTimeFormatted"))
               .withHeader("X-Message-Sender", equalTo(messageSender))
               .withHeader("Accept", equalTo("application/xml"))
-              .withHeader("Authorisation", equalTo("TestToken"))
+              .withHeader("Authorization", equalTo("Bearer bearertokenhere"))
               .willReturn(
-
                 aResponse()
-
                   .withStatus(200)
               )
           )
@@ -108,7 +90,7 @@ class MessageConnectorSpec
               .withHeader("X-Message-Sender", equalTo(messageSender))
               .withHeader("Date", equalTo("test"))
               .withHeader("Accept", equalTo("application/xml"))
-              .withHeader("Authorisation", equalTo("TestToken"))
+              .withHeader("Authorization", equalTo("Bearer bearertokenhere"))
               .willReturn(
                 aResponse()
                   .withStatus(statusCode)
@@ -124,6 +106,26 @@ class MessageConnectorSpec
       }
     }
   }
-
 }
 
+object MessageConnectorSpec {
+
+  private def headerCarrierPattern()(implicit headerCarrier: HeaderCarrier): StringValuePattern = {
+    headerCarrier.sessionId match {
+      case Some(_) => equalTo("sessionId")
+      case _ => matching("""\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b""")
+    }
+  }
+
+  private val url = "/common-transit-convention-trader-at-destination/message-notification"
+
+  private val headerCarrierWithSessionId = HeaderCarrier(sessionId = Some(SessionId("sessionId")))
+  private val headerCarrier = HeaderCarrier()
+
+  private val genFailedStatusCodes: Gen[Int] = Gen.choose(400, 599)
+  private val genHeaderCarrier = Gen.oneOf(Seq(headerCarrierWithSessionId, headerCarrier))
+
+  private val localDateTime = OffsetDateTime.now
+  private val dateFormatter: DateTimeFormatter = DateTimeFormatter.RFC_1123_DATE_TIME
+  private val dateTimeFormatted: String = localDateTime.format(dateFormatter)
+}
