@@ -30,16 +30,14 @@ trait JsonBehaviours extends FreeSpec with MustMatchers with ScalaCheckPropertyC
 
   class DualReadsAndWrites[A] {
 
-    def apply(gen: Gen[A])(implicit ev1: Reads[A], ev2: Writes[A]): Unit =
-      "must have dual reads and writes" in {
+    def apply(gen: Gen[A])(implicit ev1: Reads[A], ev2: Writes[A]): Unit = "must have dual reads and writes" in {
+      forAll(gen) {
+        model =>
+          val json = Json.toJson(model)
 
-        forAll(gen) {
-          model =>
-            val json = Json.toJson(model)
-
-            json.validate[A] mustEqual JsSuccess(model)
-        }
+          json.validate[A] mustEqual JsSuccess(model)
       }
+    }
   }
 
   def mustHaveDualReadsAndWrites[A]: DualReadsAndWrites[A] = new DualReadsAndWrites[A]

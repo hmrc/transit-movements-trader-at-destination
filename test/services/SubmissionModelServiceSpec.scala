@@ -61,19 +61,19 @@ class SubmissionModelServiceSpec
           val normalNotification: NormalNotification = {
             NormalNotification(
               movementReferenceNumber = arrivalNotificationRequest.header.movementReferenceNumber,
-              notificationPlace = arrivalNotificationRequest.header.arrivalNotificationPlace,
-              notificationDate = dateTime.toLocalDate,
-              customsSubPlace = arrivalNotificationRequest.header.customsSubPlace,
+              notificationPlace       = arrivalNotificationRequest.header.arrivalNotificationPlace,
+              notificationDate        = dateTime.toLocalDate,
+              customsSubPlace         = arrivalNotificationRequest.header.customsSubPlace,
               trader = TraderWithEori(
-                name = arrivalNotificationRequest.traderDestination.name,
+                name            = arrivalNotificationRequest.traderDestination.name,
                 streetAndNumber = arrivalNotificationRequest.traderDestination.streetAndNumber,
-                postCode = arrivalNotificationRequest.traderDestination.postCode,
-                city = arrivalNotificationRequest.traderDestination.city,
-                countryCode = arrivalNotificationRequest.traderDestination.countryCode,
-                eori = arrivalNotificationRequest.traderDestination.eori.value
+                postCode        = arrivalNotificationRequest.traderDestination.postCode,
+                city            = arrivalNotificationRequest.traderDestination.city,
+                countryCode     = arrivalNotificationRequest.traderDestination.countryCode,
+                eori            = arrivalNotificationRequest.traderDestination.eori.value
               ),
               presentationOffice = arrivalNotificationRequest.customsOfficeOfPresentation.presentationOffice,
-              enRouteEvents = arrivalNotificationRequest.enRouteEvents
+              enRouteEvents      = arrivalNotificationRequest.enRouteEvents
             )
           }
 
@@ -104,18 +104,18 @@ class SubmissionModelServiceSpec
         val normalNotification: NormalNotification = {
           NormalNotification(
             movementReferenceNumber = arrivalNotificationRequest.header.movementReferenceNumber,
-            notificationPlace = arrivalNotificationRequest.header.arrivalNotificationPlace,
-            notificationDate = dateTime.toLocalDate,
-            customsSubPlace = arrivalNotificationRequest.header.customsSubPlace,
+            notificationPlace       = arrivalNotificationRequest.header.arrivalNotificationPlace,
+            notificationDate        = dateTime.toLocalDate,
+            customsSubPlace         = arrivalNotificationRequest.header.customsSubPlace,
             trader = TraderWithoutEori(
-              name = arrivalNotificationRequest.traderDestination.name.value,
+              name            = arrivalNotificationRequest.traderDestination.name.value,
               streetAndNumber = arrivalNotificationRequest.traderDestination.streetAndNumber.value,
-              postCode = arrivalNotificationRequest.traderDestination.postCode.value,
-              city = arrivalNotificationRequest.traderDestination.city.value,
-              countryCode = arrivalNotificationRequest.traderDestination.countryCode.value
+              postCode        = arrivalNotificationRequest.traderDestination.postCode.value,
+              city            = arrivalNotificationRequest.traderDestination.city.value,
+              countryCode     = arrivalNotificationRequest.traderDestination.countryCode.value
             ),
             presentationOffice = arrivalNotificationRequest.customsOfficeOfPresentation.presentationOffice,
-            enRouteEvents = arrivalNotificationRequest.enRouteEvents
+            enRouteEvents      = arrivalNotificationRequest.enRouteEvents
           )
         }
 
@@ -145,8 +145,8 @@ class SubmissionModelServiceSpec
 
           val result: Either[ModelConversionError, ArrivalNotificationRequest] = {
             convertToSubmissionModel.convertToSubmissionModel(
-              arrivalNotification = InvalidRequestModel,
-              messageSender = messageSender,
+              arrivalNotification         = InvalidRequestModel,
+              messageSender               = messageSender,
               interchangeControlReference = interchangeControlReference
             )
           }

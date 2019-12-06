@@ -24,9 +24,7 @@ class XmlValidationServiceSpec extends SpecBase {
   private val xmlValidationService = new XmlValidationService
 
   "validate" - {
-
     "must be successful when validating a valid ArrivalNotification xml" in {
-
       val xml =
         """
           |<CC007A>
@@ -60,7 +58,6 @@ class XmlValidationServiceSpec extends SpecBase {
     }
 
     "must fail when validating a ArrivalNotification xml with missing elements" in {
-
       val xml =
         """
           |<CC007A>
@@ -85,7 +82,6 @@ class XmlValidationServiceSpec extends SpecBase {
     }
 
     "must fail when validating a ArrivalNotification xml with invalid fields" in {
-
       val xml =
         """
           |<CC007A>

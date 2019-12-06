@@ -33,16 +33,14 @@ class ArrivalNotificationRepository @Inject()(cc: ControllerComponents, mongo: R
 
   private val collectionName = CollectionNames.ArrivalNotificationCollection
 
-  private def collection: Future[JSONCollection] =
-    mongo.database.map(_.collection[JSONCollection](collectionName))
+  private def collection: Future[JSONCollection] = mongo.database.map(_.collection[JSONCollection](collectionName))
 
   def persistToMongo(arrivalNotification: ArrivalNotification): Future[WriteResult] = {
 
     val doc: JsObject = Json.toJson(arrivalNotification).as[JsObject]
 
     collection.flatMap {
-      _.insert(false)
-        .one(doc)
+      _.insert(false).one(doc)
     }
   }
 
@@ -51,8 +49,7 @@ class ArrivalNotificationRepository @Inject()(cc: ControllerComponents, mongo: R
     val selector: JsObject = Json.obj("movementReferenceNumber" -> mrn)
 
     collection.flatMap {
-      _.delete
-        .one(selector)
+      _.delete.one(selector)
     }
   }
 

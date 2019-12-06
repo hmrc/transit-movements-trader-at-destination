@@ -35,30 +35,20 @@ trait SpecBase extends FreeSpec with GuiceOneAppPerSuite with MustMatchers with 
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
-  protected def applicationBuilder: GuiceApplicationBuilder =
-    new GuiceApplicationBuilder()
+  protected def applicationBuilder: GuiceApplicationBuilder = new GuiceApplicationBuilder()
 
   lazy val normalNotification = NormalNotification(
     movementReferenceNumber = "movementReferenceNumber",
-    notificationPlace = "notificationPlace",
-    notificationDate = LocalDate.now(),
-    customsSubPlace = None,
-    trader = TraderWithEori("eori", None, None, None, None, None),
-    presentationOffice = "sadsf",
-    enRouteEvents = Option(Seq.empty)
+    notificationPlace       = "notificationPlace",
+    notificationDate        = LocalDate.now(),
+    customsSubPlace         = None,
+    trader                  = TraderWithEori("eori", None, None, None, None, None),
+    presentationOffice      = "sadsf",
+    enRouteEvents           = Option(Seq.empty)
   )
 
   lazy val fakeWriteResult: WriteResult = {
-    UpdateWriteResult(
-      ok = true,
-      n = 1,
-      nModified = 1,
-      upserted = Seq.empty,
-      writeErrors = Seq.empty,
-      writeConcernError = None,
-      code = None,
-      errmsg = None
-    )
+    UpdateWriteResult(ok = true, n = 1, nModified = 1, upserted = Seq.empty, writeErrors = Seq.empty, writeConcernError = None, code = None, errmsg = None)
   }
 
 }

@@ -18,16 +18,16 @@ package models.messages.request
 
 case class Meta(messageSender: MessageSender,
                 interchangeControlReference: InterchangeControlReference,
-                senderIdentificationCodeQualifier: Option[String] = None,
+                senderIdentificationCodeQualifier: Option[String]    = None,
                 recipientIdentificationCodeQualifier: Option[String] = None,
-                recipientsReferencePassword: Option[String] = None,
+                recipientsReferencePassword: Option[String]          = None,
                 recipientsReferencePasswordQualifier: Option[String] = None,
-                priority: Option[String] = None,
-                acknowledgementRequest: Option[String] = None,
-                communicationsAgreementId: Option[String] = None,
-                commonAccessReference: Option[String] = None,
-                messageSequenceNumber: Option[String] = None,
-                firstAndLastTransfer: Option[String] = None)
+                priority: Option[String]                             = None,
+                acknowledgementRequest: Option[String]               = None,
+                communicationsAgreementId: Option[String]            = None,
+                commonAccessReference: Option[String]                = None,
+                messageSequenceNumber: Option[String]                = None,
+                firstAndLastTransfer: Option[String]                 = None)
     extends MetaConstants
 
 sealed trait MetaConstants {

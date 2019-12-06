@@ -38,10 +38,7 @@ class DatabaseServiceImpl @Inject()(sequentialInterchangeControlReferenceIdRepos
         reference =>
           Right(reference)
       }
-      .recover {
-        case _ =>
-          Left(FailedCreatingInterchangeControlReference)
-      }
+      .recover { case _ => Left(FailedCreatingInterchangeControlReference) }
 
   def saveArrivalNotification(arrivalNotification: ArrivalNotification): Future[Either[FailedSavingArrivalNotification, WriteResult]] =
     arrivalNotificationRepository
@@ -50,15 +47,13 @@ class DatabaseServiceImpl @Inject()(sequentialInterchangeControlReferenceIdRepos
         writeResult =>
           Right(writeResult)
       }
-      .recover {
-        case _ =>
-          Left(FailedSavingArrivalNotification)
-      }
+      .recover { case _ => Left(FailedSavingArrivalNotification) }
 
 }
 
 trait DatabaseService {
   def getInterchangeControlReferenceId: Future[Either[FailedCreatingInterchangeControlReference, InterchangeControlReference]]
+
   def saveArrivalNotification(arrivalNotification: ArrivalNotification): Future[Either[FailedSavingArrivalNotification, WriteResult]]
 }
 

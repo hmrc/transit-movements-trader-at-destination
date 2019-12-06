@@ -29,7 +29,6 @@ import play.api.libs.json.Json
 class EnRouteEventSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with ModelGenerators with JsonBehaviours {
 
   "must serialise" in {
-
     forAll(arbitrary[EnRouteEvent]) {
       enrouteEvent =>
         val json = buildEnrouteEvent(enrouteEvent)
@@ -39,7 +38,6 @@ class EnRouteEventSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
   }
 
   "must deserialise" in {
-
     forAll(arbitrary[EnRouteEvent]) {
       enrouteEvent =>
         val json = buildEnrouteEvent(enrouteEvent)
@@ -56,10 +54,8 @@ class EnRouteEventSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
       "eventDetails"  -> Json.toJson(enrouteEvent.eventDetails)
     ) ++ {
       enrouteEvent.seals match {
-        case Some(seals) =>
-          Json.obj("seals" -> Json.toJson(seals))
-        case _ =>
-          JsObject.empty
+        case Some(seals) => Json.obj("seals" -> Json.toJson(seals))
+        case _           => JsObject.empty
       }
     }
 }

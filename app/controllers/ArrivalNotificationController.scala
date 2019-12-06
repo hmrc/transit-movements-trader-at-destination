@@ -40,16 +40,15 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.xml.Node
 
-class ArrivalNotificationController @Inject()(
-  cc: ControllerComponents,
-  bodyParsers: PlayBodyParsers,
-  appConfig: AppConfig,
-  databaseService: DatabaseService,
-  messageConnector: MessageConnector,
-  submissionModelService: SubmissionModelService,
-  xmlBuilderService: XmlBuilderService,
-  xmlValidationService: XmlValidationService
-) extends BackendController(cc) {
+class ArrivalNotificationController @Inject()(cc: ControllerComponents,
+                                              bodyParsers: PlayBodyParsers,
+                                              appConfig: AppConfig,
+                                              databaseService: DatabaseService,
+                                              messageConnector: MessageConnector,
+                                              submissionModelService: SubmissionModelService,
+                                              xmlBuilderService: XmlBuilderService,
+                                              xmlValidationService: XmlValidationService)
+    extends BackendController(cc) {
 
   def post(): Action[ArrivalNotification] = Action.async(validateJson[ArrivalNotification]) {
     implicit request =>
@@ -60,54 +59,39 @@ class ArrivalNotificationController @Inject()(
       implicit val localDateTime: LocalDateTime = LocalDateTime.now()
 
       databaseService.getInterchangeControlReferenceId.flatMap {
-
         case Right(interchangeControlReferenceId) => {
           submissionModelService.convertToSubmissionModel(arrivalNotification, messageSender, interchangeControlReferenceId) match {
-
             case Right(arrivalNotificationRequestModel) => {
               xmlBuilderService.buildXml(arrivalNotificationRequestModel) match {
-
                 case Right(xml) => {
                   xmlValidationService.validate(xml.toString(), ArrivalNotificationXSD) match {
-
                     case Right(XmlSuccessfullyValidated) => {
                       databaseService
                         .saveArrivalNotification(arrivalNotification)
                         .flatMap {
-
                           sendMessage(xml, arrivalNotificationRequestModel)
 
                         }
                         .recover {
                           case _ => {
-                            InternalServerError(Json.toJson(ErrorResponseBuilder.failedSavingArrivalNotification))
-                              .as("application/json")
+                            InternalServerError(Json.toJson(ErrorResponseBuilder.failedSavingArrivalNotification)).as("application/json")
                           }
                         }
                     }
                     case Left(FailedToValidateXml(reason)) =>
-                      Future.successful(
-                        BadRequest(Json.toJson(ErrorResponseBuilder.failedXmlValidation(reason)))
-                          .as("application/json"))
+                      Future.successful(BadRequest(Json.toJson(ErrorResponseBuilder.failedXmlValidation(reason))).as("application/json"))
                   }
                 }
                 case Left(FailedToCreateXml) =>
-                  Future.successful(
-                    InternalServerError(Json.toJson(ErrorResponseBuilder.failedXmlConversion))
-                      .as("application/json"))
+                  Future.successful(InternalServerError(Json.toJson(ErrorResponseBuilder.failedXmlConversion)).as("application/json"))
               }
             }
             case Left(FailedToConvertModel) =>
-              Future.successful(
-                BadRequest(Json.toJson(ErrorResponseBuilder.failedToCreateRequestModel))
-                  .as("application/json"))
+              Future.successful(BadRequest(Json.toJson(ErrorResponseBuilder.failedToCreateRequestModel)).as("application/json"))
           }
         }
         case Left(FailedCreatingInterchangeControlReference) =>
-          Future.successful(
-            InternalServerError(Json.toJson(ErrorResponseBuilder.failedToCreateInterchangeControlRef))
-              .as("application/json")
-          )
+          Future.successful(InternalServerError(Json.toJson(ErrorResponseBuilder.failedToCreateInterchangeControlRef)).as("application/json"))
       }
   }
 
@@ -120,16 +104,10 @@ class ArrivalNotificationController @Inject()(
           _ =>
             NoContent
         }
-        .recover {
-          case _ =>
-            BadGateway(Json.toJson(ErrorResponseBuilder.failedSubmissionToEIS))
-              .as("application/json")
-        }
+        .recover { case _ => BadGateway(Json.toJson(ErrorResponseBuilder.failedSubmissionToEIS)).as("application/json") }
     }
     case Left(FailedSavingArrivalNotification) =>
-      Future.successful(
-        InternalServerError(Json.toJson(ErrorResponseBuilder.failedSavingToDatabase))
-          .as("application/json"))
+      Future.successful(InternalServerError(Json.toJson(ErrorResponseBuilder.failedSavingToDatabase)).as("application/json"))
   }
 
   private def validateJson[A: Reads]: BodyParser[A] =

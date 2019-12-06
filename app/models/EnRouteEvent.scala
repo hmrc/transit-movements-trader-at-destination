@@ -18,13 +18,7 @@ package models
 
 import play.api.libs.json._
 
-final case class EnRouteEvent(
-  place: String,
-  countryCode: String,
-  alreadyInNcts: Boolean,
-  eventDetails: EventDetails,
-  seals: Option[Seq[String]]
-)
+final case class EnRouteEvent(place: String, countryCode: String, alreadyInNcts: Boolean, eventDetails: EventDetails, seals: Option[Seq[String]])
 
 object EnRouteEvent {
 
@@ -32,26 +26,20 @@ object EnRouteEvent {
 
     import play.api.libs.functional.syntax._
 
-    (
-      (__ \ "place").read[String] and
-        (__ \ "countryCode").read[String] and
-        (__ \ "alreadyInNcts").read[Boolean] and
-        (__ \ "eventDetails").read[EventDetails] and
-        (__ \ "seals").readNullable[Seq[String]]
-    )(EnRouteEvent(_, _, _, _, _))
+    ((__ \ "place").read[String] and (__ \ "countryCode").read[String] and (__ \ "alreadyInNcts").read[Boolean] and (__ \ "eventDetails")
+      .read[EventDetails] and (__ \ "seals").readNullable[Seq[String]])(EnRouteEvent(_, _, _, _, _))
   }
 
-  implicit lazy val writes: OWrites[EnRouteEvent] =
-    OWrites[EnRouteEvent] {
-      event =>
-        Json
-          .obj(
-            "place"         -> event.place,
-            "countryCode"   -> event.countryCode,
-            "alreadyInNcts" -> event.alreadyInNcts,
-            "eventDetails"  -> Json.toJson(event.eventDetails),
-            "seals"         -> Json.toJson(event.seals)
-          )
-          .filterNulls
-    }
+  implicit lazy val writes: OWrites[EnRouteEvent] = OWrites[EnRouteEvent] {
+    event =>
+      Json
+        .obj(
+          "place"         -> event.place,
+          "countryCode"   -> event.countryCode,
+          "alreadyInNcts" -> event.alreadyInNcts,
+          "eventDetails"  -> Json.toJson(event.eventDetails),
+          "seals"         -> Json.toJson(event.seals)
+        )
+        .filterNulls
+  }
 }

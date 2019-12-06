@@ -40,8 +40,7 @@ class SubmissionModelService @Inject()(appConfig: AppConfig) {
         val enRouteEvents: Option[Seq[EnRouteEvent]] = arrivalNotification.enRouteEvents
 
         Right(ArrivalNotificationRequest(meta, header, traderDestination, customsOffice, enRouteEvents))
-      case _ =>
-        Left(FailedToConvertModel)
+      case _ => Left(FailedToConvertModel)
     }
 
   private def buildMeta(messageSender: MessageSender, interchangeControlReference: InterchangeControlReference): Meta =
@@ -49,30 +48,30 @@ class SubmissionModelService @Inject()(appConfig: AppConfig) {
 
   private def buildHeader(arrivalNotification: NormalNotification, simplifiedProcedureFlag: String): Header =
     Header(
-      movementReferenceNumber = arrivalNotification.movementReferenceNumber,
-      customsSubPlace = arrivalNotification.customsSubPlace,
+      movementReferenceNumber  = arrivalNotification.movementReferenceNumber,
+      customsSubPlace          = arrivalNotification.customsSubPlace,
       arrivalNotificationPlace = arrivalNotification.notificationPlace,
-      simplifiedProcedureFlag = simplifiedProcedureFlag
+      simplifiedProcedureFlag  = simplifiedProcedureFlag
     )
 
   private def buildTrader(trader: Trader): TraderDestination = trader match {
     case traderWithEori: TraderWithEori =>
       TraderDestination(
-        name = traderWithEori.name,
+        name            = traderWithEori.name,
         streetAndNumber = traderWithEori.streetAndNumber,
-        postCode = traderWithEori.postCode,
-        city = traderWithEori.city,
-        countryCode = traderWithEori.countryCode,
-        eori = Some(traderWithEori.eori)
+        postCode        = traderWithEori.postCode,
+        city            = traderWithEori.city,
+        countryCode     = traderWithEori.countryCode,
+        eori            = Some(traderWithEori.eori)
       )
     case traderWithoutEori: TraderWithoutEori =>
       TraderDestination(
-        name = Some(traderWithoutEori.name),
+        name            = Some(traderWithoutEori.name),
         streetAndNumber = Some(traderWithoutEori.streetAndNumber),
-        postCode = Some(traderWithoutEori.postCode),
-        city = Some(traderWithoutEori.city),
-        countryCode = Some(traderWithoutEori.countryCode),
-        eori = None
+        postCode        = Some(traderWithoutEori.postCode),
+        city            = Some(traderWithoutEori.city),
+        countryCode     = Some(traderWithoutEori.countryCode),
+        eori            = None
       )
   }
 

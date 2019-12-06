@@ -28,33 +28,27 @@ import play.api.libs.json.Json
 class ProcedureTypeSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks {
 
   "must deserialise from normal procedure" in {
-
     JsString("normal").validate[ProcedureType] mustEqual JsSuccess(ProcedureType.Normal)
   }
 
   "must deserialise from simplified procedure" in {
-
     JsString("simplified").validate[ProcedureType] mustEqual JsSuccess(ProcedureType.Simplified)
   }
 
   "must fail to deserialise from an invalid string" in {
-
     forAll(arbitrary[String]) {
       value =>
         whenever(value != "normal" && value != "simplified") {
-
           JsString(value).validate[ProcedureType] mustBe a[JsError]
         }
     }
   }
 
   "must serialise from Normal Procedure" in {
-
     Json.toJson(ProcedureType.Normal) mustEqual JsString("normal")
   }
 
   "must serialise from Simplified Procedure" in {
-
     Json.toJson(ProcedureType.Simplified) mustEqual JsString("simplified")
   }
 }

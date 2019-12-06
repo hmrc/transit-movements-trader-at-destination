@@ -23,18 +23,14 @@ sealed trait Trader
 object Trader {
 
   implicit lazy val reads: Reads[Trader] = {
-
     implicit class ReadsWithContravariantOr[A](a: Reads[A]) {
 
-      def or[B >: A](b: Reads[B]): Reads[B] =
-        a.map[B](identity).orElse(b)
+      def or[B >: A](b: Reads[B]): Reads[B] = a.map[B](identity).orElse(b)
     }
 
-    implicit def convertToSupertype[A, B >: A](a: Reads[A]): Reads[B] =
-      a.map(identity)
+    implicit def convertToSupertype[A, B >: A](a: Reads[A]): Reads[B] = a.map(identity)
 
-    TraderWithEori.format or
-      TraderWithoutEori.format
+    TraderWithEori.format or TraderWithoutEori.format
   }
 
   implicit lazy val writes: Writes[Trader] = Writes {
@@ -43,31 +39,22 @@ object Trader {
   }
 }
 
-final case class TraderWithEori(
-  eori: String,
-  name: Option[String],
-  streetAndNumber: Option[String],
-  postCode: Option[String],
-  city: Option[String],
-  countryCode: Option[String]
-) extends Trader
+final case class TraderWithEori(eori: String,
+                                name: Option[String],
+                                streetAndNumber: Option[String],
+                                postCode: Option[String],
+                                city: Option[String],
+                                countryCode: Option[String])
+    extends Trader
 
 object TraderWithEori {
 
-  implicit lazy val format: Format[TraderWithEori] =
-    Json.format[TraderWithEori]
+  implicit lazy val format: Format[TraderWithEori] = Json.format[TraderWithEori]
 }
 
-final case class TraderWithoutEori(
-  name: String,
-  streetAndNumber: String,
-  postCode: String,
-  city: String,
-  countryCode: String
-) extends Trader
+final case class TraderWithoutEori(name: String, streetAndNumber: String, postCode: String, city: String, countryCode: String) extends Trader
 
 object TraderWithoutEori {
 
-  implicit lazy val format: Format[TraderWithoutEori] =
-    Json.format[TraderWithoutEori]
+  implicit lazy val format: Format[TraderWithoutEori] = Json.format[TraderWithoutEori]
 }

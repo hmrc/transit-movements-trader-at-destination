@@ -33,17 +33,11 @@ class GoodsReleaseNotificationSpec extends FreeSpec with MustMatchers with Scala
   mustHaveDualReadsAndWrites(arbitrary[GoodsReleaseNotification])
 
   "must deserialise" in {
-
     val date = datesBetween(LocalDate.of(1900, 1, 1), LocalDate.now)
 
     forAll(arbitrary[String], date, arbitrary[Trader], arbitrary[String]) {
       (mrn, releaseDate, trader, presentationOffice) =>
-        val json = Json.obj(
-          "movementReferenceNumber" -> mrn,
-          "releaseDate"             -> releaseDate,
-          "trader"                  -> trader,
-          "presentationOffice"      -> presentationOffice
-        )
+        val json = Json.obj("movementReferenceNumber" -> mrn, "releaseDate" -> releaseDate, "trader" -> trader, "presentationOffice" -> presentationOffice)
 
         val expectedResult = GoodsReleaseNotification(mrn, releaseDate, trader, presentationOffice)
 
@@ -52,17 +46,11 @@ class GoodsReleaseNotificationSpec extends FreeSpec with MustMatchers with Scala
   }
 
   "must serialise" in {
-
     val date = datesBetween(LocalDate.of(1900, 1, 1), LocalDate.now)
 
     forAll(arbitrary[String], date, arbitrary[Trader], arbitrary[String]) {
       (mrn, releaseDate, trader, presentationOffice) =>
-        val json = Json.obj(
-          "movementReferenceNumber" -> mrn,
-          "releaseDate"             -> releaseDate,
-          "trader"                  -> trader,
-          "presentationOffice"      -> presentationOffice
-        )
+        val json = Json.obj("movementReferenceNumber" -> mrn, "releaseDate" -> releaseDate, "trader" -> trader, "presentationOffice" -> presentationOffice)
 
         val notification = GoodsReleaseNotification(mrn, releaseDate, trader, presentationOffice)
 

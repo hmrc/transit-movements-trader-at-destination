@@ -30,15 +30,9 @@ class RejectionErrorSpec extends FreeSpec with MustMatchers with ScalaCheckPrope
   mustHaveDualReadsAndWrites(arbitrary[RejectionError])
 
   "must deserialise with all values present" in {
-
     forAll(arbitrary[Int], arbitrary[String], arbitrary[String], arbitrary[String]) {
       (errorType, pointer, reason, original) =>
-        val json = Json.obj(
-          "errorType"     -> errorType,
-          "pointer"       -> pointer,
-          "reason"        -> reason,
-          "originalValue" -> original
-        )
+        val json = Json.obj("errorType" -> errorType, "pointer" -> pointer, "reason" -> reason, "originalValue" -> original)
 
         val expectedResult = RejectionError(errorType, pointer, Some(reason), Some(original))
 
@@ -47,13 +41,9 @@ class RejectionErrorSpec extends FreeSpec with MustMatchers with ScalaCheckPrope
   }
 
   "must deserialise when optional values are not present" in {
-
     forAll(arbitrary[Int], arbitrary[String]) {
       (errorType, pointer) =>
-        val json = Json.obj(
-          "errorType" -> errorType,
-          "pointer"   -> pointer
-        )
+        val json = Json.obj("errorType" -> errorType, "pointer" -> pointer)
 
         val expectedResult = RejectionError(errorType, pointer, None, None)
 
@@ -62,15 +52,9 @@ class RejectionErrorSpec extends FreeSpec with MustMatchers with ScalaCheckPrope
   }
 
   "must serialise with all values present" in {
-
     forAll(arbitrary[Int], arbitrary[String], arbitrary[String], arbitrary[String]) {
       (errorType, pointer, reason, original) =>
-        val json = Json.obj(
-          "errorType"     -> errorType,
-          "pointer"       -> pointer,
-          "reason"        -> reason,
-          "originalValue" -> original
-        )
+        val json = Json.obj("errorType" -> errorType, "pointer" -> pointer, "reason" -> reason, "originalValue" -> original)
 
         val error = RejectionError(errorType, pointer, Some(reason), Some(original))
 
@@ -79,13 +63,9 @@ class RejectionErrorSpec extends FreeSpec with MustMatchers with ScalaCheckPrope
   }
 
   "must serialise when optional values are not present" in {
-
     forAll(arbitrary[Int], arbitrary[String]) {
       (errorType, pointer) =>
-        val json = Json.obj(
-          "errorType" -> errorType,
-          "pointer"   -> pointer
-        )
+        val json = Json.obj("errorType" -> errorType, "pointer" -> pointer)
 
         val error = RejectionError(errorType, pointer, None, None)
 

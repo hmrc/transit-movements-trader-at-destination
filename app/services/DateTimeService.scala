@@ -21,8 +21,7 @@ import java.time.LocalDateTime
 import com.google.inject.Singleton
 import utils.Format
 
-@Singleton
-class DateTimeServiceImpl extends DateTimeService {
+@Singleton class DateTimeServiceImpl extends DateTimeService {
 
   override def currentDateTime: LocalDateTime = LocalDateTime.now()
 

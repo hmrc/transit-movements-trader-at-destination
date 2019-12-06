@@ -39,9 +39,7 @@ class MessageConnectorImpl @Inject()(config: AppConfig, http: HttpClient) extend
       "Content-Type"   -> "application/xml",
       "X-Message-Type" -> xMessageType.code,
       "X-Correlation-ID" -> {
-        headerCarrier.sessionId
-          .map(_.value)
-          .getOrElse(UUID.randomUUID().toString)
+        headerCarrier.sessionId.map(_.value).getOrElse(UUID.randomUUID().toString)
       },
       "X-Message-Sender" -> messageSender,
       "X-Forwarded-Host" -> "mdtp"

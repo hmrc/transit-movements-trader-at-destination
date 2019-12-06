@@ -22,10 +22,13 @@ import java.time.format.DateTimeFormatter
 
 object Format {
 
-  val dateFormatter: DateTimeFormatter   = DateTimeFormatter.ofPattern("yyyyMMdd")
-  def dateFormatted(date: LocalDate)     = date.format(dateFormatter)
+  val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd")
+
+  def dateFormatted(date: LocalDate) = date.format(dateFormatter)
+
   def dateFormatted(date: LocalDateTime) = date.format(dateFormatter)
 
-  val timeFormatter: DateTimeFormatter   = DateTimeFormatter.ofPattern("HHMM")
+  val timeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HHMM")
+
   def timeFormatted(date: LocalDateTime) = date.format(timeFormatter)
 }

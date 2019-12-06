@@ -45,7 +45,6 @@ class XmlValidationService {
 
   def validate(xml: String, xsdFile: XSDFile): Either[XmlError, XmlValid] =
     try {
-
       val url: URL = getClass.getResource(xsdFile.filePath)
 
       val schema: Schema = javax.xml.validation.SchemaFactory.newInstance(schemaLang).newSchema(url)
@@ -61,8 +60,7 @@ class XmlValidationService {
       val xmlResponse: XMLLoader[Elem] = new scala.xml.factory.XMLLoader[scala.xml.Elem] {
         override def parser: SAXParser = saxParser(schema)
 
-        override def adapter =
-          new scala.xml.parsing.NoBindingFactoryAdapter with scala.xml.parsing.ConsoleErrorHandler
+        override def adapter = new scala.xml.parsing.NoBindingFactoryAdapter with scala.xml.parsing.ConsoleErrorHandler
       }
 
       xmlResponse.parser.parse(new InputSource(new StringReader(xml)), new CustomParseHandler)

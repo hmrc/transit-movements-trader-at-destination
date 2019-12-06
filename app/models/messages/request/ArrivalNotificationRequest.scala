@@ -21,13 +21,12 @@ import models.messages.MessageCode
 
 import scala.collection.immutable.ListMap
 
-case class ArrivalNotificationRequest(
-  meta: Meta,
-  header: Header,
-  traderDestination: TraderDestination,
-  customsOfficeOfPresentation: CustomsOfficeOfPresentation,
-  enRouteEvents: Option[Seq[EnRouteEvent]]
-) extends RequestConstants {
+case class ArrivalNotificationRequest(meta: Meta,
+                                      header: Header,
+                                      traderDestination: TraderDestination,
+                                      customsOfficeOfPresentation: CustomsOfficeOfPresentation,
+                                      enRouteEvents: Option[Seq[EnRouteEvent]])
+    extends RequestConstants {
 
   val xMessageType: XMessageType     = XMessageType("IE007")
   val messageCode: MessageCode       = MessageCode("GB007A")

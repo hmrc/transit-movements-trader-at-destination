@@ -26,9 +26,7 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 class InterchangeControlReferenceSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with ModelGenerators {
 
   "InterchangeControlReference" - {
-
     "must toString in the correct format" in {
-
       forAll(arbitrary[String], arbitrary[Int]) {
         (date, index) =>
           InterchangeControlReference(date, index).toString mustBe s"WE$date$index"

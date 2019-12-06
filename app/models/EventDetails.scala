@@ -23,18 +23,14 @@ sealed trait EventDetails
 object EventDetails {
 
   implicit lazy val reads: Reads[EventDetails] = {
-
     implicit class ReadsWithContravariantOr[A](a: Reads[A]) {
 
-      def or[B >: A](b: Reads[B]): Reads[B] =
-        a.map[B](identity).orElse(b)
+      def or[B >: A](b: Reads[B]): Reads[B] = a.map[B](identity).orElse(b)
     }
 
-    implicit def convertToSupertype[A, B >: A](a: Reads[A]): Reads[B] =
-      a.map(identity)
+    implicit def convertToSupertype[A, B >: A](a: Reads[A]): Reads[B] = a.map(identity)
 
-    Transhipment.reads or
-      Incident.format
+    Transhipment.reads or Incident.format
   }
 
   implicit lazy val writes: Writes[EventDetails] = Writes {
@@ -43,15 +39,11 @@ object EventDetails {
   }
 }
 
-final case class Incident(
-  information: Option[String],
-  endorsement: Endorsement
-) extends EventDetails
+final case class Incident(information: Option[String], endorsement: Endorsement) extends EventDetails
 
 object Incident {
 
-  implicit lazy val format: Format[Incident] =
-    Json.format[Incident]
+  implicit lazy val format: Format[Incident] = Json.format[Incident]
 }
 
 sealed trait Transhipment extends EventDetails
@@ -59,18 +51,14 @@ sealed trait Transhipment extends EventDetails
 object Transhipment {
 
   implicit lazy val reads: Reads[Transhipment] = {
-
     implicit class ReadsWithContravariantOr[A](a: Reads[A]) {
 
-      def or[B >: A](b: Reads[B]): Reads[B] =
-        a.map[B](identity).orElse(b)
+      def or[B >: A](b: Reads[B]): Reads[B] = a.map[B](identity).orElse(b)
     }
 
-    implicit def convertToSupertype[A, B >: A](a: Reads[A]): Reads[B] =
-      a.map(identity)
+    implicit def convertToSupertype[A, B >: A](a: Reads[A]): Reads[B] = a.map(identity)
 
-    VehicularTranshipment.reads or
-      ContainerTranshipment.format
+    VehicularTranshipment.reads or ContainerTranshipment.format
   }
 
   implicit lazy val writes: Writes[Transhipment] = Writes {
@@ -79,12 +67,8 @@ object Transhipment {
   }
 }
 
-final case class VehicularTranshipment(
-  transportIdentity: String,
-  transportCountry: String,
-  endorsement: Endorsement,
-  containers: Seq[String]
-) extends Transhipment
+final case class VehicularTranshipment(transportIdentity: String, transportCountry: String, endorsement: Endorsement, containers: Seq[String])
+    extends Transhipment
 
 object VehicularTranshipment {
 
@@ -92,38 +76,29 @@ object VehicularTranshipment {
 
     import play.api.libs.functional.syntax._
 
-    (
-      (__ \ "transportIdentity").read[String] and
-        (__ \ "transportCountry").read[String] and
-        (__ \ "endorsement").read[Endorsement] and
-        ((__ \ "containers").read[Seq[String]] or Reads.pure(Seq[String]()))
-    )(VehicularTranshipment(_, _, _, _))
+    ((__ \ "transportIdentity").read[String] and (__ \ "transportCountry").read[String] and (__ \ "endorsement")
+      .read[Endorsement] and ((__ \ "containers").read[Seq[String]] or Reads.pure(Seq[String]())))(VehicularTranshipment(_, _, _, _))
   }
 
-  implicit lazy val writes: OWrites[VehicularTranshipment] =
-    OWrites[VehicularTranshipment] {
-      transhipment =>
-        Json
-          .obj(
-            "transportIdentity" -> transhipment.transportIdentity,
-            "transportCountry"  -> transhipment.transportCountry,
-            "endorsement"       -> Json.toJson(transhipment.endorsement),
-            "containers"        -> Json.toJson(transhipment.containers)
-          )
-          .filterNulls
-    }
+  implicit lazy val writes: OWrites[VehicularTranshipment] = OWrites[VehicularTranshipment] {
+    transhipment =>
+      Json
+        .obj(
+          "transportIdentity" -> transhipment.transportIdentity,
+          "transportCountry"  -> transhipment.transportCountry,
+          "endorsement"       -> Json.toJson(transhipment.endorsement),
+          "containers"        -> Json.toJson(transhipment.containers)
+        )
+        .filterNulls
+  }
 }
 
-final case class ContainerTranshipment(
-  endorsement: Endorsement,
-  containers: Seq[String]
-) extends Transhipment {
+final case class ContainerTranshipment(endorsement: Endorsement, containers: Seq[String]) extends Transhipment {
 
   require(containers.nonEmpty, "At least one container number must be provided")
 }
 
 object ContainerTranshipment {
 
-  implicit lazy val format: Format[ContainerTranshipment] =
-    Json.format[ContainerTranshipment]
+  implicit lazy val format: Format[ContainerTranshipment] = Json.format[ContainerTranshipment]
 }

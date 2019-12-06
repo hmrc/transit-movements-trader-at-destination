@@ -27,9 +27,7 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 class MessageSenderSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with ModelGenerators {
 
   "MessageSender" - {
-
     "must toString in the correct format" in {
-
       val environment: Gen[String] = Gen.oneOf(Seq("LOCAL", "QA", "STAGING", "PRODUCTION"))
 
       forAll(environment, arbitrary[String]) {

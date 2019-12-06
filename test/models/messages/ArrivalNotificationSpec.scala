@@ -31,9 +31,7 @@ import play.api.libs.json.Json
 class ArrivalNotificationSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with MessageGenerators with JsonBehaviours {
 
   "Normal notification" - {
-
     "must deserialise" in {
-
       forAll(arbitrary[NormalNotification]) {
         normalNotification =>
           val json = createNormalNotificationJson(normalNotification)
@@ -42,12 +40,10 @@ class ArrivalNotificationSpec extends FreeSpec with MustMatchers with ScalaCheck
     }
 
     "must fail to deserialise when `procedure` is `simplified`" in {
-
       forAll(arbitrary[NormalNotification]) {
         normalNotification =>
           val jsonWithSimplified = {
-            createNormalNotificationJson(normalNotification) ++
-              Json.obj("procedure" -> Json.toJson(ProcedureType.Simplified))
+            createNormalNotificationJson(normalNotification) ++ Json.obj("procedure" -> Json.toJson(ProcedureType.Simplified))
           }
 
           jsonWithSimplified.validate[NormalNotification] mustEqual JsError("procedure must be `normal`")
@@ -55,7 +51,6 @@ class ArrivalNotificationSpec extends FreeSpec with MustMatchers with ScalaCheck
     }
 
     "must serialise" in {
-
       forAll(arbitrary[NormalNotification]) {
         normalNotification =>
           val json = createNormalNotificationJson(normalNotification)
@@ -65,9 +60,7 @@ class ArrivalNotificationSpec extends FreeSpec with MustMatchers with ScalaCheck
   }
 
   "Simplified notification" - {
-
     "must deserialise" in {
-
       forAll(arbitrary[SimplifiedNotification]) {
         simplifiedNotification =>
           val json = createSimplifiedNotificationJson(simplifiedNotification)
@@ -77,11 +70,9 @@ class ArrivalNotificationSpec extends FreeSpec with MustMatchers with ScalaCheck
 
     "must fail to deserialise when `procedure` is `normal`" in {
       forAll(arbitrary[SimplifiedNotification]) {
-
         simplifiedNotification =>
           val jsonWithNormal = {
-            createSimplifiedNotificationJson(simplifiedNotification) ++
-              Json.obj("procedure" -> Json.toJson(ProcedureType.Normal))
+            createSimplifiedNotificationJson(simplifiedNotification) ++ Json.obj("procedure" -> Json.toJson(ProcedureType.Normal))
           }
 
           jsonWithNormal.validate[SimplifiedNotification] mustEqual JsError("procedure must be `simplified`")
@@ -89,7 +80,6 @@ class ArrivalNotificationSpec extends FreeSpec with MustMatchers with ScalaCheck
     }
 
     "must serialise" in {
-
       forAll(arbitrary[SimplifiedNotification]) {
         simplifiedNotification =>
           val json = createSimplifiedNotificationJson(simplifiedNotification)
@@ -99,9 +89,7 @@ class ArrivalNotificationSpec extends FreeSpec with MustMatchers with ScalaCheck
   }
 
   "Arrival Notification" - {
-
     "must deserialise to a Normal notification" in {
-
       forAll(arbitrary[NormalNotification]) {
         normalNotification =>
           val json = createNormalNotificationJson(normalNotification)
@@ -110,7 +98,6 @@ class ArrivalNotificationSpec extends FreeSpec with MustMatchers with ScalaCheck
     }
 
     "must deserialise to a Simplified notification" in {
-
       forAll(arbitrary[SimplifiedNotification]) {
         simplifiedNotification =>
           val json = createSimplifiedNotificationJson(simplifiedNotification)
@@ -119,7 +106,6 @@ class ArrivalNotificationSpec extends FreeSpec with MustMatchers with ScalaCheck
     }
 
     "must serialise from a Normal notification" in {
-
       forAll(arbitrary[NormalNotification]) {
         normalNotification =>
           val json = createNormalNotificationJson(normalNotification)
@@ -128,7 +114,6 @@ class ArrivalNotificationSpec extends FreeSpec with MustMatchers with ScalaCheck
     }
 
     "must serialise from a Simplified notification" in {
-
       forAll(arbitrary[SimplifiedNotification]) {
         simplifiedNotification =>
           val json = createSimplifiedNotificationJson(simplifiedNotification)
@@ -145,20 +130,13 @@ class ArrivalNotificationSpec extends FreeSpec with MustMatchers with ScalaCheck
       "notificationDate"        -> notification.notificationDate
     ) ++ {
       notification.customsSubPlace match {
-        case Some(subPlace) =>
-          Json.obj("customsSubPlace" -> Json.toJson(subPlace))
-        case _ =>
-          JsObject.empty
+        case Some(subPlace) => Json.obj("customsSubPlace" -> Json.toJson(subPlace))
+        case _              => JsObject.empty
       }
-    } ++ Json.obj(
-      "trader"             -> Json.toJson(notification.trader),
-      "presentationOffice" -> notification.presentationOffice
-    ) ++ {
+    } ++ Json.obj("trader" -> Json.toJson(notification.trader), "presentationOffice" -> notification.presentationOffice) ++ {
       notification.enRouteEvents match {
-        case Some(enRouteEvents) =>
-          Json.obj("enRouteEvents" -> Json.toJson(notification.enRouteEvents))
-        case _ =>
-          JsObject.empty
+        case Some(enRouteEvents) => Json.obj("enRouteEvents" -> Json.toJson(notification.enRouteEvents))
+        case _                   => JsObject.empty
       }
     }
 
@@ -170,20 +148,13 @@ class ArrivalNotificationSpec extends FreeSpec with MustMatchers with ScalaCheck
       "notificationDate"        -> notification.notificationDate
     ) ++ {
       notification.approvedLocation match {
-        case Some(approvedLocation) =>
-          Json.obj("approvedLocation" -> approvedLocation)
-        case _ =>
-          JsObject.empty
+        case Some(approvedLocation) => Json.obj("approvedLocation" -> approvedLocation)
+        case _                      => JsObject.empty
       }
-    } ++ Json.obj(
-      "trader"             -> Json.toJson(notification.trader),
-      "presentationOffice" -> notification.presentationOffice
-    ) ++ {
+    } ++ Json.obj("trader" -> Json.toJson(notification.trader), "presentationOffice" -> notification.presentationOffice) ++ {
       notification.enRouteEvents match {
-        case Some(enrouteEvents) =>
-          Json.obj("enRouteEvents" -> Json.toJson(notification.enRouteEvents))
-        case _ =>
-          JsObject.empty
+        case Some(enrouteEvents) => Json.obj("enRouteEvents" -> Json.toJson(notification.enRouteEvents))
+        case _                   => JsObject.empty
       }
     }
 }

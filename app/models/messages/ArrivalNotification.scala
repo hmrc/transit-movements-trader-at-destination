@@ -26,18 +26,14 @@ sealed trait ArrivalNotification
 object ArrivalNotification {
 
   implicit lazy val reads: Reads[ArrivalNotification] = {
-
     implicit class ReadsWithContravariantOr[A](a: Reads[A]) {
 
-      def or[B >: A](b: Reads[B]): Reads[B] =
-        a.map[B](identity).orElse(b)
+      def or[B >: A](b: Reads[B]): Reads[B] = a.map[B](identity).orElse(b)
     }
 
-    implicit def convertToSupertype[A, B >: A](a: Reads[A]): Reads[B] =
-      a.map(identity)
+    implicit def convertToSupertype[A, B >: A](a: Reads[A]): Reads[B] = a.map(identity)
 
-    NormalNotification.reads or
-      SimplifiedNotification.reads
+    NormalNotification.reads or SimplifiedNotification.reads
   }
 
   implicit lazy val writes: Writes[ArrivalNotification] = Writes {
@@ -46,15 +42,14 @@ object ArrivalNotification {
   }
 }
 
-final case class NormalNotification(
-  movementReferenceNumber: String,
-  notificationPlace: String,
-  notificationDate: LocalDate,
-  customsSubPlace: Option[String],
-  trader: Trader,
-  presentationOffice: String,
-  enRouteEvents: Option[Seq[EnRouteEvent]]
-) extends ArrivalNotification {
+final case class NormalNotification(movementReferenceNumber: String,
+                                    notificationPlace: String,
+                                    notificationDate: LocalDate,
+                                    customsSubPlace: Option[String],
+                                    trader: Trader,
+                                    presentationOffice: String,
+                                    enRouteEvents: Option[Seq[EnRouteEvent]])
+    extends ArrivalNotification {
 
   val procedure: ProcedureType = ProcedureType.Normal
 }
@@ -75,46 +70,36 @@ object NormalNotification {
             Reads(_ => JsError("procedure must be `normal`"))
           }
       }
-      .andKeep(
-        (
-          (__ \ "movementReferenceNumber").read[String] and
-            (__ \ "notificationPlace").read[String] and
-            (__ \ "notificationDate").read[LocalDate] and
-            (__ \ "customsSubPlace").readNullable[String] and
-            (__ \ "trader").read[Trader] and
-            (__ \ "presentationOffice").read[String] and
-            (__ \ "enRouteEvents").readNullable[Seq[EnRouteEvent]]
-        )(NormalNotification(_, _, _, _, _, _, _))
-      )
+      .andKeep(((__ \ "movementReferenceNumber").read[String] and (__ \ "notificationPlace").read[String] and (__ \ "notificationDate")
+        .read[LocalDate] and (__ \ "customsSubPlace").readNullable[String] and (__ \ "trader").read[Trader] and (__ \ "presentationOffice")
+        .read[String] and (__ \ "enRouteEvents").readNullable[Seq[EnRouteEvent]])(NormalNotification(_, _, _, _, _, _, _)))
   }
 
-  implicit lazy val writes: OWrites[NormalNotification] =
-    OWrites[NormalNotification] {
-      notification =>
-        Json
-          .obj(
-            "procedure"               -> Json.toJson(notification.procedure),
-            "movementReferenceNumber" -> notification.movementReferenceNumber,
-            "notificationPlace"       -> notification.notificationPlace,
-            "notificationDate"        -> notification.notificationDate,
-            "customsSubPlace"         -> notification.customsSubPlace,
-            "trader"                  -> Json.toJson(notification.trader),
-            "presentationOffice"      -> notification.presentationOffice,
-            "enRouteEvents"           -> Json.toJson(notification.enRouteEvents)
-          )
-          .filterNulls
-    }
+  implicit lazy val writes: OWrites[NormalNotification] = OWrites[NormalNotification] {
+    notification =>
+      Json
+        .obj(
+          "procedure"               -> Json.toJson(notification.procedure),
+          "movementReferenceNumber" -> notification.movementReferenceNumber,
+          "notificationPlace"       -> notification.notificationPlace,
+          "notificationDate"        -> notification.notificationDate,
+          "customsSubPlace"         -> notification.customsSubPlace,
+          "trader"                  -> Json.toJson(notification.trader),
+          "presentationOffice"      -> notification.presentationOffice,
+          "enRouteEvents"           -> Json.toJson(notification.enRouteEvents)
+        )
+        .filterNulls
+  }
 }
 
-final case class SimplifiedNotification(
-  movementReferenceNumber: String,
-  notificationPlace: String,
-  notificationDate: LocalDate,
-  approvedLocation: Option[String],
-  trader: Trader,
-  presentationOffice: String,
-  enRouteEvents: Option[Seq[EnRouteEvent]]
-) extends ArrivalNotification {
+final case class SimplifiedNotification(movementReferenceNumber: String,
+                                        notificationPlace: String,
+                                        notificationDate: LocalDate,
+                                        approvedLocation: Option[String],
+                                        trader: Trader,
+                                        presentationOffice: String,
+                                        enRouteEvents: Option[Seq[EnRouteEvent]])
+    extends ArrivalNotification {
 
   val procedure: ProcedureType = ProcedureType.Simplified
 }
@@ -135,17 +120,9 @@ object SimplifiedNotification {
             Reads(_ => JsError("procedure must be `simplified`"))
           }
       }
-      .andKeep(
-        (
-          (__ \ "movementReferenceNumber").read[String] and
-            (__ \ "notificationPlace").read[String] and
-            (__ \ "notificationDate").read[LocalDate] and
-            (__ \ "approvedLocation").readNullable[String] and
-            (__ \ "trader").read[Trader] and
-            (__ \ "presentationOffice").read[String] and
-            (__ \ "enRouteEvents").readNullable[Seq[EnRouteEvent]]
-        )(SimplifiedNotification(_, _, _, _, _, _, _))
-      )
+      .andKeep(((__ \ "movementReferenceNumber").read[String] and (__ \ "notificationPlace").read[String] and (__ \ "notificationDate")
+        .read[LocalDate] and (__ \ "approvedLocation").readNullable[String] and (__ \ "trader").read[Trader] and (__ \ "presentationOffice")
+        .read[String] and (__ \ "enRouteEvents").readNullable[Seq[EnRouteEvent]])(SimplifiedNotification(_, _, _, _, _, _, _)))
   }
 
   implicit lazy val writes: OWrites[SimplifiedNotification] = {

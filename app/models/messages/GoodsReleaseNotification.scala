@@ -22,15 +22,9 @@ import models.Trader
 import play.api.libs.json.Format
 import play.api.libs.json.Json
 
-final case class GoodsReleaseNotification(
-  movementReferenceNumber: String,
-  releaseDate: LocalDate,
-  trader: Trader,
-  presentationOffice: String
-)
+final case class GoodsReleaseNotification(movementReferenceNumber: String, releaseDate: LocalDate, trader: Trader, presentationOffice: String)
 
 object GoodsReleaseNotification {
 
-  implicit lazy val format: Format[GoodsReleaseNotification] =
-    Json.format[GoodsReleaseNotification]
+  implicit lazy val format: Format[GoodsReleaseNotification] = Json.format[GoodsReleaseNotification]
 }

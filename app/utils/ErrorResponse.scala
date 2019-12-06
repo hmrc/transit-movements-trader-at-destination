@@ -38,8 +38,7 @@ object ErrorResponseBuilder {
     ErrorResponse("failed to save an Arrival Notification to Database")
   }
 
-  def failedXmlValidation(reason: String): ErrorResponse =
-    ErrorResponse(s"Xml validation failed for the following reason: $reason")
+  def failedXmlValidation(reason: String): ErrorResponse = ErrorResponse(s"Xml validation failed for the following reason: $reason")
 
   val failedXmlConversion: ErrorResponse = {
     ErrorResponse("failed to convert to Xml")

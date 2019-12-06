@@ -24,22 +24,14 @@ import play.api.mvc.PathBindable
 
 import scala.math.pow
 
-final case class MovementReferenceNumber(
-  year: String,
-  countryCode: String,
-  serial: String
-) {
+final case class MovementReferenceNumber(year: String, countryCode: String, serial: String) {
 
   override def toString: String = s"$year$countryCode$serial$checkCharacter"
 
   val checkCharacter: String = {
-
     val input = s"$year$countryCode$serial"
 
-    val remainder = input.zipWithIndex.map {
-      case (character, index) =>
-        characterWeights(character) * pow(2, index).toInt
-    }.sum % 11
+    val remainder = input.zipWithIndex.map { case (character, index) => characterWeights(character) * pow(2, index).toInt }.sum % 11
 
     (remainder % 10).toString
   }
@@ -58,9 +50,7 @@ object MovementReferenceNumber {
       } else {
         None
       }
-
-    case _ =>
-      None
+    case _ => None
   }
 
   implicit lazy val reads: Reads[MovementReferenceNumber] = {
@@ -83,8 +73,7 @@ object MovementReferenceNumber {
     override def bind(key: String, value: String): Either[String, MovementReferenceNumber] =
       MovementReferenceNumber.apply(value).toRight("Invalid Movement Reference Number")
 
-    override def unbind(key: String, value: MovementReferenceNumber): String =
-      value.toString
+    override def unbind(key: String, value: MovementReferenceNumber): String = value.toString
   }
 
   private val characterWeights = Map(

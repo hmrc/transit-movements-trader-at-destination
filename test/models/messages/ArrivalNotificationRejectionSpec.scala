@@ -33,15 +33,11 @@ class ArrivalNotificationRejectionSpec extends FreeSpec with MustMatchers with S
   mustHaveDualReadsAndWrites(arbitrary[ArrivalNotificationRejection])
 
   "must deserialise when action, reason and errors are not present" in {
-
     val date = datesBetween(LocalDate.of(1900, 1, 1), LocalDate.now)
 
     forAll(arbitrary[String], date) {
       (mrn, rejectionDate) =>
-        val json = Json.obj(
-          "movementReferenceNumber" -> mrn,
-          "rejectionDate"           -> rejectionDate
-        )
+        val json = Json.obj("movementReferenceNumber" -> mrn, "rejectionDate" -> rejectionDate)
 
         val expectedResult = ArrivalNotificationRejection(mrn, rejectionDate, None, None, Seq.empty)
 
@@ -50,18 +46,12 @@ class ArrivalNotificationRejectionSpec extends FreeSpec with MustMatchers with S
   }
 
   "must deserialise when action, reason and errors are present" in {
-
     val date = datesBetween(LocalDate.of(1900, 1, 1), LocalDate.now)
 
     forAll(arbitrary[String], date, arbitrary[Option[String]], arbitrary[Option[String]], arbitrary[Seq[RejectionError]]) {
       (mrn, rejectionDate, action, reason, errors) =>
-        val json = Json.obj(
-          "movementReferenceNumber" -> mrn,
-          "rejectionDate"           -> rejectionDate,
-          "action"                  -> action,
-          "reason"                  -> reason,
-          "errors"                  -> Json.toJson(errors)
-        )
+        val json =
+          Json.obj("movementReferenceNumber" -> mrn, "rejectionDate" -> rejectionDate, "action" -> action, "reason" -> reason, "errors" -> Json.toJson(errors))
 
         val expectedResult = ArrivalNotificationRejection(mrn, rejectionDate, action, reason, errors)
 
@@ -70,15 +60,11 @@ class ArrivalNotificationRejectionSpec extends FreeSpec with MustMatchers with S
   }
 
   "must serialise when action, reason and errors are not present" in {
-
     val date = datesBetween(LocalDate.of(1900, 1, 1), LocalDate.now)
 
     forAll(arbitrary[String], date) {
       (mrn, rejectionDate) =>
-        val json = Json.obj(
-          "movementReferenceNumber" -> mrn,
-          "rejectionDate"           -> rejectionDate
-        )
+        val json = Json.obj("movementReferenceNumber" -> mrn, "rejectionDate" -> rejectionDate)
 
         val rejection = ArrivalNotificationRejection(mrn, rejectionDate, None, None, Seq.empty)
 
@@ -87,26 +73,14 @@ class ArrivalNotificationRejectionSpec extends FreeSpec with MustMatchers with S
   }
 
   "must serialise when action, reason and errors are present" in {
-
     val date = datesBetween(LocalDate.of(1900, 1, 1), LocalDate.now)
 
     forAll(arbitrary[String], date, arbitrary[String], arbitrary[String], arbitrary[Seq[RejectionError]]) {
       (mrn, rejectionDate, action, reason, errors) =>
         val json = if (errors.isEmpty) {
-          Json.obj(
-            "movementReferenceNumber" -> mrn,
-            "rejectionDate"           -> rejectionDate,
-            "action"                  -> action,
-            "reason"                  -> reason
-          )
+          Json.obj("movementReferenceNumber" -> mrn, "rejectionDate" -> rejectionDate, "action" -> action, "reason" -> reason)
         } else {
-          Json.obj(
-            "movementReferenceNumber" -> mrn,
-            "rejectionDate"           -> rejectionDate,
-            "action"                  -> action,
-            "reason"                  -> reason,
-            "errors"                  -> Json.toJson(errors)
-          )
+          Json.obj("movementReferenceNumber" -> mrn, "rejectionDate" -> rejectionDate, "action" -> action, "reason" -> reason, "errors" -> Json.toJson(errors))
         }
 
         val rejection = ArrivalNotificationRejection(mrn, rejectionDate, Some(action), Some(reason), errors)

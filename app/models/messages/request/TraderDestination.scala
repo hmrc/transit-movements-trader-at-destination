@@ -20,11 +20,10 @@ sealed trait TraderConstants {
   val languageCode: String = "EN"
 }
 
-case class TraderDestination(
-  name: Option[String],
-  streetAndNumber: Option[String],
-  postCode: Option[String],
-  city: Option[String],
-  countryCode: Option[String],
-  eori: Option[String]
-) extends TraderConstants
+case class TraderDestination(name: Option[String],
+                             streetAndNumber: Option[String],
+                             postCode: Option[String],
+                             city: Option[String],
+                             countryCode: Option[String],
+                             eori: Option[String])
+    extends TraderConstants

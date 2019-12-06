@@ -32,22 +32,15 @@ class EndorsementSpec extends FreeSpec with MustMatchers with ScalaCheckProperty
   mustHaveDualReadsAndWrites(arbitrary[Endorsement])
 
   "must deserialise when nothing is present" in {
-
     Json.obj().validate[Endorsement] mustEqual JsSuccess(Endorsement(None, None, None, None))
   }
 
   "must deserialise when all values are present" in {
-
     val date = datesBetween(LocalDate.of(1900, 1, 1), LocalDate.now)
 
     forAll(date, arbitrary[String], arbitrary[String], arbitrary[String]) {
       (date, authority, place, country) =>
-        val json = Json.obj(
-          "date"      -> date,
-          "authority" -> authority,
-          "place"     -> place,
-          "country"   -> country
-        )
+        val json = Json.obj("date" -> date, "authority" -> authority, "place" -> place, "country" -> country)
 
         val expectedResult = Endorsement(Some(date), Some(authority), Some(place), Some(country))
 
@@ -56,22 +49,15 @@ class EndorsementSpec extends FreeSpec with MustMatchers with ScalaCheckProperty
   }
 
   "must serialise when nothing is present" in {
-
     Json.toJson(Endorsement(None, None, None, None)) mustEqual Json.obj()
   }
 
   "must serialise when all values are present" in {
-
     val date = datesBetween(LocalDate.of(1900, 1, 1), LocalDate.now)
 
     forAll(date, arbitrary[String], arbitrary[String], arbitrary[String]) {
       (date, authority, place, country) =>
-        val json = Json.obj(
-          "date"      -> date,
-          "authority" -> authority,
-          "place"     -> place,
-          "country"   -> country
-        )
+        val json = Json.obj("date" -> date, "authority" -> authority, "place" -> place, "country" -> country)
 
         val endorsement = Endorsement(Some(date), Some(authority), Some(place), Some(country))
 
