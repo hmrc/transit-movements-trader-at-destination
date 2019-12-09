@@ -55,7 +55,7 @@ trait ModelGenerators {
     for {
       length <- choose(1, maxLength)
       chars  <- listOfN(length, arbitrary[Char])
-    } yield chars.mkString.replaceAll("([&<>]|\\p{C})", "")
+    } yield chars.mkString
 
   //TODO: If all characters are matched with the above regex this method returns an empty string
 
