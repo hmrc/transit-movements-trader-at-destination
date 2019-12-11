@@ -74,7 +74,7 @@ trait MessageGenerators extends ModelGenerators {
         subPlace           <- Gen.option(stringsWithMaxLength(17))
         trader             <- arbitrary[Trader]
         presentationOffice <- stringsWithMaxLength(8)
-        events             <- Gen.option(seqWithMaxLength[EnRouteEvent](1))
+        events             <- Gen.option(seqWithMaxLength[EnRouteEvent](9))
       } yield NormalNotification(mrn, place, date, subPlace, trader, presentationOffice, events)
     }
 
@@ -88,7 +88,7 @@ trait MessageGenerators extends ModelGenerators {
         approvedLocation   <- Gen.option(stringsWithMaxLength(17))
         trader             <- arbitrary[Trader]
         presentationOffice <- stringsWithMaxLength(8)
-        events             <- Gen.option(seqWithMaxLength[EnRouteEvent](1))
+        events             <- Gen.option(seqWithMaxLength[EnRouteEvent](9))
       } yield SimplifiedNotification(mrn, place, date, approvedLocation, trader, presentationOffice, events)
     }
 
@@ -172,8 +172,8 @@ trait MessageGenerators extends ModelGenerators {
         header            <- arbitrary[Header]
         traderDestination <- arbitrary[TraderDestination]
         customsOffice     <- arbitrary[CustomsOfficeOfPresentation]
-        enRouteEvents     <- Gen.option(arbitrary[EnRouteEvent])
-      } yield ArrivalNotificationRequest(meta, header, traderDestination, customsOffice, enRouteEvents.map(result => Seq(result)))
+        enRouteEvents     <- Gen.option(arbitrary[Seq[EnRouteEvent]])
+      } yield ArrivalNotificationRequest(meta, header, traderDestination, customsOffice, enRouteEvents)
     }
   }
 

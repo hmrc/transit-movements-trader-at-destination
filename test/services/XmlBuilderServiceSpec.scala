@@ -54,11 +54,16 @@ class XmlBuilderServiceSpec
   private val timeOfPreparation       = Format.timeFormatted(dateTime)
 
   "XmlBuilderService" - {
-    "must return correct nodes" - {
-      forAll(arbitrary[ArrivalNotificationRequest](arbitraryArrivalNotificationRequest)) {
+    "must return correct nodes" in {
+      val localDateTime: Gen[LocalDateTime] = dateTimesBetween(LocalDateTime.of(1900, 1, 1, 0, 0), LocalDateTime.now)
 
-        arrivalNotificationRequest =>
+      forAll(arbitrary[ArrivalNotificationRequest](arbitraryArrivalNotificationRequest), localDateTime) {
+
+        (arrivalNotificationRequest, genDateTime) =>
           whenever(hasEoriWithNormalProcedure()(arrivalNotificationRequest)) {
+
+            val genDateOfPreparation = Format.dateFormatted(genDateTime)
+            val genTimeOfPreparation = Format.timeFormatted(genDateTime)
 
             val validXml: Node = {
               trim(
@@ -69,8 +74,8 @@ class XmlBuilderServiceSpec
                     buildOptionalElem(arrivalNotificationRequest.meta.senderIdentificationCodeQualifier, "SenIdeCodQuaMES4") ++
                     buildOptionalElem(arrivalNotificationRequest.meta.recipientIdentificationCodeQualifier, "RecIdeCodQuaMES7") ++
                     buildAndEncodeElem(arrivalNotificationRequest.meta.messageRecipient, "MesRecMES6") ++
-                    buildAndEncodeElem(dateOfPreparation, "DatOfPreMES9") ++
-                    buildAndEncodeElem(timeOfPreparation, "TimOfPreMES10") ++
+                    buildAndEncodeElem(genDateOfPreparation, "DatOfPreMES9") ++
+                    buildAndEncodeElem(genTimeOfPreparation, "TimOfPreMES10") ++
                     buildAndEncodeElem(arrivalNotificationRequest.meta.interchangeControlReference.toString, "IntConRefMES11") ++
                     buildOptionalElem(arrivalNotificationRequest.meta.recipientsReferencePassword, "RecRefMES12") ++
                     buildOptionalElem(arrivalNotificationRequest.meta.recipientsReferencePasswordQualifier, "RecRefQuaMES13") ++
@@ -95,7 +100,7 @@ class XmlBuilderServiceSpec
                     buildAndEncodeElem(arrivalNotificationRequest.header.languageCode, "ArrAgrLocOfGooHEA63LNG") ++
                     buildOptionalElem(arrivalNotificationRequest.header.arrivalAgreedLocationOfGoods, "ArrAutLocOfGooHEA65") ++
                     buildAndEncodeElem(arrivalNotificationRequest.header.simplifiedProcedureFlag, "SimProFlaHEA132") ++
-                    buildAndEncodeElem(dateOfPreparation, "ArrNotDatHEA141")
+                    buildAndEncodeElem(genDateOfPreparation, "ArrNotDatHEA141")
                   }
                   </HEAHEA>
                   <TRADESTRD> {
@@ -116,27 +121,28 @@ class XmlBuilderServiceSpec
               )
             }
 
-            trim(convertToXml.buildXml(arrivalNotificationRequest)(dateTime).right.toOption.value) mustBe validXml
+            trim(convertToXml.buildXml(arrivalNotificationRequest)(genDateTime).right.toOption.value) mustBe validXml
           }
       }
+    }
 
-      "must return correct nodes for a minimal arrival notification request" in {
+    "must return correct nodes for a minimal arrival notification request" in {
 
-        val minimalArrivalNotificationRequest: ArrivalNotificationRequest =
-          ArrivalNotificationRequest(
-            meta = Meta(
-              MessageSender("LOCAL", "EORI&123"),
-              InterchangeControlReference("2019", 1)
-            ),
-            header = Header("MovementReferenceNumber", None, "arrivalNotificationPlace", None, "SimplifiedProcedureFlag"),
-            traderDestination = TraderDestination(None, None, None, None, None, None),
-            customsOfficeOfPresentation = CustomsOfficeOfPresentation("PresentationOffice"),
-            enRouteEvents = None
-          )
+      val minimalArrivalNotificationRequest: ArrivalNotificationRequest =
+        ArrivalNotificationRequest(
+          meta = Meta(
+            MessageSender("LOCAL", "EORI&123"),
+            InterchangeControlReference("2019", 1)
+          ),
+          header = Header("MovementReferenceNumber", None, "arrivalNotificationPlace", None, "SimplifiedProcedureFlag"),
+          traderDestination = TraderDestination(None, None, None, None, None, None),
+          customsOfficeOfPresentation = CustomsOfficeOfPresentation("PresentationOffice"),
+          enRouteEvents = None
+        )
 
-        val minimalValidXml: Node = {
-          trim(
-            <CC007A>
+      val minimalValidXml: Node = {
+        trim(
+          <CC007A>
             <SynIdeMES1>{minimalArrivalNotificationRequest.syntaxIdentifier}</SynIdeMES1>
             <SynVerNumMES2>{minimalArrivalNotificationRequest.meta.syntaxVersionNumber}</SynVerNumMES2>
             <MesSenMES3>{minimalArrivalNotificationRequest.meta.messageSender.toString}</MesSenMES3>
@@ -163,38 +169,38 @@ class XmlBuilderServiceSpec
               <RefNumRES1>{minimalArrivalNotificationRequest.customsOfficeOfPresentation.presentationOffice}</RefNumRES1>
             </CUSOFFPREOFFRES>
           </CC007A>
-          )
-        }
-
-        trim(convertToXml.buildXml(minimalArrivalNotificationRequest)(dateTime).right.toOption.value) mustBe minimalValidXml
+        )
       }
 
-      "must return correct nodes for a minimal arrival notification request with an incident" in {
+      trim(convertToXml.buildXml(minimalArrivalNotificationRequest)(dateTime).right.toOption.value) mustBe minimalValidXml
+    }
 
-        val arrivalNotificationRequestWithIncident: ArrivalNotificationRequest =
-          ArrivalNotificationRequest(
-            meta = Meta(
-              messageSender = MessageSender("LOCAL", "EORI&123"),
-              interchangeControlReference = InterchangeControlReference("2019", 1)
-            ),
-            header = Header("MovementReferenceNumber", None, "arrivalNotificationPlace", None, "SimplifiedProcedureFlag"),
-            traderDestination = TraderDestination(None, None, None, None, None, None),
-            customsOfficeOfPresentation = CustomsOfficeOfPresentation("PresentationOffice"),
-            enRouteEvents = Some(
-              Seq(
-                EnRouteEvent(
-                  place = "place",
-                  countryCode = "GB",
-                  alreadyInNcts = true,
-                  eventDetails = Incident(None, Endorsement(None, None, None, None)),
-                  seals = Some(Seq("seal1", "seal2"))
-                )
-              ))
-          )
+    "must return correct nodes for a minimal arrival notification request with an EnRouteEvent" in {
 
-        val minimalValidXmlWithEnrouteEvent: Node =
-          trim(
-            <CC007A>
+      val arrivalNotificationRequestWithIncident: ArrivalNotificationRequest =
+        ArrivalNotificationRequest(
+          meta = Meta(
+            messageSender = MessageSender("LOCAL", "EORI&123"),
+            interchangeControlReference = InterchangeControlReference("2019", 1)
+          ),
+          header = Header("MovementReferenceNumber", None, "arrivalNotificationPlace", None, "SimplifiedProcedureFlag"),
+          traderDestination = TraderDestination(None, None, None, None, None, None),
+          customsOfficeOfPresentation = CustomsOfficeOfPresentation("PresentationOffice"),
+          enRouteEvents = Some(
+            Seq(
+              EnRouteEvent(
+                place = "place",
+                countryCode = "GB",
+                alreadyInNcts = true,
+                eventDetails = Incident(None, Endorsement(None, None, None, None)),
+                seals = Some(Seq("seal1", "seal2"))
+              )
+            ))
+        )
+
+      val minimalValidXmlWithEnrouteEvent: Node =
+        trim(
+          <CC007A>
           <SynIdeMES1>{arrivalNotificationRequestWithIncident.syntaxIdentifier}</SynIdeMES1>
           <SynVerNumMES2>{arrivalNotificationRequestWithIncident.meta.syntaxVersionNumber}</SynVerNumMES2>
           <MesSenMES3>{arrivalNotificationRequestWithIncident.meta.messageSender.toString}</MesSenMES3>
@@ -241,99 +247,13 @@ class XmlBuilderServiceSpec
           }
 
         </CC007A>
-          )
+        )
 
-        trim(convertToXml.buildXml(arrivalNotificationRequestWithIncident)(dateTime).right.toOption.value) mustBe minimalValidXmlWithEnrouteEvent
-      }
-
-      "must return correct nodes for a minimal arrival notification request with a container transhipment" in {
-
-        val arrivalNotificationWithContainterTranshipment: ArrivalNotificationRequest =
-          ArrivalNotificationRequest(
-            meta = Meta(
-              messageSender = MessageSender("LOCAL", "EORI&123"),
-              interchangeControlReference = InterchangeControlReference("2019", 1)
-            ),
-            header = Header("MovementReferenceNumber", None, "arrivalNotificationPlace", None, "SimplifiedProcedureFlag"),
-            traderDestination = TraderDestination(None, None, None, None, None, None),
-            customsOfficeOfPresentation = CustomsOfficeOfPresentation("PresentationOffice"),
-            enRouteEvents = Some(
-              Seq(
-                EnRouteEvent(
-                  place = "place",
-                  countryCode = "GB",
-                  alreadyInNcts = true,
-                  eventDetails = ContainerTranshipment(
-                    Endorsement(None, None, None, None),
-                    Seq("container < >", "container &")
-                  ),
-                  seals = Some(Seq("seal1", "seal2"))
-                )
-              ))
-          )
-
-        val minimalValidXmlWithEnrouteEvent: Node =
-          trim(
-            <CC007A>
-            <SynIdeMES1>{arrivalNotificationWithContainterTranshipment.syntaxIdentifier}</SynIdeMES1>
-            <SynVerNumMES2>{arrivalNotificationWithContainterTranshipment.meta.syntaxVersionNumber}</SynVerNumMES2>
-            <MesSenMES3>{arrivalNotificationWithContainterTranshipment.meta.messageSender.toString}</MesSenMES3>
-            <MesRecMES6>{arrivalNotificationWithContainterTranshipment.meta.messageRecipient}</MesRecMES6>
-            <DatOfPreMES9>{dateOfPreparation}</DatOfPreMES9>
-            <TimOfPreMES10>{timeOfPreparation}</TimOfPreMES10>
-            <IntConRefMES11>{arrivalNotificationWithContainterTranshipment.meta.interchangeControlReference.toString}</IntConRefMES11>
-            <AppRefMES14>{arrivalNotificationWithContainterTranshipment.meta.applicationReference}</AppRefMES14>
-            <TesIndMES18>{arrivalNotificationWithContainterTranshipment.meta.testIndicator}</TesIndMES18>
-            <MesIdeMES19>{arrivalNotificationWithContainterTranshipment.meta.messageIndication}</MesIdeMES19>
-            <MesTypMES20>{arrivalNotificationWithContainterTranshipment.messageCode.code}</MesTypMES20>
-            <HEAHEA>
-              <DocNumHEA5>{arrivalNotificationWithContainterTranshipment.header.movementReferenceNumber}</DocNumHEA5>
-              <ArrNotPlaHEA60>{arrivalNotificationWithContainterTranshipment.header.arrivalNotificationPlace}</ArrNotPlaHEA60>
-              <ArrNotPlaHEA60LNG>{arrivalNotificationWithContainterTranshipment.header.languageCode}</ArrNotPlaHEA60LNG>
-              <ArrAgrLocOfGooHEA63LNG>{arrivalNotificationWithContainterTranshipment.header.languageCode}</ArrAgrLocOfGooHEA63LNG>
-              <SimProFlaHEA132>{arrivalNotificationWithContainterTranshipment.header.simplifiedProcedureFlag}</SimProFlaHEA132>
-              <ArrNotDatHEA141>{dateOfPreparation}</ArrNotDatHEA141>
-            </HEAHEA>
-            <TRADESTRD>
-              <NADLNGRD>{arrivalNotificationWithContainterTranshipment.header.languageCode}</NADLNGRD>
-            </TRADESTRD>
-            <CUSOFFPREOFFRES>
-              <RefNumRES1>{arrivalNotificationWithContainterTranshipment.customsOfficeOfPresentation.presentationOffice}</RefNumRES1>
-            </CUSOFFPREOFFRES>
-            {
-            arrivalNotificationWithContainterTranshipment.enRouteEvents.value.map {
-              enrouteEvent =>
-                <ENROUEVETEV>
-                  <PlaTEV10>{enrouteEvent.place}</PlaTEV10>
-                  <PlaTEV10LNG>{arrivalNotificationWithContainterTranshipment.header.languageCode}</PlaTEV10LNG>
-                  <CouTEV13>{enrouteEvent.countryCode}</CouTEV13>
-                  <CTLCTL>
-                    <AlrInNCTCTL29>1</AlrInNCTCTL29>
-                  </CTLCTL>
-                  <TRASHP>
-                    <EndAutSHP61LNG>{arrivalNotificationWithContainterTranshipment.header.languageCode}</EndAutSHP61LNG>
-                    <EndPlaSHP63LNG>{arrivalNotificationWithContainterTranshipment.header.languageCode}</EndPlaSHP63LNG>
-                    <CONNR3>
-                      <ConNumNR31>{"container < >"}</ConNumNR31>
-                    </CONNR3>
-                    <CONNR3>
-                      <ConNumNR31>{"container &"}</ConNumNR31>
-                    </CONNR3>
-                  </TRASHP>
-                </ENROUEVETEV>
-            }
-            }
-          </CC007A>
-          )
-
-        trim(convertToXml.buildXml(arrivalNotificationWithContainterTranshipment)(dateTime).right.toOption.value) mustBe minimalValidXmlWithEnrouteEvent
-      }
-
+      trim(convertToXml.buildXml(arrivalNotificationRequestWithIncident)(dateTime).right.toOption.value) mustBe minimalValidXmlWithEnrouteEvent
     }
   }
 
   private def buildEnRouteEvent(enRouteEvents: Option[Seq[EnRouteEvent]], languageCode: String): NodeSeq = enRouteEvents match {
-    case None => NodeSeq.Empty
     case Some(events) =>
       events.map {
         event =>
@@ -350,6 +270,7 @@ class XmlBuilderServiceSpec
             }
           </ENROUEVETEV>
       }
+    case None => NodeSeq.Empty
   }
 
   private def buildIncidentType(event: EventDetails, languageCode: String): NodeSeq = event match {
@@ -415,6 +336,7 @@ class XmlBuilderServiceSpec
 }
 
 object XmlBuilderServiceSpec {
+
   private def hasEoriWithNormalProcedure()(implicit arrivalNotificationRequest: ArrivalNotificationRequest): Boolean =
     arrivalNotificationRequest.traderDestination.eori.isDefined &&
       arrivalNotificationRequest.header.simplifiedProcedureFlag.equals("0")

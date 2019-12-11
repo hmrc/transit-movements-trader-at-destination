@@ -55,7 +55,7 @@ trait ModelGenerators {
     for {
       length <- choose(1, maxLength)
       chars  <- listOfN(length, arbitrary[Char])
-    } yield chars.mkString.replaceAll("([&<>]|\\p{C})", "")
+    } yield chars.mkString
 
   //TODO: If all characters are matched with the above regex this method returns an empty string
 
@@ -136,7 +136,7 @@ trait ModelGenerators {
         transportIdentity  <- stringsWithMaxLength(27)
         transportCountry   <- stringsWithMaxLength(2)
         endorsement        <- arbitrary[Endorsement]
-        numberOfContainers <- Gen.choose[Int](1, 1)
+        numberOfContainers <- Gen.choose[Int](1, 99)
         containers         <- Gen.option(Gen.listOfN(numberOfContainers, stringsWithMaxLength(17)))
       } yield VehicularTranshipment(transportIdentity, transportCountry, endorsement, containers)
     }
@@ -146,7 +146,7 @@ trait ModelGenerators {
 
       for {
         endorsement        <- arbitrary[Endorsement]
-        numberOfContainers <- Gen.choose[Int](1, 1)
+        numberOfContainers <- Gen.choose[Int](1, 99)
         containers         <- Gen.listOfN(numberOfContainers, stringsWithMaxLength(17))
       } yield ContainerTranshipment(endorsement, containers)
     }
@@ -175,7 +175,7 @@ trait ModelGenerators {
         countryCode   <- stringsWithMaxLength(2)
         alreadyInNcts <- arbitrary[Boolean]
         eventDetails  <- arbitrary[EventDetails]
-        numberOfSeals <- Gen.choose[Int](0, 1)
+        numberOfSeals <- Gen.choose[Int](0, 99)
         seals         <- Gen.option(Gen.listOfN(numberOfSeals, stringsWithMaxLength(20)))
       } yield {
 
