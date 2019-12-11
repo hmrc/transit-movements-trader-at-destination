@@ -66,56 +66,58 @@ class XmlBuilderService {
   }
 
   private def buildMetaNode(meta: Meta, messageCode: String)(implicit dateTime: LocalDateTime): NodeSeq =
-    <SynIdeMES1>{meta.syntaxIdentifier}</SynIdeMES1>
-      <SynVerNumMES2>{meta.syntaxVersionNumber}</SynVerNumMES2>
-      <MesSenMES3>{meta.messageSender.toString}</MesSenMES3> ++
+    buildAndEncodeElem(meta.syntaxIdentifier, "SynIdeMES1") ++
+      buildAndEncodeElem(meta.syntaxVersionNumber, "SynVerNumMES2") ++
+      buildAndEncodeElem(meta.messageSender.toString, "MesSenMES3") ++
       buildOptionalElem(meta.senderIdentificationCodeQualifier, "SenIdeCodQuaMES4") ++
       buildOptionalElem(meta.recipientIdentificationCodeQualifier, "RecIdeCodQuaMES7") ++
-      <MesRecMES6>{meta.messageRecipient}</MesRecMES6> ++
-      <DatOfPreMES9>{Format.dateFormatted(dateTime)}</DatOfPreMES9> ++
-      <TimOfPreMES10>{Format.timeFormatted(dateTime)}</TimOfPreMES10> ++
-      <IntConRefMES11>{meta.interchangeControlReference.toString}</IntConRefMES11> ++
+      buildAndEncodeElem(meta.messageRecipient, "MesRecMES6") ++
+      buildAndEncodeElem(Format.dateFormatted(dateTime), "DatOfPreMES9") ++
+      buildAndEncodeElem(Format.timeFormatted(dateTime), "TimOfPreMES10") ++
+      buildAndEncodeElem(meta.interchangeControlReference.toString, "IntConRefMES11") ++
       buildOptionalElem(meta.recipientsReferencePassword, "RecRefMES12") ++
       buildOptionalElem(meta.recipientsReferencePasswordQualifier, "RecRefQuaMES13") ++
-      <AppRefMES14>{meta.applicationReference}</AppRefMES14> ++
+      buildAndEncodeElem(meta.applicationReference, "AppRefMES14") ++
       buildOptionalElem(meta.priority, "PriMES15") ++
       buildOptionalElem(meta.acknowledgementRequest, "AckReqMES16") ++
       buildOptionalElem(meta.communicationsAgreementId, "ComAgrIdMES17") ++
-      <TesIndMES18>{meta.testIndicator}</TesIndMES18> ++
-      <MesIdeMES19>{meta.messageIndication}</MesIdeMES19> ++
-      <MesTypMES20>{messageCode}</MesTypMES20> ++
+      buildAndEncodeElem(meta.testIndicator, "TesIndMES18") ++
+      buildAndEncodeElem(meta.messageIndication, "MesIdeMES19") ++
+      buildAndEncodeElem(messageCode, "MesTypMES20") ++
       buildOptionalElem(meta.commonAccessReference, "ComAccRefMES21") ++
       buildOptionalElem(meta.messageSequenceNumber, "MesSeqNumMES22") ++
       buildOptionalElem(meta.firstAndLastTransfer, "FirAndLasTraMES23")
 
   private def buildHeaderNode(header: Header, arrivalNotificationDate: String): NodeSeq =
-    <HEAHEA>
-      <DocNumHEA5>{header.movementReferenceNumber}</DocNumHEA5>
-      {buildOptionalElem(header.customsSubPlace, "CusSubPlaHEA66")}
-      <ArrNotPlaHEA60>{header.arrivalNotificationPlace}</ArrNotPlaHEA60>
-      <ArrNotPlaHEA60LNG>{header.languageCode}</ArrNotPlaHEA60LNG>
-      {buildOptionalElem(header.arrivalAgreedLocationOfGoods, "ArrAgrLocCodHEA62") ++
-      buildOptionalElem(header.arrivalAgreedLocationOfGoods, "ArrAgrLocOfGooHEA63")}
-      <ArrAgrLocOfGooHEA63LNG>{header.languageCode}</ArrAgrLocOfGooHEA63LNG>
-      {buildOptionalElem(header.arrivalAgreedLocationOfGoods, "ArrAutLocOfGooHEA65")}
-      <SimProFlaHEA132>{header.simplifiedProcedureFlag}</SimProFlaHEA132>
-      <ArrNotDatHEA141>{arrivalNotificationDate}</ArrNotDatHEA141>
+    <HEAHEA> {
+      buildAndEncodeElem(header.movementReferenceNumber, "DocNumHEA5") ++
+      buildOptionalElem(header.customsSubPlace, "CusSubPlaHEA66") ++
+      buildAndEncodeElem(header.arrivalNotificationPlace, "ArrNotPlaHEA60") ++
+      buildAndEncodeElem(header.languageCode, "ArrNotPlaHEA60LNG") ++
+      buildOptionalElem(header.arrivalAgreedLocationOfGoods, "ArrAgrLocCodHEA62") ++
+      buildOptionalElem(header.arrivalAgreedLocationOfGoods, "ArrAgrLocOfGooHEA63") ++
+      buildAndEncodeElem(header.languageCode, "ArrAgrLocOfGooHEA63LNG") ++
+      buildOptionalElem(header.arrivalAgreedLocationOfGoods, "ArrAutLocOfGooHEA65") ++
+      buildAndEncodeElem(header.simplifiedProcedureFlag, "SimProFlaHEA132") ++
+      buildAndEncodeElem(arrivalNotificationDate, "ArrNotDatHEA141")
+      }
     </HEAHEA>
 
   private def buildTraderDestinationNode(traderDestination: TraderDestination): NodeSeq =
-    <TRADESTRD>
-      {buildOptionalElem(traderDestination.name, "NamTRD7") ++
-      buildOptionalElem(traderDestination.streetAndNumber, "StrAndNumTRD22") ++
-      buildOptionalElem(traderDestination.postCode, "PosCodTRD23") ++
-      buildOptionalElem(traderDestination.city, "CitTRD24") ++
-      buildOptionalElem(traderDestination.countryCode, "CouTRD25")}
-      <NADLNGRD>{traderDestination.languageCode}</NADLNGRD>
-      {buildOptionalElem(traderDestination.eori, "TINTRD59")}
-    </TRADESTRD>
+    <TRADESTRD> {
+      buildOptionalElem(traderDestination.name, "NamTRD7") ++
+        buildOptionalElem(traderDestination.streetAndNumber, "StrAndNumTRD22") ++
+        buildOptionalElem(traderDestination.postCode, "PosCodTRD23") ++
+        buildOptionalElem(traderDestination.city, "CitTRD24") ++
+        buildOptionalElem(traderDestination.countryCode, "CouTRD25") ++
+        buildAndEncodeElem(traderDestination.languageCode, "NADLNGRD") ++
+        buildOptionalElem(traderDestination.eori, "TINTRD59")
+      }
+      </TRADESTRD>
 
   private def buildOfficeOfPresentationNode(customsOfficeOfPresentation: CustomsOfficeOfPresentation): NodeSeq =
     <CUSOFFPREOFFRES>
-      <RefNumRES1>{customsOfficeOfPresentation.presentationOffice}</RefNumRES1>
+      {buildAndEncodeElem(customsOfficeOfPresentation.presentationOffice, "RefNumRES1")}
     </CUSOFFPREOFFRES>
 
   private def buildEnRouteEventsNode(arrivalNotificationRequest: ArrivalNotificationRequest): NodeSeq = arrivalNotificationRequest.enRouteEvents match {
@@ -145,7 +147,7 @@ class XmlBuilderService {
           buildIncidentFlag(incident.information.isDefined) ++
           buildOptionalElem(incident.information, "IncInfINC4") ++
           buildAndEncodeElem(arrivalNotificationRequest.header.languageCode, "IncInfINC4LNG") ++
-          buildOptionalElem(incident.endorsement.date, "EndDatINC6") ++
+          buildOptionalDate(incident.endorsement.date, "EndDatINC6") ++
           buildOptionalElem(incident.endorsement.authority, "EndAutINC7") ++
           buildAndEncodeElem(arrivalNotificationRequest.header.languageCode, "EndAutINC7LNG") ++
           buildOptionalElem(incident.endorsement.place, "EndPlaINC10") ++
@@ -156,14 +158,14 @@ class XmlBuilderService {
 
     case containerTranshipment: ContainerTranshipment =>
       <TRASHP> {
-          buildOptionalElem(containerTranshipment.endorsement.date, "EndDatSHP60") ++
+          buildOptionalDate(containerTranshipment.endorsement.date, "EndDatSHP60") ++
           buildOptionalElem(containerTranshipment.endorsement.authority, "EndAutSHP61") ++
           buildAndEncodeElem(arrivalNotificationRequest.header.languageCode,"EndAutSHP61LNG") ++
           buildOptionalElem(containerTranshipment.endorsement.place, "EndPlaSHP63") ++
           buildAndEncodeElem(arrivalNotificationRequest.header.languageCode,"EndPlaSHP63LNG") ++
           buildOptionalElem(containerTranshipment.endorsement.country, "EndCouSHP65") ++
           buildContainers(Some(containerTranshipment.containers))
-        } ++
+        }
       </TRASHP>
 
     case vehicularTranshipment: VehicularTranshipment =>
@@ -171,7 +173,7 @@ class XmlBuilderService {
           buildAndEncodeElem(vehicularTranshipment.transportIdentity,"NewTraMeaIdeSHP26") ++
           buildAndEncodeElem(arrivalNotificationRequest.header.languageCode,"NewTraMeaIdeSHP26LNG") ++
           buildAndEncodeElem(vehicularTranshipment.transportCountry,"NewTraMeaNatSHP54") ++
-          buildOptionalElem(vehicularTranshipment.endorsement.date, "EndDatSHP60") ++
+          buildOptionalDate(vehicularTranshipment.endorsement.date, "EndDatSHP60") ++
           buildOptionalElem(vehicularTranshipment.endorsement.authority, "EndAutSHP61") ++
           buildAndEncodeElem(arrivalNotificationRequest.header.languageCode, "EndAutSHP61LNG") ++
           buildOptionalElem(vehicularTranshipment.endorsement.place, "EndPlaSHP63") ++
@@ -219,6 +221,10 @@ object XmlBuilderService {
       val encodeResult = StringEscapeUtils.escapeXml11(result)
       loadString(s"<$elementTag>$encodeResult</$elementTag>")
     }
+    case _ => NodeSeq.Empty
+  }
+
+  private def buildOptionalDate(value: Option[LocalDate], elementTag: String): NodeSeq = value match {
     case Some(result: LocalDate) => loadString(s"<$elementTag>${Format.dateFormatted(result)}</$elementTag>")
     case _                       => NodeSeq.Empty
   }
