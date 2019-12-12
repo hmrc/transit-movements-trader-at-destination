@@ -16,14 +16,10 @@
 
 package models.messages.request
 
-case class Header(
-  movementReferenceNumber: String,
-  customsSubPlace: Option[String] = None,
-  arrivalNotificationPlace: String,
-  arrivalAgreedLocationOfGoods: Option[String] = None,
-  simplifiedProcedureFlag: String
-) extends HeaderConstants
+trait LanguageCode {
+  val code: String
+}
 
-sealed trait HeaderConstants {
-  val languageCode: LanguageCode = LanguageCodeEn
+object LanguageCodeEn extends LanguageCode {
+  override val code: String = "EN"
 }

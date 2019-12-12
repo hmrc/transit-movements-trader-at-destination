@@ -157,13 +157,13 @@ class XmlBuilderServiceSpec
             <HEAHEA>
               <DocNumHEA5>{minimalArrivalNotificationRequest.header.movementReferenceNumber}</DocNumHEA5>
               <ArrNotPlaHEA60>{minimalArrivalNotificationRequest.header.arrivalNotificationPlace}</ArrNotPlaHEA60>
-              <ArrNotPlaHEA60LNG>{minimalArrivalNotificationRequest.header.languageCode}</ArrNotPlaHEA60LNG>
-              <ArrAgrLocOfGooHEA63LNG>{minimalArrivalNotificationRequest.header.languageCode}</ArrAgrLocOfGooHEA63LNG>
+              <ArrNotPlaHEA60LNG>{minimalArrivalNotificationRequest.header.languageCode.code}</ArrNotPlaHEA60LNG>
+              <ArrAgrLocOfGooHEA63LNG>{minimalArrivalNotificationRequest.header.languageCode.code}</ArrAgrLocOfGooHEA63LNG>
               <SimProFlaHEA132>{minimalArrivalNotificationRequest.header.simplifiedProcedureFlag}</SimProFlaHEA132>
               <ArrNotDatHEA141>{dateOfPreparation}</ArrNotDatHEA141>
             </HEAHEA>
             <TRADESTRD>
-              <NADLNGRD>{minimalArrivalNotificationRequest.header.languageCode}</NADLNGRD>
+              <NADLNGRD>{minimalArrivalNotificationRequest.header.languageCode.code}</NADLNGRD>
             </TRADESTRD>
             <CUSOFFPREOFFRES>
               <RefNumRES1>{minimalArrivalNotificationRequest.customsOfficeOfPresentation.presentationOffice}</RefNumRES1>
@@ -215,13 +215,13 @@ class XmlBuilderServiceSpec
           <HEAHEA>
             <DocNumHEA5>{arrivalNotificationRequestWithIncident.header.movementReferenceNumber}</DocNumHEA5>
             <ArrNotPlaHEA60>{arrivalNotificationRequestWithIncident.header.arrivalNotificationPlace}</ArrNotPlaHEA60>
-            <ArrNotPlaHEA60LNG>{arrivalNotificationRequestWithIncident.header.languageCode}</ArrNotPlaHEA60LNG>
-            <ArrAgrLocOfGooHEA63LNG>{arrivalNotificationRequestWithIncident.header.languageCode}</ArrAgrLocOfGooHEA63LNG>
+            <ArrNotPlaHEA60LNG>{arrivalNotificationRequestWithIncident.header.languageCode.code}</ArrNotPlaHEA60LNG>
+            <ArrAgrLocOfGooHEA63LNG>{arrivalNotificationRequestWithIncident.header.languageCode.code}</ArrAgrLocOfGooHEA63LNG>
             <SimProFlaHEA132>{arrivalNotificationRequestWithIncident.header.simplifiedProcedureFlag}</SimProFlaHEA132>
             <ArrNotDatHEA141>{dateOfPreparation}</ArrNotDatHEA141>
           </HEAHEA>
           <TRADESTRD>
-            <NADLNGRD>{arrivalNotificationRequestWithIncident.header.languageCode}</NADLNGRD>
+            <NADLNGRD>{arrivalNotificationRequestWithIncident.header.languageCode.code}</NADLNGRD>
           </TRADESTRD>
           <CUSOFFPREOFFRES>
             <RefNumRES1>{arrivalNotificationRequestWithIncident.customsOfficeOfPresentation.presentationOffice}</RefNumRES1>
@@ -231,16 +231,16 @@ class XmlBuilderServiceSpec
             enrouteEvent =>
               <ENROUEVETEV>
                 <PlaTEV10>{enrouteEvent.place}</PlaTEV10>
-                <PlaTEV10LNG>{arrivalNotificationRequestWithIncident.header.languageCode}</PlaTEV10LNG>
+                <PlaTEV10LNG>{arrivalNotificationRequestWithIncident.header.languageCode.code}</PlaTEV10LNG>
                 <CouTEV13>{enrouteEvent.countryCode}</CouTEV13>
                 <CTLCTL>
                   <AlrInNCTCTL29>1</AlrInNCTCTL29>
                 </CTLCTL>
                 <INCINC>
                   <IncFlaINC3>1</IncFlaINC3>
-                  <IncInfINC4LNG>{arrivalNotificationRequestWithIncident.header.languageCode}</IncInfINC4LNG>
-                  <EndAutINC7LNG>{arrivalNotificationRequestWithIncident.header.languageCode}</EndAutINC7LNG>
-                  <EndPlaINC10LNG>{arrivalNotificationRequestWithIncident.header.languageCode}</EndPlaINC10LNG>
+                  <IncInfINC4LNG>{arrivalNotificationRequestWithIncident.header.languageCode.code}</IncInfINC4LNG>
+                  <EndAutINC7LNG>{arrivalNotificationRequestWithIncident.header.languageCode.code}</EndAutINC7LNG>
+                  <EndPlaINC10LNG>{arrivalNotificationRequestWithIncident.header.languageCode.code}</EndPlaINC10LNG>
                 </INCINC>
               </ENROUEVETEV>
           }
@@ -253,7 +253,7 @@ class XmlBuilderServiceSpec
     }
   }
 
-  private def buildEnRouteEvent(enRouteEvents: Option[Seq[EnRouteEvent]], languageCode: String): NodeSeq = enRouteEvents match {
+  private def buildEnRouteEvent(enRouteEvents: Option[Seq[EnRouteEvent]], languageCode: LanguageCode): NodeSeq = enRouteEvents match {
     case Some(events) =>
       events.map {
         event =>
@@ -273,7 +273,7 @@ class XmlBuilderServiceSpec
     case None => NodeSeq.Empty
   }
 
-  private def buildIncidentType(event: EventDetails, languageCode: String): NodeSeq = event match {
+  private def buildIncidentType(event: EventDetails, languageCode: LanguageCode): NodeSeq = event match {
     case incident: Incident =>
       <INCINC>
         {
@@ -359,11 +359,12 @@ object XmlBuilderServiceSpec {
     case result: Boolean       => loadString(s"<$elementTag>${if (result) 1 else 0}</$elementTag>")
     case result: LocalDate     => loadString(s"<$elementTag>${Format.dateFormatted(result)}</$elementTag>")
     case result: LocalDateTime => loadString(s"<$elementTag>${Format.dateFormatted(result)}</$elementTag>")
+    case result: LanguageCode  => loadString(s"<$elementTag>${result.code}</$elementTag>")
     case _                     => NodeSeq.Empty
   }
 
   private def buildIncidentFlag(hasIncidentInformation: Boolean): NodeSeq = hasIncidentInformation match {
-    case false => <IncFlaINC3>{"1"}</IncFlaINC3>
+    case false => <IncFlaINC3>1</IncFlaINC3>
     case true  => NodeSeq.Empty
   }
 }
