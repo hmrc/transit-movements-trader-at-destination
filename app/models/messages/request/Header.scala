@@ -25,5 +25,5 @@ case class Header(
 ) extends HeaderConstants
 
 sealed trait HeaderConstants {
-  val languageCode: LanguageCode = LanguageCodeEn
+  val languageCode: LanguageCode = LanguageCodeEnglish
 }

@@ -183,7 +183,7 @@ trait MessageGenerators extends ModelGenerators {
       header         <- arbitrary[Header]
       traderWithEori <- arbitrary[TraderWithEori]
       customsOffice  <- arbitrary[CustomsOfficeOfPresentation]
-      headerWithProcedure = header.copy(simplifiedProcedureFlag = "0")
+      headerWithProcedure = header.copy(simplifiedProcedureFlag = "git a0")
       traderDestination = {
         TraderDestination(
           traderWithEori.name,

@@ -16,10 +16,10 @@
 
 package models.messages.request
 
-trait LanguageCode {
+sealed trait LanguageCode {
   val code: String
 }
 
-object LanguageCodeEn extends LanguageCode {
+object LanguageCodeEnglish extends LanguageCode {
   override val code: String = "EN"
 }

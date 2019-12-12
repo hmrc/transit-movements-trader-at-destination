@@ -17,7 +17,7 @@
 package models.messages.request
 
 sealed trait TraderConstants {
-  val languageCode: LanguageCode = LanguageCodeEn
+  val languageCode: LanguageCode = LanguageCodeEnglish
 }
 
 case class TraderDestination(
