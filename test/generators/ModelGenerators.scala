@@ -127,6 +127,12 @@ trait ModelGenerators {
       } yield Incident(information, endorsement)
     }
 
+  implicit lazy val arbitraryContainer: Arbitrary[Container] = Arbitrary {
+    for {
+      containerNumber <- stringsWithMaxLength(17)
+    } yield Container(containerNumber)
+  }
+
   implicit lazy val arbitraryVehicularTranshipment: Arbitrary[VehicularTranshipment] =
     Arbitrary {
 
@@ -135,7 +141,7 @@ trait ModelGenerators {
         transportCountry   <- stringsWithMaxLength(2)
         endorsement        <- arbitrary[Endorsement]
         numberOfContainers <- Gen.choose[Int](1, 99)
-        containers         <- Gen.option(Gen.listOfN(numberOfContainers, stringsWithMaxLength(17)))
+        containers         <- Gen.option(Gen.listOfN(numberOfContainers, arbitrary[Container]))
       } yield VehicularTranshipment(transportIdentity, transportCountry, endorsement, containers)
     }
 
@@ -145,7 +151,7 @@ trait ModelGenerators {
       for {
         endorsement        <- arbitrary[Endorsement]
         numberOfContainers <- Gen.choose[Int](1, 99)
-        containers         <- Gen.listOfN(numberOfContainers, stringsWithMaxLength(17))
+        containers         <- Gen.listOfN(numberOfContainers, arbitrary[Container])
       } yield ContainerTranshipment(endorsement, containers)
     }
 

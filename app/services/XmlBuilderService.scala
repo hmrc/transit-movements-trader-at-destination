@@ -19,6 +19,7 @@ package services
 import java.time.LocalDate
 import java.time.LocalDateTime
 
+import models.Container
 import models.ContainerTranshipment
 import models.EventDetails
 import models.Incident
@@ -184,12 +185,12 @@ class XmlBuilderService {
       </TRASHP>
   }
 
-  private def buildContainers(containers: Option[Seq[String]]) = containers match {
+  private def buildContainers(containers: Option[Seq[Container]]) = containers match {
     case Some(containers) =>
       containers.map {
         container =>
           <CONNR3> {
-              buildAndEncodeElem(container, "ConNumNR31")
+              buildAndEncodeElem(container.containerNumber, "ConNumNR31")
             }
           </CONNR3>
       }
