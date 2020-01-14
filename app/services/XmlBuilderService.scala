@@ -19,11 +19,8 @@ package services
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-import models.ContainerTranshipment
-import models.EventDetails
-import models.Incident
-import models.VehicularTranshipment
-import models.messages.request._
+import models.domain._
+import models.request._
 import play.api.Logger
 import play.twirl.api.utils.StringEscapeUtils
 import utils.Format

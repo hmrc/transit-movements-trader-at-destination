@@ -18,13 +18,9 @@ package services
 
 import com.google.inject.Inject
 import config.AppConfig
-import models.messages.NormalNotification
-import models.messages.request.InterchangeControlReference
-import models.messages.request._
-import models.EnRouteEvent
-import models.Trader
-import models.TraderWithEori
-import models.TraderWithoutEori
+import models.domain._
+import models.domain.messages.NormalNotification
+import models.request._
 
 class SubmissionModelService @Inject()(appConfig: AppConfig) {
 

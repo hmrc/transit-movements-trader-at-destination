@@ -14,11 +14,22 @@
  * limitations under the License.
  */
 
-package models.messages.request
+package models.domain
 
-case class MessageSender(environment: String, eori: String) {
+import java.time.LocalDate
 
-  override def toString: String =
-    s"$environment-$eori"
+import play.api.libs.json.Format
+import play.api.libs.json.Json
 
+final case class Endorsement(
+  date: Option[LocalDate],
+  authority: Option[String],
+  place: Option[String],
+  country: Option[String]
+)
+
+object Endorsement {
+
+  implicit lazy val format: Format[Endorsement] =
+    Json.format[Endorsement]
 }

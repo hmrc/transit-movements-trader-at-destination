@@ -14,12 +14,17 @@
  * limitations under the License.
  */
 
-package models
+package models.request
 
-sealed trait XSDFile {
-  val filePath: String
+sealed trait TraderConstants {
+  val languageCode: LanguageCode = LanguageCodeEnglish
 }
 
-object ArrivalNotificationXSD extends XSDFile {
-  val filePath = "/xsd-iconvert/cc007a.xsd"
-}
+case class TraderDestination(
+  name: Option[String],
+  streetAndNumber: Option[String],
+  postCode: Option[String],
+  city: Option[String],
+  countryCode: Option[String],
+  eori: Option[String]
+) extends TraderConstants

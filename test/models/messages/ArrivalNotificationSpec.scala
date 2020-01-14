@@ -17,8 +17,11 @@
 package models.messages
 
 import generators.MessageGenerators
-import models.ProcedureType
 import models.behaviours.JsonBehaviours
+import models.domain.ProcedureType
+import models.domain.messages.ArrivalNotification
+import models.domain.messages.NormalNotification
+import models.domain.messages.SimplifiedNotification
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers

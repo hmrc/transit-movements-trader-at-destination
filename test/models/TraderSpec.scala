@@ -18,6 +18,9 @@ package models
 
 import generators.ModelGenerators
 import models.behaviours.JsonBehaviours
+import models.domain.Trader
+import models.domain.TraderWithEori
+import models.domain.TraderWithoutEori
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers

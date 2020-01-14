@@ -14,6 +14,6 @@
  * limitations under the License.
  */
 
-package models.messages
+package models.domain.messages
 
 case class MessageCode(code: String)

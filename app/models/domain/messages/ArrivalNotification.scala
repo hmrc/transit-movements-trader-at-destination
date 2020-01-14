@@ -14,11 +14,14 @@
  * limitations under the License.
  */
 
-package models.messages
+package models.domain.messages
 
 import java.time.LocalDate
 
 import models._
+import models.domain.EnRouteEvent
+import models.domain.ProcedureType
+import models.domain.Trader
 import play.api.libs.json._
 
 sealed trait ArrivalNotification

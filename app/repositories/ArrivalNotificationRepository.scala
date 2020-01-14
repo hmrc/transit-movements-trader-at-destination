@@ -17,7 +17,7 @@
 package repositories
 
 import com.google.inject.Inject
-import models.messages.ArrivalNotification
+import models.domain.messages.ArrivalNotification
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents

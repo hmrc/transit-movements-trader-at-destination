@@ -18,8 +18,8 @@ package base
 
 import java.time.LocalDate
 
-import models.TraderWithEori
-import models.messages.NormalNotification
+import models.domain.TraderWithEori
+import models.domain.messages.NormalNotification
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers

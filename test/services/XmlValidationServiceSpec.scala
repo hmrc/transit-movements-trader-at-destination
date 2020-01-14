@@ -17,7 +17,7 @@
 package services
 
 import base.SpecBase
-import models.ArrivalNotificationXSD
+import models.request.ArrivalNotificationXSD
 
 class XmlValidationServiceSpec extends SpecBase {
 

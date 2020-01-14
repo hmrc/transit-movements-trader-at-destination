@@ -21,6 +21,7 @@ import java.time.LocalDate
 import generators.MessageGenerators
 import models._
 import models.behaviours.JsonBehaviours
+import models.domain.messages.ArrivalNotificationRejection
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers

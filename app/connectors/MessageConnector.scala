@@ -21,7 +21,7 @@ import java.util.UUID
 
 import com.google.inject.Inject
 import config.AppConfig
-import models.messages.request.XMessageType
+import models.request.XMessageType
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HttpReads
 import uk.gov.hmrc.http.HttpResponse

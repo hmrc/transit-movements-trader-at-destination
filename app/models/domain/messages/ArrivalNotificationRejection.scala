@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package models.messages
+package models.domain.messages
 
 import java.time.LocalDate
 
-import models._
 import models.RejectionError
+import models._
 import play.api.libs.json._
 
 final case class ArrivalNotificationRejection(

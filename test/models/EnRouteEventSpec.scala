@@ -19,6 +19,7 @@ package models
 import org.scalacheck.Arbitrary.arbitrary
 import generators.ModelGenerators
 import models.behaviours.JsonBehaviours
+import models.domain.EnRouteEvent
 import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks

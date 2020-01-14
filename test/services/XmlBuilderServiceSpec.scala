@@ -20,8 +20,8 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 import generators.MessageGenerators
-import models._
-import models.messages.request._
+import models.domain._
+import models.request._
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
 import org.scalatest.FreeSpec

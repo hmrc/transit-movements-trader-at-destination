@@ -17,6 +17,7 @@
 package models
 
 import generators.ModelGenerators
+import models.domain.MovementReferenceNumber
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
 import org.scalatest.EitherValues

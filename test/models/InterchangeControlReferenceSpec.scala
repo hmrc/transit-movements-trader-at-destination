@@ -17,7 +17,7 @@
 package models
 
 import generators.ModelGenerators
-import models.messages.request.InterchangeControlReference
+import models.request.InterchangeControlReference
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers

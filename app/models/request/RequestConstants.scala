@@ -14,17 +14,13 @@
  * limitations under the License.
  */
 
-package models.messages.request
+package models.request
 
-sealed trait TraderConstants {
-  val languageCode: LanguageCode = LanguageCodeEnglish
+import models.domain.messages.MessageCode
+
+trait RequestConstants {
+  val messageCode: MessageCode
+  val syntaxIdentifier: String
+  val rootKey: String
+  val nameSpace: Map[String, String]
 }
-
-case class TraderDestination(
-  name: Option[String],
-  streetAndNumber: Option[String],
-  postCode: Option[String],
-  city: Option[String],
-  countryCode: Option[String],
-  eori: Option[String]
-) extends TraderConstants

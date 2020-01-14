@@ -17,8 +17,8 @@
 package services
 
 import javax.inject.Inject
-import models.messages.ArrivalNotification
-import models.messages.request.InterchangeControlReference
+import models.domain.messages.ArrivalNotification
+import models.request.InterchangeControlReference
 import reactivemongo.api.commands.WriteResult
 import repositories.ArrivalNotificationRepository
 import repositories.FailedSavingArrivalNotification

@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package models.messages.request
+package models.request
 
-import models.EnRouteEvent
-import models.messages.MessageCode
+import models.domain.EnRouteEvent
+import models.domain.messages.MessageCode
 
 import scala.collection.immutable.ListMap
 

@@ -22,10 +22,8 @@ import java.time.OffsetDateTime
 import config.AppConfig
 import connectors.MessageConnector
 import javax.inject.Inject
-import models.ArrivalNotificationXSD
-import models.messages.ArrivalNotification
-import models.messages.request.ArrivalNotificationRequest
-import models.messages.request._
+import models.domain.messages.ArrivalNotification
+import models.request._
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
 import play.api.libs.json.Reads

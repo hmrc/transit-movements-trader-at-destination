@@ -14,6 +14,12 @@
  * limitations under the License.
  */
 
-package models.messages.request
+package models.request
 
-case class CustomsOfficeOfPresentation(presentationOffice: String)
+sealed trait LanguageCode {
+  val code: String
+}
+
+object LanguageCodeEnglish extends LanguageCode {
+  override val code: String = "EN"
+}

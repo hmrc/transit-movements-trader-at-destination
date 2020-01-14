@@ -14,23 +14,12 @@
  * limitations under the License.
  */
 
-package models.messages
+package models.request
 
-import java.time.LocalDate
+sealed trait XSDFile {
+  val filePath: String
+}
 
-import models.Trader
-import play.api.libs.json.Format
-import play.api.libs.json.Json
-
-final case class GoodsReleaseNotification(
-  movementReferenceNumber: String,
-  releaseDate: LocalDate,
-  trader: Trader,
-  presentationOffice: String
-)
-
-object GoodsReleaseNotification {
-
-  implicit lazy val format: Format[GoodsReleaseNotification] =
-    Json.format[GoodsReleaseNotification]
+object ArrivalNotificationXSD extends XSDFile {
+  val filePath = "/xsd-iconvert/cc007a.xsd"
 }

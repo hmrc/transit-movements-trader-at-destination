@@ -18,8 +18,8 @@ package services
 
 import base.SpecBase
 import generators.MessageGenerators
-import models.messages.ArrivalNotification
-import models.messages.request.InterchangeControlReference
+import models.domain.messages.ArrivalNotification
+import models.request.InterchangeControlReference
 import org.mockito.Mockito._
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.FreeSpec

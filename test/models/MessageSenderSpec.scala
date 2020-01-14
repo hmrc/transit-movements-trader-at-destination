@@ -17,7 +17,7 @@
 package models
 
 import generators.ModelGenerators
-import models.messages.request.MessageSender
+import models.request.MessageSender
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
 import org.scalatest.FreeSpec

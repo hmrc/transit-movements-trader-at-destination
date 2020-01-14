@@ -6,7 +6,7 @@ import java.time.format.DateTimeFormatter
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.matching.StringValuePattern
 import generators.MessageGenerators
-import models.messages.request.ArrivalNotificationRequest
+import models.request.ArrivalNotificationRequest
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}

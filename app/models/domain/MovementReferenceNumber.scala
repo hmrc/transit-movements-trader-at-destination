@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package models
+package models.domain
 
-import MovementReferenceNumber._
+import models.domain.MovementReferenceNumber._
 import play.api.libs.json.JsString
 import play.api.libs.json.Reads
 import play.api.libs.json.Writes

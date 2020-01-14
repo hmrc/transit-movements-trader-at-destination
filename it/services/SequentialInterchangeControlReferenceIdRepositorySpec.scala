@@ -16,7 +16,7 @@
 
 package it.services
 
-import models.messages.request.InterchangeControlReference
+import models.request.InterchangeControlReference
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.{FreeSpec, MustMatchers}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite

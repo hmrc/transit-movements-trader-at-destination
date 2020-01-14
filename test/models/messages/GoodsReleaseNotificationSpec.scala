@@ -20,7 +20,8 @@ import java.time.LocalDate
 
 import generators.MessageGenerators
 import models.behaviours.JsonBehaviours
-import models.Trader
+import models.domain.Trader
+import models.domain.messages.GoodsReleaseNotification
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers

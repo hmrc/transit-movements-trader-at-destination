@@ -18,14 +18,11 @@ package generators
 
 import java.time.LocalDate
 
-import models.messages._
-import models.messages.request._
-import models.EnRouteEvent
-import models.MovementReferenceNumber
+import models.domain._
+import models.domain.messages._
 import models.RejectionError
-import models.Trader
-import models.TraderWithEori
-import models.TraderWithoutEori
+import models.request
+import models.request._
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
@@ -137,7 +134,7 @@ trait MessageGenerators extends ModelGenerators {
         messageSender               <- arbitrary[MessageSender]
         interchangeControlReference <- arbitrary[InterchangeControlReference]
       } yield
-        Meta(
+        request.Meta(
           messageSender,
           interchangeControlReference,
           None,
@@ -173,7 +170,7 @@ trait MessageGenerators extends ModelGenerators {
         traderDestination <- arbitrary[TraderDestination]
         customsOffice     <- arbitrary[CustomsOfficeOfPresentation]
         enRouteEvents     <- Gen.option(arbitrary[Seq[EnRouteEvent]])
-      } yield ArrivalNotificationRequest(meta, header, traderDestination, customsOffice, enRouteEvents)
+      } yield request.ArrivalNotificationRequest(meta, header, traderDestination, customsOffice, enRouteEvents)
     }
   }
 
@@ -196,7 +193,7 @@ trait MessageGenerators extends ModelGenerators {
       }
       enRouteEvents <- Gen.option(arbitrary[Seq[EnRouteEvent]])
 
-    } yield ArrivalNotificationRequest(meta, headerWithProcedure, traderDestination, customsOffice, enRouteEvents)
+    } yield request.ArrivalNotificationRequest(meta, headerWithProcedure, traderDestination, customsOffice, enRouteEvents)
   }
 
   val arbitraryArrivalNotificationRequestWithoutEori: Gen[ArrivalNotificationRequest] = {
@@ -218,7 +215,7 @@ trait MessageGenerators extends ModelGenerators {
       }
       enRouteEvents <- Gen.option(arbitrary[Seq[EnRouteEvent]])
 
-    } yield ArrivalNotificationRequest(meta, headerWithProcedure, traderDestination, customsOffice, enRouteEvents)
+    } yield request.ArrivalNotificationRequest(meta, headerWithProcedure, traderDestination, customsOffice, enRouteEvents)
   }
 
 }

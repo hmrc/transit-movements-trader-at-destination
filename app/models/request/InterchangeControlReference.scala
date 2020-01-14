@@ -14,13 +14,10 @@
  * limitations under the License.
  */
 
-package models.messages.request
+package models.request
 
-import models.messages.MessageCode
-
-trait RequestConstants {
-  val messageCode: MessageCode
-  val syntaxIdentifier: String
-  val rootKey: String
-  val nameSpace: Map[String, String]
+case class InterchangeControlReference(date: String, index: Int) {
+  private val prefix = "WE"
+  override def toString: String =
+    s"$prefix$date$index"
 }

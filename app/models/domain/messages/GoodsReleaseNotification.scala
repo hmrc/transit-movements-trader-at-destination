@@ -14,22 +14,23 @@
  * limitations under the License.
  */
 
-package models
+package models.domain.messages
 
 import java.time.LocalDate
 
+import models.domain.Trader
 import play.api.libs.json.Format
 import play.api.libs.json.Json
 
-final case class Endorsement(
-  date: Option[LocalDate],
-  authority: Option[String],
-  place: Option[String],
-  country: Option[String]
+final case class GoodsReleaseNotification(
+  movementReferenceNumber: String,
+  releaseDate: LocalDate,
+  trader: Trader,
+  presentationOffice: String
 )
 
-object Endorsement {
+object GoodsReleaseNotification {
 
-  implicit lazy val format: Format[Endorsement] =
-    Json.format[Endorsement]
+  implicit lazy val format: Format[GoodsReleaseNotification] =
+    Json.format[GoodsReleaseNotification]
 }

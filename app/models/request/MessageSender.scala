@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package models.messages.request
+package models.request
 
-sealed trait LanguageCode {
-  val code: String
-}
+case class MessageSender(environment: String, eori: String) {
 
-object LanguageCodeEnglish extends LanguageCode {
-  override val code: String = "EN"
+  override def toString: String =
+    s"$environment-$eori"
+
 }

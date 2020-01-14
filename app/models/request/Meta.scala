@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package models.messages.request
+package models.request
 
 case class Meta(messageSender: MessageSender,
                 interchangeControlReference: InterchangeControlReference,

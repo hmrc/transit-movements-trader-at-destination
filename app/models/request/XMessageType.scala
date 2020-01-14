@@ -14,16 +14,6 @@
  * limitations under the License.
  */
 
-package models.messages.request
+package models.request
 
-case class Header(
-  movementReferenceNumber: String,
-  customsSubPlace: Option[String] = None,
-  arrivalNotificationPlace: String,
-  arrivalAgreedLocationOfGoods: Option[String] = None,
-  simplifiedProcedureFlag: String
-) extends HeaderConstants
-
-sealed trait HeaderConstants {
-  val languageCode: LanguageCode = LanguageCodeEnglish
-}
+case class XMessageType(code: String)

@@ -14,10 +14,6 @@
  * limitations under the License.
  */
 
-package models.messages.request
+package models.request
 
-case class InterchangeControlReference(date: String, index: Int) {
-  private val prefix = "WE"
-  override def toString: String =
-    s"$prefix$date$index"
-}
+case class CustomsOfficeOfPresentation(presentationOffice: String)

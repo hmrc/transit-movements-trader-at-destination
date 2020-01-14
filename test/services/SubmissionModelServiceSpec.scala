@@ -20,11 +20,12 @@ import java.time.LocalDateTime
 
 import config.AppConfig
 import generators.MessageGenerators
-import models.TraderWithEori
-import models.TraderWithoutEori
-import models.messages.NormalNotification
-import models.messages.request.InterchangeControlReference
-import models.messages.request._
+import models.domain.TraderWithEori
+import models.domain.TraderWithoutEori
+import models.domain.messages.NormalNotification
+import models.request.ArrivalNotificationRequest
+import models.request.InterchangeControlReference
+import models.request.MessageSender
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
 import org.scalatest.FreeSpec
