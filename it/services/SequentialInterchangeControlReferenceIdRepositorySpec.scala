@@ -27,8 +27,8 @@ import play.api.libs.json.Json
 import reactivemongo.play.json.ImplicitBSONHandlers._
 import reactivemongo.play.json.collection.JSONCollection
 import repositories.{CollectionNames, SequentialInterchangeControlReferenceIdRepository}
-import services.mocks.MockDateTimeService
 import services.DateTimeService
+import services.mocks.MockDateTimeService
 
 import scala.concurrent.ExecutionContext.Implicits.global
 

@@ -2,7 +2,6 @@ package it.services
 
 import generators.MessageGenerators
 import models.domain.messages.{NormalNotification, SimplifiedNotification}
-import models.messages.SimplifiedNotification
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.{FreeSpec, MustMatchers, OptionValues}
