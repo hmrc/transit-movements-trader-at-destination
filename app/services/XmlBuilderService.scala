@@ -18,12 +18,11 @@ package services
 
 import java.time.LocalDate
 import java.time.LocalDateTime
-
-import models.ContainerTranshipment
-import models.EventDetails
-import models.Incident
-import models.VehicularTranshipment
-import models.messages.request._
+import models.messages.ContainerTranshipment
+import models.messages.EventDetails
+import models.messages.Incident
+import models.messages.VehicularTranshipment
+import models.request._
 import play.api.Logger
 import play.twirl.api.utils.StringEscapeUtils
 import utils.Format

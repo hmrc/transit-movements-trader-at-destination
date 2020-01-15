@@ -18,7 +18,7 @@ package repositories
 
 import com.google.inject.Inject
 import com.google.inject.Singleton
-import models.messages.request.InterchangeControlReference
+import models.request.InterchangeControlReference
 import play.api.libs.json.Json
 import play.api.libs.json.Reads
 import play.modules.reactivemongo.ReactiveMongoApi

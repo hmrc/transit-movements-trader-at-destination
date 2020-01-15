@@ -22,10 +22,8 @@ import java.time.OffsetDateTime
 import config.AppConfig
 import connectors.MessageConnector
 import javax.inject.Inject
-import models.ArrivalNotificationXSD
-import models.messages.ArrivalNotification
-import models.messages.request.ArrivalNotificationRequest
-import models.messages.request._
+import models.messages.ArrivalNotificationMessage
+import models.request._
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
 import play.api.libs.json.Reads
@@ -52,7 +50,7 @@ class ArrivalNotificationController @Inject()(
   xmlValidationService: XmlValidationService
 ) extends BackendController(cc) {
 
-  def post(): Action[ArrivalNotification] = Action.async(validateJson[ArrivalNotification]) {
+  def post(): Action[ArrivalNotificationMessage] = Action.async(validateJson[ArrivalNotificationMessage]) {
     implicit request =>
       val messageSender = MessageSender(appConfig.env, "eori")
 

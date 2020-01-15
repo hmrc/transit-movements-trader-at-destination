@@ -1,7 +1,7 @@
 package it.services
 
 import generators.MessageGenerators
-import models.messages.{NormalNotification, SimplifiedNotification}
+import models.messages.{NormalNotificationMessage, SimplifiedNotificationMessage}
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.{FreeSpec, MustMatchers, OptionValues}
@@ -33,7 +33,7 @@ class ArrivalNotificationRepositorySpec
 
     "must persist NormalNotification within mongoDB" in {
 
-      forAll(arbitrary[NormalNotification]) {
+      forAll(arbitrary[NormalNotificationMessage]) {
         normalNotification =>
 
           database.flatMap(_.drop()).futureValue
@@ -42,11 +42,11 @@ class ArrivalNotificationRepositorySpec
 
           val selector = Json.obj("movementReferenceNumber" -> normalNotification.movementReferenceNumber)
 
-          val getValue: Option[NormalNotification] = database.flatMap {
+          val getValue: Option[NormalNotificationMessage] = database.flatMap {
             result =>
               result.collection[JSONCollection](CollectionNames.ArrivalNotificationCollection)
                 .find(selector, None)
-                .one[NormalNotification]
+                .one[NormalNotificationMessage]
           }.futureValue
 
           getValue.value mustBe normalNotification
@@ -55,7 +55,7 @@ class ArrivalNotificationRepositorySpec
 
     "must persist SimplifiedNotification within mongoDB" in {
 
-      forAll(arbitrary[SimplifiedNotification]) {
+      forAll(arbitrary[SimplifiedNotificationMessage]) {
         simplifiedNotification =>
 
           database.flatMap(_.drop()).futureValue
@@ -64,11 +64,11 @@ class ArrivalNotificationRepositorySpec
 
           val selector = Json.obj("movementReferenceNumber" -> simplifiedNotification.movementReferenceNumber)
 
-          val getValue: Option[SimplifiedNotification] = database.flatMap {
+          val getValue: Option[SimplifiedNotificationMessage] = database.flatMap {
             result =>
               result.collection[JSONCollection](CollectionNames.ArrivalNotificationCollection)
                 .find(selector, None)
-                .one[SimplifiedNotification]
+                .one[SimplifiedNotificationMessage]
           }.futureValue
 
           getValue.value mustBe simplifiedNotification
@@ -77,7 +77,7 @@ class ArrivalNotificationRepositorySpec
 
     "must delete NormalNotification from MongoDB" in {
 
-      forAll(arbitrary[NormalNotification]) {
+      forAll(arbitrary[NormalNotificationMessage]) {
         normalNotification =>
 
           database.flatMap(_.drop()).futureValue
@@ -95,7 +95,7 @@ class ArrivalNotificationRepositorySpec
 
           val result = database.flatMap(_.collection[JSONCollection](CollectionNames.ArrivalNotificationCollection)
             .find(Json.obj("movementReferenceNumber" -> normalNotification.movementReferenceNumber), None)
-            .one[NormalNotification]).futureValue
+            .one[NormalNotificationMessage]).futureValue
 
           result mustBe None
       }
@@ -103,7 +103,7 @@ class ArrivalNotificationRepositorySpec
 
     "must delete SimplifiedNotification from MongoDB" in {
 
-      forAll(arbitrary[SimplifiedNotification]) {
+      forAll(arbitrary[SimplifiedNotificationMessage]) {
         simplifiedNotification =>
 
           database.flatMap(_.drop()).futureValue
@@ -121,7 +121,7 @@ class ArrivalNotificationRepositorySpec
 
           val result = database.flatMap(_.collection[JSONCollection](CollectionNames.ArrivalNotificationCollection)
             .find(Json.obj("movementReferenceNumber" -> simplifiedNotification.movementReferenceNumber), None)
-            .one[SimplifiedNotification]).futureValue
+            .one[SimplifiedNotificationMessage]).futureValue
 
           result mustBe None
       }

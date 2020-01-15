@@ -17,13 +17,12 @@
 package base
 
 import java.time.LocalDate
-
-import models.TraderWithEori
-import models.messages.NormalNotification
-import org.scalatest.concurrent.ScalaFutures
+import models.messages.NormalNotificationMessage
+import models.messages.TraderWithEori
 import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers
 import org.scalatest.OptionValues
+import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -38,7 +37,7 @@ trait SpecBase extends FreeSpec with GuiceOneAppPerSuite with MustMatchers with 
   protected def applicationBuilder: GuiceApplicationBuilder =
     new GuiceApplicationBuilder()
 
-  lazy val normalNotification = NormalNotification(
+  lazy val normalNotification = NormalNotificationMessage(
     movementReferenceNumber = "movementReferenceNumber",
     notificationPlace = "notificationPlace",
     notificationDate = LocalDate.now(),
