@@ -17,7 +17,6 @@
 package models.request
 
 import models.domain.EnRouteEvent
-import models.domain.messages.MessageCode
 
 import scala.collection.immutable.ListMap
 

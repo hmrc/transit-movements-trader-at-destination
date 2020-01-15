@@ -16,8 +16,6 @@
 
 package models.request
 
-import models.domain.messages.MessageCode
-
 trait RequestConstants {
   val messageCode: MessageCode
   val syntaxIdentifier: String

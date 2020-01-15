@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package models
+package models.domain
 
 import generators.ModelGenerators
-import models.domain.MovementReferenceNumber
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
 import org.scalatest.EitherValues

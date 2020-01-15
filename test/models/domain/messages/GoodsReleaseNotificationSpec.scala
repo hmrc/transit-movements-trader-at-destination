@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-package models.messages
+package models.domain.messages
 
 import java.time.LocalDate
 
 import generators.MessageGenerators
 import models.behaviours.JsonBehaviours
 import models.domain.Trader
-import models.domain.messages.GoodsReleaseNotification
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers

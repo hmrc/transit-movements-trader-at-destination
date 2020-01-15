@@ -14,14 +14,11 @@
  * limitations under the License.
  */
 
-package models.messages
+package models.domain.messages
 
 import generators.MessageGenerators
 import models.behaviours.JsonBehaviours
 import models.domain.ProcedureType
-import models.domain.messages.ArrivalNotification
-import models.domain.messages.NormalNotification
-import models.domain.messages.SimplifiedNotification
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers

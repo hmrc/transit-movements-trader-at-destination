@@ -14,16 +14,10 @@
  * limitations under the License.
  */
 
-package models
+package models.domain
 
 import generators.ModelGenerators
 import models.behaviours.JsonBehaviours
-import models.domain.ContainerTranshipment
-import models.domain.Endorsement
-import models.domain.EventDetails
-import models.domain.Incident
-import models.domain.Transhipment
-import models.domain.VehicularTranshipment
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers

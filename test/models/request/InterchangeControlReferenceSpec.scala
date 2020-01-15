@@ -14,27 +14,23 @@
  * limitations under the License.
  */
 
-package models
+package models.request
 
 import generators.ModelGenerators
-import models.request.MessageSender
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalacheck.Gen
 import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
-class MessageSenderSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with ModelGenerators {
+class InterchangeControlReferenceSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with ModelGenerators {
 
-  "MessageSender" - {
+  "InterchangeControlReference" - {
 
     "must toString in the correct format" in {
 
-      val environment: Gen[String] = Gen.oneOf(Seq("LOCAL", "QA", "STAGING", "PRODUCTION"))
-
-      forAll(environment, arbitrary[String]) {
-        (env, eori) =>
-          MessageSender(env, eori).toString mustBe s"$env-$eori"
+      forAll(arbitrary[String], arbitrary[Int]) {
+        (date, index) =>
+          InterchangeControlReference(date, index).toString mustBe s"WE$date$index"
       }
     }
   }

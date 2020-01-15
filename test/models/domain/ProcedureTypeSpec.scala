@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package models
+package models.domain
 
-import models.domain.ProcedureType
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers

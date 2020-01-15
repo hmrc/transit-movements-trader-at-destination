@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package models
+package models.domain
 
-import org.scalacheck.Arbitrary.arbitrary
 import generators.ModelGenerators
 import models.behaviours.JsonBehaviours
-import models.domain.EnRouteEvent
+import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
