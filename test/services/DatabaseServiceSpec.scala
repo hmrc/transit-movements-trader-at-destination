@@ -18,7 +18,7 @@ package services
 
 import base.SpecBase
 import generators.MessageGenerators
-import models.domain.messages.ArrivalNotification
+import models.messages.ArrivalNotificationMessage
 import models.request.InterchangeControlReference
 import org.mockito.Mockito._
 import org.scalacheck.Arbitrary.arbitrary
@@ -79,7 +79,7 @@ class DatabaseServiceSpec
 
       "must return WriteResult when successful" in {
 
-        forAll(arbitrary[ArrivalNotification]) {
+        forAll(arbitrary[ArrivalNotificationMessage]) {
           arrivalNotification =>
             val service = new DatabaseServiceImpl(mockRepository, mockArrivalNotificationRepository)
 
@@ -95,7 +95,7 @@ class DatabaseServiceSpec
 
       "must return FailedSavingArrivalNotification when failed" in {
 
-        forAll(arbitrary[ArrivalNotification]) {
+        forAll(arbitrary[ArrivalNotificationMessage]) {
           arrivalNotification =>
             val service = new DatabaseServiceImpl(mockRepository, mockArrivalNotificationRepository)
 

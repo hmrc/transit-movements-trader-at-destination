@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package models.domain.messages
+package models.messages
 
 import java.time.LocalDate
 
@@ -22,7 +22,7 @@ import models.RejectionError
 import models._
 import play.api.libs.json._
 
-final case class ArrivalNotificationRejection(
+final case class ArrivalNotificationRejectionMessage(
   movementReferenceNumber: String,
   rejectionDate: LocalDate,
   action: Option[String],
@@ -30,9 +30,9 @@ final case class ArrivalNotificationRejection(
   errors: Seq[RejectionError]
 )
 
-object ArrivalNotificationRejection {
+object ArrivalNotificationRejectionMessage {
 
-  implicit lazy val reads: Reads[ArrivalNotificationRejection] = {
+  implicit lazy val reads: Reads[ArrivalNotificationRejectionMessage] = {
 
     import play.api.libs.functional.syntax._
 
@@ -42,11 +42,11 @@ object ArrivalNotificationRejection {
         (__ \ "action").readNullable[String] and
         (__ \ "reason").readNullable[String] and
         ((__ \ "errors").read[Seq[RejectionError]] or Reads.pure(Seq[RejectionError]()))
-    )(ArrivalNotificationRejection(_, _, _, _, _))
+    )(ArrivalNotificationRejectionMessage(_, _, _, _, _))
   }
 
-  implicit lazy val writes: OWrites[ArrivalNotificationRejection] =
-    OWrites[ArrivalNotificationRejection] {
+  implicit lazy val writes: OWrites[ArrivalNotificationRejectionMessage] =
+    OWrites[ArrivalNotificationRejectionMessage] {
       rejection =>
         Json
           .obj(

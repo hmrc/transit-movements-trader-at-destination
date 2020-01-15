@@ -17,7 +17,7 @@
 package repositories
 
 import com.google.inject.Inject
-import models.domain.messages.ArrivalNotification
+import models.messages.ArrivalNotificationMessage
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
@@ -36,7 +36,7 @@ class ArrivalNotificationRepository @Inject()(cc: ControllerComponents, mongo: R
   private def collection: Future[JSONCollection] =
     mongo.database.map(_.collection[JSONCollection](collectionName))
 
-  def persistToMongo(arrivalNotification: ArrivalNotification): Future[WriteResult] = {
+  def persistToMongo(arrivalNotification: ArrivalNotificationMessage): Future[WriteResult] = {
 
     val doc: JsObject = Json.toJson(arrivalNotification).as[JsObject]
 

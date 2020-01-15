@@ -21,24 +21,13 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 
-import models.domain
+import models.messages
 import models._
-import models.domain.ContainerTranshipment
-import models.domain.EnRouteEvent
-import models.domain.Endorsement
-import models.domain.EventDetails
-import models.domain.Incident
-import models.domain.MovementReferenceNumber
-import models.domain.ProcedureType
-import models.domain.Trader
-import models.domain.TraderWithEori
-import models.domain.TraderWithoutEori
-import models.domain.Transhipment
-import models.domain.VehicularTranshipment
+import models.messages._
 import org.scalacheck.Arbitrary._
-import org.scalacheck.Gen._
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
+import org.scalacheck.Gen._
 
 trait ModelGenerators {
 
@@ -137,7 +126,7 @@ trait ModelGenerators {
       for {
         information <- Gen.option(stringsWithMaxLength(350))
         endorsement <- arbitrary[Endorsement]
-      } yield domain.Incident(information, endorsement)
+      } yield Incident(information, endorsement)
     }
 
   implicit lazy val arbitraryVehicularTranshipment: Arbitrary[VehicularTranshipment] =
@@ -149,7 +138,7 @@ trait ModelGenerators {
         endorsement        <- arbitrary[Endorsement]
         numberOfContainers <- Gen.choose[Int](1, 99)
         containers         <- Gen.option(Gen.listOfN(numberOfContainers, stringsWithMaxLength(17)))
-      } yield domain.VehicularTranshipment(transportIdentity, transportCountry, endorsement, containers)
+      } yield VehicularTranshipment(transportIdentity, transportCountry, endorsement, containers)
     }
 
   implicit lazy val arbitraryContainerTranshipment: Arbitrary[ContainerTranshipment] =
@@ -159,7 +148,7 @@ trait ModelGenerators {
         endorsement        <- arbitrary[Endorsement]
         numberOfContainers <- Gen.choose[Int](1, 99)
         containers         <- Gen.listOfN(numberOfContainers, stringsWithMaxLength(17))
-      } yield domain.ContainerTranshipment(endorsement, containers)
+      } yield ContainerTranshipment(endorsement, containers)
     }
 
   implicit lazy val arbitraryTranshipment: Arbitrary[Transhipment] =
@@ -195,7 +184,7 @@ trait ModelGenerators {
           case _                             => None
         }
 
-        EnRouteEvent(place, countryCode, alreadyInNcts, eventDetails, removeEmptySealsList)
+        messages.EnRouteEvent(place, countryCode, alreadyInNcts, eventDetails, removeEmptySealsList)
       }
     }
 

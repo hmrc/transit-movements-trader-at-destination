@@ -18,8 +18,11 @@ package services
 
 import com.google.inject.Inject
 import config.AppConfig
-import models.domain._
-import models.domain.messages.NormalNotification
+import models.messages.EnRouteEvent
+import models.messages.NormalNotificationMessage
+import models.messages.Trader
+import models.messages.TraderWithEori
+import models.messages.TraderWithoutEori
 import models.request._
 
 class SubmissionModelService @Inject()(appConfig: AppConfig) {
@@ -28,7 +31,7 @@ class SubmissionModelService @Inject()(appConfig: AppConfig) {
                                   messageSender: MessageSender,
                                   interchangeControlReference: InterchangeControlReference): Either[ModelConversionError, ArrivalNotificationRequest] =
     arrivalNotification match {
-      case arrivalNotification: NormalNotification =>
+      case arrivalNotification: NormalNotificationMessage =>
         val meta                                     = buildMeta(messageSender: MessageSender, interchangeControlReference)
         val header                                   = buildHeader(arrivalNotification, simplifiedProcedureFlag = "0")
         val traderDestination                        = buildTrader(arrivalNotification.trader)
@@ -43,7 +46,7 @@ class SubmissionModelService @Inject()(appConfig: AppConfig) {
   private def buildMeta(messageSender: MessageSender, interchangeControlReference: InterchangeControlReference): Meta =
     Meta(messageSender = messageSender, interchangeControlReference = interchangeControlReference)
 
-  private def buildHeader(arrivalNotification: NormalNotification, simplifiedProcedureFlag: String): Header =
+  private def buildHeader(arrivalNotification: NormalNotificationMessage, simplifiedProcedureFlag: String): Header =
     Header(
       movementReferenceNumber = arrivalNotification.movementReferenceNumber,
       customsSubPlace = arrivalNotification.customsSubPlace,

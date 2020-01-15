@@ -14,21 +14,18 @@
  * limitations under the License.
  */
 
-package models.domain.messages
+package models.messages
 
 import java.time.LocalDate
 
 import models._
-import models.domain.EnRouteEvent
-import models.domain.ProcedureType
-import models.domain.Trader
 import play.api.libs.json._
 
-sealed trait ArrivalNotification
+sealed trait ArrivalNotificationMessage
 
-object ArrivalNotification {
+object ArrivalNotificationMessage {
 
-  implicit lazy val reads: Reads[ArrivalNotification] = {
+  implicit lazy val reads: Reads[ArrivalNotificationMessage] = {
 
     implicit class ReadsWithContravariantOr[A](a: Reads[A]) {
 
@@ -39,17 +36,17 @@ object ArrivalNotification {
     implicit def convertToSupertype[A, B >: A](a: Reads[A]): Reads[B] =
       a.map(identity)
 
-    NormalNotification.reads or
-      SimplifiedNotification.reads
+    NormalNotificationMessage.reads or
+      SimplifiedNotificationMessage.reads
   }
 
-  implicit lazy val writes: Writes[ArrivalNotification] = Writes {
-    case n: NormalNotification     => Json.toJson(n)(NormalNotification.writes)
-    case s: SimplifiedNotification => Json.toJson(s)(SimplifiedNotification.writes)
+  implicit lazy val writes: Writes[ArrivalNotificationMessage] = Writes {
+    case n: NormalNotificationMessage     => Json.toJson(n)(NormalNotificationMessage.writes)
+    case s: SimplifiedNotificationMessage => Json.toJson(s)(SimplifiedNotificationMessage.writes)
   }
 }
 
-final case class NormalNotification(
+final case class NormalNotificationMessage(
   movementReferenceNumber: String,
   notificationPlace: String,
   notificationDate: LocalDate,
@@ -57,14 +54,14 @@ final case class NormalNotification(
   trader: Trader,
   presentationOffice: String,
   enRouteEvents: Option[Seq[EnRouteEvent]]
-) extends ArrivalNotification {
+) extends ArrivalNotificationMessage {
 
   val procedure: ProcedureType = ProcedureType.Normal
 }
 
-object NormalNotification {
+object NormalNotificationMessage {
 
-  implicit lazy val reads: Reads[NormalNotification] = {
+  implicit lazy val reads: Reads[NormalNotificationMessage] = {
 
     import play.api.libs.functional.syntax._
 
@@ -87,12 +84,12 @@ object NormalNotification {
             (__ \ "trader").read[Trader] and
             (__ \ "presentationOffice").read[String] and
             (__ \ "enRouteEvents").readNullable[Seq[EnRouteEvent]]
-        )(NormalNotification(_, _, _, _, _, _, _))
+        )(NormalNotificationMessage(_, _, _, _, _, _, _))
       )
   }
 
-  implicit lazy val writes: OWrites[NormalNotification] =
-    OWrites[NormalNotification] {
+  implicit lazy val writes: OWrites[NormalNotificationMessage] =
+    OWrites[NormalNotificationMessage] {
       notification =>
         Json
           .obj(
@@ -109,7 +106,7 @@ object NormalNotification {
     }
 }
 
-final case class SimplifiedNotification(
+final case class SimplifiedNotificationMessage(
   movementReferenceNumber: String,
   notificationPlace: String,
   notificationDate: LocalDate,
@@ -117,14 +114,14 @@ final case class SimplifiedNotification(
   trader: Trader,
   presentationOffice: String,
   enRouteEvents: Option[Seq[EnRouteEvent]]
-) extends ArrivalNotification {
+) extends ArrivalNotificationMessage {
 
   val procedure: ProcedureType = ProcedureType.Simplified
 }
 
-object SimplifiedNotification {
+object SimplifiedNotificationMessage {
 
-  implicit lazy val reads: Reads[SimplifiedNotification] = {
+  implicit lazy val reads: Reads[SimplifiedNotificationMessage] = {
 
     import play.api.libs.functional.syntax._
 
@@ -147,12 +144,12 @@ object SimplifiedNotification {
             (__ \ "trader").read[Trader] and
             (__ \ "presentationOffice").read[String] and
             (__ \ "enRouteEvents").readNullable[Seq[EnRouteEvent]]
-        )(SimplifiedNotification(_, _, _, _, _, _, _))
+        )(SimplifiedNotificationMessage(_, _, _, _, _, _, _))
       )
   }
 
-  implicit lazy val writes: OWrites[SimplifiedNotification] = {
-    OWrites[SimplifiedNotification] {
+  implicit lazy val writes: OWrites[SimplifiedNotificationMessage] = {
+    OWrites[SimplifiedNotificationMessage] {
       notification =>
         Json
           .obj(

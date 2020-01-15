@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package models.domain.messages
+package models.messages
 
 import generators.MessageGenerators
 import models.behaviours.JsonBehaviours
-import models.domain.ProcedureType
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers
@@ -28,38 +27,38 @@ import play.api.libs.json.JsObject
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.Json
 
-class ArrivalNotificationSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with MessageGenerators with JsonBehaviours {
+class ArrivalNotificationMessageSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with MessageGenerators with JsonBehaviours {
 
   "Normal notification" - {
 
     "must deserialise" in {
 
-      forAll(arbitrary[NormalNotification]) {
+      forAll(arbitrary[NormalNotificationMessage]) {
         normalNotification =>
           val json = createNormalNotificationJson(normalNotification)
-          json.validate[NormalNotification] mustEqual JsSuccess(normalNotification)
+          json.validate[NormalNotificationMessage] mustEqual JsSuccess(normalNotification)
       }
     }
 
     "must fail to deserialise when `procedure` is `simplified`" in {
 
-      forAll(arbitrary[NormalNotification]) {
+      forAll(arbitrary[NormalNotificationMessage]) {
         normalNotification =>
           val jsonWithSimplified = {
             createNormalNotificationJson(normalNotification) ++
               Json.obj("procedure" -> Json.toJson(ProcedureType.Simplified))
           }
 
-          jsonWithSimplified.validate[NormalNotification] mustEqual JsError("procedure must be `normal`")
+          jsonWithSimplified.validate[NormalNotificationMessage] mustEqual JsError("procedure must be `normal`")
       }
     }
 
     "must serialise" in {
 
-      forAll(arbitrary[NormalNotification]) {
+      forAll(arbitrary[NormalNotificationMessage]) {
         normalNotification =>
           val json = createNormalNotificationJson(normalNotification)
-          Json.toJson(normalNotification)(NormalNotification.writes) mustEqual json
+          Json.toJson(normalNotification)(NormalNotificationMessage.writes) mustEqual json
       }
     }
   }
@@ -68,15 +67,15 @@ class ArrivalNotificationSpec extends FreeSpec with MustMatchers with ScalaCheck
 
     "must deserialise" in {
 
-      forAll(arbitrary[SimplifiedNotification]) {
+      forAll(arbitrary[SimplifiedNotificationMessage]) {
         simplifiedNotification =>
           val json = createSimplifiedNotificationJson(simplifiedNotification)
-          json.validate[SimplifiedNotification] mustEqual JsSuccess(simplifiedNotification)
+          json.validate[SimplifiedNotificationMessage] mustEqual JsSuccess(simplifiedNotification)
       }
     }
 
     "must fail to deserialise when `procedure` is `normal`" in {
-      forAll(arbitrary[SimplifiedNotification]) {
+      forAll(arbitrary[SimplifiedNotificationMessage]) {
 
         simplifiedNotification =>
           val jsonWithNormal = {
@@ -84,16 +83,16 @@ class ArrivalNotificationSpec extends FreeSpec with MustMatchers with ScalaCheck
               Json.obj("procedure" -> Json.toJson(ProcedureType.Normal))
           }
 
-          jsonWithNormal.validate[SimplifiedNotification] mustEqual JsError("procedure must be `simplified`")
+          jsonWithNormal.validate[SimplifiedNotificationMessage] mustEqual JsError("procedure must be `simplified`")
       }
     }
 
     "must serialise" in {
 
-      forAll(arbitrary[SimplifiedNotification]) {
+      forAll(arbitrary[SimplifiedNotificationMessage]) {
         simplifiedNotification =>
           val json = createSimplifiedNotificationJson(simplifiedNotification)
-          Json.toJson(simplifiedNotification)(SimplifiedNotification.writes) mustEqual json
+          Json.toJson(simplifiedNotification)(SimplifiedNotificationMessage.writes) mustEqual json
       }
     }
   }
@@ -102,42 +101,42 @@ class ArrivalNotificationSpec extends FreeSpec with MustMatchers with ScalaCheck
 
     "must deserialise to a Normal notification" in {
 
-      forAll(arbitrary[NormalNotification]) {
+      forAll(arbitrary[NormalNotificationMessage]) {
         normalNotification =>
           val json = createNormalNotificationJson(normalNotification)
-          json.validate[ArrivalNotification] mustEqual JsSuccess(normalNotification)
+          json.validate[ArrivalNotificationMessage] mustEqual JsSuccess(normalNotification)
       }
     }
 
     "must deserialise to a Simplified notification" in {
 
-      forAll(arbitrary[SimplifiedNotification]) {
+      forAll(arbitrary[SimplifiedNotificationMessage]) {
         simplifiedNotification =>
           val json = createSimplifiedNotificationJson(simplifiedNotification)
-          json.validate[ArrivalNotification] mustEqual JsSuccess(simplifiedNotification)
+          json.validate[ArrivalNotificationMessage] mustEqual JsSuccess(simplifiedNotification)
       }
     }
 
     "must serialise from a Normal notification" in {
 
-      forAll(arbitrary[NormalNotification]) {
+      forAll(arbitrary[NormalNotificationMessage]) {
         normalNotification =>
           val json = createNormalNotificationJson(normalNotification)
-          Json.toJson(normalNotification: ArrivalNotification) mustEqual json
+          Json.toJson(normalNotification: ArrivalNotificationMessage) mustEqual json
       }
     }
 
     "must serialise from a Simplified notification" in {
 
-      forAll(arbitrary[SimplifiedNotification]) {
+      forAll(arbitrary[SimplifiedNotificationMessage]) {
         simplifiedNotification =>
           val json = createSimplifiedNotificationJson(simplifiedNotification)
-          Json.toJson(simplifiedNotification: ArrivalNotification) mustEqual json
+          Json.toJson(simplifiedNotification: ArrivalNotificationMessage) mustEqual json
       }
     }
   }
 
-  private def createNormalNotificationJson(notification: NormalNotification): JsObject =
+  private def createNormalNotificationJson(notification: NormalNotificationMessage): JsObject =
     Json.obj(
       "procedure"               -> notification.procedure,
       "movementReferenceNumber" -> notification.movementReferenceNumber,
@@ -162,7 +161,7 @@ class ArrivalNotificationSpec extends FreeSpec with MustMatchers with ScalaCheck
       }
     }
 
-  private def createSimplifiedNotificationJson(notification: SimplifiedNotification): JsObject =
+  private def createSimplifiedNotificationJson(notification: SimplifiedNotificationMessage): JsObject =
     Json.obj(
       "procedure"               -> notification.procedure,
       "movementReferenceNumber" -> notification.movementReferenceNumber,

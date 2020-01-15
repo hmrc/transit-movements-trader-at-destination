@@ -18,11 +18,10 @@ package generators
 
 import java.time.LocalDate
 
-import models.domain._
-import models.domain.messages._
+import models.messages._
+import models.request._
 import models.RejectionError
 import models.request
-import models.request._
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
@@ -38,7 +37,7 @@ trait MessageGenerators extends ModelGenerators {
     }
   }
 
-  implicit lazy val arbitraryGoodsReleaseNotification: Arbitrary[GoodsReleaseNotification] =
+  implicit lazy val arbitraryGoodsReleaseNotification: Arbitrary[GoodsReleaseNotificationMessage] =
     Arbitrary {
 
       for {
@@ -46,10 +45,10 @@ trait MessageGenerators extends ModelGenerators {
         releaseDate        <- datesBetween(LocalDate.of(1900, 1, 1), LocalDate.now)
         trader             <- arbitrary[Trader]
         presentationOffice <- stringsWithMaxLength(8)
-      } yield GoodsReleaseNotification(mrn, releaseDate, trader, presentationOffice)
+      } yield models.messages.GoodsReleaseNotificationMessage(mrn, releaseDate, trader, presentationOffice)
     }
 
-  implicit lazy val arbitraryArrivalNotificationRejection: Arbitrary[ArrivalNotificationRejection] =
+  implicit lazy val arbitraryArrivalNotificationRejection: Arbitrary[ArrivalNotificationRejectionMessage] =
     Arbitrary {
 
       for {
@@ -58,10 +57,10 @@ trait MessageGenerators extends ModelGenerators {
         action <- arbitrary[Option[String]]
         reason <- arbitrary[Option[String]]
         errors <- arbitrary[Seq[RejectionError]]
-      } yield ArrivalNotificationRejection(mrn, date, action, reason, errors)
+      } yield ArrivalNotificationRejectionMessage(mrn, date, action, reason, errors)
     }
 
-  implicit lazy val arbitraryNormalNotification: Arbitrary[NormalNotification] =
+  implicit lazy val arbitraryNormalNotification: Arbitrary[NormalNotificationMessage] =
     Arbitrary {
 
       for {
@@ -72,10 +71,10 @@ trait MessageGenerators extends ModelGenerators {
         trader             <- arbitrary[Trader]
         presentationOffice <- stringsWithMaxLength(8)
         events             <- Gen.option(seqWithMaxLength[EnRouteEvent](9))
-      } yield NormalNotification(mrn, place, date, subPlace, trader, presentationOffice, events)
+      } yield models.messages.NormalNotificationMessage(mrn, place, date, subPlace, trader, presentationOffice, events)
     }
 
-  implicit lazy val arbitrarySimplifiedNotification: Arbitrary[SimplifiedNotification] =
+  implicit lazy val arbitrarySimplifiedNotification: Arbitrary[SimplifiedNotificationMessage] =
     Arbitrary {
 
       for {
@@ -86,13 +85,13 @@ trait MessageGenerators extends ModelGenerators {
         trader             <- arbitrary[Trader]
         presentationOffice <- stringsWithMaxLength(8)
         events             <- Gen.option(seqWithMaxLength[EnRouteEvent](9))
-      } yield SimplifiedNotification(mrn, place, date, approvedLocation, trader, presentationOffice, events)
+      } yield models.messages.SimplifiedNotificationMessage(mrn, place, date, approvedLocation, trader, presentationOffice, events)
     }
 
-  implicit lazy val arbitraryArrivalNotification: Arbitrary[ArrivalNotification] =
+  implicit lazy val arbitraryArrivalNotification: Arbitrary[ArrivalNotificationMessage] =
     Arbitrary {
 
-      Gen.oneOf(arbitrary[NormalNotification], arbitrary[SimplifiedNotification])
+      Gen.oneOf(arbitrary[NormalNotificationMessage], arbitrary[SimplifiedNotificationMessage])
     }
 
   implicit lazy val arbitraryTraderDestination: Arbitrary[TraderDestination] = {

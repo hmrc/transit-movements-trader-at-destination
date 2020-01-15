@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package models.domain.messages
+package models.messages
 
 import java.time.LocalDate
 
@@ -28,9 +28,9 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.Json
 
-class ArrivalNotificationRejectionSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with MessageGenerators with JsonBehaviours {
+class ArrivalNotificationRejectionMessageSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with MessageGenerators with JsonBehaviours {
 
-  mustHaveDualReadsAndWrites(arbitrary[ArrivalNotificationRejection])
+  mustHaveDualReadsAndWrites(arbitrary[ArrivalNotificationRejectionMessage])
 
   "must deserialise when action, reason and errors are not present" in {
 
@@ -43,9 +43,9 @@ class ArrivalNotificationRejectionSpec extends FreeSpec with MustMatchers with S
           "rejectionDate"           -> rejectionDate
         )
 
-        val expectedResult = ArrivalNotificationRejection(mrn, rejectionDate, None, None, Seq.empty)
+        val expectedResult = ArrivalNotificationRejectionMessage(mrn, rejectionDate, None, None, Seq.empty)
 
-        json.validate[ArrivalNotificationRejection] mustEqual JsSuccess(expectedResult)
+        json.validate[ArrivalNotificationRejectionMessage] mustEqual JsSuccess(expectedResult)
     }
   }
 
@@ -63,9 +63,9 @@ class ArrivalNotificationRejectionSpec extends FreeSpec with MustMatchers with S
           "errors"                  -> Json.toJson(errors)
         )
 
-        val expectedResult = ArrivalNotificationRejection(mrn, rejectionDate, action, reason, errors)
+        val expectedResult = ArrivalNotificationRejectionMessage(mrn, rejectionDate, action, reason, errors)
 
-        json.validate[ArrivalNotificationRejection] mustEqual JsSuccess(expectedResult)
+        json.validate[ArrivalNotificationRejectionMessage] mustEqual JsSuccess(expectedResult)
     }
   }
 
@@ -80,7 +80,7 @@ class ArrivalNotificationRejectionSpec extends FreeSpec with MustMatchers with S
           "rejectionDate"           -> rejectionDate
         )
 
-        val rejection = ArrivalNotificationRejection(mrn, rejectionDate, None, None, Seq.empty)
+        val rejection = ArrivalNotificationRejectionMessage(mrn, rejectionDate, None, None, Seq.empty)
 
         Json.toJson(rejection) mustEqual json
     }
@@ -109,7 +109,7 @@ class ArrivalNotificationRejectionSpec extends FreeSpec with MustMatchers with S
           )
         }
 
-        val rejection = ArrivalNotificationRejection(mrn, rejectionDate, Some(action), Some(reason), errors)
+        val rejection = ArrivalNotificationRejectionMessage(mrn, rejectionDate, Some(action), Some(reason), errors)
 
         Json.toJson(rejection) mustEqual json
     }

@@ -20,9 +20,9 @@ import java.time.LocalDateTime
 
 import config.AppConfig
 import generators.MessageGenerators
-import models.domain.TraderWithEori
-import models.domain.TraderWithoutEori
-import models.domain.messages.NormalNotification
+import models.messages.NormalNotificationMessage
+import models.messages.TraderWithEori
+import models.messages.TraderWithoutEori
 import models.request.ArrivalNotificationRequest
 import models.request.InterchangeControlReference
 import models.request.MessageSender
@@ -53,14 +53,14 @@ class SubmissionModelServiceSpec
 
     "must convert NormalNotification to ArrivalNotificationRequest for traders with Eori" in {
 
-      val notifications: Gen[(ArrivalNotificationRequest, NormalNotification)] = {
+      val notifications: Gen[(ArrivalNotificationRequest, NormalNotificationMessage)] = {
         for {
           arrivalNotificationRequest <- arbitraryArrivalNotificationRequestWithEori
           dateTime                   <- dateTimesBetween(LocalDateTime.of(1900, 1, 1, 0, 0), LocalDateTime.now)
         } yield {
 
-          val normalNotification: NormalNotification = {
-            NormalNotification(
+          val normalNotification: NormalNotificationMessage = {
+            NormalNotificationMessage(
               movementReferenceNumber = arrivalNotificationRequest.header.movementReferenceNumber,
               notificationPlace = arrivalNotificationRequest.header.arrivalNotificationPlace,
               notificationDate = dateTime.toLocalDate,
@@ -96,14 +96,14 @@ class SubmissionModelServiceSpec
 
   "must convert NormalNotification to ArrivalNotificationRequest for traders without Eori" in {
 
-    val notifications: Gen[(ArrivalNotificationRequest, NormalNotification)] = {
+    val notifications: Gen[(ArrivalNotificationRequest, NormalNotificationMessage)] = {
       for {
         arrivalNotificationRequest <- arbitraryArrivalNotificationRequestWithoutEori
         dateTime                   <- dateTimesBetween(LocalDateTime.of(1900, 1, 1, 0, 0), LocalDateTime.now)
       } yield {
 
-        val normalNotification: NormalNotification = {
-          NormalNotification(
+        val normalNotification: NormalNotificationMessage = {
+          NormalNotificationMessage(
             movementReferenceNumber = arrivalNotificationRequest.header.movementReferenceNumber,
             notificationPlace = arrivalNotificationRequest.header.arrivalNotificationPlace,
             notificationDate = dateTime.toLocalDate,

@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package models.domain
+package models.messages
 
-import play.api.libs.json._
 import models._
+import play.api.libs.json._
 
 sealed trait EventDetails
 

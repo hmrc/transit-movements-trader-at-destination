@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package models.domain
+package models.messages
 
 import generators.ModelGenerators
 import org.scalacheck.Arbitrary.arbitrary

@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package models.domain.messages
+package models.messages
 
 import java.time.LocalDate
 
 import generators.MessageGenerators
 import models.behaviours.JsonBehaviours
-import models.domain.Trader
+import models.messages
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers
@@ -28,9 +28,9 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.Json
 
-class GoodsReleaseNotificationSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with MessageGenerators with JsonBehaviours {
+class GoodsReleaseNotificationMessageSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with MessageGenerators with JsonBehaviours {
 
-  mustHaveDualReadsAndWrites(arbitrary[GoodsReleaseNotification])
+  mustHaveDualReadsAndWrites(arbitrary[GoodsReleaseNotificationMessage])
 
   "must deserialise" in {
 
@@ -45,9 +45,9 @@ class GoodsReleaseNotificationSpec extends FreeSpec with MustMatchers with Scala
           "presentationOffice"      -> presentationOffice
         )
 
-        val expectedResult = GoodsReleaseNotification(mrn, releaseDate, trader, presentationOffice)
+        val expectedResult = messages.GoodsReleaseNotificationMessage(mrn, releaseDate, trader, presentationOffice)
 
-        json.validate[GoodsReleaseNotification] mustEqual JsSuccess(expectedResult)
+        json.validate[GoodsReleaseNotificationMessage] mustEqual JsSuccess(expectedResult)
     }
   }
 
@@ -64,7 +64,7 @@ class GoodsReleaseNotificationSpec extends FreeSpec with MustMatchers with Scala
           "presentationOffice"      -> presentationOffice
         )
 
-        val notification = GoodsReleaseNotification(mrn, releaseDate, trader, presentationOffice)
+        val notification = messages.GoodsReleaseNotificationMessage(mrn, releaseDate, trader, presentationOffice)
 
         Json.toJson(notification) mustEqual json
     }
