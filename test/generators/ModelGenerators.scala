@@ -21,11 +21,13 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 
+import models.messages
 import models._
+import models.messages._
 import org.scalacheck.Arbitrary._
-import org.scalacheck.Gen._
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
+import org.scalacheck.Gen._
 
 trait ModelGenerators {
 
@@ -188,7 +190,7 @@ trait ModelGenerators {
           case _                             => None
         }
 
-        EnRouteEvent(place, countryCode, alreadyInNcts, eventDetails, removeEmptySealsList)
+        messages.EnRouteEvent(place, countryCode, alreadyInNcts, eventDetails, removeEmptySealsList)
       }
     }
 

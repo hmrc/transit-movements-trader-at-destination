@@ -19,7 +19,8 @@ package controllers
 import base.SpecBase
 import connectors.MessageConnector
 import generators.MessageGenerators
-import models.messages.request._
+import models.request.ArrivalNotificationRequest
+import models.request.InterchangeControlReference
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.scalacheck.Arbitrary.arbitrary

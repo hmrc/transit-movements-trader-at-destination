@@ -17,8 +17,8 @@
 package services
 
 import javax.inject.Inject
-import models.messages.ArrivalNotification
-import models.messages.request.InterchangeControlReference
+import models.messages.ArrivalNotificationMessage
+import models.request.InterchangeControlReference
 import reactivemongo.api.commands.WriteResult
 import repositories.ArrivalNotificationRepository
 import repositories.FailedSavingArrivalNotification
@@ -43,7 +43,7 @@ class DatabaseServiceImpl @Inject()(sequentialInterchangeControlReferenceIdRepos
           Left(FailedCreatingInterchangeControlReference)
       }
 
-  def saveArrivalNotification(arrivalNotification: ArrivalNotification): Future[Either[FailedSavingArrivalNotification, WriteResult]] =
+  def saveArrivalNotification(arrivalNotification: ArrivalNotificationMessage): Future[Either[FailedSavingArrivalNotification, WriteResult]] =
     arrivalNotificationRepository
       .persistToMongo(arrivalNotification)
       .map {
@@ -59,7 +59,7 @@ class DatabaseServiceImpl @Inject()(sequentialInterchangeControlReferenceIdRepos
 
 trait DatabaseService {
   def getInterchangeControlReferenceId: Future[Either[FailedCreatingInterchangeControlReference, InterchangeControlReference]]
-  def saveArrivalNotification(arrivalNotification: ArrivalNotification): Future[Either[FailedSavingArrivalNotification, WriteResult]]
+  def saveArrivalNotification(arrivalNotification: ArrivalNotificationMessage): Future[Either[FailedSavingArrivalNotification, WriteResult]]
 }
 
 sealed trait FailedCreatingInterchangeControlReference
