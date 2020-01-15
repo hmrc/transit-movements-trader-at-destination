@@ -16,15 +16,18 @@
 
 package services
 
-import java.time.{LocalDate, LocalDateTime}
+import java.time.LocalDate
+import java.time.LocalDateTime
 
-import models.messages.{ContainerTranshipment, EventDetails, Incident, VehicularTranshipment}
+import models.messages._
 import models.request._
 import play.api.Logger
 import play.twirl.api.utils.StringEscapeUtils
 import utils.Format
 
-import scala.xml.{Elem, Node, NodeSeq}
+import scala.xml.Elem
+import scala.xml.Node
+import scala.xml.NodeSeq
 import scala.xml.XML._
 
 class XmlBuilderService {
