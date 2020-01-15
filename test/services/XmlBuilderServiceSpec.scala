@@ -300,7 +300,7 @@ class XmlBuilderServiceSpec
         containerTranshipment.containers.map {
           container =>
             <CONNR3>
-              {buildAndEncodeElem(container, "ConNumNR31")}
+              {buildAndEncodeElem(container.containerNumber, "ConNumNR31")}
             </CONNR3>
           }
         }
@@ -323,7 +323,7 @@ class XmlBuilderServiceSpec
               containers.map {
                 container =>
                   <CONNR3>
-                    {buildAndEncodeElem(container, "ConNumNR31")}
+                    {buildAndEncodeElem(container.containerNumber, "ConNumNR31")}
                   </CONNR3>
               }
             case _ => NodeSeq.Empty

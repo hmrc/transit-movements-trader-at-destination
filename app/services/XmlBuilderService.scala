@@ -18,10 +18,8 @@ package services
 
 import java.time.LocalDate
 import java.time.LocalDateTime
-import models.messages.ContainerTranshipment
-import models.messages.EventDetails
-import models.messages.Incident
-import models.messages.VehicularTranshipment
+
+import models.messages._
 import models.request._
 import play.api.Logger
 import play.twirl.api.utils.StringEscapeUtils
@@ -183,12 +181,12 @@ class XmlBuilderService {
       </TRASHP>
   }
 
-  private def buildContainers(containers: Option[Seq[String]]) = containers match {
+  private def buildContainers(containers: Option[Seq[Container]]) = containers match {
     case Some(containers) =>
       containers.map {
         container =>
           <CONNR3> {
-              buildAndEncodeElem(container, "ConNumNR31")
+              buildAndEncodeElem(container.containerNumber, "ConNumNR31")
             }
           </CONNR3>
       }
