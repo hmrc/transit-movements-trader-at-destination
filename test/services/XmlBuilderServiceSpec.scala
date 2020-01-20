@@ -193,7 +193,7 @@ class XmlBuilderServiceSpec
                 countryCode = "GB",
                 alreadyInNcts = true,
                 eventDetails = Incident(None, Endorsement(None, None, None, None)),
-                seals = Some(Seq("seal1", "seal2"))
+                seals = Some(Seq(Seal("seal1"), Seal("seal2")))
               )
             ))
         )

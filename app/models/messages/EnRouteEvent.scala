@@ -24,7 +24,7 @@ final case class EnRouteEvent(
   countryCode: String,
   alreadyInNcts: Boolean,
   eventDetails: EventDetails,
-  seals: Option[Seq[String]]
+  seals: Option[Seq[Seal]]
 )
 
 object EnRouteEvent {
@@ -38,7 +38,7 @@ object EnRouteEvent {
         (__ \ "countryCode").read[String] and
         (__ \ "alreadyInNcts").read[Boolean] and
         (__ \ "eventDetails").read[EventDetails] and
-        (__ \ "seals").readNullable[Seq[String]]
+        (__ \ "seals").readNullable[Seq[Seal]]
     )(EnRouteEvent(_, _, _, _, _))
   }
 
