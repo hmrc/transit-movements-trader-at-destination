@@ -132,15 +132,36 @@ class XmlBuilderService {
                 buildAndEncodeElem(event.alreadyInNcts,"AlrInNCTCTL29")
               }
             </CTLCTL> {
-               buildIncident(event.eventDetails)(arrivalNotificationRequest)
+               buildIncident(event.eventDetails, event.seals)(arrivalNotificationRequest)
             }
           </ENROUEVETEV>
       }
   }
 
-  private def buildIncident(event: EventDetails)(implicit arrivalNotificationRequest: ArrivalNotificationRequest): NodeSeq = event match {
-    case incident: Incident =>
-      <INCINC> {
+  private def buildSeals(seals: Option[Seq[Seal]]): NodeSeq =
+    seals.fold(NodeSeq.Empty) {
+      seals =>
+        val sealsXml = seals.map {
+          seal =>
+            <SEAIDSI1>
+            <SeaIdeSI11>
+              {seal.numberOrMark}
+            </SeaIdeSI11>
+            <SeaIdeSI11LNG>GB</SeaIdeSI11LNG>
+          </SEAIDSI1>
+        }
+
+        <SEAINFSF1>
+        <SeaNumSF12>
+          {seals.size}
+        </SeaNumSF12>{sealsXml}
+      </SEAINFSF1>
+    }
+
+  private def buildIncident(event: EventDetails, seals: Option[Seq[Seal]])(implicit arrivalNotificationRequest: ArrivalNotificationRequest): NodeSeq =
+    event match {
+      case incident: Incident =>
+        <INCINC> {
           buildIncidentFlag(incident.information.isDefined) ++
           buildOptionalElem(incident.information, "IncInfINC4") ++
           buildAndEncodeElem(arrivalNotificationRequest.header.languageCode, "IncInfINC4LNG") ++
@@ -151,10 +172,11 @@ class XmlBuilderService {
           buildAndEncodeElem(arrivalNotificationRequest.header.languageCode, "EndPlaINC10LNG") ++
           buildOptionalElem(incident.endorsement.country, "EndCouINC12")
         }
-      </INCINC>
+      </INCINC> ++ buildSeals(seals)
 
-    case containerTranshipment: ContainerTranshipment =>
-      <TRASHP> {
+      case containerTranshipment: ContainerTranshipment =>
+        buildSeals(seals) ++
+          <TRASHP> {
           buildOptionalDate(containerTranshipment.endorsement.date, "EndDatSHP60") ++
           buildOptionalElem(containerTranshipment.endorsement.authority, "EndAutSHP61") ++
           buildAndEncodeElem(arrivalNotificationRequest.header.languageCode,"EndAutSHP61LNG") ++
@@ -165,8 +187,9 @@ class XmlBuilderService {
         }
       </TRASHP>
 
-    case vehicularTranshipment: VehicularTranshipment =>
-      <TRASHP> {
+      case vehicularTranshipment: VehicularTranshipment =>
+        buildSeals(seals) ++
+          <TRASHP> {
           buildAndEncodeElem(vehicularTranshipment.transportIdentity,"NewTraMeaIdeSHP26") ++
           buildAndEncodeElem(arrivalNotificationRequest.header.languageCode,"NewTraMeaIdeSHP26LNG") ++
           buildAndEncodeElem(vehicularTranshipment.transportCountry,"NewTraMeaNatSHP54") ++
@@ -179,7 +202,7 @@ class XmlBuilderService {
           buildContainers(vehicularTranshipment.containers)
         }
       </TRASHP>
-  }
+    }
 
   private def buildContainers(containers: Option[Seq[Container]]) = containers match {
     case Some(containers) =>
