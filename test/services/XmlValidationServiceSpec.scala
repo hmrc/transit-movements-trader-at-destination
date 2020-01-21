@@ -18,8 +18,10 @@ package services
 
 import base.SpecBase
 import models.request.ArrivalNotificationXSD
+import org.scalacheck.Arbitrary.arbitrary
+import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
-class XmlValidationServiceSpec extends SpecBase {
+class XmlValidationServiceSpec extends SpecBase with ScalaCheckPropertyChecks {
 
   private val xmlValidationService = new XmlValidationService
 
@@ -34,27 +36,12 @@ class XmlValidationServiceSpec extends SpecBase {
       }
 
       "with an enroute event" in {
-        val xml = buildXml(withEnrouteEvent = true)
 
-        xmlValidationService.validate(xml, ArrivalNotificationXSD) mustBe a[Right[_, _]]
-      }
-
-      "with an enroute event and incident" in {
-        val xml = buildXml(withEnrouteEvent = true, withIncident = true)
-
-        xmlValidationService.validate(xml, ArrivalNotificationXSD) mustBe a[Right[_, _]]
-      }
-
-      "with an enroute event and container transhipment" in {
-        val xml = buildXml(withEnrouteEvent = true, withContainerTranshipment = true)
-
-        xmlValidationService.validate(xml, ArrivalNotificationXSD) mustBe a[Right[_, _]]
-      }
-
-      "with an enroute event and vehicular transhipment" in {
-        val xml = buildXml(withEnrouteEvent = true, withVehicularTranshipment = true)
-
-        xmlValidationService.validate(xml, ArrivalNotificationXSD) mustBe a[Right[_, _]]
+        forAll(arbitrary[Boolean], arbitrary[Boolean], arbitrary[Boolean], arbitrary[Boolean]) {
+          (withIncident, withContainer, withVehicle, withSeals) =>
+            val xml = buildXml(withEnrouteEvent = true, withIncident, withContainer, withVehicle, withSeals)
+            xmlValidationService.validate(xml, ArrivalNotificationXSD) mustBe a[Right[_, _]]
+        }
       }
     }
 
@@ -86,11 +73,12 @@ class XmlValidationServiceSpec extends SpecBase {
   private def buildXml(withEnrouteEvent: Boolean,
                        withIncident: Boolean = false,
                        withContainerTranshipment: Boolean = false,
-                       withVehicularTranshipment: Boolean = false): String = {
+                       withVehicularTranshipment: Boolean = false,
+                       withSeals: Boolean = false): String = {
 
     val enrouteEvent = {
       if (withEnrouteEvent)
-        buildEnrouteEvent(withIncident, withContainerTranshipment, withVehicularTranshipment)
+        buildEnrouteEvent(withIncident, withContainerTranshipment, withVehicularTranshipment, withSeals)
       else ""
     }
 
@@ -175,7 +163,34 @@ class XmlValidationServiceSpec extends SpecBase {
       |""".stripMargin
   }
 
-  private def buildEnrouteEvent(withIncident: Boolean, withContainerTranshipment: Boolean, withVehicularTranshipment: Boolean): String =
+  def transhipment(isVehicular: Boolean, hasContainer: Boolean) =
+    s"""
+      |<TRASHP>
+      | ${if (isVehicular) { vehicular } else ""}
+      | <EndDatSHP60>20191110</EndDatSHP60>
+      | <EndAutSHP61>Authority</EndAutSHP61>
+      | <EndAutSHP61LNG>GB</EndAutSHP61LNG>
+      | <EndPlaSHP63>Endorsement place</EndPlaSHP63>
+      | <EndPlaSHP63LNG>GB</EndPlaSHP63LNG>
+      | <EndCouSHP65>GB</EndCouSHP65>
+      | ${if (hasContainer) { container } else ""}
+      |</TRASHP>
+      |""".stripMargin
+
+  val vehicular: String = """
+                    | <NewTraMeaIdeSHP26>Transport identity</NewTraMeaIdeSHP26>
+                    | <NewTraMeaIdeSHP26LNG>GB</NewTraMeaIdeSHP26LNG>
+                    | <NewTraMeaNatSHP54>GB</NewTraMeaNatSHP54>
+                    | """.stripMargin
+
+  val container: String =
+    """
+      | <CONNR3>
+      |   <ConNumNR31>Container id</ConNumNR31>
+      | </CONNR3>
+      |""".stripMargin
+
+  private def buildEnrouteEvent(withIncident: Boolean, withContainerTranshipment: Boolean, withVehicularTranshipment: Boolean, withSeal: Boolean): String =
     s"""
        |<ENROUEVETEV>
        | <PlaTEV10>eventPlace</PlaTEV10>
@@ -184,19 +199,33 @@ class XmlValidationServiceSpec extends SpecBase {
        | <CTLCTL>
        |   <AlrInNCTCTL29>1</AlrInNCTCTL29>
        | </CTLCTL>
-       ${buildEventDetails(withIncident, withContainerTranshipment, withVehicularTranshipment)}
+       ${buildEventDetails(withIncident, withContainerTranshipment, withVehicularTranshipment, withSeal)}
        |</ENROUEVETEV>
     """.stripMargin
 
-  private def buildEventDetails(withIncident: Boolean, withContainerTranshipment: Boolean, withVehicularTranshipment: Boolean): String = {
-    val incident: String              = if (withIncident) buildIncident else ""
-    val containerTranshipment: String = if (withContainerTranshipment) buildContainerTranshipment else ""
-    val vehicularTranshipment: String = if (withVehicularTranshipment) buildVehicularTranshipment else ""
+  val buildSeals: String =
+    s"""
+       | <SEAINFSF1>
+       | <SeaNumSF12>2</SeaNumSF12>
+       | <SEAIDSI1>
+       | <SeaIdeSI11>seal1</SeaIdeSI11>
+       | <SeaIdeSI11LNG>EN</SeaIdeSI11LNG>
+       | </SEAIDSI1>
+       | <SEAIDSI1>
+       | <SeaIdeSI11>seal2</SeaIdeSI11>
+       | <SeaIdeSI11LNG>EN</SeaIdeSI11LNG>
+       | </SEAIDSI1>
+       | </SEAINFSF1>
+       |""".stripMargin
+
+  private def buildEventDetails(withIncident: Boolean, withContainerTranshipment: Boolean, withVehicularTranshipment: Boolean, withSeal: Boolean): String = {
+    val incident: String = if (withIncident) buildIncident else ""
+    val seals: String    = if (withSeal) buildSeals else ""
 
     s"""
        |$incident
-       |$containerTranshipment
-       |$vehicularTranshipment
+       |$seals
+       |${transhipment(withVehicularTranshipment, withContainerTranshipment)}
        |""".stripMargin
   }
 }

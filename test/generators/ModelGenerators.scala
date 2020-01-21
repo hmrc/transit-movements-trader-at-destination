@@ -173,6 +173,12 @@ trait ModelGenerators {
       )
     }
 
+  implicit lazy val arbitrarySeal: Arbitrary[Seal] = Arbitrary {
+    for {
+      numberOrMark <- stringsWithMaxLength(20)
+    } yield Seal(numberOrMark)
+  }
+
   implicit lazy val arbitraryEnRouteEvent: Arbitrary[EnRouteEvent] =
     Arbitrary {
 
@@ -182,12 +188,12 @@ trait ModelGenerators {
         alreadyInNcts <- arbitrary[Boolean]
         eventDetails  <- arbitrary[EventDetails]
         numberOfSeals <- Gen.choose[Int](0, 99)
-        seals         <- Gen.option(Gen.listOfN(numberOfSeals, stringsWithMaxLength(20)))
+        seals         <- Gen.listOfN(numberOfSeals, arbitrary[Seal])
       } yield {
 
         val removeEmptySealsList = seals match {
-          case Some(seals) if seals.nonEmpty => Some(seals)
-          case _                             => None
+          case seals if seals.nonEmpty => Some(seals)
+          case _                       => None
         }
 
         messages.EnRouteEvent(place, countryCode, alreadyInNcts, eventDetails, removeEmptySealsList)
