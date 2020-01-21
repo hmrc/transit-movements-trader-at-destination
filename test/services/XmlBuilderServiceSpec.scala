@@ -253,25 +253,23 @@ class XmlBuilderServiceSpec
     }
   }
 
-  private def buildSeals(seals: Option[Seq[Seal]]): NodeSeq =
-    seals.fold(NodeSeq.Empty) {
-      seals =>
-        val sealsXml = seals.map {
-          seal =>
-            <SEAIDSI1>
+  private def buildSeals(seals: Seq[Seal]): NodeSeq = {
+    val sealsXml = seals.map {
+      seal =>
+        <SEAIDSI1>
               <SeaIdeSI11>
                 {seal.numberOrMark}
               </SeaIdeSI11>
-              <SeaIdeSI11LNG>GB</SeaIdeSI11LNG>
+              <SeaIdeSI11LNG>EN</SeaIdeSI11LNG>
             </SEAIDSI1>
-        }
+    }
 
-        <SEAINFSF1>
+    <SEAINFSF1>
           <SeaNumSF12>
             {seals.size}
           </SeaNumSF12>{sealsXml}
         </SEAINFSF1>
-    }
+  }
 
   private def buildEnRouteEvent(enRouteEvents: Option[Seq[EnRouteEvent]], languageCode: LanguageCode): NodeSeq = enRouteEvents match {
     case Some(events) =>
@@ -293,9 +291,14 @@ class XmlBuilderServiceSpec
     case None => NodeSeq.Empty
   }
 
-  private def buildIncidentType(event: EventDetails, seals: Option[Seq[Seal]], languageCode: LanguageCode): NodeSeq = event match {
-    case incident: Incident =>
-      <INCINC>
+  private def buildIncidentType(event: EventDetails, sealsOpt: Option[Seq[Seal]], languageCode: LanguageCode): NodeSeq = {
+    val seals = sealsOpt.fold(NodeSeq.Empty) {
+      seal =>
+        buildSeals(seal)
+    }
+    event match {
+      case incident: Incident =>
+        <INCINC>
         {
         buildIncidentFlag(incident.information.isDefined) ++
           buildOptionalElem(incident.information, "IncInfINC4") ++
@@ -307,11 +310,11 @@ class XmlBuilderServiceSpec
           buildAndEncodeElem(languageCode, "EndPlaINC10LNG") ++
           buildOptionalElem(incident.endorsement.country, "EndCouINC12")
         }
-      </INCINC> ++ buildSeals(seals)
+      </INCINC> ++ seals
 
-    case containerTranshipment: ContainerTranshipment =>
-      buildSeals(seals) ++
-        <TRASHP> {
+      case containerTranshipment: ContainerTranshipment =>
+        seals ++
+          <TRASHP> {
         buildOptionalElem(containerTranshipment.endorsement.date, "EndDatSHP60") ++
         buildOptionalElem(containerTranshipment.endorsement.authority, "EndAutSHP61") ++
         buildAndEncodeElem(languageCode,"EndAutSHP61LNG") ++
@@ -327,9 +330,9 @@ class XmlBuilderServiceSpec
         }
       </TRASHP>
 
-    case vehicularTranshipment: VehicularTranshipment =>
-      buildSeals(seals) ++
-        <TRASHP> {
+      case vehicularTranshipment: VehicularTranshipment =>
+        seals ++
+          <TRASHP> {
         buildAndEncodeElem(vehicularTranshipment.transportIdentity,"NewTraMeaIdeSHP26") ++
         buildAndEncodeElem(languageCode,"NewTraMeaIdeSHP26LNG") ++
         buildAndEncodeElem(vehicularTranshipment.transportCountry,"NewTraMeaNatSHP54") ++
@@ -354,6 +357,7 @@ class XmlBuilderServiceSpec
         }
       </TRASHP>
 
+    }
   }
 }
 

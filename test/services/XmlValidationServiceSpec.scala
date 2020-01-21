@@ -39,7 +39,7 @@ class XmlValidationServiceSpec extends SpecBase with ScalaCheckPropertyChecks {
 
         forAll(arbitrary[Boolean], arbitrary[Boolean], arbitrary[Boolean], arbitrary[Boolean]) {
           (withIncident, withContainer, withVehicle, withSeals) =>
-            val xml = buildXml(withEnrouteEvent = true, false, withContainer, withVehicle, withSeals)
+            val xml = buildXml(withEnrouteEvent = true, withIncident, withContainer, withVehicle, withSeals)
             xmlValidationService.validate(xml, ArrivalNotificationXSD) mustBe a[Right[_, _]]
         }
       }
@@ -209,11 +209,11 @@ class XmlValidationServiceSpec extends SpecBase with ScalaCheckPropertyChecks {
        | <SeaNumSF12>2</SeaNumSF12>
        | <SEAIDSI1>
        | <SeaIdeSI11>seal1</SeaIdeSI11>
-       | <SeaIdeSI11LNG>GB</SeaIdeSI11LNG>
+       | <SeaIdeSI11LNG>EN</SeaIdeSI11LNG>
        | </SEAIDSI1>
        | <SEAIDSI1>
        | <SeaIdeSI11>seal2</SeaIdeSI11>
-       | <SeaIdeSI11LNG>GB</SeaIdeSI11LNG>
+       | <SeaIdeSI11LNG>EN</SeaIdeSI11LNG>
        | </SEAIDSI1>
        | </SEAINFSF1>
        |""".stripMargin
