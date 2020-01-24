@@ -34,6 +34,9 @@ trait ModelGenerators {
   private val pastDate: LocalDate = LocalDate.of(1900, 1, 1)
   private val dateNow: LocalDate  = LocalDate.now
 
+  private val minNumberOfContainers = 0
+  private val maxNumberOfContainers = 99
+
   def dateTimesBetween(min: LocalDateTime, max: LocalDateTime): Gen[LocalDateTime] = {
 
     def toMillis(date: LocalDateTime): Long =
@@ -142,10 +145,10 @@ trait ModelGenerators {
     Arbitrary {
 
       for {
-        transportIdentity  <- stringsWithMaxLength(27)
-        transportCountry   <- stringsWithMaxLength(2)
+        transportIdentity  <- stringsWithMaxLength(VehicularTranshipment.Constants.transportIdentityLength)
+        transportCountry   <- stringsWithMaxLength(VehicularTranshipment.Constants.transportCountryLength)
         endorsement        <- arbitrary[Endorsement]
-        numberOfContainers <- Gen.choose[Int](1, 99)
+        numberOfContainers <- Gen.choose[Int](minNumberOfContainers, maxNumberOfContainers)
         containers         <- Gen.option(Gen.listOfN(numberOfContainers, arbitrary[Container]))
       } yield VehicularTranshipment(transportIdentity, transportCountry, endorsement, containers)
     }
@@ -155,7 +158,7 @@ trait ModelGenerators {
 
       for {
         endorsement        <- arbitrary[Endorsement]
-        numberOfContainers <- Gen.choose[Int](1, 99)
+        numberOfContainers <- Gen.choose[Int](minNumberOfContainers, maxNumberOfContainers)
         containers         <- Gen.listOfN(numberOfContainers, arbitrary[Container])
       } yield ContainerTranshipment(endorsement, containers)
     }
