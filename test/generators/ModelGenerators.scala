@@ -34,8 +34,11 @@ trait ModelGenerators {
   private val pastDate: LocalDate = LocalDate.of(1900, 1, 1)
   private val dateNow: LocalDate  = LocalDate.now
 
-  private val minNumberOfContainers = 0
+  private val minNumberOfContainers = 1
   private val maxNumberOfContainers = 99
+
+  private val minNumberOfSeals = 0
+  private val maxNumberOfSeals = 99
 
   def dateTimesBetween(min: LocalDateTime, max: LocalDateTime): Gen[LocalDateTime] = {
 
@@ -181,7 +184,7 @@ trait ModelGenerators {
 
   implicit lazy val arbitrarySeal: Arbitrary[Seal] = Arbitrary {
     for {
-      numberOrMark <- stringsWithMaxLength(20)
+      numberOrMark <- stringsWithMaxLength(Seal.constant.numberOrMarkLength)
     } yield Seal(numberOrMark)
   }
 
@@ -189,11 +192,11 @@ trait ModelGenerators {
     Arbitrary {
 
       for {
-        place         <- stringsWithMaxLength(35)
-        countryCode   <- stringsWithMaxLength(2)
+        place         <- stringsWithMaxLength(EnRouteEvent.Constants.placeLength)
+        countryCode   <- stringsWithMaxLength(EnRouteEvent.Constants.countryCodeLength)
         alreadyInNcts <- arbitrary[Boolean]
         eventDetails  <- arbitrary[EventDetails]
-        numberOfSeals <- Gen.choose[Int](0, 99)
+        numberOfSeals <- Gen.choose[Int](minNumberOfSeals, maxNumberOfSeals)
         seals         <- Gen.listOfN(numberOfSeals, arbitrary[Seal])
       } yield {
 

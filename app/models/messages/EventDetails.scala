@@ -95,7 +95,7 @@ object VehicularTranshipment {
 
   object Constants {
     val transportIdentityLength = 27
-    val transportCountryLength = 2
+    val transportCountryLength  = 2
   }
 
   implicit lazy val reads: Reads[VehicularTranshipment] = {

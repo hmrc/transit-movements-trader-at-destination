@@ -22,5 +22,10 @@ import play.api.libs.json.OFormat
 case class Seal(numberOrMark: String)
 
 object Seal {
+
+  object constant {
+    val numberOrMarkLength = 20
+  }
+
   implicit val format: OFormat[Seal] = Json.format[Seal]
 }
