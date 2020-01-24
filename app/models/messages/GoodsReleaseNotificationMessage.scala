@@ -30,6 +30,10 @@ final case class GoodsReleaseNotificationMessage(
 
 object GoodsReleaseNotificationMessage {
 
+  object Constants {
+    val presentationOfficeLength = 8
+  }
+
   implicit lazy val format: Format[GoodsReleaseNotificationMessage] =
     Json.format[GoodsReleaseNotificationMessage]
 }

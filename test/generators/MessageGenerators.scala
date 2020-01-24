@@ -44,7 +44,7 @@ trait MessageGenerators extends ModelGenerators {
         mrn                <- arbitrary[MovementReferenceNumber].map(_.toString())
         releaseDate        <- datesBetween(LocalDate.of(1900, 1, 1), LocalDate.now)
         trader             <- arbitrary[Trader]
-        presentationOffice <- stringsWithMaxLength(8)
+        presentationOffice <- stringsWithMaxLength(GoodsReleaseNotificationMessage.Constants.presentationOfficeLength)
       } yield models.messages.GoodsReleaseNotificationMessage(mrn, releaseDate, trader, presentationOffice)
     }
 
