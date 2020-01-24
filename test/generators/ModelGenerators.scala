@@ -83,12 +83,12 @@ trait ModelGenerators {
     Arbitrary {
 
       for {
-        eori            <- stringsWithMaxLength(17)
-        name            <- Gen.option(stringsWithMaxLength(35))
-        streetAndNumber <- Gen.option(stringsWithMaxLength(35))
-        postCode        <- Gen.option(stringsWithMaxLength(9))
-        city            <- Gen.option(stringsWithMaxLength(35))
-        countryCode     <- Gen.option(stringsWithMaxLength(2))
+        eori            <- stringsWithMaxLength(Trader.Constants.eoriLength)
+        name            <- Gen.option(stringsWithMaxLength(Trader.Constants.nameLength))
+        streetAndNumber <- Gen.option(stringsWithMaxLength(Trader.Constants.streetAndNumberLength))
+        postCode        <- Gen.option(stringsWithMaxLength(Trader.Constants.postCodeLength))
+        city            <- Gen.option(stringsWithMaxLength(Trader.Constants.cityLength))
+        countryCode     <- Gen.option(stringsWithMaxLength(Trader.Constants.countryCodeLength))
       } yield TraderWithEori(eori, name, streetAndNumber, postCode, city, countryCode)
     }
 
@@ -96,11 +96,11 @@ trait ModelGenerators {
     Arbitrary {
 
       for {
-        name            <- stringsWithMaxLength(35)
-        streetAndNumber <- stringsWithMaxLength(35)
-        postCode        <- stringsWithMaxLength(9)
-        city            <- stringsWithMaxLength(35)
-        countryCode     <- stringsWithMaxLength(2)
+        name            <- stringsWithMaxLength(Trader.Constants.nameLength)
+        streetAndNumber <- stringsWithMaxLength(Trader.Constants.streetAndNumberLength)
+        postCode        <- stringsWithMaxLength(Trader.Constants.postCodeLength)
+        city            <- stringsWithMaxLength(Trader.Constants.cityLength)
+        countryCode     <- stringsWithMaxLength(Trader.Constants.countryCodeLength)
       } yield TraderWithoutEori(name, streetAndNumber, postCode, city, countryCode)
     }
 

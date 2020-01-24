@@ -25,11 +25,12 @@ case class Header(
 )
 
 object Header {
+
   object Constants {
-    val languageCode: LanguageCode = LanguageCodeEnglish
-    val customsSubPlaceLength = 17
+    val languageCode: LanguageCode     = LanguageCodeEnglish
+    val customsSubPlaceLength          = 17
     val arrivalNotificationPlaceLength = 35
-    val simplifiedProcedureFlag0 = "0"
-    val simplifiedProcedureFlag1 = "1"
+    val simplifiedProcedureFlag0       = "0"
+    val simplifiedProcedureFlag1       = "1"
   }
 }

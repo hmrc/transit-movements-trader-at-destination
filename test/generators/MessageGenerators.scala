@@ -29,7 +29,7 @@ import org.scalacheck.Gen
 trait MessageGenerators extends ModelGenerators {
 
   private val pastDate: LocalDate = LocalDate.of(1900, 1, 1)
-  private val dateNow: LocalDate = LocalDate.now
+  private val dateNow: LocalDate  = LocalDate.now
 
   implicit lazy val arbitraryCustomsOfficeOfPresentation: Arbitrary[CustomsOfficeOfPresentation] = {
     Arbitrary {
@@ -159,7 +159,7 @@ trait MessageGenerators extends ModelGenerators {
         movementReferenceNumber  <- arbitrary[MovementReferenceNumber].map(_.toString())
         customsSubPlace          <- Gen.option(stringsWithMaxLength(Header.Constants.customsSubPlaceLength))
         arrivalNotificationPlace <- stringsWithMaxLength(Header.Constants.arrivalNotificationPlaceLength)
-        simplifiedProcedureFlag  <- Gen.oneOf(
+        simplifiedProcedureFlag <- Gen.oneOf(
           Header.Constants.simplifiedProcedureFlag0,
           Header.Constants.simplifiedProcedureFlag1
         )

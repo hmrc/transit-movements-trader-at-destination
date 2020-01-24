@@ -22,6 +22,15 @@ sealed trait Trader
 
 object Trader {
 
+  object Constants {
+    val eoriLength            = 17
+    val nameLength            = 35
+    val streetAndNumberLength = 35
+    val postCodeLength        = 9
+    val cityLength            = 35
+    val countryCodeLength     = 2
+  }
+
   implicit lazy val reads: Reads[Trader] = {
 
     implicit class ReadsWithContravariantOr[A](a: Reads[A]) {
