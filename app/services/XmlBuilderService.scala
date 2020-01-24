@@ -107,7 +107,7 @@ class XmlBuilderService {
         buildOptionalElem(traderDestination.postCode, "PosCodTRD23") ++
         buildOptionalElem(traderDestination.city, "CitTRD24") ++
         buildOptionalElem(traderDestination.countryCode, "CouTRD25") ++
-        buildAndEncodeElem(traderDestination.languageCode.code, "NADLNGRD") ++
+        buildAndEncodeElem(TraderDestination.Constants.languageCode, "NADLNGRD") ++
         buildOptionalElem(traderDestination.eori, "TINTRD59")
       }
       </TRADESTRD>

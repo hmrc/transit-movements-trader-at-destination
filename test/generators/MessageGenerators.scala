@@ -28,6 +28,9 @@ import org.scalacheck.Gen
 
 trait MessageGenerators extends ModelGenerators {
 
+  private val pastDate: LocalDate = LocalDate.of(1900, 1, 1)
+  private val dateNow: LocalDate = LocalDate.now
+
   implicit lazy val arbitraryCustomsOfficeOfPresentation: Arbitrary[CustomsOfficeOfPresentation] = {
     Arbitrary {
 
@@ -42,7 +45,7 @@ trait MessageGenerators extends ModelGenerators {
 
       for {
         mrn                <- arbitrary[MovementReferenceNumber].map(_.toString())
-        releaseDate        <- datesBetween(LocalDate.of(1900, 1, 1), LocalDate.now)
+        releaseDate        <- datesBetween(pastDate, dateNow)
         trader             <- arbitrary[Trader]
         presentationOffice <- stringsWithMaxLength(GoodsReleaseNotificationMessage.Constants.presentationOfficeLength)
       } yield models.messages.GoodsReleaseNotificationMessage(mrn, releaseDate, trader, presentationOffice)
@@ -53,7 +56,7 @@ trait MessageGenerators extends ModelGenerators {
 
       for {
         mrn    <- arbitrary[MovementReferenceNumber].map(_.toString())
-        date   <- datesBetween(LocalDate.of(1900, 1, 1), LocalDate.now)
+        date   <- datesBetween(pastDate, dateNow)
         action <- arbitrary[Option[String]]
         reason <- arbitrary[Option[String]]
         errors <- arbitrary[Seq[RejectionError]]
@@ -66,7 +69,7 @@ trait MessageGenerators extends ModelGenerators {
       for {
         mrn                <- arbitrary[MovementReferenceNumber].map(_.toString())
         place              <- stringsWithMaxLength(NormalNotificationMessage.Constants.notificationPlaceLength)
-        date               <- datesBetween(LocalDate.of(1900, 1, 1), LocalDate.now)
+        date               <- datesBetween(pastDate, dateNow)
         subPlace           <- Gen.option(stringsWithMaxLength(NormalNotificationMessage.Constants.customsSubPlaceLength))
         trader             <- arbitrary[Trader]
         presentationOffice <- stringsWithMaxLength(NormalNotificationMessage.Constants.presentationOfficeLength)
@@ -80,7 +83,7 @@ trait MessageGenerators extends ModelGenerators {
       for {
         mrn                <- arbitrary[MovementReferenceNumber].map(_.toString())
         place              <- stringsWithMaxLength(SimplifiedNotificationMessage.Constants.notificationPlaceLength)
-        date               <- datesBetween(LocalDate.of(1900, 1, 1), LocalDate.now)
+        date               <- datesBetween(pastDate, dateNow)
         approvedLocation   <- Gen.option(stringsWithMaxLength(SimplifiedNotificationMessage.Constants.approvedLocationLength))
         trader             <- arbitrary[Trader]
         presentationOffice <- stringsWithMaxLength(SimplifiedNotificationMessage.Constants.presentationOfficeLength)
@@ -154,9 +157,12 @@ trait MessageGenerators extends ModelGenerators {
     Arbitrary {
       for {
         movementReferenceNumber  <- arbitrary[MovementReferenceNumber].map(_.toString())
-        customsSubPlace          <- Gen.option(stringsWithMaxLength(17))
-        arrivalNotificationPlace <- stringsWithMaxLength(35)
-        simplifiedProcedureFlag  <- Gen.oneOf("0", "1")
+        customsSubPlace          <- Gen.option(stringsWithMaxLength(Header.Constants.customsSubPlaceLength))
+        arrivalNotificationPlace <- stringsWithMaxLength(Header.Constants.arrivalNotificationPlaceLength)
+        simplifiedProcedureFlag  <- Gen.oneOf(
+          Header.Constants.simplifiedProcedureFlag0,
+          Header.Constants.simplifiedProcedureFlag1
+        )
       } yield Header(movementReferenceNumber, customsSubPlace, arrivalNotificationPlace, None, simplifiedProcedureFlag)
     }
   }
@@ -179,7 +185,7 @@ trait MessageGenerators extends ModelGenerators {
       header         <- arbitrary[Header]
       traderWithEori <- arbitrary[TraderWithEori]
       customsOffice  <- arbitrary[CustomsOfficeOfPresentation]
-      headerWithProcedure = header.copy(simplifiedProcedureFlag = "0")
+      headerWithProcedure = header.copy(simplifiedProcedureFlag = Header.Constants.simplifiedProcedureFlag0)
       traderDestination = {
         TraderDestination(
           traderWithEori.name,
@@ -201,7 +207,7 @@ trait MessageGenerators extends ModelGenerators {
       header            <- arbitrary[Header]
       traderWithoutEori <- arbitrary[TraderWithoutEori]
       customsOffice     <- arbitrary[CustomsOfficeOfPresentation]
-      headerWithProcedure = header.copy(simplifiedProcedureFlag = "0")
+      headerWithProcedure = header.copy(simplifiedProcedureFlag = Header.Constants.simplifiedProcedureFlag0)
       traderDestination = {
         TraderDestination(
           Some(traderWithoutEori.name),

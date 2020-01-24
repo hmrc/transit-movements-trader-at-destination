@@ -19,6 +19,7 @@ package models.request
 case class CustomsOfficeOfPresentation(presentationOffice: String)
 
 object CustomsOfficeOfPresentation {
+
   object Constants {
     val presentationOfficeLength = 8
   }

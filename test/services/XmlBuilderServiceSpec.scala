@@ -109,7 +109,7 @@ class XmlBuilderServiceSpec
                     buildOptionalElem(arrivalNotificationRequest.traderDestination.postCode, "PosCodTRD23") ++
                     buildOptionalElem(arrivalNotificationRequest.traderDestination.city, "CitTRD24") ++
                     buildOptionalElem(arrivalNotificationRequest.traderDestination.countryCode, "CouTRD25") ++
-                    buildAndEncodeElem(arrivalNotificationRequest.traderDestination.languageCode, "NADLNGRD") ++
+                    buildAndEncodeElem(TraderDestination.Constants.languageCode, "NADLNGRD") ++
                     buildOptionalElem(arrivalNotificationRequest.traderDestination.eori, "TINTRD59")
                     }
                   </TRADESTRD>
