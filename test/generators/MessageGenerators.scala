@@ -98,12 +98,12 @@ trait MessageGenerators extends ModelGenerators {
     Arbitrary {
 
       for {
-        name            <- Gen.option(stringsWithMaxLength(35))
-        streetAndNumber <- Gen.option(stringsWithMaxLength(35))
-        postCode        <- Gen.option(stringsWithMaxLength(9))
-        city            <- Gen.option(stringsWithMaxLength(35))
-        countryCode     <- Gen.option(stringsWithMaxLength(2))
-        eori            <- Gen.option(stringsWithMaxLength(17))
+        name            <- Gen.option(stringsWithMaxLength(TraderDestination.Constants.nameLength))
+        streetAndNumber <- Gen.option(stringsWithMaxLength(TraderDestination.Constants.streetAndNumberLength))
+        postCode        <- Gen.option(stringsWithMaxLength(TraderDestination.Constants.postCodeLength))
+        city            <- Gen.option(stringsWithMaxLength(TraderDestination.Constants.cityLength))
+        countryCode     <- Gen.option(stringsWithMaxLength(TraderDestination.Constants.countryCodeLength))
+        eori            <- Gen.option(stringsWithMaxLength(TraderDestination.Constants.eoriLength))
       } yield TraderDestination(name, streetAndNumber, postCode, city, countryCode, eori)
 
     }

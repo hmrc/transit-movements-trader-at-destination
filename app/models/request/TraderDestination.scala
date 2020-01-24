@@ -16,10 +16,6 @@
 
 package models.request
 
-sealed trait TraderConstants {
-  val languageCode: LanguageCode = LanguageCodeEnglish
-}
-
 case class TraderDestination(
   name: Option[String],
   streetAndNumber: Option[String],
@@ -27,4 +23,16 @@ case class TraderDestination(
   city: Option[String],
   countryCode: Option[String],
   eori: Option[String]
-) extends TraderConstants
+)
+
+object TraderDestination {
+  object Constants {
+    val languageCode: LanguageCode = LanguageCodeEnglish
+    val eoriLength            = 17
+    val nameLength            = 35
+    val streetAndNumberLength = 35
+    val postCodeLength        = 9
+    val cityLength            = 35
+    val countryCodeLength     = 2
+  }
+}
