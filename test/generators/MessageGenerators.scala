@@ -65,12 +65,12 @@ trait MessageGenerators extends ModelGenerators {
 
       for {
         mrn                <- arbitrary[MovementReferenceNumber].map(_.toString())
-        place              <- stringsWithMaxLength(35)
+        place              <- stringsWithMaxLength(NormalNotificationMessage.Constants.notificationPlaceLength)
         date               <- datesBetween(LocalDate.of(1900, 1, 1), LocalDate.now)
-        subPlace           <- Gen.option(stringsWithMaxLength(17))
+        subPlace           <- Gen.option(stringsWithMaxLength(NormalNotificationMessage.Constants.customsSubPlaceLength))
         trader             <- arbitrary[Trader]
-        presentationOffice <- stringsWithMaxLength(8)
-        events             <- Gen.option(seqWithMaxLength[EnRouteEvent](9))
+        presentationOffice <- stringsWithMaxLength(NormalNotificationMessage.Constants.presentationOfficeLength)
+        events             <- Gen.option(seqWithMaxLength[EnRouteEvent](NormalNotificationMessage.Constants.maxNumberOfEnRouteEvents))
       } yield models.messages.NormalNotificationMessage(mrn, place, date, subPlace, trader, presentationOffice, events)
     }
 
@@ -79,12 +79,12 @@ trait MessageGenerators extends ModelGenerators {
 
       for {
         mrn                <- arbitrary[MovementReferenceNumber].map(_.toString())
-        place              <- stringsWithMaxLength(35)
+        place              <- stringsWithMaxLength(SimplifiedNotificationMessage.Constants.notificationPlaceLength)
         date               <- datesBetween(LocalDate.of(1900, 1, 1), LocalDate.now)
-        approvedLocation   <- Gen.option(stringsWithMaxLength(17))
+        approvedLocation   <- Gen.option(stringsWithMaxLength(SimplifiedNotificationMessage.Constants.approvedLocationLength))
         trader             <- arbitrary[Trader]
-        presentationOffice <- stringsWithMaxLength(8)
-        events             <- Gen.option(seqWithMaxLength[EnRouteEvent](9))
+        presentationOffice <- stringsWithMaxLength(SimplifiedNotificationMessage.Constants.presentationOfficeLength)
+        events             <- Gen.option(seqWithMaxLength[EnRouteEvent](SimplifiedNotificationMessage.Constants.maxNumberOfEnRouteEvents))
       } yield models.messages.SimplifiedNotificationMessage(mrn, place, date, approvedLocation, trader, presentationOffice, events)
     }
 
