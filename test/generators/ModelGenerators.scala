@@ -31,6 +31,9 @@ import org.scalacheck.Gen._
 
 trait ModelGenerators {
 
+  private val pastDate: LocalDate = LocalDate.of(1900, 1, 1)
+  private val dateNow: LocalDate  = LocalDate.now
+
   def dateTimesBetween(min: LocalDateTime, max: LocalDateTime): Gen[LocalDateTime] = {
 
     def toMillis(date: LocalDateTime): Long =
@@ -113,10 +116,10 @@ trait ModelGenerators {
     Arbitrary {
 
       for {
-        date      <- Gen.option(datesBetween(LocalDate.of(1900, 1, 1), LocalDate.now))
-        authority <- Gen.option(stringsWithMaxLength(35))
-        place     <- Gen.option(stringsWithMaxLength(35))
-        country   <- Gen.option(stringsWithMaxLength(2))
+        date      <- Gen.option(datesBetween(pastDate, dateNow))
+        authority <- Gen.option(stringsWithMaxLength(Endorsement.Constants.authorityLength))
+        place     <- Gen.option(stringsWithMaxLength(Endorsement.Constants.placeLength))
+        country   <- Gen.option(stringsWithMaxLength(Endorsement.Constants.countryLength))
       } yield Endorsement(date, authority, place, country)
     }
 
@@ -124,14 +127,14 @@ trait ModelGenerators {
     Arbitrary {
 
       for {
-        information <- Gen.option(stringsWithMaxLength(350))
+        information <- Gen.option(stringsWithMaxLength(Incident.Constants.informationLength))
         endorsement <- arbitrary[Endorsement]
       } yield Incident(information, endorsement)
     }
 
   implicit lazy val arbitraryContainer: Arbitrary[Container] = Arbitrary {
     for {
-      containerNumber <- stringsWithMaxLength(17)
+      containerNumber <- stringsWithMaxLength(Container.Constants.containerNumberLength)
     } yield Container(containerNumber)
   }
 

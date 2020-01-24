@@ -30,6 +30,12 @@ final case class Endorsement(
 
 object Endorsement {
 
+  object Constants {
+    val authorityLength = 35
+    val placeLength     = 35
+    val countryLength   = 2
+  }
+
   implicit lazy val format: Format[Endorsement] =
     Json.format[Endorsement]
 }
