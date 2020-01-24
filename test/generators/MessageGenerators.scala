@@ -32,7 +32,7 @@ trait MessageGenerators extends ModelGenerators {
     Arbitrary {
 
       for {
-        presentationOffice <- stringsWithMaxLength(8)
+        presentationOffice <- stringsWithMaxLength(CustomsOfficeOfPresentation.Constants.presentationOfficeLength)
       } yield CustomsOfficeOfPresentation(presentationOffice)
     }
   }
