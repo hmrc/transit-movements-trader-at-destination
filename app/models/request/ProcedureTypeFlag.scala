@@ -14,18 +14,16 @@
  * limitations under the License.
  */
 
-package models.messages
+package models.request
 
-import play.api.libs.json.Json
-import play.api.libs.json.OFormat
+sealed trait ProcedureTypeFlag {
+  val code: String
+}
 
-case class Seal(numberOrMark: String)
+case object SimplifiedProcedureFlag extends ProcedureTypeFlag {
+  val code: String = "1"
+}
 
-object Seal {
-
-  object constant {
-    val numberOrMarkLength = 20
-  }
-
-  implicit val format: OFormat[Seal] = Json.format[Seal]
+case object NormalProcedureFlag extends ProcedureTypeFlag {
+  val code: String = "0"
 }

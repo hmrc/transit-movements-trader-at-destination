@@ -21,9 +21,14 @@ case class Header(
   customsSubPlace: Option[String] = None,
   arrivalNotificationPlace: String,
   arrivalAgreedLocationOfGoods: Option[String] = None,
-  simplifiedProcedureFlag: String
-) extends HeaderConstants
+  procedureTypeFlag: ProcedureTypeFlag
+)
 
-sealed trait HeaderConstants {
-  val languageCode: LanguageCode = LanguageCodeEnglish
+object Header {
+
+  object Constants {
+    val languageCode: LanguageCode     = LanguageCodeEnglish
+    val customsSubPlaceLength          = 17
+    val arrivalNotificationPlaceLength = 35
+  }
 }

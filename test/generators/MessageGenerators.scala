@@ -28,11 +28,14 @@ import org.scalacheck.Gen
 
 trait MessageGenerators extends ModelGenerators {
 
+  private val pastDate: LocalDate = LocalDate.of(1900, 1, 1)
+  private val dateNow: LocalDate  = LocalDate.now
+
   implicit lazy val arbitraryCustomsOfficeOfPresentation: Arbitrary[CustomsOfficeOfPresentation] = {
     Arbitrary {
 
       for {
-        presentationOffice <- stringsWithMaxLength(8)
+        presentationOffice <- stringsWithMaxLength(CustomsOfficeOfPresentation.Constants.presentationOfficeLength)
       } yield CustomsOfficeOfPresentation(presentationOffice)
     }
   }
@@ -42,9 +45,9 @@ trait MessageGenerators extends ModelGenerators {
 
       for {
         mrn                <- arbitrary[MovementReferenceNumber].map(_.toString())
-        releaseDate        <- datesBetween(LocalDate.of(1900, 1, 1), LocalDate.now)
+        releaseDate        <- datesBetween(pastDate, dateNow)
         trader             <- arbitrary[Trader]
-        presentationOffice <- stringsWithMaxLength(8)
+        presentationOffice <- stringsWithMaxLength(GoodsReleaseNotificationMessage.Constants.presentationOfficeLength)
       } yield models.messages.GoodsReleaseNotificationMessage(mrn, releaseDate, trader, presentationOffice)
     }
 
@@ -53,7 +56,7 @@ trait MessageGenerators extends ModelGenerators {
 
       for {
         mrn    <- arbitrary[MovementReferenceNumber].map(_.toString())
-        date   <- datesBetween(LocalDate.of(1900, 1, 1), LocalDate.now)
+        date   <- datesBetween(pastDate, dateNow)
         action <- arbitrary[Option[String]]
         reason <- arbitrary[Option[String]]
         errors <- arbitrary[Seq[RejectionError]]
@@ -65,12 +68,12 @@ trait MessageGenerators extends ModelGenerators {
 
       for {
         mrn                <- arbitrary[MovementReferenceNumber].map(_.toString())
-        place              <- stringsWithMaxLength(35)
-        date               <- datesBetween(LocalDate.of(1900, 1, 1), LocalDate.now)
-        subPlace           <- Gen.option(stringsWithMaxLength(17))
+        place              <- stringsWithMaxLength(NormalNotificationMessage.Constants.notificationPlaceLength)
+        date               <- datesBetween(pastDate, dateNow)
+        subPlace           <- Gen.option(stringsWithMaxLength(NormalNotificationMessage.Constants.customsSubPlaceLength))
         trader             <- arbitrary[Trader]
-        presentationOffice <- stringsWithMaxLength(8)
-        events             <- Gen.option(seqWithMaxLength[EnRouteEvent](9))
+        presentationOffice <- stringsWithMaxLength(NormalNotificationMessage.Constants.presentationOfficeLength)
+        events             <- Gen.option(seqWithMaxLength[EnRouteEvent](NormalNotificationMessage.Constants.maxNumberOfEnRouteEvents))
       } yield models.messages.NormalNotificationMessage(mrn, place, date, subPlace, trader, presentationOffice, events)
     }
 
@@ -79,12 +82,12 @@ trait MessageGenerators extends ModelGenerators {
 
       for {
         mrn                <- arbitrary[MovementReferenceNumber].map(_.toString())
-        place              <- stringsWithMaxLength(35)
-        date               <- datesBetween(LocalDate.of(1900, 1, 1), LocalDate.now)
-        approvedLocation   <- Gen.option(stringsWithMaxLength(17))
+        place              <- stringsWithMaxLength(SimplifiedNotificationMessage.Constants.notificationPlaceLength)
+        date               <- datesBetween(pastDate, dateNow)
+        approvedLocation   <- Gen.option(stringsWithMaxLength(SimplifiedNotificationMessage.Constants.approvedLocationLength))
         trader             <- arbitrary[Trader]
-        presentationOffice <- stringsWithMaxLength(8)
-        events             <- Gen.option(seqWithMaxLength[EnRouteEvent](9))
+        presentationOffice <- stringsWithMaxLength(SimplifiedNotificationMessage.Constants.presentationOfficeLength)
+        events             <- Gen.option(seqWithMaxLength[EnRouteEvent](SimplifiedNotificationMessage.Constants.maxNumberOfEnRouteEvents))
       } yield models.messages.SimplifiedNotificationMessage(mrn, place, date, approvedLocation, trader, presentationOffice, events)
     }
 
@@ -98,12 +101,12 @@ trait MessageGenerators extends ModelGenerators {
     Arbitrary {
 
       for {
-        name            <- Gen.option(stringsWithMaxLength(35))
-        streetAndNumber <- Gen.option(stringsWithMaxLength(35))
-        postCode        <- Gen.option(stringsWithMaxLength(9))
-        city            <- Gen.option(stringsWithMaxLength(35))
-        countryCode     <- Gen.option(stringsWithMaxLength(2))
-        eori            <- Gen.option(stringsWithMaxLength(17))
+        name            <- Gen.option(stringsWithMaxLength(TraderDestination.Constants.nameLength))
+        streetAndNumber <- Gen.option(stringsWithMaxLength(TraderDestination.Constants.streetAndNumberLength))
+        postCode        <- Gen.option(stringsWithMaxLength(TraderDestination.Constants.postCodeLength))
+        city            <- Gen.option(stringsWithMaxLength(TraderDestination.Constants.cityLength))
+        countryCode     <- Gen.option(stringsWithMaxLength(TraderDestination.Constants.countryCodeLength))
+        eori            <- Gen.option(stringsWithMaxLength(TraderDestination.Constants.eoriLength))
       } yield TraderDestination(name, streetAndNumber, postCode, city, countryCode, eori)
 
     }
@@ -150,14 +153,22 @@ trait MessageGenerators extends ModelGenerators {
     }
   }
 
+  implicit lazy val arbitraryProcedureTypeFlag: Arbitrary[ProcedureTypeFlag] = {
+    Arbitrary {
+      for {
+        procedureType <- Gen.oneOf(Seq(SimplifiedProcedureFlag, NormalProcedureFlag))
+      } yield procedureType
+    }
+  }
+
   implicit lazy val arbitraryHeader: Arbitrary[Header] = {
     Arbitrary {
       for {
         movementReferenceNumber  <- arbitrary[MovementReferenceNumber].map(_.toString())
-        customsSubPlace          <- Gen.option(stringsWithMaxLength(17))
-        arrivalNotificationPlace <- stringsWithMaxLength(35)
-        simplifiedProcedureFlag  <- Gen.oneOf("0", "1")
-      } yield Header(movementReferenceNumber, customsSubPlace, arrivalNotificationPlace, None, simplifiedProcedureFlag)
+        customsSubPlace          <- Gen.option(stringsWithMaxLength(Header.Constants.customsSubPlaceLength))
+        arrivalNotificationPlace <- stringsWithMaxLength(Header.Constants.arrivalNotificationPlaceLength)
+        procedureTypeFlag        <- arbitrary[ProcedureTypeFlag]
+      } yield Header(movementReferenceNumber, customsSubPlace, arrivalNotificationPlace, None, procedureTypeFlag)
     }
   }
 
@@ -179,7 +190,7 @@ trait MessageGenerators extends ModelGenerators {
       header         <- arbitrary[Header]
       traderWithEori <- arbitrary[TraderWithEori]
       customsOffice  <- arbitrary[CustomsOfficeOfPresentation]
-      headerWithProcedure = header.copy(simplifiedProcedureFlag = "0")
+      headerWithProcedure = header.copy(procedureTypeFlag = NormalProcedureFlag)
       traderDestination = {
         TraderDestination(
           traderWithEori.name,
@@ -201,7 +212,7 @@ trait MessageGenerators extends ModelGenerators {
       header            <- arbitrary[Header]
       traderWithoutEori <- arbitrary[TraderWithoutEori]
       customsOffice     <- arbitrary[CustomsOfficeOfPresentation]
-      headerWithProcedure = header.copy(simplifiedProcedureFlag = "0")
+      headerWithProcedure = header.copy(procedureTypeFlag = NormalProcedureFlag)
       traderDestination = {
         TraderDestination(
           Some(traderWithoutEori.name),

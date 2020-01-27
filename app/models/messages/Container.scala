@@ -22,5 +22,10 @@ import play.api.libs.json.OFormat
 case class Container(containerNumber: String)
 
 object Container {
+
+  object Constants {
+    val containerNumberLength = 17
+  }
+
   implicit val formats: OFormat[Container] = Json.format[Container]
 }

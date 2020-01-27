@@ -90,12 +90,12 @@ class XmlBuilderService {
       buildAndEncodeElem(header.movementReferenceNumber, "DocNumHEA5") ++
       buildOptionalElem(header.customsSubPlace, "CusSubPlaHEA66") ++
       buildAndEncodeElem(header.arrivalNotificationPlace, "ArrNotPlaHEA60") ++
-      buildAndEncodeElem(header.languageCode, "ArrNotPlaHEA60LNG") ++
+      buildAndEncodeElem(Header.Constants.languageCode, "ArrNotPlaHEA60LNG") ++
       buildOptionalElem(header.arrivalAgreedLocationOfGoods, "ArrAgrLocCodHEA62") ++
       buildOptionalElem(header.arrivalAgreedLocationOfGoods, "ArrAgrLocOfGooHEA63") ++
-      buildAndEncodeElem(header.languageCode, "ArrAgrLocOfGooHEA63LNG") ++
+      buildAndEncodeElem(Header.Constants.languageCode, "ArrAgrLocOfGooHEA63LNG") ++
       buildOptionalElem(header.arrivalAgreedLocationOfGoods, "ArrAutLocOfGooHEA65") ++
-      buildAndEncodeElem(header.simplifiedProcedureFlag, "SimProFlaHEA132") ++
+      buildAndEncodeElem(header.procedureTypeFlag, "SimProFlaHEA132") ++
       buildAndEncodeElem(arrivalNotificationDate, "ArrNotDatHEA141")
       }
     </HEAHEA>
@@ -107,7 +107,7 @@ class XmlBuilderService {
         buildOptionalElem(traderDestination.postCode, "PosCodTRD23") ++
         buildOptionalElem(traderDestination.city, "CitTRD24") ++
         buildOptionalElem(traderDestination.countryCode, "CouTRD25") ++
-        buildAndEncodeElem(traderDestination.languageCode.code, "NADLNGRD") ++
+        buildAndEncodeElem(TraderDestination.Constants.languageCode, "NADLNGRD") ++
         buildOptionalElem(traderDestination.eori, "TINTRD59")
       }
       </TRADESTRD>
@@ -125,7 +125,7 @@ class XmlBuilderService {
         event =>
           <ENROUEVETEV> {
               buildAndEncodeElem(event.place,"PlaTEV10") ++
-              buildAndEncodeElem(arrivalNotificationRequest.header.languageCode,"PlaTEV10LNG") ++
+              buildAndEncodeElem(Header.Constants.languageCode,"PlaTEV10LNG") ++
               buildAndEncodeElem(event.countryCode,"CouTEV13")
             }
             <CTLCTL> {
@@ -158,19 +158,19 @@ class XmlBuilderService {
   private def buildIncident(event: EventDetails, sealsOpt: Option[Seq[Seal]])(implicit arrivalNotificationRequest: ArrivalNotificationRequest): NodeSeq = {
     val seals = sealsOpt.fold(NodeSeq.Empty) {
       seal =>
-        buildSeals(seal, arrivalNotificationRequest.header.languageCode)
+        buildSeals(seal, Header.Constants.languageCode)
     }
     event match {
       case incident: Incident =>
         <INCINC> {
           buildIncidentFlag(incident.information.isDefined) ++
           buildOptionalElem(incident.information, "IncInfINC4") ++
-          buildAndEncodeElem(arrivalNotificationRequest.header.languageCode, "IncInfINC4LNG") ++
+          buildAndEncodeElem(Header.Constants.languageCode, "IncInfINC4LNG") ++
           buildOptionalDate(incident.endorsement.date, "EndDatINC6") ++
           buildOptionalElem(incident.endorsement.authority, "EndAutINC7") ++
-          buildAndEncodeElem(arrivalNotificationRequest.header.languageCode, "EndAutINC7LNG") ++
+          buildAndEncodeElem(Header.Constants.languageCode, "EndAutINC7LNG") ++
           buildOptionalElem(incident.endorsement.place, "EndPlaINC10") ++
-          buildAndEncodeElem(arrivalNotificationRequest.header.languageCode, "EndPlaINC10LNG") ++
+          buildAndEncodeElem(Header.Constants.languageCode, "EndPlaINC10LNG") ++
           buildOptionalElem(incident.endorsement.country, "EndCouINC12")
         }
       </INCINC> ++ seals
@@ -180,9 +180,9 @@ class XmlBuilderService {
           <TRASHP> {
           buildOptionalDate(containerTranshipment.endorsement.date, "EndDatSHP60") ++
           buildOptionalElem(containerTranshipment.endorsement.authority, "EndAutSHP61") ++
-          buildAndEncodeElem(arrivalNotificationRequest.header.languageCode,"EndAutSHP61LNG") ++
+          buildAndEncodeElem(Header.Constants.languageCode,"EndAutSHP61LNG") ++
           buildOptionalElem(containerTranshipment.endorsement.place, "EndPlaSHP63") ++
-          buildAndEncodeElem(arrivalNotificationRequest.header.languageCode,"EndPlaSHP63LNG") ++
+          buildAndEncodeElem(Header.Constants.languageCode,"EndPlaSHP63LNG") ++
           buildOptionalElem(containerTranshipment.endorsement.country, "EndCouSHP65") ++
           buildContainers(Some(containerTranshipment.containers))
         }
@@ -192,13 +192,13 @@ class XmlBuilderService {
         seals ++
           <TRASHP> {
           buildAndEncodeElem(vehicularTranshipment.transportIdentity,"NewTraMeaIdeSHP26") ++
-          buildAndEncodeElem(arrivalNotificationRequest.header.languageCode,"NewTraMeaIdeSHP26LNG") ++
+          buildAndEncodeElem(Header.Constants.languageCode,"NewTraMeaIdeSHP26LNG") ++
           buildAndEncodeElem(vehicularTranshipment.transportCountry,"NewTraMeaNatSHP54") ++
           buildOptionalDate(vehicularTranshipment.endorsement.date, "EndDatSHP60") ++
           buildOptionalElem(vehicularTranshipment.endorsement.authority, "EndAutSHP61") ++
-          buildAndEncodeElem(arrivalNotificationRequest.header.languageCode, "EndAutSHP61LNG") ++
+          buildAndEncodeElem(Header.Constants.languageCode, "EndAutSHP61LNG") ++
           buildOptionalElem(vehicularTranshipment.endorsement.place, "EndPlaSHP63") ++
-          buildAndEncodeElem(arrivalNotificationRequest.header.languageCode, "EndPlaSHP63LNG") ++
+          buildAndEncodeElem(Header.Constants.languageCode, "EndPlaSHP63LNG") ++
           buildOptionalElem(vehicularTranshipment.endorsement.country, "EndCouSHP65") ++
           buildContainers(vehicularTranshipment.containers)
         }
@@ -256,10 +256,11 @@ object XmlBuilderService {
       val encodeResult = StringEscapeUtils.escapeXml11(result)
       loadString(s"<$elementTag>$encodeResult</$elementTag>")
     }
-    case result: LocalDate    => loadString(s"<$elementTag>${Format.dateFormatted(result)}</$elementTag>")
-    case result: Boolean      => loadString(s"<$elementTag>${if (result) 1 else 0}</$elementTag>")
-    case result: LanguageCode => loadString(s"<$elementTag>${result.code}</$elementTag>")
-    case _                    => NodeSeq.Empty
+    case result: LocalDate         => loadString(s"<$elementTag>${Format.dateFormatted(result)}</$elementTag>")
+    case result: Boolean           => loadString(s"<$elementTag>${if (result) 1 else 0}</$elementTag>")
+    case result: LanguageCode      => loadString(s"<$elementTag>${result.code}</$elementTag>")
+    case result: ProcedureTypeFlag => loadString(s"<$elementTag>${result.code}</$elementTag>")
+    case _                         => NodeSeq.Empty
   }
 
   private def buildIncidentFlag(hasIncidentInformation: Boolean): NodeSeq = hasIncidentInformation match {
