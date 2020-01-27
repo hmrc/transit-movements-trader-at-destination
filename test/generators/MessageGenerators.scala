@@ -153,17 +153,22 @@ trait MessageGenerators extends ModelGenerators {
     }
   }
 
+  implicit lazy val arbitraryProcedureTypeFlag: Arbitrary[ProcedureTypeFlag] = {
+    Arbitrary {
+      for {
+        procedureType <- Gen.oneOf(Seq(SimplifiedProcedureFlag, NormalProcedureFlag))
+      } yield procedureType
+    }
+  }
+
   implicit lazy val arbitraryHeader: Arbitrary[Header] = {
     Arbitrary {
       for {
         movementReferenceNumber  <- arbitrary[MovementReferenceNumber].map(_.toString())
         customsSubPlace          <- Gen.option(stringsWithMaxLength(Header.Constants.customsSubPlaceLength))
         arrivalNotificationPlace <- stringsWithMaxLength(Header.Constants.arrivalNotificationPlaceLength)
-        simplifiedProcedureFlag <- Gen.oneOf(
-          Header.Constants.simplifiedProcedureFlag0,
-          Header.Constants.simplifiedProcedureFlag1
-        )
-      } yield Header(movementReferenceNumber, customsSubPlace, arrivalNotificationPlace, None, simplifiedProcedureFlag)
+        procedureTypeFlag        <- arbitrary[ProcedureTypeFlag]
+      } yield Header(movementReferenceNumber, customsSubPlace, arrivalNotificationPlace, None, procedureTypeFlag)
     }
   }
 
@@ -185,7 +190,7 @@ trait MessageGenerators extends ModelGenerators {
       header         <- arbitrary[Header]
       traderWithEori <- arbitrary[TraderWithEori]
       customsOffice  <- arbitrary[CustomsOfficeOfPresentation]
-      headerWithProcedure = header.copy(simplifiedProcedureFlag = Header.Constants.simplifiedProcedureFlag0)
+      headerWithProcedure = header.copy(procedureTypeFlag = NormalProcedureFlag)
       traderDestination = {
         TraderDestination(
           traderWithEori.name,
@@ -207,7 +212,7 @@ trait MessageGenerators extends ModelGenerators {
       header            <- arbitrary[Header]
       traderWithoutEori <- arbitrary[TraderWithoutEori]
       customsOffice     <- arbitrary[CustomsOfficeOfPresentation]
-      headerWithProcedure = header.copy(simplifiedProcedureFlag = Header.Constants.simplifiedProcedureFlag0)
+      headerWithProcedure = header.copy(procedureTypeFlag = NormalProcedureFlag)
       traderDestination = {
         TraderDestination(
           Some(traderWithoutEori.name),

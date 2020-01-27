@@ -99,7 +99,7 @@ class XmlBuilderServiceSpec
                     buildOptionalElem(arrivalNotificationRequest.header.arrivalAgreedLocationOfGoods, "ArrAgrLocOfGooHEA63") ++
                     buildAndEncodeElem(Header.Constants.languageCode, "ArrAgrLocOfGooHEA63LNG") ++
                     buildOptionalElem(arrivalNotificationRequest.header.arrivalAgreedLocationOfGoods, "ArrAutLocOfGooHEA65") ++
-                    buildAndEncodeElem(arrivalNotificationRequest.header.simplifiedProcedureFlag, "SimProFlaHEA132") ++
+                    buildAndEncodeElem(arrivalNotificationRequest.header.procedureTypeFlag, "SimProFlaHEA132") ++
                     buildAndEncodeElem(genDateOfPreparation, "ArrNotDatHEA141")
                   }
                   </HEAHEA>
@@ -134,7 +134,7 @@ class XmlBuilderServiceSpec
             MessageSender("LOCAL", "EORI&123"),
             InterchangeControlReference("2019", 1)
           ),
-          header = Header("MovementReferenceNumber", None, "arrivalNotificationPlace", None, "SimplifiedProcedureFlag"),
+          header = Header("MovementReferenceNumber", None, "arrivalNotificationPlace", None, NormalProcedureFlag),
           traderDestination = TraderDestination(None, None, None, None, None, None),
           customsOfficeOfPresentation = CustomsOfficeOfPresentation("PresentationOffice"),
           enRouteEvents = None
@@ -159,7 +159,7 @@ class XmlBuilderServiceSpec
               <ArrNotPlaHEA60>{minimalArrivalNotificationRequest.header.arrivalNotificationPlace}</ArrNotPlaHEA60>
               <ArrNotPlaHEA60LNG>{Header.Constants.languageCode.code}</ArrNotPlaHEA60LNG>
               <ArrAgrLocOfGooHEA63LNG>{Header.Constants.languageCode.code}</ArrAgrLocOfGooHEA63LNG>
-              <SimProFlaHEA132>{minimalArrivalNotificationRequest.header.simplifiedProcedureFlag}</SimProFlaHEA132>
+              <SimProFlaHEA132>{minimalArrivalNotificationRequest.header.procedureTypeFlag.code}</SimProFlaHEA132>
               <ArrNotDatHEA141>{dateOfPreparation}</ArrNotDatHEA141>
             </HEAHEA>
             <TRADESTRD>
@@ -183,7 +183,7 @@ class XmlBuilderServiceSpec
             messageSender = MessageSender("LOCAL", "EORI&123"),
             interchangeControlReference = InterchangeControlReference("2019", 1)
           ),
-          header = Header("MovementReferenceNumber", None, "arrivalNotificationPlace", None, "SimplifiedProcedureFlag"),
+          header = Header("MovementReferenceNumber", None, "arrivalNotificationPlace", None, NormalProcedureFlag),
           traderDestination = TraderDestination(None, None, None, None, None, None),
           customsOfficeOfPresentation = CustomsOfficeOfPresentation("PresentationOffice"),
           enRouteEvents = Some(
@@ -217,7 +217,7 @@ class XmlBuilderServiceSpec
             <ArrNotPlaHEA60>{arrivalNotificationRequestWithIncident.header.arrivalNotificationPlace}</ArrNotPlaHEA60>
             <ArrNotPlaHEA60LNG>{Header.Constants.languageCode.code}</ArrNotPlaHEA60LNG>
             <ArrAgrLocOfGooHEA63LNG>{Header.Constants.languageCode.code}</ArrAgrLocOfGooHEA63LNG>
-            <SimProFlaHEA132>{arrivalNotificationRequestWithIncident.header.simplifiedProcedureFlag}</SimProFlaHEA132>
+            <SimProFlaHEA132>{arrivalNotificationRequestWithIncident.header.procedureTypeFlag.code}</SimProFlaHEA132>
             <ArrNotDatHEA141>{dateOfPreparation}</ArrNotDatHEA141>
           </HEAHEA>
           <TRADESTRD>
@@ -365,7 +365,7 @@ object XmlBuilderServiceSpec {
 
   private def hasEoriWithNormalProcedure()(implicit arrivalNotificationRequest: ArrivalNotificationRequest): Boolean =
     arrivalNotificationRequest.traderDestination.eori.isDefined &&
-      arrivalNotificationRequest.header.simplifiedProcedureFlag.equals("0")
+      arrivalNotificationRequest.header.procedureTypeFlag.equals(NormalProcedureFlag)
 
   private def buildOptionalElem[A](value: Option[A], elementTag: String): NodeSeq = value match {
     case Some(result: String) => {
@@ -382,11 +382,12 @@ object XmlBuilderServiceSpec {
       val encodeResult = StringEscapeUtils.escapeXml11(result)
       loadString(s"<$elementTag>$encodeResult</$elementTag>")
     }
-    case result: Boolean       => loadString(s"<$elementTag>${if (result) 1 else 0}</$elementTag>")
-    case result: LocalDate     => loadString(s"<$elementTag>${Format.dateFormatted(result)}</$elementTag>")
-    case result: LocalDateTime => loadString(s"<$elementTag>${Format.dateFormatted(result)}</$elementTag>")
-    case result: LanguageCode  => loadString(s"<$elementTag>${result.code}</$elementTag>")
-    case _                     => NodeSeq.Empty
+    case result: Boolean           => loadString(s"<$elementTag>${if (result) 1 else 0}</$elementTag>")
+    case result: LocalDate         => loadString(s"<$elementTag>${Format.dateFormatted(result)}</$elementTag>")
+    case result: LocalDateTime     => loadString(s"<$elementTag>${Format.dateFormatted(result)}</$elementTag>")
+    case result: LanguageCode      => loadString(s"<$elementTag>${result.code}</$elementTag>")
+    case result: ProcedureTypeFlag => loadString(s"<$elementTag>${result.code}</$elementTag>")
+    case _                         => NodeSeq.Empty
   }
 
   private def buildIncidentFlag(hasIncidentInformation: Boolean): NodeSeq = hasIncidentInformation match {

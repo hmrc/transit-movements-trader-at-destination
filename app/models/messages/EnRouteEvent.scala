@@ -30,7 +30,7 @@ final case class EnRouteEvent(
 object EnRouteEvent {
 
   object Constants {
-    val placeLength = 35
+    val placeLength       = 35
     val countryCodeLength = 2
   }
 

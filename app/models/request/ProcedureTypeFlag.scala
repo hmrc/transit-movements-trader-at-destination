@@ -16,19 +16,14 @@
 
 package models.request
 
-case class Header(
-  movementReferenceNumber: String,
-  customsSubPlace: Option[String] = None,
-  arrivalNotificationPlace: String,
-  arrivalAgreedLocationOfGoods: Option[String] = None,
-  procedureTypeFlag: ProcedureTypeFlag
-)
+sealed trait ProcedureTypeFlag {
+  val code: String
+}
 
-object Header {
+case object SimplifiedProcedureFlag extends ProcedureTypeFlag {
+  val code: String = "1"
+}
 
-  object Constants {
-    val languageCode: LanguageCode     = LanguageCodeEnglish
-    val customsSubPlaceLength          = 17
-    val arrivalNotificationPlaceLength = 35
-  }
+case object NormalProcedureFlag extends ProcedureTypeFlag {
+  val code: String = "0"
 }

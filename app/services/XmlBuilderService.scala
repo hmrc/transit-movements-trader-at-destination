@@ -95,7 +95,7 @@ class XmlBuilderService {
       buildOptionalElem(header.arrivalAgreedLocationOfGoods, "ArrAgrLocOfGooHEA63") ++
       buildAndEncodeElem(Header.Constants.languageCode, "ArrAgrLocOfGooHEA63LNG") ++
       buildOptionalElem(header.arrivalAgreedLocationOfGoods, "ArrAutLocOfGooHEA65") ++
-      buildAndEncodeElem(header.simplifiedProcedureFlag, "SimProFlaHEA132") ++
+      buildAndEncodeElem(header.procedureTypeFlag, "SimProFlaHEA132") ++
       buildAndEncodeElem(arrivalNotificationDate, "ArrNotDatHEA141")
       }
     </HEAHEA>
@@ -256,10 +256,11 @@ object XmlBuilderService {
       val encodeResult = StringEscapeUtils.escapeXml11(result)
       loadString(s"<$elementTag>$encodeResult</$elementTag>")
     }
-    case result: LocalDate    => loadString(s"<$elementTag>${Format.dateFormatted(result)}</$elementTag>")
-    case result: Boolean      => loadString(s"<$elementTag>${if (result) 1 else 0}</$elementTag>")
-    case result: LanguageCode => loadString(s"<$elementTag>${result.code}</$elementTag>")
-    case _                    => NodeSeq.Empty
+    case result: LocalDate         => loadString(s"<$elementTag>${Format.dateFormatted(result)}</$elementTag>")
+    case result: Boolean           => loadString(s"<$elementTag>${if (result) 1 else 0}</$elementTag>")
+    case result: LanguageCode      => loadString(s"<$elementTag>${result.code}</$elementTag>")
+    case result: ProcedureTypeFlag => loadString(s"<$elementTag>${result.code}</$elementTag>")
+    case _                         => NodeSeq.Empty
   }
 
   private def buildIncidentFlag(hasIncidentInformation: Boolean): NodeSeq = hasIncidentInformation match {

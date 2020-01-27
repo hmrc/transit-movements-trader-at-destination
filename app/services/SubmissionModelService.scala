@@ -33,7 +33,7 @@ class SubmissionModelService @Inject()(appConfig: AppConfig) {
     arrivalNotification match {
       case arrivalNotification: NormalNotificationMessage =>
         val meta                                     = buildMeta(messageSender: MessageSender, interchangeControlReference)
-        val header                                   = buildHeader(arrivalNotification, simplifiedProcedureFlag = "0")
+        val header                                   = buildHeader(arrivalNotification, NormalProcedureFlag)
         val traderDestination                        = buildTrader(arrivalNotification.trader)
         val customsOffice                            = CustomsOfficeOfPresentation(presentationOffice = arrivalNotification.presentationOffice)
         val enRouteEvents: Option[Seq[EnRouteEvent]] = arrivalNotification.enRouteEvents
@@ -46,12 +46,12 @@ class SubmissionModelService @Inject()(appConfig: AppConfig) {
   private def buildMeta(messageSender: MessageSender, interchangeControlReference: InterchangeControlReference): Meta =
     Meta(messageSender = messageSender, interchangeControlReference = interchangeControlReference)
 
-  private def buildHeader(arrivalNotification: NormalNotificationMessage, simplifiedProcedureFlag: String): Header =
+  private def buildHeader(arrivalNotification: NormalNotificationMessage, procedureTypeFlag: ProcedureTypeFlag): Header =
     Header(
       movementReferenceNumber = arrivalNotification.movementReferenceNumber,
       customsSubPlace = arrivalNotification.customsSubPlace,
       arrivalNotificationPlace = arrivalNotification.notificationPlace,
-      simplifiedProcedureFlag = simplifiedProcedureFlag
+      procedureTypeFlag = procedureTypeFlag
     )
 
   private def buildTrader(trader: Trader): TraderDestination = trader match {
