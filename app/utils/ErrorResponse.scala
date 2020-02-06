@@ -42,7 +42,11 @@ object ErrorResponseBuilder {
     ErrorResponse(s"Xml validation failed for the following reason: $reason")
 
   val failedXmlConversion: ErrorResponse = {
-    ErrorResponse("failed to convert to Xml")
+    ErrorResponse("failed to convert to xml")
+  }
+
+  val failedToWrapXml: ErrorResponse = {
+    ErrorResponse("failed to wrap xml in transit wrapper")
   }
 
   val failedToCreateRequestModel: ErrorResponse = {
