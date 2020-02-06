@@ -102,21 +102,6 @@ class XmlBuilderService {
       buildOptionalElem(meta.messageSequenceNumber, "MesSeqNumMES22") ++
       buildOptionalElem(meta.firstAndLastTransfer, "FirAndLasTraMES23")
 
-  private def buildHeaderNode(header: Header, arrivalNotificationDate: String): NodeSeq =
-    <HEAHEA> {
-      buildAndEncodeElem(header.movementReferenceNumber, "DocNumHEA5") ++
-      buildOptionalElem(header.customsSubPlace, "CusSubPlaHEA66") ++
-      buildAndEncodeElem(header.arrivalNotificationPlace, "ArrNotPlaHEA60") ++
-      buildAndEncodeElem(Header.Constants.languageCode, "ArrNotPlaHEA60LNG") ++
-      buildOptionalElem(header.arrivalAgreedLocationOfGoods, "ArrAgrLocCodHEA62") ++
-      buildOptionalElem(header.arrivalAgreedLocationOfGoods, "ArrAgrLocOfGooHEA63") ++
-      buildAndEncodeElem(Header.Constants.languageCode, "ArrAgrLocOfGooHEA63LNG") ++
-      buildOptionalElem(header.arrivalAgreedLocationOfGoods, "ArrAutLocOfGooHEA65") ++
-      buildAndEncodeElem(header.procedureTypeFlag, "SimProFlaHEA132") ++
-      buildAndEncodeElem(arrivalNotificationDate, "ArrNotDatHEA141")
-      }
-    </HEAHEA>
-
   private def buildEnRouteEventsNode(arrivalNotificationRequest: ArrivalNotificationRequest): NodeSeq = arrivalNotificationRequest.enRouteEvents match {
 
     case None => NodeSeq.Empty
