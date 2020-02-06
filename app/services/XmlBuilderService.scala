@@ -48,6 +48,18 @@ class XmlBuilderService {
       }
     }
 
+  def buildAndEncodeElem[A](value: A, elementTag: String): NodeSeq = value match {
+    case result: String => {
+      val encodeResult = StringEscapeUtils.escapeXml11(result)
+      loadString(s"<$elementTag>$encodeResult</$elementTag>")
+    }
+    case result: LocalDate         => loadString(s"<$elementTag>${Format.dateFormatted(result)}</$elementTag>")
+    case result: Boolean           => loadString(s"<$elementTag>${if (result) 1 else 0}</$elementTag>")
+    case result: LanguageCode      => loadString(s"<$elementTag>${result.code}</$elementTag>")
+    case result: ProcedureTypeFlag => loadString(s"<$elementTag>${result.code}</$elementTag>")
+    case _                         => NodeSeq.Empty
+  }
+
   private def createXml(arrivalNotificationRequest: ArrivalNotificationRequest)(implicit dateTime: LocalDateTime): Node = {
     val parentNode: Node = buildParentNode(arrivalNotificationRequest.rootKey, arrivalNotificationRequest.nameSpace)
 
@@ -249,18 +261,6 @@ object XmlBuilderService {
   private def buildOptionalDate(value: Option[LocalDate], elementTag: String): NodeSeq = value match {
     case Some(result: LocalDate) => loadString(s"<$elementTag>${Format.dateFormatted(result)}</$elementTag>")
     case _                       => NodeSeq.Empty
-  }
-
-  private def buildAndEncodeElem[A](value: A, elementTag: String): NodeSeq = value match {
-    case result: String => {
-      val encodeResult = StringEscapeUtils.escapeXml11(result)
-      loadString(s"<$elementTag>$encodeResult</$elementTag>")
-    }
-    case result: LocalDate         => loadString(s"<$elementTag>${Format.dateFormatted(result)}</$elementTag>")
-    case result: Boolean           => loadString(s"<$elementTag>${if (result) 1 else 0}</$elementTag>")
-    case result: LanguageCode      => loadString(s"<$elementTag>${result.code}</$elementTag>")
-    case result: ProcedureTypeFlag => loadString(s"<$elementTag>${result.code}</$elementTag>")
-    case _                         => NodeSeq.Empty
   }
 
   private def buildIncidentFlag(hasIncidentInformation: Boolean): NodeSeq = hasIncidentInformation match {

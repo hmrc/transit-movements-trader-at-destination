@@ -16,7 +16,20 @@
 
 package models.request
 
-case class CustomsOfficeOfPresentation(presentationOffice: String)
+import services.XmlBuilderService
+
+import scala.xml.Node
+
+case class CustomsOfficeOfPresentation(presentationOffice: String) extends XmlBuilderService {
+
+  val presentationOfficeTag = "RefNumRES1"
+
+  val toXml: Node = {
+    <CUSOFFPREOFFRES>
+      {buildAndEncodeElem(presentationOffice, presentationOfficeTag)}
+    </CUSOFFPREOFFRES>
+  }
+}
 
 object CustomsOfficeOfPresentation {
 
