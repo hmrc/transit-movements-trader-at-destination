@@ -70,19 +70,27 @@ class ArrivalNotificationController @Inject()(
                   xmlValidationService.validate(xml.toString(), ArrivalNotificationXSD) match {
 
                     case Right(XmlSuccessfullyValidated) => {
-                      databaseService
-                        .saveArrivalNotification(arrivalNotification)
-                        .flatMap {
 
-                          sendMessage(xml, arrivalNotificationRequestModel)
+                      xmlBuilderService.buildXmlWithTransitWrapper(xml) match {
+                        case Right(xml) => {
+                          databaseService
+                            .saveArrivalNotification(arrivalNotification)
+                            .flatMap {
+                              sendMessage(xml, arrivalNotificationRequestModel)
+                            }
+                            .recover {
+                              case _ =>
+                                InternalServerError(Json.toJson(ErrorResponseBuilder.failedSavingArrivalNotification))
+                                  .as("application/json")
+                            }
 
                         }
-                        .recover {
-                          case _ => {
-                            InternalServerError(Json.toJson(ErrorResponseBuilder.failedSavingArrivalNotification))
-                              .as("application/json")
-                          }
+                        case Left(FailedToWrapXml) => {
+                          Future.successful(
+                            InternalServerError(Json.toJson(ErrorResponseBuilder.failedToWrapXml))
+                              .as("application/json"))
                         }
+                      }
                     }
                     case Left(FailedToValidateXml(reason)) =>
                       Future.successful(

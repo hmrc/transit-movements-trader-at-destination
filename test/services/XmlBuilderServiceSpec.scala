@@ -32,6 +32,7 @@ import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.twirl.api.utils.StringEscapeUtils
 import utils.Format
 
+import scala.xml.Elem
 import scala.xml.Node
 import scala.xml.NodeSeq
 import scala.xml.Utility.trim
@@ -45,13 +46,55 @@ class XmlBuilderServiceSpec
     with ScalaCheckDrivenPropertyChecks
     with OptionValues {
 
-  import XmlBuilderServiceSpec._
-
   private val convertToXml = new XmlBuilderService()
 
   private val dateTime: LocalDateTime = LocalDateTime.now()
   private val dateOfPreparation       = Format.dateFormatted(dateTime)
   private val timeOfPreparation       = Format.timeFormatted(dateTime)
+
+  private val minimalArrivalNotificationRequest: ArrivalNotificationRequest =
+    ArrivalNotificationRequest(
+      meta = Meta(
+        MessageSender("LOCAL", "EORI&123"),
+        InterchangeControlReference("2019", 1)
+      ),
+      header = Header("MovementReferenceNumber", None, "arrivalNotificationPlace", None, NormalProcedureFlag),
+      traderDestination = TraderDestination(None, None, None, None, None, None),
+      customsOfficeOfPresentation = CustomsOfficeOfPresentation("PresentationOffice"),
+      enRouteEvents = None
+    )
+
+  private val minimalValidXml: Node = {
+    trim(
+      <CC007A>
+        <SynIdeMES1>{minimalArrivalNotificationRequest.syntaxIdentifier}</SynIdeMES1>
+        <SynVerNumMES2>{minimalArrivalNotificationRequest.meta.syntaxVersionNumber}</SynVerNumMES2>
+        <MesSenMES3>{minimalArrivalNotificationRequest.meta.messageSender.toString}</MesSenMES3>
+        <MesRecMES6>{minimalArrivalNotificationRequest.meta.messageRecipient}</MesRecMES6>
+        <DatOfPreMES9>{dateOfPreparation}</DatOfPreMES9>
+        <TimOfPreMES10>{timeOfPreparation}</TimOfPreMES10>
+        <IntConRefMES11>{minimalArrivalNotificationRequest.meta.interchangeControlReference.toString}</IntConRefMES11>
+        <AppRefMES14>{minimalArrivalNotificationRequest.meta.applicationReference}</AppRefMES14>
+        <TesIndMES18>{minimalArrivalNotificationRequest.meta.testIndicator}</TesIndMES18>
+        <MesIdeMES19>{minimalArrivalNotificationRequest.meta.messageIndication}</MesIdeMES19>
+        <MesTypMES20>{minimalArrivalNotificationRequest.messageCode.code}</MesTypMES20>
+        <HEAHEA>
+          <DocNumHEA5>{minimalArrivalNotificationRequest.header.movementReferenceNumber}</DocNumHEA5>
+          <ArrNotPlaHEA60>{minimalArrivalNotificationRequest.header.arrivalNotificationPlace}</ArrNotPlaHEA60>
+          <ArrNotPlaHEA60LNG>{Header.Constants.languageCode.code}</ArrNotPlaHEA60LNG>
+          <ArrAgrLocOfGooHEA63LNG>{Header.Constants.languageCode.code}</ArrAgrLocOfGooHEA63LNG>
+          <SimProFlaHEA132>{minimalArrivalNotificationRequest.header.procedureTypeFlag.code}</SimProFlaHEA132>
+          <ArrNotDatHEA141>{dateOfPreparation}</ArrNotDatHEA141>
+        </HEAHEA>
+        <TRADESTRD>
+          <NADLNGRD>{Header.Constants.languageCode.code}</NADLNGRD>
+        </TRADESTRD>
+        <CUSOFFPREOFFRES>
+          <RefNumRES1>{minimalArrivalNotificationRequest.customsOfficeOfPresentation.presentationOffice}</RefNumRES1>
+        </CUSOFFPREOFFRES>
+      </CC007A>
+    )
+  }
 
   "XmlBuilderService" - {
     "must return correct nodes" in {
@@ -128,51 +171,19 @@ class XmlBuilderServiceSpec
 
     "must return correct nodes for a minimal arrival notification request" in {
 
-      val minimalArrivalNotificationRequest: ArrivalNotificationRequest =
-        ArrivalNotificationRequest(
-          meta = Meta(
-            MessageSender("LOCAL", "EORI&123"),
-            InterchangeControlReference("2019", 1)
-          ),
-          header = Header("MovementReferenceNumber", None, "arrivalNotificationPlace", None, NormalProcedureFlag),
-          traderDestination = TraderDestination(None, None, None, None, None, None),
-          customsOfficeOfPresentation = CustomsOfficeOfPresentation("PresentationOffice"),
-          enRouteEvents = None
-        )
+      val result = trim(convertToXml.buildXml(minimalArrivalNotificationRequest)(dateTime).right.toOption.value)
+      result mustBe minimalValidXml
+    }
 
-      val minimalValidXml: Node = {
-        trim(
-          <CC007A>
-            <SynIdeMES1>{minimalArrivalNotificationRequest.syntaxIdentifier}</SynIdeMES1>
-            <SynVerNumMES2>{minimalArrivalNotificationRequest.meta.syntaxVersionNumber}</SynVerNumMES2>
-            <MesSenMES3>{minimalArrivalNotificationRequest.meta.messageSender.toString}</MesSenMES3>
-            <MesRecMES6>{minimalArrivalNotificationRequest.meta.messageRecipient}</MesRecMES6>
-            <DatOfPreMES9>{dateOfPreparation}</DatOfPreMES9>
-            <TimOfPreMES10>{timeOfPreparation}</TimOfPreMES10>
-            <IntConRefMES11>{minimalArrivalNotificationRequest.meta.interchangeControlReference.toString}</IntConRefMES11>
-            <AppRefMES14>{minimalArrivalNotificationRequest.meta.applicationReference}</AppRefMES14>
-            <TesIndMES18>{minimalArrivalNotificationRequest.meta.testIndicator}</TesIndMES18>
-            <MesIdeMES19>{minimalArrivalNotificationRequest.meta.messageIndication}</MesIdeMES19>
-            <MesTypMES20>{minimalArrivalNotificationRequest.messageCode.code}</MesTypMES20>
-            <HEAHEA>
-              <DocNumHEA5>{minimalArrivalNotificationRequest.header.movementReferenceNumber}</DocNumHEA5>
-              <ArrNotPlaHEA60>{minimalArrivalNotificationRequest.header.arrivalNotificationPlace}</ArrNotPlaHEA60>
-              <ArrNotPlaHEA60LNG>{Header.Constants.languageCode.code}</ArrNotPlaHEA60LNG>
-              <ArrAgrLocOfGooHEA63LNG>{Header.Constants.languageCode.code}</ArrAgrLocOfGooHEA63LNG>
-              <SimProFlaHEA132>{minimalArrivalNotificationRequest.header.procedureTypeFlag.code}</SimProFlaHEA132>
-              <ArrNotDatHEA141>{dateOfPreparation}</ArrNotDatHEA141>
-            </HEAHEA>
-            <TRADESTRD>
-              <NADLNGRD>{Header.Constants.languageCode.code}</NADLNGRD>
-            </TRADESTRD>
-            <CUSOFFPREOFFRES>
-              <RefNumRES1>{minimalArrivalNotificationRequest.customsOfficeOfPresentation.presentationOffice}</RefNumRES1>
-            </CUSOFFPREOFFRES>
-          </CC007A>
-        )
+    "must add transit wrapper to an existing xml" in {
+
+      val result = trim(convertToXml.buildXmlWithTransitWrapper(minimalValidXml).right.toOption.value)
+      val expectedResult = {
+        <transitRequest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                        xsi:noNamespaceSchemaLocation="../../schema/request/request.xsd">{minimalValidXml}</transitRequest>
       }
 
-      trim(convertToXml.buildXml(minimalArrivalNotificationRequest)(dateTime).right.toOption.value) mustBe minimalValidXml
+      result mustBe expectedResult
     }
 
     "must return correct nodes for a minimal arrival notification request with an EnRouteEvent" in {
@@ -359,9 +370,6 @@ class XmlBuilderServiceSpec
 
     }
   }
-}
-
-object XmlBuilderServiceSpec {
 
   private def hasEoriWithNormalProcedure()(implicit arrivalNotificationRequest: ArrivalNotificationRequest): Boolean =
     arrivalNotificationRequest.traderDestination.eori.isDefined &&
@@ -390,8 +398,7 @@ object XmlBuilderServiceSpec {
     case _                         => NodeSeq.Empty
   }
 
-  private def buildIncidentFlag(hasIncidentInformation: Boolean): NodeSeq = hasIncidentInformation match {
-    case false => <IncFlaINC3>1</IncFlaINC3>
-    case true  => NodeSeq.Empty
-  }
+  private def buildIncidentFlag(hasIncidentInformation: Boolean): NodeSeq =
+    if (hasIncidentInformation) NodeSeq.Empty else <IncFlaINC3>1</IncFlaINC3>
+
 }

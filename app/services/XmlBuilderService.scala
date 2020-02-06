@@ -34,6 +34,22 @@ class XmlBuilderService {
 
   import XmlBuilderService._
 
+  def buildXmlWithTransitWrapper(xml: Node): Either[XmlBuilderError, Node] =
+    try {
+      val transitWrapperNode: Node = {
+        <transitRequest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                        xsi:noNamespaceSchemaLocation="../../schema/request/request.xsd">
+        </transitRequest>
+      }
+
+      Right(addChildrenToRoot(transitWrapperNode, xml))
+    } catch {
+      case e: Exception => {
+        logger.info(s"Failed to wrap xml in transit wrapper with the following exception: $e")
+        Left(FailedToWrapXml)
+      }
+    }
+
   def buildXml(arrivalNotificationRequest: ArrivalNotificationRequest)(implicit dateTime: LocalDateTime): Either[XmlBuilderError, Node] =
     try {
 
@@ -272,3 +288,4 @@ object XmlBuilderService {
 sealed trait XmlBuilderError
 
 object FailedToCreateXml extends XmlBuilderError
+object FailedToWrapXml   extends XmlBuilderError
