@@ -60,14 +60,19 @@ class XmlBuilderService {
     case _                         => NodeSeq.Empty
   }
 
+  def buildOptionalElem[A](value: Option[A], elementTag: String): NodeSeq = value match {
+    case Some(result) => buildAndEncodeElem(result, elementTag)
+    case _            => NodeSeq.Empty
+  }
+
   private def createXml(arrivalNotificationRequest: ArrivalNotificationRequest)(implicit dateTime: LocalDateTime): Node = {
     val parentNode: Node = buildParentNode(arrivalNotificationRequest.rootKey, arrivalNotificationRequest.nameSpace)
 
     val childNodes: NodeSeq = {
       buildMetaNode(arrivalNotificationRequest.meta, arrivalNotificationRequest.messageCode.code) ++
         buildHeaderNode(arrivalNotificationRequest.header, Format.dateFormatted(dateTime)) ++
-        buildTraderDestinationNode(arrivalNotificationRequest.traderDestination) ++
-        buildOfficeOfPresentationNode(arrivalNotificationRequest.customsOfficeOfPresentation) ++
+        arrivalNotificationRequest.traderDestination.toXml ++
+        arrivalNotificationRequest.customsOfficeOfPresentation.toXml ++
         buildEnRouteEventsNode(arrivalNotificationRequest)
     }
 
@@ -111,23 +116,6 @@ class XmlBuilderService {
       buildAndEncodeElem(arrivalNotificationDate, "ArrNotDatHEA141")
       }
     </HEAHEA>
-
-  private def buildTraderDestinationNode(traderDestination: TraderDestination): NodeSeq =
-    <TRADESTRD> {
-      buildOptionalElem(traderDestination.name, "NamTRD7") ++
-        buildOptionalElem(traderDestination.streetAndNumber, "StrAndNumTRD22") ++
-        buildOptionalElem(traderDestination.postCode, "PosCodTRD23") ++
-        buildOptionalElem(traderDestination.city, "CitTRD24") ++
-        buildOptionalElem(traderDestination.countryCode, "CouTRD25") ++
-        buildAndEncodeElem(TraderDestination.Constants.languageCode, "NADLNGRD") ++
-        buildOptionalElem(traderDestination.eori, "TINTRD59")
-      }
-      </TRADESTRD>
-
-  private def buildOfficeOfPresentationNode(customsOfficeOfPresentation: CustomsOfficeOfPresentation): NodeSeq =
-    <CUSOFFPREOFFRES>
-      {buildAndEncodeElem(customsOfficeOfPresentation.presentationOffice, "RefNumRES1")}
-    </CUSOFFPREOFFRES>
 
   private def buildEnRouteEventsNode(arrivalNotificationRequest: ArrivalNotificationRequest): NodeSeq = arrivalNotificationRequest.enRouteEvents match {
 
@@ -249,14 +237,6 @@ object XmlBuilderService {
 
   private def addChildrenToRoot(root: Node, childNodes: NodeSeq): Node =
     Elem(root.prefix, root.label, root.attributes, root.scope, root.child.isEmpty, root.child ++ childNodes: _*)
-
-  private def buildOptionalElem[A](value: Option[A], elementTag: String): NodeSeq = value match {
-    case Some(result: String) => {
-      val encodeResult = StringEscapeUtils.escapeXml11(result)
-      loadString(s"<$elementTag>$encodeResult</$elementTag>")
-    }
-    case _ => NodeSeq.Empty
-  }
 
   private def buildOptionalDate(value: Option[LocalDate], elementTag: String): NodeSeq = value match {
     case Some(result: LocalDate) => loadString(s"<$elementTag>${Format.dateFormatted(result)}</$elementTag>")

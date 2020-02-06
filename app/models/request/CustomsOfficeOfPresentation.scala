@@ -22,7 +22,7 @@ import scala.xml.Node
 
 case class CustomsOfficeOfPresentation(presentationOffice: String) extends XmlBuilderService {
 
-  val presentationOfficeTag = "RefNumRES1"
+  private val presentationOfficeTag = "RefNumRES1"
 
   val toXml: Node = {
     <CUSOFFPREOFFRES>
