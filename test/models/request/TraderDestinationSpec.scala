@@ -46,7 +46,6 @@ class TraderDestinationSpec extends FreeSpec with MustMatchers with ScalaCheckPr
     "must create valid xml" in {
       forAll(arbitrary[TraderDestination]) {
         traderDestination =>
-
           val nameNode = traderDestination.name.map(
             name => <NamTRD7>{name}</NamTRD7>
           )

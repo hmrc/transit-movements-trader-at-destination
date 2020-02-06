@@ -70,7 +70,7 @@ class XmlBuilderService {
 
     val childNodes: NodeSeq = {
       buildMetaNode(arrivalNotificationRequest.meta, arrivalNotificationRequest.messageCode.code) ++
-        buildHeaderNode(arrivalNotificationRequest.header, Format.dateFormatted(dateTime)) ++
+        arrivalNotificationRequest.header.toXml ++
         arrivalNotificationRequest.traderDestination.toXml ++
         arrivalNotificationRequest.customsOfficeOfPresentation.toXml ++
         buildEnRouteEventsNode(arrivalNotificationRequest)

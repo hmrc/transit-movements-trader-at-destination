@@ -24,11 +24,10 @@ case class CustomsOfficeOfPresentation(presentationOffice: String) extends XmlBu
 
   private val presentationOfficeTag = "RefNumRES1"
 
-  val toXml: Node = {
+  def toXml: Node =
     <CUSOFFPREOFFRES>
       {buildAndEncodeElem(presentationOffice, presentationOfficeTag)}
     </CUSOFFPREOFFRES>
-  }
 }
 
 object CustomsOfficeOfPresentation {

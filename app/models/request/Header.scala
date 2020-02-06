@@ -16,13 +16,36 @@
 
 package models.request
 
-case class Header(
-  movementReferenceNumber: String,
-  customsSubPlace: Option[String] = None,
-  arrivalNotificationPlace: String,
-  arrivalAgreedLocationOfGoods: Option[String] = None,
-  procedureTypeFlag: ProcedureTypeFlag
-)
+import java.time.LocalDateTime
+
+import services.XmlBuilderService
+import utils.Format
+
+import scala.xml.Node
+
+case class Header(movementReferenceNumber: String,
+                  customsSubPlace: Option[String] = None,
+                  arrivalNotificationPlace: String,
+                  arrivalAgreedLocationOfGoods: Option[String] = None,
+                  procedureTypeFlag: ProcedureTypeFlag)
+    extends XmlBuilderService {
+
+  def toXml(implicit dateTime: LocalDateTime): Node =
+    <HEAHEA>
+    {
+      buildAndEncodeElem(movementReferenceNumber, "DocNumHEA5") ++
+      buildOptionalElem(customsSubPlace, "CusSubPlaHEA66") ++
+      buildAndEncodeElem(arrivalNotificationPlace, "ArrNotPlaHEA60") ++
+      buildAndEncodeElem(Header.Constants.languageCode, "ArrNotPlaHEA60LNG") ++
+      buildOptionalElem(arrivalAgreedLocationOfGoods, "ArrAgrLocCodHEA62") ++
+      buildOptionalElem(arrivalAgreedLocationOfGoods, "ArrAgrLocOfGooHEA63") ++
+      buildAndEncodeElem(Header.Constants.languageCode, "ArrAgrLocOfGooHEA63LNG") ++
+      buildOptionalElem(arrivalAgreedLocationOfGoods, "ArrAutLocOfGooHEA65") ++
+      buildAndEncodeElem(procedureTypeFlag, "SimProFlaHEA132") ++
+      buildAndEncodeElem(Format.dateFormatted(dateTime), "ArrNotDatHEA141")
+    }
+    </HEAHEA>
+}
 
 object Header {
 
