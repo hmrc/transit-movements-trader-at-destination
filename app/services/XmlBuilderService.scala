@@ -65,6 +65,13 @@ class XmlBuilderService {
     case _            => NodeSeq.Empty
   }
 
+  def buildIncidentFlag(hasIncidentInformation: Boolean): NodeSeq =
+    if (hasIncidentInformation) {
+      NodeSeq.Empty
+    } else {
+      <IncFlaINC3>1</IncFlaINC3>
+    }
+
   private def createXml(arrivalNotificationRequest: ArrivalNotificationRequest)(implicit dateTime: LocalDateTime): Node = {
     val parentNode: Node = buildParentNode(arrivalNotificationRequest.rootKey, arrivalNotificationRequest.nameSpace)
 
@@ -146,62 +153,12 @@ class XmlBuilderService {
         buildSeals(seal, Header.Constants.languageCode)
     }
     event match {
-      case incident: Incident =>
-        <INCINC> {
-          buildIncidentFlag(incident.information.isDefined) ++
-          buildOptionalElem(incident.information, "IncInfINC4") ++
-          buildAndEncodeElem(Header.Constants.languageCode, "IncInfINC4LNG") ++
-          buildOptionalDate(incident.endorsement.date, "EndDatINC6") ++
-          buildOptionalElem(incident.endorsement.authority, "EndAutINC7") ++
-          buildAndEncodeElem(Header.Constants.languageCode, "EndAutINC7LNG") ++
-          buildOptionalElem(incident.endorsement.place, "EndPlaINC10") ++
-          buildAndEncodeElem(Header.Constants.languageCode, "EndPlaINC10LNG") ++
-          buildOptionalElem(incident.endorsement.country, "EndCouINC12")
-        }
-      </INCINC> ++ seals
-
-      case containerTranshipment: ContainerTranshipment =>
-        seals ++
-          <TRASHP> {
-          buildOptionalDate(containerTranshipment.endorsement.date, "EndDatSHP60") ++
-          buildOptionalElem(containerTranshipment.endorsement.authority, "EndAutSHP61") ++
-          buildAndEncodeElem(Header.Constants.languageCode,"EndAutSHP61LNG") ++
-          buildOptionalElem(containerTranshipment.endorsement.place, "EndPlaSHP63") ++
-          buildAndEncodeElem(Header.Constants.languageCode,"EndPlaSHP63LNG") ++
-          buildOptionalElem(containerTranshipment.endorsement.country, "EndCouSHP65") ++
-          buildContainers(Some(containerTranshipment.containers))
-        }
-      </TRASHP>
-
-      case vehicularTranshipment: VehicularTranshipment =>
-        seals ++
-          <TRASHP> {
-          buildAndEncodeElem(vehicularTranshipment.transportIdentity,"NewTraMeaIdeSHP26") ++
-          buildAndEncodeElem(Header.Constants.languageCode,"NewTraMeaIdeSHP26LNG") ++
-          buildAndEncodeElem(vehicularTranshipment.transportCountry,"NewTraMeaNatSHP54") ++
-          buildOptionalDate(vehicularTranshipment.endorsement.date, "EndDatSHP60") ++
-          buildOptionalElem(vehicularTranshipment.endorsement.authority, "EndAutSHP61") ++
-          buildAndEncodeElem(Header.Constants.languageCode, "EndAutSHP61LNG") ++
-          buildOptionalElem(vehicularTranshipment.endorsement.place, "EndPlaSHP63") ++
-          buildAndEncodeElem(Header.Constants.languageCode, "EndPlaSHP63LNG") ++
-          buildOptionalElem(vehicularTranshipment.endorsement.country, "EndCouSHP65") ++
-          buildContainers(vehicularTranshipment.containers)
-        }
-      </TRASHP>
+      case incident: Incident                           => incident.toXml ++ seals
+      case containerTranshipment: ContainerTranshipment => seals ++ containerTranshipment.toXml
+      case vehicularTranshipment: VehicularTranshipment => seals ++ vehicularTranshipment.toXml
     }
   }
 
-  private def buildContainers(containers: Option[Seq[Container]]) = containers match {
-    case Some(containers) =>
-      containers.map {
-        container =>
-          <CONNR3> {
-              buildAndEncodeElem(container.containerNumber, "ConNumNR31")
-            }
-          </CONNR3>
-      }
-    case _ => NodeSeq.Empty
-  }
 }
 
 object XmlBuilderService {
@@ -222,16 +179,6 @@ object XmlBuilderService {
 
   private def addChildrenToRoot(root: Node, childNodes: NodeSeq): Node =
     Elem(root.prefix, root.label, root.attributes, root.scope, root.child.isEmpty, root.child ++ childNodes: _*)
-
-  private def buildOptionalDate(value: Option[LocalDate], elementTag: String): NodeSeq = value match {
-    case Some(result: LocalDate) => loadString(s"<$elementTag>${Format.dateFormatted(result)}</$elementTag>")
-    case _                       => NodeSeq.Empty
-  }
-
-  private def buildIncidentFlag(hasIncidentInformation: Boolean): NodeSeq = hasIncidentInformation match {
-    case false => <IncFlaINC3>1</IncFlaINC3>
-    case true  => NodeSeq.Empty
-  }
 }
 
 sealed trait XmlBuilderError

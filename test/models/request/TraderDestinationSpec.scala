@@ -33,14 +33,12 @@ class TraderDestinationSpec extends FreeSpec with MustMatchers with ScalaCheckPr
       val traderDestination = TraderDestination(None, None, None, None, None, None)
 
       val expectedResult = {
-        trim(
-          <TRADESTRD>
-            <NADLNGRD>{LanguageCodeEnglish.code}</NADLNGRD>
-          </TRADESTRD>
-        )
+        <TRADESTRD>
+          <NADLNGRD>{LanguageCodeEnglish.code}</NADLNGRD>
+        </TRADESTRD>
       }
 
-      trim(traderDestination.toXml) mustBe expectedResult
+      trim(traderDestination.toXml) mustBe trim(expectedResult)
     }
 
     "must create valid xml" in {
@@ -66,23 +64,20 @@ class TraderDestinationSpec extends FreeSpec with MustMatchers with ScalaCheckPr
           )
 
           val expectedResult = {
-            trim(
-              <TRADESTRD>
-              {
-                nameNode.getOrElse(NodeSeq.Empty) ++
-                streetNameNode.getOrElse(NodeSeq.Empty) ++
-                postCodeNode.getOrElse(NodeSeq.Empty) ++
-                cityNode.getOrElse(NodeSeq.Empty) ++
-                countryCodeNode.getOrElse(NodeSeq.Empty) ++
-                <NADLNGRD>{LanguageCodeEnglish.code}</NADLNGRD> ++
-                eoriNode.getOrElse(NodeSeq.Empty)
-              }
-              </TRADESTRD>
-            )
-
+            <TRADESTRD>
+            {
+              nameNode.getOrElse(NodeSeq.Empty) ++
+              streetNameNode.getOrElse(NodeSeq.Empty) ++
+              postCodeNode.getOrElse(NodeSeq.Empty) ++
+              cityNode.getOrElse(NodeSeq.Empty) ++
+              countryCodeNode.getOrElse(NodeSeq.Empty) ++
+              <NADLNGRD>{LanguageCodeEnglish.code}</NADLNGRD> ++
+              eoriNode.getOrElse(NodeSeq.Empty)
+            }
+            </TRADESTRD>
           }
 
-          trim(traderDestination.toXml) mustBe expectedResult
+          trim(traderDestination.toXml) mustBe trim(expectedResult)
       }
     }
 

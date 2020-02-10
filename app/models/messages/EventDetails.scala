@@ -17,9 +17,16 @@
 package models.messages
 
 import models._
+import models.request.Header
 import play.api.libs.json._
+import services.XmlBuilderService
 
-sealed trait EventDetails
+import scala.xml.Node
+import scala.xml.NodeSeq
+
+sealed trait EventDetails {
+  def toXml: Node
+}
 
 object EventDetails {
 
@@ -44,10 +51,23 @@ object EventDetails {
   }
 }
 
-final case class Incident(
-  information: Option[String],
-  endorsement: Endorsement
-) extends EventDetails
+final case class Incident(information: Option[String], endorsement: Endorsement) extends XmlBuilderService with EventDetails {
+
+  def toXml: Node =
+    <INCINC>
+    {
+      buildIncidentFlag(information.isDefined) ++
+      buildOptionalElem(information, "IncInfINC4") ++
+      buildAndEncodeElem(Header.Constants.languageCode, "IncInfINC4LNG") ++
+      buildOptionalElem(endorsement.date, "EndDatINC6") ++
+      buildOptionalElem(endorsement.authority, "EndAutINC7") ++
+      buildAndEncodeElem(Header.Constants.languageCode, "EndAutINC7LNG") ++
+      buildOptionalElem(endorsement.place, "EndPlaINC10") ++
+      buildAndEncodeElem(Header.Constants.languageCode, "EndPlaINC10LNG") ++
+      buildOptionalElem(endorsement.country, "EndCouINC12")
+    }
+    </INCINC>
+}
 
 object Incident {
 
@@ -84,12 +104,26 @@ object Transhipment {
   }
 }
 
-final case class VehicularTranshipment(
-  transportIdentity: String,
-  transportCountry: String,
-  endorsement: Endorsement,
-  containers: Option[Seq[Container]]
-) extends Transhipment
+final case class VehicularTranshipment(transportIdentity: String, transportCountry: String, endorsement: Endorsement, containers: Option[Seq[Container]])
+    extends XmlBuilderService
+    with Transhipment {
+
+  def toXml: Node =
+    <TRASHP>
+      {
+        buildAndEncodeElem(transportIdentity,"NewTraMeaIdeSHP26") ++
+        buildAndEncodeElem(Header.Constants.languageCode,"NewTraMeaIdeSHP26LNG") ++
+        buildAndEncodeElem(transportCountry,"NewTraMeaNatSHP54") ++
+        buildOptionalElem(endorsement.date, "EndDatSHP60") ++
+        buildOptionalElem(endorsement.authority, "EndAutSHP61") ++
+        buildAndEncodeElem(Header.Constants.languageCode, "EndAutSHP61LNG") ++
+        buildOptionalElem(endorsement.place, "EndPlaSHP63") ++
+        buildAndEncodeElem(Header.Constants.languageCode, "EndPlaSHP63LNG") ++
+        buildOptionalElem(endorsement.country, "EndCouSHP65") ++
+        containers.fold(NodeSeq.Empty)(_.map(_.toXml))
+      }
+    </TRASHP>
+}
 
 object VehicularTranshipment {
 
@@ -124,10 +158,19 @@ object VehicularTranshipment {
     }
 }
 
-final case class ContainerTranshipment(
-  endorsement: Endorsement,
-  containers: Seq[Container]
-) extends Transhipment {
+final case class ContainerTranshipment(endorsement: Endorsement, containers: Seq[Container]) extends XmlBuilderService with Transhipment {
+
+  def toXml: Node =
+    <TRASHP> {
+        buildOptionalElem(endorsement.date, "EndDatSHP60") ++
+        buildOptionalElem(endorsement.authority, "EndAutSHP61") ++
+        buildAndEncodeElem(Header.Constants.languageCode,"EndAutSHP61LNG") ++
+        buildOptionalElem(endorsement.place, "EndPlaSHP63") ++
+        buildAndEncodeElem(Header.Constants.languageCode,"EndPlaSHP63LNG") ++
+        buildOptionalElem(endorsement.country, "EndCouSHP65") ++
+        containers.map(_.toXml)
+      }
+    </TRASHP>
 
   require(containers.nonEmpty, "At least one container number must be provided")
 }

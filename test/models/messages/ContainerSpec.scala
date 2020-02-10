@@ -14,28 +14,31 @@
  * limitations under the License.
  */
 
-package models.request
+package models.messages
 
-import generators.MessageGenerators
-import org.scalacheck.Arbitrary.arbitrary
+import generators.ModelGenerators
+import models.behaviours.JsonBehaviours
 import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
+import org.scalacheck.Arbitrary.arbitrary
 import scala.xml.Utility.trim
 
-class CustomsOfficeOfPresentationSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with MessageGenerators {
+import scala.xml.Node
 
-  "CustomsOfficeOfPresentation" - {
+class ContainerSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with ModelGenerators with JsonBehaviours {
 
+  "Container" - {
     "must create valid xml" in {
-      forAll(arbitrary[CustomsOfficeOfPresentation]) {
-        customsOfficeOfPresentation =>
-          val expectedResult =
-            <CUSOFFPREOFFRES>
-              <RefNumRES1>{customsOfficeOfPresentation.presentationOffice}</RefNumRES1>
-            </CUSOFFPREOFFRES>
 
-          trim(customsOfficeOfPresentation.toXml) mustBe trim(expectedResult)
+      forAll(arbitrary[Container]) {
+        container =>
+          val expectedXml: Node =
+            <CONNR3>
+              <ConNumNR31>{container.containerNumber}</ConNumNR31>
+            </CONNR3>
+
+          trim(container.toXml) mustBe trim(expectedXml)
       }
     }
   }

@@ -66,62 +66,60 @@ class XmlBuilderServiceSpec
             val genTimeOfPreparation = Format.timeFormatted(genDateTime)
 
             val validXml: Node = {
-              trim(
-                <CC007A> {
-                    buildAndEncodeElem(arrivalNotificationRequest.meta.syntaxIdentifier, "SynIdeMES1") ++
-                    buildAndEncodeElem(arrivalNotificationRequest.meta.syntaxVersionNumber, "SynVerNumMES2") ++
-                    buildAndEncodeElem(arrivalNotificationRequest.meta.messageSender.toString, "MesSenMES3") ++
-                    buildOptionalElem(arrivalNotificationRequest.meta.senderIdentificationCodeQualifier, "SenIdeCodQuaMES4") ++
-                    buildOptionalElem(arrivalNotificationRequest.meta.recipientIdentificationCodeQualifier, "RecIdeCodQuaMES7") ++
-                    buildAndEncodeElem(arrivalNotificationRequest.meta.messageRecipient, "MesRecMES6") ++
-                    buildAndEncodeElem(genDateOfPreparation, "DatOfPreMES9") ++
-                    buildAndEncodeElem(genTimeOfPreparation, "TimOfPreMES10") ++
-                    buildAndEncodeElem(arrivalNotificationRequest.meta.interchangeControlReference.toString, "IntConRefMES11") ++
-                    buildOptionalElem(arrivalNotificationRequest.meta.recipientsReferencePassword, "RecRefMES12") ++
-                    buildOptionalElem(arrivalNotificationRequest.meta.recipientsReferencePasswordQualifier, "RecRefQuaMES13") ++
-                    buildAndEncodeElem(arrivalNotificationRequest.meta.applicationReference, "AppRefMES14") ++
-                    buildOptionalElem(arrivalNotificationRequest.meta.priority, "PriMES15") ++
-                    buildOptionalElem(arrivalNotificationRequest.meta.acknowledgementRequest, "AckReqMES16") ++
-                    buildOptionalElem(arrivalNotificationRequest.meta.communicationsAgreementId, "ComAgrIdMES17") ++
-                    buildAndEncodeElem(arrivalNotificationRequest.meta.testIndicator, "TesIndMES18") ++
-                    buildAndEncodeElem(arrivalNotificationRequest.meta.messageIndication, "MesIdeMES19") ++
-                    buildAndEncodeElem(arrivalNotificationRequest.messageCode.code, "MesTypMES20") ++
-                    buildOptionalElem(arrivalNotificationRequest.meta.commonAccessReference, "ComAccRefMES21") ++
-                    buildOptionalElem(arrivalNotificationRequest.meta.messageSequenceNumber, "MesSeqNumMES22") ++
-                    buildOptionalElem(arrivalNotificationRequest.meta.firstAndLastTransfer, "FirAndLasTraMES23")
+              <CC007A> {
+                  buildAndEncodeElem(arrivalNotificationRequest.meta.syntaxIdentifier, "SynIdeMES1") ++
+                  buildAndEncodeElem(arrivalNotificationRequest.meta.syntaxVersionNumber, "SynVerNumMES2") ++
+                  buildAndEncodeElem(arrivalNotificationRequest.meta.messageSender.toString, "MesSenMES3") ++
+                  buildOptionalElem(arrivalNotificationRequest.meta.senderIdentificationCodeQualifier, "SenIdeCodQuaMES4") ++
+                  buildOptionalElem(arrivalNotificationRequest.meta.recipientIdentificationCodeQualifier, "RecIdeCodQuaMES7") ++
+                  buildAndEncodeElem(arrivalNotificationRequest.meta.messageRecipient, "MesRecMES6") ++
+                  buildAndEncodeElem(genDateOfPreparation, "DatOfPreMES9") ++
+                  buildAndEncodeElem(genTimeOfPreparation, "TimOfPreMES10") ++
+                  buildAndEncodeElem(arrivalNotificationRequest.meta.interchangeControlReference.toString, "IntConRefMES11") ++
+                  buildOptionalElem(arrivalNotificationRequest.meta.recipientsReferencePassword, "RecRefMES12") ++
+                  buildOptionalElem(arrivalNotificationRequest.meta.recipientsReferencePasswordQualifier, "RecRefQuaMES13") ++
+                  buildAndEncodeElem(arrivalNotificationRequest.meta.applicationReference, "AppRefMES14") ++
+                  buildOptionalElem(arrivalNotificationRequest.meta.priority, "PriMES15") ++
+                  buildOptionalElem(arrivalNotificationRequest.meta.acknowledgementRequest, "AckReqMES16") ++
+                  buildOptionalElem(arrivalNotificationRequest.meta.communicationsAgreementId, "ComAgrIdMES17") ++
+                  buildAndEncodeElem(arrivalNotificationRequest.meta.testIndicator, "TesIndMES18") ++
+                  buildAndEncodeElem(arrivalNotificationRequest.meta.messageIndication, "MesIdeMES19") ++
+                  buildAndEncodeElem(arrivalNotificationRequest.messageCode.code, "MesTypMES20") ++
+                  buildOptionalElem(arrivalNotificationRequest.meta.commonAccessReference, "ComAccRefMES21") ++
+                  buildOptionalElem(arrivalNotificationRequest.meta.messageSequenceNumber, "MesSeqNumMES22") ++
+                  buildOptionalElem(arrivalNotificationRequest.meta.firstAndLastTransfer, "FirAndLasTraMES23")
+                }
+                <HEAHEA> {
+                  buildAndEncodeElem(arrivalNotificationRequest.header.movementReferenceNumber, "DocNumHEA5") ++
+                  buildOptionalElem(arrivalNotificationRequest.header.customsSubPlace, "CusSubPlaHEA66") ++
+                  buildAndEncodeElem(arrivalNotificationRequest.header.arrivalNotificationPlace, "ArrNotPlaHEA60") ++
+                  buildAndEncodeElem(Header.Constants.languageCode, "ArrNotPlaHEA60LNG") ++
+                  buildOptionalElem(arrivalNotificationRequest.header.arrivalAgreedLocationOfGoods, "ArrAgrLocCodHEA62") ++
+                  buildOptionalElem(arrivalNotificationRequest.header.arrivalAgreedLocationOfGoods, "ArrAgrLocOfGooHEA63") ++
+                  buildAndEncodeElem(Header.Constants.languageCode, "ArrAgrLocOfGooHEA63LNG") ++
+                  buildOptionalElem(arrivalNotificationRequest.header.arrivalAgreedLocationOfGoods, "ArrAutLocOfGooHEA65") ++
+                  buildAndEncodeElem(arrivalNotificationRequest.header.procedureTypeFlag, "SimProFlaHEA132") ++
+                  buildAndEncodeElem(genDateOfPreparation, "ArrNotDatHEA141")
+                }
+                </HEAHEA>
+                <TRADESTRD> {
+                  buildOptionalElem(arrivalNotificationRequest.traderDestination.name, "NamTRD7") ++
+                  buildOptionalElem(arrivalNotificationRequest.traderDestination.streetAndNumber, "StrAndNumTRD22") ++
+                  buildOptionalElem(arrivalNotificationRequest.traderDestination.postCode, "PosCodTRD23") ++
+                  buildOptionalElem(arrivalNotificationRequest.traderDestination.city, "CitTRD24") ++
+                  buildOptionalElem(arrivalNotificationRequest.traderDestination.countryCode, "CouTRD25") ++
+                  buildAndEncodeElem(TraderDestination.Constants.languageCode, "NADLNGRD") ++
+                  buildOptionalElem(arrivalNotificationRequest.traderDestination.eori, "TINTRD59")
                   }
-                  <HEAHEA> {
-                    buildAndEncodeElem(arrivalNotificationRequest.header.movementReferenceNumber, "DocNumHEA5") ++
-                    buildOptionalElem(arrivalNotificationRequest.header.customsSubPlace, "CusSubPlaHEA66") ++
-                    buildAndEncodeElem(arrivalNotificationRequest.header.arrivalNotificationPlace, "ArrNotPlaHEA60") ++
-                    buildAndEncodeElem(Header.Constants.languageCode, "ArrNotPlaHEA60LNG") ++
-                    buildOptionalElem(arrivalNotificationRequest.header.arrivalAgreedLocationOfGoods, "ArrAgrLocCodHEA62") ++
-                    buildOptionalElem(arrivalNotificationRequest.header.arrivalAgreedLocationOfGoods, "ArrAgrLocOfGooHEA63") ++
-                    buildAndEncodeElem(Header.Constants.languageCode, "ArrAgrLocOfGooHEA63LNG") ++
-                    buildOptionalElem(arrivalNotificationRequest.header.arrivalAgreedLocationOfGoods, "ArrAutLocOfGooHEA65") ++
-                    buildAndEncodeElem(arrivalNotificationRequest.header.procedureTypeFlag, "SimProFlaHEA132") ++
-                    buildAndEncodeElem(genDateOfPreparation, "ArrNotDatHEA141")
-                  }
-                  </HEAHEA>
-                  <TRADESTRD> {
-                    buildOptionalElem(arrivalNotificationRequest.traderDestination.name, "NamTRD7") ++
-                    buildOptionalElem(arrivalNotificationRequest.traderDestination.streetAndNumber, "StrAndNumTRD22") ++
-                    buildOptionalElem(arrivalNotificationRequest.traderDestination.postCode, "PosCodTRD23") ++
-                    buildOptionalElem(arrivalNotificationRequest.traderDestination.city, "CitTRD24") ++
-                    buildOptionalElem(arrivalNotificationRequest.traderDestination.countryCode, "CouTRD25") ++
-                    buildAndEncodeElem(TraderDestination.Constants.languageCode, "NADLNGRD") ++
-                    buildOptionalElem(arrivalNotificationRequest.traderDestination.eori, "TINTRD59")
-                    }
-                  </TRADESTRD>
-                  <CUSOFFPREOFFRES>
-                    <RefNumRES1>{arrivalNotificationRequest.customsOfficeOfPresentation.presentationOffice}</RefNumRES1>
-                  </CUSOFFPREOFFRES>
-                  {buildEnRouteEvent(arrivalNotificationRequest.enRouteEvents, Header.Constants.languageCode)}
-                </CC007A>
-              )
+                </TRADESTRD>
+                <CUSOFFPREOFFRES>
+                  <RefNumRES1>{arrivalNotificationRequest.customsOfficeOfPresentation.presentationOffice}</RefNumRES1>
+                </CUSOFFPREOFFRES>
+                {buildEnRouteEvent(arrivalNotificationRequest.enRouteEvents, Header.Constants.languageCode)}
+              </CC007A>
             }
 
-            trim(convertToXml.buildXml(arrivalNotificationRequest)(genDateTime).right.toOption.value) mustBe validXml
+            trim(convertToXml.buildXml(arrivalNotificationRequest)(genDateTime).right.toOption.value) mustBe trim(validXml)
           }
       }
     }
@@ -141,38 +139,36 @@ class XmlBuilderServiceSpec
         )
 
       val minimalValidXml: Node = {
-        trim(
-          <CC007A>
-            <SynIdeMES1>{minimalArrivalNotificationRequest.syntaxIdentifier}</SynIdeMES1>
-            <SynVerNumMES2>{minimalArrivalNotificationRequest.meta.syntaxVersionNumber}</SynVerNumMES2>
-            <MesSenMES3>{minimalArrivalNotificationRequest.meta.messageSender.toString}</MesSenMES3>
-            <MesRecMES6>{minimalArrivalNotificationRequest.meta.messageRecipient}</MesRecMES6>
-            <DatOfPreMES9>{dateOfPreparation}</DatOfPreMES9>
-            <TimOfPreMES10>{timeOfPreparation}</TimOfPreMES10>
-            <IntConRefMES11>{minimalArrivalNotificationRequest.meta.interchangeControlReference.toString}</IntConRefMES11>
-            <AppRefMES14>{minimalArrivalNotificationRequest.meta.applicationReference}</AppRefMES14>
-            <TesIndMES18>{minimalArrivalNotificationRequest.meta.testIndicator}</TesIndMES18>
-            <MesIdeMES19>{minimalArrivalNotificationRequest.meta.messageIndication}</MesIdeMES19>
-            <MesTypMES20>{minimalArrivalNotificationRequest.messageCode.code}</MesTypMES20>
-            <HEAHEA>
-              <DocNumHEA5>{minimalArrivalNotificationRequest.header.movementReferenceNumber}</DocNumHEA5>
-              <ArrNotPlaHEA60>{minimalArrivalNotificationRequest.header.arrivalNotificationPlace}</ArrNotPlaHEA60>
-              <ArrNotPlaHEA60LNG>{Header.Constants.languageCode.code}</ArrNotPlaHEA60LNG>
-              <ArrAgrLocOfGooHEA63LNG>{Header.Constants.languageCode.code}</ArrAgrLocOfGooHEA63LNG>
-              <SimProFlaHEA132>{minimalArrivalNotificationRequest.header.procedureTypeFlag.code}</SimProFlaHEA132>
-              <ArrNotDatHEA141>{dateOfPreparation}</ArrNotDatHEA141>
-            </HEAHEA>
-            <TRADESTRD>
-              <NADLNGRD>{Header.Constants.languageCode.code}</NADLNGRD>
-            </TRADESTRD>
-            <CUSOFFPREOFFRES>
-              <RefNumRES1>{minimalArrivalNotificationRequest.customsOfficeOfPresentation.presentationOffice}</RefNumRES1>
-            </CUSOFFPREOFFRES>
-          </CC007A>
-        )
+        <CC007A>
+          <SynIdeMES1>{minimalArrivalNotificationRequest.syntaxIdentifier}</SynIdeMES1>
+          <SynVerNumMES2>{minimalArrivalNotificationRequest.meta.syntaxVersionNumber}</SynVerNumMES2>
+          <MesSenMES3>{minimalArrivalNotificationRequest.meta.messageSender.toString}</MesSenMES3>
+          <MesRecMES6>{minimalArrivalNotificationRequest.meta.messageRecipient}</MesRecMES6>
+          <DatOfPreMES9>{dateOfPreparation}</DatOfPreMES9>
+          <TimOfPreMES10>{timeOfPreparation}</TimOfPreMES10>
+          <IntConRefMES11>{minimalArrivalNotificationRequest.meta.interchangeControlReference.toString}</IntConRefMES11>
+          <AppRefMES14>{minimalArrivalNotificationRequest.meta.applicationReference}</AppRefMES14>
+          <TesIndMES18>{minimalArrivalNotificationRequest.meta.testIndicator}</TesIndMES18>
+          <MesIdeMES19>{minimalArrivalNotificationRequest.meta.messageIndication}</MesIdeMES19>
+          <MesTypMES20>{minimalArrivalNotificationRequest.messageCode.code}</MesTypMES20>
+          <HEAHEA>
+            <DocNumHEA5>{minimalArrivalNotificationRequest.header.movementReferenceNumber}</DocNumHEA5>
+            <ArrNotPlaHEA60>{minimalArrivalNotificationRequest.header.arrivalNotificationPlace}</ArrNotPlaHEA60>
+            <ArrNotPlaHEA60LNG>{Header.Constants.languageCode.code}</ArrNotPlaHEA60LNG>
+            <ArrAgrLocOfGooHEA63LNG>{Header.Constants.languageCode.code}</ArrAgrLocOfGooHEA63LNG>
+            <SimProFlaHEA132>{minimalArrivalNotificationRequest.header.procedureTypeFlag.code}</SimProFlaHEA132>
+            <ArrNotDatHEA141>{dateOfPreparation}</ArrNotDatHEA141>
+          </HEAHEA>
+          <TRADESTRD>
+            <NADLNGRD>{Header.Constants.languageCode.code}</NADLNGRD>
+          </TRADESTRD>
+          <CUSOFFPREOFFRES>
+            <RefNumRES1>{minimalArrivalNotificationRequest.customsOfficeOfPresentation.presentationOffice}</RefNumRES1>
+          </CUSOFFPREOFFRES>
+        </CC007A>
       }
 
-      trim(convertToXml.buildXml(minimalArrivalNotificationRequest)(dateTime).right.toOption.value) mustBe minimalValidXml
+      trim(convertToXml.buildXml(minimalArrivalNotificationRequest)(dateTime).right.toOption.value) mustBe trim(minimalValidXml)
     }
 
     "must return correct nodes for a minimal arrival notification request with an EnRouteEvent" in {
@@ -199,8 +195,7 @@ class XmlBuilderServiceSpec
         )
 
       val minimalValidXmlWithEnrouteEvent: Node =
-        trim(
-          <CC007A>
+        <CC007A>
           <SynIdeMES1>{arrivalNotificationRequestWithIncident.syntaxIdentifier}</SynIdeMES1>
           <SynVerNumMES2>{arrivalNotificationRequestWithIncident.meta.syntaxVersionNumber}</SynVerNumMES2>
           <MesSenMES3>{arrivalNotificationRequestWithIncident.meta.messageSender.toString}</MesSenMES3>
@@ -227,29 +222,29 @@ class XmlBuilderServiceSpec
             <RefNumRES1>{arrivalNotificationRequestWithIncident.customsOfficeOfPresentation.presentationOffice}</RefNumRES1>
           </CUSOFFPREOFFRES>
           {
-          arrivalNotificationRequestWithIncident.enRouteEvents.value.map {
-            enrouteEvent =>
-              <ENROUEVETEV>
-                <PlaTEV10>{enrouteEvent.place}</PlaTEV10>
-                <PlaTEV10LNG>{Header.Constants.languageCode.code}</PlaTEV10LNG>
-                <CouTEV13>{enrouteEvent.countryCode}</CouTEV13>
-                <CTLCTL>
-                  <AlrInNCTCTL29>1</AlrInNCTCTL29>
-                </CTLCTL>
-                <INCINC>
-                  <IncFlaINC3>1</IncFlaINC3>
-                  <IncInfINC4LNG>{Header.Constants.languageCode.code}</IncInfINC4LNG>
-                  <EndAutINC7LNG>{Header.Constants.languageCode.code}</EndAutINC7LNG>
-                  <EndPlaINC10LNG>{Header.Constants.languageCode.code}</EndPlaINC10LNG>
-                </INCINC>
-              </ENROUEVETEV>
+            arrivalNotificationRequestWithIncident.enRouteEvents.value.map {
+              enrouteEvent =>
+                <ENROUEVETEV>
+                  <PlaTEV10>{enrouteEvent.place}</PlaTEV10>
+                  <PlaTEV10LNG>{Header.Constants.languageCode.code}</PlaTEV10LNG>
+                  <CouTEV13>{enrouteEvent.countryCode}</CouTEV13>
+                  <CTLCTL>
+                    <AlrInNCTCTL29>1</AlrInNCTCTL29>
+                  </CTLCTL>
+                  <INCINC>
+                    <IncFlaINC3>1</IncFlaINC3>
+                    <IncInfINC4LNG>{Header.Constants.languageCode.code}</IncInfINC4LNG>
+                    <EndAutINC7LNG>{Header.Constants.languageCode.code}</EndAutINC7LNG>
+                    <EndPlaINC10LNG>{Header.Constants.languageCode.code}</EndPlaINC10LNG>
+                  </INCINC>
+                </ENROUEVETEV>
+            }
           }
-          }
-
         </CC007A>
-        )
 
-      trim(convertToXml.buildXml(arrivalNotificationRequestWithIncident)(dateTime).right.toOption.value) mustBe minimalValidXmlWithEnrouteEvent
+      val result = trim(convertToXml.buildXml(arrivalNotificationRequestWithIncident)(dateTime).right.toOption.value)
+
+      result mustBe trim(minimalValidXmlWithEnrouteEvent)
     }
   }
 

@@ -184,7 +184,7 @@ trait ModelGenerators {
 
   implicit lazy val arbitrarySeal: Arbitrary[Seal] = Arbitrary {
     for {
-      numberOrMark <- stringsWithMaxLength(Seal.constant.numberOrMarkLength)
+      numberOrMark <- stringsWithMaxLength(Seal.Constants.numberOrMarkLength)
     } yield Seal(numberOrMark)
   }
 

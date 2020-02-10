@@ -17,15 +17,33 @@
 package models.messages
 
 import models._
+import models.request.Header
 import play.api.libs.json._
+import services.XmlBuilderService
 
-final case class EnRouteEvent(
-  place: String,
-  countryCode: String,
-  alreadyInNcts: Boolean,
-  eventDetails: EventDetails,
-  seals: Option[Seq[Seal]]
-)
+import scala.xml.Node
+import scala.xml.NodeSeq
+
+final case class EnRouteEvent(place: String, countryCode: String, alreadyInNcts: Boolean, eventDetails: EventDetails, seals: Option[Seq[Seal]])
+    extends XmlBuilderService {
+
+  def toXml: Node =
+    <ENROUEVETEV>
+      {
+        buildAndEncodeElem(place,"PlaTEV10") ++
+        buildAndEncodeElem(Header.Constants.languageCode,"PlaTEV10LNG") ++
+        buildAndEncodeElem(countryCode,"CouTEV13")
+      }
+      <CTLCTL>
+      {
+        buildAndEncodeElem(alreadyInNcts,"AlrInNCTCTL29")
+      }
+      </CTLCTL>
+      {
+        seals.fold(NodeSeq.Empty)(_.map(_.toXml))
+      }
+    </ENROUEVETEV>
+}
 
 object EnRouteEvent {
 

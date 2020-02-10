@@ -18,8 +18,18 @@ package models.messages
 
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
+import services.XmlBuilderService
 
-case class Container(containerNumber: String)
+import scala.xml.Node
+
+case class Container(containerNumber: String) extends XmlBuilderService {
+
+  def toXml: Node =
+    <CONNR3>
+      {buildAndEncodeElem(containerNumber, "ConNumNR31")}
+    </CONNR3>
+
+}
 
 object Container {
 

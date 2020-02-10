@@ -16,15 +16,31 @@
 
 package models.messages
 
+import models.request.LanguageCode
+import models.request.LanguageCodeEnglish
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
+import services.XmlBuilderService
 
-case class Seal(numberOrMark: String)
+import scala.xml.Node
+
+case class Seal(numberOrMark: String) extends XmlBuilderService {
+
+  def toXml: Node =
+    <SEAIDSI1>
+      {
+        buildAndEncodeElem(numberOrMark, "SeaIdeSI11") ++
+        buildAndEncodeElem(Seal.Constants.languageCode, "SeaIdeSI11LNG")
+      }
+    </SEAIDSI1>
+
+}
 
 object Seal {
 
-  object constant {
-    val numberOrMarkLength = 20
+  object Constants {
+    val numberOrMarkLength         = 20
+    val languageCode: LanguageCode = LanguageCodeEnglish
   }
 
   implicit val format: OFormat[Seal] = Json.format[Seal]

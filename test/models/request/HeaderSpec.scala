@@ -44,20 +44,17 @@ class HeaderSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyCheck
             arrivalNotificationPlace = header.arrivalNotificationPlace
           )
 
-          val expectedResult = {
-            trim(
-              <HEAHEA>
-                <DocNumHEA5>{minimalHeader.movementReferenceNumber}</DocNumHEA5>
-                <ArrNotPlaHEA60>{minimalHeader.arrivalNotificationPlace}</ArrNotPlaHEA60>
-                <ArrNotPlaHEA60LNG>{LanguageCodeEnglish.code}</ArrNotPlaHEA60LNG>
-                <ArrAgrLocOfGooHEA63LNG>{LanguageCodeEnglish.code}</ArrAgrLocOfGooHEA63LNG>
-                <SimProFlaHEA132>{minimalHeader.procedureTypeFlag.code}</SimProFlaHEA132>
-                <ArrNotDatHEA141>{Format.dateFormatted(arrivalNotificationDate)}</ArrNotDatHEA141>
-              </HEAHEA>
-            )
-          }
+          val expectedResult =
+            <HEAHEA>
+              <DocNumHEA5>{minimalHeader.movementReferenceNumber}</DocNumHEA5>
+              <ArrNotPlaHEA60>{minimalHeader.arrivalNotificationPlace}</ArrNotPlaHEA60>
+              <ArrNotPlaHEA60LNG>{LanguageCodeEnglish.code}</ArrNotPlaHEA60LNG>
+              <ArrAgrLocOfGooHEA63LNG>{LanguageCodeEnglish.code}</ArrAgrLocOfGooHEA63LNG>
+              <SimProFlaHEA132>{minimalHeader.procedureTypeFlag.code}</SimProFlaHEA132>
+              <ArrNotDatHEA141>{Format.dateFormatted(arrivalNotificationDate)}</ArrNotDatHEA141>
+            </HEAHEA>
 
-          trim(minimalHeader.toXml(arrivalNotificationDate)) mustBe expectedResult
+          trim(minimalHeader.toXml(arrivalNotificationDate)) mustBe trim(expectedResult)
       }
     }
 
@@ -78,23 +75,20 @@ class HeaderSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyCheck
             arrivalAgreedLocationOfGoods => <ArrAutLocOfGooHEA65>{arrivalAgreedLocationOfGoods}</ArrAutLocOfGooHEA65>
           )
 
-          val expectedResult = {
-            trim(
-              <HEAHEA>
-                <DocNumHEA5>{header.movementReferenceNumber}</DocNumHEA5>
-                {customsSubPlaceNode.getOrElse(NodeSeq.Empty)}
-                <ArrNotPlaHEA60>{header.arrivalNotificationPlace}</ArrNotPlaHEA60>
-                <ArrNotPlaHEA60LNG>{LanguageCodeEnglish.code}</ArrNotPlaHEA60LNG>
-                {agreedLocationOfGoods.getOrElse(NodeSeq.Empty)}
-                <ArrAgrLocOfGooHEA63LNG>{LanguageCodeEnglish.code}</ArrAgrLocOfGooHEA63LNG>
-                {authorisedLocationOfGoods.getOrElse(NodeSeq.Empty)}
-                <SimProFlaHEA132>{header.procedureTypeFlag.code}</SimProFlaHEA132>
-                <ArrNotDatHEA141>{Format.dateFormatted(arrivalNotificationDate)}</ArrNotDatHEA141>
-              </HEAHEA>
-            )
-          }
+          val expectedResult =
+            <HEAHEA>
+              <DocNumHEA5>{header.movementReferenceNumber}</DocNumHEA5>
+              {customsSubPlaceNode.getOrElse(NodeSeq.Empty)}
+              <ArrNotPlaHEA60>{header.arrivalNotificationPlace}</ArrNotPlaHEA60>
+              <ArrNotPlaHEA60LNG>{LanguageCodeEnglish.code}</ArrNotPlaHEA60LNG>
+              {agreedLocationOfGoods.getOrElse(NodeSeq.Empty)}
+              <ArrAgrLocOfGooHEA63LNG>{LanguageCodeEnglish.code}</ArrAgrLocOfGooHEA63LNG>
+              {authorisedLocationOfGoods.getOrElse(NodeSeq.Empty)}
+              <SimProFlaHEA132>{header.procedureTypeFlag.code}</SimProFlaHEA132>
+              <ArrNotDatHEA141>{Format.dateFormatted(arrivalNotificationDate)}</ArrNotDatHEA141>
+            </HEAHEA>
 
-          trim(header.toXml(arrivalNotificationDate)) mustBe expectedResult
+          trim(header.toXml(arrivalNotificationDate)) mustBe trim(expectedResult)
       }
     }
   }
