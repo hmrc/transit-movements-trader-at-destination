@@ -19,7 +19,6 @@ package services
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-import models.messages._
 import models.request._
 import play.api.Logger
 import play.twirl.api.utils.StringEscapeUtils
@@ -127,54 +126,9 @@ class XmlBuilderService {
 
   private def buildEnRouteEventsNode(arrivalNotificationRequest: ArrivalNotificationRequest): NodeSeq = arrivalNotificationRequest.enRouteEvents match {
 
-    case None => NodeSeq.Empty
-    case Some(enRouteEvent) =>
-      enRouteEvent.map {
-        event =>
-          <ENROUEVETEV> {
-              buildAndEncodeElem(event.place,"PlaTEV10") ++
-              buildAndEncodeElem(Header.Constants.languageCode,"PlaTEV10LNG") ++
-              buildAndEncodeElem(event.countryCode,"CouTEV13")
-            }
-            <CTLCTL> {
-                buildAndEncodeElem(event.alreadyInNcts,"AlrInNCTCTL29")
-              }
-            </CTLCTL> {
-               buildIncident(event.eventDetails, event.seals)(arrivalNotificationRequest)
-            }
-          </ENROUEVETEV>
-      }
+    case None               => NodeSeq.Empty
+    case Some(enRouteEvent) => enRouteEvent.map(_.toXml)
   }
-
-  private def buildSeals(seals: Seq[Seal], languageCode: LanguageCode): NodeSeq = {
-    val sealsXml = seals.map {
-      seal =>
-        <SEAIDSI1>
-          <SeaIdeSI11>
-            {seal.numberOrMark}
-          </SeaIdeSI11>{buildAndEncodeElem(languageCode, "SeaIdeSI11LNG")}
-        </SEAIDSI1>
-    }
-
-    <SEAINFSF1>
-      <SeaNumSF12>
-        {seals.size}
-      </SeaNumSF12>{sealsXml}
-    </SEAINFSF1>
-  }
-
-  private def buildIncident(event: EventDetails, sealsOpt: Option[Seq[Seal]])(implicit arrivalNotificationRequest: ArrivalNotificationRequest): NodeSeq = {
-    val seals = sealsOpt.fold(NodeSeq.Empty) {
-      seal =>
-        buildSeals(seal, Header.Constants.languageCode)
-    }
-    event match {
-      case incident: Incident                           => incident.toXml ++ seals
-      case containerTranshipment: ContainerTranshipment => seals ++ containerTranshipment.toXml
-      case vehicularTranshipment: VehicularTranshipment => seals ++ vehicularTranshipment.toXml
-    }
-  }
-
 }
 
 object XmlBuilderService {

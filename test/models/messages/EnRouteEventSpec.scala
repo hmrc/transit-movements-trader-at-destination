@@ -26,6 +26,9 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.libs.json.JsObject
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.Json
+import utils.Format
+
+import scala.xml.NodeSeq
 import scala.xml.Utility.trim
 import scala.xml.XML.loadString
 
@@ -33,29 +36,75 @@ class EnRouteEventSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
 
   "EnRouteEvent" - {
 
-    "must create valid xml" in {
+    "must create valid xml with Incident and seals" in {
 
-      forAll(arbitrary[EnRouteEvent], arbitrary[Seal]) {
-        (enRouteEvent, seal) =>
-          val enRouteEventWithSeal = enRouteEvent.copy(seals = Some(Seq(seal)))
+      forAll(arbitrary[EnRouteEvent], arbitrary[Seal], arbitrary[Incident]) {
+        (enRouteEvent, seal, incident) =>
+          val enRouteEventWithSealAndIncident = enRouteEvent.copy(seals = Some(Seq(seal)), eventDetails = incident)
 
-          val expectedResult =
+          val incidentInformationOrFlagNode = incident.information
+            .map {
+              information =>
+                <IncInfINC4>{information}</IncInfINC4>
+            }
+            .getOrElse {
+              <IncFlaINC3>1</IncFlaINC3>
+            }
+          val endorsementDateNode = incident.endorsement.date.map {
+            date =>
+              <EndDatINC6>{Format.dateFormatted(date)}</EndDatINC6>
+          }
+          val endorsementAuthority = incident.endorsement.authority.map {
+            authority =>
+              <EndAutINC7>{authority}</EndAutINC7>
+          }
+          val endorsementPlace = incident.endorsement.place.map {
+            place =>
+              <EndPlaINC10>{place}</EndPlaINC10>
+          }
+          val endorsementCountry = incident.endorsement.country.map {
+            country =>
+              <EndCouINC12>{country}</EndCouINC12>
+          }
+
+          val result = {
             <ENROUEVETEV>
-              <PlaTEV10>{enRouteEventWithSeal.place}</PlaTEV10>
-              <PlaTEV10LNG>{LanguageCodeEnglish.code}</PlaTEV10LNG>
-              <CouTEV13>{enRouteEventWithSeal.countryCode}</CouTEV13>
-              <CTLCTL>
-                <AlrInNCTCTL29>{if (enRouteEventWithSeal.alreadyInNcts) "1" else "0"}</AlrInNCTCTL29>
-              </CTLCTL>
-              <SEAIDSI1>
-                <SeaIdeSI11>{seal.numberOrMark}</SeaIdeSI11>
-                <SeaIdeSI11LNG>{LanguageCodeEnglish.code}</SeaIdeSI11LNG>
-              </SEAIDSI1>
-            </ENROUEVETEV>
+            <PlaTEV10>{enRouteEventWithSealAndIncident.place}</PlaTEV10>
+            <PlaTEV10LNG>{LanguageCodeEnglish.code}</PlaTEV10LNG>
+            <CouTEV13>{enRouteEventWithSealAndIncident.countryCode}</CouTEV13>
+            <CTLCTL>
+              <AlrInNCTCTL29>{if (enRouteEventWithSealAndIncident.alreadyInNcts) 1 else 0}</AlrInNCTCTL29>
+            </CTLCTL>
+           <INCINC>
+             {
+              incidentInformationOrFlagNode
+             }
+             <IncInfINC4LNG>{LanguageCodeEnglish.code}</IncInfINC4LNG>
+             {
+              endorsementDateNode.getOrElse(NodeSeq.Empty) ++
+               endorsementAuthority.getOrElse(NodeSeq.Empty)
+             }
+             <EndAutINC7LNG>{LanguageCodeEnglish.code}</EndAutINC7LNG>
+             {
+              endorsementPlace.getOrElse(NodeSeq.Empty)
+             }
+             <EndPlaINC10LNG>{LanguageCodeEnglish.code}</EndPlaINC10LNG>
+             {
+              endorsementCountry.getOrElse(NodeSeq.Empty)
+             }
+           </INCINC>
+           <SEAINFSF1>
+             <SeaNumSF12>1</SeaNumSF12>
+             <SEAIDSI1>
+               <SeaIdeSI11>{seal.numberOrMark}</SeaIdeSI11>
+               <SeaIdeSI11LNG>{LanguageCodeEnglish.code}</SeaIdeSI11LNG>
+             </SEAIDSI1>
+           </SEAINFSF1>
+          </ENROUEVETEV>
+          }
 
-          trim(enRouteEventWithSeal.toXml) mustBe trim(loadString(expectedResult.toString))
+          trim(enRouteEventWithSealAndIncident.toXml) mustBe trim(loadString(result.toString))
       }
-
     }
 
     "must serialise" in {
