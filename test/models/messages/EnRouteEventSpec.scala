@@ -26,9 +26,7 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.libs.json.JsObject
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.Json
-import utils.Format
 
-import scala.xml.NodeSeq
 import scala.xml.Utility.trim
 import scala.xml.XML.loadString
 
@@ -36,36 +34,11 @@ class EnRouteEventSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
 
   "EnRouteEvent" - {
 
-    "must create valid xml with Incident and seals" in {
+    "must create valid xml with Incident and seal" in {
 
       forAll(arbitrary[EnRouteEvent], arbitrary[Seal], arbitrary[Incident]) {
         (enRouteEvent, seal, incident) =>
           val enRouteEventWithSealAndIncident = enRouteEvent.copy(seals = Some(Seq(seal)), eventDetails = incident)
-
-          val incidentInformationOrFlagNode = incident.information
-            .map {
-              information =>
-                <IncInfINC4>{information}</IncInfINC4>
-            }
-            .getOrElse {
-              <IncFlaINC3>1</IncFlaINC3>
-            }
-          val endorsementDateNode = incident.endorsement.date.map {
-            date =>
-              <EndDatINC6>{Format.dateFormatted(date)}</EndDatINC6>
-          }
-          val endorsementAuthority = incident.endorsement.authority.map {
-            authority =>
-              <EndAutINC7>{authority}</EndAutINC7>
-          }
-          val endorsementPlace = incident.endorsement.place.map {
-            place =>
-              <EndPlaINC10>{place}</EndPlaINC10>
-          }
-          val endorsementCountry = incident.endorsement.country.map {
-            country =>
-              <EndCouINC12>{country}</EndCouINC12>
-          }
 
           val result = {
             <ENROUEVETEV>
@@ -75,35 +48,78 @@ class EnRouteEventSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
             <CTLCTL>
               <AlrInNCTCTL29>{if (enRouteEventWithSealAndIncident.alreadyInNcts) 1 else 0}</AlrInNCTCTL29>
             </CTLCTL>
-           <INCINC>
-             {
-              incidentInformationOrFlagNode
-             }
-             <IncInfINC4LNG>{LanguageCodeEnglish.code}</IncInfINC4LNG>
-             {
-              endorsementDateNode.getOrElse(NodeSeq.Empty) ++
-               endorsementAuthority.getOrElse(NodeSeq.Empty)
-             }
-             <EndAutINC7LNG>{LanguageCodeEnglish.code}</EndAutINC7LNG>
-             {
-              endorsementPlace.getOrElse(NodeSeq.Empty)
-             }
-             <EndPlaINC10LNG>{LanguageCodeEnglish.code}</EndPlaINC10LNG>
-             {
-              endorsementCountry.getOrElse(NodeSeq.Empty)
-             }
-           </INCINC>
+            {
+              incident.toXml
+            }
            <SEAINFSF1>
              <SeaNumSF12>1</SeaNumSF12>
-             <SEAIDSI1>
-               <SeaIdeSI11>{seal.numberOrMark}</SeaIdeSI11>
-               <SeaIdeSI11LNG>{LanguageCodeEnglish.code}</SeaIdeSI11LNG>
-             </SEAIDSI1>
+             {
+              seal.toXml
+             }
            </SEAINFSF1>
           </ENROUEVETEV>
           }
 
           trim(enRouteEventWithSealAndIncident.toXml) mustBe trim(loadString(result.toString))
+      }
+    }
+    "must create valid xml with container transhipment and seal" in {
+
+      forAll(arbitrary[EnRouteEvent], arbitrary[Seal], arbitrary[ContainerTranshipment]) {
+        (enRouteEvent, seal, containerTranshipment) =>
+          val enRouteEventWithContainer = enRouteEvent.copy(seals = Some(Seq(seal)), eventDetails = containerTranshipment)
+
+          val result = {
+            <ENROUEVETEV>
+              <PlaTEV10>{enRouteEventWithContainer.place}</PlaTEV10>
+              <PlaTEV10LNG>{LanguageCodeEnglish.code}</PlaTEV10LNG>
+              <CouTEV13>{enRouteEventWithContainer.countryCode}</CouTEV13>
+              <CTLCTL>
+                <AlrInNCTCTL29>{if (enRouteEventWithContainer.alreadyInNcts) 1 else 0}</AlrInNCTCTL29>
+              </CTLCTL>
+              <SEAINFSF1>
+                <SeaNumSF12>1</SeaNumSF12>
+                {
+                seal.toXml
+                }
+              </SEAINFSF1>
+              {
+              containerTranshipment.toXml
+              }
+            </ENROUEVETEV>
+          }
+
+          trim(enRouteEventWithContainer.toXml) mustBe trim(loadString(result.toString))
+      }
+    }
+
+    "must create valid xml with vehicular transhipment with seal" in {
+
+      forAll(arbitrary[EnRouteEvent], arbitrary[Seal], arbitrary[VehicularTranshipment]) {
+        (enRouteEvent, seal, vehicularTranshipment) =>
+          val enRouteEventWithVehicle = enRouteEvent.copy(seals = Some(Seq(seal)), eventDetails = vehicularTranshipment)
+
+          val result = {
+            <ENROUEVETEV>
+              <PlaTEV10>{enRouteEventWithVehicle.place}</PlaTEV10>
+              <PlaTEV10LNG>{LanguageCodeEnglish.code}</PlaTEV10LNG>
+              <CouTEV13>{enRouteEventWithVehicle.countryCode}</CouTEV13>
+              <CTLCTL>
+                <AlrInNCTCTL29>{if (enRouteEventWithVehicle.alreadyInNcts) 1 else 0}</AlrInNCTCTL29>
+              </CTLCTL>
+              <SEAINFSF1>
+                <SeaNumSF12>1</SeaNumSF12>
+                {
+                seal.toXml
+                }
+              </SEAINFSF1>
+              {
+              vehicularTranshipment.toXml
+              }
+            </ENROUEVETEV>
+          }
+
+          trim(enRouteEventWithVehicle.toXml) mustBe trim(loadString(result.toString))
       }
     }
 
@@ -140,4 +156,5 @@ class EnRouteEventSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
           JsObject.empty
       }
     }
+
 }

@@ -67,11 +67,15 @@ class XmlBuilderServiceSpec
     <CC007A>
         <SynIdeMES1>{minimalArrivalNotificationRequest.syntaxIdentifier}</SynIdeMES1>
         <SynVerNumMES2>{minimalArrivalNotificationRequest.meta.syntaxVersionNumber}</SynVerNumMES2>
-        <MesSenMES3>{minimalArrivalNotificationRequest.meta.messageSender.toString}</MesSenMES3>
+        {
+          minimalArrivalNotificationRequest.meta.messageSender.toXml
+        }
         <MesRecMES6>{minimalArrivalNotificationRequest.meta.messageRecipient}</MesRecMES6>
         <DatOfPreMES9>{dateOfPreparation}</DatOfPreMES9>
         <TimOfPreMES10>{timeOfPreparation}</TimOfPreMES10>
-        <IntConRefMES11>{minimalArrivalNotificationRequest.meta.interchangeControlReference.toString}</IntConRefMES11>
+        {
+          minimalArrivalNotificationRequest.meta.interchangeControlReference.toXml
+        }
         <AppRefMES14>{minimalArrivalNotificationRequest.meta.applicationReference}</AppRefMES14>
         <TesIndMES18>{minimalArrivalNotificationRequest.meta.testIndicator}</TesIndMES18>
         <MesIdeMES19>{minimalArrivalNotificationRequest.meta.messageIndication}</MesIdeMES19>
@@ -105,17 +109,17 @@ class XmlBuilderServiceSpec
             val genDateOfPreparation = Format.dateFormatted(genDateTime)
             val genTimeOfPreparation = Format.timeFormatted(genDateTime)
 
-            val validXml: Node = {
+            val validXml: Node =
               <CC007A> {
                     buildAndEncodeElem(arrivalNotificationRequest.meta.syntaxIdentifier, "SynIdeMES1") ++
                     buildAndEncodeElem(arrivalNotificationRequest.meta.syntaxVersionNumber, "SynVerNumMES2") ++
-                    buildAndEncodeElem(arrivalNotificationRequest.meta.messageSender.toString, "MesSenMES3") ++
+                    arrivalNotificationRequest.meta.messageSender.toXml ++
                     buildOptionalElem(arrivalNotificationRequest.meta.senderIdentificationCodeQualifier, "SenIdeCodQuaMES4") ++
                     buildOptionalElem(arrivalNotificationRequest.meta.recipientIdentificationCodeQualifier, "RecIdeCodQuaMES7") ++
                     buildAndEncodeElem(arrivalNotificationRequest.meta.messageRecipient, "MesRecMES6") ++
                     buildAndEncodeElem(genDateOfPreparation, "DatOfPreMES9") ++
                     buildAndEncodeElem(genTimeOfPreparation, "TimOfPreMES10") ++
-                    buildAndEncodeElem(arrivalNotificationRequest.meta.interchangeControlReference.toString, "IntConRefMES11") ++
+                    arrivalNotificationRequest.meta.interchangeControlReference.toXml ++
                     buildOptionalElem(arrivalNotificationRequest.meta.recipientsReferencePassword, "RecRefMES12") ++
                     buildOptionalElem(arrivalNotificationRequest.meta.recipientsReferencePasswordQualifier, "RecRefQuaMES13") ++
                     buildAndEncodeElem(arrivalNotificationRequest.meta.applicationReference, "AppRefMES14") ++
@@ -157,11 +161,10 @@ class XmlBuilderServiceSpec
                   </CUSOFFPREOFFRES>
                   {buildEnRouteEvent(arrivalNotificationRequest.enRouteEvents, Header.Constants.languageCode)}
                 </CC007A>
-            }
 
             val result = trim(convertToXml.buildXml(arrivalNotificationRequest)(genDateTime).right.toOption.value)
 
-            result mustBe trim(validXml)
+            result mustBe trim(loadString(validXml.toString))
           }
       }
     }
@@ -210,11 +213,15 @@ class XmlBuilderServiceSpec
         <CC007A>
           <SynIdeMES1>{arrivalNotificationRequestWithIncident.syntaxIdentifier}</SynIdeMES1>
           <SynVerNumMES2>{arrivalNotificationRequestWithIncident.meta.syntaxVersionNumber}</SynVerNumMES2>
-          <MesSenMES3>{arrivalNotificationRequestWithIncident.meta.messageSender.toString}</MesSenMES3>
+          {
+            arrivalNotificationRequestWithIncident.meta.messageSender.toXml
+          }
           <MesRecMES6>{arrivalNotificationRequestWithIncident.meta.messageRecipient}</MesRecMES6>
           <DatOfPreMES9>{dateOfPreparation}</DatOfPreMES9>
           <TimOfPreMES10>{timeOfPreparation}</TimOfPreMES10>
-          <IntConRefMES11>{arrivalNotificationRequestWithIncident.meta.interchangeControlReference.toString}</IntConRefMES11>
+          {
+            arrivalNotificationRequestWithIncident.meta.interchangeControlReference.toXml
+          }
           <AppRefMES14>{arrivalNotificationRequestWithIncident.meta.applicationReference}</AppRefMES14>
           <TesIndMES18>{arrivalNotificationRequestWithIncident.meta.testIndicator}</TesIndMES18>
           <MesIdeMES19>{arrivalNotificationRequestWithIncident.meta.messageIndication}</MesIdeMES19>

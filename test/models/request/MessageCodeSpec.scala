@@ -16,25 +16,29 @@
 
 package models.request
 
-import generators.ModelGenerators
+import generators.MessageGenerators
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
+import scala.xml.Node
 import scala.xml.XML._
 
-class InterchangeControlReferenceSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with ModelGenerators {
+class MessageCodeSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with MessageGenerators {
 
-  "InterchangeControlReference" - {
-    "must convert to xml and convert to correct format" in {
-      forAll(arbitrary[String], arbitrary[Int]) {
-        (date, index) =>
-          val expectedResult = <IntConRefMES11>{s"WE$date$index"}</IntConRefMES11>
-          val result         = InterchangeControlReference(date, index).toXml
+  "MessageCode" - {
+    "must create valid xml" in {
 
-          result mustBe loadString(expectedResult.toString)
+      forAll(arbitrary[String]) {
+        code =>
+          val messageCode: MessageCode = MessageCode(code)
+          val expectedResult: Node     = <MesTypMES20>{code}</MesTypMES20>
+
+          messageCode.toXml mustBe loadString(expectedResult.toString)
       }
+
     }
   }
+
 }

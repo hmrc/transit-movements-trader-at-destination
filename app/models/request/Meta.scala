@@ -16,6 +16,13 @@
 
 package models.request
 
+import java.time.LocalDateTime
+
+import services.XmlBuilderService
+import utils.Format
+
+import scala.xml.NodeSeq
+
 case class Meta(messageSender: MessageSender,
                 interchangeControlReference: InterchangeControlReference,
                 senderIdentificationCodeQualifier: Option[String] = None,
@@ -28,7 +35,33 @@ case class Meta(messageSender: MessageSender,
                 commonAccessReference: Option[String] = None,
                 messageSequenceNumber: Option[String] = None,
                 firstAndLastTransfer: Option[String] = None)
-    extends MetaConstants
+    extends XmlBuilderService
+    with MetaConstants {
+
+  def toXml(messageCode: MessageCode)(implicit dateTime: LocalDateTime): NodeSeq =
+    buildAndEncodeElem(syntaxIdentifier, "SynIdeMES1") ++
+      buildAndEncodeElem(syntaxVersionNumber, "SynVerNumMES2") ++
+      messageSender.toXml ++
+      buildOptionalElem(senderIdentificationCodeQualifier, "SenIdeCodQuaMES4") ++
+      buildOptionalElem(recipientIdentificationCodeQualifier, "RecIdeCodQuaMES7") ++
+      buildAndEncodeElem(messageRecipient, "MesRecMES6") ++
+      buildAndEncodeElem(Format.dateFormatted(dateTime), "DatOfPreMES9") ++
+      buildAndEncodeElem(Format.timeFormatted(dateTime), "TimOfPreMES10") ++
+      interchangeControlReference.toXml ++
+      buildOptionalElem(recipientsReferencePassword, "RecRefMES12") ++
+      buildOptionalElem(recipientsReferencePasswordQualifier, "RecRefQuaMES13") ++
+      buildAndEncodeElem(applicationReference, "AppRefMES14") ++
+      buildOptionalElem(priority, "PriMES15") ++
+      buildOptionalElem(acknowledgementRequest, "AckReqMES16") ++
+      buildOptionalElem(communicationsAgreementId, "ComAgrIdMES17") ++
+      buildAndEncodeElem(testIndicator, "TesIndMES18") ++
+      buildAndEncodeElem(messageIndication, "MesIdeMES19") ++
+      buildAndEncodeElem(messageCode.code, "MesTypMES20") ++
+      buildOptionalElem(commonAccessReference, "ComAccRefMES21") ++
+      buildOptionalElem(messageSequenceNumber, "MesSeqNumMES22") ++
+      buildOptionalElem(firstAndLastTransfer, "FirAndLasTraMES23")
+
+}
 
 sealed trait MetaConstants {
   val syntaxIdentifier: String     = "UNOC"

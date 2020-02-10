@@ -16,8 +16,11 @@
 
 package models.request
 
-case class InterchangeControlReference(date: String, index: Int) {
+import services.XmlBuilderService
+
+case class InterchangeControlReference(date: String, index: Int) extends XmlBuilderService {
+
   private val prefix = "WE"
-  override def toString: String =
-    s"$prefix$date$index"
+
+  def toXml = buildAndEncodeElem(s"$prefix$date$index", "IntConRefMES11")
 }

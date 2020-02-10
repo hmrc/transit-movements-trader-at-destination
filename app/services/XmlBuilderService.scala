@@ -91,7 +91,7 @@ class XmlBuilderService {
     val parentNode: Node = buildParentNode(arrivalNotificationRequest.rootKey, arrivalNotificationRequest.nameSpace)
 
     val childNodes: NodeSeq = {
-      buildMetaNode(arrivalNotificationRequest.meta, arrivalNotificationRequest.messageCode.code) ++
+      arrivalNotificationRequest.meta.toXml(arrivalNotificationRequest.messageCode) ++
         arrivalNotificationRequest.header.toXml ++
         arrivalNotificationRequest.traderDestination.toXml ++
         arrivalNotificationRequest.customsOfficeOfPresentation.toXml ++
@@ -101,34 +101,12 @@ class XmlBuilderService {
     addChildrenToRoot(parentNode, childNodes)
   }
 
-  private def buildMetaNode(meta: Meta, messageCode: String)(implicit dateTime: LocalDateTime): NodeSeq =
-    buildAndEncodeElem(meta.syntaxIdentifier, "SynIdeMES1") ++
-      buildAndEncodeElem(meta.syntaxVersionNumber, "SynVerNumMES2") ++
-      buildAndEncodeElem(meta.messageSender.toString, "MesSenMES3") ++
-      buildOptionalElem(meta.senderIdentificationCodeQualifier, "SenIdeCodQuaMES4") ++
-      buildOptionalElem(meta.recipientIdentificationCodeQualifier, "RecIdeCodQuaMES7") ++
-      buildAndEncodeElem(meta.messageRecipient, "MesRecMES6") ++
-      buildAndEncodeElem(Format.dateFormatted(dateTime), "DatOfPreMES9") ++
-      buildAndEncodeElem(Format.timeFormatted(dateTime), "TimOfPreMES10") ++
-      buildAndEncodeElem(meta.interchangeControlReference.toString, "IntConRefMES11") ++
-      buildOptionalElem(meta.recipientsReferencePassword, "RecRefMES12") ++
-      buildOptionalElem(meta.recipientsReferencePasswordQualifier, "RecRefQuaMES13") ++
-      buildAndEncodeElem(meta.applicationReference, "AppRefMES14") ++
-      buildOptionalElem(meta.priority, "PriMES15") ++
-      buildOptionalElem(meta.acknowledgementRequest, "AckReqMES16") ++
-      buildOptionalElem(meta.communicationsAgreementId, "ComAgrIdMES17") ++
-      buildAndEncodeElem(meta.testIndicator, "TesIndMES18") ++
-      buildAndEncodeElem(meta.messageIndication, "MesIdeMES19") ++
-      buildAndEncodeElem(messageCode, "MesTypMES20") ++
-      buildOptionalElem(meta.commonAccessReference, "ComAccRefMES21") ++
-      buildOptionalElem(meta.messageSequenceNumber, "MesSeqNumMES22") ++
-      buildOptionalElem(meta.firstAndLastTransfer, "FirAndLasTraMES23")
+  private def buildEnRouteEventsNode(arrivalNotificationRequest: ArrivalNotificationRequest): NodeSeq =
+    arrivalNotificationRequest.enRouteEvents match {
+      case Some(enRouteEvent) => enRouteEvent.map(_.toXml)
+      case None               => NodeSeq.Empty
+    }
 
-  private def buildEnRouteEventsNode(arrivalNotificationRequest: ArrivalNotificationRequest): NodeSeq = arrivalNotificationRequest.enRouteEvents match {
-
-    case None               => NodeSeq.Empty
-    case Some(enRouteEvent) => enRouteEvent.map(_.toXml)
-  }
 }
 
 object XmlBuilderService {
