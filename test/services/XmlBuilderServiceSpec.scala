@@ -32,7 +32,6 @@ import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.twirl.api.utils.StringEscapeUtils
 import utils.Format
 
-import scala.xml.Elem
 import scala.xml.Node
 import scala.xml.NodeSeq
 import scala.xml.Utility.trim
@@ -65,8 +64,7 @@ class XmlBuilderServiceSpec
     )
 
   private val minimalValidXml: Node = {
-    trim(
-      <CC007A>
+    <CC007A>
         <SynIdeMES1>{minimalArrivalNotificationRequest.syntaxIdentifier}</SynIdeMES1>
         <SynVerNumMES2>{minimalArrivalNotificationRequest.meta.syntaxVersionNumber}</SynVerNumMES2>
         <MesSenMES3>{minimalArrivalNotificationRequest.meta.messageSender.toString}</MesSenMES3>
@@ -93,7 +91,6 @@ class XmlBuilderServiceSpec
           <RefNumRES1>{minimalArrivalNotificationRequest.customsOfficeOfPresentation.presentationOffice}</RefNumRES1>
         </CUSOFFPREOFFRES>
       </CC007A>
-    )
   }
 
   "XmlBuilderService" - {
@@ -109,8 +106,7 @@ class XmlBuilderServiceSpec
             val genTimeOfPreparation = Format.timeFormatted(genDateTime)
 
             val validXml: Node = {
-              trim(
-                <CC007A> {
+              <CC007A> {
                     buildAndEncodeElem(arrivalNotificationRequest.meta.syntaxIdentifier, "SynIdeMES1") ++
                     buildAndEncodeElem(arrivalNotificationRequest.meta.syntaxVersionNumber, "SynVerNumMES2") ++
                     buildAndEncodeElem(arrivalNotificationRequest.meta.messageSender.toString, "MesSenMES3") ++
@@ -161,10 +157,11 @@ class XmlBuilderServiceSpec
                   </CUSOFFPREOFFRES>
                   {buildEnRouteEvent(arrivalNotificationRequest.enRouteEvents, Header.Constants.languageCode)}
                 </CC007A>
-              )
             }
 
-            trim(convertToXml.buildXml(arrivalNotificationRequest)(genDateTime).right.toOption.value) mustBe trim(validXml)
+            val result = trim(convertToXml.buildXml(arrivalNotificationRequest)(genDateTime).right.toOption.value)
+
+            result mustBe trim(validXml)
           }
       }
     }
@@ -172,7 +169,8 @@ class XmlBuilderServiceSpec
     "must return correct nodes for a minimal arrival notification request" in {
 
       val result = trim(convertToXml.buildXml(minimalArrivalNotificationRequest)(dateTime).right.toOption.value)
-      result mustBe minimalValidXml
+
+      result mustBe trim(loadString(minimalValidXml.toString))
     }
 
     "must add transit wrapper to an existing xml" in {
@@ -182,7 +180,7 @@ class XmlBuilderServiceSpec
         <transitRequest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                         xsi:noNamespaceSchemaLocation="../../schema/request/request.xsd">{minimalValidXml}</transitRequest>
 
-      result mustBe expectedResult
+      result mustBe trim(loadString(expectedResult.toString))
     }
 
     "must return correct nodes for a minimal arrival notification request with an EnRouteEvent" in {
@@ -258,7 +256,7 @@ class XmlBuilderServiceSpec
 
       val result = trim(convertToXml.buildXml(arrivalNotificationRequestWithIncident)(dateTime).right.toOption.value)
 
-      result mustBe trim(minimalValidXmlWithEnrouteEvent)
+      result mustBe trim(loadString(minimalValidXmlWithEnrouteEvent.toString))
     }
   }
 

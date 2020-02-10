@@ -20,14 +20,18 @@ import generators.ModelGenerators
 import models.behaviours.JsonBehaviours
 import models.request.LanguageCodeEnglish
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalatest.{FreeSpec, MustMatchers}
+import org.scalatest.FreeSpec
+import org.scalatest.MustMatchers
 import org.scalatest.OptionValues._
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import play.api.libs.json.{JsObject, JsSuccess, Json}
+import play.api.libs.json.JsObject
+import play.api.libs.json.JsSuccess
+import play.api.libs.json.Json
 import utils.Format
 
 import scala.xml.NodeSeq
 import scala.xml.Utility.trim
+import scala.xml.XML.loadString
 
 class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with ModelGenerators with JsonBehaviours {
 
@@ -82,7 +86,7 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
               }
             </INCINC>
 
-          trim(incident.toXml) mustEqual trim(expectedResult)
+          trim(incident.toXml) mustEqual trim(loadString(expectedResult.toString))
       }
     }
 
@@ -154,7 +158,7 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
               </CONNR3>
             </TRASHP>
 
-          trim(containerTranshipment.toXml) mustEqual trim(expectedResult)
+          trim(containerTranshipment.toXml) mustEqual trim(loadString(expectedResult.toString))
       }
     }
 
@@ -230,7 +234,7 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
               }
             </TRASHP>
 
-          trim(vehicularTranshipment.toXml) mustEqual trim(expectedResult)
+          trim(vehicularTranshipment.toXml) mustEqual trim(loadString(expectedResult.toString))
       }
     }
 
@@ -281,7 +285,7 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
               </CONNR3>
             </TRASHP>
 
-          trim(vehicularTranshipment.toXml) mustEqual trim(expectedResult)
+          trim(vehicularTranshipment.toXml) mustEqual trim(loadString(expectedResult.toString))
       }
     }
 

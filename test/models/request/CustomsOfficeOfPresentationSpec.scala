@@ -22,6 +22,7 @@ import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import scala.xml.Utility.trim
+import scala.xml.XML.loadString
 
 class CustomsOfficeOfPresentationSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with MessageGenerators {
 
@@ -35,7 +36,7 @@ class CustomsOfficeOfPresentationSpec extends FreeSpec with MustMatchers with Sc
               <RefNumRES1>{customsOfficeOfPresentation.presentationOffice}</RefNumRES1>
             </CUSOFFPREOFFRES>
 
-          trim(customsOfficeOfPresentation.toXml) mustBe trim(expectedResult)
+          trim(customsOfficeOfPresentation.toXml) mustBe trim(loadString(expectedResult.toString))
       }
     }
   }

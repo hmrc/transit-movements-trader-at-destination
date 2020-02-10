@@ -24,6 +24,7 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
 import scala.xml.NodeSeq
 import scala.xml.Utility.trim
+import scala.xml.XML.loadString
 
 class TraderDestinationSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with MessageGenerators {
 
@@ -32,13 +33,12 @@ class TraderDestinationSpec extends FreeSpec with MustMatchers with ScalaCheckPr
 
       val traderDestination = TraderDestination(None, None, None, None, None, None)
 
-      val expectedResult = {
+      val expectedResult =
         <TRADESTRD>
           <NADLNGRD>{LanguageCodeEnglish.code}</NADLNGRD>
         </TRADESTRD>
-      }
 
-      trim(traderDestination.toXml) mustBe trim(expectedResult)
+      trim(traderDestination.toXml) mustBe trim(loadString(expectedResult.toString))
     }
 
     "must create valid xml" in {
@@ -63,7 +63,7 @@ class TraderDestinationSpec extends FreeSpec with MustMatchers with ScalaCheckPr
             eori => <TINTRD59>{eori}</TINTRD59>
           )
 
-          val expectedResult = {
+          val expectedResult =
             <TRADESTRD>
             {
               nameNode.getOrElse(NodeSeq.Empty) ++
@@ -75,9 +75,8 @@ class TraderDestinationSpec extends FreeSpec with MustMatchers with ScalaCheckPr
               eoriNode.getOrElse(NodeSeq.Empty)
             }
             </TRADESTRD>
-          }
 
-          trim(traderDestination.toXml) mustBe trim(expectedResult)
+          trim(traderDestination.toXml) mustBe trim(loadString(expectedResult.toString))
       }
     }
 

@@ -28,6 +28,7 @@ import utils.Format
 
 import scala.xml.NodeSeq
 import scala.xml.Utility.trim
+import scala.xml.XML.loadString
 
 class HeaderSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with MessageGenerators {
 
@@ -54,7 +55,7 @@ class HeaderSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyCheck
               <ArrNotDatHEA141>{Format.dateFormatted(arrivalNotificationDate)}</ArrNotDatHEA141>
             </HEAHEA>
 
-          trim(minimalHeader.toXml(arrivalNotificationDate)) mustBe trim(expectedResult)
+          trim(minimalHeader.toXml(arrivalNotificationDate)) mustBe trim(loadString(expectedResult.toString))
       }
     }
 
@@ -88,7 +89,7 @@ class HeaderSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyCheck
               <ArrNotDatHEA141>{Format.dateFormatted(arrivalNotificationDate)}</ArrNotDatHEA141>
             </HEAHEA>
 
-          trim(header.toXml(arrivalNotificationDate)) mustBe trim(expectedResult)
+          trim(header.toXml(arrivalNotificationDate)) mustBe trim(loadString(expectedResult.toString))
       }
     }
   }

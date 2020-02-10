@@ -27,6 +27,7 @@ import play.api.libs.json.JsObject
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.Json
 import scala.xml.Utility.trim
+import scala.xml.XML.loadString
 
 class EnRouteEventSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with ModelGenerators with JsonBehaviours {
 
@@ -52,7 +53,7 @@ class EnRouteEventSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
               </SEAIDSI1>
             </ENROUEVETEV>
 
-          trim(enRouteEventWithSeal.toXml) mustBe trim(expectedResult)
+          trim(enRouteEventWithSeal.toXml) mustBe trim(loadString(expectedResult.toString))
       }
 
     }

@@ -25,6 +25,7 @@ import org.scalacheck.Arbitrary.arbitrary
 import scala.xml.Utility.trim
 
 import scala.xml.Node
+import scala.xml.XML.loadString
 
 class ContainerSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with ModelGenerators with JsonBehaviours {
 
@@ -38,7 +39,7 @@ class ContainerSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyCh
               <ConNumNR31>{container.containerNumber}</ConNumNR31>
             </CONNR3>
 
-          trim(container.toXml) mustBe trim(expectedXml)
+          trim(container.toXml) mustBe trim(loadString(expectedXml.toString))
       }
     }
   }
