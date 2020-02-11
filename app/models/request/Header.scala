@@ -18,7 +18,7 @@ package models.request
 
 import java.time.LocalDateTime
 
-import services.XmlBuilderService
+import helpers.XmlBuilderHelper
 import utils.Format
 
 import scala.xml.Node
@@ -28,7 +28,7 @@ case class Header(movementReferenceNumber: String,
                   arrivalNotificationPlace: String,
                   arrivalAgreedLocationOfGoods: Option[String] = None,
                   procedureTypeFlag: ProcedureTypeFlag)
-    extends XmlBuilderService {
+    extends XmlBuilderHelper {
 
   def toXml(implicit dateTime: LocalDateTime): Node =
     <HEAHEA>

@@ -19,6 +19,8 @@ package controllers
 import base.SpecBase
 import connectors.MessageConnector
 import generators.MessageGenerators
+import helpers.FailedToWrapXml
+import helpers.XmlBuilderHelper
 import models.request.ArrivalNotificationRequest
 import models.request.InterchangeControlReference
 import org.mockito.Matchers._
@@ -45,7 +47,7 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
   private val mockMessageConnector: MessageConnector                  = mock[MessageConnector]
   private val mockInterchangeControlReferenceService: DatabaseService = mock[DatabaseService]
   private val mockSubmissionModelService: SubmissionModelService      = mock[SubmissionModelService]
-  private val mockXmlBuilderService: XmlBuilderService                = mock[XmlBuilderService]
+  private val mockXmlBuilderService: XmlBuilderHelper                 = mock[XmlBuilderHelper]
   private val mockXmlValidationService: XmlValidationService          = mock[XmlValidationService]
 
   private val application = {
@@ -53,7 +55,7 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
       .overrides(bind[MessageConnector].toInstance(mockMessageConnector))
       .overrides(bind[DatabaseService].toInstance(mockInterchangeControlReferenceService))
       .overrides(bind[SubmissionModelService].toInstance(mockSubmissionModelService))
-      .overrides(bind[XmlBuilderService].toInstance(mockXmlBuilderService))
+      .overrides(bind[XmlBuilderHelper].toInstance(mockXmlBuilderService))
       .overrides(bind[XmlValidationService].toInstance(mockXmlValidationService))
       .build
   }

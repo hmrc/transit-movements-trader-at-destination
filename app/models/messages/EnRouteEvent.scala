@@ -16,16 +16,16 @@
 
 package models.messages
 
+import helpers.XmlBuilderHelper
 import models._
 import models.request.LanguageCodeEnglish
 import play.api.libs.json._
-import services.XmlBuilderService
 
 import scala.xml.Node
 import scala.xml.NodeSeq
 
 final case class EnRouteEvent(place: String, countryCode: String, alreadyInNcts: Boolean, eventDetails: EventDetails, seals: Option[Seq[Seal]])
-    extends XmlBuilderService {
+    extends XmlBuilderHelper {
 
   def toXml: Node = {
 

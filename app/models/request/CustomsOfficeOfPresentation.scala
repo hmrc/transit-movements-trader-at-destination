@@ -16,11 +16,11 @@
 
 package models.request
 
-import services.XmlBuilderService
+import helpers.XmlBuilderHelper
 
 import scala.xml.Node
 
-case class CustomsOfficeOfPresentation(presentationOffice: String) extends XmlBuilderService {
+case class CustomsOfficeOfPresentation(presentationOffice: String) extends XmlBuilderHelper {
 
   def toXml: Node =
     <CUSOFFPREOFFRES>

@@ -21,6 +21,8 @@ import java.time.OffsetDateTime
 
 import config.AppConfig
 import connectors.MessageConnector
+import helpers.FailedToWrapXml
+import helpers.XmlBuilderHelper
 import javax.inject.Inject
 import models.messages.ArrivalNotificationMessage
 import models.request._
@@ -46,7 +48,7 @@ class ArrivalNotificationController @Inject()(
   databaseService: DatabaseService,
   messageConnector: MessageConnector,
   submissionModelService: SubmissionModelService,
-  xmlBuilderService: XmlBuilderService,
+  xmlBuilderService: XmlBuilderHelper,
   xmlValidationService: XmlValidationService
 ) extends BackendController(cc) {
 

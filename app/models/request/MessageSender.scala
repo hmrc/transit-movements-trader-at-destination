@@ -16,9 +16,9 @@
 
 package models.request
 
-import services.XmlBuilderService
+import helpers.XmlBuilderHelper
 
-case class MessageSender(environment: String, eori: String) extends XmlBuilderService {
+case class MessageSender(environment: String, eori: String) extends XmlBuilderHelper {
 
   def toXml = buildAndEncodeElem(s"$environment-$eori", "MesSenMES3")
 }

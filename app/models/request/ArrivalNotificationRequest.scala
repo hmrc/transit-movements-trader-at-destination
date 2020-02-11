@@ -18,10 +18,8 @@ package models.request
 
 import java.time.LocalDateTime
 
+import helpers.XmlBuilderHelper
 import models.messages.EnRouteEvent
-import services.FailedToCreateXml
-import services.XmlBuilderError
-import services.XmlBuilderService
 
 import scala.collection.immutable.ListMap
 import scala.xml.Node
@@ -32,7 +30,7 @@ case class ArrivalNotificationRequest(meta: Meta,
                                       traderDestination: TraderDestination,
                                       customsOfficeOfPresentation: CustomsOfficeOfPresentation,
                                       enRouteEvents: Option[Seq[EnRouteEvent]])
-    extends XmlBuilderService
+    extends XmlBuilderHelper
     with RequestConstants {
 
   val xMessageType: XMessageType     = XMessageType("IE007")

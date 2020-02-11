@@ -16,7 +16,7 @@
 
 package models.request
 
-import services.XmlBuilderService
+import helpers.XmlBuilderHelper
 
 import scala.xml.Node
 
@@ -26,26 +26,18 @@ case class TraderDestination(name: Option[String],
                              city: Option[String],
                              countryCode: Option[String],
                              eori: Option[String])
-    extends XmlBuilderService {
-
-  private val nameTag            = "NamTRD7"
-  private val streetAndNumberTag = "StrAndNumTRD22"
-  private val postCodeTag        = "PosCodTRD23"
-  private val cityTag            = "CitTRD24"
-  private val countryCodeTag     = "CouTRD25"
-  private val eoriTag            = "TINTRD59"
-  private val languageCodeTag    = "NADLNGRD"
+    extends XmlBuilderHelper {
 
   def toXml: Node =
     <TRADESTRD>
     {
-      buildOptionalElem(name, nameTag) ++
-      buildOptionalElem(streetAndNumber, streetAndNumberTag) ++
-      buildOptionalElem(postCode, postCodeTag) ++
-      buildOptionalElem(city, cityTag) ++
-      buildOptionalElem(countryCode, countryCodeTag) ++
-      buildAndEncodeElem(TraderDestination.Constants.languageCode, languageCodeTag) ++
-      buildOptionalElem(eori, eoriTag)
+      buildOptionalElem(name, "NamTRD7") ++
+      buildOptionalElem(streetAndNumber, "StrAndNumTRD22") ++
+      buildOptionalElem(postCode, "PosCodTRD23") ++
+      buildOptionalElem(city, "CitTRD24") ++
+      buildOptionalElem(countryCode, "CouTRD25") ++
+      buildAndEncodeElem(TraderDestination.Constants.languageCode, "NADLNGRD") ++
+      buildOptionalElem(eori, "TINTRD59")
     }
     </TRADESTRD>
 

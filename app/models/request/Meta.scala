@@ -18,7 +18,7 @@ package models.request
 
 import java.time.LocalDateTime
 
-import services.XmlBuilderService
+import helpers.XmlBuilderHelper
 import utils.Format
 
 import scala.xml.NodeSeq
@@ -35,7 +35,7 @@ case class Meta(messageSender: MessageSender,
                 commonAccessReference: Option[String] = None,
                 messageSequenceNumber: Option[String] = None,
                 firstAndLastTransfer: Option[String] = None)
-    extends XmlBuilderService
+    extends XmlBuilderHelper
     with MetaConstants {
 
   def toXml(messageCode: MessageCode)(implicit dateTime: LocalDateTime): NodeSeq =

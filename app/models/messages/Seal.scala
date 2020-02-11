@@ -16,15 +16,15 @@
 
 package models.messages
 
+import helpers.XmlBuilderHelper
 import models.request.LanguageCode
 import models.request.LanguageCodeEnglish
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
-import services.XmlBuilderService
 
 import scala.xml.Node
 
-case class Seal(numberOrMark: String) extends XmlBuilderService {
+case class Seal(numberOrMark: String) extends XmlBuilderHelper {
 
   def toXml: Node =
     <SEAIDSI1>

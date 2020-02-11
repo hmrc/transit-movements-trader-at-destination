@@ -20,6 +20,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 import generators.MessageGenerators
+import helpers.XmlBuilderHelper
 import models.messages._
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
@@ -29,7 +30,6 @@ import org.scalatest.OptionValues
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.twirl.api.utils.StringEscapeUtils
-import services.XmlBuilderService
 import utils.Format
 
 import scala.xml.Node

@@ -16,9 +16,9 @@
 
 package models.request
 
-import services.XmlBuilderService
+import helpers.XmlBuilderHelper
 
-case class InterchangeControlReference(date: String, index: Int) extends XmlBuilderService {
+case class InterchangeControlReference(date: String, index: Int) extends XmlBuilderHelper {
 
   private val prefix = "WE"
 

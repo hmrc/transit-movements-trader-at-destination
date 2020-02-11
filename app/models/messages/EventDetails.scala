@@ -16,10 +16,10 @@
 
 package models.messages
 
+import helpers.XmlBuilderHelper
 import models._
 import models.request.Header
 import play.api.libs.json._
-import services.XmlBuilderService
 
 import scala.xml.Node
 import scala.xml.NodeSeq
@@ -51,7 +51,7 @@ object EventDetails {
   }
 }
 
-final case class Incident(information: Option[String], endorsement: Endorsement) extends XmlBuilderService with EventDetails {
+final case class Incident(information: Option[String], endorsement: Endorsement) extends XmlBuilderHelper with EventDetails {
 
   def toXml: Node =
     <INCINC>
@@ -105,7 +105,7 @@ object Transhipment {
 }
 
 final case class VehicularTranshipment(transportIdentity: String, transportCountry: String, endorsement: Endorsement, containers: Option[Seq[Container]])
-    extends XmlBuilderService
+    extends XmlBuilderHelper
     with Transhipment {
 
   def toXml: Node =
@@ -158,7 +158,7 @@ object VehicularTranshipment {
     }
 }
 
-final case class ContainerTranshipment(endorsement: Endorsement, containers: Seq[Container]) extends XmlBuilderService with Transhipment {
+final case class ContainerTranshipment(endorsement: Endorsement, containers: Seq[Container]) extends XmlBuilderHelper with Transhipment {
 
   def toXml: Node =
     <TRASHP> {

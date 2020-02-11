@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package services
+package helpers
 
 import java.time.LocalDate
 
@@ -28,7 +28,7 @@ import scala.xml.Elem
 import scala.xml.Node
 import scala.xml.NodeSeq
 
-class XmlBuilderService {
+class XmlBuilderHelper {
 
   val logger: Logger = Logger(getClass)
 
@@ -72,7 +72,7 @@ class XmlBuilderService {
       <IncFlaINC3>1</IncFlaINC3>
     }
 
-  def buildParentNode[A](key: String, nameSpace: Map[String, String]): Node = {
+  def buildParentNode(key: String, nameSpace: Map[String, String]): Node = {
 
     val concatNameSpace: (String, (String, String)) => String = {
       (accumulatedStrings, keyValue) =>
