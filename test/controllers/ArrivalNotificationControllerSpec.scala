@@ -35,11 +35,12 @@ import repositories._
 import services._
 import uk.gov.hmrc.http.BadRequestException
 import uk.gov.hmrc.http.HttpResponse
+import org.scalatest.concurrent.IntegrationPatience
 
 import scala.concurrent.Future
 import scala.xml.Node
 
-class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckPropertyChecks with MessageGenerators with BeforeAndAfterEach {
+class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckPropertyChecks with MessageGenerators with BeforeAndAfterEach with IntegrationPatience {
 
   private val mockMessageConnector: MessageConnector                  = mock[MessageConnector]
   private val mockInterchangeControlReferenceService: DatabaseService = mock[DatabaseService]
@@ -64,10 +65,8 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
     reset(mockSubmissionModelService)
     reset(mockXmlBuilderService)
     reset(mockXmlValidationService)
-
   }
 
-  private val testNode: Node            = <element1>test</element1>
   private val testNodeWithWrapper: Node = <wrapper><element1>test</element1></wrapper>
 
   "post" - {
@@ -82,9 +81,6 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
 
           when(mockSubmissionModelService.convertToSubmissionModel(any(), any(), any()))
             .thenReturn(Right(arrivalNotificationRequest))
-
-          when(mockXmlBuilderService.buildXml(any())(any()))
-            .thenReturn(Right(testNode))
 
           when(mockXmlValidationService.validate(any(), any()))
             .thenReturn(Right(XmlSuccessfullyValidated))
@@ -151,9 +147,6 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
           when(mockSubmissionModelService.convertToSubmissionModel(any(), any(), any()))
             .thenReturn(Right(arrivalNotificationRequest))
 
-          when(mockXmlBuilderService.buildXml(any())(any()))
-            .thenReturn(Right(testNode))
-
           when(mockXmlValidationService.validate(any(), any()))
             .thenReturn(Right(XmlSuccessfullyValidated))
 
@@ -185,9 +178,6 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
 
           when(mockSubmissionModelService.convertToSubmissionModel(any(), any(), any()))
             .thenReturn(Right(arrivalNotificationRequest))
-
-          when(mockXmlBuilderService.buildXml(any())(any()))
-            .thenReturn(Right(testNode))
 
           when(mockXmlValidationService.validate(any(), any()))
             .thenReturn(Right(XmlSuccessfullyValidated))
@@ -221,9 +211,6 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
           when(mockSubmissionModelService.convertToSubmissionModel(any(), any(), any()))
             .thenReturn(Right(arrivalNotificationRequest))
 
-          when(mockXmlBuilderService.buildXml(any())(any()))
-            .thenReturn(Right(testNode))
-
           when(mockXmlValidationService.validate(any(), any()))
             .thenReturn(Right(XmlSuccessfullyValidated))
 
@@ -247,31 +234,6 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
       }
     }
 
-    "must return INTERNAL_SERVER_ERROR when conversion to xml fails" in {
-
-      forAll(arbitrary[ArrivalNotificationRequest]) {
-
-        arrivalNotificationRequest =>
-          when(mockInterchangeControlReferenceService.getInterchangeControlReferenceId)
-            .thenReturn(Future.successful(Right(InterchangeControlReference("20190101", 1))))
-
-          when(mockSubmissionModelService.convertToSubmissionModel(any(), any(), any()))
-            .thenReturn(Right(arrivalNotificationRequest))
-
-          when(mockXmlBuilderService.buildXml(any())(any()))
-            .thenReturn(Left(FailedToCreateXml))
-
-          val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
-            .withJsonBody(Json.toJson(normalNotification))
-
-          val result = route(application, request).value
-
-          status(result) mustEqual INTERNAL_SERVER_ERROR
-          contentAsJson(result) mustBe
-            Json.obj("message" -> "failed to convert to xml")
-      }
-    }
-
     "must return BAD_REQUEST when xml validation fails" in {
 
       forAll(arbitrary[ArrivalNotificationRequest]) {
@@ -282,9 +244,6 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
 
           when(mockSubmissionModelService.convertToSubmissionModel(any(), any(), any()))
             .thenReturn(Right(arrivalNotificationRequest))
-
-          when(mockXmlBuilderService.buildXml(any())(any()))
-            .thenReturn(Right(testNode))
 
           when(mockXmlValidationService.validate(any(), any()))
             .thenReturn(Left(FailedToValidateXml("missing element")))
@@ -310,9 +269,6 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
 
           when(mockSubmissionModelService.convertToSubmissionModel(any(), any(), any()))
             .thenReturn(Right(arrivalNotificationRequest))
-
-          when(mockXmlBuilderService.buildXml(any())(any()))
-            .thenReturn(Right(testNode))
 
           when(mockXmlValidationService.validate(any(), any()))
             .thenReturn(Right(XmlSuccessfullyValidated))

@@ -61,46 +61,41 @@ class ArrivalNotificationController @Inject()(
       databaseService.getInterchangeControlReferenceId.flatMap {
 
         case Right(interchangeControlReferenceId) => {
+
           submissionModelService.convertToSubmissionModel(arrivalNotification, messageSender, interchangeControlReferenceId) match {
 
             case Right(arrivalNotificationRequestModel) => {
-              xmlBuilderService.buildXml(arrivalNotificationRequestModel) match {
 
-                case Right(xml) => {
-                  xmlValidationService.validate(xml.toString(), ArrivalNotificationXSD) match {
+              val arrivalNotificationRequestXml = arrivalNotificationRequestModel.toXml
 
-                    case Right(XmlSuccessfullyValidated) => {
+              xmlValidationService.validate(arrivalNotificationRequestXml.toString(), ArrivalNotificationXSD) match {
 
-                      xmlBuilderService.buildXmlWithTransitWrapper(xml) match {
-                        case Right(xml) => {
-                          databaseService
-                            .saveArrivalNotification(arrivalNotification)
-                            .flatMap {
-                              sendMessage(xml, arrivalNotificationRequestModel)
-                            }
-                            .recover {
-                              case _ =>
-                                InternalServerError(Json.toJson(ErrorResponseBuilder.failedSavingArrivalNotification))
-                                  .as("application/json")
-                            }
+                case Right(XmlSuccessfullyValidated) => {
 
+                  xmlBuilderService.buildXmlWithTransitWrapper(arrivalNotificationRequestXml) match {
+                    case Right(xml) => {
+                      databaseService
+                        .saveArrivalNotification(arrivalNotification)
+                        .flatMap {
+                          sendMessage(xml, arrivalNotificationRequestModel)
                         }
-                        case Left(FailedToWrapXml) => {
-                          Future.successful(
-                            InternalServerError(Json.toJson(ErrorResponseBuilder.failedToWrapXml))
-                              .as("application/json"))
+                        .recover {
+                          case _ =>
+                            InternalServerError(Json.toJson(ErrorResponseBuilder.failedSavingArrivalNotification))
+                              .as("application/json")
                         }
-                      }
+
                     }
-                    case Left(FailedToValidateXml(reason)) =>
+                    case Left(FailedToWrapXml) => {
                       Future.successful(
-                        BadRequest(Json.toJson(ErrorResponseBuilder.failedXmlValidation(reason)))
+                        InternalServerError(Json.toJson(ErrorResponseBuilder.failedToWrapXml))
                           .as("application/json"))
+                    }
                   }
                 }
-                case Left(FailedToCreateXml) =>
+                case Left(FailedToValidateXml(reason)) =>
                   Future.successful(
-                    InternalServerError(Json.toJson(ErrorResponseBuilder.failedXmlConversion))
+                    BadRequest(Json.toJson(ErrorResponseBuilder.failedXmlValidation(reason)))
                       .as("application/json"))
               }
             }
