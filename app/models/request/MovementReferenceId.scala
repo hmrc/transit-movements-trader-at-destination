@@ -14,10 +14,6 @@
  * limitations under the License.
  */
 
-package repositories
+package models.request
 
-object CollectionNames {
-  val MovementReferenceIdsCollection: String           = "movement-reference-ids"
-  val InterchangeControlReferenceIdsCollection: String = "icr-ids"
-  val ArrivalNotificationCollection: String            = "arrival-notifications"
-}
+case class MovementReferenceId(index: BigInt)
