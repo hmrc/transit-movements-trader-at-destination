@@ -15,5 +15,16 @@
  */
 
 package models.request
+import models.messages.MovementReferenceNumber
+import play.api.libs.json.JsString
+import play.api.libs.json.Json
+import play.api.libs.json.OFormat
+import play.api.libs.json.Writes
 
-case class MovementReferenceId(index: BigInt)
+case class MovementReferenceId(index: Int) { //TODO: Consider if this should be a BitInt
+//  override def toString: String = s"$index"
+}
+
+object MovementReferenceId {
+  implicit val formats: OFormat[MovementReferenceId] = Json.format[MovementReferenceId]
+}

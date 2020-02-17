@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
-package repositories
+package models
+import models.messages.ArrivalNotificationMessage
+import models.messages.MovementReferenceNumber
+import play.api.libs.json.Json
+import play.api.libs.json.OFormat
 
-object CollectionNames {
-  val MovementReferenceIdsCollection: String           = "movement-reference-ids"
-  val InterchangeControlReferenceIdsCollection: String = "icr-ids"
-  val ArrivalNotificationCollection: String            = "arrival-notifications"
-  val ArrivalMovementCollection: String                = "arrival-movements"
+case class ArrivalMovement(movementReferenceId: Int, movementReferenceNumber: MovementReferenceNumber, messages: Seq[ArrivalNotificationMessage])
 
+object ArrivalMovement {
+  implicit val formats: OFormat[ArrivalMovement] = Json.format[ArrivalMovement]
 }

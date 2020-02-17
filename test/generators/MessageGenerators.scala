@@ -20,6 +20,7 @@ import java.time.LocalDate
 
 import models.messages._
 import models.request._
+import models.ArrivalMovement
 import models.RejectionError
 import models.request
 import org.scalacheck.Arbitrary.arbitrary
@@ -30,6 +31,29 @@ trait MessageGenerators extends ModelGenerators {
 
   private val pastDate: LocalDate = LocalDate.of(1900, 1, 1)
   private val dateNow: LocalDate  = LocalDate.now
+
+  implicit lazy val arbitraryArrivalMovement: Arbitrary[ArrivalMovement] = {
+    Arbitrary {
+      for {
+        movementReferenceId     <- arbitrary[Int]
+        movementReferenceNumber <- arbitrary[MovementReferenceNumber]
+        messages                <- seqWithMaxLength[ArrivalNotificationMessage](20)
+      } yield
+        ArrivalMovement(
+          movementReferenceId,
+          movementReferenceNumber,
+          messages
+        )
+    }
+  }
+
+  implicit lazy val arbitraryMovementReferenceId: Arbitrary[MovementReferenceId] = {
+    Arbitrary {
+      for {
+        id <- arbitrary[Int]
+      } yield MovementReferenceId(id)
+    }
+  }
 
   implicit lazy val arbitraryCustomsOfficeOfPresentation: Arbitrary[CustomsOfficeOfPresentation] = {
     Arbitrary {
