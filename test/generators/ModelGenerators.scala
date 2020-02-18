@@ -16,10 +16,7 @@
 
 package generators
 
-import java.time.Instant
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.ZoneOffset
+import java.time._
 
 import models.messages
 import models._
@@ -59,6 +56,17 @@ trait ModelGenerators {
     Gen.choose(toMillis(min), toMillis(max)).map {
       millis =>
         Instant.ofEpochMilli(millis).atOffset(ZoneOffset.UTC).toLocalDate
+    }
+  }
+
+  def timesBetween(min: LocalDate, max: LocalDate): Gen[LocalTime] = {
+
+    def toMillis(date: LocalDate): Long =
+      date.atStartOfDay.atZone(ZoneOffset.UTC).toInstant.toEpochMilli
+
+    Gen.choose(toMillis(min), toMillis(max)).map {
+      millis =>
+        Instant.ofEpochMilli(millis).atOffset(ZoneOffset.UTC).toLocalTime
     }
   }
 
