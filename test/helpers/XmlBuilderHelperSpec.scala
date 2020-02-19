@@ -123,32 +123,6 @@ class XmlBuilderHelperSpec extends FreeSpec with MustMatchers with OptionValues 
       }
     }
 
-    "buildParentNode" - {
-
-      "must return a parent node when given a key" in {
-
-        val result         = xmlBuilderHelper.buildParentNode(parentTag, Map.empty)
-        val expectedResult = <parentTag></parentTag>
-
-        result mustBe expectedResult
-      }
-
-      "must return a parent node with name space when given a key and name space" in {
-
-        val nameSpaceKey1   = "key1"
-        val nameSpaceValue1 = "value1"
-
-        val nameSpaceKey2   = "key2"
-        val nameSpaceValue2 = "value2"
-
-        val result = xmlBuilderHelper.buildParentNode(parentTag, Map(nameSpaceKey1 -> nameSpaceValue1, nameSpaceKey2 -> nameSpaceValue2))
-
-        val expectedResult = <parentTag key1="value1" key2="value2"></parentTag>
-
-        result mustBe expectedResult
-      }
-    }
-
     "addChildrenToRoot" - {
 
       "must return a parent node with children" in {

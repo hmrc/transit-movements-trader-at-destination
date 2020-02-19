@@ -65,18 +65,6 @@ class XmlBuilderHelper {
     case _            => NodeSeq.Empty
   }
 
-  def buildParentNode(key: String, nameSpace: Map[String, String]): Node = {
-
-    val concatNameSpace: (String, (String, String)) => String = {
-      (accumulatedStrings, keyValue) =>
-        s"$accumulatedStrings ${keyValue._1}='${keyValue._2}'"
-    }
-
-    val rootWithNameSpace = nameSpace.foldLeft("")(concatNameSpace)
-
-    loadString(s"<$key $rootWithNameSpace></$key>")
-  }
-
   def addChildrenToRoot(root: Node, childNodes: NodeSeq): Node =
     Elem(root.prefix, root.label, root.attributes, root.scope, root.child.isEmpty, root.child ++ childNodes: _*)
 }

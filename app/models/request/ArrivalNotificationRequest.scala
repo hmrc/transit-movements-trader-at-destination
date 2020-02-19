@@ -36,12 +36,11 @@ case class ArrivalNotificationRequest(meta: Meta,
   val xMessageType: XMessageType     = XMessageType("IE007")
   val messageCode: MessageCode       = MessageCode("GB007A")
   val syntaxIdentifier: String       = "UNOC"
-  val rootKey: String                = "CC007A"
   val nameSpace: Map[String, String] = ListMap()
 
   def toXml(dateTime: LocalDateTime): Node = {
 
-    val parentNode: Node = buildParentNode(rootKey, nameSpace)
+    val parentNode: Node = <CC007A></CC007A>
 
     val childNodes: NodeSeq = {
       meta.toXml(messageCode, dateTime) ++
