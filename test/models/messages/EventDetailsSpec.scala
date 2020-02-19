@@ -18,17 +18,77 @@ package models.messages
 
 import generators.ModelGenerators
 import models.behaviours.JsonBehaviours
+import models.request.LanguageCodeEnglish
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers
+import org.scalatest.OptionValues._
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.libs.json.JsObject
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.Json
+import utils.Format
+
+import scala.xml.NodeSeq
+import scala.xml.Utility.trim
+import scala.xml.XML.loadString
 
 class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with ModelGenerators with JsonBehaviours {
 
   "Incident" - {
+
+    "must create valid xml" in {
+
+      forAll(arbitrary[Incident]) {
+        incident =>
+          val incidentInformationOrFlagNode = incident.information
+            .map {
+              information =>
+                <IncInfINC4>{information}</IncInfINC4>
+            }
+            .getOrElse {
+              <IncFlaINC3>1</IncFlaINC3>
+            }
+          val endorsementDateNode = incident.endorsement.date.map {
+            date =>
+              <EndDatINC6>{Format.dateFormatted(date)}</EndDatINC6>
+          }
+          val endorsementAuthority = incident.endorsement.authority.map {
+            authority =>
+              <EndAutINC7>{authority}</EndAutINC7>
+          }
+          val endorsementPlace = incident.endorsement.place.map {
+            place =>
+              <EndPlaINC10>{place}</EndPlaINC10>
+          }
+          val endorsementCountry = incident.endorsement.country.map {
+            country =>
+              <EndCouINC12>{country}</EndCouINC12>
+          }
+
+          val expectedResult =
+            <INCINC>
+              {
+                incidentInformationOrFlagNode
+              }
+              <IncInfINC4LNG>{LanguageCodeEnglish.code}</IncInfINC4LNG>
+              {
+                endorsementDateNode.getOrElse(NodeSeq.Empty) ++
+                endorsementAuthority.getOrElse(NodeSeq.Empty)
+              }
+              <EndAutINC7LNG>{LanguageCodeEnglish.code}</EndAutINC7LNG>
+              {
+                endorsementPlace.getOrElse(NodeSeq.Empty)
+              }
+              <EndPlaINC10LNG>{LanguageCodeEnglish.code}</EndPlaINC10LNG>
+              {
+                endorsementCountry.getOrElse(NodeSeq.Empty)
+              }
+            </INCINC>
+
+          trim(incident.toXml) mustEqual trim(loadString(expectedResult.toString))
+      }
+    }
 
     "must deserialise" in {
 
@@ -50,6 +110,57 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
   }
 
   "Container transhipment" - {
+
+    "must create valid xml" in {
+
+      forAll(arbitrary[ContainerTranshipment], arbitrary[Container], arbitrary[Container]) {
+        (transhipment, container1, container2) =>
+          val containerTranshipment: ContainerTranshipment = {
+            transhipment.copy(containers = Seq(container1, container2))
+          }
+
+          val endorsementDateNode = containerTranshipment.endorsement.date.map {
+            date =>
+              <EndDatSHP60>{Format.dateFormatted(date)}</EndDatSHP60>
+          }
+          val endorsementAuthority = containerTranshipment.endorsement.authority.map {
+            authority =>
+              <EndAutSHP61>{authority}</EndAutSHP61>
+          }
+          val endorsementPlace = containerTranshipment.endorsement.place.map {
+            place =>
+              <EndPlaSHP63>{place}</EndPlaSHP63>
+          }
+          val endorsementCountry = containerTranshipment.endorsement.country.map {
+            country =>
+              <EndCouSHP65>{country}</EndCouSHP65>
+          }
+
+          val expectedResult =
+            <TRASHP>
+              {
+                endorsementDateNode.getOrElse(NodeSeq.Empty) ++
+                endorsementAuthority.getOrElse(NodeSeq.Empty)
+              }
+              <EndAutSHP61LNG>{LanguageCodeEnglish.code}</EndAutSHP61LNG>
+              {
+                endorsementPlace.getOrElse(NodeSeq.Empty)
+              }
+              <EndPlaSHP63LNG>{LanguageCodeEnglish.code}</EndPlaSHP63LNG>
+              {
+                endorsementCountry.getOrElse(NodeSeq.Empty)
+              }
+              <CONNR3>
+                <ConNumNR31>{containerTranshipment.containers.head.containerNumber}</ConNumNR31>
+              </CONNR3>
+              <CONNR3>
+                <ConNumNR31>{containerTranshipment.containers(1).containerNumber}</ConNumNR31>
+              </CONNR3>
+            </TRASHP>
+
+          trim(containerTranshipment.toXml) mustEqual trim(loadString(expectedResult.toString))
+      }
+    }
 
     "must fail to construct when given an empty sequence of containers" in {
 
@@ -81,6 +192,102 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
   }
 
   "Vehicular transhipment" - {
+
+    "must create valid xml without containers" in {
+      forAll(arbitrary[VehicularTranshipment]) {
+        transhipment =>
+          val vehicularTranshipment = transhipment.copy(containers = None)
+
+          val endorsementDateNode = vehicularTranshipment.endorsement.date.map {
+            date =>
+              <EndDatSHP60>{Format.dateFormatted(date)}</EndDatSHP60>
+          }
+          val endorsementAuthority = vehicularTranshipment.endorsement.authority.map {
+            authority =>
+              <EndAutSHP61>{authority}</EndAutSHP61>
+          }
+          val endorsementPlace = vehicularTranshipment.endorsement.place.map {
+            place =>
+              <EndPlaSHP63>{place}</EndPlaSHP63>
+          }
+          val endorsementCountry = vehicularTranshipment.endorsement.country.map {
+            country =>
+              <EndCouSHP65>{country}</EndCouSHP65>
+          }
+
+          val expectedResult =
+            <TRASHP>
+              <NewTraMeaIdeSHP26>{vehicularTranshipment.transportIdentity}</NewTraMeaIdeSHP26>
+              <NewTraMeaIdeSHP26LNG>{LanguageCodeEnglish.code}</NewTraMeaIdeSHP26LNG>
+              <NewTraMeaNatSHP54>{vehicularTranshipment.transportCountry}</NewTraMeaNatSHP54>
+              {
+                endorsementDateNode.getOrElse(NodeSeq.Empty) ++
+                endorsementAuthority.getOrElse(NodeSeq.Empty)
+              }
+              <EndAutSHP61LNG>{LanguageCodeEnglish.code}</EndAutSHP61LNG>
+              {
+                endorsementPlace.getOrElse(NodeSeq.Empty)
+              }
+              <EndPlaSHP63LNG>{LanguageCodeEnglish.code}</EndPlaSHP63LNG>
+              {
+                endorsementCountry.getOrElse(NodeSeq.Empty)
+              }
+            </TRASHP>
+
+          trim(vehicularTranshipment.toXml) mustEqual trim(loadString(expectedResult.toString))
+      }
+    }
+
+    "must create valid xml with containers" in {
+      forAll(arbitrary[VehicularTranshipment], arbitrary[Container], arbitrary[Container]) {
+        (transhipment, container1, container2) =>
+          val vehicularTranshipment = transhipment.copy(containers = Some(Seq(container1, container2)))
+
+          val endorsementDateNode = vehicularTranshipment.endorsement.date.map {
+            date =>
+              <EndDatSHP60>{Format.dateFormatted(date)}</EndDatSHP60>
+          }
+          val endorsementAuthority = vehicularTranshipment.endorsement.authority.map {
+            authority =>
+              <EndAutSHP61>{authority}</EndAutSHP61>
+          }
+          val endorsementPlace = vehicularTranshipment.endorsement.place.map {
+            place =>
+              <EndPlaSHP63>{place}</EndPlaSHP63>
+          }
+          val endorsementCountry = vehicularTranshipment.endorsement.country.map {
+            country =>
+              <EndCouSHP65>{country}</EndCouSHP65>
+          }
+
+          val expectedResult =
+            <TRASHP>
+              <NewTraMeaIdeSHP26>{vehicularTranshipment.transportIdentity}</NewTraMeaIdeSHP26>
+              <NewTraMeaIdeSHP26LNG>{LanguageCodeEnglish.code}</NewTraMeaIdeSHP26LNG>
+              <NewTraMeaNatSHP54>{vehicularTranshipment.transportCountry}</NewTraMeaNatSHP54>
+              {
+              endorsementDateNode.getOrElse(NodeSeq.Empty) ++
+                endorsementAuthority.getOrElse(NodeSeq.Empty)
+              }
+              <EndAutSHP61LNG>{LanguageCodeEnglish.code}</EndAutSHP61LNG>
+              {
+              endorsementPlace.getOrElse(NodeSeq.Empty)
+              }
+              <EndPlaSHP63LNG>{LanguageCodeEnglish.code}</EndPlaSHP63LNG>
+              {
+              endorsementCountry.getOrElse(NodeSeq.Empty)
+              }
+              <CONNR3>
+                <ConNumNR31>{vehicularTranshipment.containers.value.head.containerNumber}</ConNumNR31>
+              </CONNR3>
+              <CONNR3>
+                <ConNumNR31>{vehicularTranshipment.containers.value(1).containerNumber}</ConNumNR31>
+              </CONNR3>
+            </TRASHP>
+
+          trim(vehicularTranshipment.toXml) mustEqual trim(loadString(expectedResult.toString))
+      }
+    }
 
     "must deserialise" in {
 

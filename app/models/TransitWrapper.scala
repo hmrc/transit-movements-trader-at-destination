@@ -14,11 +14,23 @@
  * limitations under the License.
  */
 
-package models.request
+package models
 
 import helpers.XmlBuilderHelper
 
-case class MessageSender(environment: String, eori: String) extends XmlBuilderHelper {
+import scala.xml.Node
 
-  def toXml = buildAndEncodeElem(s"$environment-$eori", "MesSenMES3")
+object TransitWrapper extends XmlBuilderHelper {
+
+  def toXml(xml: Node): Node = {
+
+    val transitWrapperNode: Node = {
+      <transitRequest
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="../../schema/request/request.xsd">
+        </transitRequest>
+    }
+
+    addChildrenToRoot(transitWrapperNode, xml)
+  }
 }

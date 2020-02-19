@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package services
+package models.request
 
 import java.time.LocalDate
 import java.time.LocalDateTime
 
 import generators.MessageGenerators
+import helpers.XmlBuilderHelper
 import models.messages._
-import models.request._
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
 import org.scalatest.FreeSpec
@@ -32,21 +32,18 @@ import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.twirl.api.utils.StringEscapeUtils
 import utils.Format
 
-import scala.xml.Elem
 import scala.xml.Node
 import scala.xml.NodeSeq
 import scala.xml.Utility.trim
 import scala.xml.XML.loadString
 
-class XmlBuilderServiceSpec
+class ArrivalNotificationRequestSpec
     extends FreeSpec
     with MustMatchers
     with GuiceOneAppPerSuite
     with MessageGenerators
     with ScalaCheckDrivenPropertyChecks
     with OptionValues {
-
-  private val convertToXml = new XmlBuilderService()
 
   private val dateTime: LocalDateTime = LocalDateTime.now()
   private val dateOfPreparation       = Format.dateFormatted(dateTime)
@@ -65,15 +62,18 @@ class XmlBuilderServiceSpec
     )
 
   private val minimalValidXml: Node = {
-    trim(
-      <CC007A>
+    <CC007A>
         <SynIdeMES1>{minimalArrivalNotificationRequest.syntaxIdentifier}</SynIdeMES1>
         <SynVerNumMES2>{minimalArrivalNotificationRequest.meta.syntaxVersionNumber}</SynVerNumMES2>
-        <MesSenMES3>{minimalArrivalNotificationRequest.meta.messageSender.toString}</MesSenMES3>
+        {
+          minimalArrivalNotificationRequest.meta.messageSender.toXml
+        }
         <MesRecMES6>{minimalArrivalNotificationRequest.meta.messageRecipient}</MesRecMES6>
         <DatOfPreMES9>{dateOfPreparation}</DatOfPreMES9>
         <TimOfPreMES10>{timeOfPreparation}</TimOfPreMES10>
-        <IntConRefMES11>{minimalArrivalNotificationRequest.meta.interchangeControlReference.toString}</IntConRefMES11>
+        {
+          minimalArrivalNotificationRequest.meta.interchangeControlReference.toXml
+        }
         <AppRefMES14>{minimalArrivalNotificationRequest.meta.applicationReference}</AppRefMES14>
         <TesIndMES18>{minimalArrivalNotificationRequest.meta.testIndicator}</TesIndMES18>
         <MesIdeMES19>{minimalArrivalNotificationRequest.meta.messageIndication}</MesIdeMES19>
@@ -93,11 +93,10 @@ class XmlBuilderServiceSpec
           <RefNumRES1>{minimalArrivalNotificationRequest.customsOfficeOfPresentation.presentationOffice}</RefNumRES1>
         </CUSOFFPREOFFRES>
       </CC007A>
-    )
   }
 
-  "XmlBuilderService" - {
-    "must return correct nodes" in {
+  "ArrivalNotificationRequest" - {
+    "must create valid xml" in {
       val localDateTime: Gen[LocalDateTime] = dateTimesBetween(LocalDateTime.of(1900, 1, 1, 0, 0), LocalDateTime.now)
 
       forAll(arbitrary[ArrivalNotificationRequest](arbitraryArrivalNotificationRequest), localDateTime) {
@@ -108,18 +107,17 @@ class XmlBuilderServiceSpec
             val genDateOfPreparation = Format.dateFormatted(genDateTime)
             val genTimeOfPreparation = Format.timeFormatted(genDateTime)
 
-            val validXml: Node = {
-              trim(
-                <CC007A> {
+            val validXml: Node =
+              <CC007A> {
                     buildAndEncodeElem(arrivalNotificationRequest.meta.syntaxIdentifier, "SynIdeMES1") ++
                     buildAndEncodeElem(arrivalNotificationRequest.meta.syntaxVersionNumber, "SynVerNumMES2") ++
-                    buildAndEncodeElem(arrivalNotificationRequest.meta.messageSender.toString, "MesSenMES3") ++
+                    arrivalNotificationRequest.meta.messageSender.toXml ++
                     buildOptionalElem(arrivalNotificationRequest.meta.senderIdentificationCodeQualifier, "SenIdeCodQuaMES4") ++
                     buildOptionalElem(arrivalNotificationRequest.meta.recipientIdentificationCodeQualifier, "RecIdeCodQuaMES7") ++
                     buildAndEncodeElem(arrivalNotificationRequest.meta.messageRecipient, "MesRecMES6") ++
                     buildAndEncodeElem(genDateOfPreparation, "DatOfPreMES9") ++
                     buildAndEncodeElem(genTimeOfPreparation, "TimOfPreMES10") ++
-                    buildAndEncodeElem(arrivalNotificationRequest.meta.interchangeControlReference.toString, "IntConRefMES11") ++
+                    arrivalNotificationRequest.meta.interchangeControlReference.toXml ++
                     buildOptionalElem(arrivalNotificationRequest.meta.recipientsReferencePassword, "RecRefMES12") ++
                     buildOptionalElem(arrivalNotificationRequest.meta.recipientsReferencePasswordQualifier, "RecRefQuaMES13") ++
                     buildAndEncodeElem(arrivalNotificationRequest.meta.applicationReference, "AppRefMES14") ++
@@ -161,32 +159,22 @@ class XmlBuilderServiceSpec
                   </CUSOFFPREOFFRES>
                   {buildEnRouteEvent(arrivalNotificationRequest.enRouteEvents, Header.Constants.languageCode)}
                 </CC007A>
-              )
-            }
 
-            trim(convertToXml.buildXml(arrivalNotificationRequest)(genDateTime).right.toOption.value) mustBe validXml
+            val result = trim(arrivalNotificationRequest.toXml(genDateTime))
+
+            result mustBe trim(loadString(validXml.toString))
           }
       }
     }
 
-    "must return correct nodes for a minimal arrival notification request" in {
+    "must return minimal valid xml" in {
 
-      val result = trim(convertToXml.buildXml(minimalArrivalNotificationRequest)(dateTime).right.toOption.value)
-      result mustBe minimalValidXml
+      val result = trim(minimalArrivalNotificationRequest.toXml(dateTime))
+
+      result mustBe trim(loadString(minimalValidXml.toString))
     }
 
-    "must add transit wrapper to an existing xml" in {
-
-      val result = trim(convertToXml.buildXmlWithTransitWrapper(minimalValidXml).right.toOption.value)
-      val expectedResult = {
-        <transitRequest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                        xsi:noNamespaceSchemaLocation="../../schema/request/request.xsd">{minimalValidXml}</transitRequest>
-      }
-
-      result mustBe expectedResult
-    }
-
-    "must return correct nodes for a minimal arrival notification request with an EnRouteEvent" in {
+    "must return valid xml with an EnRouteEvent" in {
 
       val arrivalNotificationRequestWithIncident: ArrivalNotificationRequest =
         ArrivalNotificationRequest(
@@ -210,15 +198,18 @@ class XmlBuilderServiceSpec
         )
 
       val minimalValidXmlWithEnrouteEvent: Node =
-        trim(
-          <CC007A>
+        <CC007A>
           <SynIdeMES1>{arrivalNotificationRequestWithIncident.syntaxIdentifier}</SynIdeMES1>
           <SynVerNumMES2>{arrivalNotificationRequestWithIncident.meta.syntaxVersionNumber}</SynVerNumMES2>
-          <MesSenMES3>{arrivalNotificationRequestWithIncident.meta.messageSender.toString}</MesSenMES3>
+          {
+            arrivalNotificationRequestWithIncident.meta.messageSender.toXml
+          }
           <MesRecMES6>{arrivalNotificationRequestWithIncident.meta.messageRecipient}</MesRecMES6>
           <DatOfPreMES9>{dateOfPreparation}</DatOfPreMES9>
           <TimOfPreMES10>{timeOfPreparation}</TimOfPreMES10>
-          <IntConRefMES11>{arrivalNotificationRequestWithIncident.meta.interchangeControlReference.toString}</IntConRefMES11>
+          {
+            arrivalNotificationRequestWithIncident.meta.interchangeControlReference.toXml
+          }
           <AppRefMES14>{arrivalNotificationRequestWithIncident.meta.applicationReference}</AppRefMES14>
           <TesIndMES18>{arrivalNotificationRequestWithIncident.meta.testIndicator}</TesIndMES18>
           <MesIdeMES19>{arrivalNotificationRequestWithIncident.meta.messageIndication}</MesIdeMES19>
@@ -238,29 +229,29 @@ class XmlBuilderServiceSpec
             <RefNumRES1>{arrivalNotificationRequestWithIncident.customsOfficeOfPresentation.presentationOffice}</RefNumRES1>
           </CUSOFFPREOFFRES>
           {
-          arrivalNotificationRequestWithIncident.enRouteEvents.value.map {
-            enrouteEvent =>
-              <ENROUEVETEV>
-                <PlaTEV10>{enrouteEvent.place}</PlaTEV10>
-                <PlaTEV10LNG>{Header.Constants.languageCode.code}</PlaTEV10LNG>
-                <CouTEV13>{enrouteEvent.countryCode}</CouTEV13>
-                <CTLCTL>
-                  <AlrInNCTCTL29>1</AlrInNCTCTL29>
-                </CTLCTL>
-                <INCINC>
-                  <IncFlaINC3>1</IncFlaINC3>
-                  <IncInfINC4LNG>{Header.Constants.languageCode.code}</IncInfINC4LNG>
-                  <EndAutINC7LNG>{Header.Constants.languageCode.code}</EndAutINC7LNG>
-                  <EndPlaINC10LNG>{Header.Constants.languageCode.code}</EndPlaINC10LNG>
-                </INCINC>
-              </ENROUEVETEV>
+            arrivalNotificationRequestWithIncident.enRouteEvents.value.map {
+              enrouteEvent =>
+                <ENROUEVETEV>
+                  <PlaTEV10>{enrouteEvent.place}</PlaTEV10>
+                  <PlaTEV10LNG>{Header.Constants.languageCode.code}</PlaTEV10LNG>
+                  <CouTEV13>{enrouteEvent.countryCode}</CouTEV13>
+                  <CTLCTL>
+                    <AlrInNCTCTL29>1</AlrInNCTCTL29>
+                  </CTLCTL>
+                  <INCINC>
+                    <IncFlaINC3>1</IncFlaINC3>
+                    <IncInfINC4LNG>{Header.Constants.languageCode.code}</IncInfINC4LNG>
+                    <EndAutINC7LNG>{Header.Constants.languageCode.code}</EndAutINC7LNG>
+                    <EndPlaINC10LNG>{Header.Constants.languageCode.code}</EndPlaINC10LNG>
+                  </INCINC>
+                </ENROUEVETEV>
+            }
           }
-          }
-
         </CC007A>
-        )
 
-      trim(convertToXml.buildXml(arrivalNotificationRequestWithIncident)(dateTime).right.toOption.value) mustBe minimalValidXmlWithEnrouteEvent
+      val result = trim(arrivalNotificationRequestWithIncident.toXml(dateTime))
+
+      result mustBe trim(loadString(minimalValidXmlWithEnrouteEvent.toString))
     }
   }
 

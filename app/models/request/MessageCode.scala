@@ -16,4 +16,10 @@
 
 package models.request
 
-case class MessageCode(code: String)
+import helpers.XmlBuilderHelper
+
+case class MessageCode(code: String) extends XmlBuilderHelper {
+
+  def toXml = buildAndEncodeElem(code, "MesTypMES20")
+
+}

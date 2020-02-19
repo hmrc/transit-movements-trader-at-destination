@@ -16,21 +16,29 @@
 
 package models.request
 
-import helpers.XmlBuilderHelper
+import generators.MessageGenerators
+import org.scalacheck.Arbitrary.arbitrary
+import org.scalatest.FreeSpec
+import org.scalatest.MustMatchers
+import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
 import scala.xml.Node
+import scala.xml.XML._
 
-case class CustomsOfficeOfPresentation(presentationOffice: String) extends XmlBuilderHelper {
+class MessageCodeSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with MessageGenerators {
 
-  def toXml: Node =
-    <CUSOFFPREOFFRES>
-      {buildAndEncodeElem(presentationOffice, "RefNumRES1")}
-    </CUSOFFPREOFFRES>
-}
+  "MessageCode" - {
+    "must create valid xml" in {
 
-object CustomsOfficeOfPresentation {
+      forAll(arbitrary[String]) {
+        code =>
+          val messageCode: MessageCode = MessageCode(code)
+          val expectedResult: Node     = <MesTypMES20>{code}</MesTypMES20>
 
-  object Constants {
-    val presentationOfficeLength = 8
+          messageCode.toXml mustBe loadString(expectedResult.toString)
+      }
+
+    }
   }
+
 }

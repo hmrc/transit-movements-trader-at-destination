@@ -23,19 +23,24 @@ import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
+import scala.xml.XML.loadString
+
 class MessageSenderSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with ModelGenerators {
 
   "MessageSender" - {
 
-    "must toString in the correct format" in {
+    "must convert to xml and convert to correct format" in {
 
       val environment: Gen[String] = Gen.oneOf(Seq("LOCAL", "QA", "STAGING", "PRODUCTION"))
 
-      forAll(environment, arbitrary[String]) {
-        (env, eori) =>
-          MessageSender(env, eori).toString mustBe s"$env-$eori"
+      forAll(arbitrary[String], environment) {
+        (eori, environment) =>
+          val expectedResult = <MesSenMES3>{s"$environment-$eori"}</MesSenMES3>
+
+          val result = MessageSender(environment, eori).toXml
+
+          result mustBe loadString(expectedResult.toString)
       }
     }
   }
-
 }

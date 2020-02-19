@@ -19,6 +19,5 @@ package models.request
 trait RequestConstants {
   val messageCode: MessageCode
   val syntaxIdentifier: String
-  val rootKey: String
   val nameSpace: Map[String, String]
 }
