@@ -23,6 +23,7 @@ import config.AppConfig
 import connectors.MessageConnector
 import helpers.XmlBuilderHelper
 import javax.inject.Inject
+import models.TransitWrapper
 import models.messages.ArrivalNotificationMessage
 import models.request._
 import play.api.libs.json.JsError
@@ -73,7 +74,7 @@ class ArrivalNotificationController @Inject()(
 
                 case Right(XmlSuccessfullyValidated) => {
 
-                  val xmlWithWrapper: Node = arrivalNotificationRequestModel.addTransitWrapper(arrivalNotificationRequestXml)
+                  val xmlWithWrapper: Node = TransitWrapper.toXml(arrivalNotificationRequestXml)
 
                   databaseService
                     .saveArrivalNotification(arrivalNotification)
