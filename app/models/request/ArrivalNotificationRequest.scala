@@ -54,6 +54,17 @@ case class ArrivalNotificationRequest(meta: Meta,
     val arrivalNotificationRequestXml = addChildrenToRoot(parentNode, childNodes)
 
     arrivalNotificationRequestXml
+  }
 
+  def addTransitWrapper(xml: Node): Node = {
+
+    val transitWrapperNode: Node = {
+      <transitRequest
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="../../schema/request/request.xsd">
+      </transitRequest>
+    }
+
+    addChildrenToRoot(transitWrapperNode, xml)
   }
 }

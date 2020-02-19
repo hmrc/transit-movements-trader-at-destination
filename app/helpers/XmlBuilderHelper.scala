@@ -19,34 +19,15 @@ package helpers
 import java.time.LocalDate
 
 import models.request._
-import play.api.Logger
 import play.twirl.api.utils.StringEscapeUtils
 import utils.Format
 
-import scala.xml.XML._
 import scala.xml.Elem
 import scala.xml.Node
 import scala.xml.NodeSeq
+import scala.xml.XML._
 
 class XmlBuilderHelper {
-
-  val logger: Logger = Logger(getClass)
-
-  def buildXmlWithTransitWrapper(xml: Node): Either[XmlBuilderError, Node] =
-    try {
-      val transitWrapperNode: Node = {
-        <transitRequest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                        xsi:noNamespaceSchemaLocation="../../schema/request/request.xsd">
-        </transitRequest>
-      }
-
-      Right(addChildrenToRoot(transitWrapperNode, xml))
-    } catch {
-      case e: Exception => {
-        logger.info(s"Failed to wrap xml in transit wrapper with the following exception: $e")
-        Left(FailedToWrapXml)
-      }
-    }
 
   def buildAndEncodeElem[A](value: A, elementTag: String): NodeSeq = value match {
     case result: String => {
@@ -68,8 +49,3 @@ class XmlBuilderHelper {
   def addChildrenToRoot(root: Node, childNodes: NodeSeq): Node =
     Elem(root.prefix, root.label, root.attributes, root.scope, root.child.isEmpty, root.child ++ childNodes: _*)
 }
-
-sealed trait XmlBuilderError
-
-object FailedToCreateXml extends XmlBuilderError
-object FailedToWrapXml   extends XmlBuilderError

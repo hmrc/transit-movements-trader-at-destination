@@ -23,31 +23,15 @@ import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers
 import org.scalatest.OptionValues
 
-import scala.xml.Elem
 import scala.xml.NodeSeq
 import scala.xml.Utility.trim
 
 class XmlBuilderHelperSpec extends FreeSpec with MustMatchers with OptionValues {
 
   private val xmlBuilderHelper = new XmlBuilderHelper
-  private val testXml          = <C007A></C007A>
   private val elementTag       = "testElement"
-  private val parentTag        = "parentTag"
 
   "XmlBuilderService" - {
-
-    "buildXmlWithTransitWrapper" - {
-
-      "must add transit wrapper to an existing xml" in {
-
-        val result = xmlBuilderHelper.buildXmlWithTransitWrapper(testXml).right.toOption.value
-        val expectedResult =
-          <transitRequest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                          xsi:noNamespaceSchemaLocation="../../schema/request/request.xsd">{testXml}</transitRequest>
-
-        trim(result) mustBe trim(expectedResult)
-      }
-    }
 
     "buildAndEncodeElem" - {
 

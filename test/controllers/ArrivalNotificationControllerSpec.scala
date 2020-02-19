@@ -19,7 +19,6 @@ package controllers
 import base.SpecBase
 import connectors.MessageConnector
 import generators.MessageGenerators
-import helpers.FailedToWrapXml
 import helpers.XmlBuilderHelper
 import models.request.ArrivalNotificationRequest
 import models.request.InterchangeControlReference
@@ -27,6 +26,7 @@ import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.BeforeAndAfterEach
+import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.inject.bind
 import play.api.libs.json.Json
@@ -37,7 +37,6 @@ import repositories._
 import services._
 import uk.gov.hmrc.http.BadRequestException
 import uk.gov.hmrc.http.HttpResponse
-import org.scalatest.concurrent.IntegrationPatience
 
 import scala.concurrent.Future
 import scala.xml.Node
@@ -69,8 +68,6 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
     reset(mockXmlValidationService)
   }
 
-  private val testNodeWithWrapper: Node = <wrapper><element1>test</element1></wrapper>
-
   "post" - {
 
     "must return NO_CONTENT when successful" in {
@@ -86,9 +83,6 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
 
           when(mockXmlValidationService.validate(any(), any()))
             .thenReturn(Right(XmlSuccessfullyValidated))
-
-          when(mockXmlBuilderService.buildXmlWithTransitWrapper(any()))
-            .thenReturn(Right(testNodeWithWrapper))
 
           when(mockInterchangeControlReferenceService.saveArrivalNotification(any()))
             .thenReturn(Future.successful(Right(fakeWriteResult)))
@@ -152,9 +146,6 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
           when(mockXmlValidationService.validate(any(), any()))
             .thenReturn(Right(XmlSuccessfullyValidated))
 
-          when(mockXmlBuilderService.buildXmlWithTransitWrapper(any()))
-            .thenReturn(Right(testNodeWithWrapper))
-
           when(mockInterchangeControlReferenceService.saveArrivalNotification(any()))
             .thenReturn(Future.successful(Left(FailedSavingArrivalNotification)))
 
@@ -184,9 +175,6 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
           when(mockXmlValidationService.validate(any(), any()))
             .thenReturn(Right(XmlSuccessfullyValidated))
 
-          when(mockXmlBuilderService.buildXmlWithTransitWrapper(any()))
-            .thenReturn(Right(testNodeWithWrapper))
-
           when(mockInterchangeControlReferenceService.saveArrivalNotification(any()))
             .thenReturn(Future.failed(new BadRequestException("")))
 
@@ -215,9 +203,6 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
 
           when(mockXmlValidationService.validate(any(), any()))
             .thenReturn(Right(XmlSuccessfullyValidated))
-
-          when(mockXmlBuilderService.buildXmlWithTransitWrapper(any()))
-            .thenReturn(Right(testNodeWithWrapper))
 
           when(mockInterchangeControlReferenceService.saveArrivalNotification(any()))
             .thenReturn(Future.successful(Right(fakeWriteResult)))
@@ -258,34 +243,6 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
           status(result) mustEqual BAD_REQUEST
           contentAsJson(result) mustBe
             Json.obj("message" -> "Xml validation failed for the following reason: missing element")
-      }
-    }
-
-    "must return INTERNAL_SERVER_ERROR when builder fails to wrap xml in transit wrapper" in {
-
-      forAll(arbitrary[ArrivalNotificationRequest]) {
-
-        arrivalNotificationRequest =>
-          when(mockInterchangeControlReferenceService.getInterchangeControlReferenceId)
-            .thenReturn(Future.successful(Right(InterchangeControlReference("20190101", 1))))
-
-          when(mockSubmissionModelService.convertToSubmissionModel(any(), any(), any()))
-            .thenReturn(Right(arrivalNotificationRequest))
-
-          when(mockXmlValidationService.validate(any(), any()))
-            .thenReturn(Right(XmlSuccessfullyValidated))
-
-          when(mockXmlBuilderService.buildXmlWithTransitWrapper(any()))
-            .thenReturn(Left(FailedToWrapXml))
-
-          val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
-            .withJsonBody(Json.toJson(normalNotification))
-
-          val result = route(application, request).value
-
-          status(result) mustEqual INTERNAL_SERVER_ERROR
-          contentAsJson(result) mustBe
-            Json.obj("message" -> "failed to wrap xml in transit wrapper")
       }
     }
 
