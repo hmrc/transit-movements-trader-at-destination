@@ -22,7 +22,7 @@ import play.api.libs.json.OFormat
 import java.time.LocalDate
 import java.time.LocalTime
 
-case class ArrivalMovement(movementReferenceId: Int, movementReferenceNumber: MovementReferenceNumber, messages: Seq[Message])
+case class ArrivalMovement(internalReferenceId: Int, movementReferenceNumber: MovementReferenceNumber, messages: Seq[Message])
 
 object ArrivalMovement {
   implicit val formats: OFormat[ArrivalMovement] = Json.format[ArrivalMovement]

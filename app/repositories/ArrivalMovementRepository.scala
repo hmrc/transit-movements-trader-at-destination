@@ -27,10 +27,10 @@ import reactivemongo.api.commands.WriteResult
 import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 import reactivemongo.play.json.collection.JSONCollection
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: ReactiveMongoApi) {
+class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: ReactiveMongoApi)(implicit ec: ExecutionContext) {
 
   private val collectionName = CollectionNames.ArrivalMovementCollection
 

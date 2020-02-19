@@ -26,7 +26,6 @@ import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits._
 
-@Inject
 class MovementReferenceIdRepository @Inject()(mongo: ReactiveMongoApi) extends MovementReferenceIdRepositoryInterface {
 
   private val lastIndexKey = "last-index"

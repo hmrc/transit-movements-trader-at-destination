@@ -35,7 +35,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 import utils.ErrorResponseBuilder
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.xml.Node
 
@@ -48,7 +48,8 @@ class ArrivalNotificationController @Inject()(
   submissionModelService: SubmissionModelService,
   xmlBuilderService: XmlBuilderService,
   xmlValidationService: XmlValidationService
-) extends BackendController(cc) {
+)(implicit ec: ExecutionContext)
+    extends BackendController(cc) {
 
   def post(): Action[ArrivalNotificationMessage] = Action.async(validateJson[ArrivalNotificationMessage]) {
     implicit request =>
