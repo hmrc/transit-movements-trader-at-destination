@@ -123,25 +123,6 @@ class XmlBuilderHelperSpec extends FreeSpec with MustMatchers with OptionValues 
       }
     }
 
-    "buildIncidentFlag" - {
-
-      "must return an empty element  when given true" in {
-
-        val result = xmlBuilderHelper.buildIncidentFlag(true)
-
-        result mustBe NodeSeq.Empty
-      }
-
-      "must return an empty element when given false" in {
-
-        val result         = xmlBuilderHelper.buildIncidentFlag(false)
-        val expectedResult = <IncFlaINC3>1</IncFlaINC3>
-
-        result mustBe expectedResult
-      }
-
-    }
-
     "buildParentNode" - {
 
       "must return a parent node when given a key" in {

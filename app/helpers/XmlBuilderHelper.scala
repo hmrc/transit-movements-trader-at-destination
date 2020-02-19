@@ -65,13 +65,6 @@ class XmlBuilderHelper {
     case _            => NodeSeq.Empty
   }
 
-  def buildIncidentFlag(hasIncidentInformation: Boolean): NodeSeq =
-    if (hasIncidentInformation) {
-      NodeSeq.Empty
-    } else {
-      <IncFlaINC3>1</IncFlaINC3>
-    }
-
   def buildParentNode(key: String, nameSpace: Map[String, String]): Node = {
 
     val concatNameSpace: (String, (String, String)) => String = {

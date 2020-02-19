@@ -56,8 +56,12 @@ final case class Incident(information: Option[String], endorsement: Endorsement)
   def toXml: Node =
     <INCINC>
     {
-      buildIncidentFlag(information.isDefined) ++
-      buildOptionalElem(information, "IncInfINC4") ++
+      information.map(
+        information =>
+          buildAndEncodeElem(information, "IncInfINC4")
+      ).getOrElse(
+          <IncFlaINC3>1</IncFlaINC3>
+      ) ++
       buildAndEncodeElem(Header.Constants.languageCode, "IncInfINC4LNG") ++
       buildOptionalElem(endorsement.date, "EndDatINC6") ++
       buildOptionalElem(endorsement.authority, "EndAutINC7") ++
