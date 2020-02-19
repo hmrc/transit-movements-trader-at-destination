@@ -27,7 +27,10 @@ import org.scalatest.MustMatchers
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import repositories.{ArrivalMovementRepository, ArrivalNotificationRepository, FailedSavingArrivalNotification, SequentialInterchangeControlReferenceIdRepository}
+import repositories.ArrivalMovementRepository
+import repositories.ArrivalNotificationRepository
+import repositories.FailedSavingArrivalNotification
+import repositories.SequentialInterchangeControlReferenceIdRepository
 
 import scala.concurrent.Future
 
@@ -40,8 +43,8 @@ class DatabaseServiceSpec
     with MessageGenerators
     with SpecBase {
 
-  val mockRepository                    = mock[SequentialInterchangeControlReferenceIdRepository]
-  val mockArrivalMovementRepository     = mock[ArrivalMovementRepository]
+  val mockRepository                = mock[SequentialInterchangeControlReferenceIdRepository]
+  val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
 
   "DatabaseService" - {
 

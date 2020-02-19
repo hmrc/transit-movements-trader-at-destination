@@ -15,12 +15,13 @@
  */
 
 package models
+import java.time.LocalDate
+import java.time.LocalTime
+
 import models.messages.ArrivalNotificationMessage
 import models.messages.MovementReferenceNumber
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
-import java.time.LocalDate
-import java.time.LocalTime
 
 case class ArrivalMovement(internalReferenceId: Int, movementReferenceNumber: MovementReferenceNumber, messages: Seq[Message])
 

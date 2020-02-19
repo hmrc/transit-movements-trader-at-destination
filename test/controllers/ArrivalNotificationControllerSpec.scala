@@ -39,7 +39,6 @@ import uk.gov.hmrc.http.BadRequestException
 import uk.gov.hmrc.http.HttpResponse
 
 import scala.concurrent.Future
-import scala.xml.Node
 
 class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckPropertyChecks with MessageGenerators with BeforeAndAfterEach with IntegrationPatience {
 
@@ -96,6 +95,7 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
           val result = route(application, request).value
 
           status(result) mustEqual NO_CONTENT
+
       }
     }
 

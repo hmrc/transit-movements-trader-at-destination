@@ -23,6 +23,7 @@ import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
 import play.modules.reactivemongo.ReactiveMongoApi
+import reactivemongo.api.Cursor
 import reactivemongo.api.commands.WriteResult
 import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 import reactivemongo.play.json.collection.JSONCollection
@@ -56,6 +57,11 @@ class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: React
         .one(selector)
     }
   }
+
+  def fetchAllMovements: Future[Seq[ArrivalMovement]] =
+    collection.flatMap {
+      _.find(Json.obj(), Option.empty[JsObject]).cursor[ArrivalMovement]().collect[Seq](-1, Cursor.FailOnError())
+    }
 
 }
 

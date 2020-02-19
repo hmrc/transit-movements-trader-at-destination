@@ -84,6 +84,29 @@ class ArrivalMovementRepositorySpec
       }
     }
 
+    "must fetch all the ArrivalMovements from mongoDB" in {
+
+      forAll(seqWithMaxLength[ArrivalMovement](10)) {
+        arrivalMovement =>
+
+          database.flatMap(_.drop()).futureValue
+
+          val jsonArr = arrivalMovement.map(Json.toJsObject(_))
+
+          database.flatMap {
+            db =>
+              db.collection[JSONCollection](CollectionNames.ArrivalMovementCollection)
+                .insert(false)
+                .many(jsonArr)
+          }.futureValue
+
+          val result: Seq[ArrivalMovement] = service.fetchAllMovements.futureValue
+
+          result mustBe arrivalMovement
+      }
+    }
+
   }
 
 }
+
