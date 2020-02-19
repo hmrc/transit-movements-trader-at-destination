@@ -23,8 +23,8 @@ import config.AppConfig
 import connectors.MessageConnector
 import helpers.XmlBuilderHelper
 import javax.inject.Inject
-import models.TransitWrapper
-import models.messages.ArrivalNotificationMessage
+import models.{ArrivalMovement, Message, TransitWrapper}
+import models.messages.{ArrivalNotificationMessage, MovementReferenceNumber}
 import models.request._
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
@@ -57,12 +57,11 @@ class ArrivalNotificationController @Inject()(
     implicit request =>
       val messageSender = MessageSender(appConfig.env, "eori")
 
-      val arrivalNotification = request.body
+      val arrivalNotification: ArrivalNotificationMessage = request.body
 
       val localDateTime: LocalDateTime = LocalDateTime.now()
 
       databaseService.getInterchangeControlReferenceId.flatMap {
-
         case Right(interchangeControlReferenceId) => {
 
           submissionModelService.convertToSubmissionModel(arrivalNotification, messageSender, interchangeControlReferenceId) match {
@@ -78,7 +77,9 @@ class ArrivalNotificationController @Inject()(
                   val xmlWithWrapper: Node = TransitWrapper.toXml(arrivalNotificationRequestXml)
 
                   databaseService
-                    .saveArrivalNotification(arrivalNotification)
+                    .saveArrivalNotification(ArrivalMovement(0,
+                      MovementReferenceNumber(arrivalNotificationRequestModel.header.movementReferenceNumber).get,
+                      Seq(Message(arrivalNotification))))
                     .flatMap {
                       sendMessage(xmlWithWrapper, arrivalNotificationRequestModel)
                     }

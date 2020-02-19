@@ -29,6 +29,7 @@ import reactivemongo.play.json.collection.JSONCollection
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
+// OLD repo
 class ArrivalNotificationRepository @Inject()(cc: ControllerComponents, mongo: ReactiveMongoApi) {
 
   private val collectionName = CollectionNames.ArrivalNotificationCollection
