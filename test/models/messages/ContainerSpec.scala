@@ -14,27 +14,34 @@
  * limitations under the License.
  */
 
-package models.request
+package models.messages
 
 import generators.ModelGenerators
-import org.scalacheck.Arbitrary.arbitrary
+import models.behaviours.JsonBehaviours
 import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
+import org.scalacheck.Arbitrary.arbitrary
+import scala.xml.Utility.trim
 
-import scala.xml.XML._
+import scala.xml.Node
+import scala.xml.XML.loadString
 
-class InterchangeControlReferenceSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with ModelGenerators {
+class ContainerSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with ModelGenerators with JsonBehaviours {
 
-  "InterchangeControlReference" - {
-    "must convert to xml and convert to correct format" in {
-      forAll(arbitrary[String], arbitrary[Int]) {
-        (date, index) =>
-          val expectedResult = <IntConRefMES11>{s"WE$date$index"}</IntConRefMES11>
-          val result         = InterchangeControlReference(date, index).toXml
+  "Container" - {
+    "must create valid xml" in {
 
-          result mustBe loadString(expectedResult.toString)
+      forAll(arbitrary[Container]) {
+        container =>
+          val expectedXml: Node =
+            <CONNR3>
+              <ConNumNR31>{container.containerNumber}</ConNumNR31>
+            </CONNR3>
+
+          trim(container.toXml) mustBe trim(loadString(expectedXml.toString))
       }
     }
   }
+
 }

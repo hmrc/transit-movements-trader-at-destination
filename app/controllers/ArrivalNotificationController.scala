@@ -21,7 +21,9 @@ import java.time.OffsetDateTime
 
 import config.AppConfig
 import connectors.MessageConnector
+import helpers.XmlBuilderHelper
 import javax.inject.Inject
+import models.TransitWrapper
 import models.messages.ArrivalNotificationMessage
 import models.request._
 import play.api.libs.json.JsError
@@ -46,7 +48,7 @@ class ArrivalNotificationController @Inject()(
   databaseService: DatabaseService,
   messageConnector: MessageConnector,
   submissionModelService: SubmissionModelService,
-  xmlBuilderService: XmlBuilderService,
+  xmlBuilderService: XmlBuilderHelper,
   xmlValidationService: XmlValidationService
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
@@ -57,51 +59,38 @@ class ArrivalNotificationController @Inject()(
 
       val arrivalNotification = request.body
 
-      implicit val localDateTime: LocalDateTime = LocalDateTime.now()
+      val localDateTime: LocalDateTime = LocalDateTime.now()
 
       databaseService.getInterchangeControlReferenceId.flatMap {
 
         case Right(interchangeControlReferenceId) => {
+
           submissionModelService.convertToSubmissionModel(arrivalNotification, messageSender, interchangeControlReferenceId) match {
 
             case Right(arrivalNotificationRequestModel) => {
-              xmlBuilderService.buildXml(arrivalNotificationRequestModel) match {
 
-                case Right(xml) => {
-                  xmlValidationService.validate(xml.toString(), ArrivalNotificationXSD) match {
+              val arrivalNotificationRequestXml = arrivalNotificationRequestModel.toXml(localDateTime)
 
-                    case Right(XmlSuccessfullyValidated) => {
+              xmlValidationService.validate(arrivalNotificationRequestXml.toString(), ArrivalNotificationXSD) match {
 
-                      xmlBuilderService.buildXmlWithTransitWrapper(xml) match {
-                        case Right(xml) => {
-                          databaseService
-                            .saveArrivalNotification(arrivalNotification)
-                            .flatMap {
-                              sendMessage(xml, arrivalNotificationRequestModel)
-                            }
-                            .recover {
-                              case _ =>
-                                InternalServerError(Json.toJson(ErrorResponseBuilder.failedSavingArrivalNotification))
-                                  .as("application/json")
-                            }
+                case Right(XmlSuccessfullyValidated) => {
 
-                        }
-                        case Left(FailedToWrapXml) => {
-                          Future.successful(
-                            InternalServerError(Json.toJson(ErrorResponseBuilder.failedToWrapXml))
-                              .as("application/json"))
-                        }
-                      }
+                  val xmlWithWrapper: Node = TransitWrapper.toXml(arrivalNotificationRequestXml)
+
+                  databaseService
+                    .saveArrivalNotification(arrivalNotification)
+                    .flatMap {
+                      sendMessage(xmlWithWrapper, arrivalNotificationRequestModel)
                     }
-                    case Left(FailedToValidateXml(reason)) =>
-                      Future.successful(
-                        BadRequest(Json.toJson(ErrorResponseBuilder.failedXmlValidation(reason)))
-                          .as("application/json"))
-                  }
+                    .recover {
+                      case _ =>
+                        InternalServerError(Json.toJson(ErrorResponseBuilder.failedSavingArrivalNotification))
+                          .as("application/json")
+                    }
                 }
-                case Left(FailedToCreateXml) =>
+                case Left(FailedToValidateXml(reason)) =>
                   Future.successful(
-                    InternalServerError(Json.toJson(ErrorResponseBuilder.failedXmlConversion))
+                    BadRequest(Json.toJson(ErrorResponseBuilder.failedXmlValidation(reason)))
                       .as("application/json"))
               }
             }

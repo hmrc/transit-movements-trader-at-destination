@@ -14,28 +14,27 @@
  * limitations under the License.
  */
 
-package models.messages
+package models
 
-import helpers.XmlBuilderHelper
-import play.api.libs.json.Json
-import play.api.libs.json.OFormat
+import org.scalatest.FreeSpec
+import org.scalatest.MustMatchers
+import scala.xml.Utility.trim
 
-import scala.xml.Node
+class TransitWrapperSpec extends FreeSpec with MustMatchers {
 
-case class Container(containerNumber: String) extends XmlBuilderHelper {
+  "TransitWrapper" - {
+    "must add transit wrapper to an existing xml" in {
 
-  def toXml: Node =
-    <CONNR3>
-      {buildAndEncodeElem(containerNumber, "ConNumNR31")}
-    </CONNR3>
+      val testNode = <testNode></testNode>
+      val result   = TransitWrapper.toXml(testNode)
 
-}
+      val expectedResult =
+        <transitRequest
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:noNamespaceSchemaLocation="../../schema/request/request.xsd">{testNode}</transitRequest>
 
-object Container {
-
-  object Constants {
-    val containerNumberLength = 17
+      trim(result) mustBe trim(expectedResult)
+    }
   }
 
-  implicit val formats: OFormat[Container] = Json.format[Container]
 }

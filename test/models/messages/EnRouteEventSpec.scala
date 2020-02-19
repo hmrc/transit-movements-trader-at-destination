@@ -18,6 +18,7 @@ package models.messages
 
 import generators.ModelGenerators
 import models.behaviours.JsonBehaviours
+import models.request.LanguageCodeEnglish
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers
@@ -26,25 +27,118 @@ import play.api.libs.json.JsObject
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.Json
 
+import scala.xml.Utility.trim
+import scala.xml.XML.loadString
+
 class EnRouteEventSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with ModelGenerators with JsonBehaviours {
 
-  "must serialise" in {
+  "EnRouteEvent" - {
 
-    forAll(arbitrary[EnRouteEvent]) {
-      enrouteEvent =>
-        val json = buildEnrouteEvent(enrouteEvent)
+    "must create valid xml with Incident and seal" in {
 
-        Json.toJson(enrouteEvent) mustEqual json
+      forAll(arbitrary[EnRouteEvent], arbitrary[Seal], arbitrary[Incident]) {
+        (enRouteEvent, seal, incident) =>
+          val enRouteEventWithSealAndIncident = enRouteEvent.copy(seals = Some(Seq(seal)), eventDetails = incident)
+
+          val result = {
+            <ENROUEVETEV>
+            <PlaTEV10>{enRouteEventWithSealAndIncident.place}</PlaTEV10>
+            <PlaTEV10LNG>{LanguageCodeEnglish.code}</PlaTEV10LNG>
+            <CouTEV13>{enRouteEventWithSealAndIncident.countryCode}</CouTEV13>
+            <CTLCTL>
+              <AlrInNCTCTL29>{if (enRouteEventWithSealAndIncident.alreadyInNcts) 1 else 0}</AlrInNCTCTL29>
+            </CTLCTL>
+            {
+              incident.toXml
+            }
+           <SEAINFSF1>
+             <SeaNumSF12>1</SeaNumSF12>
+             {
+              seal.toXml
+             }
+           </SEAINFSF1>
+          </ENROUEVETEV>
+          }
+
+          trim(enRouteEventWithSealAndIncident.toXml) mustBe trim(loadString(result.toString))
+      }
     }
-  }
+    "must create valid xml with container transhipment and seal" in {
 
-  "must deserialise" in {
+      forAll(arbitrary[EnRouteEvent], arbitrary[Seal], arbitrary[ContainerTranshipment]) {
+        (enRouteEvent, seal, containerTranshipment) =>
+          val enRouteEventWithContainer = enRouteEvent.copy(seals = Some(Seq(seal)), eventDetails = containerTranshipment)
 
-    forAll(arbitrary[EnRouteEvent]) {
-      enrouteEvent =>
-        val json = buildEnrouteEvent(enrouteEvent)
+          val result = {
+            <ENROUEVETEV>
+              <PlaTEV10>{enRouteEventWithContainer.place}</PlaTEV10>
+              <PlaTEV10LNG>{LanguageCodeEnglish.code}</PlaTEV10LNG>
+              <CouTEV13>{enRouteEventWithContainer.countryCode}</CouTEV13>
+              <CTLCTL>
+                <AlrInNCTCTL29>{if (enRouteEventWithContainer.alreadyInNcts) 1 else 0}</AlrInNCTCTL29>
+              </CTLCTL>
+              <SEAINFSF1>
+                <SeaNumSF12>1</SeaNumSF12>
+                {
+                seal.toXml
+                }
+              </SEAINFSF1>
+              {
+              containerTranshipment.toXml
+              }
+            </ENROUEVETEV>
+          }
 
-        json.validate[EnRouteEvent] mustEqual JsSuccess(enrouteEvent)
+          trim(enRouteEventWithContainer.toXml) mustBe trim(loadString(result.toString))
+      }
+    }
+
+    "must create valid xml with vehicular transhipment with seal" in {
+
+      forAll(arbitrary[EnRouteEvent], arbitrary[Seal], arbitrary[VehicularTranshipment]) {
+        (enRouteEvent, seal, vehicularTranshipment) =>
+          val enRouteEventWithVehicle = enRouteEvent.copy(seals = Some(Seq(seal)), eventDetails = vehicularTranshipment)
+
+          val result = {
+            <ENROUEVETEV>
+              <PlaTEV10>{enRouteEventWithVehicle.place}</PlaTEV10>
+              <PlaTEV10LNG>{LanguageCodeEnglish.code}</PlaTEV10LNG>
+              <CouTEV13>{enRouteEventWithVehicle.countryCode}</CouTEV13>
+              <CTLCTL>
+                <AlrInNCTCTL29>{if (enRouteEventWithVehicle.alreadyInNcts) 1 else 0}</AlrInNCTCTL29>
+              </CTLCTL>
+              <SEAINFSF1>
+                <SeaNumSF12>1</SeaNumSF12>
+                {
+                seal.toXml
+                }
+              </SEAINFSF1>
+              {
+              vehicularTranshipment.toXml
+              }
+            </ENROUEVETEV>
+          }
+
+          trim(enRouteEventWithVehicle.toXml) mustBe trim(loadString(result.toString))
+      }
+    }
+
+    "must serialise" in {
+      forAll(arbitrary[EnRouteEvent]) {
+        enrouteEvent =>
+          val json = buildEnrouteEvent(enrouteEvent)
+
+          Json.toJson(enrouteEvent) mustEqual json
+      }
+    }
+
+    "must deserialise" in {
+      forAll(arbitrary[EnRouteEvent]) {
+        enrouteEvent =>
+          val json = buildEnrouteEvent(enrouteEvent)
+
+          json.validate[EnRouteEvent] mustEqual JsSuccess(enrouteEvent)
+      }
     }
   }
 
@@ -62,4 +156,5 @@ class EnRouteEventSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
           JsObject.empty
       }
     }
+
 }

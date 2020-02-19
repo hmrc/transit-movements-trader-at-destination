@@ -21,6 +21,8 @@ import java.time._
 import models.messages
 import models._
 import models.messages._
+import models.request.InterchangeControlReference
+import models.request.MessageSender
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
@@ -192,7 +194,7 @@ trait ModelGenerators {
 
   implicit lazy val arbitrarySeal: Arbitrary[Seal] = Arbitrary {
     for {
-      numberOrMark <- stringsWithMaxLength(Seal.constant.numberOrMarkLength)
+      numberOrMark <- stringsWithMaxLength(Seal.Constants.numberOrMarkLength)
     } yield Seal(numberOrMark)
   }
 

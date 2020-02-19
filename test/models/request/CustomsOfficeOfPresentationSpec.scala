@@ -16,25 +16,29 @@
 
 package models.request
 
-import generators.ModelGenerators
+import generators.MessageGenerators
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
+import scala.xml.Utility.trim
+import scala.xml.XML.loadString
 
-import scala.xml.XML._
+class CustomsOfficeOfPresentationSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with MessageGenerators {
 
-class InterchangeControlReferenceSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with ModelGenerators {
+  "CustomsOfficeOfPresentation" - {
 
-  "InterchangeControlReference" - {
-    "must convert to xml and convert to correct format" in {
-      forAll(arbitrary[String], arbitrary[Int]) {
-        (date, index) =>
-          val expectedResult = <IntConRefMES11>{s"WE$date$index"}</IntConRefMES11>
-          val result         = InterchangeControlReference(date, index).toXml
+    "must create valid xml" in {
+      forAll(arbitrary[CustomsOfficeOfPresentation]) {
+        customsOfficeOfPresentation =>
+          val expectedResult =
+            <CUSOFFPREOFFRES>
+              <RefNumRES1>{customsOfficeOfPresentation.presentationOffice}</RefNumRES1>
+            </CUSOFFPREOFFRES>
 
-          result mustBe loadString(expectedResult.toString)
+          trim(customsOfficeOfPresentation.toXml) mustBe trim(loadString(expectedResult.toString))
       }
     }
   }
+
 }

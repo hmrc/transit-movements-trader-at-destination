@@ -16,21 +16,43 @@
 
 package models.request
 
+import java.time.LocalDateTime
+
+import helpers.XmlBuilderHelper
 import models.messages.EnRouteEvent
 
 import scala.collection.immutable.ListMap
+import scala.xml.Node
+import scala.xml.NodeSeq
 
-case class ArrivalNotificationRequest(
-  meta: Meta,
-  header: Header,
-  traderDestination: TraderDestination,
-  customsOfficeOfPresentation: CustomsOfficeOfPresentation,
-  enRouteEvents: Option[Seq[EnRouteEvent]]
-) extends RequestConstants {
+case class ArrivalNotificationRequest(meta: Meta,
+                                      header: Header,
+                                      traderDestination: TraderDestination,
+                                      customsOfficeOfPresentation: CustomsOfficeOfPresentation,
+                                      enRouteEvents: Option[Seq[EnRouteEvent]])
+    extends XmlBuilderHelper
+    with RequestConstants {
 
   val xMessageType: XMessageType     = XMessageType("IE007")
   val messageCode: MessageCode       = MessageCode("GB007A")
   val syntaxIdentifier: String       = "UNOC"
-  val rootKey: String                = "CC007A"
   val nameSpace: Map[String, String] = ListMap()
+
+  def toXml(dateTime: LocalDateTime): Node = {
+
+    val parentNode: Node = <CC007A></CC007A>
+
+    val childNodes: NodeSeq = {
+      meta.toXml(messageCode, dateTime) ++
+        header.toXml(dateTime) ++
+        traderDestination.toXml ++
+        customsOfficeOfPresentation.toXml ++ {
+        enRouteEvents.map(_.map(_.toXml)).getOrElse(NodeSeq.Empty)
+      }
+    }
+
+    val arrivalNotificationRequestXml = addChildrenToRoot(parentNode, childNodes)
+
+    arrivalNotificationRequestXml
+  }
 }
