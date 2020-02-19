@@ -30,7 +30,7 @@ case class Header(movementReferenceNumber: String,
                   procedureTypeFlag: ProcedureTypeFlag)
     extends XmlBuilderHelper {
 
-  def toXml(implicit dateTime: LocalDateTime): Node =
+  def toXml(dateTime: LocalDateTime): Node =
     <HEAHEA>
     {
       buildAndEncodeElem(movementReferenceNumber, "DocNumHEA5") ++

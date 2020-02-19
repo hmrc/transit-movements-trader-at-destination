@@ -38,7 +38,7 @@ case class Meta(messageSender: MessageSender,
     extends XmlBuilderHelper
     with MetaConstants {
 
-  def toXml(messageCode: MessageCode)(implicit dateTime: LocalDateTime): NodeSeq =
+  def toXml(messageCode: MessageCode, dateTime: LocalDateTime): NodeSeq =
     buildAndEncodeElem(syntaxIdentifier, "SynIdeMES1") ++
       buildAndEncodeElem(syntaxVersionNumber, "SynVerNumMES2") ++
       messageSender.toXml ++

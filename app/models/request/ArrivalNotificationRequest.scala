@@ -39,13 +39,13 @@ case class ArrivalNotificationRequest(meta: Meta,
   val rootKey: String                = "CC007A"
   val nameSpace: Map[String, String] = ListMap()
 
-  def toXml(implicit dateTime: LocalDateTime): Node = {
+  def toXml(dateTime: LocalDateTime): Node = {
 
     val parentNode: Node = buildParentNode(rootKey, nameSpace)
 
     val childNodes: NodeSeq = {
-      meta.toXml(messageCode) ++
-        header.toXml ++
+      meta.toXml(messageCode, dateTime) ++
+        header.toXml(dateTime) ++
         traderDestination.toXml ++
         customsOfficeOfPresentation.toXml ++ {
         enRouteEvents.map(_.map(_.toXml)).getOrElse(NodeSeq.Empty)

@@ -58,7 +58,7 @@ class ArrivalNotificationController @Inject()(
 
       val arrivalNotification = request.body
 
-      implicit val localDateTime: LocalDateTime = LocalDateTime.now()
+      val localDateTime: LocalDateTime = LocalDateTime.now()
 
       databaseService.getInterchangeControlReferenceId.flatMap {
 
@@ -68,7 +68,7 @@ class ArrivalNotificationController @Inject()(
 
             case Right(arrivalNotificationRequestModel) => {
 
-              val arrivalNotificationRequestXml = arrivalNotificationRequestModel.toXml
+              val arrivalNotificationRequestXml = arrivalNotificationRequestModel.toXml(localDateTime)
 
               xmlValidationService.validate(arrivalNotificationRequestXml.toString(), ArrivalNotificationXSD) match {
 

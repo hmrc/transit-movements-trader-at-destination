@@ -115,7 +115,7 @@ class MetaSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks 
             }
           }
 
-          meta.toXml(messageCode)(dateTime) mustBe expectedResult
+          meta.toXml(messageCode, dateTime) mustBe expectedResult
       }
     }
   }
