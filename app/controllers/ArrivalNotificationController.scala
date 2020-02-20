@@ -34,7 +34,7 @@ import play.api.libs.json.Json
 import play.api.libs.json.Reads
 import play.api.mvc._
 import reactivemongo.api.commands.WriteResult
-import repositories.FailedSavingArrivalNotification
+import repositories._
 import services._
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.controller.BackendController

@@ -70,3 +70,7 @@ class SequentialInterchangeControlReferenceIdRepository @Inject()(
 trait InterchangeControlReferenceIdRepository {
   def nextInterchangeControlReferenceId(): Future[InterchangeControlReference]
 }
+
+sealed trait FailedCreatingInterchangeControlReference
+
+object FailedCreatingInterchangeControlReference extends FailedCreatingInterchangeControlReference

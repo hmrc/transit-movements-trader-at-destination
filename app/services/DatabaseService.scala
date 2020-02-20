@@ -19,15 +19,15 @@ package services
 import javax.inject.Inject
 import models.ArrivalMovement
 import models.request.InterchangeControlReference
+import models.request.MovementReferenceId
 import reactivemongo.api.commands.WriteResult
-import repositories.ArrivalMovementRepository
-import repositories.FailedSavingArrivalNotification
-import repositories.SequentialInterchangeControlReferenceIdRepository
+import repositories._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class DatabaseServiceImpl @Inject()(sequentialInterchangeControlReferenceIdRepository: SequentialInterchangeControlReferenceIdRepository,
+                                    movementReferenceIdRepository: MovementReferenceIdRepository,
                                     arrivalMovementRepository: ArrivalMovementRepository)
     extends DatabaseService {
 
@@ -41,6 +41,17 @@ class DatabaseServiceImpl @Inject()(sequentialInterchangeControlReferenceIdRepos
       .recover {
         case _ =>
           Left(FailedCreatingInterchangeControlReference)
+      }
+
+  def getMovementReferenceId: Future[Either[FailedCreatingNextMovementReferenceId, MovementReferenceId]] =
+    movementReferenceIdRepository
+      .nextId()
+      .map {
+        movementReferenceId =>
+          Right(movementReferenceId)
+      }
+      .recover {
+        case _ => Left(FailedCreatingNextMovementReferenceId)
       }
 
   def saveArrivalNotification(arrivalMovement: ArrivalMovement): Future[Either[FailedSavingArrivalNotification, WriteResult]] =
@@ -61,7 +72,3 @@ trait DatabaseService {
   def getInterchangeControlReferenceId: Future[Either[FailedCreatingInterchangeControlReference, InterchangeControlReference]]
   def saveArrivalNotification(arrivalMovement: ArrivalMovement): Future[Either[FailedSavingArrivalNotification, WriteResult]]
 }
-
-sealed trait FailedCreatingInterchangeControlReference
-
-object FailedCreatingInterchangeControlReference extends FailedCreatingInterchangeControlReference

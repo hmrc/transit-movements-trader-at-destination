@@ -65,3 +65,7 @@ class MovementReferenceIdRepository @Inject()(mongo: ReactiveMongoApi) extends M
 trait MovementReferenceIdRepositoryInterface {
   def nextId(): Future[MovementReferenceId]
 }
+
+sealed trait FailedCreatingNextMovementReferenceId
+
+object FailedCreatingNextMovementReferenceId extends FailedCreatingNextMovementReferenceId
