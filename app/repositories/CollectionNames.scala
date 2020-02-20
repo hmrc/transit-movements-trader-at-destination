@@ -18,7 +18,7 @@ package repositories
 
 object CollectionNames {
   val MovementReferenceIdsCollection: String           = "movement-reference-ids"
-  val InterchangeControlReferenceIdsCollection: String = "icr-ids"
+  val InterchangeControlReferenceIdsCollection: String = "interchange-control-reference-ids"
   val ArrivalNotificationCollection: String            = "arrival-notifications"
   val ArrivalMovementCollection: String                = "arrival-movements"
 

@@ -83,7 +83,7 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
           when(mockDatabaseService.getInternalReferenceId)
             .thenReturn(Future.successful(Right(InternalReferenceId(0))))
 
-          when(mockDatabaseService.saveArrivalNotification(any()))
+          when(mockDatabaseService.saveArrivalMovement(any()))
             .thenReturn(Future.successful(Right(fakeWriteResult)))
 
           when(mockMessageConnector.post(any(), any(), any())(any(), any()))
@@ -178,7 +178,7 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
           when(mockDatabaseService.getInternalReferenceId)
             .thenReturn(Future.successful(Right(InternalReferenceId(0))))
 
-          when(mockDatabaseService.saveArrivalNotification(any()))
+          when(mockDatabaseService.saveArrivalMovement(any()))
             .thenReturn(Future.successful(Left(FailedSavingArrivalNotification)))
 
           val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
@@ -210,7 +210,7 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
           when(mockDatabaseService.getInternalReferenceId)
             .thenReturn(Future.successful(Right(InternalReferenceId(0))))
 
-          when(mockDatabaseService.saveArrivalNotification(any()))
+          when(mockDatabaseService.saveArrivalMovement(any()))
             .thenReturn(Future.failed(new BadRequestException("")))
 
           val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
@@ -242,7 +242,7 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
           when(mockDatabaseService.getInternalReferenceId)
             .thenReturn(Future.successful(Right(InternalReferenceId(0))))
 
-          when(mockDatabaseService.saveArrivalNotification(any()))
+          when(mockDatabaseService.saveArrivalMovement(any()))
             .thenReturn(Future.successful(Right(fakeWriteResult)))
 
           when(mockMessageConnector.post(any(), any(), any())(any(), any()))

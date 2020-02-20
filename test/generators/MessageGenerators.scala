@@ -53,7 +53,7 @@ trait MessageGenerators extends ModelGenerators {
       } yield
         ArrivalMovement(
           movementReferenceId,
-          movementReferenceNumber,
+          movementReferenceNumber.toString,
           messages
         )
     }

@@ -121,7 +121,7 @@ class DatabaseServiceSpec
             when(mockArrivalMovementRepository.persistToMongo(arrivalNotification))
               .thenReturn(Future.successful(fakeWriteResult))
 
-            val response = service.saveArrivalNotification(arrivalNotification).futureValue
+            val response = service.saveArrivalMovement(arrivalNotification).futureValue
 
             response mustBe Right(fakeWriteResult)
         }
@@ -135,7 +135,7 @@ class DatabaseServiceSpec
             when(mockArrivalMovementRepository.persistToMongo(arrivalNotification))
               .thenReturn(Future.failed(new RuntimeException))
 
-            val response = service.saveArrivalNotification(arrivalNotification).futureValue
+            val response = service.saveArrivalMovement(arrivalNotification).futureValue
 
             response mustBe Left(FailedSavingArrivalNotification)
         }

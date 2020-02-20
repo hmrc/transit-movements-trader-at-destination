@@ -15,15 +15,12 @@
  */
 
 package models
-import java.time.LocalDate
-import java.time.LocalTime
+import java.time.{LocalDate, LocalTime}
 
 import models.messages.ArrivalNotificationMessage
-import models.messages.MovementReferenceNumber
-import play.api.libs.json.Json
-import play.api.libs.json.OFormat
+import play.api.libs.json.{Json, OFormat}
 
-case class ArrivalMovement(internalReferenceId: Int, movementReferenceNumber: MovementReferenceNumber, messages: Seq[Message])
+case class ArrivalMovement(internalReferenceId: Int, movementReferenceNumber: String, messages: Seq[Message])
 
 object ArrivalMovement {
   implicit val formats: OFormat[ArrivalMovement] = Json.format[ArrivalMovement]

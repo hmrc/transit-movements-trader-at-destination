@@ -48,7 +48,7 @@ class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: React
     }
   }
 
-  def deleteFromMongo(mrn: MovementReferenceNumber): Future[WriteResult] = {
+  def deleteFromMongo(mrn: String): Future[WriteResult] = {
 
     val selector: JsObject = Json.obj("movementReferenceNumber" -> mrn)
 
@@ -65,6 +65,6 @@ class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: React
 
 }
 
-//sealed trait FailedSavingArrivalMovement
-//
-//object FailedSavingArrivalNotification extends FailedSavingArrivalMovement
+sealed trait FailedSavingArrivalMovement
+
+object FailedSavingArrivalNotification extends FailedSavingArrivalMovement

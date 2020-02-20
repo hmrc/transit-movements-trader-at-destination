@@ -79,14 +79,16 @@ class ArrivalNotificationController @Inject()(
                   databaseService.getInternalReferenceId.flatMap {
 
                     case Right(movementReferenceId) =>
+                      val movementReferenceNumber: String = arrivalNotificationRequestModel.header.movementReferenceNumber
+
                       val arrivalMovement: ArrivalMovement = ArrivalMovement(
-                        internalReferenceId = movementReferenceId.index, //TODO it should not be 0
-                        movementReferenceNumber = MovementReferenceNumber(arrivalNotificationRequestModel.header.movementReferenceNumber).get,
+                        internalReferenceId = movementReferenceId.index,
+                        movementReferenceNumber = movementReferenceNumber,
                         messages = Seq(Message(localDateTime.toLocalDate, localDateTime.toLocalTime, arrivalNotification))
                       )
 
                       databaseService
-                        .saveArrivalNotification(arrivalMovement)
+                        .saveArrivalMovement(arrivalMovement)
                         .flatMap {
                           sendMessage(xmlWithWrapper, arrivalNotificationRequestModel)
                         }
@@ -122,7 +124,7 @@ class ArrivalNotificationController @Inject()(
   }
 
   private def sendMessage(xml: Node, arrivalNotificationRequestModel: ArrivalNotificationRequest)(
-    implicit headerCarrier: HeaderCarrier): PartialFunction[Either[FailedSavingArrivalNotification, WriteResult], Future[Result]] = {
+    implicit headerCarrier: HeaderCarrier): PartialFunction[Either[FailedSavingArrivalMovement, WriteResult], Future[Result]] = {
     case Right(_) =>
       messageConnector
         .post(xml.toString, arrivalNotificationRequestModel.xMessageType, OffsetDateTime.now)
