@@ -61,7 +61,7 @@ class ArrivalsHistoryControllerSpec extends SpecBase with ScalaCheckPropertyChec
 
           val result = route(application, request).value
 
-          status(result) mustEqual NO_CONTENT
+          status(result) mustEqual OK
           contentAsJson(result) mustEqual Json.toJson(arrivalMovements)
       }
 

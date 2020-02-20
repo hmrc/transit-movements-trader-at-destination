@@ -17,17 +17,32 @@
 package controllers
 
 import javax.inject.Inject
+import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import repositories.ArrivalMovementRepository
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
+import scala.concurrent.ExecutionContext
+
 class ArrivalsHistoryController @Inject()(
   cc: ControllerComponents,
   arrivalMovementRepository: ArrivalMovementRepository
-)() extends BackendController(cc) {
+)(implicit ec: ExecutionContext)
+    extends BackendController(cc) {
 
-  def getArrivalsHistory(): Action[AnyContent] = ???
+  def getArrivalsHistory: Action[AnyContent] = Action.async {
+
+    arrivalMovementRepository.fetchAllMovements
+      .map {
+        arrivalMovements =>
+          Ok(Json.toJson(arrivalMovements))
+      }
+      .recover {
+        case e =>
+          InternalServerError(s"Failed with the following error: $e")
+      }
+  }
 
 }
