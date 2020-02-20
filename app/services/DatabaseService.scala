@@ -19,7 +19,7 @@ package services
 import javax.inject.Inject
 import models.ArrivalMovement
 import models.request.InterchangeControlReference
-import models.request.MovementReferenceId
+import models.request.InternalReferenceId
 import reactivemongo.api.commands.WriteResult
 import repositories._
 
@@ -27,7 +27,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class DatabaseServiceImpl @Inject()(sequentialInterchangeControlReferenceIdRepository: SequentialInterchangeControlReferenceIdRepository,
-                                    movementReferenceIdRepository: MovementReferenceIdRepository,
+                                    movementReferenceIdRepository: InternalReferenceIdRepository,
                                     arrivalMovementRepository: ArrivalMovementRepository)
     extends DatabaseService {
 
@@ -43,7 +43,7 @@ class DatabaseServiceImpl @Inject()(sequentialInterchangeControlReferenceIdRepos
           Left(FailedCreatingInterchangeControlReference)
       }
 
-  def getMovementReferenceId: Future[Either[FailedCreatingNextMovementReferenceId, MovementReferenceId]] =
+  def getInternalReferenceId: Future[Either[FailedCreatingNextInternalReferenceId, InternalReferenceId]] =
     movementReferenceIdRepository
       .nextId()
       .map {
@@ -51,7 +51,7 @@ class DatabaseServiceImpl @Inject()(sequentialInterchangeControlReferenceIdRepos
           Right(movementReferenceId)
       }
       .recover {
-        case _ => Left(FailedCreatingNextMovementReferenceId)
+        case _ => Left(FailedCreatingNextInternalReferenceId)
       }
 
   def saveArrivalNotification(arrivalMovement: ArrivalMovement): Future[Either[FailedSavingArrivalNotification, WriteResult]] =
@@ -70,5 +70,6 @@ class DatabaseServiceImpl @Inject()(sequentialInterchangeControlReferenceIdRepos
 
 trait DatabaseService {
   def getInterchangeControlReferenceId: Future[Either[FailedCreatingInterchangeControlReference, InterchangeControlReference]]
+  def getInternalReferenceId: Future[Either[FailedCreatingNextInternalReferenceId, InternalReferenceId]]
   def saveArrivalNotification(arrivalMovement: ArrivalMovement): Future[Either[FailedSavingArrivalNotification, WriteResult]]
 }

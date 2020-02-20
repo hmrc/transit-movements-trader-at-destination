@@ -59,11 +59,11 @@ trait MessageGenerators extends ModelGenerators {
     }
   }
 
-  implicit lazy val arbitraryMovementReferenceId: Arbitrary[MovementReferenceId] = {
+  implicit lazy val arbitraryMovementReferenceId: Arbitrary[InternalReferenceId] = {
     Arbitrary {
       for {
         id <- arbitrary[Int]
-      } yield MovementReferenceId(id)
+      } yield InternalReferenceId(id)
     }
   }
 

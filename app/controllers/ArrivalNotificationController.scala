@@ -76,22 +76,33 @@ class ArrivalNotificationController @Inject()(
                 case Right(XmlSuccessfullyValidated) =>
                   val xmlWithWrapper: Node = TransitWrapper.toXml(arrivalNotificationRequestXml)
 
-                  val arrivalMovement: ArrivalMovement = ArrivalMovement(
-                    internalReferenceId = 0, //TODO it should not be 0
-                    movementReferenceNumber = MovementReferenceNumber(arrivalNotificationRequestModel.header.movementReferenceNumber).get,
-                    messages = Seq(Message(localDateTime.toLocalDate, localDateTime.toLocalTime, arrivalNotification))
-                  )
+                  databaseService.getInternalReferenceId.flatMap {
 
-                  databaseService
-                    .saveArrivalNotification(arrivalMovement)
-                    .flatMap {
-                      sendMessage(xmlWithWrapper, arrivalNotificationRequestModel)
-                    }
-                    .recover {
-                      case _ =>
-                        InternalServerError(Json.toJson(ErrorResponseBuilder.failedSavingArrivalNotification))
+                    case Right(movementReferenceId) =>
+                      val arrivalMovement: ArrivalMovement = ArrivalMovement(
+                        internalReferenceId = movementReferenceId.index, //TODO it should not be 0
+                        movementReferenceNumber = MovementReferenceNumber(arrivalNotificationRequestModel.header.movementReferenceNumber).get,
+                        messages = Seq(Message(localDateTime.toLocalDate, localDateTime.toLocalTime, arrivalNotification))
+                      )
+
+                      databaseService
+                        .saveArrivalNotification(arrivalMovement)
+                        .flatMap {
+                          sendMessage(xmlWithWrapper, arrivalNotificationRequestModel)
+                        }
+                        .recover {
+                          case _ =>
+                            InternalServerError(Json.toJson(ErrorResponseBuilder.failedSavingArrivalNotification))
+                              .as("application/json")
+                        }
+
+                    case Left(FailedCreatingNextInternalReferenceId) =>
+                      Future.successful(
+                        InternalServerError(Json.toJson(ErrorResponseBuilder.failedToCreateInternalReferenceId))
                           .as("application/json")
-                    }
+                      )
+                  }
+
                 case Left(FailedToValidateXml(reason)) =>
                   Future.successful(
                     BadRequest(Json.toJson(ErrorResponseBuilder.failedXmlValidation(reason)))

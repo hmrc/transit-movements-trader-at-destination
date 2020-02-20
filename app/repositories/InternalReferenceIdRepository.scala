@@ -16,7 +16,7 @@
 
 package repositories
 import com.google.inject.Inject
-import models.request.MovementReferenceId
+import models.request.InternalReferenceId
 import play.api.libs.json.Json
 import play.api.libs.json.Reads
 import play.modules.reactivemongo.ReactiveMongoApi
@@ -26,7 +26,7 @@ import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits._
 
-class MovementReferenceIdRepository @Inject()(mongo: ReactiveMongoApi) extends MovementReferenceIdRepositoryInterface {
+class InternalReferenceIdRepository @Inject()(mongo: ReactiveMongoApi) extends InternalReferenceIdRepositoryInterface {
 
   private val lastIndexKey = "last-index"
   private val primaryValue = "record_id"
@@ -41,7 +41,7 @@ class MovementReferenceIdRepository @Inject()(mongo: ReactiveMongoApi) extends M
   private def collection: Future[JSONCollection] =
     mongo.database.map(_.collection[JSONCollection](collectionName))
 
-  def nextId(): Future[MovementReferenceId] = {
+  def nextId(): Future[InternalReferenceId] = {
 
     val update = Json.obj(
       "$inc" -> Json.obj(lastIndexKey -> 1)
@@ -54,7 +54,7 @@ class MovementReferenceIdRepository @Inject()(mongo: ReactiveMongoApi) extends M
         .map(
           x =>
             x.result(indexKeyReads)
-              .map(increment => MovementReferenceId(increment))
+              .map(increment => InternalReferenceId(increment))
               .getOrElse(throw new Exception(s"Unable to generate MovementReferenceId")))
     )
 
@@ -62,10 +62,10 @@ class MovementReferenceIdRepository @Inject()(mongo: ReactiveMongoApi) extends M
 
 }
 
-trait MovementReferenceIdRepositoryInterface {
-  def nextId(): Future[MovementReferenceId]
+trait InternalReferenceIdRepositoryInterface {
+  def nextId(): Future[InternalReferenceId]
 }
 
-sealed trait FailedCreatingNextMovementReferenceId
+sealed trait FailedCreatingNextInternalReferenceId
 
-object FailedCreatingNextMovementReferenceId extends FailedCreatingNextMovementReferenceId
+object FailedCreatingNextInternalReferenceId extends FailedCreatingNextInternalReferenceId

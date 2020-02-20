@@ -56,4 +56,8 @@ object ErrorResponseBuilder {
   val failedToCreateInterchangeControlRef: ErrorResponse = {
     ErrorResponse("failed to create InterchangeControlReference")
   }
+
+  val failedToCreateInternalReferenceId: ErrorResponse = {
+    ErrorResponse("failed to create InternalReferenceId")
+  }
 }

@@ -20,7 +20,7 @@ import base.SpecBase
 import generators.MessageGenerators
 import models.ArrivalMovement
 import models.request.InterchangeControlReference
-import models.request.MovementReferenceId
+import models.request.InternalReferenceId
 import org.mockito.Mockito._
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.concurrent.ScalaFutures
@@ -44,19 +44,19 @@ class DatabaseServiceSpec
     with BeforeAndAfterEach {
 
   private val mockRepository                  = mock[SequentialInterchangeControlReferenceIdRepository]
-  private val mockMovementReferenceRepository = mock[MovementReferenceIdRepository]
+  private val mockInternalReferenceRepository = mock[InternalReferenceIdRepository]
   private val mockArrivalMovementRepository   = mock[ArrivalMovementRepository]
 
   val service = new DatabaseServiceImpl(
     mockRepository,
-    mockMovementReferenceRepository,
+    mockInternalReferenceRepository,
     mockArrivalMovementRepository
   )
 
   override protected def beforeEach(): Unit = {
     super.beforeEach()
     reset(mockRepository)
-    reset(mockMovementReferenceRepository)
+    reset(mockInternalReferenceRepository)
     reset(mockArrivalMovementRepository)
   }
 
@@ -86,28 +86,28 @@ class DatabaseServiceSpec
 
     }
 
-    "getMovementReferenceId" - {
+    "getInternalReferenceId" - {
 
       "must return a movement reference id when successful" in {
 
-        val movementReferenceId = MovementReferenceId(0)
+        val internalReferenceId = InternalReferenceId(0)
 
-        when(mockMovementReferenceRepository.nextId())
-          .thenReturn(Future.successful(movementReferenceId))
+        when(mockInternalReferenceRepository.nextId())
+          .thenReturn(Future.successful(internalReferenceId))
 
-        val response = service.getMovementReferenceId.futureValue
+        val response = service.getInternalReferenceId.futureValue
 
-        response mustBe Right(movementReferenceId)
+        response mustBe Right(internalReferenceId)
       }
 
       "must return FailedCreatingMovementReference when failed" in {
 
-        when(mockMovementReferenceRepository.nextId())
+        when(mockInternalReferenceRepository.nextId())
           .thenReturn(Future.failed(new RuntimeException))
 
-        val response = service.getMovementReferenceId.futureValue
+        val response = service.getInternalReferenceId.futureValue
 
-        response mustBe Left(FailedCreatingNextMovementReferenceId)
+        response mustBe Left(FailedCreatingNextInternalReferenceId)
       }
 
     }
