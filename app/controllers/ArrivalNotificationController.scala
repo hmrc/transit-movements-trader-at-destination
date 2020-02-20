@@ -27,7 +27,6 @@ import models.ArrivalMovement
 import models.Message
 import models.TransitWrapper
 import models.messages.ArrivalNotificationMessage
-import models.messages.MovementReferenceNumber
 import models.request._
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
