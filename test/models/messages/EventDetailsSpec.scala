@@ -32,6 +32,7 @@ import utils.Format
 import scala.xml.NodeSeq
 import scala.xml.Utility.trim
 import scala.xml.XML.loadString
+import models.RichJsObject
 
 class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with ModelGenerators with JsonBehaviours {
 
@@ -49,19 +50,19 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
             .getOrElse {
               <IncFlaINC3>1</IncFlaINC3>
             }
-          val endorsementDateNode = incident.endorsement.date.map {
+          val endorsementDateNode = incident.date.map {
             date =>
               <EndDatINC6>{Format.dateFormatted(date)}</EndDatINC6>
           }
-          val endorsementAuthority = incident.endorsement.authority.map {
+          val endorsementAuthority = incident.authority.map {
             authority =>
               <EndAutINC7>{authority}</EndAutINC7>
           }
-          val endorsementPlace = incident.endorsement.place.map {
+          val endorsementPlace = incident.place.map {
             place =>
               <EndPlaINC10>{place}</EndPlaINC10>
           }
-          val endorsementCountry = incident.endorsement.country.map {
+          val endorsementCountry = incident.country.map {
             country =>
               <EndCouINC12>{country}</EndCouINC12>
           }
@@ -119,19 +120,19 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
             transhipment.copy(containers = Seq(container1, container2))
           }
 
-          val endorsementDateNode = containerTranshipment.endorsement.date.map {
+          val endorsementDateNode = containerTranshipment.date.map {
             date =>
               <EndDatSHP60>{Format.dateFormatted(date)}</EndDatSHP60>
           }
-          val endorsementAuthority = containerTranshipment.endorsement.authority.map {
+          val endorsementAuthority = containerTranshipment.authority.map {
             authority =>
               <EndAutSHP61>{authority}</EndAutSHP61>
           }
-          val endorsementPlace = containerTranshipment.endorsement.place.map {
+          val endorsementPlace = containerTranshipment.place.map {
             place =>
               <EndPlaSHP63>{place}</EndPlaSHP63>
           }
-          val endorsementCountry = containerTranshipment.endorsement.country.map {
+          val endorsementCountry = containerTranshipment.country.map {
             country =>
               <EndCouSHP65>{country}</EndCouSHP65>
           }
@@ -164,10 +165,10 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
 
     "must fail to construct when given an empty sequence of containers" in {
 
-      forAll(arbitrary[Endorsement]) {
-        endorsement =>
+      forAll(arbitrary[ContainerTranshipment]) {
+        case ContainerTranshipment(date, authority, place, country, _) =>
           intercept[IllegalArgumentException] {
-            ContainerTranshipment(endorsement, Seq.empty)
+            ContainerTranshipment(date, authority, place, country, Seq.empty)
           }
       }
     }
@@ -198,19 +199,19 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
         transhipment =>
           val vehicularTranshipment = transhipment.copy(containers = None)
 
-          val endorsementDateNode = vehicularTranshipment.endorsement.date.map {
+          val endorsementDateNode = vehicularTranshipment.date.map {
             date =>
               <EndDatSHP60>{Format.dateFormatted(date)}</EndDatSHP60>
           }
-          val endorsementAuthority = vehicularTranshipment.endorsement.authority.map {
+          val endorsementAuthority = vehicularTranshipment.authority.map {
             authority =>
               <EndAutSHP61>{authority}</EndAutSHP61>
           }
-          val endorsementPlace = vehicularTranshipment.endorsement.place.map {
+          val endorsementPlace = vehicularTranshipment.place.map {
             place =>
               <EndPlaSHP63>{place}</EndPlaSHP63>
           }
-          val endorsementCountry = vehicularTranshipment.endorsement.country.map {
+          val endorsementCountry = vehicularTranshipment.country.map {
             country =>
               <EndCouSHP65>{country}</EndCouSHP65>
           }
@@ -243,19 +244,19 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
         (transhipment, container1, container2) =>
           val vehicularTranshipment = transhipment.copy(containers = Some(Seq(container1, container2)))
 
-          val endorsementDateNode = vehicularTranshipment.endorsement.date.map {
+          val endorsementDateNode = vehicularTranshipment.date.map {
             date =>
               <EndDatSHP60>{Format.dateFormatted(date)}</EndDatSHP60>
           }
-          val endorsementAuthority = vehicularTranshipment.endorsement.authority.map {
+          val endorsementAuthority = vehicularTranshipment.authority.map {
             authority =>
               <EndAutSHP61>{authority}</EndAutSHP61>
           }
-          val endorsementPlace = vehicularTranshipment.endorsement.place.map {
+          val endorsementPlace = vehicularTranshipment.place.map {
             place =>
               <EndPlaSHP63>{place}</EndPlaSHP63>
           }
-          val endorsementCountry = vehicularTranshipment.endorsement.country.map {
+          val endorsementCountry = vehicularTranshipment.country.map {
             country =>
               <EndCouSHP65>{country}</EndCouSHP65>
           }
@@ -413,20 +414,35 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
         JsObject.empty
     }
 
-    information ++ Json.obj("endorsement" -> Json.toJson(incident.endorsement))
+    information ++ Json
+      .obj(
+        "date"      -> Json.toJson(incident.date),
+        "authority" -> Json.toJson(incident.authority),
+        "place"     -> Json.toJson(incident.place),
+        "country"   -> Json.toJson(incident.country)
+      )
+      .filterNulls
   }
 
   private def containerTranshipmentJson(containerTranshipment: ContainerTranshipment): JsObject =
-    Json.obj(
-      "endorsement" -> Json.toJson(containerTranshipment.endorsement),
-      "containers"  -> Json.toJson(containerTranshipment.containers)
-    )
+    Json
+      .obj(
+        "date"       -> Json.toJson(containerTranshipment.date),
+        "authority"  -> Json.toJson(containerTranshipment.authority),
+        "place"      -> Json.toJson(containerTranshipment.place),
+        "country"    -> Json.toJson(containerTranshipment.country),
+        "containers" -> Json.toJson(containerTranshipment.containers)
+      )
+      .filterNulls
 
-  private def vehicularTranshipmentJson(vehicularTranshipment: VehicularTranshipment): JsObject =
+  private def vehicularTranshipmentJson(vehicularTranshipment: VehicularTranshipment): JsObject = {
     Json.obj(
       "transportIdentity" -> vehicularTranshipment.transportIdentity,
       "transportCountry"  -> vehicularTranshipment.transportCountry,
-      "endorsement"       -> Json.toJson(vehicularTranshipment.endorsement)
+      "date"              -> Json.toJson(vehicularTranshipment.date),
+      "authority"         -> Json.toJson(vehicularTranshipment.authority),
+      "place"             -> Json.toJson(vehicularTranshipment.place),
+      "country"           -> Json.toJson(vehicularTranshipment.country)
     ) ++ {
       vehicularTranshipment.containers match {
         case Some(containers) =>
@@ -435,5 +451,6 @@ class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
           JsObject.empty
       }
     }
+  }.filterNulls
 
 }

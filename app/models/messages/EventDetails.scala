@@ -16,6 +16,8 @@
 
 package models.messages
 
+import java.time.LocalDate
+
 import helpers.XmlBuilderHelper
 import models._
 import models.request.Header
@@ -29,6 +31,12 @@ sealed trait EventDetails {
 }
 
 object EventDetails {
+
+  object Constants {
+    val authorityLength = 35
+    val placeLength     = 35
+    val countryLength   = 2
+  }
 
   implicit lazy val reads: Reads[EventDetails] = {
 
@@ -51,7 +59,14 @@ object EventDetails {
   }
 }
 
-final case class Incident(information: Option[String], endorsement: Endorsement) extends XmlBuilderHelper with EventDetails {
+final case class Incident(
+  information: Option[String],
+  date: Option[LocalDate],
+  authority: Option[String],
+  place: Option[String],
+  country: Option[String]
+) extends XmlBuilderHelper
+    with EventDetails {
 
   def toXml: Node =
     <INCINC>
@@ -63,12 +78,12 @@ final case class Incident(information: Option[String], endorsement: Endorsement)
           <IncFlaINC3>1</IncFlaINC3>
       ) ++
       buildAndEncodeElem(Header.Constants.languageCode, "IncInfINC4LNG") ++
-      buildOptionalElem(endorsement.date, "EndDatINC6") ++
-      buildOptionalElem(endorsement.authority, "EndAutINC7") ++
+      buildOptionalElem(date, "EndDatINC6") ++
+      buildOptionalElem(authority, "EndAutINC7") ++
       buildAndEncodeElem(Header.Constants.languageCode, "EndAutINC7LNG") ++
-      buildOptionalElem(endorsement.place, "EndPlaINC10") ++
+      buildOptionalElem(place, "EndPlaINC10") ++
       buildAndEncodeElem(Header.Constants.languageCode, "EndPlaINC10LNG") ++
-      buildOptionalElem(endorsement.country, "EndCouINC12")
+      buildOptionalElem(country, "EndCouINC12")
     }
     </INCINC>
 }
@@ -108,8 +123,15 @@ object Transhipment {
   }
 }
 
-final case class VehicularTranshipment(transportIdentity: String, transportCountry: String, endorsement: Endorsement, containers: Option[Seq[Container]])
-    extends XmlBuilderHelper
+final case class VehicularTranshipment(
+  transportIdentity: String,
+  transportCountry: String,
+  date: Option[LocalDate],
+  authority: Option[String],
+  place: Option[String],
+  country: Option[String],
+  containers: Option[Seq[Container]]
+) extends XmlBuilderHelper
     with Transhipment {
 
   def toXml: Node =
@@ -118,12 +140,12 @@ final case class VehicularTranshipment(transportIdentity: String, transportCount
         buildAndEncodeElem(transportIdentity,"NewTraMeaIdeSHP26") ++
         buildAndEncodeElem(Header.Constants.languageCode,"NewTraMeaIdeSHP26LNG") ++
         buildAndEncodeElem(transportCountry,"NewTraMeaNatSHP54") ++
-        buildOptionalElem(endorsement.date, "EndDatSHP60") ++
-        buildOptionalElem(endorsement.authority, "EndAutSHP61") ++
+        buildOptionalElem(date, "EndDatSHP60") ++
+        buildOptionalElem(authority, "EndAutSHP61") ++
         buildAndEncodeElem(Header.Constants.languageCode, "EndAutSHP61LNG") ++
-        buildOptionalElem(endorsement.place, "EndPlaSHP63") ++
+        buildOptionalElem(place, "EndPlaSHP63") ++
         buildAndEncodeElem(Header.Constants.languageCode, "EndPlaSHP63LNG") ++
-        buildOptionalElem(endorsement.country, "EndCouSHP65") ++
+        buildOptionalElem(country, "EndCouSHP65") ++
         containers.fold(NodeSeq.Empty)(_.map(_.toXml))
       }
     </TRASHP>
@@ -143,7 +165,10 @@ object VehicularTranshipment {
     (
       (__ \ "transportIdentity").read[String] and
         (__ \ "transportCountry").read[String] and
-        (__ \ "endorsement").read[Endorsement] and
+        (__ \ "date").readNullable[LocalDate] and
+        (__ \ "authority").readNullable[String] and
+        (__ \ "place").readNullable[String] and
+        (__ \ "country").readNullable[String] and
         (__ \ "containers").readNullable[Seq[Container]]
     )(VehicularTranshipment.apply _)
   }
@@ -155,23 +180,33 @@ object VehicularTranshipment {
           .obj(
             "transportIdentity" -> transhipment.transportIdentity,
             "transportCountry"  -> transhipment.transportCountry,
-            "endorsement"       -> Json.toJson(transhipment.endorsement),
+            "date"              -> transhipment.date,
+            "authority"         -> transhipment.authority,
+            "place"             -> transhipment.place,
+            "country"           -> transhipment.country,
             "containers"        -> Json.toJson(transhipment.containers)
           )
           .filterNulls
     }
 }
 
-final case class ContainerTranshipment(endorsement: Endorsement, containers: Seq[Container]) extends XmlBuilderHelper with Transhipment {
+final case class ContainerTranshipment(
+  date: Option[LocalDate],
+  authority: Option[String],
+  place: Option[String],
+  country: Option[String],
+  containers: Seq[Container]
+) extends XmlBuilderHelper
+    with Transhipment {
 
   def toXml: Node =
     <TRASHP> {
-        buildOptionalElem(endorsement.date, "EndDatSHP60") ++
-        buildOptionalElem(endorsement.authority, "EndAutSHP61") ++
+        buildOptionalElem(date, "EndDatSHP60") ++
+        buildOptionalElem(authority, "EndAutSHP61") ++
         buildAndEncodeElem(Header.Constants.languageCode,"EndAutSHP61LNG") ++
-        buildOptionalElem(endorsement.place, "EndPlaSHP63") ++
+        buildOptionalElem(place, "EndPlaSHP63") ++
         buildAndEncodeElem(Header.Constants.languageCode,"EndPlaSHP63LNG") ++
-        buildOptionalElem(endorsement.country, "EndCouSHP65") ++
+        buildOptionalElem(country, "EndCouSHP65") ++
         containers.map(_.toXml)
       }
     </TRASHP>

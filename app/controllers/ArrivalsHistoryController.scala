@@ -17,6 +17,7 @@
 package controllers
 
 import javax.inject.Inject
+import models.Message
 import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
@@ -37,7 +38,9 @@ class ArrivalsHistoryController @Inject()(
     arrivalMovementRepository.fetchAllMovements
       .map {
         arrivalMovements =>
-          Ok(Json.toJson(arrivalMovements))
+          // TODO this needs further iteration
+          val messages: Seq[Message] = arrivalMovements.map(_.messages.head)
+          Ok(Json.toJson(messages))
       }
       .recover {
         case e =>

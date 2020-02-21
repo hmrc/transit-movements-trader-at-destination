@@ -19,6 +19,7 @@ package controllers
 import base.SpecBase
 import generators.MessageGenerators
 import models.ArrivalMovement
+import models.Message
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
@@ -50,21 +51,19 @@ class ArrivalsHistoryControllerSpec extends SpecBase with ScalaCheckPropertyChec
   "ArrivalsHistoryController" - {
 
     "must return Ok and retrieve arrivals history" in {
-
       forAll(seqWithMaxLength[ArrivalMovement](10)) {
         arrivalMovements =>
-          when(mockArrivalMovementRepository.fetchAllMovements)
-            .thenReturn(Future.successful(arrivalMovements))
+          when(mockArrivalMovementRepository.fetchAllMovements).thenReturn(Future.successful(arrivalMovements))
 
-          val request = FakeRequest(GET, routes.ArrivalsHistoryController.getArrivalsHistory().url)
-            .withJsonBody(Json.toJson(arrivalMovements))
+          val expectedResult: Seq[Message] = arrivalMovements.map(_.messages.head)
+
+          val request = FakeRequest(GET, routes.ArrivalsHistoryController.getArrivalsHistory().url).withJsonBody(Json.toJson(expectedResult))
 
           val result = route(application, request).value
 
           status(result) mustEqual OK
-          contentAsJson(result) mustEqual Json.toJson(arrivalMovements)
+          contentAsJson(result) mustEqual Json.toJson(expectedResult)
       }
-
     }
 
     "must return an INTERNAL_SERVER_ERROR on fail" in {
