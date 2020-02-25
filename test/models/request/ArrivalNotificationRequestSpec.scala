@@ -90,7 +90,7 @@ class ArrivalNotificationRequestSpec
           <NADLNGRD>{Header.Constants.languageCode.code}</NADLNGRD>
         </TRADESTRD>
         <CUSOFFPREOFFRES>
-          <RefNumRES1>{minimalArrivalNotificationRequest.customsOfficeOfPresentation.presentationOffice}</RefNumRES1>
+          <RefNumRES1>{minimalArrivalNotificationRequest.customsOfficeOfPresentation.presentationOfficeId}</RefNumRES1>
         </CUSOFFPREOFFRES>
       </CC007A>
   }
@@ -155,7 +155,7 @@ class ArrivalNotificationRequestSpec
                     }
                   </TRADESTRD>
                   <CUSOFFPREOFFRES>
-                    <RefNumRES1>{arrivalNotificationRequest.customsOfficeOfPresentation.presentationOffice}</RefNumRES1>
+                    <RefNumRES1>{arrivalNotificationRequest.customsOfficeOfPresentation.presentationOfficeId}</RefNumRES1>
                   </CUSOFFPREOFFRES>
                   {buildEnRouteEvent(arrivalNotificationRequest.enRouteEvents, Header.Constants.languageCode)}
                 </CC007A>
@@ -226,7 +226,7 @@ class ArrivalNotificationRequestSpec
             <NADLNGRD>{Header.Constants.languageCode.code}</NADLNGRD>
           </TRADESTRD>
           <CUSOFFPREOFFRES>
-            <RefNumRES1>{arrivalNotificationRequestWithIncident.customsOfficeOfPresentation.presentationOffice}</RefNumRES1>
+            <RefNumRES1>{arrivalNotificationRequestWithIncident.customsOfficeOfPresentation.presentationOfficeId}</RefNumRES1>
           </CUSOFFPREOFFRES>
           {
             arrivalNotificationRequestWithIncident.enRouteEvents.value.map {

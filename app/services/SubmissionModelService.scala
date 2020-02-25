@@ -35,7 +35,7 @@ class SubmissionModelService @Inject()(appConfig: AppConfig) {
         val meta                                     = buildMeta(messageSender: MessageSender, interchangeControlReference)
         val header                                   = buildHeader(arrivalNotification, NormalProcedureFlag)
         val traderDestination                        = buildTrader(arrivalNotification.trader)
-        val customsOffice                            = CustomsOfficeOfPresentation(presentationOffice = arrivalNotification.presentationOffice)
+        val customsOffice                            = CustomsOfficeOfPresentation(presentationOfficeId = arrivalNotification.presentationOfficeId)
         val enRouteEvents: Option[Seq[EnRouteEvent]] = arrivalNotification.enRouteEvents
 
         Right(ArrivalNotificationRequest(meta, header, traderDestination, customsOffice, enRouteEvents))

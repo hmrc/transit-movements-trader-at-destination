@@ -46,15 +46,15 @@ object ArrivalNotificationMessage {
   }
 }
 
-final case class NormalNotificationMessage(
-  movementReferenceNumber: String,
-  notificationPlace: String,
-  notificationDate: LocalDate,
-  customsSubPlace: Option[String],
-  trader: Trader,
-  presentationOffice: String,
-  enRouteEvents: Option[Seq[EnRouteEvent]]
-) extends ArrivalNotificationMessage {
+final case class NormalNotificationMessage(movementReferenceNumber: String,
+                                           notificationPlace: String,
+                                           notificationDate: LocalDate,
+                                           customsSubPlace: Option[String],
+                                           trader: Trader,
+                                           presentationOfficeId: String,
+                                           presentationOfficeName: String,
+                                           enRouteEvents: Option[Seq[EnRouteEvent]])
+    extends ArrivalNotificationMessage {
 
   val procedure: ProcedureType = ProcedureType.Normal
 }
@@ -62,10 +62,10 @@ final case class NormalNotificationMessage(
 object NormalNotificationMessage {
 
   object Constants {
-    val customsSubPlaceLength    = 17
-    val notificationPlaceLength  = 35
-    val presentationOfficeLength = 8
-    val maxNumberOfEnRouteEvents = 9
+    val customsSubPlaceLength      = 17
+    val notificationPlaceLength    = 35
+    val presentationOfficeIdLength = 8
+    val maxNumberOfEnRouteEvents   = 9
   }
 
   implicit lazy val reads: Reads[NormalNotificationMessage] = {
@@ -89,7 +89,8 @@ object NormalNotificationMessage {
             (__ \ "notificationDate").read[LocalDate] and
             (__ \ "customsSubPlace").readNullable[String] and
             (__ \ "trader").read[Trader] and
-            (__ \ "presentationOffice").read[String] and
+            (__ \ "presentationOfficeId").read[String] and
+            (__ \ "presentationOfficeName").read[String] and
             (__ \ "enRouteEvents").readNullable[Seq[EnRouteEvent]]
         )(NormalNotificationMessage.apply _)
       )
@@ -106,7 +107,8 @@ object NormalNotificationMessage {
             "notificationDate"        -> notification.notificationDate,
             "customsSubPlace"         -> notification.customsSubPlace,
             "trader"                  -> Json.toJson(notification.trader),
-            "presentationOffice"      -> notification.presentationOffice,
+            "presentationOfficeId"    -> notification.presentationOfficeId,
+            "presentationOfficeName"  -> notification.presentationOfficeName,
             "enRouteEvents"           -> Json.toJson(notification.enRouteEvents)
           )
           .filterNulls
@@ -119,7 +121,8 @@ final case class SimplifiedNotificationMessage(
   notificationDate: LocalDate,
   approvedLocation: Option[String],
   trader: Trader,
-  presentationOffice: String,
+  presentationOfficeId: String,
+  presentationOfficeName: String,
   enRouteEvents: Option[Seq[EnRouteEvent]]
 ) extends ArrivalNotificationMessage {
 
@@ -129,10 +132,10 @@ final case class SimplifiedNotificationMessage(
 object SimplifiedNotificationMessage {
 
   object Constants {
-    val notificationPlaceLength  = 35
-    val approvedLocationLength   = 17
-    val presentationOfficeLength = 8
-    val maxNumberOfEnRouteEvents = 9
+    val notificationPlaceLength    = 35
+    val approvedLocationLength     = 17
+    val presentationOfficeIdLength = 8
+    val maxNumberOfEnRouteEvents   = 9
   }
 
   implicit lazy val reads: Reads[SimplifiedNotificationMessage] = {
@@ -156,7 +159,8 @@ object SimplifiedNotificationMessage {
             (__ \ "notificationDate").read[LocalDate] and
             (__ \ "approvedLocation").readNullable[String] and
             (__ \ "trader").read[Trader] and
-            (__ \ "presentationOffice").read[String] and
+            (__ \ "presentationOfficeId").read[String] and
+            (__ \ "presentationOfficeName").read[String] and
             (__ \ "enRouteEvents").readNullable[Seq[EnRouteEvent]]
         )(SimplifiedNotificationMessage.apply _)
       )
@@ -173,7 +177,8 @@ object SimplifiedNotificationMessage {
             "notificationDate"        -> notification.notificationDate,
             "approvedLocation"        -> notification.approvedLocation,
             "trader"                  -> Json.toJson(notification.trader),
-            "presentationOffice"      -> notification.presentationOffice,
+            "presentationOfficeId"    -> notification.presentationOfficeId,
+            "presentationOfficeName"  -> notification.presentationOfficeName,
             "enRouteEvents"           -> Json.toJson(notification.enRouteEvents)
           )
           .filterNulls

@@ -49,6 +49,8 @@ class SubmissionModelServiceSpec
 
   val convertToSubmissionModel = new SubmissionModelService(appConfig)
 
+  val presentationOfficeName = "Presentation Office Name"
+
   "SubmissionModelService" - {
 
     "must convert NormalNotification to ArrivalNotificationRequest for traders with Eori" in {
@@ -73,7 +75,8 @@ class SubmissionModelServiceSpec
                 countryCode = arrivalNotificationRequest.traderDestination.countryCode,
                 eori = arrivalNotificationRequest.traderDestination.eori.value
               ),
-              presentationOffice = arrivalNotificationRequest.customsOfficeOfPresentation.presentationOffice,
+              presentationOfficeId = arrivalNotificationRequest.customsOfficeOfPresentation.presentationOfficeId,
+              presentationOfficeName = presentationOfficeName,
               enRouteEvents = arrivalNotificationRequest.enRouteEvents
             )
           }
@@ -115,7 +118,8 @@ class SubmissionModelServiceSpec
               city = arrivalNotificationRequest.traderDestination.city.value,
               countryCode = arrivalNotificationRequest.traderDestination.countryCode.value
             ),
-            presentationOffice = arrivalNotificationRequest.customsOfficeOfPresentation.presentationOffice,
+            presentationOfficeId = arrivalNotificationRequest.customsOfficeOfPresentation.presentationOfficeId,
+            presentationOfficeName = presentationOfficeName,
             enRouteEvents = arrivalNotificationRequest.enRouteEvents
           )
         }

@@ -150,8 +150,9 @@ class ArrivalNotificationMessageSpec extends FreeSpec with MustMatchers with Sca
           JsObject.empty
       }
     } ++ Json.obj(
-      "trader"             -> Json.toJson(notification.trader),
-      "presentationOffice" -> notification.presentationOffice
+      "trader"                 -> Json.toJson(notification.trader),
+      "presentationOfficeId"   -> notification.presentationOfficeId,
+      "presentationOfficeName" -> notification.presentationOfficeName
     ) ++ {
       notification.enRouteEvents match {
         case Some(enRouteEvents) =>
@@ -175,8 +176,9 @@ class ArrivalNotificationMessageSpec extends FreeSpec with MustMatchers with Sca
           JsObject.empty
       }
     } ++ Json.obj(
-      "trader"             -> Json.toJson(notification.trader),
-      "presentationOffice" -> notification.presentationOffice
+      "trader"                 -> Json.toJson(notification.trader),
+      "presentationOfficeId"   -> notification.presentationOfficeId,
+      "presentationOfficeName" -> notification.presentationOfficeName
     ) ++ {
       notification.enRouteEvents match {
         case Some(enrouteEvents) =>

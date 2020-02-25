@@ -43,7 +43,8 @@ trait SpecBase extends FreeSpec with GuiceOneAppPerSuite with MustMatchers with 
     notificationDate = LocalDate.now(),
     customsSubPlace = None,
     trader = TraderWithEori("eori", None, None, None, None, None),
-    presentationOffice = "sadsf",
+    presentationOfficeId = "Presentation Office Id",
+    presentationOfficeName = "Presentation Office Name",
     enRouteEvents = Option(Seq.empty)
   )
 

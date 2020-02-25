@@ -33,7 +33,7 @@ class CustomsOfficeOfPresentationSpec extends FreeSpec with MustMatchers with Sc
         customsOfficeOfPresentation =>
           val expectedResult =
             <CUSOFFPREOFFRES>
-              <RefNumRES1>{customsOfficeOfPresentation.presentationOffice}</RefNumRES1>
+              <RefNumRES1>{customsOfficeOfPresentation.presentationOfficeId}</RefNumRES1>
             </CUSOFFPREOFFRES>
 
           trim(customsOfficeOfPresentation.toXml) mustBe trim(loadString(expectedResult.toString))

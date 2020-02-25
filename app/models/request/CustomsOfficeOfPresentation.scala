@@ -20,11 +20,11 @@ import helpers.XmlBuilderHelper
 
 import scala.xml.Node
 
-case class CustomsOfficeOfPresentation(presentationOffice: String) extends XmlBuilderHelper {
+case class CustomsOfficeOfPresentation(presentationOfficeId: String) extends XmlBuilderHelper {
 
   def toXml: Node =
     <CUSOFFPREOFFRES>
-      {buildAndEncodeElem(presentationOffice, "RefNumRES1")}
+      {buildAndEncodeElem(presentationOfficeId, "RefNumRES1")}
     </CUSOFFPREOFFRES>
 }
 
