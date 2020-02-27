@@ -8,7 +8,7 @@ object AppDependencies {
   val compile = Seq(
 
     "org.reactivemongo"       %% "play2-reactivemongo"      % "0.18.6-play26",
-    "uk.gov.hmrc"             %% "bootstrap-play-26"        % "1.1.0"
+    "uk.gov.hmrc"             %% "bootstrap-play-26"        % "1.4.0"
   )
 
   val test = Seq(
@@ -20,4 +20,15 @@ object AppDependencies {
     "org.scalacheck"          %% "scalacheck"               % "1.14.1",
     "com.github.tomakehurst"  %  "wiremock-standalone"      % "2.17.0"
   ).map(_ % "test, it")
+
+  val akkaVersion = "2.5.23"
+  val akkaHttpVersion = "10.0.15"
+
+  val overrides = Seq(
+    "com.typesafe.akka" %% "akka-stream" % akkaVersion,
+    "com.typesafe.akka" %% "akka-protobuf" % akkaVersion,
+    "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
+    "com.typesafe.akka" %% "akka-actor" % akkaVersion,
+    "com.typesafe.akka" %% "akka-http-core" % akkaHttpVersion
+  )
 }

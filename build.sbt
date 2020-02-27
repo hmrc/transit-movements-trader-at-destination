@@ -48,3 +48,5 @@ lazy val itSettings = Defaults.itSettings ++ Seq(
   ),
   scalafmtTestOnCompile in ThisBuild := true
 )
+
+dependencyOverrides ++= AppDependencies.overrides
