@@ -27,13 +27,13 @@ import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.ExecutionContext
 
-class ArrivalsHistoryController @Inject()(
+class MovementsController @Inject()(
   cc: ControllerComponents,
   arrivalMovementRepository: ArrivalMovementRepository
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
-  def getArrivalsHistory: Action[AnyContent] = Action.async {
+  def getMovements: Action[AnyContent] = Action.async {
 
     arrivalMovementRepository.fetchAllMovements
       .map {

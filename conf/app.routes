@@ -1,4 +1,4 @@
 # microservice specific routes
 
 POST                    /arrival-notification               controllers.ArrivalNotificationController.post
-GET                     /arrivals-history                   controllers.ArrivalsHistoryController.getArrivalsHistory
+GET                     /movements                          controllers.MovementsController.getMovements

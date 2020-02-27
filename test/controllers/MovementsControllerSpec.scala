@@ -33,7 +33,7 @@ import play.api.test.Helpers._
 
 import scala.concurrent.Future
 
-class ArrivalsHistoryControllerSpec extends SpecBase with ScalaCheckPropertyChecks with MessageGenerators with BeforeAndAfterEach with IntegrationPatience {
+class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks with MessageGenerators with BeforeAndAfterEach with IntegrationPatience {
 
   private val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
 
@@ -48,16 +48,16 @@ class ArrivalsHistoryControllerSpec extends SpecBase with ScalaCheckPropertyChec
     reset(mockArrivalMovementRepository)
   }
 
-  "ArrivalsHistoryController" - {
+  "MovementsController" - {
 
-    "must return Ok and retrieve arrivals history" in {
+    "must return Ok and retrieve movements" in {
       forAll(seqWithMaxLength[ArrivalMovement](10)) {
         arrivalMovements =>
           when(mockArrivalMovementRepository.fetchAllMovements).thenReturn(Future.successful(arrivalMovements))
 
           val expectedResult: Seq[Message] = arrivalMovements.map(_.messages.head)
 
-          val request = FakeRequest(GET, routes.ArrivalsHistoryController.getArrivalsHistory().url).withJsonBody(Json.toJson(expectedResult))
+          val request = FakeRequest(GET, routes.MovementsController.getMovements().url).withJsonBody(Json.toJson(expectedResult))
 
           val result = route(application, request).value
 
@@ -71,7 +71,7 @@ class ArrivalsHistoryControllerSpec extends SpecBase with ScalaCheckPropertyChec
       when(mockArrivalMovementRepository.fetchAllMovements)
         .thenReturn(Future.failed(new Exception))
 
-      val request = FakeRequest(GET, routes.ArrivalsHistoryController.getArrivalsHistory().url)
+      val request = FakeRequest(GET, routes.MovementsController.getMovements().url)
 
       val result = route(application, request).value
 
