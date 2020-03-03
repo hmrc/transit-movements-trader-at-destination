@@ -16,10 +16,7 @@
 
 package generators
 
-import java.time.Instant
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.ZoneOffset
+import java.time._
 
 import models.messages
 import models._
@@ -61,6 +58,17 @@ trait ModelGenerators {
     Gen.choose(toMillis(min), toMillis(max)).map {
       millis =>
         Instant.ofEpochMilli(millis).atOffset(ZoneOffset.UTC).toLocalDate
+    }
+  }
+
+  def timesBetween(min: LocalDate, max: LocalDate): Gen[LocalTime] = {
+
+    def toMillis(date: LocalDate): Long =
+      date.atStartOfDay.atZone(ZoneOffset.UTC).toInstant.toEpochMilli
+
+    Gen.choose(toMillis(min), toMillis(max)).map {
+      millis =>
+        Instant.ofEpochMilli(millis).atOffset(ZoneOffset.UTC).toLocalTime
     }
   }
 
@@ -120,24 +128,16 @@ trait ModelGenerators {
       Gen.oneOf(arbitrary[TraderWithEori], arbitrary[TraderWithoutEori])
     }
 
-  implicit lazy val arbitraryEndorsement: Arbitrary[Endorsement] =
-    Arbitrary {
-
-      for {
-        date      <- Gen.option(datesBetween(pastDate, dateNow))
-        authority <- Gen.option(stringsWithMaxLength(Endorsement.Constants.authorityLength))
-        place     <- Gen.option(stringsWithMaxLength(Endorsement.Constants.placeLength))
-        country   <- Gen.option(stringsWithMaxLength(Endorsement.Constants.countryLength))
-      } yield Endorsement(date, authority, place, country)
-    }
-
   implicit lazy val arbitraryIncident: Arbitrary[Incident] =
     Arbitrary {
 
       for {
         information <- Gen.option(stringsWithMaxLength(Incident.Constants.informationLength))
-        endorsement <- arbitrary[Endorsement]
-      } yield Incident(information, endorsement)
+        date        <- Gen.option(datesBetween(pastDate, dateNow))
+        authority   <- Gen.option(stringsWithMaxLength(EventDetails.Constants.authorityLength))
+        place       <- Gen.option(stringsWithMaxLength(EventDetails.Constants.placeLength))
+        country     <- Gen.option(stringsWithMaxLength(EventDetails.Constants.countryLength))
+      } yield Incident(information, date, authority, place, country)
     }
 
   implicit lazy val arbitraryContainer: Arbitrary[Container] = Arbitrary {
@@ -152,20 +152,26 @@ trait ModelGenerators {
       for {
         transportIdentity  <- stringsWithMaxLength(VehicularTranshipment.Constants.transportIdentityLength)
         transportCountry   <- stringsWithMaxLength(VehicularTranshipment.Constants.transportCountryLength)
-        endorsement        <- arbitrary[Endorsement]
+        date               <- Gen.option(datesBetween(pastDate, dateNow))
+        authority          <- Gen.option(stringsWithMaxLength(EventDetails.Constants.authorityLength))
+        place              <- Gen.option(stringsWithMaxLength(EventDetails.Constants.placeLength))
+        country            <- Gen.option(stringsWithMaxLength(EventDetails.Constants.countryLength))
         numberOfContainers <- Gen.choose[Int](minNumberOfContainers, maxNumberOfContainers)
         containers         <- Gen.option(Gen.listOfN(numberOfContainers, arbitrary[Container]))
-      } yield VehicularTranshipment(transportIdentity, transportCountry, endorsement, containers)
+      } yield VehicularTranshipment(transportIdentity, transportCountry, date, authority, place, country, containers)
     }
 
   implicit lazy val arbitraryContainerTranshipment: Arbitrary[ContainerTranshipment] =
     Arbitrary {
 
       for {
-        endorsement        <- arbitrary[Endorsement]
+        date               <- Gen.option(datesBetween(pastDate, dateNow))
+        authority          <- Gen.option(stringsWithMaxLength(EventDetails.Constants.authorityLength))
+        place              <- Gen.option(stringsWithMaxLength(EventDetails.Constants.placeLength))
+        country            <- Gen.option(stringsWithMaxLength(EventDetails.Constants.countryLength))
         numberOfContainers <- Gen.choose[Int](minNumberOfContainers, maxNumberOfContainers)
         containers         <- Gen.listOfN(numberOfContainers, arbitrary[Container])
-      } yield ContainerTranshipment(endorsement, containers)
+      } yield ContainerTranshipment(date, authority, place, country, containers)
     }
 
   implicit lazy val arbitraryTranshipment: Arbitrary[Transhipment] =

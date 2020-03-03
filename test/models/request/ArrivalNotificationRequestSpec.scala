@@ -191,7 +191,7 @@ class ArrivalNotificationRequestSpec
                 place = "place",
                 countryCode = "GB",
                 alreadyInNcts = true,
-                eventDetails = Incident(None, Endorsement(None, None, None, None)),
+                eventDetails = Incident(None, None, None, None, None),
                 seals = None
               )
             ))
@@ -305,24 +305,24 @@ class ArrivalNotificationRequestSpec
         buildIncidentFlag(incident.information.isDefined) ++
           buildOptionalElem(incident.information, "IncInfINC4") ++
           buildAndEncodeElem(languageCode, "IncInfINC4LNG") ++
-          buildOptionalElem(incident.endorsement.date, "EndDatINC6") ++
-          buildOptionalElem(incident.endorsement.authority, "EndAutINC7") ++
+          buildOptionalElem(incident.date, "EndDatINC6") ++
+          buildOptionalElem(incident.authority, "EndAutINC7") ++
           buildAndEncodeElem(languageCode, "EndAutINC7LNG") ++
-          buildOptionalElem(incident.endorsement.place, "EndPlaINC10") ++
+          buildOptionalElem(incident.place, "EndPlaINC10") ++
           buildAndEncodeElem(languageCode, "EndPlaINC10LNG") ++
-          buildOptionalElem(incident.endorsement.country, "EndCouINC12")
+          buildOptionalElem(incident.country, "EndCouINC12")
         }
       </INCINC> ++ seals
 
       case containerTranshipment: ContainerTranshipment =>
         seals ++
           <TRASHP> {
-        buildOptionalElem(containerTranshipment.endorsement.date, "EndDatSHP60") ++
-        buildOptionalElem(containerTranshipment.endorsement.authority, "EndAutSHP61") ++
+        buildOptionalElem(containerTranshipment.date, "EndDatSHP60") ++
+        buildOptionalElem(containerTranshipment.authority, "EndAutSHP61") ++
         buildAndEncodeElem(languageCode,"EndAutSHP61LNG") ++
-        buildOptionalElem(containerTranshipment.endorsement.place, "EndPlaSHP63") ++
+        buildOptionalElem(containerTranshipment.place, "EndPlaSHP63") ++
         buildAndEncodeElem(languageCode,"EndPlaSHP63LNG") ++
-        buildOptionalElem(containerTranshipment.endorsement.country, "EndCouSHP65") ++
+        buildOptionalElem(containerTranshipment.country, "EndCouSHP65") ++
         containerTranshipment.containers.map {
           container =>
             <CONNR3>
@@ -338,12 +338,12 @@ class ArrivalNotificationRequestSpec
         buildAndEncodeElem(vehicularTranshipment.transportIdentity,"NewTraMeaIdeSHP26") ++
         buildAndEncodeElem(languageCode,"NewTraMeaIdeSHP26LNG") ++
         buildAndEncodeElem(vehicularTranshipment.transportCountry,"NewTraMeaNatSHP54") ++
-        buildOptionalElem(vehicularTranshipment.endorsement.date, "EndDatSHP60") ++
-        buildOptionalElem(vehicularTranshipment.endorsement.authority, "EndAutSHP61") ++
+        buildOptionalElem(vehicularTranshipment.date, "EndDatSHP60") ++
+        buildOptionalElem(vehicularTranshipment.authority, "EndAutSHP61") ++
         buildAndEncodeElem(languageCode, "EndAutSHP61LNG") ++
-        buildOptionalElem(vehicularTranshipment.endorsement.place, "EndPlaSHP63") ++
+        buildOptionalElem(vehicularTranshipment.place, "EndPlaSHP63") ++
         buildAndEncodeElem(languageCode, "EndPlaSHP63LNG") ++
-        buildOptionalElem(vehicularTranshipment.endorsement.country, "EndCouSHP65") ++
+        buildOptionalElem(vehicularTranshipment.country, "EndCouSHP65") ++
         {
           vehicularTranshipment.containers match {
             case Some(containers) =>

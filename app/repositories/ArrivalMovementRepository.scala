@@ -17,28 +17,31 @@
 package repositories
 
 import com.google.inject.Inject
-import models.messages.ArrivalNotificationMessage
+import models.ArrivalMovement
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
 import play.modules.reactivemongo.ReactiveMongoApi
+import reactivemongo.api.Cursor
+import reactivemongo.api.ReadPreference
+import reactivemongo.api.collections.GenericQueryBuilder
 import reactivemongo.api.commands.WriteResult
 import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 import reactivemongo.play.json.collection.JSONCollection
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class ArrivalNotificationRepository @Inject()(cc: ControllerComponents, mongo: ReactiveMongoApi) {
+class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: ReactiveMongoApi)(implicit ec: ExecutionContext) {
 
-  private val collectionName = CollectionNames.ArrivalNotificationCollection
+  private val collectionName = CollectionNames.ArrivalMovementCollection
 
   private def collection: Future[JSONCollection] =
     mongo.database.map(_.collection[JSONCollection](collectionName))
 
-  def persistToMongo(arrivalNotification: ArrivalNotificationMessage): Future[WriteResult] = {
+  def persistToMongo(arrivalMovement: ArrivalMovement): Future[WriteResult] = {
 
-    val doc: JsObject = Json.toJson(arrivalNotification).as[JsObject]
+    val doc: JsObject = Json.toJson(arrivalMovement).as[JsObject]
 
     collection.flatMap {
       _.insert(false)
@@ -56,8 +59,15 @@ class ArrivalNotificationRepository @Inject()(cc: ControllerComponents, mongo: R
     }
   }
 
+  def fetchAllMovements: Future[Seq[ArrivalMovement]] =
+    collection.flatMap {
+      _.find(Json.obj(), Option.empty[JsObject])
+        .cursor[ArrivalMovement]()
+        .collect[Seq](-1, Cursor.FailOnError())
+    }
+
 }
 
-sealed trait FailedSavingArrivalNotification
+sealed trait FailedSavingArrivalMovement
 
-object FailedSavingArrivalNotification extends FailedSavingArrivalNotification
+object FailedSavingArrivalNotification extends FailedSavingArrivalMovement

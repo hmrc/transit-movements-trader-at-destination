@@ -36,76 +36,79 @@ class MessageConnectorSpec
 
   "MessageConnector" - {
 
-    "return OK when post is successful" in {
+    "post" - {
 
-      forAll(arbitrary[ArrivalNotificationRequest], genHeaderCarrier) {
-        (arrivalNotificationRequest, hc) =>
+      "return OK when post is successful" in {
 
-          implicit val headerCarrier: HeaderCarrier = hc
+        forAll(arbitrary[ArrivalNotificationRequest], genHeaderCarrier) {
+          (arrivalNotificationRequest, hc) =>
 
-          val xMessageType: String = arrivalNotificationRequest.xMessageType.code
-          val messageSender = "mdtp-userseori"
-          server.stubFor(
-            post(urlEqualTo(url))
+            implicit val headerCarrier: HeaderCarrier = hc
 
-              .withHeader("Content-Type", equalTo("application/xml;charset=UTF-8"))
-              .withHeader("X-Message-Type", equalTo(xMessageType))
-              .withHeader("X-Correlation-ID", headerCarrierPattern)
-              .withHeader("X-Forwarded-Host", equalTo("mdtp"))
-              .withHeader("Date", equalTo(s"$dateTimeFormatted"))
-              .withHeader("X-Message-Sender", equalTo(messageSender))
-              .withHeader("Accept", equalTo("application/xml"))
-              .withHeader("Authorization", equalTo("Bearer bearertokenhere"))
-              .willReturn(
-                aResponse()
-                  .withStatus(200)
-              )
-          )
+            val xMessageType: String = arrivalNotificationRequest.xMessageType.code
+            val messageSender = "mdtp-userseori"
+            server.stubFor(
+              post(urlEqualTo(postUrl))
 
-          val result = connector.post("<CC007A>test</CC007A>", arrivalNotificationRequest.xMessageType, localDateTime)
+                .withHeader("Content-Type", equalTo("application/xml;charset=UTF-8"))
+                .withHeader("X-Message-Type", equalTo(xMessageType))
+                .withHeader("X-Correlation-ID", headerCarrierPattern)
+                .withHeader("X-Forwarded-Host", equalTo("mdtp"))
+                .withHeader("Date", equalTo(s"$dateTimeFormatted"))
+                .withHeader("X-Message-Sender", equalTo(messageSender))
+                .withHeader("Accept", equalTo("application/xml"))
+                .withHeader("Authorization", equalTo("Bearer bearertokenhere"))
+                .willReturn(
+                  aResponse()
+                    .withStatus(200)
+                )
+            )
 
-          whenReady(result) {
-            response =>
-              response.status mustBe 200
-          }
+            val result = connector.post("<CC007A>test</CC007A>", arrivalNotificationRequest.xMessageType, localDateTime)
+
+            whenReady(result) {
+              response =>
+                response.status mustBe 200
+            }
+        }
+      }
+
+
+      "return an exception when post is unsuccessful" in {
+        forAll(genFailedStatusCodes, arbitrary[ArrivalNotificationRequest], genHeaderCarrier) {
+          (statusCode, arrivalNotificationRequest, hc) =>
+
+            implicit val headerCarrier: HeaderCarrier = hc
+
+            val xMessageType: String = arrivalNotificationRequest.xMessageType.code
+            val messageSender = "mdtp-userseori"
+
+            server.stubFor(
+              post(urlEqualTo(postUrl))
+                .withHeader("Content-Type", equalTo("application/xml;charset=UTF-8"))
+                .withHeader("X-Message-Type", equalTo(xMessageType))
+                .withHeader("X-Correlation-ID", headerCarrierPattern)
+                .withHeader("X-Forwarded-Host", equalTo("mdtp"))
+                .withHeader("X-Message-Sender", equalTo(messageSender))
+                .withHeader("Date", equalTo("test"))
+                .withHeader("Accept", equalTo("application/xml"))
+                .withHeader("Authorization", equalTo("Bearer bearertokenhere"))
+                .willReturn(
+                  aResponse()
+                    .withStatus(statusCode)
+                )
+            )
+
+            val result = connector.post("<CC007A>test</CC007A>", arrivalNotificationRequest.xMessageType, localDateTime)
+
+            whenReady(result.failed) {
+              response =>
+                response mustBe an[Exception]
+            }
+        }
       }
     }
-
-
-    "return an exception when post is unsuccessful" in {
-      forAll(genFailedStatusCodes, arbitrary[ArrivalNotificationRequest], genHeaderCarrier) {
-        (statusCode, arrivalNotificationRequest, hc) =>
-
-          implicit val headerCarrier: HeaderCarrier = hc
-
-          val xMessageType: String = arrivalNotificationRequest.xMessageType.code
-          val messageSender = "mdtp-userseori"
-
-          server.stubFor(
-            post(urlEqualTo(url))
-              .withHeader("Content-Type", equalTo("application/xml;charset=UTF-8"))
-              .withHeader("X-Message-Type", equalTo(xMessageType))
-              .withHeader("X-Correlation-ID", headerCarrierPattern)
-              .withHeader("X-Forwarded-Host", equalTo("mdtp"))
-              .withHeader("X-Message-Sender", equalTo(messageSender))
-              .withHeader("Date", equalTo("test"))
-              .withHeader("Accept", equalTo("application/xml"))
-              .withHeader("Authorization", equalTo("Bearer bearertokenhere"))
-              .willReturn(
-                aResponse()
-                  .withStatus(statusCode)
-              )
-          )
-
-          val result = connector.post("<CC007A>test</CC007A>", arrivalNotificationRequest.xMessageType, localDateTime)
-
-          whenReady(result.failed) {
-            response =>
-              response mustBe an[Exception]
-          }
-      }
-    }
-  }
+ }
 }
 
 object MessageConnectorSpec {
@@ -117,7 +120,7 @@ object MessageConnectorSpec {
     }
   }
 
-  private val url = "/common-transit-convention-trader-at-destination/message-notification"
+  private val postUrl = "/common-transit-convention-trader-at-destination/message-notification"
 
   private val headerCarrierWithSessionId = HeaderCarrier(sessionId = Some(SessionId("sessionId")))
   private val headerCarrier = HeaderCarrier()

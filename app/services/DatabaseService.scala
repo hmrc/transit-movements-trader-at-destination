@@ -17,18 +17,18 @@
 package services
 
 import javax.inject.Inject
-import models.messages.ArrivalNotificationMessage
+import models.ArrivalMovement
 import models.request.InterchangeControlReference
+import models.request.InternalReferenceId
 import reactivemongo.api.commands.WriteResult
-import repositories.ArrivalNotificationRepository
-import repositories.FailedSavingArrivalNotification
-import repositories.SequentialInterchangeControlReferenceIdRepository
+import repositories._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class DatabaseServiceImpl @Inject()(sequentialInterchangeControlReferenceIdRepository: SequentialInterchangeControlReferenceIdRepository,
-                                    arrivalNotificationRepository: ArrivalNotificationRepository)
+                                    movementReferenceIdRepository: InternalReferenceIdRepository,
+                                    arrivalMovementRepository: ArrivalMovementRepository)
     extends DatabaseService {
 
   def getInterchangeControlReferenceId: Future[Either[FailedCreatingInterchangeControlReference, InterchangeControlReference]] =
@@ -43,9 +43,20 @@ class DatabaseServiceImpl @Inject()(sequentialInterchangeControlReferenceIdRepos
           Left(FailedCreatingInterchangeControlReference)
       }
 
-  def saveArrivalNotification(arrivalNotification: ArrivalNotificationMessage): Future[Either[FailedSavingArrivalNotification, WriteResult]] =
-    arrivalNotificationRepository
-      .persistToMongo(arrivalNotification)
+  def getInternalReferenceId: Future[Either[FailedCreatingNextInternalReferenceId, InternalReferenceId]] =
+    movementReferenceIdRepository
+      .nextId()
+      .map {
+        movementReferenceId =>
+          Right(movementReferenceId)
+      }
+      .recover {
+        case _ => Left(FailedCreatingNextInternalReferenceId)
+      }
+
+  def saveArrivalMovement(arrivalMovement: ArrivalMovement): Future[Either[FailedSavingArrivalMovement, WriteResult]] =
+    arrivalMovementRepository
+      .persistToMongo(arrivalMovement)
       .map {
         writeResult =>
           Right(writeResult)
@@ -59,9 +70,6 @@ class DatabaseServiceImpl @Inject()(sequentialInterchangeControlReferenceIdRepos
 
 trait DatabaseService {
   def getInterchangeControlReferenceId: Future[Either[FailedCreatingInterchangeControlReference, InterchangeControlReference]]
-  def saveArrivalNotification(arrivalNotification: ArrivalNotificationMessage): Future[Either[FailedSavingArrivalNotification, WriteResult]]
+  def getInternalReferenceId: Future[Either[FailedCreatingNextInternalReferenceId, InternalReferenceId]]
+  def saveArrivalMovement(arrivalMovement: ArrivalMovement): Future[Either[FailedSavingArrivalMovement, WriteResult]]
 }
-
-sealed trait FailedCreatingInterchangeControlReference
-
-object FailedCreatingInterchangeControlReference extends FailedCreatingInterchangeControlReference

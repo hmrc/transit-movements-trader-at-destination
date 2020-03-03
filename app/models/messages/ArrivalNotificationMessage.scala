@@ -91,7 +91,7 @@ object NormalNotificationMessage {
             (__ \ "trader").read[Trader] and
             (__ \ "presentationOffice").read[String] and
             (__ \ "enRouteEvents").readNullable[Seq[EnRouteEvent]]
-        )(NormalNotificationMessage(_, _, _, _, _, _, _))
+        )(NormalNotificationMessage.apply _)
       )
   }
 
@@ -158,7 +158,7 @@ object SimplifiedNotificationMessage {
             (__ \ "trader").read[Trader] and
             (__ \ "presentationOffice").read[String] and
             (__ \ "enRouteEvents").readNullable[Seq[EnRouteEvent]]
-        )(SimplifiedNotificationMessage(_, _, _, _, _, _, _))
+        )(SimplifiedNotificationMessage.apply _)
       )
   }
 

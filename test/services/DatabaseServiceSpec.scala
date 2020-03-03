@@ -18,18 +18,18 @@ package services
 
 import base.SpecBase
 import generators.MessageGenerators
-import models.messages.ArrivalNotificationMessage
+import models.ArrivalMovement
 import models.request.InterchangeControlReference
+import models.request.InternalReferenceId
 import org.mockito.Mockito._
 import org.scalacheck.Arbitrary.arbitrary
+import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.BeforeAndAfterEach
 import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers
-import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import repositories.ArrivalNotificationRepository
-import repositories.FailedSavingArrivalNotification
-import repositories.SequentialInterchangeControlReferenceIdRepository
+import repositories._
 
 import scala.concurrent.Future
 
@@ -40,18 +40,31 @@ class DatabaseServiceSpec
     with ScalaFutures
     with ScalaCheckPropertyChecks
     with MessageGenerators
-    with SpecBase {
+    with SpecBase
+    with BeforeAndAfterEach {
 
-  val mockRepository                    = mock[SequentialInterchangeControlReferenceIdRepository]
-  val mockArrivalNotificationRepository = mock[ArrivalNotificationRepository]
+  private val mockRepository                  = mock[SequentialInterchangeControlReferenceIdRepository]
+  private val mockInternalReferenceRepository = mock[InternalReferenceIdRepository]
+  private val mockArrivalMovementRepository   = mock[ArrivalMovementRepository]
+
+  val service = new DatabaseServiceImpl(
+    mockRepository,
+    mockInternalReferenceRepository,
+    mockArrivalMovementRepository
+  )
+
+  override protected def beforeEach(): Unit = {
+    super.beforeEach()
+    reset(mockRepository)
+    reset(mockInternalReferenceRepository)
+    reset(mockArrivalMovementRepository)
+  }
 
   "DatabaseService" - {
 
     "getInterchangeControlReferenceId" - {
 
       "must return InterchangeControlReference when successful" in {
-
-        val service = new DatabaseServiceImpl(mockRepository, mockArrivalNotificationRepository)
 
         when(mockRepository.nextInterchangeControlReferenceId())
           .thenReturn(Future.successful(InterchangeControlReference("date", 1)))
@@ -63,8 +76,6 @@ class DatabaseServiceSpec
 
       "must return FailedCreatingInterchangeControlReference when failed" in {
 
-        val service = new DatabaseServiceImpl(mockRepository, mockArrivalNotificationRepository)
-
         when(mockRepository.nextInterchangeControlReferenceId())
           .thenReturn(Future.failed(new RuntimeException))
 
@@ -75,18 +86,42 @@ class DatabaseServiceSpec
 
     }
 
+    "getInternalReferenceId" - {
+
+      "must return a movement reference id when successful" in {
+
+        val internalReferenceId = InternalReferenceId(0)
+
+        when(mockInternalReferenceRepository.nextId())
+          .thenReturn(Future.successful(internalReferenceId))
+
+        val response = service.getInternalReferenceId.futureValue
+
+        response mustBe Right(internalReferenceId)
+      }
+
+      "must return FailedCreatingMovementReference when failed" in {
+
+        when(mockInternalReferenceRepository.nextId())
+          .thenReturn(Future.failed(new RuntimeException))
+
+        val response = service.getInternalReferenceId.futureValue
+
+        response mustBe Left(FailedCreatingNextInternalReferenceId)
+      }
+
+    }
+
     "saveArrivalNotification" - {
 
       "must return WriteResult when successful" in {
 
-        forAll(arbitrary[ArrivalNotificationMessage]) {
+        forAll(arbitrary[ArrivalMovement]) {
           arrivalNotification =>
-            val service = new DatabaseServiceImpl(mockRepository, mockArrivalNotificationRepository)
-
-            when(mockArrivalNotificationRepository.persistToMongo(arrivalNotification))
+            when(mockArrivalMovementRepository.persistToMongo(arrivalNotification))
               .thenReturn(Future.successful(fakeWriteResult))
 
-            val response = service.saveArrivalNotification(arrivalNotification).futureValue
+            val response = service.saveArrivalMovement(arrivalNotification).futureValue
 
             response mustBe Right(fakeWriteResult)
         }
@@ -95,22 +130,17 @@ class DatabaseServiceSpec
 
       "must return FailedSavingArrivalNotification when failed" in {
 
-        forAll(arbitrary[ArrivalNotificationMessage]) {
+        forAll(arbitrary[ArrivalMovement]) {
           arrivalNotification =>
-            val service = new DatabaseServiceImpl(mockRepository, mockArrivalNotificationRepository)
-
-            when(mockArrivalNotificationRepository.persistToMongo(arrivalNotification))
+            when(mockArrivalMovementRepository.persistToMongo(arrivalNotification))
               .thenReturn(Future.failed(new RuntimeException))
 
-            val response = service.saveArrivalNotification(arrivalNotification).futureValue
+            val response = service.saveArrivalMovement(arrivalNotification).futureValue
 
             response mustBe Left(FailedSavingArrivalNotification)
         }
-
       }
-
     }
-
   }
 
 }

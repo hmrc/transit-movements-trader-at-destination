@@ -15,29 +15,23 @@
  */
 
 package repositories
-
 import com.google.inject.Inject
-import com.google.inject.Singleton
-import models.request.InterchangeControlReference
+import models.request.InternalReferenceId
 import play.api.libs.json.Json
 import play.api.libs.json.Reads
 import play.modules.reactivemongo.ReactiveMongoApi
-import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 import reactivemongo.play.json.collection.JSONCollection
-import services.DateTimeService
+import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits._
 
-@Singleton
-class SequentialInterchangeControlReferenceIdRepository @Inject()(
-  mongo: ReactiveMongoApi,
-  dateTimeService: DateTimeService
-) extends InterchangeControlReferenceIdRepository {
+class InternalReferenceIdRepository @Inject()(mongo: ReactiveMongoApi) extends InternalReferenceIdRepositoryInterface {
 
   private val lastIndexKey = "last-index"
+  private val primaryValue = "record_id"
 
-  private val collectionName: String = CollectionNames.InterchangeControlReferenceIdsCollection
+  private val collectionName: String = CollectionNames.MovementReferenceIdsCollection
 
   private val indexKeyReads: Reads[Int] = {
     import play.api.libs.json._
@@ -47,30 +41,31 @@ class SequentialInterchangeControlReferenceIdRepository @Inject()(
   private def collection: Future[JSONCollection] =
     mongo.database.map(_.collection[JSONCollection](collectionName))
 
-  override def nextInterchangeControlReferenceId(): Future[InterchangeControlReference] = {
-
-    val date = dateTimeService.dateFormatted
+  def nextId(): Future[InternalReferenceId] = {
 
     val update = Json.obj(
       "$inc" -> Json.obj(lastIndexKey -> 1)
     )
 
-    val selector = Json.obj("_id" -> s"$date")
+    val selector = Json.obj("_id" -> primaryValue)
 
-    collection.flatMap {
+    collection.flatMap(
       _.findAndUpdate(selector, update, upsert = true, fetchNewObject = true)
         .map(
-          _.result(indexKeyReads)
-            .map(InterchangeControlReference(date, _))
-            .getOrElse(throw new Exception(s"Unable to generate InterchangeControlReferenceId for: $date")))
-    }
+          x =>
+            x.result(indexKeyReads)
+              .map(increment => InternalReferenceId(increment))
+              .getOrElse(throw new Exception(s"Unable to generate MovementReferenceId")))
+    )
+
   }
+
 }
 
-trait InterchangeControlReferenceIdRepository {
-  def nextInterchangeControlReferenceId(): Future[InterchangeControlReference]
+trait InternalReferenceIdRepositoryInterface {
+  def nextId(): Future[InternalReferenceId]
 }
 
-sealed trait FailedCreatingInterchangeControlReference
+sealed trait FailedCreatingNextInternalReferenceId
 
-object FailedCreatingInterchangeControlReference extends FailedCreatingInterchangeControlReference
+object FailedCreatingNextInternalReferenceId extends FailedCreatingNextInternalReferenceId

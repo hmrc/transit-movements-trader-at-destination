@@ -14,28 +14,14 @@
  * limitations under the License.
  */
 
-package models.messages
-
-import java.time.LocalDate
-
-import play.api.libs.json.Format
+package models.request
 import play.api.libs.json.Json
+import play.api.libs.json.OFormat
 
-final case class Endorsement(
-  date: Option[LocalDate],
-  authority: Option[String],
-  place: Option[String],
-  country: Option[String]
-)
+case class InternalReferenceId(index: Int) { //TODO: Consider if this should be a BitInt
+//  override def toString: String = s"$index"
+}
 
-object Endorsement {
-
-  object Constants {
-    val authorityLength = 35
-    val placeLength     = 35
-    val countryLength   = 2
-  }
-
-  implicit lazy val format: Format[Endorsement] =
-    Json.format[Endorsement]
+object InternalReferenceId {
+  implicit val formats: OFormat[InternalReferenceId] = Json.format[InternalReferenceId]
 }

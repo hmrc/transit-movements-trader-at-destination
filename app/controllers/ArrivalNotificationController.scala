@@ -23,6 +23,8 @@ import config.AppConfig
 import connectors.MessageConnector
 import helpers.XmlBuilderHelper
 import javax.inject.Inject
+import models.ArrivalMovement
+import models.Message
 import models.TransitWrapper
 import models.messages.ArrivalNotificationMessage
 import models.request._
@@ -31,13 +33,13 @@ import play.api.libs.json.Json
 import play.api.libs.json.Reads
 import play.api.mvc._
 import reactivemongo.api.commands.WriteResult
-import repositories.FailedSavingArrivalNotification
+import repositories._
 import services._
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 import utils.ErrorResponseBuilder
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.xml.Node
 
@@ -50,55 +52,68 @@ class ArrivalNotificationController @Inject()(
   submissionModelService: SubmissionModelService,
   xmlBuilderService: XmlBuilderHelper,
   xmlValidationService: XmlValidationService
-) extends BackendController(cc) {
+)(implicit ec: ExecutionContext)
+    extends BackendController(cc) {
 
   def post(): Action[ArrivalNotificationMessage] = Action.async(validateJson[ArrivalNotificationMessage]) {
     implicit request =>
       val messageSender = MessageSender(appConfig.env, "eori")
 
-      val arrivalNotification = request.body
+      val arrivalNotification: ArrivalNotificationMessage = request.body
 
       val localDateTime: LocalDateTime = LocalDateTime.now()
 
       databaseService.getInterchangeControlReferenceId.flatMap {
-
-        case Right(interchangeControlReferenceId) => {
-
+        case Right(interchangeControlReferenceId) =>
           submissionModelService.convertToSubmissionModel(arrivalNotification, messageSender, interchangeControlReferenceId) match {
 
-            case Right(arrivalNotificationRequestModel) => {
-
+            case Right(arrivalNotificationRequestModel) =>
               val arrivalNotificationRequestXml = arrivalNotificationRequestModel.toXml(localDateTime)
 
               xmlValidationService.validate(arrivalNotificationRequestXml.toString(), ArrivalNotificationXSD) match {
 
-                case Right(XmlSuccessfullyValidated) => {
-
+                case Right(XmlSuccessfullyValidated) =>
                   val xmlWithWrapper: Node = TransitWrapper.toXml(arrivalNotificationRequestXml)
 
-                  databaseService
-                    .saveArrivalNotification(arrivalNotification)
-                    .flatMap {
-                      sendMessage(xmlWithWrapper, arrivalNotificationRequestModel)
-                    }
-                    .recover {
-                      case _ =>
-                        InternalServerError(Json.toJson(ErrorResponseBuilder.failedSavingArrivalNotification))
+                  databaseService.getInternalReferenceId.flatMap {
+
+                    case Right(movementReferenceId) =>
+                      val movementReferenceNumber: String = arrivalNotificationRequestModel.header.movementReferenceNumber
+
+                      val arrivalMovement: ArrivalMovement = ArrivalMovement(
+                        internalReferenceId = movementReferenceId.index,
+                        movementReferenceNumber = movementReferenceNumber,
+                        messages = Seq(Message(localDateTime.toLocalDate, localDateTime.toLocalTime, arrivalNotification))
+                      )
+
+                      databaseService
+                        .saveArrivalMovement(arrivalMovement)
+                        .flatMap {
+                          sendMessage(xmlWithWrapper, arrivalNotificationRequestModel)
+                        }
+                        .recover {
+                          case _ =>
+                            InternalServerError(Json.toJson(ErrorResponseBuilder.failedSavingArrivalNotification))
+                              .as("application/json")
+                        }
+
+                    case Left(FailedCreatingNextInternalReferenceId) =>
+                      Future.successful(
+                        InternalServerError(Json.toJson(ErrorResponseBuilder.failedToCreateInternalReferenceId))
                           .as("application/json")
-                    }
-                }
+                      )
+                  }
+
                 case Left(FailedToValidateXml(reason)) =>
                   Future.successful(
                     BadRequest(Json.toJson(ErrorResponseBuilder.failedXmlValidation(reason)))
                       .as("application/json"))
               }
-            }
             case Left(FailedToConvertModel) =>
               Future.successful(
                 BadRequest(Json.toJson(ErrorResponseBuilder.failedToCreateRequestModel))
                   .as("application/json"))
           }
-        }
         case Left(FailedCreatingInterchangeControlReference) =>
           Future.successful(
             InternalServerError(Json.toJson(ErrorResponseBuilder.failedToCreateInterchangeControlRef))
@@ -108,8 +123,8 @@ class ArrivalNotificationController @Inject()(
   }
 
   private def sendMessage(xml: Node, arrivalNotificationRequestModel: ArrivalNotificationRequest)(
-    implicit headerCarrier: HeaderCarrier): PartialFunction[Either[FailedSavingArrivalNotification, WriteResult], Future[Result]] = {
-    case Right(_) => {
+    implicit headerCarrier: HeaderCarrier): PartialFunction[Either[FailedSavingArrivalMovement, WriteResult], Future[Result]] = {
+    case Right(_) =>
       messageConnector
         .post(xml.toString, arrivalNotificationRequestModel.xMessageType, OffsetDateTime.now)
         .map {
@@ -121,7 +136,6 @@ class ArrivalNotificationController @Inject()(
             BadGateway(Json.toJson(ErrorResponseBuilder.failedSubmissionToEIS))
               .as("application/json")
         }
-    }
     case Left(FailedSavingArrivalNotification) =>
       Future.successful(
         InternalServerError(Json.toJson(ErrorResponseBuilder.failedSavingToDatabase))
