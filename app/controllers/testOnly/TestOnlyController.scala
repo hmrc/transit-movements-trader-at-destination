@@ -17,7 +17,6 @@
 package controllers.testOnly
 
 import javax.inject.Inject
-import play.api.i18n.I18nSupport
 import play.api.i18n.MessagesApi
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
@@ -33,7 +32,7 @@ import scala.concurrent.Future
 class TestOnlyController @Inject()(override val messagesApi: MessagesApi, mongo: ReactiveMongoApi, cc: ControllerComponents)(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
-  def dropMongoCollection: Action[AnyContent] = Action.async {
+  def dropArrivalMovementCollection: Action[AnyContent] = Action.async {
     implicit request =>
       val collection: Future[JSONCollection] = mongo.database.map(_.collection[JSONCollection](CollectionNames.ArrivalMovementCollection))
 
