@@ -266,4 +266,6 @@ trait MessageGenerators extends ModelGenerators {
     } yield request.ArrivalNotificationRequest(meta, headerWithProcedure, traderDestination, customsOffice, enRouteEvents)
   }
 
+  val arbitraryEoriNumber: Gen[String] = stringsWithMaxLength(TraderDestination.Constants.eoriLength)
+
 }
