@@ -16,6 +16,7 @@
 
 package models.request
 
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 import generators.MessageGenerators
@@ -31,17 +32,16 @@ import scala.xml.XML.loadString
 
 class HeaderSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with MessageGenerators {
 
-  private val genDateTime = dateTimesBetween(LocalDateTime.of(1900, 1, 1, 0, 0), LocalDateTime.now)
-
   "Header" - {
     "must create minimal valid xml" in {
 
-      forAll(arbitrary[Header], genDateTime) {
+      forAll(arbitrary[Header], arbitrary[LocalDate]) {
         (header, arrivalNotificationDate) =>
           val minimalHeader = Header(
             movementReferenceNumber = header.movementReferenceNumber.toString,
             procedureTypeFlag = header.procedureTypeFlag,
-            arrivalNotificationPlace = header.arrivalNotificationPlace
+            arrivalNotificationPlace = header.arrivalNotificationPlace,
+            notificationDate = arrivalNotificationDate
           )
 
           val expectedResult =
@@ -54,13 +54,13 @@ class HeaderSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyCheck
               <ArrNotDatHEA141>{Format.dateFormatted(arrivalNotificationDate)}</ArrNotDatHEA141>
             </HEAHEA>
 
-          trim(minimalHeader.toXml(arrivalNotificationDate)) mustBe trim(loadString(expectedResult.toString))
+          trim(minimalHeader.toXml) mustBe trim(loadString(expectedResult.toString))
       }
     }
 
     "must create valid xml" in {
-      forAll(arbitrary[Header], genDateTime) {
-        (header, arrivalNotificationDate) =>
+      forAll(arbitrary[Header]) {
+        header =>
           // TODO need to follow up on these elements as ArrAgrLocCodHEA62,
           //  ArrAgrLocCodHEA62 and ArrAutLocOfGooHEA65 are the same value
 
@@ -85,10 +85,10 @@ class HeaderSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyCheck
               <ArrAgrLocOfGooHEA63LNG>{LanguageCodeEnglish.code}</ArrAgrLocOfGooHEA63LNG>
               {authorisedLocationOfGoods.getOrElse(NodeSeq.Empty)}
               <SimProFlaHEA132>{header.procedureTypeFlag.code}</SimProFlaHEA132>
-              <ArrNotDatHEA141>{Format.dateFormatted(arrivalNotificationDate)}</ArrNotDatHEA141>
+              <ArrNotDatHEA141>{Format.dateFormatted(header.notificationDate)}</ArrNotDatHEA141>
             </HEAHEA>
 
-          trim(header.toXml(arrivalNotificationDate)) mustBe trim(loadString(expectedResult.toString))
+          trim(header.toXml) mustBe trim(loadString(expectedResult.toString))
       }
     }
   }

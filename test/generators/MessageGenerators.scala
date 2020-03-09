@@ -204,7 +204,8 @@ trait MessageGenerators extends ModelGenerators {
         customsSubPlace          <- Gen.option(stringsWithMaxLength(Header.Constants.customsSubPlaceLength))
         arrivalNotificationPlace <- stringsWithMaxLength(Header.Constants.arrivalNotificationPlaceLength)
         procedureTypeFlag        <- arbitrary[ProcedureTypeFlag]
-      } yield Header(movementReferenceNumber, customsSubPlace, arrivalNotificationPlace, None, procedureTypeFlag)
+        notificationDate         <- arbitrary[LocalDate]
+      } yield Header(movementReferenceNumber, customsSubPlace, arrivalNotificationPlace, None, procedureTypeFlag, notificationDate)
     }
   }
 
@@ -215,7 +216,7 @@ trait MessageGenerators extends ModelGenerators {
         header            <- arbitrary[Header]
         traderDestination <- arbitrary[TraderDestination]
         customsOffice     <- arbitrary[CustomsOfficeOfPresentation]
-        enRouteEvents     <- Gen.option(arbitrary[Seq[EnRouteEvent]])
+        enRouteEvents     <- Gen.option(listWithMaxLength[EnRouteEvent](2))
       } yield request.ArrivalNotificationRequest(meta, header, traderDestination, customsOffice, enRouteEvents)
     }
   }

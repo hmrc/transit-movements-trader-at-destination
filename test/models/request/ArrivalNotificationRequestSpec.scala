@@ -45,9 +45,10 @@ class ArrivalNotificationRequestSpec
     with ScalaCheckDrivenPropertyChecks
     with OptionValues {
 
-  private val dateTime: LocalDateTime = LocalDateTime.now()
-  private val dateOfPreparation       = Format.dateFormatted(dateTime)
-  private val timeOfPreparation       = Format.timeFormatted(dateTime)
+  private val dateTime: LocalDateTime    = LocalDateTime.now()
+  private val dateOfPreparation          = LocalDate.now()
+  private val dateOfPreparationFormatted = Format.dateFormatted(dateTime)
+  private val timeOfPreparationFormatted = Format.timeFormatted(dateTime)
 
   private val minimalArrivalNotificationRequest: ArrivalNotificationRequest =
     ArrivalNotificationRequest(
@@ -55,7 +56,7 @@ class ArrivalNotificationRequestSpec
         MessageSender("LOCAL", "EORI&123"),
         InterchangeControlReference("2019", 1)
       ),
-      header = Header("MovementReferenceNumber", None, "arrivalNotificationPlace", None, NormalProcedureFlag),
+      header = Header("MovementReferenceNumber", None, "arrivalNotificationPlace", None, NormalProcedureFlag, dateOfPreparation),
       traderDestination = TraderDestination(None, None, None, None, None, None),
       customsOfficeOfPresentation = CustomsOfficeOfPresentation("PresentationOffice"),
       enRouteEvents = None
@@ -69,8 +70,8 @@ class ArrivalNotificationRequestSpec
           minimalArrivalNotificationRequest.meta.messageSender.toXml
         }
         <MesRecMES6>{minimalArrivalNotificationRequest.meta.messageRecipient}</MesRecMES6>
-        <DatOfPreMES9>{dateOfPreparation}</DatOfPreMES9>
-        <TimOfPreMES10>{timeOfPreparation}</TimOfPreMES10>
+        <DatOfPreMES9>{dateOfPreparationFormatted}</DatOfPreMES9>
+        <TimOfPreMES10>{timeOfPreparationFormatted}</TimOfPreMES10>
         {
           minimalArrivalNotificationRequest.meta.interchangeControlReference.toXml
         }
@@ -84,7 +85,7 @@ class ArrivalNotificationRequestSpec
           <ArrNotPlaHEA60LNG>{Header.Constants.languageCode.code}</ArrNotPlaHEA60LNG>
           <ArrAgrLocOfGooHEA63LNG>{Header.Constants.languageCode.code}</ArrAgrLocOfGooHEA63LNG>
           <SimProFlaHEA132>{minimalArrivalNotificationRequest.header.procedureTypeFlag.code}</SimProFlaHEA132>
-          <ArrNotDatHEA141>{dateOfPreparation}</ArrNotDatHEA141>
+          <ArrNotDatHEA141>{dateOfPreparationFormatted}</ArrNotDatHEA141>
         </HEAHEA>
         <TRADESTRD>
           <NADLNGRD>{Header.Constants.languageCode.code}</NADLNGRD>
@@ -99,13 +100,13 @@ class ArrivalNotificationRequestSpec
     "must create valid xml" in {
       val localDateTime: Gen[LocalDateTime] = dateTimesBetween(LocalDateTime.of(1900, 1, 1, 0, 0), LocalDateTime.now)
 
-      forAll(arbitrary[ArrivalNotificationRequest](arbitraryArrivalNotificationRequest), localDateTime) {
+      forAll(arbitrary[ArrivalNotificationRequest], localDateTime) {
 
         (arrivalNotificationRequest, genDateTime) =>
           whenever(hasEoriWithNormalProcedure()(arrivalNotificationRequest)) {
 
-            val genDateOfPreparation = Format.dateFormatted(genDateTime)
-            val genTimeOfPreparation = Format.timeFormatted(genDateTime)
+            val genDateOfPreparation = Format.dateFormatted(genDateTime) // TODO: Remove this sideway injection of data
+            val genTimeOfPreparation = Format.timeFormatted(genDateTime) // TODO: Remove this sideway injection of data
 
             val validXml: Node =
               <CC007A> {
@@ -115,7 +116,7 @@ class ArrivalNotificationRequestSpec
                     buildOptionalElem(arrivalNotificationRequest.meta.senderIdentificationCodeQualifier, "SenIdeCodQuaMES4") ++
                     buildOptionalElem(arrivalNotificationRequest.meta.recipientIdentificationCodeQualifier, "RecIdeCodQuaMES7") ++
                     buildAndEncodeElem(arrivalNotificationRequest.meta.messageRecipient, "MesRecMES6") ++
-                    buildAndEncodeElem(genDateOfPreparation, "DatOfPreMES9") ++
+                    buildAndEncodeElem(genDateOfPreparation, "DatOfPreMES9") ++ // TODO: Change this to use the same date from the header
                     buildAndEncodeElem(genTimeOfPreparation, "TimOfPreMES10") ++
                     arrivalNotificationRequest.meta.interchangeControlReference.toXml ++
                     buildOptionalElem(arrivalNotificationRequest.meta.recipientsReferencePassword, "RecRefMES12") ++
@@ -141,7 +142,7 @@ class ArrivalNotificationRequestSpec
                     buildAndEncodeElem(Header.Constants.languageCode, "ArrAgrLocOfGooHEA63LNG") ++
                     buildOptionalElem(arrivalNotificationRequest.header.arrivalAgreedLocationOfGoods, "ArrAutLocOfGooHEA65") ++
                     buildAndEncodeElem(arrivalNotificationRequest.header.procedureTypeFlag, "SimProFlaHEA132") ++
-                    buildAndEncodeElem(genDateOfPreparation, "ArrNotDatHEA141")
+                    buildAndEncodeElem(arrivalNotificationRequest.header.notificationDate, "ArrNotDatHEA141")
                   }
                   </HEAHEA>
                   <TRADESTRD> {
@@ -182,7 +183,7 @@ class ArrivalNotificationRequestSpec
             messageSender = MessageSender("LOCAL", "EORI&123"),
             interchangeControlReference = InterchangeControlReference("2019", 1)
           ),
-          header = Header("MovementReferenceNumber", None, "arrivalNotificationPlace", None, NormalProcedureFlag),
+          header = Header("MovementReferenceNumber", None, "arrivalNotificationPlace", None, NormalProcedureFlag, dateTime.toLocalDate),
           traderDestination = TraderDestination(None, None, None, None, None, None),
           customsOfficeOfPresentation = CustomsOfficeOfPresentation("PresentationOffice"),
           enRouteEvents = Some(
@@ -205,8 +206,8 @@ class ArrivalNotificationRequestSpec
             arrivalNotificationRequestWithIncident.meta.messageSender.toXml
           }
           <MesRecMES6>{arrivalNotificationRequestWithIncident.meta.messageRecipient}</MesRecMES6>
-          <DatOfPreMES9>{dateOfPreparation}</DatOfPreMES9>
-          <TimOfPreMES10>{timeOfPreparation}</TimOfPreMES10>
+          <DatOfPreMES9>{dateOfPreparationFormatted}</DatOfPreMES9>
+          <TimOfPreMES10>{timeOfPreparationFormatted}</TimOfPreMES10>
           {
             arrivalNotificationRequestWithIncident.meta.interchangeControlReference.toXml
           }
@@ -220,7 +221,7 @@ class ArrivalNotificationRequestSpec
             <ArrNotPlaHEA60LNG>{Header.Constants.languageCode.code}</ArrNotPlaHEA60LNG>
             <ArrAgrLocOfGooHEA63LNG>{Header.Constants.languageCode.code}</ArrAgrLocOfGooHEA63LNG>
             <SimProFlaHEA132>{arrivalNotificationRequestWithIncident.header.procedureTypeFlag.code}</SimProFlaHEA132>
-            <ArrNotDatHEA141>{dateOfPreparation}</ArrNotDatHEA141>
+            <ArrNotDatHEA141>{dateOfPreparationFormatted}</ArrNotDatHEA141>
           </HEAHEA>
           <TRADESTRD>
             <NADLNGRD>{Header.Constants.languageCode.code}</NADLNGRD>
