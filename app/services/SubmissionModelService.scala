@@ -51,7 +51,8 @@ class SubmissionModelService @Inject()(appConfig: AppConfig) {
       movementReferenceNumber = arrivalNotification.movementReferenceNumber,
       customsSubPlace = arrivalNotification.customsSubPlace,
       arrivalNotificationPlace = arrivalNotification.notificationPlace,
-      procedureTypeFlag = procedureTypeFlag
+      procedureTypeFlag = procedureTypeFlag,
+      notificationDate = arrivalNotification.notificationDate
     )
 
   private def buildTrader(trader: Trader): TraderDestination = trader match {

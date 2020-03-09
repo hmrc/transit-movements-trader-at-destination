@@ -43,8 +43,8 @@ case class ArrivalNotificationRequest(meta: Meta,
     val parentNode: Node = <CC007A></CC007A>
 
     val childNodes: NodeSeq = {
-      meta.toXml(messageCode, dateTime) ++
-        header.toXml(dateTime) ++
+      meta.toXml(messageCode, dateTime) ++ // TODO: Remove dateTimeHere
+        header.toXml ++
         traderDestination.toXml ++
         customsOfficeOfPresentation.toXml ++ {
         enRouteEvents.map(_.map(_.toXml)).getOrElse(NodeSeq.Empty)
