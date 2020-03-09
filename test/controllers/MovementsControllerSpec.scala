@@ -50,32 +50,34 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
   "MovementsController" - {
 
-    "must return Ok and retrieve movements" in {
-      forAll(seqWithMaxLength[ArrivalMovement](10)) {
-        arrivalMovements =>
-          when(mockArrivalMovementRepository.fetchAllMovements).thenReturn(Future.successful(arrivalMovements))
+    "getMovements" - {
+      "must return Ok and retrieve movements" in {
+        forAll(seqWithMaxLength[ArrivalMovement](10)) {
+          arrivalMovements =>
+            when(mockArrivalMovementRepository.fetchAllMovements).thenReturn(Future.successful(arrivalMovements))
 
-          val expectedResult: Seq[Message] = arrivalMovements.map(_.messages.head)
+            val expectedResult: Seq[Message] = arrivalMovements.map(_.messages.head)
 
-          val request = FakeRequest(GET, routes.MovementsController.getMovements().url).withJsonBody(Json.toJson(expectedResult))
+            val request = FakeRequest(GET, routes.MovementsController.getMovements().url).withJsonBody(Json.toJson(expectedResult))
 
-          val result = route(application, request).value
+            val result = route(application, request).value
 
-          status(result) mustEqual OK
-          contentAsJson(result) mustEqual Json.toJson(expectedResult)
+            status(result) mustEqual OK
+            contentAsJson(result) mustEqual Json.toJson(expectedResult)
+        }
       }
-    }
 
-    "must return an INTERNAL_SERVER_ERROR on fail" in {
+      "must return an INTERNAL_SERVER_ERROR on fail" in {
 
-      when(mockArrivalMovementRepository.fetchAllMovements)
-        .thenReturn(Future.failed(new Exception))
+        when(mockArrivalMovementRepository.fetchAllMovements)
+          .thenReturn(Future.failed(new Exception))
 
-      val request = FakeRequest(GET, routes.MovementsController.getMovements().url)
+        val request = FakeRequest(GET, routes.MovementsController.getMovements().url)
 
-      val result = route(application, request).value
+        val result = route(application, request).value
 
-      status(result) mustEqual INTERNAL_SERVER_ERROR
+        status(result) mustEqual INTERNAL_SERVER_ERROR
+      }
     }
 
   }
