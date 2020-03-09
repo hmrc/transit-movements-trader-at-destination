@@ -22,6 +22,7 @@ import java.util.UUID
 import com.google.inject.Inject
 import config.AppConfig
 import models.request.XMessageType
+import play.api.Logger
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HttpReads
 import uk.gov.hmrc.http.HttpResponse
@@ -37,6 +38,8 @@ class MessageConnectorImpl @Inject()(config: AppConfig, http: HttpClient) extend
                                                                               ec: ExecutionContext): Future[HttpResponse] = {
 
     val url = config.eisUrl
+
+    Logger.warn(s"****POST CTC URL $url")
 
     val newHeaders = headerCarrier.withExtraHeaders(addHeaders(xMessageType, dateTime): _*)
 
