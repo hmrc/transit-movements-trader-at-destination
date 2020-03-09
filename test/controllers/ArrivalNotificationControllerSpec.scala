@@ -100,37 +100,14 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
       }
     }
 
-    "must return BAD_REQUEST when eori numbers is missing int the request header" in {
+    "must return BAD_REQUEST when eori numbers is missing in the request header" in {
+      val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
+        .withJsonBody(Json.toJson(normalNotification))
 
-      forAll(arbitrary[ArrivalNotificationRequest]) {
+      val result = route(application, request).value
 
-        arrivalNotificationRequest =>
-          when(mockDatabaseService.getInterchangeControlReferenceId)
-            .thenReturn(Future.successful(Right(InterchangeControlReference("20190101", 1))))
-
-          when(mockSubmissionModelService.convertToSubmissionModel(any(), any(), any()))
-            .thenReturn(Right(arrivalNotificationRequest))
-
-          when(mockXmlValidationService.validate(any(), any()))
-            .thenReturn(Right(XmlSuccessfullyValidated))
-
-          when(mockDatabaseService.getInternalReferenceId)
-            .thenReturn(Future.successful(Right(InternalReferenceId(0))))
-
-          when(mockDatabaseService.saveArrivalMovement(any()))
-            .thenReturn(Future.successful(Right(fakeWriteResult)))
-
-          when(mockMessageConnector.post(any(), any(), any())(any(), any()))
-            .thenReturn(Future.successful(HttpResponse(200)))
-
-          val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
-            .withJsonBody(Json.toJson(normalNotification))
-
-          val result = route(application, request).value
-
-          status(result) mustEqual BAD_REQUEST
-
-      }
+      status(result) mustEqual BAD_REQUEST
+      contentAsString(result) mustEqual "eori number is missing from the request header"
     }
 
     "must return INTERNAL_SERVER_ERROR when interchange control reference id cannot be generated" in {
