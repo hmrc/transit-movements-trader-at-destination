@@ -21,6 +21,7 @@ import java.time.OffsetDateTime
 
 import config.AppConfig
 import connectors.MessageConnector
+import controllers.actions.IdentifierAction
 import helpers.XmlBuilderHelper
 import javax.inject.Inject
 import models.ArrivalMovement
@@ -52,11 +53,12 @@ class ArrivalNotificationController @Inject()(
   messageConnector: MessageConnector,
   submissionModelService: SubmissionModelService,
   xmlBuilderService: XmlBuilderHelper,
-  xmlValidationService: XmlValidationService
+  xmlValidationService: XmlValidationService,
+  identify: IdentifierAction
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
-  def post(): Action[ArrivalNotificationMessage] = Action.async(validateJson[ArrivalNotificationMessage]) {
+  def post(): Action[ArrivalNotificationMessage] = identify.async(validateJson[ArrivalNotificationMessage]) {
     implicit request =>
       val messageSender = MessageSender(appConfig.env, "eori")
 

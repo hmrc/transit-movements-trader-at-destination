@@ -19,6 +19,8 @@ package config
 import com.google.inject.AbstractModule
 import connectors.MessageConnector
 import connectors.MessageConnectorImpl
+import controllers.actions.AuthenticatedIdentifierAction
+import controllers.actions.IdentifierAction
 import services._
 
 class Module extends AbstractModule {
@@ -31,6 +33,7 @@ class Module extends AbstractModule {
 
     bind(classOf[DatabaseService]).to(classOf[DatabaseServiceImpl]).asEagerSingleton()
 
+    bind(classOf[IdentifierAction]).to(classOf[AuthenticatedIdentifierAction]).asEagerSingleton()
   }
 
 }
