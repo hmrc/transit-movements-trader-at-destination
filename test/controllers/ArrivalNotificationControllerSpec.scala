@@ -91,10 +91,44 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
 
           val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
             .withJsonBody(Json.toJson(normalNotification))
+            .withHeaders("eoriNumber" -> "GB123456")
 
           val result = route(application, request).value
 
           status(result) mustEqual NO_CONTENT
+
+      }
+    }
+
+    "must return BAD_REQUEST when eori numbers is missing int the request header" in {
+
+      forAll(arbitrary[ArrivalNotificationRequest]) {
+
+        arrivalNotificationRequest =>
+          when(mockDatabaseService.getInterchangeControlReferenceId)
+            .thenReturn(Future.successful(Right(InterchangeControlReference("20190101", 1))))
+
+          when(mockSubmissionModelService.convertToSubmissionModel(any(), any(), any()))
+            .thenReturn(Right(arrivalNotificationRequest))
+
+          when(mockXmlValidationService.validate(any(), any()))
+            .thenReturn(Right(XmlSuccessfullyValidated))
+
+          when(mockDatabaseService.getInternalReferenceId)
+            .thenReturn(Future.successful(Right(InternalReferenceId(0))))
+
+          when(mockDatabaseService.saveArrivalMovement(any()))
+            .thenReturn(Future.successful(Right(fakeWriteResult)))
+
+          when(mockMessageConnector.post(any(), any(), any())(any(), any()))
+            .thenReturn(Future.successful(HttpResponse(200)))
+
+          val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
+            .withJsonBody(Json.toJson(normalNotification))
+
+          val result = route(application, request).value
+
+          status(result) mustEqual BAD_REQUEST
 
       }
     }
@@ -106,6 +140,7 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
 
       val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
         .withJsonBody(Json.toJson(normalNotification))
+        .withHeaders("eoriNumber" -> "GB123456")
 
       val result: Future[Result] = route(application, request).value
 
@@ -124,6 +159,7 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
 
       val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
         .withJsonBody(Json.toJson(normalNotification))
+        .withHeaders("eoriNumber" -> "GB123456")
 
       val result = route(application, request).value
 
@@ -151,6 +187,7 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
 
           val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
             .withJsonBody(Json.toJson(normalNotification))
+            .withHeaders("eoriNumber" -> "GB123456")
 
           val result: Future[Result] = route(application, request).value
 
@@ -183,6 +220,7 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
 
           val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
             .withJsonBody(Json.toJson(normalNotification))
+            .withHeaders("eoriNumber" -> "GB123456")
 
           val result: Future[Result] = route(application, request).value
 
@@ -215,6 +253,7 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
 
           val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
             .withJsonBody(Json.toJson(normalNotification))
+            .withHeaders("eoriNumber" -> "GB123456")
 
           val result: Future[Result] = route(application, request).value
 
@@ -250,6 +289,7 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
 
           val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
             .withJsonBody(Json.toJson(normalNotification))
+            .withHeaders("eoriNumber" -> "GB123456")
 
           val result: Future[Result] = route(application, request).value
 
@@ -275,6 +315,7 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
 
           val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
             .withJsonBody(Json.toJson(normalNotification))
+            .withHeaders("eoriNumber" -> "GB123456")
 
           val result = route(application, request).value
 
@@ -293,6 +334,7 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
 
       val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
         .withJsonBody(Json.toJson(invalidJson))
+        .withHeaders("eoriNumber" -> "GB123456")
 
       val result = route(application, request).value
 

@@ -49,12 +49,14 @@ trait MessageGenerators extends ModelGenerators {
       for {
         movementReferenceId     <- arbitrary[Int]
         movementReferenceNumber <- arbitrary[MovementReferenceNumber]
+        eoriNumber              <- arbitrary[String]
         messages                <- seqWithMaxLength[Message](20)
       } yield
         ArrivalMovement(
-          movementReferenceId,
-          movementReferenceNumber.toString,
-          messages
+          internalReferenceId = movementReferenceId,
+          movementReferenceNumber = movementReferenceNumber.toString,
+          eoriNumber = eoriNumber,
+          messages = messages
         )
     }
   }

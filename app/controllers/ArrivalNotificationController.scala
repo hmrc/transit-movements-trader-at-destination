@@ -36,7 +36,9 @@ import play.api.mvc._
 import reactivemongo.api.commands.WriteResult
 import repositories._
 import services._
+import uk.gov.hmrc.http.BadRequestException
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.NotFoundException
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 import utils.ErrorResponseBuilder
 
@@ -81,9 +83,13 @@ class ArrivalNotificationController @Inject()(
                     case Right(movementReferenceId) =>
                       val movementReferenceNumber: String = arrivalNotificationRequestModel.header.movementReferenceNumber
 
+                      val eoriNumber: String =
+                        request.headers.get("eoriNumber").getOrElse(throw new BadRequestException("eori number is missing from the request header"))
+
                       val arrivalMovement: ArrivalMovement = ArrivalMovement(
                         internalReferenceId = movementReferenceId.index,
                         movementReferenceNumber = movementReferenceNumber,
+                        eoriNumber = eoriNumber,
                         messages = Seq(Message(localDateTime.toLocalDate, localDateTime.toLocalTime, arrivalNotification))
                       )
 
@@ -93,6 +99,7 @@ class ArrivalNotificationController @Inject()(
                           sendMessage(xmlWithWrapper, arrivalNotificationRequestModel)
                         }
                         .recover {
+                          case badRequestException: BadRequestException => BadRequest(badRequestException.message)
                           case _ =>
                             InternalServerError(Json.toJson(ErrorResponseBuilder.failedSavingArrivalNotification))
                               .as("application/json")
