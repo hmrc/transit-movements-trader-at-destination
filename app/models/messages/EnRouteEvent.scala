@@ -24,7 +24,7 @@ import play.api.libs.json._
 import scala.xml.Node
 import scala.xml.NodeSeq
 
-final case class EnRouteEvent(place: String, countryCode: String, alreadyInNcts: Boolean, eventDetails: EventDetails, seals: Option[Seq[Seal]])
+final case class EnRouteEvent(place: String, countryCode: String, alreadyInNcts: Boolean, eventDetails: Option[EventDetails], seals: Option[Seq[Seal]])
     extends XmlBuilderHelper {
 
   def toXml: Node = {
@@ -53,11 +53,11 @@ final case class EnRouteEvent(place: String, countryCode: String, alreadyInNcts:
         }
       </CTLCTL>
       {
-        eventDetails match {
+        eventDetails.map {
           case incident: Incident                           => incident.toXml ++ buildSealsXml
           case containerTranshipment: ContainerTranshipment => buildSealsXml ++ containerTranshipment.toXml
           case vehicularTranshipment: VehicularTranshipment => buildSealsXml ++ vehicularTranshipment.toXml
-        }
+        }.getOrElse(NodeSeq.Empty)
       }
     </ENROUEVETEV>
   }
@@ -78,7 +78,7 @@ object EnRouteEvent {
       (__ \ "place").read[String] and
         (__ \ "countryCode").read[String] and
         (__ \ "alreadyInNcts").read[Boolean] and
-        (__ \ "eventDetails").read[EventDetails] and
+        (__ \ "eventDetails").readNullable[EventDetails] and
         (__ \ "seals").readNullable[Seq[Seal]]
     )(EnRouteEvent(_, _, _, _, _))
   }

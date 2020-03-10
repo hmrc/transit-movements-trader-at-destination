@@ -131,13 +131,17 @@ trait ModelGenerators {
   implicit lazy val arbitraryIncident: Arbitrary[Incident] =
     Arbitrary {
 
-      for {
+      (for {
         information <- Gen.option(stringsWithMaxLength(Incident.Constants.informationLength))
         date        <- Gen.option(datesBetween(pastDate, dateNow))
         authority   <- Gen.option(stringsWithMaxLength(EventDetails.Constants.authorityLength))
         place       <- Gen.option(stringsWithMaxLength(EventDetails.Constants.placeLength))
         country     <- Gen.option(stringsWithMaxLength(EventDetails.Constants.countryLength))
-      } yield Incident(information, date, authority, place, country)
+      } yield Incident(information, date, authority, place, country))
+        .suchThat {
+          case Incident(None, None, None, None, None) => false
+          case _                                      => true
+        }
     }
 
   implicit lazy val arbitraryContainer: Arbitrary[Container] = Arbitrary {
@@ -203,7 +207,7 @@ trait ModelGenerators {
         place         <- stringsWithMaxLength(EnRouteEvent.Constants.placeLength)
         countryCode   <- stringsWithMaxLength(EnRouteEvent.Constants.countryCodeLength)
         alreadyInNcts <- arbitrary[Boolean]
-        eventDetails  <- arbitrary[EventDetails]
+        eventDetails  <- arbitrary[Option[EventDetails]]
         numberOfSeals <- Gen.choose[Int](minNumberOfSeals, maxNumberOfSeals)
         seals         <- Gen.listOfN(numberOfSeals, arbitrary[Seal])
       } yield {
