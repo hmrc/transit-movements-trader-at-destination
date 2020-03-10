@@ -49,12 +49,14 @@ trait MessageGenerators extends ModelGenerators {
       for {
         movementReferenceId     <- arbitrary[Int]
         movementReferenceNumber <- arbitrary[MovementReferenceNumber]
+        eoriNumber              <- arbitrary[String]
         messages                <- seqWithMaxLength[Message](20)
       } yield
         ArrivalMovement(
-          movementReferenceId,
-          movementReferenceNumber.toString,
-          messages
+          internalReferenceId = movementReferenceId,
+          movementReferenceNumber = movementReferenceNumber.toString,
+          eoriNumber = eoriNumber,
+          messages = messages
         )
     }
   }
@@ -263,5 +265,7 @@ trait MessageGenerators extends ModelGenerators {
 
     } yield request.ArrivalNotificationRequest(meta, headerWithProcedure, traderDestination, customsOffice, enRouteEvents)
   }
+
+  val arbitraryEoriNumber: Gen[String] = stringsWithMaxLength(TraderDestination.Constants.eoriLength)
 
 }

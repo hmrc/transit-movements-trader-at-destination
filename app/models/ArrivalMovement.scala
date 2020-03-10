@@ -22,7 +22,7 @@ import models.messages.ArrivalNotificationMessage
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
 
-case class ArrivalMovement(internalReferenceId: Int, movementReferenceNumber: String, messages: Seq[Message])
+case class ArrivalMovement(internalReferenceId: Int, movementReferenceNumber: String, eoriNumber: String, messages: Seq[Message])
 
 object ArrivalMovement {
   implicit val formats: OFormat[ArrivalMovement] = Json.format[ArrivalMovement]
