@@ -18,6 +18,7 @@ package utils
 
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 
@@ -27,8 +28,9 @@ object Format {
   def dateFormatted(date: LocalDate): String     = date.format(dateFormatter)
   def dateFormatted(date: LocalDateTime): String = date.format(dateFormatter)
 
-  val timeFormatter: DateTimeFormatter           = DateTimeFormatter.ofPattern("HHMM")
+  val timeFormatter: DateTimeFormatter           = DateTimeFormatter.ofPattern("HHmm")
   def timeFormatted(date: LocalDateTime): String = date.format(timeFormatter)
+  def timeFormatted(date: LocalTime): String     = date.format(timeFormatter)
 
   def dateFormattedForHeader(dateTime: OffsetDateTime): String =
     dateTime.format(DateTimeFormatter.RFC_1123_DATE_TIME)

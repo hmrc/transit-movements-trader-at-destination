@@ -82,6 +82,13 @@ trait ModelGenerators {
     datesBetween(LocalDate.of(1900, 1, 1), LocalDate.of(2100, 1, 1))
   }
 
+  implicit lazy val arbitraryLocalTime: Arbitrary[LocalTime] = Arbitrary {
+    dateTimesBetween(
+      LocalDateTime.of(1900, 1, 1, 0, 0, 0),
+      LocalDateTime.of(2100, 1, 1, 0, 0, 0)
+    ).map(_.toLocalTime)
+  }
+
   def seqWithMaxLength[A](maxLength: Int)(implicit a: Arbitrary[A]): Gen[Seq[A]] =
     for {
       length <- choose(1, maxLength)

@@ -17,6 +17,7 @@
 package generators
 
 import java.time.LocalDate
+import java.time.LocalTime
 
 import models.messages._
 import models.request._
@@ -173,10 +174,14 @@ trait MessageGenerators extends ModelGenerators {
       for {
         messageSender               <- arbitrary[MessageSender]
         interchangeControlReference <- arbitrary[InterchangeControlReference]
+        date                        <- arbitrary[LocalDate]
+        time                        <- arbitrary[LocalTime]
       } yield
         request.Meta(
           messageSender,
           interchangeControlReference,
+          date,
+          time,
           None,
           None,
           None,
@@ -215,7 +220,7 @@ trait MessageGenerators extends ModelGenerators {
     Arbitrary {
       for {
         meta              <- arbitrary[Meta]
-        header            <- arbitrary[Header]
+        header            <- arbitrary[Header].map(_.copy(notificationDate = meta.dateOfPreparation))
         traderDestination <- arbitrary[TraderDestination]
         customsOffice     <- arbitrary[CustomsOfficeOfPresentation]
         enRouteEvents     <- Gen.option(listWithMaxLength[EnRouteEvent](2))
@@ -225,46 +230,45 @@ trait MessageGenerators extends ModelGenerators {
 
   val arbitraryArrivalNotificationRequestWithEori: Gen[ArrivalNotificationRequest] = {
     for {
-      meta           <- arbitrary[Meta]
-      header         <- arbitrary[Header]
-      traderWithEori <- arbitrary[TraderWithEori]
-      customsOffice  <- arbitrary[CustomsOfficeOfPresentation]
-      headerWithProcedure = header.copy(procedureTypeFlag = NormalProcedureFlag)
-      traderDestination = {
-        TraderDestination(
-          traderWithEori.name,
-          traderWithEori.streetAndNumber,
-          traderWithEori.postCode,
-          traderWithEori.city,
-          traderWithEori.countryCode,
-          Some(traderWithEori.eori)
-        )
-      }
-      enRouteEvents <- Gen.option(arbitrary[Seq[EnRouteEvent]])
+      arrivalNotificationRequest <- arbitraryArrivalNotificationRequest.arbitrary
+      traderWithEori             <- arbitrary[TraderWithEori]
 
-    } yield request.ArrivalNotificationRequest(meta, headerWithProcedure, traderDestination, customsOffice, enRouteEvents)
+    } yield {
+
+      val newHeader = arrivalNotificationRequest.header.copy(procedureTypeFlag = NormalProcedureFlag)
+
+      arrivalNotificationRequest
+        .copy(header = newHeader)
+        .copy(
+          traderDestination = TraderDestination(
+            traderWithEori.name,
+            traderWithEori.streetAndNumber,
+            traderWithEori.postCode,
+            traderWithEori.city,
+            traderWithEori.countryCode,
+            Some(traderWithEori.eori)
+          ))
+    }
   }
 
   val arbitraryArrivalNotificationRequestWithoutEori: Gen[ArrivalNotificationRequest] = {
     for {
-      meta              <- arbitrary[Meta]
-      header            <- arbitrary[Header]
-      traderWithoutEori <- arbitrary[TraderWithoutEori]
-      customsOffice     <- arbitrary[CustomsOfficeOfPresentation]
-      headerWithProcedure = header.copy(procedureTypeFlag = NormalProcedureFlag)
-      traderDestination = {
+      arrivalNotificationRequest <- arbitraryArrivalNotificationRequestWithEori
+      traderWithEori             <- arbitrary[TraderWithoutEori]
+    } yield {
+
+      arrivalNotificationRequest.copy(traderDestination = {
         TraderDestination(
-          Some(traderWithoutEori.name),
-          Some(traderWithoutEori.streetAndNumber),
-          Some(traderWithoutEori.postCode),
-          Some(traderWithoutEori.city),
-          Some(traderWithoutEori.countryCode),
+          Some(traderWithEori.name),
+          Some(traderWithEori.streetAndNumber),
+          Some(traderWithEori.postCode),
+          Some(traderWithEori.city),
+          Some(traderWithEori.countryCode),
           None
         )
-      }
-      enRouteEvents <- Gen.option(arbitrary[Seq[EnRouteEvent]])
+      })
 
-    } yield request.ArrivalNotificationRequest(meta, headerWithProcedure, traderDestination, customsOffice, enRouteEvents)
+    }
   }
 
   val arbitraryEoriNumber: Gen[String] = stringsWithMaxLength(TraderDestination.Constants.eoriLength)

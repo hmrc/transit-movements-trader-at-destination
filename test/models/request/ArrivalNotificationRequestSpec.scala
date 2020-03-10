@@ -18,6 +18,7 @@ package models.request
 
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 
 import generators.MessageGenerators
 import helpers.XmlBuilderHelper
@@ -45,16 +46,18 @@ class ArrivalNotificationRequestSpec
     with ScalaCheckDrivenPropertyChecks
     with OptionValues {
 
-  private val dateTime: LocalDateTime    = LocalDateTime.now()
   private val dateOfPreparation          = LocalDate.now()
-  private val dateOfPreparationFormatted = Format.dateFormatted(dateTime)
-  private val timeOfPreparationFormatted = Format.timeFormatted(dateTime)
+  private val dateOfPreparationFormatted = Format.dateFormatted(dateOfPreparation)
+  private val timeOfPreparation          = LocalTime.now()
+  private val timeOfPreparationFormatted = Format.timeFormatted(timeOfPreparation)
 
   private val minimalArrivalNotificationRequest: ArrivalNotificationRequest =
     ArrivalNotificationRequest(
       meta = Meta(
         MessageSender("LOCAL", "EORI&123"),
-        InterchangeControlReference("2019", 1)
+        InterchangeControlReference("2019", 1),
+        dateOfPreparation,
+        timeOfPreparation
       ),
       header = Header("MovementReferenceNumber", None, "arrivalNotificationPlace", None, NormalProcedureFlag, dateOfPreparation),
       traderDestination = TraderDestination(None, None, None, None, None, None),
@@ -98,15 +101,9 @@ class ArrivalNotificationRequestSpec
 
   "ArrivalNotificationRequest" - {
     "must create valid xml" in {
-      val localDateTime: Gen[LocalDateTime] = dateTimesBetween(LocalDateTime.of(1900, 1, 1, 0, 0), LocalDateTime.now)
-
-      forAll(arbitrary[ArrivalNotificationRequest], localDateTime) {
-
-        (arrivalNotificationRequest, genDateTime) =>
-          whenever(hasEoriWithNormalProcedure()(arrivalNotificationRequest)) {
-
-            val genDateOfPreparation = Format.dateFormatted(genDateTime) // TODO: Remove this sideway injection of data
-            val genTimeOfPreparation = Format.timeFormatted(genDateTime) // TODO: Remove this sideway injection of data
+      forAll(arbitrary[ArrivalNotificationRequest]) {
+        arrivalNotificationRequest =>
+          whenever(hasEoriWithNormalProcedure(arrivalNotificationRequest)) {
 
             val validXml: Node =
               <CC007A> {
@@ -116,8 +113,8 @@ class ArrivalNotificationRequestSpec
                     buildOptionalElem(arrivalNotificationRequest.meta.senderIdentificationCodeQualifier, "SenIdeCodQuaMES4") ++
                     buildOptionalElem(arrivalNotificationRequest.meta.recipientIdentificationCodeQualifier, "RecIdeCodQuaMES7") ++
                     buildAndEncodeElem(arrivalNotificationRequest.meta.messageRecipient, "MesRecMES6") ++
-                    buildAndEncodeElem(genDateOfPreparation, "DatOfPreMES9") ++ // TODO: Change this to use the same date from the header
-                    buildAndEncodeElem(genTimeOfPreparation, "TimOfPreMES10") ++
+                    buildAndEncodeElem(arrivalNotificationRequest.meta.dateOfPreparation, "DatOfPreMES9") ++
+                    buildAndEncodeElem(Format.timeFormatted(arrivalNotificationRequest.meta.timeOfPreparation), "TimOfPreMES10") ++
                     arrivalNotificationRequest.meta.interchangeControlReference.toXml ++
                     buildOptionalElem(arrivalNotificationRequest.meta.recipientsReferencePassword, "RecRefMES12") ++
                     buildOptionalElem(arrivalNotificationRequest.meta.recipientsReferencePasswordQualifier, "RecRefQuaMES13") ++
@@ -161,7 +158,7 @@ class ArrivalNotificationRequestSpec
                   {buildEnRouteEvent(arrivalNotificationRequest.enRouteEvents, Header.Constants.languageCode)}
                 </CC007A>
 
-            val result = trim(arrivalNotificationRequest.toXml(genDateTime))
+            val result = trim(arrivalNotificationRequest.toXml)
 
             result mustBe trim(loadString(validXml.toString))
           }
@@ -170,7 +167,7 @@ class ArrivalNotificationRequestSpec
 
     "must return minimal valid xml" in {
 
-      val result = trim(minimalArrivalNotificationRequest.toXml(dateTime))
+      val result = trim(minimalArrivalNotificationRequest.toXml)
 
       result mustBe trim(loadString(minimalValidXml.toString))
     }
@@ -181,9 +178,11 @@ class ArrivalNotificationRequestSpec
         ArrivalNotificationRequest(
           meta = Meta(
             messageSender = MessageSender("LOCAL", "EORI&123"),
-            interchangeControlReference = InterchangeControlReference("2019", 1)
+            interchangeControlReference = InterchangeControlReference("2019", 1),
+            dateOfPreparation,
+            timeOfPreparation
           ),
-          header = Header("MovementReferenceNumber", None, "arrivalNotificationPlace", None, NormalProcedureFlag, dateTime.toLocalDate),
+          header = Header("MovementReferenceNumber", None, "arrivalNotificationPlace", None, NormalProcedureFlag, dateOfPreparation),
           traderDestination = TraderDestination(None, None, None, None, None, None),
           customsOfficeOfPresentation = CustomsOfficeOfPresentation("PresentationOffice"),
           enRouteEvents = Some(
@@ -250,7 +249,7 @@ class ArrivalNotificationRequestSpec
           }
         </CC007A>
 
-      val result = trim(arrivalNotificationRequestWithIncident.toXml(dateTime))
+      val result = trim(arrivalNotificationRequestWithIncident.toXml)
 
       result mustBe trim(loadString(minimalValidXmlWithEnrouteEvent.toString))
     }
@@ -363,7 +362,7 @@ class ArrivalNotificationRequestSpec
     }
   }
 
-  private def hasEoriWithNormalProcedure()(implicit arrivalNotificationRequest: ArrivalNotificationRequest): Boolean =
+  private def hasEoriWithNormalProcedure(arrivalNotificationRequest: ArrivalNotificationRequest): Boolean =
     arrivalNotificationRequest.traderDestination.eori.isDefined &&
       arrivalNotificationRequest.header.procedureTypeFlag.equals(NormalProcedureFlag)
 

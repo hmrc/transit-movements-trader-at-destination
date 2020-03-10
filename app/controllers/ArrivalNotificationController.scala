@@ -67,12 +67,11 @@ class ArrivalNotificationController @Inject()(
           val localDateTime: LocalDateTime = LocalDateTime.now()
 
           databaseService.getInterchangeControlReferenceId.flatMap {
-
             case Right(interchangeControlReferenceId) =>
-              submissionModelService.convertToSubmissionModel(arrivalNotification, messageSender, interchangeControlReferenceId) match {
-
+              submissionModelService
+                .convertToSubmissionModel(arrivalNotification, messageSender, interchangeControlReferenceId, localDateTime.toLocalTime) match {
                 case Right(arrivalNotificationRequestModel) =>
-                  val arrivalNotificationRequestXml = arrivalNotificationRequestModel.toXml(localDateTime)
+                  val arrivalNotificationRequestXml = arrivalNotificationRequestModel.toXml
 
                   xmlValidationService.validate(arrivalNotificationRequestXml.toString(), ArrivalNotificationXSD) match {
 

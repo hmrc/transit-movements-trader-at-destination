@@ -41,8 +41,8 @@ class MetaSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks 
     val testIndicator        = "0"
 
     "must create valid xml" in {
-      forAll(arbitrary[Meta], genDateTime, arbitrary[String]) {
-        (meta, dateTime, code) =>
+      forAll(arbitrary[Meta], arbitrary[String]) {
+        (meta, code) =>
           val messageCode = MessageCode(code)
 
           val senderIdentificationCodeQualifier = meta.senderIdentificationCodeQualifier.fold(NodeSeq.Empty)(
@@ -95,8 +95,8 @@ class MetaSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks 
                 recipientIdentificationCodeQualifier
             } ++
               <MesRecMES6>{messageRecipient}</MesRecMES6> ++
-              <DatOfPreMES9>{Format.dateFormatted(dateTime)}</DatOfPreMES9> ++
-              <TimOfPreMES10>{Format.timeFormatted(dateTime)}</TimOfPreMES10> ++ {
+              <DatOfPreMES9>{Format.dateFormatted(meta.dateOfPreparation)}</DatOfPreMES9> ++
+              <TimOfPreMES10>{Format.timeFormatted(meta.timeOfPreparation)}</TimOfPreMES10> ++ {
               meta.interchangeControlReference.toXml ++
                 recipientsReferencePassword ++
                 recipientsReferencePasswordQualifier
@@ -115,7 +115,7 @@ class MetaSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks 
             }
           }
 
-          meta.toXml(messageCode, dateTime) mustBe expectedResult
+          meta.toXml(messageCode) mustBe expectedResult
       }
     }
   }

@@ -16,7 +16,9 @@
 
 package models.request
 
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 
 import helpers.XmlBuilderHelper
 import utils.Format
@@ -25,6 +27,8 @@ import scala.xml.NodeSeq
 
 case class Meta(messageSender: MessageSender,
                 interchangeControlReference: InterchangeControlReference,
+                dateOfPreparation: LocalDate,
+                timeOfPreparation: LocalTime,
                 senderIdentificationCodeQualifier: Option[String] = None,
                 recipientIdentificationCodeQualifier: Option[String] = None,
                 recipientsReferencePassword: Option[String] = None,
@@ -38,15 +42,15 @@ case class Meta(messageSender: MessageSender,
     extends XmlBuilderHelper
     with MetaConstants {
 
-  def toXml(messageCode: MessageCode, dateTime: LocalDateTime): NodeSeq =
+  def toXml(messageCode: MessageCode): NodeSeq =
     buildAndEncodeElem(syntaxIdentifier, "SynIdeMES1") ++
       buildAndEncodeElem(syntaxVersionNumber, "SynVerNumMES2") ++
       messageSender.toXml ++
       buildOptionalElem(senderIdentificationCodeQualifier, "SenIdeCodQuaMES4") ++
       buildOptionalElem(recipientIdentificationCodeQualifier, "RecIdeCodQuaMES7") ++
       buildAndEncodeElem(messageRecipient, "MesRecMES6") ++
-      buildAndEncodeElem(Format.dateFormatted(dateTime), "DatOfPreMES9") ++
-      buildAndEncodeElem(Format.timeFormatted(dateTime), "TimOfPreMES10") ++
+      buildAndEncodeElem(Format.dateFormatted(dateOfPreparation), "DatOfPreMES9") ++
+      buildAndEncodeElem(Format.timeFormatted(timeOfPreparation), "TimOfPreMES10") ++
       interchangeControlReference.toXml ++
       buildOptionalElem(recipientsReferencePassword, "RecRefMES12") ++
       buildOptionalElem(recipientsReferencePasswordQualifier, "RecRefQuaMES13") ++

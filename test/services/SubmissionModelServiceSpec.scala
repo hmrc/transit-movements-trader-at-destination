@@ -17,6 +17,7 @@
 package services
 
 import java.time.LocalDateTime
+import java.time.LocalTime
 
 import config.AppConfig
 import generators.MessageGenerators
@@ -45,10 +46,7 @@ class SubmissionModelServiceSpec
 
   def injector: Injector = app.injector
 
-  def appConfig: AppConfig = injector.instanceOf[AppConfig]
-
-  val convertToSubmissionModel = new SubmissionModelService(appConfig)
-//  val convertToSubmissionModel = injector.instanceOf[SubmissionModelService]
+  val convertToSubmissionModel = injector.instanceOf[SubmissionModelService]
 
   "SubmissionModelService" - {
 
@@ -88,8 +86,12 @@ class SubmissionModelServiceSpec
           val messageSender               = arrivalNotificationRequest.meta.messageSender
           val interchangeControlReference = arrivalNotificationRequest.meta.interchangeControlReference
 
-          convertToSubmissionModel.convertToSubmissionModel(normalNotification, messageSender, interchangeControlReference) mustBe
-            Right(arrivalNotificationRequest)
+          val result = convertToSubmissionModel.convertToSubmissionModel(normalNotification,
+                                                                         messageSender,
+                                                                         interchangeControlReference,
+                                                                         arrivalNotificationRequest.meta.timeOfPreparation)
+
+          result mustBe Right(arrivalNotificationRequest)
       }
     }
   }
@@ -129,8 +131,12 @@ class SubmissionModelServiceSpec
         val messageSender: MessageSender                             = arrivalNotificationRequest.meta.messageSender
         val interchangeControlReference: InterchangeControlReference = arrivalNotificationRequest.meta.interchangeControlReference
 
-        convertToSubmissionModel.convertToSubmissionModel(normalNotification, messageSender, interchangeControlReference) mustBe
-          Right(arrivalNotificationRequest)
+        val result = convertToSubmissionModel.convertToSubmissionModel(normalNotification,
+                                                                       messageSender,
+                                                                       interchangeControlReference,
+                                                                       arrivalNotificationRequest.meta.timeOfPreparation)
+
+        result mustBe Right(arrivalNotificationRequest)
     }
   }
 
@@ -139,20 +145,15 @@ class SubmissionModelServiceSpec
     import support.InvalidRequestModel
 
     forAll(arbitrary[MessageSender], arbitrary[InterchangeControlReference]) {
-
       (messageSender, interchangeControlReference) =>
-        {
+        val result = convertToSubmissionModel.convertToSubmissionModel(
+          arrivalNotification = InvalidRequestModel,
+          messageSender = messageSender,
+          interchangeControlReference = interchangeControlReference,
+          LocalTime.now()
+        )
 
-          val result: Either[ModelConversionError, ArrivalNotificationRequest] = {
-            convertToSubmissionModel.convertToSubmissionModel(
-              arrivalNotification = InvalidRequestModel,
-              messageSender = messageSender,
-              interchangeControlReference = interchangeControlReference
-            )
-          }
-
-          result mustBe Left(FailedToConvertModel)
-        }
+        result mustBe Left(FailedToConvertModel)
     }
   }
 
