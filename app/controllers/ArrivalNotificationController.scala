@@ -17,6 +17,7 @@
 package controllers
 
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.OffsetDateTime
 
 import config.AppConfig
@@ -64,12 +65,10 @@ class ArrivalNotificationController @Inject()(
         case Some(eoriNumber) =>
           val arrivalNotification: ArrivalNotificationMessage = request.body
 
-          val localDateTime: LocalDateTime = LocalDateTime.now()
-
           databaseService.getInterchangeControlReferenceId.flatMap {
             case Right(interchangeControlReferenceId) =>
-              submissionModelService
-                .convertToSubmissionModel(arrivalNotification, messageSender, interchangeControlReferenceId, localDateTime.toLocalTime) match {
+              submissionModelService.convertToSubmissionModel(arrivalNotification, messageSender, interchangeControlReferenceId, LocalTime.now()) match {
+
                 case Right(arrivalNotificationRequestModel) =>
                   val arrivalNotificationRequestXml = arrivalNotificationRequestModel.toXml
 
@@ -79,15 +78,15 @@ class ArrivalNotificationController @Inject()(
                       val xmlWithWrapper: Node = TransitWrapper.toXml(arrivalNotificationRequestXml)
 
                       databaseService.getInternalReferenceId.flatMap {
-
-                        case Right(movementReferenceId) =>
-                          val movementReferenceNumber: String = arrivalNotificationRequestModel.header.movementReferenceNumber
-
+                        case Right(internalReferenceId) =>
                           val arrivalMovement: ArrivalMovement = ArrivalMovement(
-                            internalReferenceId = movementReferenceId.index,
-                            movementReferenceNumber = movementReferenceNumber,
+                            internalReferenceId = internalReferenceId.index,
+                            movementReferenceNumber = arrivalNotificationRequestModel.header.movementReferenceNumber,
                             eoriNumber = eoriNumber,
-                            messages = Seq(Message(localDateTime.toLocalDate, localDateTime.toLocalTime, arrivalNotification))
+                            messages = Seq(
+                              Message(arrivalNotificationRequestModel.meta.dateOfPreparation,
+                                      arrivalNotificationRequestModel.meta.timeOfPreparation,
+                                      arrivalNotification))
                           )
 
                           databaseService
@@ -144,6 +143,7 @@ class ArrivalNotificationController @Inject()(
             Logger.warn(s"****CAUSE - ${e.getCause}")
             Logger.warn(s"****LocalizedMessage - $e")
             Logger.warn(s"****MESSAGE - ${e.getMessage}")
+
             BadGateway(Json.toJson(ErrorResponseBuilder.failedSubmissionToEIS))
               .as("application/json")
 
