@@ -62,73 +62,70 @@ class ArrivalNotificationController @Inject()(
     implicit request =>
       val messageSender = MessageSender(appConfig.env, "eori")
 
-      request.headers.get("eoriNumber") match {
-        case Some(eoriNumber) =>
-          val arrivalNotification: ArrivalNotificationMessage = request.body
+      val arrivalNotification: ArrivalNotificationMessage = request.body
 
-          val localDateTime: LocalDateTime = LocalDateTime.now()
+      val localDateTime: LocalDateTime = LocalDateTime.now()
 
-          databaseService.getInterchangeControlReferenceId.flatMap {
+      databaseService.getInterchangeControlReferenceId.flatMap {
 
-            case Right(interchangeControlReferenceId) =>
-              submissionModelService.convertToSubmissionModel(arrivalNotification, messageSender, interchangeControlReferenceId) match {
+        case Right(interchangeControlReferenceId) =>
+          submissionModelService.convertToSubmissionModel(arrivalNotification, messageSender, interchangeControlReferenceId) match {
 
-                case Right(arrivalNotificationRequestModel) =>
-                  val arrivalNotificationRequestXml = arrivalNotificationRequestModel.toXml(localDateTime)
+            case Right(arrivalNotificationRequestModel) =>
+              val arrivalNotificationRequestXml = arrivalNotificationRequestModel.toXml(localDateTime)
 
-                  xmlValidationService.validate(arrivalNotificationRequestXml.toString(), ArrivalNotificationXSD) match {
+              xmlValidationService.validate(arrivalNotificationRequestXml.toString(), ArrivalNotificationXSD) match {
 
-                    case Right(XmlSuccessfullyValidated) =>
-                      val xmlWithWrapper: Node = TransitWrapper.toXml(arrivalNotificationRequestXml)
+                case Right(XmlSuccessfullyValidated) =>
+                  val xmlWithWrapper: Node = TransitWrapper.toXml(arrivalNotificationRequestXml)
 
-                      databaseService.getInternalReferenceId.flatMap {
+                  databaseService.getInternalReferenceId.flatMap {
 
-                        case Right(movementReferenceId) =>
-                          val movementReferenceNumber: String = arrivalNotificationRequestModel.header.movementReferenceNumber
+                    case Right(movementReferenceId) =>
+                      val movementReferenceNumber: String = arrivalNotificationRequestModel.header.movementReferenceNumber
 
-                          val arrivalMovement: ArrivalMovement = ArrivalMovement(
-                            internalReferenceId = movementReferenceId.index,
-                            movementReferenceNumber = movementReferenceNumber,
-                            eoriNumber = eoriNumber,
-                            messages = Seq(Message(localDateTime.toLocalDate, localDateTime.toLocalTime, arrivalNotification))
-                          )
+                      val arrivalMovement: ArrivalMovement = ArrivalMovement(
+                        internalReferenceId = movementReferenceId.index,
+                        movementReferenceNumber = movementReferenceNumber,
+                        eoriNumber = request.eoriNumber,
+                        messages = Seq(Message(localDateTime.toLocalDate, localDateTime.toLocalTime, arrivalNotification))
+                      )
 
-                          databaseService
-                            .saveArrivalMovement(arrivalMovement)
-                            .flatMap {
-                              sendMessage(xmlWithWrapper, arrivalNotificationRequestModel)
-                            }
-                            .recover {
-                              case _ =>
-                                InternalServerError(Json.toJson(ErrorResponseBuilder.failedSavingArrivalNotification))
-                                  .as("application/json")
-                            }
-
-                        case Left(FailedCreatingNextInternalReferenceId) =>
-                          Future.successful(
-                            InternalServerError(Json.toJson(ErrorResponseBuilder.failedToCreateInternalReferenceId))
+                      databaseService
+                        .saveArrivalMovement(arrivalMovement)
+                        .flatMap {
+                          sendMessage(xmlWithWrapper, arrivalNotificationRequestModel)
+                        }
+                        .recover {
+                          case _ =>
+                            InternalServerError(Json.toJson(ErrorResponseBuilder.failedSavingArrivalNotification))
                               .as("application/json")
-                          )
-                      }
+                        }
 
-                    case Left(FailedToValidateXml(reason)) =>
+                    case Left(FailedCreatingNextInternalReferenceId) =>
                       Future.successful(
-                        BadRequest(Json.toJson(ErrorResponseBuilder.failedXmlValidation(reason)))
-                          .as("application/json"))
+                        InternalServerError(Json.toJson(ErrorResponseBuilder.failedToCreateInternalReferenceId))
+                          .as("application/json")
+                      )
                   }
-                case Left(FailedToConvertModel) =>
+
+                case Left(FailedToValidateXml(reason)) =>
                   Future.successful(
-                    BadRequest(Json.toJson(ErrorResponseBuilder.failedToCreateRequestModel))
+                    BadRequest(Json.toJson(ErrorResponseBuilder.failedXmlValidation(reason)))
                       .as("application/json"))
               }
-            case Left(FailedCreatingInterchangeControlReference) =>
+            case Left(FailedToConvertModel) =>
               Future.successful(
-                InternalServerError(Json.toJson(ErrorResponseBuilder.failedToCreateInterchangeControlRef))
-                  .as("application/json")
-              )
+                BadRequest(Json.toJson(ErrorResponseBuilder.failedToCreateRequestModel))
+                  .as("application/json"))
           }
-        case _ => Future.successful(BadRequest("eori number is missing from the request header"))
+        case Left(FailedCreatingInterchangeControlReference) =>
+          Future.successful(
+            InternalServerError(Json.toJson(ErrorResponseBuilder.failedToCreateInterchangeControlRef))
+              .as("application/json")
+          )
       }
+
   }
 
   private def sendMessage(xml: Node, arrivalNotificationRequestModel: ArrivalNotificationRequest)(

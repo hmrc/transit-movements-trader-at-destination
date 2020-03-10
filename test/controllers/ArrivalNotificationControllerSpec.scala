@@ -101,16 +101,6 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
       }
     }
 
-    "must return BAD_REQUEST when eori numbers is missing in the request header" in {
-      val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
-        .withJsonBody(Json.toJson(normalNotification))
-
-      val result = route(application, request).value
-
-      status(result) mustEqual BAD_REQUEST
-      contentAsString(result) mustEqual "eori number is missing from the request header"
-    }
-
     "must return INTERNAL_SERVER_ERROR when interchange control reference id cannot be generated" in {
 
       when(mockDatabaseService.getInterchangeControlReferenceId)
