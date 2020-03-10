@@ -135,7 +135,7 @@ class EnRouteEventSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
     "must deserialise" in {
       forAll(arbitrary[EnRouteEvent]) {
         enrouteEvent =>
-          val json = buildEnrouteEvent(enrouteEvent)
+          val json = Json.toJson(enrouteEvent)
 
           json.validate[EnRouteEvent] mustEqual JsSuccess(enrouteEvent)
       }
@@ -146,9 +146,10 @@ class EnRouteEventSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
     Json.obj(
       "place"         -> enrouteEvent.place,
       "countryCode"   -> enrouteEvent.countryCode,
-      "alreadyInNcts" -> enrouteEvent.alreadyInNcts,
-      "eventDetails"  -> enrouteEvent.eventDetails.map(Json.toJson(_))
+      "alreadyInNcts" -> enrouteEvent.alreadyInNcts
     ) ++ {
+      enrouteEvent.eventDetails.fold(JsObject.empty)(ed => Json.obj("eventDetails" -> Json.toJson(ed)))
+    } ++ {
       enrouteEvent.seals match {
         case Some(seals) =>
           Json.obj("seals" -> Json.toJson(seals))
