@@ -20,38 +20,33 @@ import java.time.LocalDate
 import java.time.LocalTime
 
 import models.TimeStampedMessageXml
+import utils.Format
 
-import scala.concurrent.Future
-import scala.util.matching.Regex
-import scala.xml.Atom
+import scala.util.Try
 import scala.xml.NodeSeq
 
 class MessageTimestampService {
 
   def deriveTimestamp(a: NodeSeq): Option[TimeStampedMessageXml] = {
-    val dateOfPrepRegex: Regex = """(\d{4})(\d{2})(\d{2})""".r.anchored
-    val timeOfPrepRegex: Regex = """(\d{2})(\d{2})""".r.anchored
 
-    val dateOfPrep: Option[LocalDate] =
-      (a \ "CC007A" \ "DatOfPreMES9").text match {
-        case dateOfPrepRegex(year, month, date) =>
-          Some(LocalDate.of(year.toInt, month.toInt, date.toInt)) // we shouldn't do unsafe casting like this but is it fine in this case because of the Regex?
-        case _ => None
+    val dateOfPrep =
+      Try {
+        LocalDate.parse((a \ "CC007A" \ "DatOfPreMES9").text, Format.dateFormatter)
       }
 
-    val timeOfPrep: Option[LocalTime] =
-      (a \ "CC007A" \ "TimOfPreMES10").text match {
-        case timeOfPrepRegex(hours, minutes) =>
-          Some(LocalTime.of(hours.toInt, minutes.toInt)) // TODO: we shouldn't do unsafe casting like this but is it fine in this case because of the Regex?
-        case _ => None
+    val timeOfPrep =
+      Try {
+        LocalTime.parse((a \ "CC007A" \ "TimOfPreMES10").text, Format.timeFormatter)
       }
 
     /*
       TODO: Make this applicative composition so that we can report back on ALL fields that are malformed. Also consider switching to using parsers.
      */
-    for {
+    (for {
       d <- dateOfPrep
       t <- timeOfPrep
-    } yield TimeStampedMessageXml(d, t, a)
+    } yield {
+      TimeStampedMessageXml(d, t, a)
+    }).toOption
   }
 }
