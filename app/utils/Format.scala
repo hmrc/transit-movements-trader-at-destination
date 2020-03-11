@@ -18,17 +18,19 @@ package utils
 
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 
 object Format {
 
-  val dateFormatter: DateTimeFormatter           = DateTimeFormatter.ofPattern("yyyyMMdd")
-  def dateFormatted(date: LocalDate): String     = date.format(dateFormatter)
-  def dateFormatted(date: LocalDateTime): String = date.format(dateFormatter)
+  val dateFormatter: DateTimeFormatter               = DateTimeFormatter.ofPattern("yyyyMMdd")
+  def dateFormatted(date: LocalDate): String         = date.format(dateFormatter)
+  def dateFormatted(dateTime: LocalDateTime): String = dateTime.format(dateFormatter)
 
-  val timeFormatter: DateTimeFormatter           = DateTimeFormatter.ofPattern("HHMM")
-  def timeFormatted(date: LocalDateTime): String = date.format(timeFormatter)
+  val timeFormatter: DateTimeFormatter               = DateTimeFormatter.ofPattern("HHmm")
+  def timeFormatted(dateTime: LocalDateTime): String = dateTime.format(timeFormatter)
+  def timeFormatted(time: LocalTime): String         = time.format(timeFormatter)
 
   def dateFormattedForHeader(dateTime: OffsetDateTime): String =
     dateTime.format(DateTimeFormatter.RFC_1123_DATE_TIME)

@@ -38,13 +38,13 @@ case class ArrivalNotificationRequest(meta: Meta,
   val syntaxIdentifier: String       = "UNOC"
   val nameSpace: Map[String, String] = ListMap()
 
-  def toXml(dateTime: LocalDateTime): Node = {
+  def toXml: Node = {
 
     val parentNode: Node = <CC007A></CC007A>
 
     val childNodes: NodeSeq = {
-      meta.toXml(messageCode, dateTime) ++
-        header.toXml(dateTime) ++
+      meta.toXml(messageCode) ++
+        header.toXml ++
         traderDestination.toXml ++
         customsOfficeOfPresentation.toXml ++ {
         enRouteEvents.map(_.map(_.toXml)).getOrElse(NodeSeq.Empty)
