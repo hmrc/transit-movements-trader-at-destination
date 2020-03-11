@@ -38,7 +38,7 @@ class EnRouteEventSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
 
       forAll(arbitrary[EnRouteEvent], arbitrary[Seal], arbitrary[Incident]) {
         (enRouteEvent, seal, incident) =>
-          val enRouteEventWithSealAndIncident = enRouteEvent.copy(seals = Some(Seq(seal)), eventDetails = incident)
+          val enRouteEventWithSealAndIncident = enRouteEvent.copy(seals = Some(Seq(seal)), eventDetails = Some(incident))
 
           val result = {
             <ENROUEVETEV>
@@ -67,7 +67,7 @@ class EnRouteEventSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
 
       forAll(arbitrary[EnRouteEvent], arbitrary[Seal], arbitrary[ContainerTranshipment]) {
         (enRouteEvent, seal, containerTranshipment) =>
-          val enRouteEventWithContainer = enRouteEvent.copy(seals = Some(Seq(seal)), eventDetails = containerTranshipment)
+          val enRouteEventWithContainer = enRouteEvent.copy(seals = Some(Seq(seal)), eventDetails = Some(containerTranshipment))
 
           val result = {
             <ENROUEVETEV>
@@ -97,7 +97,7 @@ class EnRouteEventSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
 
       forAll(arbitrary[EnRouteEvent], arbitrary[Seal], arbitrary[VehicularTranshipment]) {
         (enRouteEvent, seal, vehicularTranshipment) =>
-          val enRouteEventWithVehicle = enRouteEvent.copy(seals = Some(Seq(seal)), eventDetails = vehicularTranshipment)
+          val enRouteEventWithVehicle = enRouteEvent.copy(seals = Some(Seq(seal)), eventDetails = Some(vehicularTranshipment))
 
           val result = {
             <ENROUEVETEV>
@@ -135,7 +135,7 @@ class EnRouteEventSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
     "must deserialise" in {
       forAll(arbitrary[EnRouteEvent]) {
         enrouteEvent =>
-          val json = buildEnrouteEvent(enrouteEvent)
+          val json = Json.toJson(enrouteEvent)
 
           json.validate[EnRouteEvent] mustEqual JsSuccess(enrouteEvent)
       }
@@ -146,9 +146,10 @@ class EnRouteEventSpec extends FreeSpec with MustMatchers with ScalaCheckPropert
     Json.obj(
       "place"         -> enrouteEvent.place,
       "countryCode"   -> enrouteEvent.countryCode,
-      "alreadyInNcts" -> enrouteEvent.alreadyInNcts,
-      "eventDetails"  -> Json.toJson(enrouteEvent.eventDetails)
+      "alreadyInNcts" -> enrouteEvent.alreadyInNcts
     ) ++ {
+      enrouteEvent.eventDetails.fold(JsObject.empty)(ed => Json.obj("eventDetails" -> Json.toJson(ed)))
+    } ++ {
       enrouteEvent.seals match {
         case Some(seals) =>
           Json.obj("seals" -> Json.toJson(seals))

@@ -191,7 +191,7 @@ class ArrivalNotificationRequestSpec
                 place = "place",
                 countryCode = "GB",
                 alreadyInNcts = true,
-                eventDetails = Incident(None, None, None, None, None),
+                eventDetails = Some(Incident(None, None, None, None, None)),
                 seals = None
               )
             ))
@@ -286,7 +286,7 @@ class ArrivalNotificationRequestSpec
               buildAndEncodeElem(event.alreadyInNcts,"AlrInNCTCTL29")
               }
             </CTLCTL> {
-            buildIncidentType(event.eventDetails, event.seals, languageCode)
+            event.eventDetails.map (buildIncidentType(_, event.seals, languageCode)).getOrElse(NodeSeq.Empty)
             }
           </ENROUEVETEV>
       }
