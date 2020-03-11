@@ -16,6 +16,7 @@
 
 package controllers
 
+import controllers.actions.IdentifierAction
 import javax.inject.Inject
 import models.Message
 import play.api.libs.json.Json
@@ -29,23 +30,25 @@ import scala.concurrent.ExecutionContext
 
 class MovementsController @Inject()(
   cc: ControllerComponents,
+  identify: IdentifierAction,
   arrivalMovementRepository: ArrivalMovementRepository
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
-  def getMovements: Action[AnyContent] = Action.async {
-
-    arrivalMovementRepository.fetchAllMovements
-      .map {
-        arrivalMovements =>
-          // TODO this needs further iteration
-          val messages: Seq[Message] = arrivalMovements.map(_.messages.head)
-          Ok(Json.toJson(messages))
-      }
-      .recover {
-        case e =>
-          InternalServerError(s"Failed with the following error: $e")
-      }
+  def getMovements: Action[AnyContent] = identify.async {
+    implicit request =>
+      arrivalMovementRepository
+        .fetchAllMovements(request.eoriNumber)
+        .map {
+          arrivalMovements =>
+            // TODO this needs further iteration
+            val messages: Seq[Message] = arrivalMovements.map(_.messages.head)
+            Ok(Json.toJson(messages))
+        }
+        .recover {
+          case e =>
+            InternalServerError(s"Failed with the following error: $e")
+        }
   }
 
 }

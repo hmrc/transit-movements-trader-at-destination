@@ -86,12 +86,17 @@ class ArrivalMovementRepositorySpec
 
     "must fetch all the ArrivalMovements from mongoDB" in {
 
-      forAll(seqWithMaxLength[ArrivalMovement](10)) {
-        arrivalMovement =>
+      forAll(seqWithMaxLength[ArrivalMovement](10), seqWithMaxLength[ArrivalMovement](10)) {
+        (arrivalMovement, arrivalMovementWithDifferentEori) =>
+
+
+        val arrivalMovementWithMatchingEori =  arrivalMovement.map(_.copy(eoriNumber = "AA11111"))
+
+          val allMovements = arrivalMovementWithMatchingEori ++ arrivalMovementWithDifferentEori
 
           database.flatMap(_.drop()).futureValue
 
-          val jsonArr = arrivalMovement.map(Json.toJsObject(_))
+          val jsonArr = allMovements.map(Json.toJsObject(_))
 
           database.flatMap {
             db =>
@@ -100,9 +105,9 @@ class ArrivalMovementRepositorySpec
                 .many(jsonArr)
           }.futureValue
 
-          val result: Seq[ArrivalMovement] = service.fetchAllMovements.futureValue
+          val result: Seq[ArrivalMovement] = service.fetchAllMovements("AA11111").futureValue
 
-          result mustBe arrivalMovement
+          result mustBe arrivalMovementWithMatchingEori
       }
     }
 
