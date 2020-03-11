@@ -16,6 +16,8 @@
 
 package services
 
+import java.time.LocalTime
+
 import com.google.inject.Inject
 import config.AppConfig
 import models.messages.EnRouteEvent
@@ -29,10 +31,16 @@ class SubmissionModelService @Inject()(appConfig: AppConfig) {
 
   def convertToSubmissionModel[A](arrivalNotification: A,
                                   messageSender: MessageSender,
-                                  interchangeControlReference: InterchangeControlReference): Either[ModelConversionError, ArrivalNotificationRequest] =
+                                  interchangeControlReference: InterchangeControlReference,
+                                  timeOfPresentation: LocalTime): Either[ModelConversionError, ArrivalNotificationRequest] =
     arrivalNotification match {
       case arrivalNotification: NormalNotificationMessage =>
-        val meta                                     = buildMeta(messageSender: MessageSender, interchangeControlReference)
+        val meta = Meta(
+          messageSender = messageSender,
+          interchangeControlReference = interchangeControlReference,
+          dateOfPreparation = arrivalNotification.notificationDate,
+          timeOfPreparation = timeOfPresentation
+        )
         val header                                   = buildHeader(arrivalNotification, NormalProcedureFlag)
         val traderDestination                        = buildTrader(arrivalNotification.trader)
         val customsOffice                            = CustomsOfficeOfPresentation(presentationOffice = arrivalNotification.presentationOffice)
@@ -43,15 +51,13 @@ class SubmissionModelService @Inject()(appConfig: AppConfig) {
         Left(FailedToConvertModel)
     }
 
-  private def buildMeta(messageSender: MessageSender, interchangeControlReference: InterchangeControlReference): Meta =
-    Meta(messageSender = messageSender, interchangeControlReference = interchangeControlReference)
-
   private def buildHeader(arrivalNotification: NormalNotificationMessage, procedureTypeFlag: ProcedureTypeFlag): Header =
     Header(
       movementReferenceNumber = arrivalNotification.movementReferenceNumber,
       customsSubPlace = arrivalNotification.customsSubPlace,
       arrivalNotificationPlace = arrivalNotification.notificationPlace,
-      procedureTypeFlag = procedureTypeFlag
+      procedureTypeFlag = procedureTypeFlag,
+      notificationDate = arrivalNotification.notificationDate
     )
 
   private def buildTrader(trader: Trader): TraderDestination = trader match {

@@ -16,7 +16,7 @@
 
 package models.request
 
-import java.time.LocalDateTime
+import java.time.LocalDate
 
 import helpers.XmlBuilderHelper
 import utils.Format
@@ -27,10 +27,11 @@ case class Header(movementReferenceNumber: String,
                   customsSubPlace: Option[String] = None,
                   arrivalNotificationPlace: String,
                   arrivalAgreedLocationOfGoods: Option[String] = None,
-                  procedureTypeFlag: ProcedureTypeFlag)
+                  procedureTypeFlag: ProcedureTypeFlag,
+                  notificationDate: LocalDate)
     extends XmlBuilderHelper {
 
-  def toXml(dateTime: LocalDateTime): Node =
+  def toXml: Node =
     <HEAHEA>
     {
       buildAndEncodeElem(movementReferenceNumber, "DocNumHEA5") ++
@@ -42,7 +43,7 @@ case class Header(movementReferenceNumber: String,
       buildAndEncodeElem(Header.Constants.languageCode, "ArrAgrLocOfGooHEA63LNG") ++
       buildOptionalElem(arrivalAgreedLocationOfGoods, "ArrAutLocOfGooHEA65") ++
       buildAndEncodeElem(procedureTypeFlag, "SimProFlaHEA132") ++
-      buildAndEncodeElem(Format.dateFormatted(dateTime), "ArrNotDatHEA141")
+      buildAndEncodeElem(Format.dateFormatted(notificationDate), "ArrNotDatHEA141")
     }
     </HEAHEA>
 }
