@@ -19,11 +19,11 @@ package controllers
 import base.SpecBase
 import generators.MessageGenerators
 import models.ArrivalMovement
-import models.Message
+import org.mockito.Mockito.reset
+import org.mockito.Mockito.when
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import repositories.ArrivalMovementRepository
 import play.api.inject.bind
 import org.mockito.Mockito.reset
 import org.mockito.Mockito.when
@@ -31,6 +31,7 @@ import org.mockito.Matchers.any
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
+import repositories.ArrivalMovementRepository
 
 import scala.concurrent.Future
 
@@ -57,7 +58,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           arrivalMovements =>
             when(mockArrivalMovementRepository.fetchAllMovements(any())).thenReturn(Future.successful(arrivalMovements))
 
-            val expectedResult: Seq[Message] = arrivalMovements.map(_.messages.head)
+            val expectedResult = arrivalMovements.map(_.messages.head)
 
             val request = FakeRequest(GET, routes.MovementsController.getMovements().url)
 

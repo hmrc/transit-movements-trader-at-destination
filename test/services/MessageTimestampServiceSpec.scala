@@ -17,13 +17,10 @@
 package services
 
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.LocalTime
 
 import base.SpecBase
-import models.Message
-import models.TimeStampedMessage
-import org.scalatest.FunSuite
+import models.TimeStampedMessageXml
 import utils.Format
 
 class MessageTimestampServiceSpec extends SpecBase {
@@ -47,7 +44,7 @@ class MessageTimestampServiceSpec extends SpecBase {
           </CC007A>
         </transitRequest>
 
-      val expectedMessage = TimeStampedMessage(dateOfPrep, timeOfPrep, movement)
+      val expectedMessage = TimeStampedMessageXml(dateOfPrep, timeOfPrep, movement)
 
       service.deriveTimestamp(movement).value mustEqual expectedMessage
 

@@ -19,4 +19,69 @@ package models
 import java.time.LocalDate
 import java.time.LocalTime
 
-final case class TimeStampedMessage[A](date: LocalDate, time: LocalTime, message: A)
+import helpers.XmlBuilderHelper
+import models.messages.ArrivalNotificationMessage
+import play.api.libs.functional.syntax._
+import play.api.libs.json.Format
+import play.api.libs.json.JsError
+import play.api.libs.json.JsObject
+import play.api.libs.json.JsResult
+import play.api.libs.json.JsString
+import play.api.libs.json.JsSuccess
+import play.api.libs.json.JsValue
+import play.api.libs.json.Json
+import play.api.libs.json.OFormat
+import play.api.libs.json.OWrites
+import play.api.libs.json.Reads
+import play.api.libs.json.Writes
+import play.api.libs.json.__
+
+import scala.xml.NodeSeq
+import scala.xml.XML
+
+sealed trait TimeStampedMessage
+
+final case class TimeStampedMessageJson(date: LocalDate, time: LocalTime, body: ArrivalNotificationMessage) extends TimeStampedMessage
+
+object TimeStampedMessageJson {
+  implicit val formats: OFormat[TimeStampedMessageJson] = Json.format[TimeStampedMessageJson]
+}
+
+final case class TimeStampedMessageXml(date: LocalDate, time: LocalTime, body: NodeSeq) extends TimeStampedMessage
+
+object TimeStampedMessageXml {
+
+  def unapplyString(arg: TimeStampedMessageXml): Option[(LocalDate, LocalTime, String)] =
+    Some((arg.date, arg.time, arg.body.toString))
+
+  implicit val writes: OWrites[TimeStampedMessageXml] =
+    ((__ \ "date").write[LocalDate] and
+      (__ \ "time").write[LocalTime] and
+      (__ \ "body").write[String])(unlift(TimeStampedMessageXml.unapplyString))
+
+  implicit val reads: Reads[TimeStampedMessageXml] = {
+    implicit val reads: Reads[NodeSeq] = new Reads[NodeSeq] {
+      override def reads(json: JsValue): JsResult[NodeSeq] = json match {
+        case JsString(value) => JsSuccess(XML.loadString(value))
+        case _               => JsError("Value cannot be parsed as XML")
+      }
+    }
+
+    Json.reads[TimeStampedMessageXml]
+  }
+
+}
+
+object TimeStampedMessage {
+
+  implicit val reads: Reads[TimeStampedMessage] =
+    implicitly[Reads[TimeStampedMessageJson]].map(identity[TimeStampedMessage])
+
+  implicit val writes: OWrites[TimeStampedMessage] = new OWrites[TimeStampedMessage] {
+    override def writes(o: TimeStampedMessage): JsObject = o match {
+      case msg: TimeStampedMessageJson => Json.toJsObject(msg)(TimeStampedMessageJson.formats)
+      case msg: TimeStampedMessageXml  => Json.toJsObject(msg)(TimeStampedMessageXml.writes)
+    }
+  }
+
+}

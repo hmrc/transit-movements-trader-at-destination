@@ -18,7 +18,6 @@ package controllers
 
 import controllers.actions.IdentifierAction
 import javax.inject.Inject
-import models.Message
 import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
@@ -42,7 +41,7 @@ class MovementsController @Inject()(
         .map {
           arrivalMovements =>
             // TODO this needs further iteration
-            val messages: Seq[Message] = arrivalMovements.map(_.messages.head)
+            val messages = arrivalMovements.map(_.messages.head)
             Ok(Json.toJson(messages))
         }
         .recover {

@@ -19,7 +19,7 @@ package services
 import java.time.LocalDate
 import java.time.LocalTime
 
-import models.TimeStampedMessage
+import models.TimeStampedMessageXml
 
 import scala.concurrent.Future
 import scala.util.matching.Regex
@@ -28,7 +28,7 @@ import scala.xml.NodeSeq
 
 class MessageTimestampService {
 
-  def deriveTimestamp(a: NodeSeq): Option[TimeStampedMessage[NodeSeq]] = {
+  def deriveTimestamp(a: NodeSeq): Option[TimeStampedMessageXml] = {
     val dateOfPrepRegex: Regex = """(\d{4})(\d{2})(\d{2})""".r.anchored
     val timeOfPrepRegex: Regex = """(\d{2})(\d{2})""".r.anchored
 
@@ -52,6 +52,6 @@ class MessageTimestampService {
     for {
       d <- dateOfPrep
       t <- timeOfPrep
-    } yield TimeStampedMessage(d, t, a)
+    } yield TimeStampedMessageXml(d, t, a)
   }
 }
