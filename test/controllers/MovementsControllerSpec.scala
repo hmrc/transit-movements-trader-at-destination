@@ -58,7 +58,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
             val expectedResult: Seq[Message] = arrivalMovements.map(_.messages.head)
 
-            val request = FakeRequest(GET, routes.MovementsController.getMovements().url).withJsonBody(Json.toJson(expectedResult))
+            val request = FakeRequest(GET, routes.MovementsController.getMovements().url)
 
             val result = route(application, request).value
 
