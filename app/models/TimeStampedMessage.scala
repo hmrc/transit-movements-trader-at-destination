@@ -19,22 +19,9 @@ package models
 import java.time.LocalDate
 import java.time.LocalTime
 
-import helpers.XmlBuilderHelper
 import models.messages.ArrivalNotificationMessage
 import play.api.libs.functional.syntax._
-import play.api.libs.json.Format
-import play.api.libs.json.JsError
-import play.api.libs.json.JsObject
-import play.api.libs.json.JsResult
-import play.api.libs.json.JsString
-import play.api.libs.json.JsSuccess
-import play.api.libs.json.JsValue
-import play.api.libs.json.Json
-import play.api.libs.json.OFormat
-import play.api.libs.json.OWrites
-import play.api.libs.json.Reads
-import play.api.libs.json.Writes
-import play.api.libs.json.__
+import play.api.libs.json._
 
 import scala.xml.NodeSeq
 import scala.xml.XML

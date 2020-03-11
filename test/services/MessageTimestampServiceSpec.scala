@@ -51,7 +51,7 @@ class MessageTimestampServiceSpec extends SpecBase {
       app.stop()
     }
 
-    "return a none when date of preparation is malformed" in {
+    "return a None when date of preparation is malformed" in {
       val application = app
       val service     = application.injector.instanceOf[MessageTimestampService]
 
@@ -62,6 +62,27 @@ class MessageTimestampServiceSpec extends SpecBase {
           <CC007A>
             <DatOfPreMES9>198801211</DatOfPreMES9>
             <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+            <HEAHEA>
+              <DocNumHEA5>MRN</DocNumHEA5>
+            </HEAHEA>
+          </CC007A>
+        </transitRequest>
+
+      service.deriveTimestamp(movement) must not be (defined)
+
+      app.stop()
+    }
+
+    "return a None when date of preparation is missing" in {
+      val application = app
+      val service     = application.injector.instanceOf[MessageTimestampService]
+
+      val timeOfPrep = LocalTime.of(1, 1)
+
+      val movement =
+        <transitRequest>
+          <CC007A>
+            <DatOfPreMES9>198801211</DatOfPreMES9>
             <HEAHEA>
               <DocNumHEA5>MRN</DocNumHEA5>
             </HEAHEA>
