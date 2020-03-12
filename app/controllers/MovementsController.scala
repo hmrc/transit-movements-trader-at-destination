@@ -30,15 +30,14 @@ import scala.concurrent.ExecutionContext
 
 class MovementsController @Inject()(
   cc: ControllerComponents,
-  identify: IdentifierAction,
-  arrivalMovementRepository: ArrivalMovementRepository
+  arrivalMovementRepository: ArrivalMovementRepository,
+  identify: IdentifierAction
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
   def getMovements: Action[AnyContent] = identify.async {
     implicit request =>
-      arrivalMovementRepository
-        .fetchAllMovements(request.eoriNumber)
+      arrivalMovementRepository.fetchAllMovements(request.eoriNumber)
         .map {
           arrivalMovements =>
             // TODO this needs further iteration

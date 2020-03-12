@@ -17,6 +17,7 @@
 package services
 
 import java.time.LocalDateTime
+import java.time.LocalTime
 
 import config.AppConfig
 import generators.MessageGenerators
@@ -45,9 +46,7 @@ class SubmissionModelServiceSpec
 
   def injector: Injector = app.injector
 
-  def appConfig: AppConfig = injector.instanceOf[AppConfig]
-
-  val convertToSubmissionModel = new SubmissionModelService(appConfig)
+  val convertToSubmissionModel = injector.instanceOf[SubmissionModelService]
 
   "SubmissionModelService" - {
 
@@ -56,14 +55,13 @@ class SubmissionModelServiceSpec
       val notifications: Gen[(ArrivalNotificationRequest, NormalNotificationMessage)] = {
         for {
           arrivalNotificationRequest <- arbitraryArrivalNotificationRequestWithEori
-          dateTime                   <- dateTimesBetween(LocalDateTime.of(1900, 1, 1, 0, 0), LocalDateTime.now)
         } yield {
 
           val normalNotification: NormalNotificationMessage = {
             NormalNotificationMessage(
               movementReferenceNumber = arrivalNotificationRequest.header.movementReferenceNumber,
               notificationPlace = arrivalNotificationRequest.header.arrivalNotificationPlace,
-              notificationDate = dateTime.toLocalDate,
+              notificationDate = arrivalNotificationRequest.header.notificationDate,
               customsSubPlace = arrivalNotificationRequest.header.customsSubPlace,
               trader = TraderWithEori(
                 name = arrivalNotificationRequest.traderDestination.name,
@@ -85,11 +83,15 @@ class SubmissionModelServiceSpec
       forAll(notifications) {
 
         case (arrivalNotificationRequest, normalNotification) =>
-          val messageSender: MessageSender                             = arrivalNotificationRequest.meta.messageSender
-          val interchangeControlReference: InterchangeControlReference = arrivalNotificationRequest.meta.interchangeControlReference
+          val messageSender               = arrivalNotificationRequest.meta.messageSender
+          val interchangeControlReference = arrivalNotificationRequest.meta.interchangeControlReference
 
-          convertToSubmissionModel.convertToSubmissionModel(normalNotification, messageSender, interchangeControlReference) mustBe
-            Right(arrivalNotificationRequest)
+          val result = convertToSubmissionModel.convertToSubmissionModel(normalNotification,
+                                                                         messageSender,
+                                                                         interchangeControlReference,
+                                                                         arrivalNotificationRequest.meta.timeOfPreparation)
+
+          result mustBe Right(arrivalNotificationRequest)
       }
     }
   }
@@ -99,14 +101,13 @@ class SubmissionModelServiceSpec
     val notifications: Gen[(ArrivalNotificationRequest, NormalNotificationMessage)] = {
       for {
         arrivalNotificationRequest <- arbitraryArrivalNotificationRequestWithoutEori
-        dateTime                   <- dateTimesBetween(LocalDateTime.of(1900, 1, 1, 0, 0), LocalDateTime.now)
       } yield {
 
         val normalNotification: NormalNotificationMessage = {
           NormalNotificationMessage(
             movementReferenceNumber = arrivalNotificationRequest.header.movementReferenceNumber,
             notificationPlace = arrivalNotificationRequest.header.arrivalNotificationPlace,
-            notificationDate = dateTime.toLocalDate,
+            notificationDate = arrivalNotificationRequest.header.notificationDate,
             customsSubPlace = arrivalNotificationRequest.header.customsSubPlace,
             trader = TraderWithoutEori(
               name = arrivalNotificationRequest.traderDestination.name.value,
@@ -130,8 +131,12 @@ class SubmissionModelServiceSpec
         val messageSender: MessageSender                             = arrivalNotificationRequest.meta.messageSender
         val interchangeControlReference: InterchangeControlReference = arrivalNotificationRequest.meta.interchangeControlReference
 
-        convertToSubmissionModel.convertToSubmissionModel(normalNotification, messageSender, interchangeControlReference) mustBe
-          Right(arrivalNotificationRequest)
+        val result = convertToSubmissionModel.convertToSubmissionModel(normalNotification,
+                                                                       messageSender,
+                                                                       interchangeControlReference,
+                                                                       arrivalNotificationRequest.meta.timeOfPreparation)
+
+        result mustBe Right(arrivalNotificationRequest)
     }
   }
 
@@ -140,20 +145,15 @@ class SubmissionModelServiceSpec
     import support.InvalidRequestModel
 
     forAll(arbitrary[MessageSender], arbitrary[InterchangeControlReference]) {
-
       (messageSender, interchangeControlReference) =>
-        {
+        val result = convertToSubmissionModel.convertToSubmissionModel(
+          arrivalNotification = InvalidRequestModel,
+          messageSender = messageSender,
+          interchangeControlReference = interchangeControlReference,
+          LocalTime.now()
+        )
 
-          val result: Either[ModelConversionError, ArrivalNotificationRequest] = {
-            convertToSubmissionModel.convertToSubmissionModel(
-              arrivalNotification = InvalidRequestModel,
-              messageSender = messageSender,
-              interchangeControlReference = interchangeControlReference
-            )
-          }
-
-          result mustBe Left(FailedToConvertModel)
-        }
+        result mustBe Left(FailedToConvertModel)
     }
   }
 

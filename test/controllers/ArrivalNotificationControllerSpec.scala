@@ -75,7 +75,7 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
           when(mockDatabaseService.getInterchangeControlReferenceId)
             .thenReturn(Future.successful(Right(InterchangeControlReference("20190101", 1))))
 
-          when(mockSubmissionModelService.convertToSubmissionModel(any(), any(), any()))
+          when(mockSubmissionModelService.convertToSubmissionModel(any(), any(), any(), any()))
             .thenReturn(Right(arrivalNotificationRequest))
 
           when(mockXmlValidationService.validate(any(), any()))
@@ -122,7 +122,7 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
       when(mockDatabaseService.getInterchangeControlReferenceId)
         .thenReturn(Future.successful(Right(InterchangeControlReference("20190101", 1))))
 
-      when(mockSubmissionModelService.convertToSubmissionModel(any(), any(), any()))
+      when(mockSubmissionModelService.convertToSubmissionModel(any(), any(), any(), any()))
         .thenReturn(Left(FailedToConvertModel))
 
       val request = FakeRequest(POST, routes.ArrivalNotificationController.post().url)
@@ -144,7 +144,7 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
           when(mockDatabaseService.getInterchangeControlReferenceId)
             .thenReturn(Future.successful(Right(InterchangeControlReference("20190101", 1))))
 
-          when(mockSubmissionModelService.convertToSubmissionModel(any(), any(), any()))
+          when(mockSubmissionModelService.convertToSubmissionModel(any(), any(), any(), any()))
             .thenReturn(Right(arrivalNotificationRequest))
 
           when(mockXmlValidationService.validate(any(), any()))
@@ -174,7 +174,7 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
           when(mockDatabaseService.getInterchangeControlReferenceId)
             .thenReturn(Future.successful(Right(InterchangeControlReference("20190101", 1))))
 
-          when(mockSubmissionModelService.convertToSubmissionModel(any(), any(), any()))
+          when(mockSubmissionModelService.convertToSubmissionModel(any(), any(), any(), any()))
             .thenReturn(Right(arrivalNotificationRequest))
 
           when(mockXmlValidationService.validate(any(), any()))
@@ -207,7 +207,7 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
           when(mockDatabaseService.getInterchangeControlReferenceId)
             .thenReturn(Future.successful(Right(InterchangeControlReference("20190101", 1))))
 
-          when(mockSubmissionModelService.convertToSubmissionModel(any(), any(), any()))
+          when(mockSubmissionModelService.convertToSubmissionModel(any(), any(), any(), any()))
             .thenReturn(Right(arrivalNotificationRequest))
 
           when(mockXmlValidationService.validate(any(), any()))
@@ -240,7 +240,7 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
           when(mockDatabaseService.getInterchangeControlReferenceId)
             .thenReturn(Future.successful(Right(InterchangeControlReference("20190101", 1))))
 
-          when(mockSubmissionModelService.convertToSubmissionModel(any(), any(), any()))
+          when(mockSubmissionModelService.convertToSubmissionModel(any(), any(), any(), any()))
             .thenReturn(Right(arrivalNotificationRequest))
 
           when(mockXmlValidationService.validate(any(), any()))
@@ -275,7 +275,7 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
           when(mockDatabaseService.getInterchangeControlReferenceId)
             .thenReturn(Future.successful(Right(InterchangeControlReference("20190101", 1))))
 
-          when(mockSubmissionModelService.convertToSubmissionModel(any(), any(), any()))
+          when(mockSubmissionModelService.convertToSubmissionModel(any(), any(), any(), any()))
             .thenReturn(Right(arrivalNotificationRequest))
 
           when(mockXmlValidationService.validate(any(), any()))

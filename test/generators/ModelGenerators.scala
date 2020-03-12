@@ -37,7 +37,7 @@ trait ModelGenerators {
   private val maxNumberOfContainers = 99
 
   private val minNumberOfSeals = 0
-  private val maxNumberOfSeals = 99
+  private val maxNumberOfSeals = 5
 
   def dateTimesBetween(min: LocalDateTime, max: LocalDateTime): Gen[LocalDateTime] = {
 
@@ -77,6 +77,17 @@ trait ModelGenerators {
       length <- choose(1, maxLength)
       chars  <- listOfN(length, arbitrary[Char])
     } yield chars.mkString
+
+  implicit lazy val arbitraryLocalDate: Arbitrary[LocalDate] = Arbitrary {
+    datesBetween(LocalDate.of(1900, 1, 1), LocalDate.of(2100, 1, 1))
+  }
+
+  implicit lazy val arbitraryLocalTime: Arbitrary[LocalTime] = Arbitrary {
+    dateTimesBetween(
+      LocalDateTime.of(1900, 1, 1, 0, 0, 0),
+      LocalDateTime.of(2100, 1, 1, 0, 0, 0)
+    ).map(_.toLocalTime)
+  }
 
   def seqWithMaxLength[A](maxLength: Int)(implicit a: Arbitrary[A]): Gen[Seq[A]] =
     for {
@@ -208,16 +219,9 @@ trait ModelGenerators {
         countryCode   <- stringsWithMaxLength(EnRouteEvent.Constants.countryCodeLength)
         alreadyInNcts <- arbitrary[Boolean]
         eventDetails  <- arbitrary[Option[EventDetails]]
-        numberOfSeals <- Gen.choose[Int](minNumberOfSeals, maxNumberOfSeals)
-        seals         <- Gen.listOfN(numberOfSeals, arbitrary[Seal])
+        seals         <- Gen.option(listWithMaxLength[Seal](maxNumberOfSeals))
       } yield {
-
-        val removeEmptySealsList = seals match {
-          case seals if seals.nonEmpty => Some(seals)
-          case _                       => None
-        }
-
-        messages.EnRouteEvent(place, countryCode, alreadyInNcts, eventDetails, removeEmptySealsList)
+        messages.EnRouteEvent(place, countryCode, alreadyInNcts, eventDetails, seals)
       }
     }
 
@@ -231,4 +235,10 @@ trait ModelGenerators {
         originalValue <- arbitrary[Option[String]]
       } yield RejectionError(errorType, pointer, reason, originalValue)
     }
+
+  def listWithMaxLength[A](maxLength: Int)(implicit a: Arbitrary[A]): Gen[List[A]] =
+    for {
+      length <- choose(1, maxLength)
+      seq    <- listOfN(length, arbitrary[A])
+    } yield seq
 }
