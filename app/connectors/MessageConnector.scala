@@ -62,8 +62,8 @@ class MessageConnectorImpl @Inject()(config: AppConfig, http: HttpClient) extend
       "X-Message-Sender" -> messageSender,
       "X-Forwarded-Host" -> "mdtp",
       "Date"             -> Format.dateFormattedForHeader(dateTime),
-      "Accept"           -> "application/xml",
-      "Authorization"    -> s"Bearer $bearerToken"
+      "Accept"           -> "application/xml"
+      //"Authorization"    -> s"Bearer $bearerToken"
     )
   }
 }
