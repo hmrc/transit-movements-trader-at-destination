@@ -16,7 +16,6 @@
 
 package controllers
 
-import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.OffsetDateTime
 
@@ -29,7 +28,6 @@ import models.Message
 import models.TransitWrapper
 import models.messages.ArrivalNotificationMessage
 import models.request._
-import play.api.Logger
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
 import play.api.libs.json.Reads
@@ -137,19 +135,12 @@ class ArrivalNotificationController @Inject()(
             NoContent
         }
         .recover {
-          case e =>
-            Logger.warn("****FAILED POSTING TO EIS")
-            Logger.warn(s"****Throwable - $e")
-            Logger.warn(s"****CAUSE - ${e.getCause}")
-            Logger.warn(s"****LocalizedMessage - $e")
-            Logger.warn(s"****MESSAGE - ${e.getMessage}")
-
+          case _ =>
             BadGateway(Json.toJson(ErrorResponseBuilder.failedSubmissionToEIS))
               .as("application/json")
 
         }
     case Left(FailedSavingArrivalNotification) =>
-      Logger.warn("****FailedSavingArrivalNotification")
       Future.successful(
         InternalServerError(Json.toJson(ErrorResponseBuilder.failedSavingToDatabase))
           .as("application/json"))

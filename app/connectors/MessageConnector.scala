@@ -22,7 +22,6 @@ import java.util.UUID
 import com.google.inject.Inject
 import config.AppConfig
 import models.request.XMessageType
-import play.api.Logger
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HttpReads
 import uk.gov.hmrc.http.HttpResponse
@@ -39,8 +38,6 @@ class MessageConnectorImpl @Inject()(config: AppConfig, http: HttpClient) extend
 
     val url = config.eisUrl
 
-    Logger.warn(s"****POST CTC URL $url")
-
     val newHeaders = headerCarrier.withExtraHeaders(addHeaders(xMessageType, dateTime): _*)
 
     http.POSTString(url, xml)(rds = HttpReads.readRaw, hc = newHeaders, ec = ec)
@@ -48,7 +45,6 @@ class MessageConnectorImpl @Inject()(config: AppConfig, http: HttpClient) extend
 
   private def addHeaders(xMessageType: XMessageType, dateTime: OffsetDateTime)(implicit headerCarrier: HeaderCarrier): Seq[(String, String)] = {
 
-    val bearerToken   = config.eisBearerToken
     val messageSender = "mdtp-userseori" //TODO: This will be a unique message sender i.e. mdtp-0001-1
 
     Seq(
@@ -63,7 +59,6 @@ class MessageConnectorImpl @Inject()(config: AppConfig, http: HttpClient) extend
       "X-Forwarded-Host" -> "mdtp",
       "Date"             -> Format.dateFormattedForHeader(dateTime),
       "Accept"           -> "application/xml"
-      //"Authorization"    -> s"Bearer $bearerToken"
     )
   }
 }
