@@ -57,7 +57,7 @@ class MessageConnectorSpec
                 .withHeader("Date", equalTo(s"$dateTimeFormatted"))
                 .withHeader("X-Message-Sender", equalTo(messageSender))
                 .withHeader("Accept", equalTo("application/xml"))
-                .withHeader("Authorization", equalTo("Bearer bearertokenhere"))
+                //.withHeader("Authorization", equalTo("Bearer bearertokenhere"))
                 .willReturn(
                   aResponse()
                     .withStatus(200)
@@ -92,7 +92,7 @@ class MessageConnectorSpec
                 .withHeader("X-Message-Sender", equalTo(messageSender))
                 .withHeader("Date", equalTo("test"))
                 .withHeader("Accept", equalTo("application/xml"))
-                .withHeader("Authorization", equalTo("Bearer bearertokenhere"))
+                //.withHeader("Authorization", equalTo("Bearer bearertokenhere"))
                 .willReturn(
                   aResponse()
                     .withStatus(statusCode)
