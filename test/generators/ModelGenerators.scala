@@ -171,7 +171,7 @@ trait ModelGenerators {
         authority          <- Gen.option(stringsWithMaxLength(EventDetails.Constants.authorityLength))
         place              <- Gen.option(stringsWithMaxLength(EventDetails.Constants.placeLength))
         country            <- Gen.option(stringsWithMaxLength(EventDetails.Constants.countryLength))
-        numberOfContainers <- Gen.choose[Int](minNumberOfContainers, maxNumberOfContainers)
+        numberOfContainers <- Gen.choose[Int](minNumberOfContainers, 2)
         containers         <- Gen.option(Gen.listOfN(numberOfContainers, arbitrary[Container]))
       } yield VehicularTranshipment(transportIdentity, transportCountry, date, authority, place, country, containers)
     }
@@ -184,7 +184,7 @@ trait ModelGenerators {
         authority          <- Gen.option(stringsWithMaxLength(EventDetails.Constants.authorityLength))
         place              <- Gen.option(stringsWithMaxLength(EventDetails.Constants.placeLength))
         country            <- Gen.option(stringsWithMaxLength(EventDetails.Constants.countryLength))
-        numberOfContainers <- Gen.choose[Int](minNumberOfContainers, maxNumberOfContainers)
+        numberOfContainers <- Gen.choose[Int](minNumberOfContainers, 2)
         containers         <- Gen.listOfN(numberOfContainers, arbitrary[Container])
       } yield ContainerTranshipment(date, authority, place, country, containers)
     }
@@ -219,7 +219,7 @@ trait ModelGenerators {
         countryCode   <- stringsWithMaxLength(EnRouteEvent.Constants.countryCodeLength)
         alreadyInNcts <- arbitrary[Boolean]
         eventDetails  <- arbitrary[Option[EventDetails]]
-        seals         <- Gen.option(listWithMaxLength[Seal](maxNumberOfSeals))
+        seals         <- Gen.option(listWithMaxLength[Seal](2))
       } yield {
         messages.EnRouteEvent(place, countryCode, alreadyInNcts, eventDetails, seals)
       }

@@ -1,5 +1,5 @@
-package services
-import it.services.MongoSuite
+package services.repositories
+
 import models.request.InternalReferenceId
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.{FreeSpec, MustMatchers}

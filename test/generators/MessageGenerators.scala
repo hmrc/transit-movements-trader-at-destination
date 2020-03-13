@@ -51,7 +51,7 @@ trait MessageGenerators extends ModelGenerators {
         movementReferenceId     <- arbitrary[Int]
         movementReferenceNumber <- arbitrary[MovementReferenceNumber]
         eoriNumber              <- arbitrary[String]
-        messages                <- seqWithMaxLength[Message](20)
+        messages                <- seqWithMaxLength[Message](2)
       } yield
         ArrivalMovement(
           internalReferenceId = movementReferenceId,
@@ -112,7 +112,7 @@ trait MessageGenerators extends ModelGenerators {
         subPlace           <- Gen.option(stringsWithMaxLength(NormalNotificationMessage.Constants.customsSubPlaceLength))
         trader             <- arbitrary[Trader]
         presentationOffice <- stringsWithMaxLength(NormalNotificationMessage.Constants.presentationOfficeLength)
-        events             <- Gen.option(seqWithMaxLength[EnRouteEvent](NormalNotificationMessage.Constants.maxNumberOfEnRouteEvents))
+        events             <- Gen.option(seqWithMaxLength[EnRouteEvent](2))
       } yield models.messages.NormalNotificationMessage(mrn, place, date, subPlace, trader, presentationOffice, events)
     }
 
