@@ -37,7 +37,8 @@ class MovementsController @Inject()(
 
   def getMovements: Action[AnyContent] = identify.async {
     implicit request =>
-      arrivalMovementRepository.fetchAllMovements
+      arrivalMovementRepository
+        .fetchAllMovements(request.eoriNumber)
         .map {
           arrivalMovements =>
             // TODO this needs further iteration

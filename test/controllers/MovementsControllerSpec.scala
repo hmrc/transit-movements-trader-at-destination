@@ -27,6 +27,7 @@ import repositories.ArrivalMovementRepository
 import play.api.inject.bind
 import org.mockito.Mockito.reset
 import org.mockito.Mockito.when
+import org.mockito.Matchers.any
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
@@ -54,7 +55,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
       "must return Ok and retrieve movements" in {
         forAll(seqWithMaxLength[ArrivalMovement](10)) {
           arrivalMovements =>
-            when(mockArrivalMovementRepository.fetchAllMovements).thenReturn(Future.successful(arrivalMovements))
+            when(mockArrivalMovementRepository.fetchAllMovements(any())).thenReturn(Future.successful(arrivalMovements))
 
             val expectedResult: Seq[Message] = arrivalMovements.map(_.messages.head)
 
@@ -69,7 +70,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
       "must return an INTERNAL_SERVER_ERROR on fail" in {
 
-        when(mockArrivalMovementRepository.fetchAllMovements)
+        when(mockArrivalMovementRepository.fetchAllMovements(any()))
           .thenReturn(Future.failed(new Exception))
 
         val request = FakeRequest(GET, routes.MovementsController.getMovements().url)

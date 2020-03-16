@@ -32,80 +32,82 @@ class ArrivalMovementRepositorySpec
   private val service: ArrivalMovementRepository = app.injector.instanceOf[ArrivalMovementRepository]
 
   "ArrivalMovementRepository" - {
-
     "must persist ArrivalMovement within mongoDB" in {
+      forAll(arbitrary[ArrivalMovement]) { arrivalMovement =>
+        database.flatMap(_.drop()).futureValue
 
-      forAll(arbitrary[ArrivalMovement]) {
-        arrivalMovement =>
+        service.persistToMongo(arrivalMovement).futureValue
 
-          database.flatMap(_.drop()).futureValue
+        val selector = Json.obj("movementReferenceNumber" -> arrivalMovement.movementReferenceNumber)
 
-          service.persistToMongo(arrivalMovement).futureValue
+        val getValue: Option[ArrivalMovement] = database.flatMap { result =>
+          result.collection[JSONCollection](CollectionNames.ArrivalMovementCollection).find(selector, None).one[ArrivalMovement]
+        }.futureValue
 
-          val selector = Json.obj("movementReferenceNumber" -> arrivalMovement.movementReferenceNumber)
-
-          val getValue: Option[ArrivalMovement] = database.flatMap {
-            result =>
-              result.collection[JSONCollection](CollectionNames.ArrivalMovementCollection)
-                .find(selector, None)
-                .one[ArrivalMovement]
-          }.futureValue
-
-          getValue.value mustBe arrivalMovement
+        getValue.value mustBe arrivalMovement
       }
     }
 
 
     "must delete NormalNotification from MongoDB" in {
+      forAll(arbitrary[ArrivalMovement]) { arrivalMovement =>
+        database.flatMap(_.drop()).futureValue
 
-      forAll(arbitrary[ArrivalMovement]) {
-        arrivalMovement =>
+        val json: JsObject = Json.toJsObject(arrivalMovement)
 
-          database.flatMap(_.drop()).futureValue
+        database.flatMap { db =>
+          db.collection[JSONCollection](CollectionNames.ArrivalMovementCollection).insert(false).one(json)
+        }.futureValue
 
-          val json: JsObject = Json.toJsObject(arrivalMovement)
+        val selector = Json.obj("movementReferenceNumber" -> arrivalMovement.movementReferenceNumber)
 
-          database.flatMap {
-            db =>
-              db.collection[JSONCollection](CollectionNames.ArrivalMovementCollection)
-                .insert(false)
-                .one(json)
-          }.futureValue
+        service.deleteFromMongo(arrivalMovement.movementReferenceNumber).futureValue
 
-          val selector = Json.obj("movementReferenceNumber" -> arrivalMovement.movementReferenceNumber)
+        val result = database.flatMap(_.collection[JSONCollection](CollectionNames.ArrivalMovementCollection).find(selector, None).one[ArrivalMovement]).futureValue
 
-          service.deleteFromMongo(arrivalMovement.movementReferenceNumber).futureValue
-
-          val result = database.flatMap(_.collection[JSONCollection](CollectionNames.ArrivalMovementCollection)
-            .find(selector, None)
-            .one[ArrivalMovement]).futureValue
-
-          result mustBe None
+        result mustBe None
       }
     }
 
-    "must fetch all the ArrivalMovements from mongoDB" in {
+    "fetchAllMovements" - {
 
-      forAll(seqWithMaxLength[ArrivalMovement](10)) {
-        arrivalMovement =>
+      "must fetch all the ArrivalMovements from mongoDB" in {
+        forAll(seqWithMaxLength[ArrivalMovement](10), seqWithMaxLength[ArrivalMovement](10)) { (arrivalMovement, arrivalMovementWithDifferentEori) =>
+          val arrivalMovementWithMatchingEori = arrivalMovement.map(_.copy(eoriNumber = "AA11111"))
+
+          val allMovements = arrivalMovementWithMatchingEori ++ arrivalMovementWithDifferentEori
 
           database.flatMap(_.drop()).futureValue
 
-          val jsonArr = arrivalMovement.map(Json.toJsObject(_))
+          val jsonArr = allMovements.map(Json.toJsObject(_))
 
-          database.flatMap {
-            db =>
-              db.collection[JSONCollection](CollectionNames.ArrivalMovementCollection)
-                .insert(false)
-                .many(jsonArr)
+          database.flatMap { db =>
+            db.collection[JSONCollection](CollectionNames.ArrivalMovementCollection).insert(false).many(jsonArr)
           }.futureValue
 
-          val result: Seq[ArrivalMovement] = service.fetchAllMovements.futureValue
+          val result: Seq[ArrivalMovement] = service.fetchAllMovements("AA11111").futureValue
 
-          result mustBe arrivalMovement
+          result mustBe arrivalMovementWithMatchingEori
+        }
+      }
+
+      "must return an empty sequence when there are no movements with the same eori" in {
+        forAll(seqWithMaxLength[ArrivalMovement](10)) { arrivalMovementsWithDifferentEori =>
+          database.flatMap(_.drop()).futureValue
+
+          val jsonArr = arrivalMovementsWithDifferentEori.map(Json.toJsObject(_))
+
+          database.flatMap { db =>
+            db.collection[JSONCollection](CollectionNames.ArrivalMovementCollection).insert(false).many(jsonArr)
+          }.futureValue
+
+          val result: Seq[ArrivalMovement] = service.fetchAllMovements("AA11111").futureValue
+
+          result mustBe Seq.empty[ArrivalMovement]
+        }
+
       }
     }
-
   }
 
 }
