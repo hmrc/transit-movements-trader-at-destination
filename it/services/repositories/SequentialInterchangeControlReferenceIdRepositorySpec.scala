@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package it.services
+package services.repositories
 
 import models.request.InterchangeControlReference
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}

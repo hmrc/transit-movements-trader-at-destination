@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package it.services
+package services.repositories
 
 import com.typesafe.config.ConfigFactory
 import org.scalatest._
-import play.api.Configuration
+import play.api.{Application, Configuration}
 import reactivemongo.api._
+import repositories.ArrivalMovementRepository
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -39,6 +40,15 @@ object MongoSuite {
 
 trait MongoSuite {
   self: TestSuite =>
+
+  def started(app: Application): Future[_] = {
+
+    val arrivalMovementRepo = app.injector.instanceOf[ArrivalMovementRepository]
+
+    val services = Seq(arrivalMovementRepo.started)
+
+    Future.sequence(services)
+  }
 
   def database: Future[DefaultDB] = {
     for {

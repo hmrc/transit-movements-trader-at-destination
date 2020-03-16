@@ -24,6 +24,8 @@ import play.api.mvc.ControllerComponents
 import play.modules.reactivemongo.ReactiveMongoApi
 import reactivemongo.api.Cursor
 import reactivemongo.api.commands.WriteResult
+import reactivemongo.api.indexes.Index
+import reactivemongo.api.indexes.IndexType
 import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 import reactivemongo.play.json.collection.JSONCollection
 
@@ -31,6 +33,20 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: ReactiveMongoApi)(implicit ec: ExecutionContext) {
+
+  private val index = Index(
+    key = Seq("eoriNumber" -> IndexType.Ascending),
+    name = Some("eori-number-index")
+  )
+
+  //TODO: investigate if this needs to be done at app start
+  val started: Future[Unit] = {
+    collection
+      .flatMap {
+        _.indexesManager.ensure(index)
+      }
+      .map(_ => ())
+  }
 
   private val collectionName = CollectionNames.ArrivalMovementCollection
 
@@ -44,16 +60,6 @@ class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: React
     collection.flatMap {
       _.insert(false)
         .one(doc)
-    }
-  }
-
-  def deleteFromMongo(mrn: String): Future[WriteResult] = {
-
-    val selector: JsObject = Json.obj("movementReferenceNumber" -> mrn)
-
-    collection.flatMap {
-      _.delete
-        .one(selector)
     }
   }
 
