@@ -39,6 +39,7 @@ class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: React
     name = Some("eori-number-index")
   )
 
+  //TODO: investigate if this needs to be done at app start
   val started: Future[Unit] = {
     collection
       .flatMap {
