@@ -19,8 +19,6 @@ package base
 import java.time.LocalDate
 
 import config.AppConfig
-import controllers.actions.FakeIdentifierAction
-import controllers.actions.IdentifierAction
 import models.messages.NormalNotificationMessage
 import models.messages.TraderWithEori
 import org.scalatest.FreeSpec
@@ -28,17 +26,14 @@ import org.scalatest.MustMatchers
 import org.scalatest.OptionValues
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.inject.Injector
-import play.api.inject.bind
-import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.mvc.AnyContentAsEmpty
 import play.api.test.FakeRequest
 import reactivemongo.api.commands.UpdateWriteResult
 import reactivemongo.api.commands.WriteResult
 import uk.gov.hmrc.http.HeaderCarrier
 
-trait SpecBase extends FreeSpec with GuiceOneAppPerSuite with MustMatchers with MockitoSugar with ScalaFutures with OptionValues {
+trait SpecBase extends FreeSpec with GuiceBindingHelpers with MustMatchers with MockitoSugar with ScalaFutures with OptionValues {
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
@@ -47,12 +42,6 @@ trait SpecBase extends FreeSpec with GuiceOneAppPerSuite with MustMatchers with 
   def appConfig: AppConfig = injector.instanceOf[AppConfig]
 
   def fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest("", "")
-
-  protected def applicationBuilder: GuiceApplicationBuilder =
-    new GuiceApplicationBuilder()
-      .overrides(
-        bind[IdentifierAction].to[FakeIdentifierAction]
-      )
 
   lazy val normalNotification = NormalNotificationMessage(
     movementReferenceNumber = "movementReferenceNumber",
