@@ -17,6 +17,7 @@
 package controllers.actions
 
 import base.SpecBase
+import config.AppConfig
 import org.mockito.Matchers.any
 import org.mockito.Mockito.when
 import play.api.mvc.Action
@@ -113,6 +114,7 @@ class IdentifierActionSpec extends SpecBase {
       val application = applicationBuilder.build()
 
       val bodyParsers = application.injector.instanceOf[BodyParsers.Default]
+      val appConfig   = application.injector.instanceOf[AppConfig]
 
       val authAction = new AuthenticatedIdentifierAction(mockAuthConnector, appConfig, bodyParsers)
       val controller = new Harness(authAction)
@@ -125,7 +127,10 @@ class IdentifierActionSpec extends SpecBase {
     "must return 401 when given enrolments that do not contain a valid eori" in {
       when(mockAuthConnector.authorise[Enrolments](any(), any())(any(), any()))
         .thenReturn(Future.successful(enrolmentsWithoutEori))
-      val bodyParsers = applicationBuilder.build().injector.instanceOf[BodyParsers.Default]
+
+      val application = applicationBuilder.build()
+      val bodyParsers = application.injector.instanceOf[BodyParsers.Default]
+      val appConfig   = application.injector.instanceOf[AppConfig]
 
       val authAction = new AuthenticatedIdentifierAction(mockAuthConnector, appConfig, bodyParsers)
       val controller = new Harness(authAction)
