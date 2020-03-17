@@ -22,17 +22,52 @@ import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
+import reactivemongo.api.commands.WriteResult
 import repositories.ArrivalMovementRepository
+import repositories.FailedSavingArrivalMovement
+import services.ArrivalMovementService
+import services.DatabaseService
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.xml.NodeSeq
 
 class MovementsController @Inject()(
   cc: ControllerComponents,
   arrivalMovementRepository: ArrivalMovementRepository,
+  arrivalMovementService: ArrivalMovementService,
+  databaseService: DatabaseService,
   identify: IdentifierAction
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
+
+  def createMovement: Action[NodeSeq] = identify.async(parse.xml) {
+    implicit request =>
+      arrivalMovementService.makeArrivalMovement(request.eoriNumber)(request.body) match {
+        case None =>
+          Future.successful(BadRequest("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5"))
+
+        case Some(x) =>
+          x.flatMap {
+            case None =>
+              Future.successful(InternalServerError)
+
+            case Some(arrivalMovement) =>
+              databaseService
+                .saveArrivalMovement(arrivalMovement)
+                .map {
+                  case Right(_) =>
+                    Accepted("Message accepted")
+                    // TODO: This needs to be replaced url to arrival movement resource, for which we need an Arrival Movement number
+                      .withHeaders("Location" -> arrivalMovement.internalReferenceId.toString)
+
+                  case _ =>
+                    InternalServerError
+                }
+          }
+      }
+  }
 
   def getMovements: Action[AnyContent] = identify.async {
     implicit request =>
