@@ -16,25 +16,69 @@
 
 package services
 
+import java.time.LocalDate
+import java.time.LocalTime
+
+import cats._
+import cats.data._
+import cats.implicits._
 import com.google.inject.Inject
 import models.ArrivalMovement
 import models.TimeStampedMessageXml
-import repositories.FailedCreatingNextInternalReferenceId
+import models.messages.MovementReferenceNumber
+import utils.Format
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.util.Try
+import scala.xml.NodeSeq
 
 class ArrivalMovementService @Inject()(databaseService: DatabaseService)(implicit ec: ExecutionContext) {
+  import ArrivalMovementService._
 
-  def makeArrivalMovement(thing: TimeStampedMessageXml, eori: String): Future[Either[FailedCreatingNextInternalReferenceId, ArrivalMovement]] = {
-    val mrn = (thing.body \ "CC007A" \ "HEAHEA" \ "DocNumHEA5").text
+  def makeArrivalMovement(eori: String): Reader[NodeSeq, Option[Future[Option[ArrivalMovement]]]] =
+    for {
+      date       <- dateOfPrepR
+      time       <- timeOfPrepR
+      mrn        <- mrnR
+      xmlMessage <- Reader(identity[NodeSeq])
+    } yield {
 
-    databaseService.getInternalReferenceId.map(
-      _.right
-        .map(_.index)
-        .right
-        .map(ArrivalMovement(_, mrn, eori, Seq(thing)))
-    )
-  }
+      for {
+        d <- date
+        t <- time
+        m <- mrn.map(_.value)
+      } yield {
+        databaseService.getInternalReferenceId
+          .map(_.toOption)
+          .map(_.map(_.index))
+          .map(_.map(ArrivalMovement(_, m, eori, Seq(TimeStampedMessageXml(d, t, xmlMessage)))))
+      }
+    }
 
+}
+
+object ArrivalMovementService {
+
+  val dateOfPrepR: Reader[NodeSeq, Option[LocalDate]] =
+    Reader[NodeSeq, NodeSeq](_ \ "CC007A" \ "DatOfPreMES9")
+      .map(_.text)
+      .map(Try(_))
+      .map(_.map(LocalDate.parse(_, Format.dateFormatter)))
+      .map(_.toOption) // TODO: We are not propagating this failure back, do we need to do this?
+
+  val timeOfPrepR: Reader[NodeSeq, Option[LocalTime]] =
+    Reader[NodeSeq, NodeSeq](_ \ "CC007A" \ "TimOfPreMES10")
+      .map(_.text)
+      .map(Try(_))
+      .map(_.map(LocalTime.parse(_, Format.timeFormatter)))
+      .map(_.toOption) // TODO: We are not propagating this failure back, do we need to do this?
+
+  val mrnR: Reader[NodeSeq, Option[MovementReferenceNumber]] =
+    Reader[NodeSeq, NodeSeq](_ \ "CC007A" \ "HEAHEA" \ "DocNumHEA5")
+      .map(_.text)
+      .map {
+        case mrnString if !mrnString.isEmpty => Some(MovementReferenceNumber(mrnString))
+        case _                               => None
+      }
 }

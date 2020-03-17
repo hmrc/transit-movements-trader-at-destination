@@ -22,22 +22,26 @@ import java.time.LocalTime
 import base.SpecBase
 import models.ArrivalMovement
 import models.TimeStampedMessageXml
+import models.messages.MovementReferenceNumber
 import models.request.InternalReferenceId
 import org.mockito.Mockito.when
 import org.scalatest.EitherValues
+import org.scalatest.concurrent.IntegrationPatience
 import play.api.inject.bind
+import utils.Format
 
 import scala.concurrent.Future
-import scala.xml.NodeSeq
 
-class ArrivalMovementServiceSpec extends SpecBase with EitherValues {
+class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
 
   "makeArrivalMovement" - {
-    "adds internal reference number and movement reference number" in {
+    "creates an arrival movement with an internal ref number and a mrn, date and time of creation from the message submitted" in {
 
-      val ir   = InternalReferenceId(1)
-      val mrn  = "MRN"
-      val eori = "eoriNumber"
+      val ir                    = InternalReferenceId(1)
+      val mrn                   = "MRN"
+      val eori                  = "eoriNumber"
+      val dateOfPrep: LocalDate = LocalDate.now()
+      val timeOfPrep: LocalTime = LocalTime.of(1, 1)
 
       val mockDatabaseService = mock[DatabaseService]
       when(mockDatabaseService.getInternalReferenceId).thenReturn(Future.successful(Right(ir)))
@@ -52,28 +56,149 @@ class ArrivalMovementServiceSpec extends SpecBase with EitherValues {
       val movement =
         <transitRequest>
           <CC007A>
-            <DatOfPreMES9>19000101</DatOfPreMES9>
-            <TimOfPreMES10>1231</TimOfPreMES10>
+            <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+            <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
             <HEAHEA>
               <DocNumHEA5>{mrn}</DocNumHEA5>
             </HEAHEA>
           </CC007A>
         </transitRequest>
 
-      val msg = TimeStampedMessageXml(LocalDate.now(), LocalTime.now(), movement)
-
       val expectedArrivalMovement: ArrivalMovement = ArrivalMovement(
         internalReferenceId = ir.index,
         movementReferenceNumber = mrn,
         eoriNumber = eori,
         messages = Seq(
-          msg
+          TimeStampedMessageXml(dateOfPrep, timeOfPrep, movement)
         )
       )
 
-      service.makeArrivalMovement(msg, eori).futureValue.right.value mustEqual expectedArrivalMovement
+      service.makeArrivalMovement(eori)(movement).value.futureValue.value mustEqual expectedArrivalMovement
 
       app.stop()
     }
   }
+
+  "dateOfPrepR" - {
+    "returns the date from the DatOfPreMES9 node" in {
+      val dateOfPrep: LocalDate = LocalDate.now()
+
+      val movement =
+        <transitRequest>
+          <CC007A>
+            <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+          </CC007A>
+        </transitRequest>
+
+      ArrivalMovementService.dateOfPrepR(movement).value mustEqual dateOfPrep
+
+    }
+
+    "will return a None when the date in the DatOfPreMES9 node is malformed" in {
+      val dateOfPrep: LocalDate = LocalDate.now()
+
+      val movement =
+        <transitRequest>
+          <CC007A>
+            <DatOfPreMES9>{Format.dateFormatted(dateOfPrep) ++ "1"}</DatOfPreMES9>
+          </CC007A>
+        </transitRequest>
+
+      ArrivalMovementService.dateOfPrepR(movement) must not be (defined)
+
+    }
+
+    "will return a None when the date in the DatOfPreMES9 node is missing" in {
+      val dateOfPrep: LocalDate = LocalDate.now()
+
+      val movement =
+        <transitRequest>
+          <CC007A>
+          </CC007A>
+        </transitRequest>
+
+      ArrivalMovementService.dateOfPrepR(movement) must not be (defined)
+
+    }
+
+  }
+
+  "timeOfPrepR" - {
+    "returns the time from the TimOfPreMES10 node" in {
+      val timeOfPrep: LocalTime = LocalTime.of(1, 1)
+
+      val movement =
+        <transitRequest>
+          <CC007A>
+            <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+          </CC007A>
+        </transitRequest>
+
+      ArrivalMovementService.timeOfPrepR(movement).value mustEqual timeOfPrep
+
+    }
+
+    "returns a None if TimOfPreMES10 is malformed" in {
+      val timeOfPrep: LocalTime = LocalTime.of(1, 1)
+
+      val movement =
+        <transitRequest>
+          <CC007A>
+            <TimOfPreMES10>{Format.timeFormatted(timeOfPrep) ++ "a"}</TimOfPreMES10>
+          </CC007A>
+        </transitRequest>
+
+      ArrivalMovementService.timeOfPrepR(movement) must not be (defined)
+
+    }
+
+    "returns a None if TimOfPreMES10 is missing" in {
+      val timeOfPrep: LocalTime = LocalTime.of(1, 1)
+
+      val movement =
+        <transitRequest>
+          <CC007A>
+          </CC007A>
+        </transitRequest>
+
+      ArrivalMovementService.timeOfPrepR(movement) must not be (defined)
+
+    }
+
+  }
+
+  "mrnR" - {
+    "returns the mrn from the DocNumHEA5 node" in {
+      val mrn = MovementReferenceNumber("MRN")
+
+      val movement =
+        <transitRequest>
+          <CC007A>
+            <HEAHEA>
+              <DocNumHEA5>{mrn.value}</DocNumHEA5>
+            </HEAHEA>
+          </CC007A>
+        </transitRequest>
+
+      ArrivalMovementService.mrnR(movement).value mustEqual mrn
+
+    }
+
+    "returns None if DocNumHEA5 node is missing" in {
+      val mrn = MovementReferenceNumber("MRN")
+
+      val movement =
+        <transitRequest>
+          <CC007A>
+            <HEAHEA>
+            </HEAHEA>
+          </CC007A>
+        </transitRequest>
+
+      ArrivalMovementService.mrnR(movement) must not be (defined)
+
+    }
+
+  }
+
 }
