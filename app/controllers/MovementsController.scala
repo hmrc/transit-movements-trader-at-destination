@@ -44,29 +44,31 @@ class MovementsController @Inject()(
 
   def createMovement: Action[NodeSeq] = identify.async(parse.xml) {
     implicit request =>
-      arrivalMovementService.makeArrivalMovement(request.eoriNumber)(request.body) match {
-        case None =>
-          Future.successful(BadRequest("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5"))
+//      arrivalMovementService.makeArrivalMovement(request.eoriNumber)(request.body) match {
+      ////        case None =>
+      ////          Future.successful(BadRequest("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5"))
+      ////
+      ////        case Some(x) =>
+      ////          x.flatMap {
+      ////            case None =>
+      ////              Future.successful(InternalServerError)
+      ////
+      ////            case Some(arrivalMovement) =>
+      ////              databaseService
+      ////                .saveArrivalMovement(arrivalMovement)
+      ////                .map {
+      ////                  case Right(_) =>
+      ////                    Accepted("Message accepted")
+      ////                    // TODO: This needs to be replaced url to arrival movement resource, for which we need an Arrival Movement number
+      ////                      .withHeaders("Location" -> arrivalMovement.internalReferenceId.toString)
+      ////
+      ////                  case _ =>
+      ////                    InternalServerError
+      ////                }
+      ////          }
+      ////      }
 
-        case Some(x) =>
-          x.flatMap {
-            case None =>
-              Future.successful(InternalServerError)
-
-            case Some(arrivalMovement) =>
-              databaseService
-                .saveArrivalMovement(arrivalMovement)
-                .map {
-                  case Right(_) =>
-                    Accepted("Message accepted")
-                    // TODO: This needs to be replaced url to arrival movement resource, for which we need an Arrival Movement number
-                      .withHeaders("Location" -> arrivalMovement.internalReferenceId.toString)
-
-                  case _ =>
-                    InternalServerError
-                }
-          }
-      }
+      ???
   }
 
   def getMovements: Action[AnyContent] = identify.async {
