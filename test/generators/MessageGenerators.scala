@@ -20,10 +20,11 @@ import java.time.LocalDate
 import java.time.LocalTime
 
 import models.messages._
+import models.Arrival
 import models.ArrivalMovement
 import models.RejectionError
-import models.TimeStampedMessage
 import models.TimeStampedMessageJson
+import models.TimeStampedMessageXml
 import models.request
 import models.request._
 import org.scalacheck.Arbitrary.arbitrary
@@ -35,6 +36,16 @@ trait MessageGenerators extends ModelGenerators {
   private val pastDate: LocalDate = LocalDate.of(1900, 1, 1)
   private val dateNow: LocalDate  = LocalDate.now
 
+  implicit lazy val arbitraryMessageXml: Arbitrary[TimeStampedMessageXml] = {
+    Arbitrary {
+      for {
+        date <- datesBetween(pastDate, dateNow)
+        time <- timesBetween(pastDate, dateNow)
+        xml  <- Gen.const(<blankXml>message</blankXml>) // TODO: revisit this
+      } yield TimeStampedMessageXml(date, time, xml)
+    }
+  }
+
   implicit lazy val arbitraryMessageJson: Arbitrary[TimeStampedMessageJson] = {
     Arbitrary {
       for {
@@ -43,6 +54,31 @@ trait MessageGenerators extends ModelGenerators {
         message <- arbitrary[ArrivalNotificationMessage]
 
       } yield TimeStampedMessageJson(date, time, message)
+    }
+  }
+
+  implicit lazy val arbitraryArrivalId: Arbitrary[ArrivalId] = {
+    Arbitrary {
+      for {
+        id <- arbitrary[Int]
+      } yield ArrivalId(id)
+    }
+  }
+
+  implicit lazy val arbitraryArrival: Arbitrary[Arrival] = {
+    Arbitrary {
+      for {
+        arrivalId               <- arbitrary[ArrivalId]
+        movementReferenceNumber <- arbitrary[MovementReferenceNumber]
+        eoriNumber              <- arbitrary[String]
+        messages                <- seqWithMaxLength[TimeStampedMessageXml](2)
+      } yield
+        Arrival(
+          arrivalId = arrivalId,
+          movementReferenceNumber = movementReferenceNumber.toString,
+          eoriNumber = eoriNumber,
+          messages = messages
+        )
     }
   }
 

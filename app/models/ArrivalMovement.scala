@@ -19,7 +19,7 @@ package models
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
 
-case class ArrivalMovement(internalReferenceId: Int, movementReferenceNumber: String, eoriNumber: String, messages: Seq[TimeStampedMessage])
+case class ArrivalMovement(internalReferenceId: Int, movementReferenceNumber: String, eoriNumber: String, messages: Seq[TimeStampedMessageJson])
 
 object ArrivalMovement {
   implicit val formats: OFormat[ArrivalMovement] = Json.format[ArrivalMovement]

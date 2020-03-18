@@ -20,13 +20,11 @@ import java.time.LocalDate
 import java.time.LocalTime
 
 import base.SpecBase
-import models.ArrivalMovement
+import models.Arrival
 import models.TimeStampedMessageXml
 import models.messages.MovementReferenceNumber
 import models.request.ArrivalId
-import models.request.InternalReferenceId
 import org.mockito.Mockito.when
-import org.scalatest.EitherValues
 import org.scalatest.concurrent.IntegrationPatience
 import play.api.inject.bind
 import repositories.ArrivalIdRepository
@@ -39,15 +37,15 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
   "makeArrivalMovement" - {
     "creates an arrival movement with an internal ref number and a mrn, date and time of creation from the message submitted" in {
 
-      val id                    = ArrivalId(1)
-      val mrn                   = "MRN"
-      val eori                  = "eoriNumber"
-      val dateOfPrep: LocalDate = LocalDate.now()
-      val timeOfPrep: LocalTime = LocalTime.of(1, 1)
+      val id         = ArrivalId(1)
+      val mrn        = "MRN"
+      val eori       = "eoriNumber"
+      val dateOfPrep = LocalDate.now()
+      val timeOfPrep = LocalTime.of(1, 1)
 
       val mockArrivalIdRepository = mock[ArrivalIdRepository]
       when(mockArrivalIdRepository.nextId).thenReturn(Future.successful(id))
-      val application = applicationBuilder
+      val application = baseApplicationBuilder
         .overrides(
           bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository)
         )
@@ -66,8 +64,8 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
           </CC007A>
         </transitRequest>
 
-      val expectedArrivalMovement: ArrivalMovement = ArrivalMovement(
-        internalReferenceId = id.index,
+      val expectedArrival = Arrival(
+        arrivalId = id,
         movementReferenceNumber = mrn,
         eoriNumber = eori,
         messages = Seq(
@@ -75,7 +73,7 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
         )
       )
 
-      service.makeArrivalMovement(eori)(movement).value.futureValue mustEqual expectedArrivalMovement
+      service.makeArrivalMovement(eori)(movement).value.futureValue mustEqual expectedArrival
     }
   }
 

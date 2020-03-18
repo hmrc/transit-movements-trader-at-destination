@@ -23,6 +23,7 @@ import cats._
 import cats.data._
 import cats.implicits._
 import com.google.inject.Inject
+import models.Arrival
 import models.ArrivalMovement
 import models.TimeStampedMessageXml
 import models.messages.MovementReferenceNumber
@@ -37,7 +38,7 @@ import scala.xml.NodeSeq
 class ArrivalMovementService @Inject()(arrivalIdRepository: ArrivalIdRepository)(implicit ec: ExecutionContext) {
   import ArrivalMovementService._
 
-  def makeArrivalMovement(eori: String): Reader[NodeSeq, Option[Future[ArrivalMovement]]] =
+  def makeArrivalMovement(eori: String): Reader[NodeSeq, Option[Future[Arrival]]] =
     for {
       date       <- dateOfPrepR
       time       <- timeOfPrepR
@@ -52,8 +53,7 @@ class ArrivalMovementService @Inject()(arrivalIdRepository: ArrivalIdRepository)
       } yield {
         arrivalIdRepository
           .nextId()
-          .map(_.index)
-          .map(ArrivalMovement(_, m, eori, Seq(TimeStampedMessageXml(d, t, xmlMessage))))
+          .map(Arrival(_, m, eori, Seq(TimeStampedMessageXml(d, t, xmlMessage))))
       }
     }
 }

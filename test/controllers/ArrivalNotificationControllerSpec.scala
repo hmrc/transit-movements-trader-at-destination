@@ -49,7 +49,7 @@ class ArrivalNotificationControllerSpec extends SpecBase with ScalaCheckProperty
   private val mockXmlValidationService: XmlValidationService     = mock[XmlValidationService]
 
   private val application = {
-    applicationBuilder
+    baseApplicationBuilder
       .overrides(bind[MessageConnector].toInstance(mockMessageConnector))
       .overrides(bind[DatabaseService].toInstance(mockDatabaseService))
       .overrides(bind[SubmissionModelService].toInstance(mockSubmissionModelService))
