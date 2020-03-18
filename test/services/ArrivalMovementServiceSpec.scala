@@ -74,8 +74,6 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
       )
 
       service.makeArrivalMovement(eori)(movement).value.futureValue.value mustEqual expectedArrivalMovement
-
-      app.stop()
     }
   }
 
