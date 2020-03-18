@@ -2,3 +2,4 @@
 
 POST                    /arrival-notification               controllers.ArrivalNotificationController.post
 GET                     /movements                          controllers.MovementsController.getMovements
+POST                    /movements/arrivals                          controllers.MovementsController.createMovement

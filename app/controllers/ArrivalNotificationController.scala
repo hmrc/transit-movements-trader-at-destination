@@ -16,7 +16,6 @@
 
 package controllers
 
-import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.OffsetDateTime
 
@@ -26,7 +25,7 @@ import controllers.actions.IdentifierAction
 import helpers.XmlBuilderHelper
 import javax.inject.Inject
 import models.ArrivalMovement
-import models.Message
+import models.TimeStampedMessageJson
 import models.TransitWrapper
 import models.messages.ArrivalNotificationMessage
 import models.request._
@@ -84,9 +83,9 @@ class ArrivalNotificationController @Inject()(
                         movementReferenceNumber = arrivalNotificationRequestModel.header.movementReferenceNumber,
                         eoriNumber = request.eoriNumber,
                         messages = Seq(
-                          Message(arrivalNotificationRequestModel.meta.dateOfPreparation,
-                                  arrivalNotificationRequestModel.meta.timeOfPreparation,
-                                  arrivalNotification))
+                          TimeStampedMessageJson(arrivalNotificationRequestModel.meta.dateOfPreparation,
+                                                 arrivalNotificationRequestModel.meta.timeOfPreparation,
+                                                 arrivalNotification))
                       )
 
                       databaseService

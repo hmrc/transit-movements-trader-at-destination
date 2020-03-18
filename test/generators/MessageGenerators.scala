@@ -20,11 +20,12 @@ import java.time.LocalDate
 import java.time.LocalTime
 
 import models.messages._
-import models.request._
 import models.ArrivalMovement
-import models.Message
 import models.RejectionError
+import models.TimeStampedMessage
+import models.TimeStampedMessageJson
 import models.request
+import models.request._
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
@@ -34,14 +35,14 @@ trait MessageGenerators extends ModelGenerators {
   private val pastDate: LocalDate = LocalDate.of(1900, 1, 1)
   private val dateNow: LocalDate  = LocalDate.now
 
-  implicit lazy val arbitraryMessage: Arbitrary[Message] = {
+  implicit lazy val arbitraryMessageJson: Arbitrary[TimeStampedMessageJson] = {
     Arbitrary {
       for {
         date    <- datesBetween(pastDate, dateNow)
         time    <- timesBetween(pastDate, dateNow)
         message <- arbitrary[ArrivalNotificationMessage]
 
-      } yield Message(date, time, message)
+      } yield TimeStampedMessageJson(date, time, message)
     }
   }
 
@@ -51,7 +52,7 @@ trait MessageGenerators extends ModelGenerators {
         movementReferenceId     <- arbitrary[Int]
         movementReferenceNumber <- arbitrary[MovementReferenceNumber]
         eoriNumber              <- arbitrary[String]
-        messages                <- seqWithMaxLength[Message](2)
+        messages                <- seqWithMaxLength[TimeStampedMessageJson](2)
       } yield
         ArrivalMovement(
           internalReferenceId = movementReferenceId,

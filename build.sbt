@@ -21,6 +21,9 @@ lazy val microservice = Project(appName, file("."))
   .settings(resolvers += Resolver.jcenterRepo)
   .settings(PlayKeys.playDefaultPort := 9480)
   .settings(scoverageSettings: _*)
+  .settings(
+    scalacOptions += "-Ypartial-unification"
+  )
 
 lazy val scoverageSettings = {
   Seq(
