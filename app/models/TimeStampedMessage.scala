@@ -28,7 +28,7 @@ import scala.xml.XML
 
 sealed trait TimeStampedMessage
 
-final case class TimeStampedMessageJson(date: LocalDate, time: LocalTime, body: ArrivalNotificationMessage) extends TimeStampedMessage
+final case class TimeStampedMessageJson(date: LocalDate, time: LocalTime, message: ArrivalNotificationMessage) extends TimeStampedMessage
 
 object TimeStampedMessageJson {
   implicit val formats: OFormat[TimeStampedMessageJson] = Json.format[TimeStampedMessageJson]
