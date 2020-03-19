@@ -16,11 +16,14 @@
 
 package models
 
+import models.request.ArrivalId
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
 
-case class ArrivalMovement(internalReferenceId: Int, movementReferenceNumber: String, eoriNumber: String, messages: Seq[TimeStampedMessageJson])
+case class Arrival(arrivalId: ArrivalId, movementReferenceNumber: String, eoriNumber: String, messages: Seq[TimeStampedMessageXml])
 
-object ArrivalMovement {
-  implicit val formats: OFormat[ArrivalMovement] = Json.format[ArrivalMovement]
+object Arrival {
+
+  implicit val formatsArrival: OFormat[Arrival] = Json.format[Arrival]
+
 }

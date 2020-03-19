@@ -26,27 +26,25 @@ import play.api.libs.json._
 import scala.xml.NodeSeq
 import scala.xml.XML
 
-sealed trait TimeStampedMessage
-
-final case class TimeStampedMessageJson(date: LocalDate, time: LocalTime, message: ArrivalNotificationMessage) extends TimeStampedMessage
+final case class TimeStampedMessageJson(date: LocalDate, time: LocalTime, body: ArrivalNotificationMessage)
 
 object TimeStampedMessageJson {
   implicit val formats: OFormat[TimeStampedMessageJson] = Json.format[TimeStampedMessageJson]
 }
 
-final case class TimeStampedMessageXml(date: LocalDate, time: LocalTime, message: NodeSeq) extends TimeStampedMessage
+final case class TimeStampedMessageXml(date: LocalDate, time: LocalTime, body: NodeSeq)
 
 object TimeStampedMessageXml {
 
   def unapplyString(arg: TimeStampedMessageXml): Option[(LocalDate, LocalTime, String)] =
-    Some((arg.date, arg.time, arg.message.toString))
+    Some((arg.date, arg.time, arg.body.toString))
 
-  implicit val writes: OWrites[TimeStampedMessageXml] =
+  implicit val writesTimeStampedMessageXml: OWrites[TimeStampedMessageXml] =
     ((__ \ "date").write[LocalDate] and
       (__ \ "time").write[LocalTime] and
-      (__ \ "message").write[String])(unlift(TimeStampedMessageXml.unapplyString))
+      (__ \ "body").write[String])(unlift(TimeStampedMessageXml.unapplyString))
 
-  implicit val reads: Reads[TimeStampedMessageXml] = {
+  implicit val readsTimeStampedMessageXml: Reads[TimeStampedMessageXml] = {
     implicit val reads: Reads[NodeSeq] = new Reads[NodeSeq] {
       override def reads(json: JsValue): JsResult[NodeSeq] = json match {
         case JsString(value) => JsSuccess(XML.loadString(value))
@@ -55,20 +53,6 @@ object TimeStampedMessageXml {
     }
 
     Json.reads[TimeStampedMessageXml]
-  }
-
-}
-
-object TimeStampedMessage {
-
-  implicit val reads: Reads[TimeStampedMessage] =
-    implicitly[Reads[TimeStampedMessageJson]].map(identity[TimeStampedMessage])
-
-  implicit val writes: OWrites[TimeStampedMessage] = new OWrites[TimeStampedMessage] {
-    override def writes(o: TimeStampedMessage): JsObject = o match {
-      case msg: TimeStampedMessageJson => Json.toJsObject(msg)(TimeStampedMessageJson.formats)
-      case msg: TimeStampedMessageXml  => Json.toJsObject(msg)(TimeStampedMessageXml.writes)
-    }
   }
 
 }

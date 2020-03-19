@@ -22,7 +22,7 @@ import java.time.LocalTime
 import base.SpecBase
 import generators.MessageGenerators
 import models.ArrivalMovement
-import models.request.InternalReferenceId
+import models.request.ArrivalId
 import org.mockito.Matchers.any
 import org.mockito.Mockito.reset
 import org.mockito.Mockito._
@@ -33,39 +33,33 @@ import play.api.inject.bind
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
+import repositories.ArrivalIdRepository
 import repositories.ArrivalMovementRepository
-import repositories.FailedCreatingNextInternalReferenceId
-import services.DatabaseService
 import utils.Format
+import org.scalacheck.Arbitrary.arbitrary
 
 import scala.concurrent.Future
 
 class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks with MessageGenerators with BeforeAndAfterEach with IntegrationPatience {
-
-  private val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
-
-  def applicationMovementsControllerSpec =
-    applicationBuilder
-      .overrides(
-        bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository)
-      )
-
-  override protected def beforeEach(): Unit = {
-    super.beforeEach()
-    reset(mockArrivalMovementRepository)
-  }
 
   "MovementsController" - {
 
     "createMovement" - {
 
       "must return Ok and create movement" in {
-        val mockDatabaseService = mock[DatabaseService]
-        val ir                  = InternalReferenceId(1)
-        when(mockDatabaseService.getInternalReferenceId).thenReturn(Future.successful(Right(ir)))
-        when(mockDatabaseService.saveArrivalMovement(any())).thenReturn(Future.successful(Right(fakeWriteResult)))
+        val mockArrivalIdRepository       = mock[ArrivalIdRepository]
+        val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+        val arrivalId                     = ArrivalId(1)
 
-        val application = applicationMovementsControllerSpec.overrides(bind[DatabaseService].toInstance(mockDatabaseService)).build()
+        when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
+        when(mockArrivalMovementRepository.insert(any())).thenReturn(Future.successful(()))
+
+        val application = baseApplicationBuilder
+          .overrides(
+            bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
+            bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository)
+          )
+          .build()
 
         running(application) {
 
@@ -88,20 +82,24 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           val result = route(application, request).value
 
           status(result) mustEqual ACCEPTED
-          header("Location", result).value must be(ir.index.toString) // TODO: This needs to be the actual resource location
-          verify(mockDatabaseService, times(1)).saveArrivalMovement(any())
+          header("Location", result).value must be(arrivalId.index.toString) // TODO: This needs to be the actual resource location
+          verify(mockArrivalMovementRepository, times(1)).insert(any())
 
         }
       }
 
       "must return InternalServerError if the InternalReference generation fails" in {
-        val mockDatabaseService = mock[DatabaseService]
-        when(mockDatabaseService.getInternalReferenceId).thenReturn(Future.successful(Left(FailedCreatingNextInternalReferenceId)))
+        val mockArrivalIdRepository       = mock[ArrivalIdRepository]
+        val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
 
-        val application =
-          applicationMovementsControllerSpec
-            .overrides(bind[DatabaseService].toInstance(mockDatabaseService))
-            .build()
+        when(mockArrivalIdRepository.nextId()).thenReturn(Future.failed(new Exception))
+
+        val application = baseApplicationBuilder
+          .overrides(
+            bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
+            bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository)
+          )
+          .build()
 
         running(application) {
           val dateOfPrep = LocalDate.now()
@@ -124,17 +122,24 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
           status(result) mustEqual INTERNAL_SERVER_ERROR
           header("Location", result) must not be (defined)
+          verify(mockArrivalMovementRepository, times(0)).insert(any())
         }
       }
 
       "must return InternalServerError if the database fails to create a new Arrival Movement" in {
-        val mockDatabaseService = mock[DatabaseService]
-        when(mockDatabaseService.getInternalReferenceId).thenReturn(Future.successful(Left(FailedCreatingNextInternalReferenceId)))
+        val mockArrivalIdRepository       = mock[ArrivalIdRepository]
+        val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+        val arrivalId                     = ArrivalId(1)
 
-        val application =
-          applicationMovementsControllerSpec
-            .overrides(bind[DatabaseService].toInstance(mockDatabaseService))
-            .build()
+        when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
+        when(mockArrivalMovementRepository.insert(any())).thenReturn(Future.failed(new Exception))
+
+        val application = baseApplicationBuilder
+          .overrides(
+            bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
+            bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository)
+          )
+          .build()
 
         running(application) {
           val dateOfPrep = LocalDate.now()
@@ -161,12 +166,15 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
       }
 
       "must return BadRequest if the payload is malformed" in {
-        val mockDatabaseService = mock[DatabaseService]
-        when(mockDatabaseService.getInternalReferenceId).thenReturn(Future.successful(Left(FailedCreatingNextInternalReferenceId)))
+        val mockArrivalIdRepository       = mock[ArrivalIdRepository]
+        val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
 
         val application =
-          applicationMovementsControllerSpec
-            .overrides(bind[DatabaseService].toInstance(mockDatabaseService))
+          baseApplicationBuilder
+            .overrides(
+              bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
+              bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository)
+            )
             .build()
 
         running(application) {
@@ -184,6 +192,8 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
           status(result) mustEqual BAD_REQUEST
           header("Location", result) must not be (defined)
+          verify(mockArrivalIdRepository, times(0)).nextId()
+          verify(mockArrivalMovementRepository, times(0)).insert(any())
         }
       }
     }
@@ -191,11 +201,16 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
     "getMovements" - {
 
       "must return Ok and retrieve movements" in {
-        forAll(seqWithMaxLength[ArrivalMovement](10)) {
-          arrivalMovements =>
-            val application = applicationMovementsControllerSpec.build()
+        val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
 
-            running(application) {
+        val application =
+          baseApplicationBuilder
+            .overrides(bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository))
+            .build()
+
+        running(application) {
+          forAll(seqWithMaxLength[ArrivalMovement](10)) {
+            arrivalMovements =>
               when(mockArrivalMovementRepository.fetchAllMovements(any())).thenReturn(Future.successful(arrivalMovements))
 
               val expectedResult = arrivalMovements.map(_.messages.head)
@@ -206,16 +221,23 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
               status(result) mustEqual OK
               contentAsJson(result) mustEqual Json.toJson(expectedResult)
-            }
+
+              reset(mockArrivalMovementRepository)
+          }
         }
       }
 
       "must return an INTERNAL_SERVER_ERROR on fail" in {
-        val application = applicationMovementsControllerSpec.build()
+        val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+        when(mockArrivalMovementRepository.fetchAllMovements(any()))
+          .thenReturn(Future.failed(new Exception))
+
+        val application =
+          baseApplicationBuilder
+            .overrides(bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository))
+            .build()
 
         running(application) {
-          when(mockArrivalMovementRepository.fetchAllMovements(any()))
-            .thenReturn(Future.failed(new Exception))
 
           val request = FakeRequest(GET, routes.MovementsController.getMovements().url)
 

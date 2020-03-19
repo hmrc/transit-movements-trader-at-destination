@@ -17,6 +17,7 @@
 package repositories
 
 import com.google.inject.Inject
+import models.Arrival
 import models.ArrivalMovement
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
@@ -53,6 +54,14 @@ class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: React
   private def collection: Future[JSONCollection] =
     mongo.database.map(_.collection[JSONCollection](collectionName))
 
+  def insert(arrival: Arrival): Future[Unit] =
+    collection.flatMap {
+      _.insert(false)
+        .one(Json.toJsObject(arrival))
+        .map(_ => ())
+    }
+
+  @deprecated
   def persistToMongo(arrivalMovement: ArrivalMovement): Future[WriteResult] = {
 
     val doc: JsObject = Json.toJson(arrivalMovement).as[JsObject]

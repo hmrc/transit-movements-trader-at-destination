@@ -23,9 +23,11 @@ import cats._
 import cats.data._
 import cats.implicits._
 import com.google.inject.Inject
+import models.Arrival
 import models.ArrivalMovement
 import models.TimeStampedMessageXml
 import models.messages.MovementReferenceNumber
+import repositories.ArrivalIdRepository
 import utils.Format
 
 import scala.concurrent.ExecutionContext
@@ -33,10 +35,10 @@ import scala.concurrent.Future
 import scala.util.Try
 import scala.xml.NodeSeq
 
-class ArrivalMovementService @Inject()(databaseService: DatabaseService)(implicit ec: ExecutionContext) {
+class ArrivalMovementService @Inject()(arrivalIdRepository: ArrivalIdRepository)(implicit ec: ExecutionContext) {
   import ArrivalMovementService._
 
-  def makeArrivalMovement(eori: String): Reader[NodeSeq, Option[Future[Option[ArrivalMovement]]]] =
+  def makeArrivalMovement(eori: String): Reader[NodeSeq, Option[Future[Arrival]]] =
     for {
       date       <- dateOfPrepR
       time       <- timeOfPrepR
@@ -49,13 +51,11 @@ class ArrivalMovementService @Inject()(databaseService: DatabaseService)(implici
         t <- time
         m <- mrn.map(_.value)
       } yield {
-        databaseService.getInternalReferenceId
-          .map(_.toOption)
-          .map(_.map(_.index))
-          .map(_.map(ArrivalMovement(_, m, eori, Seq(TimeStampedMessageXml(d, t, xmlMessage)))))
+        arrivalIdRepository
+          .nextId()
+          .map(Arrival(_, m, eori, Seq(TimeStampedMessageXml(d, t, xmlMessage))))
       }
     }
-
 }
 
 object ArrivalMovementService {

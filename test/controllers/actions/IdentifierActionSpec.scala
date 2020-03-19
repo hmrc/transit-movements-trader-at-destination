@@ -111,7 +111,7 @@ class IdentifierActionSpec extends SpecBase {
       when(mockAuthConnector.authorise[Enrolments](any(), any())(any(), any()))
         .thenReturn(Future.successful(enrolmentsWithEori))
 
-      val application = applicationBuilder.build()
+      val application = baseApplicationBuilder.build()
 
       val bodyParsers = application.injector.instanceOf[BodyParsers.Default]
       val appConfig   = application.injector.instanceOf[AppConfig]
@@ -128,7 +128,7 @@ class IdentifierActionSpec extends SpecBase {
       when(mockAuthConnector.authorise[Enrolments](any(), any())(any(), any()))
         .thenReturn(Future.successful(enrolmentsWithoutEori))
 
-      val application = applicationBuilder.build()
+      val application = baseApplicationBuilder.build()
       val bodyParsers = application.injector.instanceOf[BodyParsers.Default]
       val appConfig   = application.injector.instanceOf[AppConfig]
 

@@ -50,22 +50,21 @@ class MovementsController @Inject()(
 
         case Some(x) =>
           x.flatMap {
-            case None =>
-              Future.successful(InternalServerError)
-
-            case Some(arrivalMovement) =>
-              databaseService
-                .saveArrivalMovement(arrivalMovement)
-                .map {
-                  case Right(_) =>
+              arrival =>
+                arrivalMovementRepository.insert(arrival) map {
+                  _ =>
                     Accepted("Message accepted")
                     // TODO: This needs to be replaced url to arrival movement resource, for which we need an Arrival Movement number
-                      .withHeaders("Location" -> arrivalMovement.internalReferenceId.toString)
-
-                  case _ =>
-                    InternalServerError
+                      .withHeaders("Location" -> arrival.arrivalId.index.toString)
                 }
-          }
+            }
+            .recover {
+              case _ => {
+                // TODO: Add logging here so that we can be alerted to these issues.
+                InternalServerError
+              }
+            }
+
       }
   }
 

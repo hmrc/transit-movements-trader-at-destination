@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-package models
-
+package models.request
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
 
-case class ArrivalMovement(internalReferenceId: Int, movementReferenceNumber: String, eoriNumber: String, messages: Seq[TimeStampedMessageJson])
+case class ArrivalId(index: Int)
 
-object ArrivalMovement {
-  implicit val formats: OFormat[ArrivalMovement] = Json.format[ArrivalMovement]
+object ArrivalId {
+  implicit val formatsArrivalId: OFormat[ArrivalId] = Json.format[ArrivalId]
 }

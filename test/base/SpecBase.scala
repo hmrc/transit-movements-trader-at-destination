@@ -41,7 +41,7 @@ trait SpecBase extends FreeSpec with MustMatchers with MockitoSugar with ScalaFu
 
   def fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest("", "")
 
-  protected def applicationBuilder: GuiceApplicationBuilder =
+  protected def baseApplicationBuilder: GuiceApplicationBuilder =
     new GuiceApplicationBuilder()
       .overrides(
         bind[IdentifierAction].to[FakeIdentifierAction]
