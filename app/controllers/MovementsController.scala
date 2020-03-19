@@ -58,12 +58,14 @@ class MovementsController @Inject()(
               arrival =>
                 arrivalMovementRepository.insert(arrival) flatMap {
                   _ =>
-                    messageConnector.post(request.body.toString, MessageType.ArrivalNotification, OffsetDateTime.now).map {
-                      _ =>
-                        Accepted("Message accepted")
-                        // TODO: This needs to be replaced url to arrival movement resource, for which we need an Arrival Movement number
-                          .withHeaders("Location" -> arrival.arrivalId.index.toString)
-                    }
+                    messageConnector
+                      .post(request.body.toString, MessageType.ArrivalNotification, OffsetDateTime.now)
+                      .map {
+                        _ =>
+                          Accepted("Message accepted")
+                          // TODO: This needs to be replaced url to arrival movement resource, for which we need an Arrival Movement number
+                            .withHeaders("Location" -> arrival.arrivalId.index.toString)
+                      }
                 }
             }
             .recover {

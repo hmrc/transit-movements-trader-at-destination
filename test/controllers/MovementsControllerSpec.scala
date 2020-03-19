@@ -76,15 +76,13 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           val timeOfPrep = LocalTime.of(1, 1)
 
           val requestXmlBody =
-            <transitRequest>
-              <CC007A>
-                <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
-                <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
-                <HEAHEA>
-                  <DocNumHEA5>MRN</DocNumHEA5>
-                </HEAHEA>
-              </CC007A>
-            </transitRequest>
+            <CC007A>
+              <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+              <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+              <HEAHEA>
+                <DocNumHEA5>MRN</DocNumHEA5>
+              </HEAHEA>
+            </CC007A>
 
           val request = FakeRequest(POST, routes.MovementsController.createMovement().url).withXmlBody(requestXmlBody)
 
@@ -118,15 +116,13 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           val timeOfPrep = LocalTime.of(1, 1)
 
           val requestXmlBody =
-            <transitRequest>
-              <CC007A>
-                <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
-                <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
-                <HEAHEA>
-                  <DocNumHEA5>MRN</DocNumHEA5>
-                </HEAHEA>
-              </CC007A>
-            </transitRequest>
+            <CC007A>
+              <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+              <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+              <HEAHEA>
+                <DocNumHEA5>MRN</DocNumHEA5>
+              </HEAHEA>
+            </CC007A>
 
           val request = FakeRequest(POST, routes.MovementsController.createMovement().url).withXmlBody(requestXmlBody)
 
@@ -160,15 +156,13 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           val timeOfPrep = LocalTime.of(1, 1)
 
           val requestXmlBody =
-            <transitRequest>
-              <CC007A>
-                <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
-                <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
-                <HEAHEA>
-                  <DocNumHEA5>MRN</DocNumHEA5>
-                </HEAHEA>
-              </CC007A>
-            </transitRequest>
+            <CC007A>
+              <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+              <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+              <HEAHEA>
+                <DocNumHEA5>MRN</DocNumHEA5>
+              </HEAHEA>
+            </CC007A>
 
           val request = FakeRequest(POST, routes.MovementsController.createMovement().url).withXmlBody(requestXmlBody)
 
@@ -195,12 +189,48 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
         running(application) {
           val requestXmlBody =
-            <transitRequest>
-              <CC007A>
-                <HEAHEA>
-                </HEAHEA>
-              </CC007A>
-            </transitRequest>
+            <CC007A>
+              <HEAHEA>
+              </HEAHEA>
+            </CC007A>
+
+          val request = FakeRequest(POST, routes.MovementsController.createMovement().url).withXmlBody(requestXmlBody)
+
+          val result = route(application, request).value
+
+          status(result) mustEqual BAD_REQUEST
+          header("Location", result) must not be (defined)
+          verify(mockArrivalIdRepository, times(0)).nextId()
+          verify(mockArrivalMovementRepository, times(0)).insert(any())
+        }
+      }
+
+      "must return BadRequest if the message is not an arrival notification" in {
+        val mockArrivalIdRepository       = mock[ArrivalIdRepository]
+        val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+        val mockMessageConnector          = mock[MessageConnector]
+
+        val application =
+          baseApplicationBuilder
+            .overrides(
+              bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
+              bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
+              bind[MessageConnector].toInstance(mockMessageConnector)
+            )
+            .build()
+
+        val dateOfPrep = LocalDate.now()
+        val timeOfPrep = LocalTime.of(1, 1)
+
+        running(application) {
+          val requestXmlBody =
+            <InvalidRootNode>
+              <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+              <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+              <HEAHEA>
+                <DocNumHEA5>MRN</DocNumHEA5>
+              </HEAHEA>
+            </InvalidRootNode>
 
           val request = FakeRequest(POST, routes.MovementsController.createMovement().url).withXmlBody(requestXmlBody)
 
@@ -238,15 +268,13 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           val timeOfPrep = LocalTime.of(1, 1)
 
           val requestXmlBody =
-            <transitRequest>
-              <CC007A>
-                <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
-                <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
-                <HEAHEA>
-                  <DocNumHEA5>MRN</DocNumHEA5>
-                </HEAHEA>
-              </CC007A>
-            </transitRequest>
+            <CC007A>
+              <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+              <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+              <HEAHEA>
+                <DocNumHEA5>MRN</DocNumHEA5>
+              </HEAHEA>
+            </CC007A>
 
           val request = FakeRequest(POST, routes.MovementsController.createMovement().url).withXmlBody(requestXmlBody)
 

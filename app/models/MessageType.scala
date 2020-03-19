@@ -20,5 +20,5 @@ sealed trait MessageType
 
 object MessageType extends Enumerable.Implicits {
 
-  case object ArrivalNotification extends WithName("IE007") with MessageType
+  case object ArrivalNotification extends IeMetadata("IE007", "CC007A") with MessageType
 }
