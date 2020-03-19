@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
-package models.request
+package models
 
-case class XMessageType(code: String)
+class WithName(string: String) {
+  override val toString: String = string
+}

@@ -21,7 +21,7 @@ import java.util.UUID
 
 import com.google.inject.Inject
 import config.AppConfig
-import models.request.XMessageType
+import models.MessageType
 import play.api.Logger
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HttpReads
@@ -34,26 +34,24 @@ import scala.concurrent.Future
 
 class MessageConnectorImpl @Inject()(config: AppConfig, http: HttpClient) extends MessageConnector {
 
-  def post(xml: String, xMessageType: XMessageType, dateTime: OffsetDateTime)(implicit headerCarrier: HeaderCarrier,
-                                                                              ec: ExecutionContext): Future[HttpResponse] = {
+  def post(xml: String, messageType: MessageType, dateTime: OffsetDateTime)(implicit headerCarrier: HeaderCarrier,
+                                                                            ec: ExecutionContext): Future[HttpResponse] = {
 
     val url = config.eisUrl
 
-    Logger.warn(s"****POST CTC URL $url")
-
-    val newHeaders = headerCarrier.withExtraHeaders(addHeaders(xMessageType, dateTime): _*)
+    val newHeaders = headerCarrier.withExtraHeaders(addHeaders(messageType, dateTime): _*)
 
     http.POSTString(url, xml)(rds = HttpReads.readRaw, hc = newHeaders, ec = ec)
   }
 
-  private def addHeaders(xMessageType: XMessageType, dateTime: OffsetDateTime)(implicit headerCarrier: HeaderCarrier): Seq[(String, String)] = {
+  private def addHeaders(messageType: MessageType, dateTime: OffsetDateTime)(implicit headerCarrier: HeaderCarrier): Seq[(String, String)] = {
 
     val bearerToken   = config.eisBearerToken
     val messageSender = "mdtp-userseori" //TODO: This will be a unique message sender i.e. mdtp-0001-1
 
     Seq(
       "Content-Type"   -> "application/xml;charset=UTF-8",
-      "X-Message-Type" -> xMessageType.code,
+      "X-Message-Type" -> messageType.toString,
       "X-Correlation-ID" -> {
         headerCarrier.sessionId
           .map(_.value)
@@ -69,5 +67,5 @@ class MessageConnectorImpl @Inject()(config: AppConfig, http: HttpClient) extend
 }
 
 trait MessageConnector {
-  def post(xml: String, xMessageType: XMessageType, dateTime: OffsetDateTime)(implicit headerCarrier: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse]
+  def post(xml: String, messageType: MessageType, dateTime: OffsetDateTime)(implicit headerCarrier: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse]
 }

@@ -16,9 +16,8 @@
 
 package models.request
 
-import java.time.LocalDateTime
-
 import helpers.XmlBuilderHelper
+import models.MessageType
 import models.messages.EnRouteEvent
 
 import scala.collection.immutable.ListMap
@@ -33,7 +32,7 @@ case class ArrivalNotificationRequest(meta: Meta,
     extends XmlBuilderHelper
     with RequestConstants {
 
-  val xMessageType: XMessageType     = XMessageType("IE007")
+  val messageType: MessageType       = MessageType.ArrivalNotification
   val messageCode: MessageCode       = MessageCode("GB007A")
   val syntaxIdentifier: String       = "UNOC"
   val nameSpace: Map[String, String] = ListMap()

@@ -18,11 +18,15 @@ package controllers
 
 import java.time.LocalDate
 import java.time.LocalTime
+import java.time.OffsetDateTime
 
 import base.SpecBase
+import connectors.MessageConnector
 import generators.MessageGenerators
 import models.ArrivalMovement
+import models.MessageType
 import models.request.ArrivalId
+import org.mockito.Matchers.{eq => eqTo}
 import org.mockito.Matchers.any
 import org.mockito.Mockito.reset
 import org.mockito.Mockito._
@@ -36,9 +40,11 @@ import play.api.test.Helpers._
 import repositories.ArrivalIdRepository
 import repositories.ArrivalMovementRepository
 import utils.Format
-import org.scalacheck.Arbitrary.arbitrary
+import uk.gov.hmrc.http.HttpResponse
+import uk.gov.hmrc.http.Upstream5xxResponse
 
 import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks with MessageGenerators with BeforeAndAfterEach with IntegrationPatience {
 
@@ -46,18 +52,21 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
     "createMovement" - {
 
-      "must return Ok and create movement" in {
+      "must return Ok, create movement and send the message upstream" in {
         val mockArrivalIdRepository       = mock[ArrivalIdRepository]
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+        val mockMessageConnector          = mock[MessageConnector]
         val arrivalId                     = ArrivalId(1)
 
         when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
         when(mockArrivalMovementRepository.insert(any())).thenReturn(Future.successful(()))
+        when(mockMessageConnector.post(any(), any(), any())(any(), any())).thenReturn(Future.successful(HttpResponse(ACCEPTED)))
 
         val application = baseApplicationBuilder
           .overrides(
             bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
-            bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository)
+            bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
+            bind[MessageConnector].toInstance(mockMessageConnector)
           )
           .build()
 
@@ -84,6 +93,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           status(result) mustEqual ACCEPTED
           header("Location", result).value must be(arrivalId.index.toString) // TODO: This needs to be the actual resource location
           verify(mockArrivalMovementRepository, times(1)).insert(any())
+          verify(mockMessageConnector, times(1)).post(eqTo(requestXmlBody.toString), eqTo(MessageType.ArrivalNotification), any())(any(), any())
 
         }
       }
@@ -91,13 +101,15 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
       "must return InternalServerError if the InternalReference generation fails" in {
         val mockArrivalIdRepository       = mock[ArrivalIdRepository]
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+        val mockMessageConnector          = mock[MessageConnector]
 
         when(mockArrivalIdRepository.nextId()).thenReturn(Future.failed(new Exception))
 
         val application = baseApplicationBuilder
           .overrides(
             bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
-            bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository)
+            bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
+            bind[MessageConnector].toInstance(mockMessageConnector)
           )
           .build()
 
@@ -121,7 +133,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           val result = route(application, request).value
 
           status(result) mustEqual INTERNAL_SERVER_ERROR
-          header("Location", result) must not be (defined)
+          header("Location", result) must not be defined
           verify(mockArrivalMovementRepository, times(0)).insert(any())
         }
       }
@@ -129,6 +141,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
       "must return InternalServerError if the database fails to create a new Arrival Movement" in {
         val mockArrivalIdRepository       = mock[ArrivalIdRepository]
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+        val mockMessageConnector          = mock[MessageConnector]
         val arrivalId                     = ArrivalId(1)
 
         when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
@@ -137,7 +150,8 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         val application = baseApplicationBuilder
           .overrides(
             bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
-            bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository)
+            bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
+            bind[MessageConnector].toInstance(mockMessageConnector)
           )
           .build()
 
@@ -161,19 +175,21 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           val result = route(application, request).value
 
           status(result) mustEqual INTERNAL_SERVER_ERROR
-          header("Location", result) must not be (defined)
+          header("Location", result) must not be defined
         }
       }
 
       "must return BadRequest if the payload is malformed" in {
         val mockArrivalIdRepository       = mock[ArrivalIdRepository]
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+        val mockMessageConnector          = mock[MessageConnector]
 
         val application =
           baseApplicationBuilder
             .overrides(
               bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
-              bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository)
+              bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
+              bind[MessageConnector].toInstance(mockMessageConnector)
             )
             .build()
 
@@ -194,6 +210,49 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           header("Location", result) must not be (defined)
           verify(mockArrivalIdRepository, times(0)).nextId()
           verify(mockArrivalMovementRepository, times(0)).insert(any())
+        }
+      }
+
+      "must return InternalServerError if sending the message upstream fails" in {
+
+        val mockArrivalIdRepository       = mock[ArrivalIdRepository]
+        val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+        val mockMessageConnector          = mock[MessageConnector]
+        val arrivalId                     = ArrivalId(1)
+
+        when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
+        when(mockArrivalMovementRepository.insert(any())).thenReturn(Future.successful(()))
+        when(mockMessageConnector.post(any(), any(), any())(any(), any())).thenReturn(Future.failed(Upstream5xxResponse("message", 500, 500)))
+
+        val application = baseApplicationBuilder
+          .overrides(
+            bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
+            bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
+            bind[MessageConnector].toInstance(mockMessageConnector)
+          )
+          .build()
+
+        running(application) {
+
+          val dateOfPrep = LocalDate.now()
+          val timeOfPrep = LocalTime.of(1, 1)
+
+          val requestXmlBody =
+            <transitRequest>
+              <CC007A>
+                <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+                <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+                <HEAHEA>
+                  <DocNumHEA5>MRN</DocNumHEA5>
+                </HEAHEA>
+              </CC007A>
+            </transitRequest>
+
+          val request = FakeRequest(POST, routes.MovementsController.createMovement().url).withXmlBody(requestXmlBody)
+
+          val result = route(application, request).value
+
+          status(result) mustEqual INTERNAL_SERVER_ERROR
         }
       }
     }
