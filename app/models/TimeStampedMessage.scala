@@ -26,23 +26,23 @@ import play.api.libs.json._
 import scala.xml.NodeSeq
 import scala.xml.XML
 
-final case class TimeStampedMessageJson(date: LocalDate, time: LocalTime, body: ArrivalNotificationMessage)
+final case class TimeStampedMessageJson(date: LocalDate, time: LocalTime, message: ArrivalNotificationMessage)
 
 object TimeStampedMessageJson {
   implicit val formats: OFormat[TimeStampedMessageJson] = Json.format[TimeStampedMessageJson]
 }
 
-final case class TimeStampedMessageXml(date: LocalDate, time: LocalTime, body: NodeSeq)
+final case class TimeStampedMessageXml(date: LocalDate, time: LocalTime, message: NodeSeq)
 
 object TimeStampedMessageXml {
 
   def unapplyString(arg: TimeStampedMessageXml): Option[(LocalDate, LocalTime, String)] =
-    Some((arg.date, arg.time, arg.body.toString))
+    Some((arg.date, arg.time, arg.message.toString))
 
   implicit val writesTimeStampedMessageXml: OWrites[TimeStampedMessageXml] =
     ((__ \ "date").write[LocalDate] and
       (__ \ "time").write[LocalTime] and
-      (__ \ "body").write[String])(unlift(TimeStampedMessageXml.unapplyString))
+      (__ \ "message").write[String])(unlift(TimeStampedMessageXml.unapplyString))
 
   implicit val readsTimeStampedMessageXml: Reads[TimeStampedMessageXml] = {
     implicit val reads: Reads[NodeSeq] = new Reads[NodeSeq] {
