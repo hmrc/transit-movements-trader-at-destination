@@ -21,6 +21,7 @@ import java.time.LocalTime
 
 import base.SpecBase
 import models.Arrival
+import models.State
 import models.TimeStampedMessageXml
 import models.messages.MovementReferenceNumber
 import models.request.ArrivalId
@@ -66,6 +67,7 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
         arrivalId = id,
         movementReferenceNumber = mrn,
         eoriNumber = eori,
+        state = State.PendingSubmission,
         messages = Seq(
           TimeStampedMessageXml(dateOfPrep, timeOfPrep, movement)
         )

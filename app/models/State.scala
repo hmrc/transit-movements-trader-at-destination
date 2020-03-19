@@ -16,14 +16,20 @@
 
 package models
 
-import models.request.ArrivalId
-import play.api.libs.json.Json
-import play.api.libs.json.OFormat
+sealed trait State
 
-case class Arrival(arrivalId: ArrivalId, movementReferenceNumber: String, eoriNumber: String, state: State, messages: Seq[TimeStampedMessageXml])
+object State extends Enumerable.Implicits {
 
-object Arrival {
+  case object PendingSubmission extends State
+  case object Submitted         extends State
+  case object SubmissionFailed  extends State
 
-  implicit val formatsArrival: OFormat[Arrival] = Json.format[Arrival]
+  val values = Seq(
+    PendingSubmission,
+    Submitted,
+    SubmissionFailed
+  )
 
+  implicit val enumerable: Enumerable[State] =
+    Enumerable(values.map(v => v.toString -> v): _*)
 }

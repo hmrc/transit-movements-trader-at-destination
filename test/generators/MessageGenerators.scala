@@ -23,6 +23,7 @@ import models.messages._
 import models.Arrival
 import models.ArrivalMovement
 import models.RejectionError
+import models.State
 import models.TimeStampedMessageJson
 import models.TimeStampedMessageXml
 import models.request
@@ -65,18 +66,25 @@ trait MessageGenerators extends ModelGenerators {
     }
   }
 
+  implicit lazy val arbitraryState: Arbitrary[State] =
+    Arbitrary {
+      Gen.oneOf(State.values)
+    }
+
   implicit lazy val arbitraryArrival: Arbitrary[Arrival] = {
     Arbitrary {
       for {
         arrivalId               <- arbitrary[ArrivalId]
         movementReferenceNumber <- arbitrary[MovementReferenceNumber]
         eoriNumber              <- arbitrary[String]
+        state                   <- arbitrary[State]
         messages                <- seqWithMaxLength[TimeStampedMessageXml](2)
       } yield
         Arrival(
           arrivalId = arrivalId,
           movementReferenceNumber = movementReferenceNumber.toString,
           eoriNumber = eoriNumber,
+          state = state,
           messages = messages
         )
     }
