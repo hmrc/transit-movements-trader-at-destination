@@ -34,17 +34,17 @@ object TimeStampedMessageJson {
   implicit val formats: OFormat[TimeStampedMessageJson] = Json.format[TimeStampedMessageJson]
 }
 
-final case class TimeStampedMessageXml(date: LocalDate, time: LocalTime, body: NodeSeq) extends TimeStampedMessage
+final case class TimeStampedMessageXml(date: LocalDate, time: LocalTime, message: NodeSeq) extends TimeStampedMessage
 
 object TimeStampedMessageXml {
 
   def unapplyString(arg: TimeStampedMessageXml): Option[(LocalDate, LocalTime, String)] =
-    Some((arg.date, arg.time, arg.body.toString))
+    Some((arg.date, arg.time, arg.message.toString))
 
   implicit val writes: OWrites[TimeStampedMessageXml] =
     ((__ \ "date").write[LocalDate] and
       (__ \ "time").write[LocalTime] and
-      (__ \ "body").write[String])(unlift(TimeStampedMessageXml.unapplyString))
+      (__ \ "message").write[String])(unlift(TimeStampedMessageXml.unapplyString))
 
   implicit val reads: Reads[TimeStampedMessageXml] = {
     implicit val reads: Reads[NodeSeq] = new Reads[NodeSeq] {
