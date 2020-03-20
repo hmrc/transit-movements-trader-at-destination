@@ -19,18 +19,16 @@ package services
 import java.time.LocalDate
 import java.time.LocalTime
 
-import cats._
 import cats.data._
 import cats.implicits._
 import com.google.inject.Inject
 import models.Arrival
 import models.MessageType
-import models.State
 import models.TimeStampedMessageXml
 import models.messages.MovementReferenceNumber
 import repositories.ArrivalIdRepository
 import utils.Format
-
+import models.State.PendingSubmission
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.Try
@@ -39,55 +37,56 @@ import scala.xml.NodeSeq
 class ArrivalMovementService @Inject()(arrivalIdRepository: ArrivalIdRepository)(implicit ec: ExecutionContext) {
   import ArrivalMovementService._
 
-  def makeArrivalMovement(eori: String): Reader[NodeSeq, Option[Future[Arrival]]] =
+  def makeArrivalMovement(eori: String): ReaderT[Option, NodeSeq, Future[Arrival]] =
     for {
-      correctRoot <- correctRootNodeR
-      date        <- dateOfPrepR
-      time        <- timeOfPrepR
-      mrn         <- mrnR
-      xmlMessage  <- Reader(identity[NodeSeq])
+      _          <- correctRootNodeR
+      date       <- dateOfPrepR
+      time       <- timeOfPrepR
+      mrn        <- mrnR
+      xmlMessage <- ReaderT[Option, NodeSeq, NodeSeq](Option.apply)
     } yield {
-
-      for {
-        _ <- correctRoot
-        d <- date
-        t <- time
-        m <- mrn.map(_.value)
-      } yield {
-        arrivalIdRepository
-          .nextId()
-          .map(Arrival(_, m, eori, State.PendingSubmission, Seq(TimeStampedMessageXml(d, t, xmlMessage))))
-      }
+      arrivalIdRepository
+        .nextId()
+        .map(Arrival(_, mrn.value, eori, PendingSubmission, Seq(TimeStampedMessageXml(date, time, xmlMessage))))
     }
 }
 
 object ArrivalMovementService {
 
-  def correctRootNodeR: Reader[NodeSeq, Option[Unit]] =
-    Reader[NodeSeq, Option[Unit]] {
+  val correctRootNodeR: ReaderT[Option, NodeSeq, Unit] =
+    ReaderT[Option, NodeSeq, Unit] {
       nodeSeq =>
         if (nodeSeq.head.label == MessageType.ArrivalNotification.rootNode) Some(()) else None
     }
 
-  val dateOfPrepR: Reader[NodeSeq, Option[LocalDate]] =
-    Reader[NodeSeq, NodeSeq](_ \ "DatOfPreMES9")
-      .map(_.text)
-      .map(Try(_))
-      .map(_.map(LocalDate.parse(_, Format.dateFormatter)))
-      .map(_.toOption) // TODO: We are not propagating this failure back, do we need to do this?
-
-  val timeOfPrepR: Reader[NodeSeq, Option[LocalTime]] =
-    Reader[NodeSeq, NodeSeq](_ \ "TimOfPreMES10")
-      .map(_.text)
-      .map(Try(_))
-      .map(_.map(LocalTime.parse(_, Format.timeFormatter)))
-      .map(_.toOption) // TODO: We are not propagating this failure back, do we need to do this?
-
-  val mrnR: Reader[NodeSeq, Option[MovementReferenceNumber]] =
-    Reader[NodeSeq, NodeSeq](_ \ "HEAHEA" \ "DocNumHEA5")
-      .map(_.text)
-      .map {
-        case mrnString if mrnString.nonEmpty => Some(MovementReferenceNumber(mrnString))
-        case _                               => None
+  val dateOfPrepR: ReaderT[Option, NodeSeq, LocalDate] =
+    ReaderT[Option, NodeSeq, LocalDate](xml => {
+      (xml \ "DatOfPreMES9").text match {
+        case x if x.isEmpty => None
+        case x => {
+          Try {
+            LocalDate.parse(x, Format.dateFormatter)
+          }.toOption // TODO: We are not propagating this failure back, do we need to do this?
+        }
       }
+    })
+
+  val timeOfPrepR: ReaderT[Option, NodeSeq, LocalTime] =
+    ReaderT[Option, NodeSeq, LocalTime](xml => {
+      (xml \ "TimOfPreMES10").text match {
+        case x if x.isEmpty => None
+        case x => {
+          Try {
+            LocalTime.parse(x, Format.timeFormatter)
+          }.toOption // TODO: We are not propagating this failure back, do we need to do this?
+        }
+      }
+    })
+
+  val mrnR: ReaderT[Option, NodeSeq, MovementReferenceNumber] =
+    ReaderT[Option, NodeSeq, MovementReferenceNumber](xml =>
+      (xml \ "HEAHEA" \ "DocNumHEA5").text match {
+        case mrnString if !mrnString.isEmpty => Some(MovementReferenceNumber(mrnString))
+        case _                               => None
+    })
 }
