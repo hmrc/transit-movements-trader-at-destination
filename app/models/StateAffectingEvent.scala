@@ -16,9 +16,12 @@
 
 package models
 
-sealed trait MessageType extends IeMetadata
+sealed trait StateAffectingEvent
 
-object MessageType extends Enumerable.Implicits {
+sealed trait SubmissionResult extends StateAffectingEvent
 
-  case object ArrivalNotification extends IeMetadata("IE007", "CC007A") with MessageType
+object SubmissionResult {
+
+  case object Success extends SubmissionResult
+  case object Failure extends SubmissionResult
 }

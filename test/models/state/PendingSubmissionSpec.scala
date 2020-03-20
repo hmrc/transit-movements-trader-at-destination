@@ -14,11 +14,23 @@
  * limitations under the License.
  */
 
-package models
+package models.state
 
-sealed trait MessageType extends IeMetadata
+import models.State._
+import models.SubmissionResult
+import org.scalatest.FreeSpec
+import org.scalatest.MustMatchers
 
-object MessageType extends Enumerable.Implicits {
+class PendingSubmissionSpec extends FreeSpec with MustMatchers {
 
-  case object ArrivalNotification extends IeMetadata("IE007", "CC007A") with MessageType
+  "Pending Submission must transition" - {
+
+    "to Submitted when receiving a Submission Success event" in {
+      PendingSubmission.transition(SubmissionResult.Success) mustEqual Submitted
+    }
+
+    "to Submission Failed when receiving a Submission Failure event" in {
+      PendingSubmission.transition(SubmissionResult.Failure) mustEqual SubmissionFailed
+    }
+  }
 }

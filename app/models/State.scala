@@ -16,13 +16,31 @@
 
 package models
 
-sealed trait State
+sealed trait State {
+  def transition(event: StateAffectingEvent): State
+}
 
 object State extends Enumerable.Implicits {
 
-  case object PendingSubmission extends State
-  case object Submitted         extends State
-  case object SubmissionFailed  extends State
+  case object PendingSubmission extends State {
+    override def transition(event: StateAffectingEvent): State = event match {
+      case SubmissionResult.Success => Submitted
+      case SubmissionResult.Failure => SubmissionFailed
+    }
+  }
+
+  case object Submitted extends State {
+    override def transition(event: StateAffectingEvent): State = event match {
+      case _ => ???
+    }
+  }
+
+  case object SubmissionFailed extends State {
+    override def transition(event: StateAffectingEvent): State = event match {
+      case _ => ???
+    }
+
+  }
 
   val values = Seq(
     PendingSubmission,

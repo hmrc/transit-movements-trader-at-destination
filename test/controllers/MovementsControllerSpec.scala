@@ -25,6 +25,7 @@ import connectors.MessageConnector
 import generators.MessageGenerators
 import models.ArrivalMovement
 import models.MessageType
+import models.State
 import models.request.ArrivalId
 import org.mockito.Matchers.{eq => eqTo}
 import org.mockito.Matchers.any
@@ -52,7 +53,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
     "createMovement" - {
 
-      "must return Ok, create movement and send the message upstream" in {
+      "must return Ok, create movement, send the message upstream and set the state to Submitted" in {
         val mockArrivalIdRepository       = mock[ArrivalIdRepository]
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
         val mockMessageConnector          = mock[MessageConnector]
@@ -60,6 +61,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
         when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
         when(mockArrivalMovementRepository.insert(any())).thenReturn(Future.successful(()))
+        when(mockArrivalMovementRepository.setState(any(), any())).thenReturn(Future.successful(()))
         when(mockMessageConnector.post(any(), any(), any())(any(), any())).thenReturn(Future.successful(HttpResponse(ACCEPTED)))
 
         val application = baseApplicationBuilder
@@ -92,7 +94,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           header("Location", result).value must be(arrivalId.index.toString) // TODO: This needs to be the actual resource location
           verify(mockArrivalMovementRepository, times(1)).insert(any())
           verify(mockMessageConnector, times(1)).post(eqTo(requestXmlBody.toString), eqTo(MessageType.ArrivalNotification), any())(any(), any())
-
+          verify(mockArrivalMovementRepository, times(1)).setState(any(), eqTo(State.Submitted))
         }
       }
 
@@ -243,7 +245,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         }
       }
 
-      "must return InternalServerError if sending the message upstream fails" in {
+      "must return InternalServerError and update the status to SubmissionFailed if sending the message upstream fails" in {
 
         val mockArrivalIdRepository       = mock[ArrivalIdRepository]
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
@@ -252,6 +254,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
         when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
         when(mockArrivalMovementRepository.insert(any())).thenReturn(Future.successful(()))
+        when(mockArrivalMovementRepository.setState(any(), any())).thenReturn(Future.successful(()))
         when(mockMessageConnector.post(any(), any(), any())(any(), any())).thenReturn(Future.failed(Upstream5xxResponse("message", 500, 500)))
 
         val application = baseApplicationBuilder
@@ -281,6 +284,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           val result = route(application, request).value
 
           status(result) mustEqual INTERNAL_SERVER_ERROR
+          verify(mockArrivalMovementRepository, times(1)).setState(arrivalId, State.SubmissionFailed)
         }
       }
     }

@@ -1,8 +1,7 @@
 package services.repositories
 
 import generators.MessageGenerators
-import models.Arrival
-import models.ArrivalMovement
+import models.{Arrival, ArrivalMovement, State}
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatest.concurrent.ScalaFutures
@@ -71,7 +70,33 @@ class ArrivalMovementRepositorySpec
           result.value mustBe arrival
         }
       }
+    }
 
+    "setState" - {
+      "must update the state of an existing record" in {
+
+        val app: Application = builder.build()
+
+        val arrival = arbitrary[Arrival].sample.value copy (state = State.PendingSubmission)
+
+        running(app) {
+          started(app).futureValue
+
+          val repository = app.injector.instanceOf[ArrivalMovementRepository]
+
+          repository.insert(arrival).futureValue
+          repository.setState(arrival.arrivalId, State.Submitted).futureValue
+
+          val selector = Json.obj("_id" -> arrival.arrivalId)
+
+          val result = database.flatMap {
+            result =>
+              result.collection[JSONCollection](CollectionNames.ArrivalMovementCollection).find(selector, None).one[Arrival]
+          }.futureValue
+
+          result.value.state mustEqual State.Submitted
+        }
+      }
     }
 
     "persistToMongo" - {
