@@ -84,7 +84,7 @@ object ArrivalMovementService {
     Reader[NodeSeq, NodeSeq](_ \ "HEAHEA" \ "DocNumHEA5")
       .map(_.text)
       .map {
-        case mrnString if !mrnString.isEmpty => Some(MovementReferenceNumber(mrnString))
+        case mrnString if mrnString.nonEmpty => Some(MovementReferenceNumber(mrnString))
         case _                               => None
       }
 }
