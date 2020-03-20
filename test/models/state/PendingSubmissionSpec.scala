@@ -14,16 +14,23 @@
  * limitations under the License.
  */
 
-package models
+package models.state
 
-import models.request.ArrivalId
-import play.api.libs.json.Json
-import play.api.libs.json.OFormat
+import models.State._
+import models.SubmissionResult
+import org.scalatest.FreeSpec
+import org.scalatest.MustMatchers
 
-case class Arrival(arrivalId: ArrivalId, movementReferenceNumber: String, eoriNumber: String, state: State, messages: Seq[TimeStampedMessageXml])
+class PendingSubmissionSpec extends FreeSpec with MustMatchers {
 
-object Arrival {
+  "Pending Submission must transition" - {
 
-  implicit val formatsArrival: OFormat[Arrival] = Json.format[Arrival]
+    "to Submitted when receiving a Submission Success event" in {
+      PendingSubmission.transition(SubmissionResult.Success) mustEqual Submitted
+    }
 
+    "to Submission Failed when receiving a Submission Failure event" in {
+      PendingSubmission.transition(SubmissionResult.Failure) mustEqual SubmissionFailed
+    }
+  }
 }

@@ -16,14 +16,12 @@
 
 package models
 
-import models.request.ArrivalId
-import play.api.libs.json.Json
-import play.api.libs.json.OFormat
+sealed trait StateAffectingEvent
 
-case class Arrival(arrivalId: ArrivalId, movementReferenceNumber: String, eoriNumber: String, state: State, messages: Seq[TimeStampedMessageXml])
+sealed trait SubmissionResult extends StateAffectingEvent
 
-object Arrival {
+object SubmissionResult {
 
-  implicit val formatsArrival: OFormat[Arrival] = Json.format[Arrival]
-
+  case object Success extends SubmissionResult
+  case object Failure extends SubmissionResult
 }

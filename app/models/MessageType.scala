@@ -16,7 +16,7 @@
 
 package models
 
-sealed trait MessageType
+sealed trait MessageType extends IeMetadata
 
 object MessageType extends Enumerable.Implicits {
 

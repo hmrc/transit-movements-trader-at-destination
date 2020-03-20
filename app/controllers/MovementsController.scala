@@ -22,6 +22,8 @@ import connectors.MessageConnector
 import controllers.actions.IdentifierAction
 import javax.inject.Inject
 import models.MessageType
+import models.State
+import models.SubmissionResult
 import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
@@ -60,11 +62,23 @@ class MovementsController @Inject()(
                   _ =>
                     messageConnector
                       .post(request.body.toString, MessageType.ArrivalNotification, OffsetDateTime.now)
-                      .map {
+                      .flatMap {
                         _ =>
-                          Accepted("Message accepted")
-                          // TODO: This needs to be replaced url to arrival movement resource, for which we need an Arrival Movement number
-                            .withHeaders("Location" -> arrival.arrivalId.index.toString)
+                          val newState = arrival.state.transition(SubmissionResult.Success)
+                          arrivalMovementRepository.setState(arrival.arrivalId, newState).map {
+                            _ =>
+                              Accepted("Message accepted")
+                              // TODO: This needs to be replaced url to arrival movement resource, for which we need an Arrival Movement number
+                                .withHeaders("Location" -> arrival.arrivalId.index.toString)
+                          }
+                      }
+                      .recoverWith {
+                        case _ =>
+                          val newState = arrival.state.transition(SubmissionResult.Failure)
+                          arrivalMovementRepository.setState(arrival.arrivalId, newState).map {
+                            _ =>
+                              InternalServerError
+                          }
                       }
                 }
             }

@@ -19,6 +19,8 @@ package repositories
 import com.google.inject.Inject
 import models.Arrival
 import models.ArrivalMovement
+import models.State
+import models.request.ArrivalId
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
@@ -54,12 +56,16 @@ class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: React
   private def collection: Future[JSONCollection] =
     mongo.database.map(_.collection[JSONCollection](collectionName))
 
-  def insert(arrival: Arrival): Future[Unit] =
+  def insert(arrival: Arrival): Future[Unit] = {
+
+    val mongoId = Json.obj("_id" -> arrival.arrivalId)
+
     collection.flatMap {
       _.insert(false)
-        .one(Json.toJsObject(arrival))
+        .one(Json.toJsObject(arrival) ++ mongoId)
         .map(_ => ())
     }
+  }
 
   @deprecated
   def persistToMongo(arrivalMovement: ArrivalMovement): Future[WriteResult] = {
@@ -79,6 +85,23 @@ class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: React
         .collect[Seq](-1, Cursor.FailOnError())
     }
 
+  def setState(id: ArrivalId, state: State): Future[Unit] = {
+
+    val selector = Json.obj(
+      "_id" -> id
+    )
+
+    val modifier = Json.obj(
+      "$set" -> Json.obj(
+        "state" -> state.toString
+      )
+    )
+
+    collection.flatMap {
+      _.findAndUpdate(selector, modifier)
+        .map(_ => ())
+    }
+  }
 }
 
 sealed trait FailedSavingArrivalMovement
