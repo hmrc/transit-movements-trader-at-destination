@@ -40,6 +40,6 @@ object MovementMessage {
     }
   }
 
-  implicit val formatsTimeStampedMessageXml: OFormat[MovementMessage] =
+  implicit val formatsMovementMessage: OFormat[MovementMessage] =
     Json.format[MovementMessage]
 }
