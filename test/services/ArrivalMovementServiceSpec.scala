@@ -21,8 +21,9 @@ import java.time.LocalTime
 
 import base.SpecBase
 import models.Arrival
+import models.MessageType
+import models.MovementMessage
 import models.State
-import models.TimeStampedMessageXml
 import models.messages.MovementReferenceNumber
 import models.request.ArrivalId
 import org.mockito.Mockito.when
@@ -69,7 +70,7 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
         eoriNumber = eori,
         state = State.PendingSubmission,
         messages = Seq(
-          TimeStampedMessageXml(dateOfPrep, timeOfPrep, movement)
+          MovementMessage(dateOfPrep, timeOfPrep, MessageType.ArrivalNotification, movement)
         )
       )
 

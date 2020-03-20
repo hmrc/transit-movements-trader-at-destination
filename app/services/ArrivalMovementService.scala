@@ -24,7 +24,7 @@ import cats.implicits._
 import com.google.inject.Inject
 import models.Arrival
 import models.MessageType
-import models.TimeStampedMessageXml
+import models.MovementMessage
 import models.messages.MovementReferenceNumber
 import repositories.ArrivalIdRepository
 import utils.Format
@@ -47,7 +47,7 @@ class ArrivalMovementService @Inject()(arrivalIdRepository: ArrivalIdRepository)
     } yield {
       arrivalIdRepository
         .nextId()
-        .map(Arrival(_, mrn.value, eori, PendingSubmission, Seq(TimeStampedMessageXml(date, time, xmlMessage))))
+        .map(Arrival(_, mrn.value, eori, PendingSubmission, Seq(MovementMessage(date, time, MessageType.ArrivalNotification, xmlMessage))))
     }
 }
 
