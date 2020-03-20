@@ -45,7 +45,7 @@ class MessageConnectorSpec
 
             implicit val headerCarrier: HeaderCarrier = hc
 
-            val xMessageType: String = arrivalNotificationRequest.xMessageType.code
+            val xMessageType: String = arrivalNotificationRequest.messageType.toString
             val messageSender = "mdtp-userseori"
             server.stubFor(
               post(urlEqualTo(postUrl))
@@ -64,7 +64,7 @@ class MessageConnectorSpec
                 )
             )
 
-            val result = connector.post("<CC007A>test</CC007A>", arrivalNotificationRequest.xMessageType, localDateTime)
+            val result = connector.post("<CC007A>test</CC007A>", arrivalNotificationRequest.messageType, localDateTime)
 
             whenReady(result) {
               response =>
@@ -80,7 +80,7 @@ class MessageConnectorSpec
 
             implicit val headerCarrier: HeaderCarrier = hc
 
-            val xMessageType: String = arrivalNotificationRequest.xMessageType.code
+            val xMessageType: String = arrivalNotificationRequest.messageType.toString
             val messageSender = "mdtp-userseori"
 
             server.stubFor(
@@ -99,7 +99,7 @@ class MessageConnectorSpec
                 )
             )
 
-            val result = connector.post("<CC007A>test</CC007A>", arrivalNotificationRequest.xMessageType, localDateTime)
+            val result = connector.post("<CC007A>test</CC007A>", arrivalNotificationRequest.messageType, localDateTime)
 
             whenReady(result.failed) {
               response =>

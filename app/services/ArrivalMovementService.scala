@@ -23,9 +23,7 @@ import cats._
 import cats.data._
 import cats.implicits._
 import com.google.inject.Inject
-import models.Arrival
-import models.ArrivalMovement
-import models.TimeStampedMessageXml
+import models.{Arrival, ArrivalMovement, MessageType, TimeStampedMessageXml}
 import models.messages.MovementReferenceNumber
 import repositories.ArrivalIdRepository
 import utils.Format
@@ -40,13 +38,15 @@ class ArrivalMovementService @Inject()(arrivalIdRepository: ArrivalIdRepository)
 
   def makeArrivalMovement(eori: String): Reader[NodeSeq, Option[Future[Arrival]]] =
     for {
-      date       <- dateOfPrepR
-      time       <- timeOfPrepR
-      mrn        <- mrnR
-      xmlMessage <- Reader(identity[NodeSeq])
+      correctRoot <- correctRootNodeR
+      date        <- dateOfPrepR
+      time        <- timeOfPrepR
+      mrn         <- mrnR
+      xmlMessage  <- Reader(identity[NodeSeq])
     } yield {
 
       for {
+        _ <- correctRoot
         d <- date
         t <- time
         m <- mrn.map(_.value)
@@ -60,25 +60,31 @@ class ArrivalMovementService @Inject()(arrivalIdRepository: ArrivalIdRepository)
 
 object ArrivalMovementService {
 
+  def correctRootNodeR: Reader[NodeSeq, Option[Unit]] =
+    Reader[NodeSeq, Option[Unit]] {
+      nodeSeq =>
+        if (nodeSeq.head.label == MessageType.ArrivalNotification.rootNode) Some(()) else None
+    }
+
   val dateOfPrepR: Reader[NodeSeq, Option[LocalDate]] =
-    Reader[NodeSeq, NodeSeq](_ \ "CC007A" \ "DatOfPreMES9")
+    Reader[NodeSeq, NodeSeq](_ \ "DatOfPreMES9")
       .map(_.text)
       .map(Try(_))
       .map(_.map(LocalDate.parse(_, Format.dateFormatter)))
       .map(_.toOption) // TODO: We are not propagating this failure back, do we need to do this?
 
   val timeOfPrepR: Reader[NodeSeq, Option[LocalTime]] =
-    Reader[NodeSeq, NodeSeq](_ \ "CC007A" \ "TimOfPreMES10")
+    Reader[NodeSeq, NodeSeq](_ \ "TimOfPreMES10")
       .map(_.text)
       .map(Try(_))
       .map(_.map(LocalTime.parse(_, Format.timeFormatter)))
       .map(_.toOption) // TODO: We are not propagating this failure back, do we need to do this?
 
   val mrnR: Reader[NodeSeq, Option[MovementReferenceNumber]] =
-    Reader[NodeSeq, NodeSeq](_ \ "CC007A" \ "HEAHEA" \ "DocNumHEA5")
+    Reader[NodeSeq, NodeSeq](_ \ "HEAHEA" \ "DocNumHEA5")
       .map(_.text)
       .map {
-        case mrnString if !mrnString.isEmpty => Some(MovementReferenceNumber(mrnString))
+        case mrnString if mrnString.nonEmpty => Some(MovementReferenceNumber(mrnString))
         case _                               => None
       }
 }

@@ -16,8 +16,12 @@
 
 package controllers
 
+import java.time.OffsetDateTime
+
+import connectors.MessageConnector
 import controllers.actions.IdentifierAction
 import javax.inject.Inject
+import models.MessageType
 import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
@@ -38,7 +42,8 @@ class MovementsController @Inject()(
   arrivalMovementRepository: ArrivalMovementRepository,
   arrivalMovementService: ArrivalMovementService,
   databaseService: DatabaseService,
-  identify: IdentifierAction
+  identify: IdentifierAction,
+  messageConnector: MessageConnector
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
@@ -51,11 +56,16 @@ class MovementsController @Inject()(
         case Some(x) =>
           x.flatMap {
               arrival =>
-                arrivalMovementRepository.insert(arrival) map {
+                arrivalMovementRepository.insert(arrival) flatMap {
                   _ =>
-                    Accepted("Message accepted")
-                    // TODO: This needs to be replaced url to arrival movement resource, for which we need an Arrival Movement number
-                      .withHeaders("Location" -> arrival.arrivalId.index.toString)
+                    messageConnector
+                      .post(request.body.toString, MessageType.ArrivalNotification, OffsetDateTime.now)
+                      .map {
+                        _ =>
+                          Accepted("Message accepted")
+                          // TODO: This needs to be replaced url to arrival movement resource, for which we need an Arrival Movement number
+                            .withHeaders("Location" -> arrival.arrivalId.index.toString)
+                      }
                 }
             }
             .recover {
@@ -64,7 +74,6 @@ class MovementsController @Inject()(
                 InternalServerError
               }
             }
-
       }
   }
 

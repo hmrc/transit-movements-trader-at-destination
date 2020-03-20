@@ -11,6 +11,7 @@ lazy val microservice = Project(appName, file("."))
   .configs(IntegrationTest)
   .settings(inConfig(IntegrationTest)(itSettings): _*)
   .settings(inConfig(IntegrationTest)(scalafmtSettings): _*)
+  .settings(inConfig(Test)(testSettings): _*)
   .settings(
     majorVersion := 0,
     libraryDependencies ++= AppDependencies.compile ++ AppDependencies.test,
@@ -42,7 +43,7 @@ lazy val itSettings = Defaults.itSettings ++ Seq(
     baseDirectory.value / "test" / "generators"
   ),
   unmanagedResourceDirectories := Seq(
-    baseDirectory.value / "it" / "services" / "resources"
+    baseDirectory.value / "it" / "resources"
   ),
   parallelExecution := false,
   fork := true,
@@ -51,6 +52,15 @@ lazy val itSettings = Defaults.itSettings ++ Seq(
     "-Dlogger.resource=it.logback.xml"
   ),
   scalafmtTestOnCompile in ThisBuild := true
+)
+
+lazy val testSettings = Seq(
+  javaOptions ++= Seq(
+    "-Dconfig.resource=test.application.conf"
+  ),
+  unmanagedResourceDirectories := Seq(
+    baseDirectory.value / "test" / "resources"
+  )
 )
 
 dependencyOverrides ++= AppDependencies.overrides

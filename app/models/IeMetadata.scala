@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
-package models.request
+package models
 
-case class XMessageType(code: String)
+abstract class IeMetadata(code: String, val rootNode: String) {
+  override val toString: String = code
+}
