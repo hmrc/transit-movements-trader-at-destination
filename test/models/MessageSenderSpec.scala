@@ -18,12 +18,14 @@ package models
 
 import models.request.ArrivalId
 import org.scalacheck.Arbitrary.arbitrary
+import org.scalatest.EitherValues
 import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers
 import org.scalatest.OptionValues
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
+import play.api.mvc.PathBindable
 
-class MessageSenderSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with OptionValues {
+class MessageSenderSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with OptionValues with EitherValues {
 
   "Message Sender" - {
 
@@ -44,6 +46,29 @@ class MessageSenderSpec extends FreeSpec with MustMatchers with ScalaCheckProper
             MessageSender(value) must not be defined
           }
       }
+    }
+
+    "must convert to string in the correct format" in {
+
+      val messageSender = MessageSender(ArrivalId(123), 1)
+
+      messageSender.toString mustEqual "MDTP-123-1"
+    }
+
+    val pathBindable = implicitly[PathBindable[MessageSender]]
+
+    "must bind from a URL" in {
+
+      val messageSender = MessageSender(ArrivalId(123), 1)
+
+      pathBindable.bind("key", messageSender.toString).right.value mustEqual messageSender
+    }
+
+    "must unbind from a URL" in {
+
+      val messageSender = MessageSender(ArrivalId(123), 1)
+
+      pathBindable.unbind("key", messageSender) mustEqual messageSender.toString
     }
   }
 }

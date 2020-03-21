@@ -17,14 +17,17 @@
 package models
 
 import models.request.ArrivalId
+import play.api.mvc.PathBindable
 
 import scala.util.Try
 
-final case class MessageSender(arrivalId: ArrivalId, version: Int)
+final case class MessageSender(arrivalId: ArrivalId, version: Int) {
+  override val toString = s"MDTP-${arrivalId.index}-$version"
+}
 
 object MessageSender {
 
-  val pattern = "MDTP-(\\d+)-(\\d+)".r.anchored
+  private val pattern = "MDTP-(\\d+)-(\\d+)".r.anchored
 
   def apply(value: String): Option[MessageSender] =
     value match {
@@ -37,4 +40,15 @@ object MessageSender {
         }).toOption
       case _ => None
     }
+
+  implicit lazy val pathBindable: PathBindable[MessageSender] = new PathBindable[MessageSender] {
+    override def bind(key: String, value: String): Either[String, MessageSender] =
+      apply(value) match {
+        case Some(messageSender) => Right(messageSender)
+        case None                => Left("Invalid message sender")
+      }
+
+    override def unbind(key: String, value: MessageSender): String =
+      value.toString
+  }
 }

@@ -1,4 +1,4 @@
-import sbt.Def
+import play.sbt.routes.RoutesKeys
 import uk.gov.hmrc.SbtArtifactory
 import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin.publishingSettings
 import scoverage.ScoverageKeys
@@ -25,6 +25,9 @@ lazy val microservice = Project(appName, file("."))
   .settings(
     scalacOptions += "-Ypartial-unification"
   )
+  .settings(RoutesKeys.routesImport ++= Seq(
+    "models._"
+  ))
 
 lazy val scoverageSettings = {
   Seq(
