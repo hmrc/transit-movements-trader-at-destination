@@ -16,22 +16,46 @@
 
 package controllers
 
+import controllers.actions.ArrivalRetrievalActionProvider
 import javax.inject.Inject
+import models.MessageReceived
 import models.MessageSender
 import play.api.mvc.Action
-import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
+import repositories.ArrivalMovementRepository
+import services.ArrivalMovementService
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.util.Failure
+import scala.util.Success
+import scala.xml.NodeSeq
 
 class GoodsReleasedController @Inject()(
-  cc: ControllerComponents
+  cc: ControllerComponents,
+  arrivalMovementService: ArrivalMovementService,
+  getArrival: ArrivalRetrievalActionProvider,
+  arrivalMovementRepository: ArrivalMovementRepository
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
-  def post(messageSender: MessageSender): Action[AnyContent] = Action {
+  def post(messageSender: MessageSender): Action[NodeSeq] = getArrival(messageSender.arrivalId)(parse.xml).async {
     implicit request =>
-      ???
+      request.arrival match {
+        case Some(arrival) =>
+          arrivalMovementService.makeGoodsReleasedMessage()(request.request.body) match {
+            case Some(message) =>
+              val newState = arrival.state.transition(MessageReceived.GoodsReleased)
+              arrivalMovementRepository.addMessage(arrival.arrivalId, message, newState).map {
+                case Success(_) => Ok
+                case Failure(_) => InternalServerError
+              }
+            case None =>
+              Future.successful(InternalServerError)
+          }
+        case _ =>
+          Future.successful(NotFound)
+      }
   }
 }

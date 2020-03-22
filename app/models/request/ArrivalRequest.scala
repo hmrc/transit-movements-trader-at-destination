@@ -14,21 +14,10 @@
  * limitations under the License.
  */
 
-package models
+package models.request
 
-sealed trait StateAffectingEvent
+import models.Arrival
+import play.api.mvc.Request
+import play.api.mvc.WrappedRequest
 
-sealed trait SubmissionResult extends StateAffectingEvent
-
-object SubmissionResult {
-
-  case object Success extends SubmissionResult
-  case object Failure extends SubmissionResult
-}
-
-sealed trait MessageReceived extends StateAffectingEvent
-
-object MessageReceived {
-
-  case object GoodsReleased extends MessageReceived
-}
+case class ArrivalRequest[A](request: Request[A], arrival: Option[Arrival]) extends WrappedRequest[A](request)

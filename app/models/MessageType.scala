@@ -31,8 +31,9 @@ sealed trait MessageType extends IeMetadata {
 object MessageType extends Enumerable.Implicits {
 
   case object ArrivalNotification extends IeMetadata("IE007", "CC007A") with MessageType
+  case object GoodsReleased       extends IeMetadata("IE025", "CC025A") with MessageType
 
-  val values: Seq[MessageType] = Seq(ArrivalNotification)
+  val values: Seq[MessageType] = Seq(ArrivalNotification, GoodsReleased)
 
   implicit val enumerable: Enumerable[MessageType] =
     Enumerable(values.map(v => v.code -> v): _*)

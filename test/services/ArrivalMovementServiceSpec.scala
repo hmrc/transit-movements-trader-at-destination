@@ -102,6 +102,49 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
     }
   }
 
+  "makeGoodsReleasedMessage" - {
+
+    "returns a Goods Released message" in {
+
+      val dateOfPrep = LocalDate.now()
+      val timeOfPrep = LocalTime.of(1, 1)
+
+      val application = baseApplicationBuilder.build()
+
+      val service = application.injector.instanceOf[ArrivalMovementService]
+
+      val movement =
+        <CC025A>
+          <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+          <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+        </CC025A>
+
+      val expectedMessage = MovementMessage(dateOfPrep, timeOfPrep, MessageType.GoodsReleased, movement)
+
+      service.makeGoodsReleasedMessage()(movement).value mustEqual expectedMessage
+    }
+
+    "returns None when the root node is not <CC025A>" in {
+
+      val dateOfPrep = LocalDate.now()
+      val timeOfPrep = LocalTime.of(1, 1)
+
+      val application = baseApplicationBuilder.build()
+
+      val service = application.injector.instanceOf[ArrivalMovementService]
+
+      val movement =
+        <Foo>
+          <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+          <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+        </Foo>
+
+      val expectedMessage = MovementMessage(dateOfPrep, timeOfPrep, MessageType.GoodsReleased, movement)
+
+      service.makeGoodsReleasedMessage()(movement) must not be defined
+    }
+  }
+
   "dateOfPrepR" - {
     "returns the date from the DatOfPreMES9 node" in {
       val dateOfPrep: LocalDate = LocalDate.now()
@@ -158,8 +201,8 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
 
       val movement =
         <CC007A>
-            <TimOfPreMES10>{Format.timeFormatted(timeOfPrep) ++ "a"}</TimOfPreMES10>
-          </CC007A>
+          <TimOfPreMES10>{Format.timeFormatted(timeOfPrep) ++ "a"}</TimOfPreMES10>
+        </CC007A>
 
       ArrivalMovementService.timeOfPrepR(movement) must not be (defined)
 
@@ -170,7 +213,7 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
 
       val movement =
         <CC007A>
-          </CC007A>
+        </CC007A>
 
       ArrivalMovementService.timeOfPrepR(movement) must not be (defined)
 
@@ -184,10 +227,10 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
 
       val movement =
         <CC007A>
-            <HEAHEA>
-              <DocNumHEA5>{mrn.value}</DocNumHEA5>
-            </HEAHEA>
-          </CC007A>
+          <HEAHEA>
+            <DocNumHEA5>{mrn.value}</DocNumHEA5>
+          </HEAHEA>
+        </CC007A>
 
       ArrivalMovementService.mrnR(movement).value mustEqual mrn
 
@@ -198,9 +241,9 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
 
       val movement =
         <CC007A>
-            <HEAHEA>
-            </HEAHEA>
-          </CC007A>
+          <HEAHEA>
+          </HEAHEA>
+        </CC007A>
 
       ArrivalMovementService.mrnR(movement) must not be (defined)
 
@@ -209,19 +252,20 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
   }
 
   "correctRootNodeR" - {
-    "returns true if the root node is <CC007A>" in {
+    "returns true if the root node is as expected" in {
+
       val movement =
         <CC007A></CC007A>
 
-      ArrivalMovementService.correctRootNodeR(movement) mustBe (defined)
+      ArrivalMovementService.correctRootNodeR(MessageType.ArrivalNotification)(movement) mustBe (defined)
     }
 
-    "returns false if the root node is not <CC007A>" in {
+    "returns false if the root node is not as expected" in {
 
       val movement =
         <Foo></Foo>
 
-      ArrivalMovementService.correctRootNodeR(movement) must not be defined
+      ArrivalMovementService.correctRootNodeR(MessageType.ArrivalNotification)(movement) must not be defined
     }
   }
 

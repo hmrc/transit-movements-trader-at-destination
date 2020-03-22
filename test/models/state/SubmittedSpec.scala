@@ -14,21 +14,19 @@
  * limitations under the License.
  */
 
-package models
+package models.state
 
-sealed trait StateAffectingEvent
+import models.State._
+import models.MessageReceived
+import org.scalatest.FreeSpec
+import org.scalatest.MustMatchers
 
-sealed trait SubmissionResult extends StateAffectingEvent
+class SubmittedSpec extends FreeSpec with MustMatchers {
 
-object SubmissionResult {
+  "Submitted must transition" - {
 
-  case object Success extends SubmissionResult
-  case object Failure extends SubmissionResult
-}
-
-sealed trait MessageReceived extends StateAffectingEvent
-
-object MessageReceived {
-
-  case object GoodsReleased extends MessageReceived
+    "to GoodsReceived when receiving a Goods Received event" in {
+      Submitted.transition(MessageReceived.GoodsReleased) mustEqual GoodsReleased
+    }
+  }
 }
