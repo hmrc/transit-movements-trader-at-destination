@@ -86,7 +86,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
               </HEAHEA>
             </CC007A>
 
-          val request = FakeRequest(POST, routes.MovementsController.createMovement().url).withXmlBody(requestXmlBody)
+          val request = FakeRequest(POST, routes.MovementsController.createMovement().url).withBody(requestXmlBody.toString())
 
           val result = route(application, request).value
 
