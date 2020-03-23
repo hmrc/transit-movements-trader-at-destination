@@ -35,6 +35,7 @@ import repositories.ArrivalMovementRepository
 import utils.Format
 
 import scala.concurrent.Future
+import scala.util.Failure
 import scala.util.Success
 
 class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks with ModelGenerators {
@@ -172,7 +173,7 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
       )
 
       when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
-      when(mockArrivalMovementRepository.addMessage(any(), any(), any())).thenReturn(Future.failed(new Exception()))
+      when(mockArrivalMovementRepository.addMessage(any(), any(), any())).thenReturn(Future.successful(Failure(new Exception())))
 
       val application = baseApplicationBuilder
         .overrides(

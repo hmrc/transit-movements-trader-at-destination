@@ -50,7 +50,7 @@ class ArrivalRetrievalActionSpec extends FreeSpec with MustMatchers with Mockito
 
     def onPageLoad(): Action[AnyContent] = retrievalAction {
       request =>
-        Results.Ok(request.arrival.isDefined.toString)
+        Results.Ok(request.arrival.arrivalId.toString)
     }
   }
 
@@ -77,10 +77,10 @@ class ArrivalRetrievalActionSpec extends FreeSpec with MustMatchers with Mockito
       val result     = controller.onPageLoad()(fakeRequest)
 
       status(result) mustEqual OK
-      contentAsString(result) mustEqual "true"
+      contentAsString(result) mustEqual arrival.arrivalId.toString
     }
 
-    "must succeed but not retrieve a movement when one does not exist" in {
+    "must return NotFound when one does not exist" in {
 
       val arrival = arbitrary[Arrival].sample.value
 
@@ -100,8 +100,7 @@ class ArrivalRetrievalActionSpec extends FreeSpec with MustMatchers with Mockito
       val controller = new Harness(action)
       val result     = controller.onPageLoad()(fakeRequest)
 
-      status(result) mustEqual OK
-      contentAsString(result) mustEqual "false"
+      status(result) mustEqual NOT_FOUND
     }
   }
 }
