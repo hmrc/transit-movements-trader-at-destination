@@ -21,6 +21,7 @@ import models.request.ArrivalId
 import models.request.ArrivalRequest
 import play.api.mvc.ActionFunction
 import play.api.mvc._
+import play.api.mvc.Results.NotFound
 import repositories.ArrivalMovementRepository
 
 import scala.concurrent.ExecutionContext
@@ -47,7 +48,9 @@ class ArrivalRetrievalAction(
 
   override def invokeBlock[A](request: Request[A], block: ArrivalRequest[A] => Future[Result]): Future[Result] =
     repository.get(arrivalId).flatMap {
-      arrival =>
+      case Some(arrival) =>
         block(ArrivalRequest(request, arrival))
+      case None =>
+        Future.successful(NotFound)
     }
 }

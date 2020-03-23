@@ -20,4 +20,4 @@ import models.Arrival
 import play.api.mvc.Request
 import play.api.mvc.WrappedRequest
 
-case class ArrivalRequest[A](request: Request[A], arrival: Option[Arrival]) extends WrappedRequest[A](request)
+case class ArrivalRequest[A](request: Request[A], arrival: Arrival) extends WrappedRequest[A](request)
