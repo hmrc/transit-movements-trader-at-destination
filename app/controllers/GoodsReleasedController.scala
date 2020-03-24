@@ -23,6 +23,7 @@ import models.MessageSender
 import play.api.mvc.Action
 import play.api.mvc.ControllerComponents
 import repositories.ArrivalMovementRepository
+import repositories.LockRepository
 import services.ArrivalMovementService
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
@@ -36,21 +37,36 @@ class GoodsReleasedController @Inject()(
   cc: ControllerComponents,
   arrivalMovementService: ArrivalMovementService,
   getArrival: ArrivalRetrievalActionProvider,
-  arrivalMovementRepository: ArrivalMovementRepository
+  arrivalMovementRepository: ArrivalMovementRepository,
+  lockRepository: LockRepository
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
   def post(messageSender: MessageSender): Action[NodeSeq] = getArrival(messageSender.arrivalId)(parse.xml).async {
     implicit request =>
-      arrivalMovementService.makeGoodsReleasedMessage()(request.request.body) match {
-        case Some(message) =>
-          val newState = request.arrival.state.transition(MessageReceived.GoodsReleased)
-          arrivalMovementRepository.addMessage(request.arrival.arrivalId, message, newState).map {
-            case Success(_) => Ok
-            case Failure(_) => InternalServerError
+      lockRepository.lock(messageSender.arrivalId).flatMap {
+        case true =>
+          arrivalMovementService.makeGoodsReleasedMessage()(request.request.body) match {
+            case Some(message) =>
+              val newState = request.arrival.state.transition(MessageReceived.GoodsReleased)
+              arrivalMovementRepository.addMessage(request.arrival.arrivalId, message, newState).flatMap {
+                messageAdded =>
+                  lockRepository.unlock(request.arrival.arrivalId).map {
+                    _ =>
+                      messageAdded match {
+                        case Success(_) => Ok
+                        case Failure(_) => InternalServerError
+                      }
+                  }
+              }
+            case None =>
+              lockRepository.unlock(request.arrival.arrivalId).map {
+                _ =>
+                  InternalServerError
+              }
           }
-        case None =>
-          Future.successful(InternalServerError)
+        case false =>
+          Future.successful(Locked)
       }
   }
 }
