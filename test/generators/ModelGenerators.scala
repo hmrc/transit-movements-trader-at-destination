@@ -102,11 +102,6 @@ trait ModelGenerators {
       } yield MovementReferenceNumber(year ++ country.mkString ++ serial.mkString)
     }
 
-  implicit lazy val arbitraryProcedureType: Arbitrary[ProcedureType] =
-    Arbitrary {
-      Gen.oneOf(ProcedureType.Normal, ProcedureType.Simplified)
-    }
-
   implicit lazy val arbitraryTraderWithEori: Arbitrary[TraderWithEori] =
     Arbitrary {
 

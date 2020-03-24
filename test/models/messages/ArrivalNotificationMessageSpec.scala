@@ -24,6 +24,7 @@ import org.scalatest.MustMatchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.libs.json.JsError
 import play.api.libs.json.JsObject
+import play.api.libs.json.JsString
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.Json
 
@@ -46,7 +47,7 @@ class ArrivalNotificationMessageSpec extends FreeSpec with MustMatchers with Sca
         normalNotification =>
           val jsonWithSimplified = {
             createNormalNotificationJson(normalNotification) ++
-              Json.obj("procedure" -> Json.toJson(ProcedureType.Simplified))
+              Json.obj("procedure" -> JsString("simplified"))
           }
 
           jsonWithSimplified.validate[NormalNotificationMessage] mustEqual JsError("procedure must be `normal`")
@@ -80,7 +81,7 @@ class ArrivalNotificationMessageSpec extends FreeSpec with MustMatchers with Sca
         simplifiedNotification =>
           val jsonWithNormal = {
             createSimplifiedNotificationJson(simplifiedNotification) ++
-              Json.obj("procedure" -> Json.toJson(ProcedureType.Normal))
+              Json.obj("procedure" -> JsString("normal"))
           }
 
           jsonWithNormal.validate[SimplifiedNotificationMessage] mustEqual JsError("procedure must be `simplified`")
@@ -138,7 +139,7 @@ class ArrivalNotificationMessageSpec extends FreeSpec with MustMatchers with Sca
 
   private def createNormalNotificationJson(notification: NormalNotificationMessage): JsObject =
     Json.obj(
-      "procedure"               -> notification.procedure,
+      "procedure"               -> "normal",
       "movementReferenceNumber" -> notification.movementReferenceNumber,
       "notificationPlace"       -> notification.notificationPlace,
       "notificationDate"        -> notification.notificationDate

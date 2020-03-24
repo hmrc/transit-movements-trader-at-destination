@@ -16,20 +16,10 @@
 
 package models.messages
 
-import helpers.XmlBuilderHelper
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
 
-import scala.xml.Node
-
-case class Container(containerNumber: String) extends XmlBuilderHelper {
-
-  def toXml: Node =
-    <CONNR3>
-      {buildAndEncodeElem(containerNumber, "ConNumNR31")}
-    </CONNR3>
-
-}
+case class Container(containerNumber: String)
 
 object Container {
 

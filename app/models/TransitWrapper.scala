@@ -16,11 +16,10 @@
 
 package models
 
-import helpers.XmlBuilderHelper
-
+import scala.xml.Elem
 import scala.xml.Node
 
-object TransitWrapper extends XmlBuilderHelper {
+object TransitWrapper {
 
   def toXml(xml: Node): Node = {
 
@@ -31,6 +30,13 @@ object TransitWrapper extends XmlBuilderHelper {
         </transitRequest>
     }
 
-    addChildrenToRoot(transitWrapperNode, xml)
+    Elem(
+      transitWrapperNode.prefix,
+      transitWrapperNode.label,
+      transitWrapperNode.attributes,
+      transitWrapperNode.scope,
+      transitWrapperNode.child.isEmpty,
+      transitWrapperNode.child ++ xml: _*
+    )
   }
 }

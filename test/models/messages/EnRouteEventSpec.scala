@@ -18,7 +18,6 @@ package models.messages
 
 import generators.ModelGenerators
 import models.behaviours.JsonBehaviours
-import models.request.LanguageCodeEnglish
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers
@@ -26,9 +25,6 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.libs.json.JsObject
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.Json
-
-import scala.xml.Utility.trim
-import scala.xml.XML.loadString
 
 class EnRouteEventSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with ModelGenerators with JsonBehaviours {
 

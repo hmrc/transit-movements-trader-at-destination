@@ -27,8 +27,6 @@ class Module extends AbstractModule {
 
   override def configure(): Unit = {
 
-    bind(classOf[DateTimeService]).to(classOf[DateTimeServiceImpl]).asEagerSingleton()
-
     bind(classOf[MessageConnector]).to(classOf[MessageConnectorImpl]).asEagerSingleton()
 
     bind(classOf[DatabaseService]).to(classOf[DatabaseServiceImpl]).asEagerSingleton()

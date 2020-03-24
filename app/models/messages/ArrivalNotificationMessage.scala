@@ -54,10 +54,7 @@ final case class NormalNotificationMessage(
   trader: Trader,
   presentationOffice: String,
   enRouteEvents: Option[Seq[EnRouteEvent]]
-) extends ArrivalNotificationMessage {
-
-  val procedure: ProcedureType = ProcedureType.Normal
-}
+) extends ArrivalNotificationMessage
 
 object NormalNotificationMessage {
 
@@ -76,7 +73,7 @@ object NormalNotificationMessage {
       .read[String]
       .flatMap[String] {
         p =>
-          if (p == ProcedureType.Normal.toString) {
+          if (p == "normal") {
             Reads(_ => JsSuccess(p))
           } else {
             Reads(_ => JsError("procedure must be `normal`"))
@@ -100,7 +97,7 @@ object NormalNotificationMessage {
       notification =>
         Json
           .obj(
-            "procedure"               -> Json.toJson(notification.procedure),
+            "procedure"               -> JsString("normal"),
             "movementReferenceNumber" -> notification.movementReferenceNumber,
             "notificationPlace"       -> notification.notificationPlace,
             "notificationDate"        -> notification.notificationDate,
@@ -123,7 +120,7 @@ final case class SimplifiedNotificationMessage(
   enRouteEvents: Option[Seq[EnRouteEvent]]
 ) extends ArrivalNotificationMessage {
 
-  val procedure: ProcedureType = ProcedureType.Simplified
+  val procedure = "simplified"
 }
 
 object SimplifiedNotificationMessage {
@@ -143,7 +140,7 @@ object SimplifiedNotificationMessage {
       .read[String]
       .flatMap[String] {
         p =>
-          if (p == ProcedureType.Simplified.toString) {
+          if (p == "simplified") {
             Reads(_ => JsSuccess(p))
           } else {
             Reads(_ => JsError("procedure must be `simplified`"))

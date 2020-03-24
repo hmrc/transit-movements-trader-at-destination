@@ -17,22 +17,15 @@
 package models.messages
 
 import generators.ModelGenerators
+import models.RichJsObject
 import models.behaviours.JsonBehaviours
-import models.request.LanguageCodeEnglish
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers
-import org.scalatest.OptionValues._
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.libs.json.JsObject
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.Json
-import utils.Format
-
-import scala.xml.NodeSeq
-import scala.xml.Utility.trim
-import scala.xml.XML.loadString
-import models.RichJsObject
 
 class EventDetailsSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with ModelGenerators with JsonBehaviours {
 

@@ -18,11 +18,8 @@ package models.messages
 
 import java.time.LocalDate
 
-import helpers.XmlBuilderHelper
 import models._
 import play.api.libs.json._
-
-import scala.xml.Node
 
 sealed trait EventDetails
 
@@ -61,7 +58,7 @@ final case class Incident(
   authority: Option[String],
   place: Option[String],
   country: Option[String]
-) extends EventDetails {}
+) extends EventDetails
 
 object Incident {
 
@@ -106,8 +103,7 @@ final case class VehicularTranshipment(
   place: Option[String],
   country: Option[String],
   containers: Option[Seq[Container]]
-) extends XmlBuilderHelper
-    with Transhipment {}
+) extends Transhipment
 
 object VehicularTranshipment {
 

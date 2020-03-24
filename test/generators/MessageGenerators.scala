@@ -126,18 +126,6 @@ trait MessageGenerators extends ModelGenerators {
       } yield models.messages.GoodsReleaseNotificationMessage(mrn, releaseDate, trader, presentationOffice)
     }
 
-  implicit lazy val arbitraryArrivalNotificationRejection: Arbitrary[ArrivalNotificationRejectionMessage] =
-    Arbitrary {
-
-      for {
-        mrn    <- arbitrary[MovementReferenceNumber].map(_.toString())
-        date   <- datesBetween(pastDate, dateNow)
-        action <- arbitrary[Option[String]]
-        reason <- arbitrary[Option[String]]
-        errors <- arbitrary[Seq[RejectionError]]
-      } yield ArrivalNotificationRejectionMessage(mrn, date, action, reason, errors)
-    }
-
   implicit lazy val arbitraryNormalNotification: Arbitrary[NormalNotificationMessage] =
     Arbitrary {
 
@@ -171,13 +159,4 @@ trait MessageGenerators extends ModelGenerators {
 
       Gen.oneOf(arbitrary[NormalNotificationMessage], arbitrary[SimplifiedNotificationMessage])
     }
-
-  implicit lazy val arbitraryProcedureTypeFlag: Arbitrary[ProcedureTypeFlag] = {
-    Arbitrary {
-      for {
-        procedureType <- Gen.oneOf(Seq(SimplifiedProcedureFlag, NormalProcedureFlag))
-      } yield procedureType
-    }
-  }
-
 }
