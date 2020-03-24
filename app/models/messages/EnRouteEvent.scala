@@ -16,52 +16,10 @@
 
 package models.messages
 
-import helpers.XmlBuilderHelper
 import models._
-import models.request.LanguageCodeEnglish
 import play.api.libs.json._
 
-import scala.xml.Node
-import scala.xml.NodeSeq
-
 final case class EnRouteEvent(place: String, countryCode: String, alreadyInNcts: Boolean, eventDetails: Option[EventDetails], seals: Option[Seq[Seal]])
-    extends XmlBuilderHelper {
-
-  def toXml: Node = {
-
-    val buildSealsXml = seals match {
-      case Some(seals) => {
-        <SEAINFSF1>
-        {
-          buildAndEncodeElem(seals.size.toString, "SeaNumSF12") ++
-          seals.map(_.toXml)
-        }
-        </SEAINFSF1>
-      }
-      case _ => NodeSeq.Empty
-    }
-
-    <ENROUEVETEV>
-      {
-        buildAndEncodeElem(place,"PlaTEV10") ++
-        buildAndEncodeElem(LanguageCodeEnglish.code,"PlaTEV10LNG") ++
-        buildAndEncodeElem(countryCode,"CouTEV13")
-      }
-      <CTLCTL>
-        {
-        buildAndEncodeElem(alreadyInNcts,"AlrInNCTCTL29")
-        }
-      </CTLCTL>
-      {
-        eventDetails.map {
-          case incident: Incident                           => incident.toXml ++ buildSealsXml
-          case containerTranshipment: ContainerTranshipment => buildSealsXml ++ containerTranshipment.toXml
-          case vehicularTranshipment: VehicularTranshipment => buildSealsXml ++ vehicularTranshipment.toXml
-        }.getOrElse(NodeSeq.Empty)
-      }
-    </ENROUEVETEV>
-  }
-}
 
 object EnRouteEvent {
 

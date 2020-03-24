@@ -18,7 +18,6 @@ package services
 
 import javax.inject.Inject
 import models.ArrivalMovement
-import models.request.InterchangeControlReference
 import models.request.InternalReferenceId
 import reactivemongo.api.commands.WriteResult
 import repositories._
@@ -26,22 +25,8 @@ import repositories._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class DatabaseServiceImpl @Inject()(sequentialInterchangeControlReferenceIdRepository: SequentialInterchangeControlReferenceIdRepository,
-                                    movementReferenceIdRepository: InternalReferenceIdRepository,
-                                    arrivalMovementRepository: ArrivalMovementRepository)
+class DatabaseServiceImpl @Inject()(movementReferenceIdRepository: InternalReferenceIdRepository, arrivalMovementRepository: ArrivalMovementRepository)
     extends DatabaseService {
-
-  def getInterchangeControlReferenceId: Future[Either[FailedCreatingInterchangeControlReference, InterchangeControlReference]] =
-    sequentialInterchangeControlReferenceIdRepository
-      .nextInterchangeControlReferenceId()
-      .map {
-        reference =>
-          Right(reference)
-      }
-      .recover {
-        case _ =>
-          Left(FailedCreatingInterchangeControlReference)
-      }
 
   def getInternalReferenceId: Future[Either[FailedCreatingNextInternalReferenceId, InternalReferenceId]] =
     movementReferenceIdRepository
@@ -69,7 +54,6 @@ class DatabaseServiceImpl @Inject()(sequentialInterchangeControlReferenceIdRepos
 }
 
 trait DatabaseService {
-  def getInterchangeControlReferenceId: Future[Either[FailedCreatingInterchangeControlReference, InterchangeControlReference]]
   def getInternalReferenceId: Future[Either[FailedCreatingNextInternalReferenceId, InternalReferenceId]]
   def saveArrivalMovement(arrivalMovement: ArrivalMovement): Future[Either[FailedSavingArrivalMovement, WriteResult]]
 }

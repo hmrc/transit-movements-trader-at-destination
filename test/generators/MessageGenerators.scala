@@ -115,15 +115,6 @@ trait MessageGenerators extends ModelGenerators {
     }
   }
 
-  implicit lazy val arbitraryCustomsOfficeOfPresentation: Arbitrary[CustomsOfficeOfPresentation] = {
-    Arbitrary {
-
-      for {
-        presentationOffice <- stringsWithMaxLength(CustomsOfficeOfPresentation.Constants.presentationOfficeLength)
-      } yield CustomsOfficeOfPresentation(presentationOffice)
-    }
-  }
-
   implicit lazy val arbitraryGoodsReleaseNotification: Arbitrary[GoodsReleaseNotificationMessage] =
     Arbitrary {
 
@@ -181,66 +172,6 @@ trait MessageGenerators extends ModelGenerators {
       Gen.oneOf(arbitrary[NormalNotificationMessage], arbitrary[SimplifiedNotificationMessage])
     }
 
-  implicit lazy val arbitraryTraderDestination: Arbitrary[TraderDestination] = {
-    Arbitrary {
-
-      for {
-        name            <- Gen.option(stringsWithMaxLength(TraderDestination.Constants.nameLength))
-        streetAndNumber <- Gen.option(stringsWithMaxLength(TraderDestination.Constants.streetAndNumberLength))
-        postCode        <- Gen.option(stringsWithMaxLength(TraderDestination.Constants.postCodeLength))
-        city            <- Gen.option(stringsWithMaxLength(TraderDestination.Constants.cityLength))
-        countryCode     <- Gen.option(stringsWithMaxLength(TraderDestination.Constants.countryCodeLength))
-        eori            <- Gen.option(stringsWithMaxLength(TraderDestination.Constants.eoriLength))
-      } yield TraderDestination(name, streetAndNumber, postCode, city, countryCode, eori)
-
-    }
-  }
-
-  implicit lazy val arbitraryMessageSender: Arbitrary[MessageSender] = {
-    Arbitrary {
-      for {
-        environment <- arbitrary[String]
-        eori        <- arbitrary[String]
-      } yield MessageSender(environment, eori)
-    }
-  }
-
-  implicit lazy val arbitraryInterchangeControlReference: Arbitrary[InterchangeControlReference] = {
-    Arbitrary {
-      for {
-        dateTime <- arbitrary[String]
-        index    <- arbitrary[Int]
-      } yield InterchangeControlReference(dateTime, index)
-    }
-  }
-
-  implicit lazy val arbitraryMeta: Arbitrary[Meta] = {
-    Arbitrary {
-      for {
-        messageSender               <- arbitrary[MessageSender]
-        interchangeControlReference <- arbitrary[InterchangeControlReference]
-        date                        <- arbitrary[LocalDate]
-        time                        <- arbitrary[LocalTime]
-      } yield
-        request.Meta(
-          messageSender,
-          interchangeControlReference,
-          date,
-          time,
-          None,
-          None,
-          None,
-          None,
-          None,
-          None,
-          None,
-          None,
-          None,
-          None
-        )
-    }
-  }
-
   implicit lazy val arbitraryProcedureTypeFlag: Arbitrary[ProcedureTypeFlag] = {
     Arbitrary {
       for {
@@ -248,74 +179,5 @@ trait MessageGenerators extends ModelGenerators {
       } yield procedureType
     }
   }
-
-  implicit lazy val arbitraryHeader: Arbitrary[Header] = {
-    Arbitrary {
-      for {
-        movementReferenceNumber  <- arbitrary[MovementReferenceNumber].map(_.toString())
-        customsSubPlace          <- Gen.option(stringsWithMaxLength(Header.Constants.customsSubPlaceLength))
-        arrivalNotificationPlace <- stringsWithMaxLength(Header.Constants.arrivalNotificationPlaceLength)
-        procedureTypeFlag        <- arbitrary[ProcedureTypeFlag]
-        notificationDate         <- arbitrary[LocalDate]
-      } yield Header(movementReferenceNumber, customsSubPlace, arrivalNotificationPlace, None, procedureTypeFlag, notificationDate)
-    }
-  }
-
-  implicit lazy val arbitraryArrivalNotificationRequest: Arbitrary[ArrivalNotificationRequest] = {
-    Arbitrary {
-      for {
-        meta              <- arbitrary[Meta]
-        header            <- arbitrary[Header].map(_.copy(notificationDate = meta.dateOfPreparation))
-        traderDestination <- arbitrary[TraderDestination]
-        customsOffice     <- arbitrary[CustomsOfficeOfPresentation]
-        enRouteEvents     <- Gen.option(listWithMaxLength[EnRouteEvent](2))
-      } yield request.ArrivalNotificationRequest(meta, header, traderDestination, customsOffice, enRouteEvents)
-    }
-  }
-
-  val arbitraryArrivalNotificationRequestWithEori: Gen[ArrivalNotificationRequest] = {
-    for {
-      arrivalNotificationRequest <- arbitraryArrivalNotificationRequest.arbitrary
-      traderWithEori             <- arbitrary[TraderWithEori]
-
-    } yield {
-
-      val newHeader = arrivalNotificationRequest.header.copy(procedureTypeFlag = NormalProcedureFlag)
-
-      arrivalNotificationRequest
-        .copy(header = newHeader)
-        .copy(
-          traderDestination = TraderDestination(
-            traderWithEori.name,
-            traderWithEori.streetAndNumber,
-            traderWithEori.postCode,
-            traderWithEori.city,
-            traderWithEori.countryCode,
-            Some(traderWithEori.eori)
-          ))
-    }
-  }
-
-  val arbitraryArrivalNotificationRequestWithoutEori: Gen[ArrivalNotificationRequest] = {
-    for {
-      arrivalNotificationRequest <- arbitraryArrivalNotificationRequestWithEori
-      traderWithEori             <- arbitrary[TraderWithoutEori]
-    } yield {
-
-      arrivalNotificationRequest.copy(traderDestination = {
-        TraderDestination(
-          Some(traderWithEori.name),
-          Some(traderWithEori.streetAndNumber),
-          Some(traderWithEori.postCode),
-          Some(traderWithEori.city),
-          Some(traderWithEori.countryCode),
-          None
-        )
-      })
-
-    }
-  }
-
-  val arbitraryEoriNumber: Gen[String] = stringsWithMaxLength(TraderDestination.Constants.eoriLength)
 
 }

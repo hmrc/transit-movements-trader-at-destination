@@ -19,14 +19,13 @@ package services
 import base.SpecBase
 import generators.MessageGenerators
 import models.ArrivalMovement
-import models.request.InterchangeControlReference
 import models.request.InternalReferenceId
 import org.mockito.Mockito._
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers
+import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import repositories._
@@ -43,48 +42,21 @@ class DatabaseServiceSpec
     with SpecBase
     with BeforeAndAfterEach {
 
-  private val mockRepository                  = mock[SequentialInterchangeControlReferenceIdRepository]
   private val mockInternalReferenceRepository = mock[InternalReferenceIdRepository]
   private val mockArrivalMovementRepository   = mock[ArrivalMovementRepository]
 
   val service = new DatabaseServiceImpl(
-    mockRepository,
     mockInternalReferenceRepository,
     mockArrivalMovementRepository
   )
 
   override protected def beforeEach(): Unit = {
     super.beforeEach()
-    reset(mockRepository)
     reset(mockInternalReferenceRepository)
     reset(mockArrivalMovementRepository)
   }
 
   "DatabaseService" - {
-
-    "getInterchangeControlReferenceId" - {
-
-      "must return InterchangeControlReference when successful" in {
-
-        when(mockRepository.nextInterchangeControlReferenceId())
-          .thenReturn(Future.successful(InterchangeControlReference("date", 1)))
-
-        val response = service.getInterchangeControlReferenceId.futureValue
-
-        response mustBe Right(InterchangeControlReference("date", 1))
-      }
-
-      "must return FailedCreatingInterchangeControlReference when failed" in {
-
-        when(mockRepository.nextInterchangeControlReferenceId())
-          .thenReturn(Future.failed(new RuntimeException))
-
-        val response = service.getInterchangeControlReferenceId.futureValue
-
-        response mustBe Left(FailedCreatingInterchangeControlReference)
-      }
-
-    }
 
     "getInternalReferenceId" - {
 

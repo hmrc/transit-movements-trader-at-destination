@@ -20,15 +20,11 @@ import java.time.LocalDate
 
 import helpers.XmlBuilderHelper
 import models._
-import models.request.Header
 import play.api.libs.json._
 
 import scala.xml.Node
-import scala.xml.NodeSeq
 
-sealed trait EventDetails {
-  def toXml: Node
-}
+sealed trait EventDetails
 
 object EventDetails {
 
@@ -65,28 +61,7 @@ final case class Incident(
   authority: Option[String],
   place: Option[String],
   country: Option[String]
-) extends XmlBuilderHelper
-    with EventDetails {
-
-  def toXml: Node =
-    <INCINC>
-    {
-      information.map(
-        information =>
-          buildAndEncodeElem(information, "IncInfINC4")
-      ).getOrElse(
-          <IncFlaINC3>1</IncFlaINC3>
-      ) ++
-      buildAndEncodeElem(Header.Constants.languageCode, "IncInfINC4LNG") ++
-      buildOptionalElem(date, "EndDatINC6") ++
-      buildOptionalElem(authority, "EndAutINC7") ++
-      buildAndEncodeElem(Header.Constants.languageCode, "EndAutINC7LNG") ++
-      buildOptionalElem(place, "EndPlaINC10") ++
-      buildAndEncodeElem(Header.Constants.languageCode, "EndPlaINC10LNG") ++
-      buildOptionalElem(country, "EndCouINC12")
-    }
-    </INCINC>
-}
+) extends EventDetails {}
 
 object Incident {
 
@@ -132,24 +107,7 @@ final case class VehicularTranshipment(
   country: Option[String],
   containers: Option[Seq[Container]]
 ) extends XmlBuilderHelper
-    with Transhipment {
-
-  def toXml: Node =
-    <TRASHP>
-      {
-        buildAndEncodeElem(transportIdentity,"NewTraMeaIdeSHP26") ++
-        buildAndEncodeElem(Header.Constants.languageCode,"NewTraMeaIdeSHP26LNG") ++
-        buildAndEncodeElem(transportCountry,"NewTraMeaNatSHP54") ++
-        buildOptionalElem(date, "EndDatSHP60") ++
-        buildOptionalElem(authority, "EndAutSHP61") ++
-        buildAndEncodeElem(Header.Constants.languageCode, "EndAutSHP61LNG") ++
-        buildOptionalElem(place, "EndPlaSHP63") ++
-        buildAndEncodeElem(Header.Constants.languageCode, "EndPlaSHP63LNG") ++
-        buildOptionalElem(country, "EndCouSHP65") ++
-        containers.fold(NodeSeq.Empty)(_.map(_.toXml))
-      }
-    </TRASHP>
-}
+    with Transhipment {}
 
 object VehicularTranshipment {
 
@@ -196,21 +154,7 @@ final case class ContainerTranshipment(
   place: Option[String],
   country: Option[String],
   containers: Seq[Container]
-) extends XmlBuilderHelper
-    with Transhipment {
-
-  def toXml: Node =
-    <TRASHP> {
-        buildOptionalElem(date, "EndDatSHP60") ++
-        buildOptionalElem(authority, "EndAutSHP61") ++
-        buildAndEncodeElem(Header.Constants.languageCode,"EndAutSHP61LNG") ++
-        buildOptionalElem(place, "EndPlaSHP63") ++
-        buildAndEncodeElem(Header.Constants.languageCode,"EndPlaSHP63LNG") ++
-        buildOptionalElem(country, "EndCouSHP65") ++
-        containers.map(_.toXml)
-      }
-    </TRASHP>
-
+) extends Transhipment {
   require(containers.nonEmpty, "At least one container number must be provided")
 }
 
