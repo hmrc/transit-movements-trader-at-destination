@@ -6,11 +6,10 @@ import java.time.format.DateTimeFormatter
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.matching.StringValuePattern
 import generators.MessageGenerators
-import models.request.ArrivalNotificationRequest
-import org.scalacheck.Arbitrary.arbitrary
+import models.MessageType
 import org.scalacheck.Gen
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
-import org.scalatest.{FreeSpec, MustMatchers}
+import org.scalatest.{FreeSpec, MustMatchers, OptionValues}
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import uk.gov.hmrc.http.HeaderCarrier
@@ -26,7 +25,8 @@ class MessageConnectorSpec
     with IntegrationPatience
     with WiremockSuite
     with ScalaCheckPropertyChecks
-    with MessageGenerators {
+    with MessageGenerators
+    with OptionValues {
 
   import MessageConnectorSpec._
 
@@ -34,18 +34,19 @@ class MessageConnectorSpec
 
   private def connector: MessageConnector = app.injector.instanceOf[MessageConnector]
 
+  implicit val headerCarrier: HeaderCarrier = HeaderCarrier()
+
+  private val messageType: MessageType = Gen.oneOf(MessageType.values).sample.value
+
   "MessageConnector" - {
 
     "post" - {
 
       "return OK when post is successful" in {
 
-        forAll(arbitrary[ArrivalNotificationRequest], genHeaderCarrier) {
-          (arrivalNotificationRequest, hc) =>
 
-            implicit val headerCarrier: HeaderCarrier = hc
 
-            val xMessageType: String = arrivalNotificationRequest.messageType.toString
+        val xMessageType: String = "IE007"
             val messageSender = "mdtp-userseori"
             server.stubFor(
               post(urlEqualTo(postUrl))
@@ -64,23 +65,18 @@ class MessageConnectorSpec
                 )
             )
 
-            val result = connector.post("<CC007A>test</CC007A>", arrivalNotificationRequest.messageType, localDateTime)
+            val result = connector.post("<CC007A>test</CC007A>", messageType, localDateTime)
 
             whenReady(result) {
               response =>
                 response.status mustBe 200
             }
-        }
       }
 
 
       "return an exception when post is unsuccessful" in {
-        forAll(genFailedStatusCodes, arbitrary[ArrivalNotificationRequest], genHeaderCarrier) {
-          (statusCode, arrivalNotificationRequest, hc) =>
 
-            implicit val headerCarrier: HeaderCarrier = hc
-
-            val xMessageType: String = arrivalNotificationRequest.messageType.toString
+            val xMessageType: String = "IE007"
             val messageSender = "mdtp-userseori"
 
             server.stubFor(
@@ -95,17 +91,16 @@ class MessageConnectorSpec
                 //.withHeader("Authorization", equalTo("Bearer bearertokenhere"))
                 .willReturn(
                   aResponse()
-                    .withStatus(statusCode)
+                    .withStatus(genFailedStatusCodes.sample.value)
                 )
             )
 
-            val result = connector.post("<CC007A>test</CC007A>", arrivalNotificationRequest.messageType, localDateTime)
+            val result = connector.post("<CC007A>test</CC007A>", messageType, localDateTime)
 
             whenReady(result.failed) {
               response =>
                 response mustBe an[Exception]
             }
-        }
       }
     }
  }

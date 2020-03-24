@@ -6,9 +6,8 @@ import generators.MessageGenerators
 import models.request.ArrivalId
 import models.{Arrival, ArrivalMovement, MessageType, MovementMessage, State}
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalatest.concurrent.IntegrationPatience
-import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.{EitherValues, FreeSpec, MustMatchers, OptionValues}
+import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
+import org.scalatest.{BeforeAndAfterEach, EitherValues, FreeSpec, MustMatchers, OptionValues}
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -16,9 +15,7 @@ import play.api.libs.json.Json
 import play.api.test.Helpers._
 import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 import reactivemongo.play.json.collection.JSONCollection
-import repositories.ArrivalMovementRepository
-import repositories.CollectionNames
-import services.mocks.MockDateTimeService
+import repositories.{ArrivalMovementRepository, CollectionNames}
 import utils.Format
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -31,7 +28,7 @@ class ArrivalMovementRepositorySpec
     with FailOnUnindexedQueries
     with ScalaFutures
     with IntegrationPatience
-    with MockDateTimeService
+    with BeforeAndAfterEach
     with OptionValues
     with EitherValues
     with ScalaCheckPropertyChecks
