@@ -49,7 +49,7 @@ class MovementsController @Inject()(
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
-  def createMovement: Action[NodeSeq] = identify.async(parse.tolerantXml) {
+  def createMovement: Action[NodeSeq] = identify.async(parse.xml) {
     implicit request =>
       arrivalMovementService.makeArrivalMovement(request.eoriNumber)(request.body) match {
         case None =>
