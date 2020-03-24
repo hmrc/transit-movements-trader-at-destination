@@ -17,13 +17,29 @@
 package models
 
 import models.request.ArrivalId
-import play.api.libs.json.Json
-import play.api.libs.json.OFormat
+import play.api.libs.json._
+import play.api.libs.functional.syntax._
 
 case class Arrival(arrivalId: ArrivalId, movementReferenceNumber: String, eoriNumber: String, state: State, messages: Seq[MovementMessage])
 
 object Arrival {
 
-  implicit val formatsArrival: OFormat[Arrival] = Json.format[Arrival]
+  implicit val readsArrival: Reads[Arrival] =
+    (
+      (__ \ "_id").read[ArrivalId] and
+        (__ \ "movementReferenceNumber").read[String] and
+        (__ \ "eoriNumber").read[String] and
+        (__ \ "state").read[State] and
+        (__ \ "messages").read[Seq[MovementMessage]]
+    )(Arrival.apply _)
+
+  implicit val writesArrival: OWrites[Arrival] =
+    (
+      (__ \ "_id").write[ArrivalId] and
+        (__ \ "movementReferenceNumber").write[String] and
+        (__ \ "eoriNumber").write[String] and
+        (__ \ "state").write[State] and
+        (__ \ "messages").write[Seq[MovementMessage]]
+    )(unlift(Arrival.unapply))
 
 }

@@ -60,16 +60,12 @@ class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: React
   private def collection: Future[JSONCollection] =
     mongo.database.map(_.collection[JSONCollection](collectionName))
 
-  def insert(arrival: Arrival): Future[Unit] = {
-
-    val mongoId = Json.obj("_id" -> arrival.arrivalId)
-
+  def insert(arrival: Arrival): Future[Unit] =
     collection.flatMap {
       _.insert(false)
-        .one(Json.toJsObject(arrival) ++ mongoId)
+        .one(Json.toJsObject(arrival))
         .map(_ => ())
     }
-  }
 
   def get(arrivalId: ArrivalId): Future[Option[Arrival]] = {
 
