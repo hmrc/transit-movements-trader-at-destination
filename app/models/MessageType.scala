@@ -16,9 +16,25 @@
 
 package models
 
-sealed trait MessageType extends IeMetadata
+import play.api.libs.json.Format
+import play.api.libs.json.JsError
+import play.api.libs.json.JsResult
+import play.api.libs.json.JsString
+import play.api.libs.json.JsSuccess
+import play.api.libs.json.JsValue
+
+sealed trait MessageType extends IeMetadata {
+  def code: String
+  def rootNode: String
+}
 
 object MessageType extends Enumerable.Implicits {
 
   case object ArrivalNotification extends IeMetadata("IE007", "CC007A") with MessageType
+  case object GoodsReleased       extends IeMetadata("IE025", "CC025A") with MessageType
+
+  val values: Seq[MessageType] = Seq(ArrivalNotification, GoodsReleased)
+
+  implicit val enumerable: Enumerable[MessageType] =
+    Enumerable(values.map(v => v.code -> v): _*)
 }

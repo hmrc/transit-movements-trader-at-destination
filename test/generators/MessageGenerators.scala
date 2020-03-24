@@ -22,10 +22,11 @@ import java.time.LocalTime
 import models.messages._
 import models.Arrival
 import models.ArrivalMovement
+import models.MessageType
+import models.MovementMessage
 import models.RejectionError
 import models.State
 import models.TimeStampedMessageJson
-import models.TimeStampedMessageXml
 import models.request
 import models.request._
 import org.scalacheck.Arbitrary.arbitrary
@@ -37,13 +38,14 @@ trait MessageGenerators extends ModelGenerators {
   private val pastDate: LocalDate = LocalDate.of(1900, 1, 1)
   private val dateNow: LocalDate  = LocalDate.now
 
-  implicit lazy val arbitraryMessageXml: Arbitrary[TimeStampedMessageXml] = {
+  implicit lazy val arbitraryMessageXml: Arbitrary[MovementMessage] = {
     Arbitrary {
       for {
-        date <- datesBetween(pastDate, dateNow)
-        time <- timesBetween(pastDate, dateNow)
-        xml  <- Gen.const(<blankXml>message</blankXml>) // TODO: revisit this
-      } yield TimeStampedMessageXml(date, time, xml)
+        date        <- datesBetween(pastDate, dateNow)
+        time        <- timesBetween(pastDate, dateNow)
+        xml         <- Gen.const(<blankXml>message</blankXml>) // TODO: revisit this
+        messageType <- Gen.oneOf(MessageType.values)
+      } yield MovementMessage(date, time, messageType, xml)
     }
   }
 
@@ -78,7 +80,7 @@ trait MessageGenerators extends ModelGenerators {
         movementReferenceNumber <- arbitrary[MovementReferenceNumber]
         eoriNumber              <- arbitrary[String]
         state                   <- arbitrary[State]
-        messages                <- seqWithMaxLength[TimeStampedMessageXml](2)
+        messages                <- seqWithMaxLength[MovementMessage](2)
       } yield
         Arrival(
           arrivalId = arrivalId,
