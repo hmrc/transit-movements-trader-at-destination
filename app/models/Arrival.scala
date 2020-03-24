@@ -20,7 +20,7 @@ import models.request.ArrivalId
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
 
-case class Arrival(arrivalId: ArrivalId, movementReferenceNumber: String, eoriNumber: String, state: State, messages: Seq[TimeStampedMessageXml])
+case class Arrival(arrivalId: ArrivalId, movementReferenceNumber: String, eoriNumber: String, state: State, messages: Seq[MovementMessage])
 
 object Arrival {
 

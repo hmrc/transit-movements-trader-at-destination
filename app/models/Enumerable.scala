@@ -41,9 +41,9 @@ object Enumerable {
               s =>
                 JsSuccess(s)
             }
-            .getOrElse(JsError("error.invalid"))
-        case _ =>
-          JsError("error.invalid")
+            .getOrElse(JsError("Not a recognised value"))
+        case jsValue =>
+          JsError(s"Invalid type. Expected a JsString got a ${jsValue.getClass}")
       }
 
     implicit def writes[A: Enumerable]: Writes[A] =

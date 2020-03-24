@@ -234,4 +234,7 @@ trait ModelGenerators {
       length <- choose(1, maxLength)
       seq    <- listOfN(length, arbitrary[A])
     } yield seq
+
+  implicit lazy val arbitraryMessageType: Arbitrary[MessageType] =
+    Arbitrary(Gen.oneOf(MessageType.values))
 }

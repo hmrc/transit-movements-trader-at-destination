@@ -17,6 +17,7 @@
 package models.state
 
 import models.State._
+import models.MessageReceived
 import models.SubmissionResult
 import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers
@@ -31,6 +32,10 @@ class PendingSubmissionSpec extends FreeSpec with MustMatchers {
 
     "to Submission Failed when receiving a Submission Failure event" in {
       PendingSubmission.transition(SubmissionResult.Failure) mustEqual SubmissionFailed
+    }
+
+    "to Goods Released when receiving a Goods Released event" in {
+      PendingSubmission.transition(MessageReceived.GoodsReleased) mustEqual GoodsReleased
     }
   }
 }
