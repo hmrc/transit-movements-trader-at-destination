@@ -47,10 +47,17 @@ class GoodsReleasedController @Inject()(
           arrivalMovementService.makeGoodsReleasedMessage()(request.request.body) match {
             case Some(message) =>
               val newState = arrival.state.transition(MessageReceived.GoodsReleased)
-              arrivalMovementRepository.addMessage(arrival.arrivalId, message, newState).map {
-                case Success(_) => Ok
-                case Failure(_) => InternalServerError
-              }
+              arrivalMovementRepository
+                .addMessage(arrival.arrivalId, message, newState)
+                .map {
+                  case Success(_) => Ok
+                  case Failure(_) => InternalServerError
+                }
+                .recover {
+                  case _ =>
+                    // TODO: clean this up
+                    InternalServerError
+                }
             case None =>
               Future.successful(InternalServerError)
           }
