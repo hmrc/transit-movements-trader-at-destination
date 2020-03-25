@@ -34,9 +34,9 @@ class ArrivalIdRepository @Inject()(mongo: ReactiveMongoApi) {
 
   private val collectionName: String = ArrivalIdRepository.collectionName
 
-  private val indexKeyReads: Reads[Int] = {
+  private val indexKeyReads: Reads[ArrivalId] = {
     import play.api.libs.json._
-    (__ \ lastIndexKey).read[Int]
+    (__ \ lastIndexKey).read[ArrivalId]
   }
 
   private def collection: Future[JSONCollection] =
@@ -55,7 +55,6 @@ class ArrivalIdRepository @Inject()(mongo: ReactiveMongoApi) {
         .map(
           x =>
             x.result(indexKeyReads)
-              .map(increment => ArrivalId(increment))
               .getOrElse(throw new Exception(s"Unable to generate ArrivalId")))
     )
   }

@@ -1,14 +1,22 @@
 package services.repositories
 
-import java.time.{LocalDate, LocalTime}
+import java.time.LocalDate
+import java.time.LocalTime
 
 import generators.MessageGenerators
+import models.Arrival
+import models.ArrivalMovement
+import models.MessageType
+import models.MovementMessage
+import models.State
 import models.request.ArrivalId
-import models.{Arrival, ArrivalMovement, MessageType, MovementMessage, State}
 import org.scalacheck.Arbitrary.arbitrary
+import org.scalatest.EitherValues
+import org.scalatest.FreeSpec
+import org.scalatest.MustMatchers
+import org.scalatest.OptionValues
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.{EitherValues, FreeSpec, MustMatchers, OptionValues}
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -22,7 +30,8 @@ import services.mocks.MockDateTimeService
 import utils.Format
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.util.{Failure, Success}
+import scala.util.Failure
+import scala.util.Success
 
 class ArrivalMovementRepositorySpec
     extends FreeSpec
@@ -121,7 +130,7 @@ class ArrivalMovementRepositorySpec
           </CC025A>
 
         val goodsReleasedMessage = MovementMessage(dateOfPrep, timeOfPrep, MessageType.GoodsReleased, messageBody)
-        val newState = State.GoodsReleased
+        val newState             = State.GoodsReleased
 
         running(app) {
           started(app).futureValue
@@ -165,7 +174,7 @@ class ArrivalMovementRepositorySpec
           </CC025A>
 
         val goodsReleasedMessage = MovementMessage(dateOfPrep, timeOfPrep, MessageType.GoodsReleased, messageBody)
-        val newState = State.GoodsReleased
+        val newState             = State.GoodsReleased
 
         running(app) {
           started(app).futureValue
