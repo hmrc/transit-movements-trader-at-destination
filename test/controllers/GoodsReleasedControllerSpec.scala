@@ -93,14 +93,16 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
         }
       }
 
-      "must return NotFound when given a message for an arrival that does not exist" in {
-        val messageSender = MessageSender(ArrivalId(1), 1)
+      "must lock, return NotFound and unlock when given a message for an arrival that does not exist" in {
+        val arrivalId     = ArrivalId(1)
+        val messageSender = MessageSender(arrivalId, 1)
 
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
         val mockLockRepository            = mock[LockRepository]
 
         when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(None))
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
+        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
 
         val application = baseApplicationBuilder
           .overrides(
@@ -125,10 +127,12 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
 
           status(result) mustEqual NOT_FOUND
           verify(mockArrivalMovementRepository, never).addMessage(any(), any(), any())
+          verify(mockLockRepository, times(1)).lock(arrivalId)
+          verify(mockLockRepository, times(1)).unlock(arrivalId)
         }
       }
 
-      "must return Internal Server Error and release the lock if the message is not Goods Released" in {
+      "must lock, return Internal Server Error and release the lock if the message is not Goods Released" in {
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
         val mockLockRepository            = mock[LockRepository]
 
@@ -171,11 +175,12 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
 
           status(result) mustEqual INTERNAL_SERVER_ERROR
           verify(mockArrivalMovementRepository, never).addMessage(any(), any(), any())
+          verify(mockLockRepository, times(1)).lock(arrivalId)
           verify(mockLockRepository, times(1)).unlock(arrivalId)
         }
       }
 
-      "must return Internal Server Error and release the lock if adding the message to the movement fails" in {
+      "must lock, return Internal Server Error and unlock if adding the message to the movement fails" in {
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
         val mockLockRepository            = mock[LockRepository]
 
@@ -217,6 +222,7 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
           val result = route(application, request).value
 
           status(result) mustEqual INTERNAL_SERVER_ERROR
+          verify(mockLockRepository, times(1)).lock(arrivalId)
           verify(mockLockRepository, times(1)).unlock(arrivalId)
         }
       }
@@ -225,7 +231,6 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
     "when a lock cannot be acquired" - {
 
       //TODO: Do we want to return Locked or something else?
-      //TODO: We may want a retry strategy for releasing locks (and probably for acquiring them too!)
       "must return Locked" in {
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
         val mockLockRepository            = mock[LockRepository]

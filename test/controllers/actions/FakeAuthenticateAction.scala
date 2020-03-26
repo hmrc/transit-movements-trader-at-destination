@@ -17,19 +17,28 @@
 package controllers.actions
 
 import javax.inject.Inject
-import models.request.IdentifierRequest
-import play.api.mvc._
+import models.request.AuthenticatedRequest
+import play.api.mvc.ActionBuilder
+import play.api.mvc.ActionRefiner
+import play.api.mvc.AnyContent
+import play.api.mvc.DefaultActionBuilder
+import play.api.mvc.Request
+import play.api.mvc.Result
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class FakeIdentifierAction @Inject()(bodyParsers: PlayBodyParsers) extends IdentifierAction {
+class FakeAuthenticateActionProvider @Inject()(defaultActionBuilder: DefaultActionBuilder, auth: FakeAuthenticateAction)(
+  implicit executionContext: ExecutionContext)
+    extends AuthenticateActionProvider {
 
-  override def invokeBlock[A](request: Request[A], block: IdentifierRequest[A] => Future[Result]): Future[Result] =
-    block(IdentifierRequest(request, "id"))
+  override def apply(): ActionBuilder[AuthenticatedRequest, AnyContent] =
+    defaultActionBuilder andThen auth
+}
 
-  override def parser: BodyParser[AnyContent] =
-    bodyParsers.default
+class FakeAuthenticateAction extends ActionRefiner[Request, AuthenticatedRequest] {
+  override protected def refine[A](request: Request[A]): Future[Either[Result, AuthenticatedRequest[A]]] =
+    Future.successful(Right(AuthenticatedRequest(request, "id")))
 
   override protected def executionContext: ExecutionContext =
     scala.concurrent.ExecutionContext.Implicits.global

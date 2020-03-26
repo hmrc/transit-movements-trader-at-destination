@@ -16,50 +16,49 @@
 
 package controllers.actions
 
-import com.google.inject.Inject
 import config.AppConfig
-import models.request.IdentifierRequest
+import javax.inject.Inject
+import models.request.AuthenticatedRequest
 import play.api.Logger
+import play.api.mvc.ActionRefiner
+import play.api.mvc.Request
+import play.api.mvc.Result
 import play.api.mvc.Results.Unauthorized
-import play.api.mvc._
-import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
+import uk.gov.hmrc.auth.core.AuthConnector
+import uk.gov.hmrc.auth.core.AuthorisationException
+import uk.gov.hmrc.auth.core.AuthorisedFunctions
+import uk.gov.hmrc.auth.core.Enrolment
+import uk.gov.hmrc.auth.core.InsufficientEnrolments
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.HeaderCarrierConverter
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-trait IdentifierAction extends ActionBuilder[IdentifierRequest, AnyContent] with ActionFunction[Request, IdentifierRequest]
-
-class AuthenticatedIdentifierAction @Inject()(
-  override val authConnector: AuthConnector,
-  config: AppConfig,
-  val parser: BodyParsers.Default
-)(implicit val executionContext: ExecutionContext)
-    extends IdentifierAction
+private[actions] class AuthenticateAction @Inject()(override val authConnector: AuthConnector, config: AppConfig)(
+  implicit val executionContext: ExecutionContext)
+    extends ActionRefiner[Request, AuthenticatedRequest]
     with AuthorisedFunctions {
 
   private val enrolmentIdentifierKey: String = "VATRegNoTURN"
 
-  override def invokeBlock[A](request: Request[A], block: IdentifierRequest[A] => Future[Result]): Future[Result] = {
+  override protected def refine[A](request: Request[A]): Future[Either[Result, AuthenticatedRequest[A]]] = {
 
     implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
 
     authorised(Enrolment(config.enrolmentKey)).retrieve(Retrievals.authorisedEnrolments) {
       enrolments =>
-        val eoriNumber: String = (for {
+        val eoriNumber = (for {
           enrolment  <- enrolments.enrolments.find(_.key.equals(config.enrolmentKey))
           identifier <- enrolment.getIdentifier(enrolmentIdentifierKey)
         } yield identifier.value).getOrElse(throw InsufficientEnrolments(s"Unable to retrieve enrolment for $enrolmentIdentifierKey"))
 
-        block(IdentifierRequest(request, eoriNumber))
+        Future.successful(Right(AuthenticatedRequest(request, eoriNumber)))
     }
   }.recover {
-    case e: AuthorisationException => {
-      //TODO: Alerting - We need to clarify the logging and alerting for the failures below
+    case e: AuthorisationException =>
       Logger.warn(s"Failed to authorise with the following exception: $e")
-      Unauthorized
-    }
+      Left(Unauthorized)
   }
 }

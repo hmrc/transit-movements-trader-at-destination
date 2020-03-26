@@ -19,10 +19,8 @@ package config
 import com.google.inject.AbstractModule
 import connectors.MessageConnector
 import connectors.MessageConnectorImpl
-import controllers.actions.AuthenticatedIdentifierAction
-import controllers.actions.IdentifierAction
-import controllers.actions.ArrivalRetrievalActionProvider
-import controllers.actions.ArrivalRetrievalActionProviderImpl
+import controllers.actions.AuthenticateActionProvider
+import controllers.actions.AuthenticateActionProviderImpl
 import services._
 
 class Module extends AbstractModule {
@@ -35,9 +33,7 @@ class Module extends AbstractModule {
 
     bind(classOf[DatabaseService]).to(classOf[DatabaseServiceImpl]).asEagerSingleton()
 
-    bind(classOf[IdentifierAction]).to(classOf[AuthenticatedIdentifierAction]).asEagerSingleton()
-
-    bind(classOf[ArrivalRetrievalActionProvider]).to(classOf[ArrivalRetrievalActionProviderImpl]).asEagerSingleton()
+    bind(classOf[AuthenticateActionProvider]).to(classOf[AuthenticateActionProviderImpl]).asEagerSingleton()
   }
 
 }

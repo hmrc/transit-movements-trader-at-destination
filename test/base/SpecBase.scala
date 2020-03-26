@@ -18,8 +18,8 @@ package base
 
 import java.time.LocalDate
 
-import controllers.actions.FakeIdentifierAction
-import controllers.actions.IdentifierAction
+import controllers.actions.AuthenticateActionProvider
+import controllers.actions.FakeAuthenticateActionProvider
 import models.messages.NormalNotificationMessage
 import models.messages.TraderWithEori
 import org.scalatest.FreeSpec
@@ -44,16 +44,16 @@ trait SpecBase extends FreeSpec with MustMatchers with MockitoSugar with ScalaFu
   protected def baseApplicationBuilder: GuiceApplicationBuilder =
     new GuiceApplicationBuilder()
       .overrides(
-        bind[IdentifierAction].to[FakeIdentifierAction]
+        bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider]
       )
 
-  lazy val normalNotification = NormalNotificationMessage(
+  lazy val normalNotification: NormalNotificationMessage = NormalNotificationMessage(
     movementReferenceNumber = "movementReferenceNumber",
     notificationPlace = "notificationPlace",
     notificationDate = LocalDate.now(),
     customsSubPlace = None,
     trader = TraderWithEori("eori", None, None, None, None, None),
-    presentationOffice = "sadsf",
+    presentationOffice = "office",
     enRouteEvents = Option(Seq.empty)
   )
 
