@@ -21,6 +21,8 @@ import java.time.LocalTime
 
 import models.messages._
 import models.Arrival
+import models.ArrivalDateTime
+import models.ArrivalMeta
 import models.ArrivalMovement
 import models.MessageType
 import models.MovementMessage
@@ -80,6 +82,7 @@ trait MessageGenerators extends ModelGenerators {
         movementReferenceNumber <- arbitrary[MovementReferenceNumber]
         eoriNumber              <- arbitrary[String]
         state                   <- arbitrary[State]
+        meta                    <- arbitrary[ArrivalMeta]
         messages                <- seqWithMaxLength[MovementMessage](2)
       } yield
         Arrival(
@@ -87,8 +90,29 @@ trait MessageGenerators extends ModelGenerators {
           movementReferenceNumber = movementReferenceNumber,
           eoriNumber = eoriNumber,
           state = state,
+          meta = meta,
           messages = messages
         )
+    }
+  }
+
+  implicit lazy val arbitraryArrivalMeta: Arbitrary[ArrivalMeta] = {
+    Arbitrary {
+      for {
+        created <- arbitrary[ArrivalDateTime]
+        updated <- arbitrary[ArrivalDateTime]
+
+      } yield ArrivalMeta(created, updated)
+    }
+  }
+
+  implicit lazy val arbitraryArrivalDateTime: Arbitrary[ArrivalDateTime] = {
+
+    Arbitrary {
+      for {
+        date <- arbitrary[LocalDate]
+        time <- arbitrary[LocalTime]
+      } yield ArrivalDateTime(date, time)
     }
   }
 

@@ -21,6 +21,8 @@ import java.time.LocalTime
 
 import base.SpecBase
 import models.Arrival
+import models.ArrivalDateTime
+import models.ArrivalMeta
 import models.MessageType
 import models.MovementMessage
 import models.State
@@ -36,14 +38,16 @@ import scala.concurrent.Future
 
 class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
 
+  val dateOfPrep          = LocalDate.now()
+  val timeOfPrep          = LocalTime.of(1, 1)
+  private val arrivalMeta = ArrivalMeta(ArrivalDateTime(dateOfPrep, timeOfPrep), ArrivalDateTime(dateOfPrep, timeOfPrep))
+
   "makeArrivalMovement" - {
     "creates an arrival movement with an internal ref number and a mrn, date and time of creation from the message submitted" in {
 
-      val id         = ArrivalId(1)
-      val mrn        = MovementReferenceNumber("MRN")
-      val eori       = "eoriNumber"
-      val dateOfPrep = LocalDate.now()
-      val timeOfPrep = LocalTime.of(1, 1)
+      val id   = ArrivalId(1)
+      val mrn  = MovementReferenceNumber("MRN")
+      val eori = "eoriNumber"
 
       val mockArrivalIdRepository = mock[ArrivalIdRepository]
       when(mockArrivalIdRepository.nextId).thenReturn(Future.successful(id))
@@ -69,6 +73,7 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
         movementReferenceNumber = mrn,
         eoriNumber = eori,
         state = State.PendingSubmission,
+        arrivalMeta,
         messages = Seq(
           MovementMessage(dateOfPrep, timeOfPrep, MessageType.ArrivalNotification, movement)
         )

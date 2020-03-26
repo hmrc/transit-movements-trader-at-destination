@@ -22,6 +22,8 @@ import java.time.LocalTime
 import base.SpecBase
 import generators.ModelGenerators
 import models.Arrival
+import models.ArrivalDateTime
+import models.ArrivalMeta
 import models.MessageSender
 import models.State
 import models.messages.MovementReferenceNumber
@@ -40,6 +42,8 @@ import scala.util.Success
 
 class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks with ModelGenerators {
 
+  private val arrivalMeta = ArrivalMeta(ArrivalDateTime(LocalDate.now, LocalTime.now()), ArrivalDateTime(LocalDate.now, LocalTime.now()))
+
   "post" - {
 
     "must add the message to the arrival, set the state to Goods Released and return OK" in {
@@ -53,6 +57,7 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
         MovementReferenceNumber("mrn"),
         "eori",
         State.Submitted,
+        arrivalMeta,
         Seq.empty
       )
 
@@ -127,6 +132,7 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
         MovementReferenceNumber("mrn"),
         "eori",
         State.Submitted,
+        arrivalMeta,
         Seq.empty
       )
 
@@ -169,6 +175,7 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
         MovementReferenceNumber("mrn"),
         "eori",
         State.Submitted,
+        arrivalMeta,
         Seq.empty
       )
 

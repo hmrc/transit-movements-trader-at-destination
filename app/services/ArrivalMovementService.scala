@@ -23,12 +23,15 @@ import cats.data._
 import cats.implicits._
 import com.google.inject.Inject
 import models.Arrival
+import models.ArrivalDateTime
+import models.ArrivalMeta
 import models.MessageType
 import models.MovementMessage
 import models.messages.MovementReferenceNumber
 import repositories.ArrivalIdRepository
 import utils.Format
 import models.State.PendingSubmission
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.Try
@@ -47,7 +50,15 @@ class ArrivalMovementService @Inject()(arrivalIdRepository: ArrivalIdRepository)
     } yield {
       arrivalIdRepository
         .nextId()
-        .map(Arrival(_, mrn, eori, PendingSubmission, Seq(MovementMessage(date, time, MessageType.ArrivalNotification, xmlMessage))))
+        .map(
+          Arrival(
+            _,
+            mrn,
+            eori,
+            PendingSubmission,
+            ArrivalMeta(ArrivalDateTime(date, time), ArrivalDateTime(date, time)),
+            Seq(MovementMessage(date, time, MessageType.ArrivalNotification, xmlMessage))
+          ))
     }
 
   def makeGoodsReleasedMessage(): ReaderT[Option, NodeSeq, MovementMessage] =

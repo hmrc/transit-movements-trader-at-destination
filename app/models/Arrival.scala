@@ -26,6 +26,7 @@ case class Arrival(
   movementReferenceNumber: MovementReferenceNumber,
   eoriNumber: String,
   state: State,
+  meta: ArrivalMeta,
   messages: Seq[MovementMessage]
 )
 
@@ -37,6 +38,7 @@ object Arrival {
         (__ \ "movementReferenceNumber").read[MovementReferenceNumber] and
         (__ \ "eoriNumber").read[String] and
         (__ \ "state").read[State] and
+        (__ \ "meta").read[ArrivalMeta] and
         (__ \ "messages").read[Seq[MovementMessage]]
     )(Arrival.apply _)
 
@@ -46,6 +48,7 @@ object Arrival {
         (__ \ "movementReferenceNumber").write[MovementReferenceNumber] and
         (__ \ "eoriNumber").write[String] and
         (__ \ "state").write[State] and
+        (__ \ "meta").write[ArrivalMeta] and
         (__ \ "messages").write[Seq[MovementMessage]]
     )(unlift(Arrival.unapply))
 
