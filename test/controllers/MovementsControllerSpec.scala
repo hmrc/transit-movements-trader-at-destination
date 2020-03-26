@@ -23,6 +23,7 @@ import java.time.OffsetDateTime
 import base.SpecBase
 import connectors.MessageConnector
 import generators.MessageGenerators
+import models.Arrival
 import models.ArrivalMovement
 import models.MessageType
 import models.State
@@ -331,6 +332,54 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         running(application) {
 
           val request = FakeRequest(GET, routes.MovementsController.getMovements().url)
+
+          val result = route(application, request).value
+
+          status(result) mustEqual INTERNAL_SERVER_ERROR
+        }
+      }
+    }
+
+    "getArrivals" - {
+
+      "must return Ok and retrieve arrivals" in {
+        val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+
+        val application =
+          baseApplicationBuilder
+            .overrides(bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository))
+            .build()
+
+        running(application) {
+          forAll(seqWithMaxLength[Arrival](10)) {
+            arrivals =>
+              when(mockArrivalMovementRepository.fetchAllArrivals(any())).thenReturn(Future.successful(arrivals))
+
+              val request = FakeRequest(GET, routes.MovementsController.getArrivals().url)
+
+              val result = route(application, request).value
+
+              status(result) mustEqual OK
+              contentAsJson(result) mustEqual Json.toJson(arrivals)
+
+              reset(mockArrivalMovementRepository)
+          }
+        }
+      }
+
+      "must return an INTERNAL_SERVER_ERROR on fail" in {
+        val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+        when(mockArrivalMovementRepository.fetchAllArrivals(any()))
+          .thenReturn(Future.failed(new Exception))
+
+        val application =
+          baseApplicationBuilder
+            .overrides(bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository))
+            .build()
+
+        running(application) {
+
+          val request = FakeRequest(GET, routes.MovementsController.getArrivals().url)
 
           val result = route(application, request).value
 

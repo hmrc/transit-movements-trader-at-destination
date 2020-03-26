@@ -106,4 +106,18 @@ class MovementsController @Inject()(
             InternalServerError(s"Failed with the following error: $e")
         }
   }
+
+  def getArrivals: Action[AnyContent] = identify.async {
+    implicit request =>
+      arrivalMovementRepository
+        .fetchAllArrivals(request.eoriNumber)
+        .map {
+          arrivals =>
+            Ok(Json.toJson(arrivals))
+        }
+        .recover {
+          case e =>
+            InternalServerError(s"Failed with the following error: $e")
+        }
+  }
 }
