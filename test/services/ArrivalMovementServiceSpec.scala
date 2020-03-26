@@ -40,7 +40,7 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
     "creates an arrival movement with an internal ref number and a mrn, date and time of creation from the message submitted" in {
 
       val id         = ArrivalId(1)
-      val mrn        = "MRN"
+      val mrn        = MovementReferenceNumber("MRN")
       val eori       = "eoriNumber"
       val dateOfPrep = LocalDate.now()
       val timeOfPrep = LocalTime.of(1, 1)
@@ -60,7 +60,7 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
             <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
             <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
             <HEAHEA>
-              <DocNumHEA5>{mrn}</DocNumHEA5>
+              <DocNumHEA5>{mrn.value}</DocNumHEA5>
             </HEAHEA>
           </CC007A>
 
@@ -80,7 +80,7 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
     "returns None when the root node is not <CC007A>" in {
 
       val id         = ArrivalId(1)
-      val mrn        = "MRN"
+      val mrn        = MovementReferenceNumber("MRN")
       val eori       = "eoriNumber"
       val dateOfPrep = LocalDate.now()
       val timeOfPrep = LocalTime.of(1, 1)
@@ -94,7 +94,7 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
           <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
           <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
           <HEAHEA>
-            <DocNumHEA5>{mrn}</DocNumHEA5>
+            <DocNumHEA5>{mrn.value}</DocNumHEA5>
           </HEAHEA>
         </Foo>
 

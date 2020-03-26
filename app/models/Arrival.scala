@@ -16,18 +16,25 @@
 
 package models
 
+import models.messages.MovementReferenceNumber
 import models.request.ArrivalId
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 
-case class Arrival(arrivalId: ArrivalId, movementReferenceNumber: String, eoriNumber: String, state: State, messages: Seq[MovementMessage])
+case class Arrival(
+  arrivalId: ArrivalId,
+  movementReferenceNumber: MovementReferenceNumber,
+  eoriNumber: String,
+  state: State,
+  messages: Seq[MovementMessage]
+)
 
 object Arrival {
 
   implicit val readsArrival: Reads[Arrival] =
     (
       (__ \ "_id").read[ArrivalId] and
-        (__ \ "movementReferenceNumber").read[String] and
+        (__ \ "movementReferenceNumber").read[MovementReferenceNumber] and
         (__ \ "eoriNumber").read[String] and
         (__ \ "state").read[State] and
         (__ \ "messages").read[Seq[MovementMessage]]
@@ -36,7 +43,7 @@ object Arrival {
   implicit val writesArrival: OWrites[Arrival] =
     (
       (__ \ "_id").write[ArrivalId] and
-        (__ \ "movementReferenceNumber").write[String] and
+        (__ \ "movementReferenceNumber").write[MovementReferenceNumber] and
         (__ \ "eoriNumber").write[String] and
         (__ \ "state").write[State] and
         (__ \ "messages").write[Seq[MovementMessage]]

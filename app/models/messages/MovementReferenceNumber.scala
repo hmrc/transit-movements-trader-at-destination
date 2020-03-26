@@ -16,9 +16,7 @@
 
 package models.messages
 
-import models.messages.MovementReferenceNumber._
 import play.api.libs.json._
-import play.api.mvc.PathBindable
 
 final case class MovementReferenceNumber(value: String)
 
@@ -28,14 +26,5 @@ object MovementReferenceNumber {
   implicit lazy val writes: Writes[MovementReferenceNumber] = Writes {
     mrn =>
       JsString(mrn.value)
-  }
-
-  implicit def pathBindable: PathBindable[MovementReferenceNumber] = new PathBindable[MovementReferenceNumber] {
-
-    override def bind(key: String, value: String): Right[String, MovementReferenceNumber] =
-      Right(MovementReferenceNumber(value))
-
-    override def unbind(key: String, value: MovementReferenceNumber): String =
-      value.value
   }
 }

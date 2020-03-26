@@ -47,7 +47,7 @@ class ArrivalMovementService @Inject()(arrivalIdRepository: ArrivalIdRepository)
     } yield {
       arrivalIdRepository
         .nextId()
-        .map(Arrival(_, mrn.value, eori, PendingSubmission, Seq(MovementMessage(date, time, MessageType.ArrivalNotification, xmlMessage))))
+        .map(Arrival(_, mrn, eori, PendingSubmission, Seq(MovementMessage(date, time, MessageType.ArrivalNotification, xmlMessage))))
     }
 
   def makeGoodsReleasedMessage(): ReaderT[Option, NodeSeq, MovementMessage] =

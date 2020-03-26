@@ -24,6 +24,7 @@ import generators.ModelGenerators
 import models.Arrival
 import models.MessageSender
 import models.State
+import models.messages.MovementReferenceNumber
 import models.request.ArrivalId
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito._
@@ -49,7 +50,7 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
       val messageSender = MessageSender(arrivalId, version)
       val arrival = Arrival(
         arrivalId,
-        "mrn",
+        MovementReferenceNumber("mrn"),
         "eori",
         State.Submitted,
         Seq.empty
@@ -123,7 +124,7 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
       val messageSender = MessageSender(arrivalId, version)
       val arrival = Arrival(
         arrivalId,
-        "mrn",
+        MovementReferenceNumber("mrn"),
         "eori",
         State.Submitted,
         Seq.empty
@@ -165,7 +166,7 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
       val messageSender = MessageSender(arrivalId, version)
       val arrival = Arrival(
         arrivalId,
-        "mrn",
+        MovementReferenceNumber("mrn"),
         "eori",
         State.Submitted,
         Seq.empty

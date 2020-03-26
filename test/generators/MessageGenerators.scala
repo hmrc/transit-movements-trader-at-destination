@@ -84,7 +84,7 @@ trait MessageGenerators extends ModelGenerators {
       } yield
         Arrival(
           arrivalId = arrivalId,
-          movementReferenceNumber = movementReferenceNumber.toString,
+          movementReferenceNumber = movementReferenceNumber,
           eoriNumber = eoriNumber,
           state = state,
           messages = messages
