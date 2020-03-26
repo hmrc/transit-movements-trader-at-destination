@@ -16,14 +16,13 @@
 
 package controllers
 
-import controllers.actions.ArrivalRetrievalActionProvider
+import controllers.actions.GetArrivalForEditActionProvider
 import javax.inject.Inject
 import models.MessageReceived
 import models.MessageSender
 import play.api.mvc.Action
 import play.api.mvc.ControllerComponents
 import repositories.ArrivalMovementRepository
-import repositories.LockRepository
 import services.ArrivalMovementService
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
@@ -36,37 +35,22 @@ import scala.xml.NodeSeq
 class GoodsReleasedController @Inject()(
   cc: ControllerComponents,
   arrivalMovementService: ArrivalMovementService,
-  getArrival: ArrivalRetrievalActionProvider,
-  arrivalMovementRepository: ArrivalMovementRepository,
-  lockRepository: LockRepository
+  getArrival: GetArrivalForEditActionProvider,
+  arrivalMovementRepository: ArrivalMovementRepository
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
   def post(messageSender: MessageSender): Action[NodeSeq] = getArrival(messageSender.arrivalId)(parse.xml).async {
     implicit request =>
-      lockRepository.lock(messageSender.arrivalId).flatMap {
-        case true =>
-          arrivalMovementService.makeGoodsReleasedMessage()(request.request.body) match {
-            case Some(message) =>
-              val newState = request.arrival.state.transition(MessageReceived.GoodsReleased)
-              arrivalMovementRepository.addMessage(request.arrival.arrivalId, message, newState).flatMap {
-                messageAdded =>
-                  lockRepository.unlock(request.arrival.arrivalId).map {
-                    _ =>
-                      messageAdded match {
-                        case Success(_) => Ok
-                        case Failure(_) => InternalServerError
-                      }
-                  }
-              }
-            case None =>
-              lockRepository.unlock(request.arrival.arrivalId).map {
-                _ =>
-                  InternalServerError
-              }
+      arrivalMovementService.makeGoodsReleasedMessage()(request.request.body) match {
+        case Some(message) =>
+          val newState = request.arrival.state.transition(MessageReceived.GoodsReleased)
+          arrivalMovementRepository.addMessage(request.arrival.arrivalId, message, newState).map {
+            case Success(_) => Ok
+            case Failure(_) => InternalServerError
           }
-        case false =>
-          Future.successful(Locked)
+        case None =>
+          Future.successful(InternalServerError)
       }
   }
 }

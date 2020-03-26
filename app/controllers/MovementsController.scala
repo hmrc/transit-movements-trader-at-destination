@@ -19,18 +19,15 @@ package controllers
 import java.time.OffsetDateTime
 
 import connectors.MessageConnector
-import controllers.actions.IdentifierAction
+import controllers.actions.AuthenticateActionProvider
 import javax.inject.Inject
 import models.MessageType
-import models.State
 import models.SubmissionResult
 import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
-import reactivemongo.api.commands.WriteResult
 import repositories.ArrivalMovementRepository
-import repositories.FailedSavingArrivalMovement
 import services.ArrivalMovementService
 import services.DatabaseService
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
@@ -44,12 +41,12 @@ class MovementsController @Inject()(
   arrivalMovementRepository: ArrivalMovementRepository,
   arrivalMovementService: ArrivalMovementService,
   databaseService: DatabaseService,
-  identify: IdentifierAction,
+  authenticate: AuthenticateActionProvider,
   messageConnector: MessageConnector
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
-  def createMovement: Action[NodeSeq] = identify.async(parse.xml) {
+  def createMovement: Action[NodeSeq] = authenticate().async(parse.xml) {
     implicit request =>
       arrivalMovementService.makeArrivalMovement(request.eoriNumber)(request.body) match {
         case None =>
@@ -91,7 +88,7 @@ class MovementsController @Inject()(
       }
   }
 
-  def getMovements: Action[AnyContent] = identify.async {
+  def getMovements: Action[AnyContent] = authenticate().async {
     implicit request =>
       arrivalMovementRepository
         .fetchAllMovements(request.eoriNumber)
@@ -106,5 +103,4 @@ class MovementsController @Inject()(
             InternalServerError(s"Failed with the following error: $e")
         }
   }
-
 }
