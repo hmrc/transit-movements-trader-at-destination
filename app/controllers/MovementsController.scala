@@ -106,5 +106,4 @@ class MovementsController @Inject()(
             InternalServerError(s"Failed with the following error: $e")
         }
   }
-
 }

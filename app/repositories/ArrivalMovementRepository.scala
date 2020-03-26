@@ -97,7 +97,12 @@ class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: React
         .collect[Seq](-1, Cursor.FailOnError())
     }
 
-  def fetchAllArrivals(eoriNumber: String): Future[Seq[Arrival]] = ???
+  def fetchAllArrivals(eoriNumber: String): Future[Seq[Arrival]] =
+    collection.flatMap {
+      _.find(Json.obj("eoriNumber" -> eoriNumber), Option.empty[JsObject])
+        .cursor[Arrival]()
+        .collect[Seq](-1, Cursor.FailOnError())
+    }
 
   def setState(id: ArrivalId, state: State): Future[Unit] = {
 
