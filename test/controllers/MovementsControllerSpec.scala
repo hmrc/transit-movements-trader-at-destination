@@ -302,7 +302,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         running(application) {
           forAll(seqWithMaxLength[ArrivalMovement](10)) {
             arrivalMovements =>
-              when(mockArrivalMovementRepository.fetchAllMovements(any())).thenReturn(Future.successful(arrivalMovements))
+              when(mockArrivalMovementRepository.fetchAllMovementsOld(any())).thenReturn(Future.successful(arrivalMovements))
 
               val expectedResult = arrivalMovements.map(_.messages.head)
 
@@ -320,7 +320,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
       "must return an INTERNAL_SERVER_ERROR on fail" in {
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
-        when(mockArrivalMovementRepository.fetchAllMovements(any()))
+        when(mockArrivalMovementRepository.fetchAllMovementsOld(any()))
           .thenReturn(Future.failed(new Exception))
 
         val application =

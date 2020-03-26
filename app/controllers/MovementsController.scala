@@ -94,7 +94,7 @@ class MovementsController @Inject()(
   def getMovements: Action[AnyContent] = identify.async {
     implicit request =>
       arrivalMovementRepository
-        .fetchAllMovements(request.eoriNumber)
+        .fetchAllMovementsOld(request.eoriNumber)
         .map {
           arrivalMovements =>
             // TODO this needs further iteration
