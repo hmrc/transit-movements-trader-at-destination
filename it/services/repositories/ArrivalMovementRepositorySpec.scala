@@ -299,7 +299,7 @@ class ArrivalMovementRepositorySpec
     }
 
     "fetchAllArrivals" - {
-      "must fetch all the ArrivalMovements from mongoDB and filter non-matching eori's" in {
+      "must return Arrival Movements that match an eoriNumber" in {
         val app: Application = builder.build()
 
         val arrivalMovement1 = arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber)
