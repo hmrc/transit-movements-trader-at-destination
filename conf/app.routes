@@ -2,6 +2,7 @@
 
 POST                    /arrival-notification               controllers.ArrivalNotificationController.post
 GET                     /movements                          controllers.MovementsController.getMovements
-POST                    /movements/arrivals                          controllers.MovementsController.createMovement
+POST                    /movements/arrivals                 controllers.MovementsController.createMovement
+GET                     /movements/arrivals                  controllers.MovementsController.getArrivals
 
 POST                    /movements/arrivals/:messageSender/goods-released    controllers.GoodsReleasedController.post(messageSender: MessageSender)

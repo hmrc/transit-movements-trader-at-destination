@@ -90,10 +90,17 @@ class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: React
     }
   }
 
-  def fetchAllMovements(eoriNumber: String): Future[Seq[ArrivalMovement]] =
+  def fetchAllMovementsOld(eoriNumber: String): Future[Seq[ArrivalMovement]] =
     collection.flatMap {
       _.find(Json.obj("eoriNumber" -> eoriNumber), Option.empty[JsObject])
         .cursor[ArrivalMovement]()
+        .collect[Seq](-1, Cursor.FailOnError())
+    }
+
+  def fetchAllArrivals(eoriNumber: String): Future[Seq[Arrival]] =
+    collection.flatMap {
+      _.find(Json.obj("eoriNumber" -> eoriNumber), Option.empty[JsObject])
+        .cursor[Arrival]()
         .collect[Seq](-1, Cursor.FailOnError())
     }
 

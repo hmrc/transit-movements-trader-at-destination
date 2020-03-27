@@ -23,7 +23,9 @@ import java.time.OffsetDateTime
 import base.SpecBase
 import connectors.MessageConnector
 import generators.MessageGenerators
+import models.Arrival
 import models.ArrivalMovement
+import models.Arrivals
 import models.MessageType
 import models.State
 import models.request.ArrivalId
@@ -302,7 +304,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         running(application) {
           forAll(seqWithMaxLength[ArrivalMovement](10)) {
             arrivalMovements =>
-              when(mockArrivalMovementRepository.fetchAllMovements(any())).thenReturn(Future.successful(arrivalMovements))
+              when(mockArrivalMovementRepository.fetchAllMovementsOld(any())).thenReturn(Future.successful(arrivalMovements))
 
               val expectedResult = arrivalMovements.map(_.messages.head)
 
@@ -320,7 +322,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
       "must return an INTERNAL_SERVER_ERROR on fail" in {
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
-        when(mockArrivalMovementRepository.fetchAllMovements(any()))
+        when(mockArrivalMovementRepository.fetchAllMovementsOld(any()))
           .thenReturn(Future.failed(new Exception))
 
         val application =
@@ -331,6 +333,54 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         running(application) {
 
           val request = FakeRequest(GET, routes.MovementsController.getMovements().url)
+
+          val result = route(application, request).value
+
+          status(result) mustEqual INTERNAL_SERVER_ERROR
+        }
+      }
+    }
+
+    "getArrivals" - {
+
+      "must return Ok with the retrieved arrivals" in {
+        val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+
+        val application =
+          baseApplicationBuilder
+            .overrides(bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository))
+            .build()
+
+        running(application) {
+          forAll(seqWithMaxLength[Arrival](10)) {
+            arrivals =>
+              when(mockArrivalMovementRepository.fetchAllArrivals(any())).thenReturn(Future.successful(arrivals))
+
+              val request = FakeRequest(GET, routes.MovementsController.getArrivals().url)
+
+              val result = route(application, request).value
+
+              status(result) mustEqual OK
+              contentAsJson(result) mustEqual Json.toJson(Arrivals(arrivals))
+
+              reset(mockArrivalMovementRepository)
+          }
+        }
+      }
+
+      "must return an INTERNAL_SERVER_ERROR when we cannot retrieve the Arrival Movements" in {
+        val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+        when(mockArrivalMovementRepository.fetchAllArrivals(any()))
+          .thenReturn(Future.failed(new Exception))
+
+        val application =
+          baseApplicationBuilder
+            .overrides(bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository))
+            .build()
+
+        running(application) {
+
+          val request = FakeRequest(GET, routes.MovementsController.getArrivals().url)
 
           val result = route(application, request).value
 
