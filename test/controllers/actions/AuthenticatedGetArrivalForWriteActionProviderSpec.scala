@@ -60,6 +60,11 @@ class AuthenticatedGetArrivalForWriteActionProviderSpec
       request =>
         Results.Ok(request.arrival.arrivalId.toString)
     }
+
+    def failingAction(arrivalId: ArrivalId): Action[AnyContent] = authLockAndGet(arrivalId).async {
+      _ =>
+        Future.failed(new Exception)
+    }
   }
 
   "authenticated get arrival for write" - {
@@ -185,6 +190,36 @@ class AuthenticatedGetArrivalForWriteActionProviderSpec
         status(result) mustBe NOT_FOUND
         verify(mockLockRepository, times(1)).lock(eqTo(arrivalId))
         verify(mockLockRepository, times(1)).unlock(eqTo(arrivalId))
+      }
+
+      "must unlock the arrival and return Internal Server Error if the main action fails" in {
+
+        val arrival = arbitrary[Arrival].sample.value copy (eoriNumber = eoriNumber)
+
+        val mockAuthConnector: AuthConnector = mock[AuthConnector]
+        val mockArrivalMovementRepository    = mock[ArrivalMovementRepository]
+        val mockLockRepository               = mock[LockRepository]
+
+        when(mockAuthConnector.authorise[Enrolments](any(), any())(any(), any()))
+          .thenReturn(Future.successful(validEnrolments))
+        when(mockArrivalMovementRepository.get(any())) thenReturn Future.successful(Some(arrival))
+        when(mockLockRepository.lock(any())) thenReturn Future.successful(true)
+        when(mockLockRepository.unlock(any())) thenReturn Future.successful(())
+
+        val application = new GuiceApplicationBuilder()
+          .overrides(
+            bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
+            bind[AuthConnector].toInstance(mockAuthConnector),
+            bind[LockRepository].toInstance(mockLockRepository)
+          )
+
+        val actionProvider = application.injector().instanceOf[AuthenticatedGetArrivalForWriteActionProvider]
+
+        val controller = new Harness(actionProvider)
+        val result     = controller.failingAction(arrival.arrivalId)(fakeRequest)
+
+        status(result) mustBe INTERNAL_SERVER_ERROR
+        verify(mockLockRepository, times(1)).unlock(eqTo(arrival.arrivalId))
       }
     }
 

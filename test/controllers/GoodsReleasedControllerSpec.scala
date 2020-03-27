@@ -230,7 +230,6 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
 
     "when a lock cannot be acquired" - {
 
-      //TODO: Do we want to return Locked or something else?
       "must return Locked" in {
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
         val mockLockRepository            = mock[LockRepository]

@@ -24,11 +24,14 @@ import play.api.mvc.AnyContent
 import play.api.mvc.BodyParsers
 import play.api.mvc.Request
 import play.api.mvc.Result
+import play.api.mvc.Results.InternalServerError
 import play.api.mvc.Results.Locked
 import repositories.LockRepository
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.util.Failure
+import scala.util.Success
 
 private[actions] class LockActionProvider @Inject()(
   lockRepository: LockRepository,
@@ -51,14 +54,22 @@ private[actions] class LockAction(
   override def invokeBlock[A](request: Request[A], block: Request[A] => Future[Result]): Future[Result] =
     lockRepository.lock(arrivalId).flatMap {
       case true =>
-        block(request).flatMap {
-          result =>
-            lockRepository.unlock(arrivalId).map {
-              _ =>
-                result
-            }
-        }
+        block(request)
+          .flatMap {
+            result =>
+              lockRepository.unlock(arrivalId).map {
+                _ =>
+                  result
+              }
+          }
+          .recoverWith {
+            case e: Exception =>
+              lockRepository.unlock(arrivalId).map {
+                _ =>
+                  InternalServerError
+              }
+          }
       case false =>
-        Future.successful(Locked) //TODO: Or something else
+        Future.successful(Locked)
     }
 }

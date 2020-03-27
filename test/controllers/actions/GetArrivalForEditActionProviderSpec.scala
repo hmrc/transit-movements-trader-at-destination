@@ -56,6 +56,11 @@ class GetArrivalForEditActionProviderSpec
       request =>
         Results.Ok(request.arrival.arrivalId.toString)
     }
+
+    def failingAction(arrivalId: ArrivalId): Action[AnyContent] = getAndLock(arrivalId).async {
+      _ =>
+        Future.failed(new Exception())
+    }
   }
 
   "get arrival for edit" - {
@@ -138,6 +143,32 @@ class GetArrivalForEditActionProviderSpec
       status(result) mustEqual LOCKED
       verify(mockLockRepository, never).unlock(any())
       verify(mockArrivalMovementRepository, never).get(any())
+    }
+
+    "must unlock an arrival and return Internal Server Error if the main action fails" in {
+
+      val arrival = arbitrary[Arrival].sample.value
+
+      val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+      val mockLockRepository            = mock[LockRepository]
+
+      when(mockArrivalMovementRepository.get(any())) thenReturn Future.successful(Some(arrival))
+      when(mockLockRepository.lock(any())) thenReturn Future.successful(true)
+      when(mockLockRepository.unlock(any())) thenReturn Future.successful(())
+
+      val application = new GuiceApplicationBuilder()
+        .overrides(
+          bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
+          bind[LockRepository].toInstance(mockLockRepository)
+        )
+
+      val actionProvider = application.injector.instanceOf[GetArrivalForEditActionProvider]
+
+      val controller = new Harness(actionProvider)
+      val result     = controller.failingAction(arrival.arrivalId)(fakeRequest)
+
+      status(result) mustEqual INTERNAL_SERVER_ERROR
+      verify(mockLockRepository, times(1)).lock(eqTo(arrival.arrivalId))
     }
   }
 }
