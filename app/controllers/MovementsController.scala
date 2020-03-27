@@ -21,6 +21,7 @@ import java.time.OffsetDateTime
 import connectors.MessageConnector
 import controllers.actions.IdentifierAction
 import javax.inject.Inject
+import models.Arrivals
 import models.MessageType
 import models.State
 import models.SubmissionResult
@@ -112,8 +113,8 @@ class MovementsController @Inject()(
       arrivalMovementRepository
         .fetchAllArrivals(request.eoriNumber)
         .map {
-          arrivals =>
-            Ok(Json.toJson(arrivals))
+          allArrivals =>
+            Ok(Json.toJsObject(Arrivals(allArrivals)))
         }
         .recover {
           case e =>

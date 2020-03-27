@@ -25,6 +25,7 @@ import connectors.MessageConnector
 import generators.MessageGenerators
 import models.Arrival
 import models.ArrivalMovement
+import models.Arrivals
 import models.MessageType
 import models.State
 import models.request.ArrivalId
@@ -360,7 +361,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
               val result = route(application, request).value
 
               status(result) mustEqual OK
-              contentAsJson(result) mustEqual Json.toJson(arrivals)
+              contentAsJson(result) mustEqual Json.toJson(Arrivals(arrivals))
 
               reset(mockArrivalMovementRepository)
           }
