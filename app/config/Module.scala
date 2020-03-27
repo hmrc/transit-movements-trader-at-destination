@@ -31,8 +31,6 @@ class Module extends AbstractModule {
 
     bind(classOf[MessageConnector]).to(classOf[MessageConnectorImpl]).asEagerSingleton()
 
-    bind(classOf[DatabaseService]).to(classOf[DatabaseServiceImpl]).asEagerSingleton()
-
     bind(classOf[IdentifierAction]).to(classOf[AuthenticatedIdentifierAction]).asEagerSingleton()
 
     bind(classOf[ArrivalRetrievalActionProvider]).to(classOf[ArrivalRetrievalActionProviderImpl]).asEagerSingleton()

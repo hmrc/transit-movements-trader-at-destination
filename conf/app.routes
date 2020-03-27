@@ -1,6 +1,5 @@
 # microservice specific routes
 
-GET                     /movements                          controllers.MovementsController.getMovements
 POST                    /movements/arrivals                 controllers.MovementsController.createMovement
 GET                     /movements/arrivals                 controllers.MovementsController.getArrivals
 

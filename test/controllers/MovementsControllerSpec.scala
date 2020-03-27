@@ -18,19 +18,17 @@ package controllers
 
 import java.time.LocalDate
 import java.time.LocalTime
-import java.time.OffsetDateTime
 
 import base.SpecBase
 import connectors.MessageConnector
 import generators.MessageGenerators
 import models.Arrival
-import models.ArrivalMovement
 import models.Arrivals
 import models.MessageType
 import models.State
 import models.request.ArrivalId
-import org.mockito.Matchers.{eq => eqTo}
 import org.mockito.Matchers.any
+import org.mockito.Matchers.{eq => eqTo}
 import org.mockito.Mockito.reset
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
@@ -42,12 +40,11 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import repositories.ArrivalIdRepository
 import repositories.ArrivalMovementRepository
-import utils.Format
 import uk.gov.hmrc.http.HttpResponse
 import uk.gov.hmrc.http.Upstream5xxResponse
+import utils.Format
 
 import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
 
 class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks with MessageGenerators with BeforeAndAfterEach with IntegrationPatience {
 
@@ -287,56 +284,6 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
           status(result) mustEqual INTERNAL_SERVER_ERROR
           verify(mockArrivalMovementRepository, times(1)).setState(arrivalId, State.SubmissionFailed)
-        }
-      }
-    }
-
-    "getMovements" - {
-
-      "must return Ok and retrieve movements" in {
-        val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
-
-        val application =
-          baseApplicationBuilder
-            .overrides(bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository))
-            .build()
-
-        running(application) {
-          forAll(seqWithMaxLength[ArrivalMovement](10)) {
-            arrivalMovements =>
-              when(mockArrivalMovementRepository.fetchAllMovementsOld(any())).thenReturn(Future.successful(arrivalMovements))
-
-              val expectedResult = arrivalMovements.map(_.messages.head)
-
-              val request = FakeRequest(GET, routes.MovementsController.getMovements().url)
-
-              val result = route(application, request).value
-
-              status(result) mustEqual OK
-              contentAsJson(result) mustEqual Json.toJson(expectedResult)
-
-              reset(mockArrivalMovementRepository)
-          }
-        }
-      }
-
-      "must return an INTERNAL_SERVER_ERROR on fail" in {
-        val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
-        when(mockArrivalMovementRepository.fetchAllMovementsOld(any()))
-          .thenReturn(Future.failed(new Exception))
-
-        val application =
-          baseApplicationBuilder
-            .overrides(bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository))
-            .build()
-
-        running(application) {
-
-          val request = FakeRequest(GET, routes.MovementsController.getMovements().url)
-
-          val result = route(application, request).value
-
-          status(result) mustEqual INTERNAL_SERVER_ERROR
         }
       }
     }

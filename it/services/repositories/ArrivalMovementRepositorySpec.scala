@@ -177,30 +177,6 @@ class ArrivalMovementRepositorySpec
       }
     }
 
-    "persistToMongo" - {
-      "must persist ArrivalMovement within mongoDB" in {
-
-        val app: Application = builder.build()
-
-        running(app) {
-          started(app).futureValue
-
-          val service: ArrivalMovementRepository = app.injector.instanceOf[ArrivalMovementRepository]
-
-          service.persistToMongo(arrivalMovement1).futureValue
-
-          val selector = Json.obj("eoriNumber" -> arrivalMovement1.eoriNumber)
-
-          val getValue: Option[ArrivalMovement] = database.flatMap {
-            result =>
-              result.collection[JSONCollection](CollectionNames.ArrivalMovementCollection).find(selector, None).one[ArrivalMovement]
-          }.futureValue
-
-          getValue.value mustBe arrivalMovement1
-        }
-      }
-    }
-
     "get" - {
       "must get an arrival when it exists" in {
         val app: Application = builder.build()
@@ -234,54 +210,6 @@ class ArrivalMovementRepositorySpec
           val result = repository.get(ArrivalId(2)).futureValue
 
           result must not be defined
-        }
-      }
-    }
-
-    "fetchAllMovements" - {
-      "must fetch all the ArrivalMovements from mongoDB and filter non-matching eori's" in {
-        val app: Application = builder.build()
-
-        running(app) {
-          started(app).futureValue
-
-          val service: ArrivalMovementRepository = app.injector.instanceOf[ArrivalMovementRepository]
-
-          val allMovements = Seq(arrivalMovement1, arrivalMovement2)
-
-          val jsonArr = allMovements.map(Json.toJsObject(_))
-
-          database.flatMap {
-            db =>
-              db.collection[JSONCollection](CollectionNames.ArrivalMovementCollection).insert(false).many(jsonArr)
-          }.futureValue
-
-          val result: Seq[ArrivalMovement] = service.fetchAllMovementsOld(arrivalMovement1.eoriNumber).futureValue
-
-          result mustBe Seq(arrivalMovement1)
-        }
-      }
-
-      "must return an empty sequence when there are no movements with the same eori" in {
-        val app: Application = builder.build()
-
-        running(app) {
-          started(app).futureValue
-
-          val service: ArrivalMovementRepository = app.injector.instanceOf[ArrivalMovementRepository]
-
-          val allMovements = Seq(arrivalMovement1, arrivalMovement2)
-
-          val jsonArr = allMovements.map(Json.toJsObject(_))
-
-          database.flatMap {
-            db =>
-              db.collection[JSONCollection](CollectionNames.ArrivalMovementCollection).insert(false).many(jsonArr)
-          }.futureValue
-
-          val result: Seq[ArrivalMovement] = service.fetchAllMovementsOld(eoriNumber).futureValue
-
-          result mustBe Seq.empty[ArrivalMovement]
         }
       }
     }

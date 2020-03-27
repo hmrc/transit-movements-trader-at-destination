@@ -79,24 +79,6 @@ class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: React
     }
   }
 
-  @deprecated
-  def persistToMongo(arrivalMovement: ArrivalMovement): Future[WriteResult] = {
-
-    val doc: JsObject = Json.toJson(arrivalMovement).as[JsObject]
-
-    collection.flatMap {
-      _.insert(false)
-        .one(doc)
-    }
-  }
-
-  def fetchAllMovementsOld(eoriNumber: String): Future[Seq[ArrivalMovement]] =
-    collection.flatMap {
-      _.find(Json.obj("eoriNumber" -> eoriNumber), Option.empty[JsObject])
-        .cursor[ArrivalMovement]()
-        .collect[Seq](-1, Cursor.FailOnError())
-    }
-
   def fetchAllArrivals(eoriNumber: String): Future[Seq[Arrival]] =
     collection.flatMap {
       _.find(Json.obj("eoriNumber" -> eoriNumber), Option.empty[JsObject])
