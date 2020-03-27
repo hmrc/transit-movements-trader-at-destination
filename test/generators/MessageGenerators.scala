@@ -19,17 +19,13 @@ package generators
 import java.time.LocalDate
 import java.time.LocalTime
 
-import models.messages._
+import models.messages.MovementReferenceNumber
+import models.request.ArrivalId
 import models.Arrival
 import models.ArrivalDateTime
-import models.ArrivalMovement
 import models.MessageType
 import models.MovementMessage
-import models.RejectionError
 import models.State
-import models.TimeStampedMessageJson
-import models.request
-import models.request._
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
@@ -47,17 +43,6 @@ trait MessageGenerators extends ModelGenerators {
         xml         <- Gen.const(<blankXml>message</blankXml>) // TODO: revisit this
         messageType <- Gen.oneOf(MessageType.values)
       } yield MovementMessage(date, time, messageType, xml)
-    }
-  }
-
-  implicit lazy val arbitraryMessageJson: Arbitrary[TimeStampedMessageJson] = {
-    Arbitrary {
-      for {
-        date    <- datesBetween(pastDate, dateNow)
-        time    <- timesBetween(pastDate, dateNow)
-        message <- arbitrary[ArrivalNotificationMessage]
-
-      } yield TimeStampedMessageJson(date, time, message)
     }
   }
 
@@ -107,73 +92,4 @@ trait MessageGenerators extends ModelGenerators {
     }
   }
 
-  implicit lazy val arbitraryArrivalMovement: Arbitrary[ArrivalMovement] = {
-    Arbitrary {
-      for {
-        movementReferenceId     <- arbitrary[Int]
-        movementReferenceNumber <- arbitrary[MovementReferenceNumber]
-        eoriNumber              <- arbitrary[String]
-        messages                <- seqWithMaxLength[TimeStampedMessageJson](2)
-      } yield
-        ArrivalMovement(
-          internalReferenceId = movementReferenceId,
-          movementReferenceNumber = movementReferenceNumber.toString,
-          eoriNumber = eoriNumber,
-          messages = messages
-        )
-    }
-  }
-
-  implicit lazy val arbitraryMovementReferenceId: Arbitrary[InternalReferenceId] = {
-    Arbitrary {
-      for {
-        id <- arbitrary[Int]
-      } yield InternalReferenceId(id)
-    }
-  }
-
-  implicit lazy val arbitraryGoodsReleaseNotification: Arbitrary[GoodsReleaseNotificationMessage] =
-    Arbitrary {
-
-      for {
-        mrn                <- arbitrary[MovementReferenceNumber].map(_.toString())
-        releaseDate        <- datesBetween(pastDate, dateNow)
-        trader             <- arbitrary[Trader]
-        presentationOffice <- stringsWithMaxLength(GoodsReleaseNotificationMessage.Constants.presentationOfficeLength)
-      } yield models.messages.GoodsReleaseNotificationMessage(mrn, releaseDate, trader, presentationOffice)
-    }
-
-  implicit lazy val arbitraryNormalNotification: Arbitrary[NormalNotificationMessage] =
-    Arbitrary {
-
-      for {
-        mrn                <- arbitrary[MovementReferenceNumber].map(_.toString())
-        place              <- stringsWithMaxLength(NormalNotificationMessage.Constants.notificationPlaceLength)
-        date               <- datesBetween(pastDate, dateNow)
-        subPlace           <- Gen.option(stringsWithMaxLength(NormalNotificationMessage.Constants.customsSubPlaceLength))
-        trader             <- arbitrary[Trader]
-        presentationOffice <- stringsWithMaxLength(NormalNotificationMessage.Constants.presentationOfficeLength)
-        events             <- Gen.option(seqWithMaxLength[EnRouteEvent](2))
-      } yield models.messages.NormalNotificationMessage(mrn, place, date, subPlace, trader, presentationOffice, events)
-    }
-
-  implicit lazy val arbitrarySimplifiedNotification: Arbitrary[SimplifiedNotificationMessage] =
-    Arbitrary {
-
-      for {
-        mrn                <- arbitrary[MovementReferenceNumber].map(_.toString())
-        place              <- stringsWithMaxLength(SimplifiedNotificationMessage.Constants.notificationPlaceLength)
-        date               <- datesBetween(pastDate, dateNow)
-        approvedLocation   <- Gen.option(stringsWithMaxLength(SimplifiedNotificationMessage.Constants.approvedLocationLength))
-        trader             <- arbitrary[Trader]
-        presentationOffice <- stringsWithMaxLength(SimplifiedNotificationMessage.Constants.presentationOfficeLength)
-        events             <- Gen.option(seqWithMaxLength[EnRouteEvent](SimplifiedNotificationMessage.Constants.maxNumberOfEnRouteEvents))
-      } yield models.messages.SimplifiedNotificationMessage(mrn, place, date, approvedLocation, trader, presentationOffice, events)
-    }
-
-  implicit lazy val arbitraryArrivalNotification: Arbitrary[ArrivalNotificationMessage] =
-    Arbitrary {
-
-      Gen.oneOf(arbitrary[NormalNotificationMessage], arbitrary[SimplifiedNotificationMessage])
-    }
 }

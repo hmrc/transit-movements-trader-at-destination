@@ -19,6 +19,7 @@ package models
 import play.api.libs.json.Json
 import play.api.libs.json.Format
 
+// TODO: Is this still needed?
 final case class RejectionError(
   errorType: Int,
   pointer: String,

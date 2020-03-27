@@ -52,7 +52,7 @@ class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: React
       .map(_ => ())
   }
 
-  private val collectionName = CollectionNames.ArrivalMovementCollection
+  private val collectionName = ArrivalMovementRepository.collectionName
 
   private def collection: Future[JSONCollection] =
     mongo.database.map(_.collection[JSONCollection](collectionName))
@@ -130,6 +130,6 @@ class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: React
   }
 }
 
-sealed trait FailedSavingArrivalMovement
-
-object FailedSavingArrivalNotification extends FailedSavingArrivalMovement
+object ArrivalMovementRepository {
+  val collectionName = "arrival-movements"
+}

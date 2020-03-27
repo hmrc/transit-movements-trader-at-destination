@@ -23,7 +23,7 @@ import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import play.modules.reactivemongo.ReactiveMongoApi
 import reactivemongo.play.json.collection.JSONCollection
-import repositories.CollectionNames
+import repositories.ArrivalMovementRepository
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.ExecutionContext
@@ -34,14 +34,14 @@ class TestOnlyController @Inject()(override val messagesApi: MessagesApi, mongo:
 
   def dropArrivalMovementCollection: Action[AnyContent] = Action.async {
     implicit request =>
-      val collection: Future[JSONCollection] = mongo.database.map(_.collection[JSONCollection](CollectionNames.ArrivalMovementCollection))
-
-      collection.flatMap(
-        _.drop(failIfNotFound = false) map {
-          case true  => Ok(s"Dropped  '${CollectionNames.ArrivalMovementCollection}' Mongo collection")
-          case false => Ok("collection does not exist or something gone wrong")
-        }
-      )
+      mongo.database
+        .map(_.collection[JSONCollection](ArrivalMovementRepository.collectionName))
+        .flatMap(
+          _.drop(failIfNotFound = false) map {
+            case true  => Ok(s"Dropped  '${ArrivalMovementRepository.collectionName}' Mongo collection")
+            case false => Ok("collection does not exist or something gone wrong")
+          }
+        )
   }
 
 }

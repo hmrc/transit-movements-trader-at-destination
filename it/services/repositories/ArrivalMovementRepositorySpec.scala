@@ -4,19 +4,19 @@ import java.time.LocalDate
 import java.time.LocalTime
 
 import generators.MessageGenerators
-import models.request.ArrivalId
 import models.Arrival
 import models.MessageType
 import models.MovementMessage
 import models.State
+import models.request.ArrivalId
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalatest.concurrent.IntegrationPatience
-import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.EitherValues
 import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers
 import org.scalatest.OptionValues
 import org.scalatest._
+import org.scalatest.concurrent.IntegrationPatience
+import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -25,7 +25,6 @@ import play.api.test.Helpers._
 import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 import reactivemongo.play.json.collection.JSONCollection
 import repositories.ArrivalMovementRepository
-import repositories.CollectionNames
 import utils.Format
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -73,7 +72,7 @@ class ArrivalMovementRepositorySpec
 
           val result = database.flatMap {
             result =>
-              result.collection[JSONCollection](CollectionNames.ArrivalMovementCollection).find(selector, None).one[Arrival]
+              result.collection[JSONCollection](ArrivalMovementRepository.collectionName).find(selector, None).one[Arrival]
           }.futureValue
 
           result.value mustBe arrival
@@ -100,7 +99,7 @@ class ArrivalMovementRepositorySpec
 
           val result = database.flatMap {
             result =>
-              result.collection[JSONCollection](CollectionNames.ArrivalMovementCollection).find(selector, None).one[Arrival]
+              result.collection[JSONCollection](ArrivalMovementRepository.collectionName).find(selector, None).one[Arrival]
           }.futureValue
 
           result.value.state mustEqual State.Submitted
@@ -141,7 +140,7 @@ class ArrivalMovementRepositorySpec
 
           val result = database.flatMap {
             result =>
-              result.collection[JSONCollection](CollectionNames.ArrivalMovementCollection).find(selector, None).one[Arrival]
+              result.collection[JSONCollection](ArrivalMovementRepository.collectionName).find(selector, None).one[Arrival]
           }.futureValue
 
           val updatedArrival = result.value
@@ -241,7 +240,7 @@ class ArrivalMovementRepositorySpec
 
           database.flatMap {
             db =>
-              db.collection[JSONCollection](CollectionNames.ArrivalMovementCollection).insert(false).many(jsonArr)
+              db.collection[JSONCollection](ArrivalMovementRepository.collectionName).insert(false).many(jsonArr)
           }.futureValue
 
           val result: Seq[Arrival] = service.fetchAllArrivals(eoriNumber).futureValue
@@ -266,7 +265,7 @@ class ArrivalMovementRepositorySpec
 
           database.flatMap {
             db =>
-              db.collection[JSONCollection](CollectionNames.ArrivalMovementCollection).insert(false).many(jsonArr)
+              db.collection[JSONCollection](ArrivalMovementRepository.collectionName).insert(false).many(jsonArr)
           }.futureValue
 
           val result = service.fetchAllArrivals(eoriNumber).futureValue
