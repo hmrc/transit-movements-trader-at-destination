@@ -368,7 +368,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         }
       }
 
-      "must return an INTERNAL_SERVER_ERROR on fail" in {
+      "must return an INTERNAL_SERVER_ERROR when we cannot retrieve the Arrival Movements" in {
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
         when(mockArrivalMovementRepository.fetchAllArrivals(any()))
           .thenReturn(Future.failed(new Exception))
