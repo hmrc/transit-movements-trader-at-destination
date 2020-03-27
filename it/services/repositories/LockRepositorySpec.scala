@@ -43,6 +43,8 @@ class LockRepositorySpec
       running(app) {
         val repository = app.injector.instanceOf[LockRepository]
 
+        repository.started.futureValue
+
         val result = repository.lock(arrivalId).futureValue
 
         result mustEqual true
@@ -66,6 +68,8 @@ class LockRepositorySpec
       running(app) {
         val repository = app.injector.instanceOf[LockRepository]
 
+        repository.started.futureValue
+
         val result1 = repository.lock(arrivalId).futureValue
         val result2 = repository.lock(arrivalId).futureValue
 
@@ -84,6 +88,8 @@ class LockRepositorySpec
 
       running(app) {
         val repository = app.injector.instanceOf[LockRepository]
+
+        repository.started.futureValue
 
         repository.lock(arrivalId).futureValue
         repository.unlock(arrivalId).futureValue
@@ -106,6 +112,8 @@ class LockRepositorySpec
 
       running(app) {
         val repository = app.injector.instanceOf[LockRepository]
+
+        repository.started.futureValue
 
         repository.unlock(arrivalId).futureValue
       }

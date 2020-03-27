@@ -16,28 +16,50 @@
 
 package repositories
 
+import java.time.LocalDateTime
+
+import config.AppConfig
 import javax.inject.Inject
 import models.request.ArrivalId
 import play.api.libs.json.Json
 import play.modules.reactivemongo.ReactiveMongoApi
 import reactivemongo.api.commands.LastError
+import reactivemongo.api.indexes.Index
+import reactivemongo.api.indexes.IndexType
+import reactivemongo.bson.BSONDocument
 import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 import reactivemongo.play.json.collection.JSONCollection
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class LockRepository @Inject()(mongo: ReactiveMongoApi)(implicit ec: ExecutionContext) {
+class LockRepository @Inject()(mongo: ReactiveMongoApi, appConfig: AppConfig)(implicit ec: ExecutionContext) {
 
   private val documentExistsErrorCodeValue = 11000
+
+  private val ttl = appConfig.lockRepositoryTtl
 
   private def collection: Future[JSONCollection] =
     mongo.database.map(_.collection[JSONCollection](LockRepository.collectionName))
 
+  private val createdIndex = Index(
+    key = Seq("created" -> IndexType.Ascending),
+    name = Some("created-index"),
+    options = BSONDocument("expireAfterSeconds" -> ttl)
+  )
+
+  val started: Future[Unit] =
+    collection
+      .flatMap {
+        _.indexesManager.ensure(createdIndex)
+      }
+      .map(_ => ())
+
   def lock(arrivalId: ArrivalId): Future[Boolean] = {
 
     val lock = Json.obj(
-      "_id" -> arrivalId
+      "_id"     -> arrivalId,
+      "created" -> LocalDateTime.now
     )
 
     collection.flatMap {
