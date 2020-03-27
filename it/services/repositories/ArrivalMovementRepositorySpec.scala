@@ -1,12 +1,21 @@
 package services.repositories
 
-import java.time.{LocalDate, LocalTime}
+import java.time.LocalDate
+import java.time.LocalTime
 
 import generators.MessageGenerators
-import models.{Arrival, ArrivalMovement, MessageType, MovementMessage, State}
 import models.request.ArrivalId
+import models.Arrival
+import models.MessageType
+import models.MovementMessage
+import models.State
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
+import org.scalatest.concurrent.IntegrationPatience
+import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.EitherValues
+import org.scalatest.FreeSpec
+import org.scalatest.MustMatchers
+import org.scalatest.OptionValues
 import org.scalatest._
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.Application
@@ -15,11 +24,13 @@ import play.api.libs.json.Json
 import play.api.test.Helpers._
 import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 import reactivemongo.play.json.collection.JSONCollection
-import repositories.{ArrivalMovementRepository, CollectionNames}
+import repositories.ArrivalMovementRepository
+import repositories.CollectionNames
 import utils.Format
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.util.{Failure, Success}
+import scala.util.Failure
+import scala.util.Success
 
 class ArrivalMovementRepositorySpec
     extends FreeSpec
@@ -34,9 +45,7 @@ class ArrivalMovementRepositorySpec
     with ScalaCheckPropertyChecks
     with MessageGenerators {
 
-  private val eoriNumber: String                = arbitrary[String].sample.value
-  private val arrivalMovement1: ArrivalMovement = arbitrary[ArrivalMovement].sample.value.ensuring(_.eoriNumber != eoriNumber)
-  private val arrivalMovement2: ArrivalMovement = arbitrary[ArrivalMovement].sample.value.ensuring(_.eoriNumber != eoriNumber)
+  private val eoriNumber: String = arbitrary[String].sample.value
 
   private lazy val builder = new GuiceApplicationBuilder()
 

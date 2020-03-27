@@ -18,7 +18,6 @@ package repositories
 
 import com.google.inject.Inject
 import models.Arrival
-import models.ArrivalMovement
 import models.MovementMessage
 import models.State
 import models.request.ArrivalId
@@ -27,8 +26,6 @@ import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
 import play.modules.reactivemongo.ReactiveMongoApi
 import reactivemongo.api.Cursor
-import reactivemongo.api.commands.FindAndModifyCommand.UpdateLastError
-import reactivemongo.api.commands.WriteResult
 import reactivemongo.api.indexes.Index
 import reactivemongo.api.indexes.IndexType
 import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
