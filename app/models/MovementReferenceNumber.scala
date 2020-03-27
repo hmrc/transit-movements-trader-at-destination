@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package models.messages
+package models
 
 import play.api.libs.json._
 

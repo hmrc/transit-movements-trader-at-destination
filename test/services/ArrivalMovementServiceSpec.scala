@@ -24,8 +24,8 @@ import models.Arrival
 import models.ArrivalDateTime
 import models.MessageType
 import models.MovementMessage
+import models.MovementReferenceNumber
 import models.State
-import models.messages.MovementReferenceNumber
 import models.request.ArrivalId
 import org.mockito.Mockito.when
 import org.scalatest.concurrent.IntegrationPatience

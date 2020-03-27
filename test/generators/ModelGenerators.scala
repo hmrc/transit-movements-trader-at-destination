@@ -18,8 +18,8 @@ package generators
 
 import java.time._
 
-import models.messages.MovementReferenceNumber
 import models.MessageType
+import models.MovementReferenceNumber
 import models.RejectionError
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen.choose

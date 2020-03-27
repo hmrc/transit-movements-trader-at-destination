@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package models.messages
+package models
 
 import generators.ModelGenerators
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalacheck.Gen
 import org.scalatest.EitherValues
 import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers
@@ -26,7 +25,6 @@ import org.scalatest.OptionValues
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.libs.json.JsString
 import play.api.libs.json.Json
-import play.api.mvc.PathBindable
 
 class MovementReferenceNumberSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with ModelGenerators with EitherValues with OptionValues {
 

@@ -24,8 +24,8 @@ import generators.ModelGenerators
 import models.Arrival
 import models.ArrivalDateTime
 import models.MessageSender
+import models.MovementReferenceNumber
 import models.State
-import models.messages.MovementReferenceNumber
 import models.request.ArrivalId
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito._

@@ -19,12 +19,12 @@ package generators
 import java.time.LocalDate
 import java.time.LocalTime
 
-import models.messages.MovementReferenceNumber
 import models.request.ArrivalId
 import models.Arrival
 import models.ArrivalDateTime
 import models.MessageType
 import models.MovementMessage
+import models.MovementReferenceNumber
 import models.State
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Arbitrary
