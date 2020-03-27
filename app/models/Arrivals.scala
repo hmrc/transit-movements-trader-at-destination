@@ -14,17 +14,13 @@
  * limitations under the License.
  */
 
-package models.messages
+package models
 
-import play.api.libs.json._
+import play.api.libs.json.Json
+import play.api.libs.json.OFormat
 
-final case class MovementReferenceNumber(value: String)
+case class Arrivals(arrivals: Seq[Arrival])
 
-object MovementReferenceNumber {
-
-  implicit lazy val reads: Reads[MovementReferenceNumber] = __.read[String].map(MovementReferenceNumber.apply)
-  implicit lazy val writes: Writes[MovementReferenceNumber] = Writes {
-    mrn =>
-      JsString(mrn.value)
-  }
+object Arrivals {
+  implicit val formats: OFormat[Arrivals] = Json.format[Arrivals]
 }

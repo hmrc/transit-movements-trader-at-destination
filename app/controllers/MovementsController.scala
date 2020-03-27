@@ -21,6 +21,7 @@ import java.time.OffsetDateTime
 import connectors.MessageConnector
 import controllers.actions.IdentifierAction
 import javax.inject.Inject
+import models.Arrivals
 import models.MessageType
 import models.State
 import models.SubmissionResult
@@ -94,7 +95,7 @@ class MovementsController @Inject()(
   def getMovements: Action[AnyContent] = identify.async {
     implicit request =>
       arrivalMovementRepository
-        .fetchAllMovements(request.eoriNumber)
+        .fetchAllMovementsOld(request.eoriNumber)
         .map {
           arrivalMovements =>
             // TODO this needs further iteration
@@ -107,4 +108,17 @@ class MovementsController @Inject()(
         }
   }
 
+  def getArrivals: Action[AnyContent] = identify.async {
+    implicit request =>
+      arrivalMovementRepository
+        .fetchAllArrivals(request.eoriNumber)
+        .map {
+          allArrivals =>
+            Ok(Json.toJsObject(Arrivals(allArrivals)))
+        }
+        .recover {
+          case e =>
+            InternalServerError(s"Failed with the following error: $e")
+        }
+  }
 }

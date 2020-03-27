@@ -15,11 +15,25 @@
  */
 
 package models.request
-import play.api.libs.json.Json
-import play.api.libs.json.OFormat
+import play.api.libs.json._
+
+import scala.util.Try
 
 case class ArrivalId(index: Int)
 
 object ArrivalId {
-  implicit val formatsArrivalId: OFormat[ArrivalId] = Json.format[ArrivalId]
+  implicit val formatsArrivalId: Format[ArrivalId] = new Format[ArrivalId] {
+    override def reads(json: JsValue): JsResult[ArrivalId] = json match {
+      case JsNumber(number) =>
+        Try(number.toInt)
+          .map(ArrivalId(_))
+          .map(JsSuccess(_))
+          .getOrElse(JsError("Error in converting JsNumber to an Int"))
+
+      case e =>
+        JsError(s"Error in deserialization of Json value to an ArrivalId, expected JsNumber got ${e.getClass}")
+    }
+
+    override def writes(o: ArrivalId): JsNumber = JsNumber(o.index)
+  }
 }

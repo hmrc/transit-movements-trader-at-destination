@@ -32,17 +32,6 @@ class MovementReferenceNumberSpec extends FreeSpec with MustMatchers with ScalaC
 
   "a Movement Reference Number" - {
 
-    val pathBindable = implicitly[PathBindable[MovementReferenceNumber]]
-
-    "must bind from a url" in {
-
-      val mrn = MovementReferenceNumber("99IT9876AB88901209")
-
-      val result = pathBindable.bind("mrn", "99IT9876AB88901209")
-
-      result.right.value mustEqual mrn
-    }
-
     "must deserialise" in {
 
       forAll(arbitrary[MovementReferenceNumber]) {

@@ -3,11 +3,11 @@ package services.repositories
 import java.time.{LocalDate, LocalTime}
 
 import generators.MessageGenerators
-import models.request.ArrivalId
 import models.{Arrival, ArrivalMovement, MessageType, MovementMessage, State}
+import models.request.ArrivalId
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
-import org.scalatest.{BeforeAndAfterEach, EitherValues, FreeSpec, MustMatchers, OptionValues}
+import org.scalatest._
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -118,7 +118,7 @@ class ArrivalMovementRepositorySpec
           </CC025A>
 
         val goodsReleasedMessage = MovementMessage(dateOfPrep, timeOfPrep, MessageType.GoodsReleased, messageBody)
-        val newState = State.GoodsReleased
+        val newState             = State.GoodsReleased
 
         running(app) {
           started(app).futureValue
@@ -162,7 +162,7 @@ class ArrivalMovementRepositorySpec
           </CC025A>
 
         val goodsReleasedMessage = MovementMessage(dateOfPrep, timeOfPrep, MessageType.GoodsReleased, messageBody)
-        val newState = State.GoodsReleased
+        val newState             = State.GoodsReleased
 
         running(app) {
           started(app).futureValue
@@ -256,7 +256,7 @@ class ArrivalMovementRepositorySpec
               db.collection[JSONCollection](CollectionNames.ArrivalMovementCollection).insert(false).many(jsonArr)
           }.futureValue
 
-          val result: Seq[ArrivalMovement] = service.fetchAllMovements(arrivalMovement1.eoriNumber).futureValue
+          val result: Seq[ArrivalMovement] = service.fetchAllMovementsOld(arrivalMovement1.eoriNumber).futureValue
 
           result mustBe Seq(arrivalMovement1)
         }
@@ -279,11 +279,65 @@ class ArrivalMovementRepositorySpec
               db.collection[JSONCollection](CollectionNames.ArrivalMovementCollection).insert(false).many(jsonArr)
           }.futureValue
 
-          val result: Seq[ArrivalMovement] = service.fetchAllMovements(eoriNumber).futureValue
+          val result: Seq[ArrivalMovement] = service.fetchAllMovementsOld(eoriNumber).futureValue
 
           result mustBe Seq.empty[ArrivalMovement]
         }
       }
+    }
+
+    "fetchAllArrivals" - {
+      "must return Arrival Movements that match an eoriNumber" in {
+        val app: Application = builder.build()
+
+        val arrivalMovement1 = arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber)
+        val arrivalMovement2 = arbitrary[Arrival].suchThat(_.eoriNumber != eoriNumber).sample.value
+
+        running(app) {
+          started(app).futureValue
+
+          val service: ArrivalMovementRepository = app.injector.instanceOf[ArrivalMovementRepository]
+
+          val allMovements = Seq(arrivalMovement1, arrivalMovement2)
+
+          val jsonArr = allMovements.map(Json.toJsObject(_))
+
+          database.flatMap {
+            db =>
+              db.collection[JSONCollection](CollectionNames.ArrivalMovementCollection).insert(false).many(jsonArr)
+          }.futureValue
+
+          val result: Seq[Arrival] = service.fetchAllArrivals(eoriNumber).futureValue
+
+          result mustBe Seq(arrivalMovement1)
+        }
+      }
+
+      "must return an empty sequence when there are no movements with the same eori" in {
+        val app: Application = builder.build()
+        val arrivalMovement1 = arbitrary[Arrival].suchThat(_.eoriNumber != eoriNumber).sample.value
+        val arrivalMovement2 = arbitrary[Arrival].suchThat(_.eoriNumber != eoriNumber).sample.value
+
+        running(app) {
+          started(app).futureValue
+
+          val service: ArrivalMovementRepository = app.injector.instanceOf[ArrivalMovementRepository]
+
+          val allMovements = Seq(arrivalMovement1, arrivalMovement2)
+
+          val jsonArr = allMovements.map(Json.toJsObject(_))
+
+          database.flatMap {
+            db =>
+              db.collection[JSONCollection](CollectionNames.ArrivalMovementCollection).insert(false).many(jsonArr)
+          }.futureValue
+
+          val result = service.fetchAllArrivals(eoriNumber).futureValue
+
+          result mustBe Seq.empty[Arrival]
+        }
+      }
+
     }
   }
 

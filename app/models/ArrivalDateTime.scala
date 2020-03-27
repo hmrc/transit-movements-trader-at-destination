@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-package models.messages
+package models
 
-import play.api.libs.json._
+import java.time.LocalDate
+import java.time.LocalTime
 
-final case class MovementReferenceNumber(value: String)
+import play.api.libs.json.Json
+import play.api.libs.json.OFormat
 
-object MovementReferenceNumber {
+case class ArrivalDateTime(date: LocalDate, time: LocalTime)
 
-  implicit lazy val reads: Reads[MovementReferenceNumber] = __.read[String].map(MovementReferenceNumber.apply)
-  implicit lazy val writes: Writes[MovementReferenceNumber] = Writes {
-    mrn =>
-      JsString(mrn.value)
-  }
+object ArrivalDateTime {
+  implicit val format: OFormat[ArrivalDateTime] = Json.format[ArrivalDateTime]
 }
