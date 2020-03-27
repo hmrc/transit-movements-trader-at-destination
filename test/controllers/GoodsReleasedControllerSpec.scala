@@ -23,7 +23,6 @@ import base.SpecBase
 import generators.ModelGenerators
 import models.Arrival
 import models.ArrivalDateTime
-import models.ArrivalMeta
 import models.MessageSender
 import models.State
 import models.messages.MovementReferenceNumber
@@ -42,8 +41,6 @@ import scala.util.Success
 
 class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks with ModelGenerators {
 
-  private val arrivalMeta = ArrivalMeta(ArrivalDateTime(LocalDate.now, LocalTime.now()), ArrivalDateTime(LocalDate.now, LocalTime.now()))
-
   "post" - {
 
     "must add the message to the arrival, set the state to Goods Released and return OK" in {
@@ -52,12 +49,15 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
       val arrivalId     = ArrivalId(1)
       val version       = 1
       val messageSender = MessageSender(arrivalId, version)
+      val dateOfPrep    = LocalDate.now()
+      val timeOfPrep    = LocalTime.of(1, 1)
       val arrival = Arrival(
         arrivalId,
         MovementReferenceNumber("mrn"),
         "eori",
         State.Submitted,
-        arrivalMeta,
+        ArrivalDateTime(dateOfPrep, timeOfPrep),
+        ArrivalDateTime(dateOfPrep, timeOfPrep),
         Seq.empty
       )
 
@@ -71,8 +71,6 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
         .build()
 
       running(application) {
-        val dateOfPrep = LocalDate.now()
-        val timeOfPrep = LocalTime.of(1, 1)
 
         val requestXmlBody =
           <CC025A>
@@ -127,12 +125,16 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
       val arrivalId     = ArrivalId(1)
       val version       = 1
       val messageSender = MessageSender(arrivalId, version)
+      val dateOfPrep    = LocalDate.now()
+      val timeOfPrep    = LocalTime.of(1, 1)
+
       val arrival = Arrival(
         arrivalId,
         MovementReferenceNumber("mrn"),
         "eori",
         State.Submitted,
-        arrivalMeta,
+        ArrivalDateTime(dateOfPrep, timeOfPrep),
+        ArrivalDateTime(dateOfPrep, timeOfPrep),
         Seq.empty
       )
 
@@ -146,9 +148,6 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
         .build()
 
       running(application) {
-        val dateOfPrep = LocalDate.now()
-        val timeOfPrep = LocalTime.of(1, 1)
-
         val requestXmlBody =
           <InvalidRootNode>
             <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
@@ -170,12 +169,16 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
       val arrivalId     = ArrivalId(1)
       val version       = 1
       val messageSender = MessageSender(arrivalId, version)
+      val dateOfPrep    = LocalDate.now()
+      val timeOfPrep    = LocalTime.of(1, 1)
+
       val arrival = Arrival(
         arrivalId,
         MovementReferenceNumber("mrn"),
         "eori",
         State.Submitted,
-        arrivalMeta,
+        ArrivalDateTime(dateOfPrep, timeOfPrep),
+        ArrivalDateTime(dateOfPrep, timeOfPrep),
         Seq.empty
       )
 
