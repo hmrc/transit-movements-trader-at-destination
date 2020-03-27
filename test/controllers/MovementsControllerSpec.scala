@@ -343,7 +343,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
     "getArrivals" - {
 
-      "must return Ok and retrieve arrivals" in {
+      "must return Ok with the retrieved arrivals" in {
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
 
         val application =
