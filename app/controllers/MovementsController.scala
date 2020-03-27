@@ -23,17 +23,13 @@ import controllers.actions.IdentifierAction
 import javax.inject.Inject
 import models.Arrivals
 import models.MessageType
-import models.State
 import models.SubmissionResult
 import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
-import reactivemongo.api.commands.WriteResult
 import repositories.ArrivalMovementRepository
-import repositories.FailedSavingArrivalMovement
 import services.ArrivalMovementService
-import services.DatabaseService
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.ExecutionContext
@@ -44,7 +40,6 @@ class MovementsController @Inject()(
   cc: ControllerComponents,
   arrivalMovementRepository: ArrivalMovementRepository,
   arrivalMovementService: ArrivalMovementService,
-  databaseService: DatabaseService,
   identify: IdentifierAction,
   messageConnector: MessageConnector
 )(implicit ec: ExecutionContext)
@@ -90,22 +85,6 @@ class MovementsController @Inject()(
               }
             }
       }
-  }
-
-  def getMovements: Action[AnyContent] = identify.async {
-    implicit request =>
-      arrivalMovementRepository
-        .fetchAllMovementsOld(request.eoriNumber)
-        .map {
-          arrivalMovements =>
-            // TODO this needs further iteration
-            val messages = arrivalMovements.map(_.messages.head)
-            Ok(Json.toJson(messages))
-        }
-        .recover {
-          case e =>
-            InternalServerError(s"Failed with the following error: $e")
-        }
   }
 
   def getArrivals: Action[AnyContent] = identify.async {

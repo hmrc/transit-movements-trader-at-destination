@@ -5,7 +5,6 @@ import java.time.LocalTime
 
 import generators.MessageGenerators
 import models.Arrival
-import models.ArrivalMovement
 import models.MessageType
 import models.MovementMessage
 import models.State
@@ -15,6 +14,7 @@ import org.scalatest.EitherValues
 import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers
 import org.scalatest.OptionValues
+import org.scalatest._
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
@@ -25,8 +25,6 @@ import play.api.test.Helpers._
 import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 import reactivemongo.play.json.collection.JSONCollection
 import repositories.ArrivalMovementRepository
-import repositories.CollectionNames
-import services.mocks.MockDateTimeService
 import utils.Format
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -40,15 +38,13 @@ class ArrivalMovementRepositorySpec
     with FailOnUnindexedQueries
     with ScalaFutures
     with IntegrationPatience
-    with MockDateTimeService
+    with BeforeAndAfterEach
     with OptionValues
     with EitherValues
     with ScalaCheckPropertyChecks
     with MessageGenerators {
 
-  private val eoriNumber: String                = arbitrary[String].sample.value
-  private val arrivalMovement1: ArrivalMovement = arbitrary[ArrivalMovement].sample.value.ensuring(_.eoriNumber != eoriNumber)
-  private val arrivalMovement2: ArrivalMovement = arbitrary[ArrivalMovement].sample.value.ensuring(_.eoriNumber != eoriNumber)
+  private val eoriNumber: String = arbitrary[String].sample.value
 
   private lazy val builder = new GuiceApplicationBuilder()
 
@@ -76,7 +72,7 @@ class ArrivalMovementRepositorySpec
 
           val result = database.flatMap {
             result =>
-              result.collection[JSONCollection](CollectionNames.ArrivalMovementCollection).find(selector, None).one[Arrival]
+              result.collection[JSONCollection](ArrivalMovementRepository.collectionName).find(selector, None).one[Arrival]
           }.futureValue
 
           result.value mustBe arrival
@@ -103,7 +99,7 @@ class ArrivalMovementRepositorySpec
 
           val result = database.flatMap {
             result =>
-              result.collection[JSONCollection](CollectionNames.ArrivalMovementCollection).find(selector, None).one[Arrival]
+              result.collection[JSONCollection](ArrivalMovementRepository.collectionName).find(selector, None).one[Arrival]
           }.futureValue
 
           result.value.state mustEqual State.Submitted
@@ -144,7 +140,7 @@ class ArrivalMovementRepositorySpec
 
           val result = database.flatMap {
             result =>
-              result.collection[JSONCollection](CollectionNames.ArrivalMovementCollection).find(selector, None).one[Arrival]
+              result.collection[JSONCollection](ArrivalMovementRepository.collectionName).find(selector, None).one[Arrival]
           }.futureValue
 
           val updatedArrival = result.value
@@ -189,30 +185,6 @@ class ArrivalMovementRepositorySpec
       }
     }
 
-    "persistToMongo" - {
-      "must persist ArrivalMovement within mongoDB" in {
-
-        val app: Application = builder.build()
-
-        running(app) {
-          started(app).futureValue
-
-          val service: ArrivalMovementRepository = app.injector.instanceOf[ArrivalMovementRepository]
-
-          service.persistToMongo(arrivalMovement1).futureValue
-
-          val selector = Json.obj("eoriNumber" -> arrivalMovement1.eoriNumber)
-
-          val getValue: Option[ArrivalMovement] = database.flatMap {
-            result =>
-              result.collection[JSONCollection](CollectionNames.ArrivalMovementCollection).find(selector, None).one[ArrivalMovement]
-          }.futureValue
-
-          getValue.value mustBe arrivalMovement1
-        }
-      }
-    }
-
     "get" - {
       "must get an arrival when it exists" in {
         val app: Application = builder.build()
@@ -250,54 +222,6 @@ class ArrivalMovementRepositorySpec
       }
     }
 
-    "fetchAllMovements" - {
-      "must fetch all the ArrivalMovements from mongoDB and filter non-matching eori's" in {
-        val app: Application = builder.build()
-
-        running(app) {
-          started(app).futureValue
-
-          val service: ArrivalMovementRepository = app.injector.instanceOf[ArrivalMovementRepository]
-
-          val allMovements = Seq(arrivalMovement1, arrivalMovement2)
-
-          val jsonArr = allMovements.map(Json.toJsObject(_))
-
-          database.flatMap {
-            db =>
-              db.collection[JSONCollection](CollectionNames.ArrivalMovementCollection).insert(false).many(jsonArr)
-          }.futureValue
-
-          val result: Seq[ArrivalMovement] = service.fetchAllMovementsOld(arrivalMovement1.eoriNumber).futureValue
-
-          result mustBe Seq(arrivalMovement1)
-        }
-      }
-
-      "must return an empty sequence when there are no movements with the same eori" in {
-        val app: Application = builder.build()
-
-        running(app) {
-          started(app).futureValue
-
-          val service: ArrivalMovementRepository = app.injector.instanceOf[ArrivalMovementRepository]
-
-          val allMovements = Seq(arrivalMovement1, arrivalMovement2)
-
-          val jsonArr = allMovements.map(Json.toJsObject(_))
-
-          database.flatMap {
-            db =>
-              db.collection[JSONCollection](CollectionNames.ArrivalMovementCollection).insert(false).many(jsonArr)
-          }.futureValue
-
-          val result: Seq[ArrivalMovement] = service.fetchAllMovementsOld(eoriNumber).futureValue
-
-          result mustBe Seq.empty[ArrivalMovement]
-        }
-      }
-    }
-
     "fetchAllArrivals" - {
       "must return Arrival Movements that match an eoriNumber" in {
         val app: Application = builder.build()
@@ -316,7 +240,7 @@ class ArrivalMovementRepositorySpec
 
           database.flatMap {
             db =>
-              db.collection[JSONCollection](CollectionNames.ArrivalMovementCollection).insert(false).many(jsonArr)
+              db.collection[JSONCollection](ArrivalMovementRepository.collectionName).insert(false).many(jsonArr)
           }.futureValue
 
           val result: Seq[Arrival] = service.fetchAllArrivals(eoriNumber).futureValue
@@ -341,7 +265,7 @@ class ArrivalMovementRepositorySpec
 
           database.flatMap {
             db =>
-              db.collection[JSONCollection](CollectionNames.ArrivalMovementCollection).insert(false).many(jsonArr)
+              db.collection[JSONCollection](ArrivalMovementRepository.collectionName).insert(false).many(jsonArr)
           }.futureValue
 
           val result = service.fetchAllArrivals(eoriNumber).futureValue

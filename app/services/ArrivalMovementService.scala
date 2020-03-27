@@ -26,7 +26,7 @@ import models.Arrival
 import models.ArrivalDateTime
 import models.MessageType
 import models.MovementMessage
-import models.messages.MovementReferenceNumber
+import models.MovementReferenceNumber
 import repositories.ArrivalIdRepository
 import utils.Format
 import models.State.PendingSubmission

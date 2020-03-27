@@ -14,11 +14,17 @@
  * limitations under the License.
  */
 
-package models.request
+package models
 
-import helpers.XmlBuilderHelper
+import play.api.libs.json._
 
-case class MessageSender(environment: String, eori: String) extends XmlBuilderHelper {
+final case class MovementReferenceNumber(value: String)
 
-  def toXml = buildAndEncodeElem(s"$environment-$eori", "MesSenMES3")
+object MovementReferenceNumber {
+
+  implicit lazy val reads: Reads[MovementReferenceNumber] = __.read[String].map(MovementReferenceNumber.apply)
+  implicit lazy val writes: Writes[MovementReferenceNumber] = Writes {
+    mrn =>
+      JsString(mrn.value)
+  }
 }
