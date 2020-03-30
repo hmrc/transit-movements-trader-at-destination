@@ -26,6 +26,7 @@ import models.Arrival
 import models.Arrivals
 import models.MessageType
 import models.State
+import models.TransitWrapper
 import models.request.ArrivalId
 import org.mockito.Matchers.any
 import org.mockito.Matchers.{eq => eqTo}
@@ -61,7 +62,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
         when(mockArrivalMovementRepository.insert(any())).thenReturn(Future.successful(()))
         when(mockArrivalMovementRepository.setState(any(), any())).thenReturn(Future.successful(()))
-        when(mockMessageConnector.post(any(), any(), any())(any(), any())).thenReturn(Future.successful(HttpResponse(ACCEPTED)))
+        when(mockMessageConnector.post(any(), any(), any())(any())).thenReturn(Future.successful(HttpResponse(ACCEPTED)))
 
         val application = baseApplicationBuilder
           .overrides(
@@ -90,9 +91,9 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           val result = route(application, request).value
 
           status(result) mustEqual ACCEPTED
-          header("Location", result).value must be(arrivalId.index.toString) // TODO: This needs to be the actual resource location
+          header("Location", result).value must be(arrivalId.index.toString)
           verify(mockArrivalMovementRepository, times(1)).insert(any())
-          verify(mockMessageConnector, times(1)).post(eqTo(requestXmlBody.toString), eqTo(MessageType.ArrivalNotification), any())(any(), any())
+          verify(mockMessageConnector, times(1)).post(eqTo(TransitWrapper(requestXmlBody)), eqTo(MessageType.ArrivalNotification), any())(any())
           verify(mockArrivalMovementRepository, times(1)).setState(any(), eqTo(State.Submitted))
         }
       }
@@ -254,7 +255,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
         when(mockArrivalMovementRepository.insert(any())).thenReturn(Future.successful(()))
         when(mockArrivalMovementRepository.setState(any(), any())).thenReturn(Future.successful(()))
-        when(mockMessageConnector.post(any(), any(), any())(any(), any())).thenReturn(Future.failed(Upstream5xxResponse("message", 500, 500)))
+        when(mockMessageConnector.post(any(), any(), any())(any())).thenReturn(Future.failed(Upstream5xxResponse("message", 500, 500)))
 
         val application = baseApplicationBuilder
           .overrides(

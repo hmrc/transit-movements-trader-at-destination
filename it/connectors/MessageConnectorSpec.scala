@@ -7,6 +7,7 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.matching.StringValuePattern
 import generators.MessageGenerators
 import models.MessageType
+import models.TransitWrapper
 import org.scalacheck.Gen
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatest.concurrent.ScalaFutures
@@ -57,14 +58,15 @@ class MessageConnectorSpec
             .withHeader("Date", equalTo(s"$dateTimeFormatted"))
             .withHeader("X-Message-Sender", equalTo(messageSender))
             .withHeader("Accept", equalTo("application/xml"))
-            //.withHeader("Authorization", equalTo("Bearer bearertokenhere"))
             .willReturn(
               aResponse()
                 .withStatus(200)
             )
         )
 
-        val result = connector.post("<CC007A>test</CC007A>", messageType, localDateTime)
+        val postValue = TransitWrapper(<CC007A>test</CC007A>)
+
+        val result = connector.post(postValue, messageType, localDateTime)
 
         whenReady(result) {
           response =>
@@ -85,14 +87,15 @@ class MessageConnectorSpec
             .withHeader("X-Message-Sender", equalTo(messageSender))
             .withHeader("Date", equalTo("test"))
             .withHeader("Accept", equalTo("application/xml"))
-            //.withHeader("Authorization", equalTo("Bearer bearertokenhere"))
             .willReturn(
               aResponse()
                 .withStatus(genFailedStatusCodes.sample.value)
             )
         )
 
-        val result = connector.post("<CC007A>test</CC007A>", messageType, localDateTime)
+        val postValue = TransitWrapper(<CC007A>test</CC007A>)
+
+        val result = connector.post(postValue, messageType, localDateTime)
 
         whenReady(result.failed) {
           response =>

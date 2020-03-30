@@ -26,7 +26,7 @@ class TransitWrapperSpec extends FreeSpec with MustMatchers {
     "must add transit wrapper to an existing xml" in {
 
       val testNode = <testNode></testNode>
-      val result   = TransitWrapper.toXml(testNode)
+      val result   = TransitWrapper(testNode).toXml
 
       val expectedResult =
         <transitRequest
