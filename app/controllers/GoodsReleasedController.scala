@@ -16,7 +16,7 @@
 
 package controllers
 
-import controllers.actions.ArrivalRetrievalActionProvider
+import controllers.actions.GetArrivalForWriteActionProvider
 import javax.inject.Inject
 import models.MessageReceived
 import models.MessageSender
@@ -35,34 +35,22 @@ import scala.xml.NodeSeq
 class GoodsReleasedController @Inject()(
   cc: ControllerComponents,
   arrivalMovementService: ArrivalMovementService,
-  getArrival: ArrivalRetrievalActionProvider,
+  getArrival: GetArrivalForWriteActionProvider,
   arrivalMovementRepository: ArrivalMovementRepository
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
   def post(messageSender: MessageSender): Action[NodeSeq] = getArrival(messageSender.arrivalId)(parse.xml).async {
     implicit request =>
-      request.arrival match {
-        case Some(arrival) =>
-          arrivalMovementService.makeGoodsReleasedMessage()(request.request.body) match {
-            case Some(message) =>
-              val newState = arrival.state.transition(MessageReceived.GoodsReleased)
-              arrivalMovementRepository
-                .addMessage(arrival.arrivalId, message, newState)
-                .map {
-                  case Success(_) => Ok
-                  case Failure(_) => InternalServerError
-                }
-                .recover {
-                  case _ =>
-                    // TODO: clean this up
-                    InternalServerError
-                }
-            case None =>
-              Future.successful(InternalServerError)
+      arrivalMovementService.makeGoodsReleasedMessage()(request.request.body) match {
+        case Some(message) =>
+          val newState = request.arrival.state.transition(MessageReceived.GoodsReleased)
+          arrivalMovementRepository.addMessage(request.arrival.arrivalId, message, newState).map {
+            case Success(_) => Ok
+            case Failure(_) => InternalServerError
           }
-        case _ =>
-          Future.successful(NotFound)
+        case None =>
+          Future.successful(InternalServerError)
       }
   }
 }

@@ -16,8 +16,7 @@
 
 package models.request
 
-import models.Arrival
 import play.api.mvc.Request
 import play.api.mvc.WrappedRequest
 
-case class ArrivalRequest[A](request: Request[A], arrival: Arrival) extends WrappedRequest[A](request)
+case class AuthenticatedRequest[A](request: Request[A], eoriNumber: String) extends WrappedRequest[A](request)

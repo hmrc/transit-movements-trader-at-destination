@@ -19,7 +19,7 @@ package controllers
 import java.time.OffsetDateTime
 
 import connectors.MessageConnector
-import controllers.actions.IdentifierAction
+import controllers.actions.AuthenticateActionProvider
 import javax.inject.Inject
 import models.Arrivals
 import models.MessageType
@@ -41,12 +41,12 @@ class MovementsController @Inject()(
   cc: ControllerComponents,
   arrivalMovementRepository: ArrivalMovementRepository,
   arrivalMovementService: ArrivalMovementService,
-  identify: IdentifierAction,
+  authenticate: AuthenticateActionProvider,
   messageConnector: MessageConnector
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
-  def createMovement: Action[NodeSeq] = identify.async(parse.xml) {
+  def createMovement: Action[NodeSeq] = authenticate().async(parse.xml) {
     implicit request =>
       arrivalMovementService.makeArrivalMovement(request.eoriNumber)(request.body) match {
         case None =>
@@ -88,7 +88,7 @@ class MovementsController @Inject()(
       }
   }
 
-  def getArrivals: Action[AnyContent] = identify.async {
+  def getArrivals: Action[AnyContent] = authenticate().async {
     implicit request =>
       arrivalMovementRepository
         .fetchAllArrivals(request.eoriNumber)

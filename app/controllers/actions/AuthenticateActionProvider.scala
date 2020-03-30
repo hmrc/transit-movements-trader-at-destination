@@ -14,10 +14,23 @@
  * limitations under the License.
  */
 
-package models.request
+package controllers.actions
 
-import models.Arrival
-import play.api.mvc.Request
-import play.api.mvc.WrappedRequest
+import javax.inject.Inject
+import models.request.AuthenticatedRequest
+import play.api.mvc.ActionBuilder
+import play.api.mvc.AnyContent
+import play.api.mvc.DefaultActionBuilder
 
-case class ArrivalRequest[A](request: Request[A], arrival: Arrival) extends WrappedRequest[A](request)
+trait AuthenticateActionProvider {
+  def apply(): ActionBuilder[AuthenticatedRequest, AnyContent]
+}
+
+class AuthenticateActionProviderImpl @Inject()(
+  authenticate: AuthenticateAction,
+  buildDefault: DefaultActionBuilder
+) extends AuthenticateActionProvider {
+
+  override def apply(): ActionBuilder[AuthenticatedRequest, AnyContent] =
+    buildDefault andThen authenticate
+}

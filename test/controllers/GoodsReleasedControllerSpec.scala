@@ -34,178 +34,262 @@ import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import repositories.ArrivalMovementRepository
+import repositories.LockRepository
 import utils.Format
 
 import scala.concurrent.Future
+import scala.util.Failure
 import scala.util.Success
 
 class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks with ModelGenerators {
 
   "post" - {
 
-    "must add the message to the arrival, set the state to Goods Released and return OK" in {
-      val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+    "when a lock can be acquired" - {
 
-      val arrivalId     = ArrivalId(1)
-      val version       = 1
-      val messageSender = MessageSender(arrivalId, version)
-      val dateOfPrep    = LocalDate.now()
-      val timeOfPrep    = LocalTime.of(1, 1)
-      val arrival = Arrival(
-        arrivalId,
-        MovementReferenceNumber("mrn"),
-        "eori",
-        State.Submitted,
-        ArrivalDateTime(dateOfPrep, timeOfPrep),
-        ArrivalDateTime(dateOfPrep, timeOfPrep),
-        Seq.empty
-      )
+      "must lock the arrival, add the message, set the state to Goods Released, unlock it and return OK" in {
+        val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+        val mockLockRepository            = mock[LockRepository]
 
-      when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
-      when(mockArrivalMovementRepository.addMessage(any(), any(), any())).thenReturn(Future.successful(Success(())))
-
-      val application = baseApplicationBuilder
-        .overrides(
-          bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository)
+        val arrivalId     = ArrivalId(1)
+        val version       = 1
+        val messageSender = MessageSender(arrivalId, version)
+        val dateOfPrep    = LocalDate.now()
+        val timeOfPrep    = LocalTime.of(1, 1)
+        val arrival = Arrival(
+          arrivalId,
+          MovementReferenceNumber("mrn"),
+          "eori",
+          State.Submitted,
+          ArrivalDateTime(dateOfPrep, timeOfPrep),
+          ArrivalDateTime(dateOfPrep, timeOfPrep),
+          Seq.empty
         )
-        .build()
 
-      running(application) {
+        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
+        when(mockArrivalMovementRepository.addMessage(any(), any(), any())).thenReturn(Future.successful(Success(())))
+        when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
+        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
 
-        val requestXmlBody =
-          <CC025A>
-            <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
-            <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
-          </CC025A>
+        val application = baseApplicationBuilder
+          .overrides(
+            bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
+            bind[LockRepository].toInstance(mockLockRepository)
+          )
+          .build()
 
-        val request = FakeRequest(POST, routes.GoodsReleasedController.post(messageSender).url).withXmlBody(requestXmlBody)
+        running(application) {
 
-        val result = route(application, request).value
+          val requestXmlBody =
+            <CC025A>
+              <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+              <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+            </CC025A>
 
-        status(result) mustEqual OK
-        verify(mockArrivalMovementRepository, times(1)).addMessage(any(), any(), eqTo(State.GoodsReleased))
+          val request = FakeRequest(POST, routes.GoodsReleasedController.post(messageSender).url).withXmlBody(requestXmlBody)
+
+          val result = route(application, request).value
+
+          status(result) mustEqual OK
+          verify(mockLockRepository, times(1)).lock(arrivalId)
+          verify(mockArrivalMovementRepository, times(1)).addMessage(any(), any(), eqTo(State.GoodsReleased))
+          verify(mockLockRepository, times(1)).unlock(arrivalId)
+        }
+      }
+
+      "must lock, return NotFound and unlock when given a message for an arrival that does not exist" in {
+        val arrivalId     = ArrivalId(1)
+        val messageSender = MessageSender(arrivalId, 1)
+
+        val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+        val mockLockRepository            = mock[LockRepository]
+
+        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(None))
+        when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
+        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
+
+        val application = baseApplicationBuilder
+          .overrides(
+            bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
+            bind[LockRepository].toInstance(mockLockRepository)
+          )
+          .build()
+
+        running(application) {
+          val dateOfPrep = LocalDate.now()
+          val timeOfPrep = LocalTime.of(1, 1)
+
+          val requestXmlBody =
+            <CC025A>
+              <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+              <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+            </CC025A>
+
+          val request = FakeRequest(POST, routes.GoodsReleasedController.post(messageSender).url).withXmlBody(requestXmlBody)
+
+          val result = route(application, request).value
+
+          status(result) mustEqual NOT_FOUND
+          verify(mockArrivalMovementRepository, never).addMessage(any(), any(), any())
+          verify(mockLockRepository, times(1)).lock(arrivalId)
+          verify(mockLockRepository, times(1)).unlock(arrivalId)
+        }
+      }
+
+      "must lock, return Internal Server Error and release the lock if the message is not Goods Released" in {
+        val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+        val mockLockRepository            = mock[LockRepository]
+
+        val arrivalId     = ArrivalId(1)
+        val version       = 1
+        val messageSender = MessageSender(arrivalId, version)
+        val dateOfPrep    = LocalDate.now()
+        val timeOfPrep    = LocalTime.of(1, 1)
+
+        val arrival = Arrival(
+          arrivalId,
+          MovementReferenceNumber("mrn"),
+          "eori",
+          State.Submitted,
+          ArrivalDateTime(dateOfPrep, timeOfPrep),
+          ArrivalDateTime(dateOfPrep, timeOfPrep),
+          Seq.empty
+        )
+
+        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
+        when(mockArrivalMovementRepository.addMessage(any(), any(), any())).thenReturn(Future.successful(Success(())))
+        when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
+        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
+
+        val application = baseApplicationBuilder
+          .overrides(
+            bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
+            bind[LockRepository].toInstance(mockLockRepository)
+          )
+          .build()
+
+        running(application) {
+          val dateOfPrep = LocalDate.now()
+          val timeOfPrep = LocalTime.of(1, 1)
+
+          val requestXmlBody =
+            <InvalidRootNode>
+              <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+              <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+            </InvalidRootNode>
+
+          val request = FakeRequest(POST, routes.GoodsReleasedController.post(messageSender).url).withXmlBody(requestXmlBody)
+
+          val result = route(application, request).value
+
+          status(result) mustEqual INTERNAL_SERVER_ERROR
+          verify(mockArrivalMovementRepository, never).addMessage(any(), any(), any())
+          verify(mockLockRepository, times(1)).lock(arrivalId)
+          verify(mockLockRepository, times(1)).unlock(arrivalId)
+        }
+      }
+
+      "must lock, return Internal Server Error and unlock if adding the message to the movement fails" in {
+        val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+        val mockLockRepository            = mock[LockRepository]
+
+        val arrivalId     = ArrivalId(1)
+        val version       = 1
+        val messageSender = MessageSender(arrivalId, version)
+        val dateOfPrep    = LocalDate.now()
+        val timeOfPrep    = LocalTime.of(1, 1)
+
+        val arrival = Arrival(
+          arrivalId,
+          MovementReferenceNumber("mrn"),
+          "eori",
+          State.Submitted,
+          ArrivalDateTime(dateOfPrep, timeOfPrep),
+          ArrivalDateTime(dateOfPrep, timeOfPrep),
+          Seq.empty
+        )
+
+        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
+        when(mockArrivalMovementRepository.addMessage(any(), any(), any())).thenReturn(Future.successful(Failure(new Exception())))
+        when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
+        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
+
+        val application = baseApplicationBuilder
+          .overrides(
+            bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
+            bind[LockRepository].toInstance(mockLockRepository)
+          )
+          .build()
+
+        running(application) {
+          val dateOfPrep = LocalDate.now()
+          val timeOfPrep = LocalTime.of(1, 1)
+
+          val requestXmlBody =
+            <CC025A>
+              <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+              <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+            </CC025A>
+
+          val request = FakeRequest(POST, routes.GoodsReleasedController.post(messageSender).url).withXmlBody(requestXmlBody)
+
+          val result = route(application, request).value
+
+          status(result) mustEqual INTERNAL_SERVER_ERROR
+          verify(mockLockRepository, times(1)).lock(arrivalId)
+          verify(mockLockRepository, times(1)).unlock(arrivalId)
+        }
       }
     }
 
-    "must return NotFound when given a message for an arrival that does not exist" in {
-      val messageSender = MessageSender(ArrivalId(1), 1)
+    "when a lock cannot be acquired" - {
 
-      val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
-
-      when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(None))
-
-      val application = baseApplicationBuilder
-        .overrides(
-          bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository)
-        )
-        .build()
-
-      running(application) {
+      "must return Locked" in {
         val dateOfPrep = LocalDate.now()
         val timeOfPrep = LocalTime.of(1, 1)
 
-        val requestXmlBody =
-          <CC025A>
-            <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
-            <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
-          </CC025A>
+        val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+        val mockLockRepository            = mock[LockRepository]
 
-        val request = FakeRequest(POST, routes.GoodsReleasedController.post(messageSender).url).withXmlBody(requestXmlBody)
-
-        val result = route(application, request).value
-
-        status(result) mustEqual NOT_FOUND
-        verify(mockArrivalMovementRepository, never).addMessage(any(), any(), any())
-      }
-    }
-
-    "must return Internal Server Error if the message is not Goods Released" in {
-      val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
-
-      val arrivalId     = ArrivalId(1)
-      val version       = 1
-      val messageSender = MessageSender(arrivalId, version)
-      val dateOfPrep    = LocalDate.now()
-      val timeOfPrep    = LocalTime.of(1, 1)
-
-      val arrival = Arrival(
-        arrivalId,
-        MovementReferenceNumber("mrn"),
-        "eori",
-        State.Submitted,
-        ArrivalDateTime(dateOfPrep, timeOfPrep),
-        ArrivalDateTime(dateOfPrep, timeOfPrep),
-        Seq.empty
-      )
-
-      when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
-      when(mockArrivalMovementRepository.addMessage(any(), any(), any())).thenReturn(Future.successful(Success(())))
-
-      val application = baseApplicationBuilder
-        .overrides(
-          bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository)
+        val arrivalId     = ArrivalId(1)
+        val version       = 1
+        val messageSender = MessageSender(arrivalId, version)
+        val arrival = Arrival(
+          arrivalId,
+          MovementReferenceNumber("mrn"),
+          "eori",
+          State.Submitted,
+          ArrivalDateTime(dateOfPrep, timeOfPrep),
+          ArrivalDateTime(dateOfPrep, timeOfPrep),
+          Seq.empty
         )
-        .build()
 
-      running(application) {
-        val requestXmlBody =
-          <InvalidRootNode>
-            <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
-            <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
-          </InvalidRootNode>
+        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
+        when(mockLockRepository.lock(any())).thenReturn(Future.successful(false))
 
-        val request = FakeRequest(POST, routes.GoodsReleasedController.post(messageSender).url).withXmlBody(requestXmlBody)
+        val application = baseApplicationBuilder
+          .overrides(
+            bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
+            bind[LockRepository].toInstance(mockLockRepository)
+          )
+          .build()
 
-        val result = route(application, request).value
+        running(application) {
+          val dateOfPrep = LocalDate.now()
+          val timeOfPrep = LocalTime.of(1, 1)
 
-        status(result) mustEqual INTERNAL_SERVER_ERROR
-        verify(mockArrivalMovementRepository, never).addMessage(any(), any(), any())
-      }
-    }
+          val requestXmlBody =
+            <CC025A>
+              <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+              <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+            </CC025A>
 
-    "must return Internal Server Error if adding the message to the movement fails" in {
-      val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+          val request = FakeRequest(POST, routes.GoodsReleasedController.post(messageSender).url).withXmlBody(requestXmlBody)
 
-      val arrivalId     = ArrivalId(1)
-      val version       = 1
-      val messageSender = MessageSender(arrivalId, version)
-      val dateOfPrep    = LocalDate.now()
-      val timeOfPrep    = LocalTime.of(1, 1)
+          val result = route(application, request).value
 
-      val arrival = Arrival(
-        arrivalId,
-        MovementReferenceNumber("mrn"),
-        "eori",
-        State.Submitted,
-        ArrivalDateTime(dateOfPrep, timeOfPrep),
-        ArrivalDateTime(dateOfPrep, timeOfPrep),
-        Seq.empty
-      )
-
-      when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
-      when(mockArrivalMovementRepository.addMessage(any(), any(), any())).thenReturn(Future.failed(new Exception()))
-
-      val application = baseApplicationBuilder
-        .overrides(
-          bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository)
-        )
-        .build()
-
-      running(application) {
-        val dateOfPrep = LocalDate.now()
-        val timeOfPrep = LocalTime.of(1, 1)
-
-        val requestXmlBody =
-          <CC025A>
-            <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
-            <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
-          </CC025A>
-
-        val request = FakeRequest(POST, routes.GoodsReleasedController.post(messageSender).url).withXmlBody(requestXmlBody)
-
-        val result = route(application, request).value
-
-        status(result) mustEqual INTERNAL_SERVER_ERROR
+          status(result) mustEqual LOCKED
+        }
       }
     }
   }

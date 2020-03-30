@@ -16,8 +16,8 @@
 
 package base
 
-import controllers.actions.FakeIdentifierAction
-import controllers.actions.IdentifierAction
+import controllers.actions.AuthenticateActionProvider
+import controllers.actions.FakeAuthenticateActionProvider
 import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers
 import org.scalatest.OptionValues
@@ -38,7 +38,7 @@ trait SpecBase extends FreeSpec with MustMatchers with MockitoSugar with ScalaFu
   protected def baseApplicationBuilder: GuiceApplicationBuilder =
     new GuiceApplicationBuilder()
       .overrides(
-        bind[IdentifierAction].to[FakeIdentifierAction]
+        bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider]
       )
 
 }
