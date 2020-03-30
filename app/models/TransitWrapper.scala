@@ -19,7 +19,6 @@ package models
 import scala.xml.Elem
 import scala.xml.Node
 
-// TODO: Use this on outbound messages!
 object TransitWrapper {
 
   def toXml(xml: Node): Node = {

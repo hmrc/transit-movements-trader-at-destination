@@ -57,14 +57,13 @@ class MessageConnectorSpec
             .withHeader("Date", equalTo(s"$dateTimeFormatted"))
             .withHeader("X-Message-Sender", equalTo(messageSender))
             .withHeader("Accept", equalTo("application/xml"))
-            //.withHeader("Authorization", equalTo("Bearer bearertokenhere"))
             .willReturn(
               aResponse()
                 .withStatus(200)
             )
         )
 
-        val result = connector.post("<CC007A>test</CC007A>", messageType, localDateTime)
+        val result = connector.post(<CC007A>test</CC007A>, messageType, localDateTime)
 
         whenReady(result) {
           response =>
@@ -85,14 +84,13 @@ class MessageConnectorSpec
             .withHeader("X-Message-Sender", equalTo(messageSender))
             .withHeader("Date", equalTo("test"))
             .withHeader("Accept", equalTo("application/xml"))
-            //.withHeader("Authorization", equalTo("Bearer bearertokenhere"))
             .willReturn(
               aResponse()
                 .withStatus(genFailedStatusCodes.sample.value)
             )
         )
 
-        val result = connector.post("<CC007A>test</CC007A>", messageType, localDateTime)
+        val result = connector.post(<CC007A>test</CC007A>, messageType, localDateTime)
 
         whenReady(result.failed) {
           response =>

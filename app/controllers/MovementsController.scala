@@ -57,7 +57,7 @@ class MovementsController @Inject()(
                 arrivalMovementRepository.insert(arrival) flatMap {
                   _ =>
                     messageConnector
-                      .post(request.body.toString, MessageType.ArrivalNotification, OffsetDateTime.now)
+                      .post(request.body, MessageType.ArrivalNotification, OffsetDateTime.now)
                       .flatMap {
                         _ =>
                           val newState = arrival.state.transition(SubmissionResult.Success)

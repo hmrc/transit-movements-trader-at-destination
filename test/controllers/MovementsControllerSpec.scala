@@ -92,7 +92,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           status(result) mustEqual ACCEPTED
           header("Location", result).value must be(arrivalId.index.toString) // TODO: This needs to be the actual resource location
           verify(mockArrivalMovementRepository, times(1)).insert(any())
-          verify(mockMessageConnector, times(1)).post(eqTo(requestXmlBody.toString), eqTo(MessageType.ArrivalNotification), any())(any(), any())
+          verify(mockMessageConnector, times(1)).post(eqTo(requestXmlBody), eqTo(MessageType.ArrivalNotification), any())(any(), any())
           verify(mockArrivalMovementRepository, times(1)).setState(any(), eqTo(State.Submitted))
         }
       }

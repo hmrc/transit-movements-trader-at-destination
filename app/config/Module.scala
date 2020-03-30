@@ -17,19 +17,14 @@
 package config
 
 import com.google.inject.AbstractModule
-import connectors.MessageConnector
-import connectors.MessageConnectorImpl
-import controllers.actions.AuthenticatedIdentifierAction
-import controllers.actions.IdentifierAction
 import controllers.actions.ArrivalRetrievalActionProvider
 import controllers.actions.ArrivalRetrievalActionProviderImpl
-import services._
+import controllers.actions.AuthenticatedIdentifierAction
+import controllers.actions.IdentifierAction
 
 class Module extends AbstractModule {
 
   override def configure(): Unit = {
-
-    bind(classOf[MessageConnector]).to(classOf[MessageConnectorImpl]).asEagerSingleton()
 
     bind(classOf[IdentifierAction]).to(classOf[AuthenticatedIdentifierAction]).asEagerSingleton()
 
