@@ -14,28 +14,17 @@
  * limitations under the License.
  */
 
-package models.messages
+package models
 
-import helpers.XmlBuilderHelper
-import play.api.libs.json.Json
-import play.api.libs.json.OFormat
+import play.api.libs.json._
 
-import scala.xml.Node
+final case class MovementReferenceNumber(value: String)
 
-case class Container(containerNumber: String) extends XmlBuilderHelper {
+object MovementReferenceNumber {
 
-  def toXml: Node =
-    <CONNR3>
-      {buildAndEncodeElem(containerNumber, "ConNumNR31")}
-    </CONNR3>
-
-}
-
-object Container {
-
-  object Constants {
-    val containerNumberLength = 17
+  implicit lazy val reads: Reads[MovementReferenceNumber] = __.read[String].map(MovementReferenceNumber.apply)
+  implicit lazy val writes: Writes[MovementReferenceNumber] = Writes {
+    mrn =>
+      JsString(mrn.value)
   }
-
-  implicit val formats: OFormat[Container] = Json.format[Container]
 }

@@ -22,7 +22,7 @@ import java.util.UUID
 import com.google.inject.Inject
 import config.AppConfig
 import models.MessageType
-import play.api.Logger
+import models.TransitWrapper
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HttpReads
 import uk.gov.hmrc.http.HttpResponse
@@ -31,17 +31,17 @@ import utils.Format
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.xml.NodeSeq
 
-class MessageConnectorImpl @Inject()(config: AppConfig, http: HttpClient) extends MessageConnector {
+class MessageConnector @Inject()(config: AppConfig, http: HttpClient)(implicit ec: ExecutionContext) {
 
-  def post(xml: String, messageType: MessageType, dateTime: OffsetDateTime)(implicit headerCarrier: HeaderCarrier,
-                                                                            ec: ExecutionContext): Future[HttpResponse] = {
+  def post(xml: TransitWrapper, messageType: MessageType, dateTime: OffsetDateTime)(implicit headerCarrier: HeaderCarrier): Future[HttpResponse] = {
 
     val url = config.eisUrl
 
     val newHeaders = headerCarrier.withExtraHeaders(addHeaders(messageType, dateTime): _*)
 
-    http.POSTString(url, xml)(rds = HttpReads.readRaw, hc = newHeaders, ec = ec)
+    http.POSTString(url, xml.toString)(rds = HttpReads.readRaw, hc = newHeaders, ec = ec)
   }
 
   private def addHeaders(messageType: MessageType, dateTime: OffsetDateTime)(implicit headerCarrier: HeaderCarrier): Seq[(String, String)] = {
@@ -64,8 +64,4 @@ class MessageConnectorImpl @Inject()(config: AppConfig, http: HttpClient) extend
       //"Authorization"    -> s"Bearer $bearerToken"
     )
   }
-}
-
-trait MessageConnector {
-  def post(xml: String, messageType: MessageType, dateTime: OffsetDateTime)(implicit headerCarrier: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse]
 }

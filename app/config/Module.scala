@@ -18,22 +18,12 @@ package config
 
 import com.google.inject.AbstractModule
 import connectors.MessageConnector
-import connectors.MessageConnectorImpl
 import controllers.actions.AuthenticateActionProvider
 import controllers.actions.AuthenticateActionProviderImpl
-import services._
 
 class Module extends AbstractModule {
 
-  override def configure(): Unit = {
-
-    bind(classOf[DateTimeService]).to(classOf[DateTimeServiceImpl]).asEagerSingleton()
-
-    bind(classOf[MessageConnector]).to(classOf[MessageConnectorImpl]).asEagerSingleton()
-
-    bind(classOf[DatabaseService]).to(classOf[DatabaseServiceImpl]).asEagerSingleton()
-
+  override def configure(): Unit =
     bind(classOf[AuthenticateActionProvider]).to(classOf[AuthenticateActionProviderImpl]).asEagerSingleton()
-  }
 
 }

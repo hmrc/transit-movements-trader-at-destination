@@ -14,10 +14,16 @@
  * limitations under the License.
  */
 
-package models.request
+package models
 
-trait RequestConstants {
-  val messageCode: MessageCode
-  val syntaxIdentifier: String
-  val nameSpace: Map[String, String]
+import java.time.LocalDate
+import java.time.LocalTime
+
+import play.api.libs.json.Json
+import play.api.libs.json.OFormat
+
+case class ArrivalDateTime(date: LocalDate, time: LocalTime)
+
+object ArrivalDateTime {
+  implicit val format: OFormat[ArrivalDateTime] = Json.format[ArrivalDateTime]
 }

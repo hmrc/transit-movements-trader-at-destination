@@ -18,17 +18,18 @@ package controllers
 
 import java.time.LocalDate
 import java.time.LocalTime
-import java.time.OffsetDateTime
 
 import base.SpecBase
 import connectors.MessageConnector
 import generators.MessageGenerators
-import models.ArrivalMovement
+import models.Arrival
+import models.Arrivals
 import models.MessageType
 import models.State
+import models.TransitWrapper
 import models.request.ArrivalId
-import org.mockito.Matchers.{eq => eqTo}
 import org.mockito.Matchers.any
+import org.mockito.Matchers.{eq => eqTo}
 import org.mockito.Mockito.reset
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
@@ -40,12 +41,11 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import repositories.ArrivalIdRepository
 import repositories.ArrivalMovementRepository
-import utils.Format
 import uk.gov.hmrc.http.HttpResponse
 import uk.gov.hmrc.http.Upstream5xxResponse
+import utils.Format
 
 import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
 
 class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks with MessageGenerators with BeforeAndAfterEach with IntegrationPatience {
 
@@ -62,7 +62,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
         when(mockArrivalMovementRepository.insert(any())).thenReturn(Future.successful(()))
         when(mockArrivalMovementRepository.setState(any(), any())).thenReturn(Future.successful(()))
-        when(mockMessageConnector.post(any(), any(), any())(any(), any())).thenReturn(Future.successful(HttpResponse(ACCEPTED)))
+        when(mockMessageConnector.post(any(), any(), any())(any())).thenReturn(Future.successful(HttpResponse(ACCEPTED)))
 
         val application = baseApplicationBuilder
           .overrides(
@@ -91,9 +91,9 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           val result = route(application, request).value
 
           status(result) mustEqual ACCEPTED
-          header("Location", result).value must be(arrivalId.index.toString) // TODO: This needs to be the actual resource location
+          header("Location", result).value must be(arrivalId.index.toString)
           verify(mockArrivalMovementRepository, times(1)).insert(any())
-          verify(mockMessageConnector, times(1)).post(eqTo(requestXmlBody.toString), eqTo(MessageType.ArrivalNotification), any())(any(), any())
+          verify(mockMessageConnector, times(1)).post(eqTo(TransitWrapper(requestXmlBody)), eqTo(MessageType.ArrivalNotification), any())(any())
           verify(mockArrivalMovementRepository, times(1)).setState(any(), eqTo(State.Submitted))
         }
       }
@@ -255,7 +255,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
         when(mockArrivalMovementRepository.insert(any())).thenReturn(Future.successful(()))
         when(mockArrivalMovementRepository.setState(any(), any())).thenReturn(Future.successful(()))
-        when(mockMessageConnector.post(any(), any(), any())(any(), any())).thenReturn(Future.failed(Upstream5xxResponse("message", 500, 500)))
+        when(mockMessageConnector.post(any(), any(), any())(any())).thenReturn(Future.failed(Upstream5xxResponse("message", 500, 500)))
 
         val application = baseApplicationBuilder
           .overrides(
@@ -289,9 +289,9 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
       }
     }
 
-    "getMovements" - {
+    "getArrivals" - {
 
-      "must return Ok and retrieve movements" in {
+      "must return Ok with the retrieved arrivals" in {
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
 
         val application =
@@ -300,27 +300,25 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
             .build()
 
         running(application) {
-          forAll(seqWithMaxLength[ArrivalMovement](10)) {
-            arrivalMovements =>
-              when(mockArrivalMovementRepository.fetchAllMovements(any())).thenReturn(Future.successful(arrivalMovements))
+          forAll(seqWithMaxLength[Arrival](10)) {
+            arrivals =>
+              when(mockArrivalMovementRepository.fetchAllArrivals(any())).thenReturn(Future.successful(arrivals))
 
-              val expectedResult = arrivalMovements.map(_.messages.head)
-
-              val request = FakeRequest(GET, routes.MovementsController.getMovements().url)
+              val request = FakeRequest(GET, routes.MovementsController.getArrivals().url)
 
               val result = route(application, request).value
 
               status(result) mustEqual OK
-              contentAsJson(result) mustEqual Json.toJson(expectedResult)
+              contentAsJson(result) mustEqual Json.toJson(Arrivals(arrivals))
 
               reset(mockArrivalMovementRepository)
           }
         }
       }
 
-      "must return an INTERNAL_SERVER_ERROR on fail" in {
+      "must return an INTERNAL_SERVER_ERROR when we cannot retrieve the Arrival Movements" in {
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
-        when(mockArrivalMovementRepository.fetchAllMovements(any()))
+        when(mockArrivalMovementRepository.fetchAllArrivals(any()))
           .thenReturn(Future.failed(new Exception))
 
         val application =
@@ -330,7 +328,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
         running(application) {
 
-          val request = FakeRequest(GET, routes.MovementsController.getMovements().url)
+          val request = FakeRequest(GET, routes.MovementsController.getArrivals().url)
 
           val result = route(application, request).value
 

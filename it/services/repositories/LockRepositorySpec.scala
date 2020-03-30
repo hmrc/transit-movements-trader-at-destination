@@ -2,39 +2,39 @@ package services.repositories
 
 import generators.MessageGenerators
 import models.request.ArrivalId
-import org.scalatest.{EitherValues, FreeSpec, MustMatchers, OptionValues}
-import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
+import org.scalatest.concurrent.IntegrationPatience
+import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.EitherValues
+import org.scalatest.FreeSpec
+import org.scalatest.MustMatchers
+import org.scalatest.OptionValues
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.{JsObject, JsSuccess, Json}
+import play.api.libs.json.JsObject
+import play.api.libs.json.JsSuccess
+import play.api.libs.json.Json
 import play.api.test.Helpers._
 import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 import reactivemongo.play.json.collection.JSONCollection
 import repositories.LockRepository
-import services.mocks.MockDateTimeService
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class LockRepositorySpec
-  extends FreeSpec
+    extends FreeSpec
     with MustMatchers
     with MongoSuite
     with FailOnUnindexedQueries
     with ScalaFutures
     with IntegrationPatience
-    with MockDateTimeService
     with OptionValues
     with EitherValues
     with ScalaCheckPropertyChecks
     with MessageGenerators {
 
-  override def beforeEach(): Unit = {
-    super.beforeEach()
-    database.flatMap(_.drop()).futureValue
-  }
-
   "lock" - {
     "must lock an arrivalId when it is not already locked" in {
+      database.flatMap(_.drop()).futureValue
 
       val app = new GuiceApplicationBuilder().build()
 
@@ -60,6 +60,7 @@ class LockRepositorySpec
     }
 
     "must not lock an arrivalId that is already locked" in {
+      database.flatMap(_.drop()).futureValue
 
       val app = new GuiceApplicationBuilder().build()
 
@@ -81,12 +82,14 @@ class LockRepositorySpec
 
   "unlock" - {
     "must remove an existing lock" in {
+      database.flatMap(_.drop()).futureValue
 
       val app = new GuiceApplicationBuilder().build()
 
       val arrivalId = ArrivalId(1)
 
       running(app) {
+
         val repository = app.injector.instanceOf[LockRepository]
 
         repository.started.futureValue
@@ -105,12 +108,14 @@ class LockRepositorySpec
     }
 
     "must not fail when asked to remove a lock that doesn't exist" in {
+      database.flatMap(_.drop()).futureValue
 
       val app = new GuiceApplicationBuilder().build()
 
       val arrivalId = ArrivalId(1)
 
       running(app) {
+
         val repository = app.injector.instanceOf[LockRepository]
 
         repository.started.futureValue

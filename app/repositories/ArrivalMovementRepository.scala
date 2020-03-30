@@ -18,7 +18,6 @@ package repositories
 
 import com.google.inject.Inject
 import models.Arrival
-import models.ArrivalMovement
 import models.MovementMessage
 import models.State
 import models.request.ArrivalId
@@ -27,8 +26,6 @@ import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
 import play.modules.reactivemongo.ReactiveMongoApi
 import reactivemongo.api.Cursor
-import reactivemongo.api.commands.FindAndModifyCommand.UpdateLastError
-import reactivemongo.api.commands.WriteResult
 import reactivemongo.api.indexes.Index
 import reactivemongo.api.indexes.IndexType
 import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
@@ -55,7 +52,7 @@ class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: React
       .map(_ => ())
   }
 
-  private val collectionName = CollectionNames.ArrivalMovementCollection
+  private val collectionName = ArrivalMovementRepository.collectionName
 
   private def collection: Future[JSONCollection] =
     mongo.database.map(_.collection[JSONCollection](collectionName))
@@ -79,21 +76,10 @@ class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: React
     }
   }
 
-  @deprecated
-  def persistToMongo(arrivalMovement: ArrivalMovement): Future[WriteResult] = {
-
-    val doc: JsObject = Json.toJson(arrivalMovement).as[JsObject]
-
-    collection.flatMap {
-      _.insert(false)
-        .one(doc)
-    }
-  }
-
-  def fetchAllMovements(eoriNumber: String): Future[Seq[ArrivalMovement]] =
+  def fetchAllArrivals(eoriNumber: String): Future[Seq[Arrival]] =
     collection.flatMap {
       _.find(Json.obj("eoriNumber" -> eoriNumber), Option.empty[JsObject])
-        .cursor[ArrivalMovement]()
+        .cursor[Arrival]()
         .collect[Seq](-1, Cursor.FailOnError())
     }
 
@@ -144,6 +130,6 @@ class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: React
   }
 }
 
-sealed trait FailedSavingArrivalMovement
-
-object FailedSavingArrivalNotification extends FailedSavingArrivalMovement
+object ArrivalMovementRepository {
+  val collectionName = "arrival-movements"
+}

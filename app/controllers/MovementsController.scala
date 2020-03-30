@@ -21,15 +21,16 @@ import java.time.OffsetDateTime
 import connectors.MessageConnector
 import controllers.actions.AuthenticateActionProvider
 import javax.inject.Inject
+import models.Arrivals
 import models.MessageType
 import models.SubmissionResult
+import models.TransitWrapper
 import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import repositories.ArrivalMovementRepository
 import services.ArrivalMovementService
-import services.DatabaseService
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.ExecutionContext
@@ -40,7 +41,6 @@ class MovementsController @Inject()(
   cc: ControllerComponents,
   arrivalMovementRepository: ArrivalMovementRepository,
   arrivalMovementService: ArrivalMovementService,
-  databaseService: DatabaseService,
   authenticate: AuthenticateActionProvider,
   messageConnector: MessageConnector
 )(implicit ec: ExecutionContext)
@@ -58,7 +58,7 @@ class MovementsController @Inject()(
                 arrivalMovementRepository.insert(arrival) flatMap {
                   _ =>
                     messageConnector
-                      .post(request.body.toString, MessageType.ArrivalNotification, OffsetDateTime.now)
+                      .post(TransitWrapper(request.body), MessageType.ArrivalNotification, OffsetDateTime.now)
                       .flatMap {
                         _ =>
                           val newState = arrival.state.transition(SubmissionResult.Success)
@@ -88,15 +88,13 @@ class MovementsController @Inject()(
       }
   }
 
-  def getMovements: Action[AnyContent] = authenticate().async {
+  def getArrivals: Action[AnyContent] = authenticate().async {
     implicit request =>
       arrivalMovementRepository
-        .fetchAllMovements(request.eoriNumber)
+        .fetchAllArrivals(request.eoriNumber)
         .map {
-          arrivalMovements =>
-            // TODO this needs further iteration
-            val messages = arrivalMovements.map(_.messages.head)
-            Ok(Json.toJson(messages))
+          allArrivals =>
+            Ok(Json.toJsObject(Arrivals(allArrivals)))
         }
         .recover {
           case e =>

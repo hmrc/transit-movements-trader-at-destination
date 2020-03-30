@@ -14,34 +14,36 @@
  * limitations under the License.
  */
 
-package models.messages
+package models
 
 import generators.ModelGenerators
-import models.behaviours.JsonBehaviours
+import org.scalacheck.Arbitrary.arbitrary
+import org.scalatest.EitherValues
 import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers
+import org.scalatest.OptionValues
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import org.scalacheck.Arbitrary.arbitrary
-import scala.xml.Utility.trim
+import play.api.libs.json.JsString
+import play.api.libs.json.Json
 
-import scala.xml.Node
-import scala.xml.XML.loadString
+class MovementReferenceNumberSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with ModelGenerators with EitherValues with OptionValues {
 
-class ContainerSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with ModelGenerators with JsonBehaviours {
+  "a Movement Reference Number" - {
 
-  "Container" - {
-    "must create valid xml" in {
+    "must deserialise" in {
 
-      forAll(arbitrary[Container]) {
-        container =>
-          val expectedXml: Node =
-            <CONNR3>
-              <ConNumNR31>{container.containerNumber}</ConNumNR31>
-            </CONNR3>
+      forAll(arbitrary[MovementReferenceNumber]) {
+        mrn =>
+          JsString(mrn.value).as[MovementReferenceNumber] mustEqual mrn
+      }
+    }
 
-          trim(container.toXml) mustBe trim(loadString(expectedXml.toString))
+    "must serialise" in {
+
+      forAll(arbitrary[MovementReferenceNumber]) {
+        mrn =>
+          Json.toJson(mrn) mustEqual JsString(mrn.value)
       }
     }
   }
-
 }

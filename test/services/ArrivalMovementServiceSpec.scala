@@ -21,10 +21,11 @@ import java.time.LocalTime
 
 import base.SpecBase
 import models.Arrival
+import models.ArrivalDateTime
 import models.MessageType
 import models.MovementMessage
+import models.MovementReferenceNumber
 import models.State
-import models.messages.MovementReferenceNumber
 import models.request.ArrivalId
 import org.mockito.Mockito.when
 import org.scalatest.concurrent.IntegrationPatience
@@ -38,12 +39,12 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
 
   "makeArrivalMovement" - {
     "creates an arrival movement with an internal ref number and a mrn, date and time of creation from the message submitted" in {
-
-      val id         = ArrivalId(1)
-      val mrn        = "MRN"
-      val eori       = "eoriNumber"
       val dateOfPrep = LocalDate.now()
       val timeOfPrep = LocalTime.of(1, 1)
+
+      val id   = ArrivalId(1)
+      val mrn  = MovementReferenceNumber("MRN")
+      val eori = "eoriNumber"
 
       val mockArrivalIdRepository = mock[ArrivalIdRepository]
       when(mockArrivalIdRepository.nextId).thenReturn(Future.successful(id))
@@ -60,7 +61,7 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
             <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
             <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
             <HEAHEA>
-              <DocNumHEA5>{mrn}</DocNumHEA5>
+              <DocNumHEA5>{mrn.value}</DocNumHEA5>
             </HEAHEA>
           </CC007A>
 
@@ -69,6 +70,8 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
         movementReferenceNumber = mrn,
         eoriNumber = eori,
         state = State.PendingSubmission,
+        ArrivalDateTime(dateOfPrep, timeOfPrep),
+        ArrivalDateTime(dateOfPrep, timeOfPrep),
         messages = Seq(
           MovementMessage(dateOfPrep, timeOfPrep, MessageType.ArrivalNotification, movement)
         )
@@ -80,7 +83,7 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
     "returns None when the root node is not <CC007A>" in {
 
       val id         = ArrivalId(1)
-      val mrn        = "MRN"
+      val mrn        = MovementReferenceNumber("MRN")
       val eori       = "eoriNumber"
       val dateOfPrep = LocalDate.now()
       val timeOfPrep = LocalTime.of(1, 1)
@@ -94,7 +97,7 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
           <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
           <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
           <HEAHEA>
-            <DocNumHEA5>{mrn}</DocNumHEA5>
+            <DocNumHEA5>{mrn.value}</DocNumHEA5>
           </HEAHEA>
         </Foo>
 

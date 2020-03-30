@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
-package models.request
+package models
 
-import helpers.XmlBuilderHelper
+import play.api.libs.json.Json
+import play.api.libs.json.OFormat
 
-case class MessageSender(environment: String, eori: String) extends XmlBuilderHelper {
+case class Arrivals(arrivals: Seq[Arrival])
 
-  def toXml = buildAndEncodeElem(s"$environment-$eori", "MesSenMES3")
+object Arrivals {
+  implicit val formats: OFormat[Arrivals] = Json.format[Arrivals]
 }

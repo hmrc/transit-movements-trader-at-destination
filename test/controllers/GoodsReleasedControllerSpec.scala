@@ -22,7 +22,9 @@ import java.time.LocalTime
 import base.SpecBase
 import generators.ModelGenerators
 import models.Arrival
+import models.ArrivalDateTime
 import models.MessageSender
+import models.MovementReferenceNumber
 import models.State
 import models.request.ArrivalId
 import org.mockito.Matchers.{eq => eqTo, _}
@@ -52,11 +54,15 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
         val arrivalId     = ArrivalId(1)
         val version       = 1
         val messageSender = MessageSender(arrivalId, version)
+        val dateOfPrep    = LocalDate.now()
+        val timeOfPrep    = LocalTime.of(1, 1)
         val arrival = Arrival(
           arrivalId,
-          "mrn",
+          MovementReferenceNumber("mrn"),
           "eori",
           State.Submitted,
+          ArrivalDateTime(dateOfPrep, timeOfPrep),
+          ArrivalDateTime(dateOfPrep, timeOfPrep),
           Seq.empty
         )
 
@@ -73,8 +79,6 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
           .build()
 
         running(application) {
-          val dateOfPrep = LocalDate.now()
-          val timeOfPrep = LocalTime.of(1, 1)
 
           val requestXmlBody =
             <CC025A>
@@ -139,18 +143,23 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
         val arrivalId     = ArrivalId(1)
         val version       = 1
         val messageSender = MessageSender(arrivalId, version)
+        val dateOfPrep    = LocalDate.now()
+        val timeOfPrep    = LocalTime.of(1, 1)
+
         val arrival = Arrival(
           arrivalId,
-          "mrn",
+          MovementReferenceNumber("mrn"),
           "eori",
           State.Submitted,
+          ArrivalDateTime(dateOfPrep, timeOfPrep),
+          ArrivalDateTime(dateOfPrep, timeOfPrep),
           Seq.empty
         )
 
         when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
         when(mockArrivalMovementRepository.addMessage(any(), any(), any())).thenReturn(Future.successful(Success(())))
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
-        when(mockLockRepository.unlock(any())).thenReturn(Future.successful())
+        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
 
         val application = baseApplicationBuilder
           .overrides(
@@ -187,11 +196,16 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
         val arrivalId     = ArrivalId(1)
         val version       = 1
         val messageSender = MessageSender(arrivalId, version)
+        val dateOfPrep    = LocalDate.now()
+        val timeOfPrep    = LocalTime.of(1, 1)
+
         val arrival = Arrival(
           arrivalId,
-          "mrn",
+          MovementReferenceNumber("mrn"),
           "eori",
           State.Submitted,
+          ArrivalDateTime(dateOfPrep, timeOfPrep),
+          ArrivalDateTime(dateOfPrep, timeOfPrep),
           Seq.empty
         )
 
@@ -231,6 +245,9 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
     "when a lock cannot be acquired" - {
 
       "must return Locked" in {
+        val dateOfPrep = LocalDate.now()
+        val timeOfPrep = LocalTime.of(1, 1)
+
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
         val mockLockRepository            = mock[LockRepository]
 
@@ -239,9 +256,11 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
         val messageSender = MessageSender(arrivalId, version)
         val arrival = Arrival(
           arrivalId,
-          "mrn",
+          MovementReferenceNumber("mrn"),
           "eori",
           State.Submitted,
+          ArrivalDateTime(dateOfPrep, timeOfPrep),
+          ArrivalDateTime(dateOfPrep, timeOfPrep),
           Seq.empty
         )
 
