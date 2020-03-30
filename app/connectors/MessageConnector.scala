@@ -22,6 +22,7 @@ import java.util.UUID
 import com.google.inject.Inject
 import config.AppConfig
 import models.MessageType
+import models.TransitWrapper
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HttpReads
 import uk.gov.hmrc.http.HttpResponse
@@ -32,16 +33,15 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.xml.NodeSeq
 
-class MessageConnector @Inject()(config: AppConfig, http: HttpClient) {
+class MessageConnector @Inject()(config: AppConfig, http: HttpClient)(implicit ec: ExecutionContext) {
 
-  def post(xml: NodeSeq, messageType: MessageType, dateTime: OffsetDateTime)(implicit headerCarrier: HeaderCarrier,
-                                                                             ec: ExecutionContext): Future[HttpResponse] = {
+  def post(xml: TransitWrapper, messageType: MessageType, dateTime: OffsetDateTime)(implicit headerCarrier: HeaderCarrier): Future[HttpResponse] = {
 
     val url = config.eisUrl
 
     val newHeaders = headerCarrier.withExtraHeaders(addHeaders(messageType, dateTime): _*)
 
-    http.POSTString(url, xml.toString())(rds = HttpReads.readRaw, hc = newHeaders, ec = ec)
+    http.POSTString(url, xml.toString)(rds = HttpReads.readRaw, hc = newHeaders, ec = ec)
   }
 
   private def addHeaders(messageType: MessageType, dateTime: OffsetDateTime)(implicit headerCarrier: HeaderCarrier): Seq[(String, String)] = {

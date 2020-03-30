@@ -24,6 +24,7 @@ import javax.inject.Inject
 import models.Arrivals
 import models.MessageType
 import models.SubmissionResult
+import models.TransitWrapper
 import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
@@ -57,7 +58,7 @@ class MovementsController @Inject()(
                 arrivalMovementRepository.insert(arrival) flatMap {
                   _ =>
                     messageConnector
-                      .post(request.body, MessageType.ArrivalNotification, OffsetDateTime.now)
+                      .post(TransitWrapper(request.body), MessageType.ArrivalNotification, OffsetDateTime.now)
                       .flatMap {
                         _ =>
                           val newState = arrival.state.transition(SubmissionResult.Success)

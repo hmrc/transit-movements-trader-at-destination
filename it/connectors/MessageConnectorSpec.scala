@@ -7,6 +7,7 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.matching.StringValuePattern
 import generators.MessageGenerators
 import models.MessageType
+import models.TransitWrapper
 import org.scalacheck.Gen
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatest.concurrent.ScalaFutures
@@ -63,7 +64,9 @@ class MessageConnectorSpec
             )
         )
 
-        val result = connector.post(<CC007A>test</CC007A>, messageType, localDateTime)
+        val postValue = TransitWrapper(<CC007A>test</CC007A>)
+
+        val result = connector.post(postValue, messageType, localDateTime)
 
         whenReady(result) {
           response =>
@@ -90,7 +93,9 @@ class MessageConnectorSpec
             )
         )
 
-        val result = connector.post(<CC007A>test</CC007A>, messageType, localDateTime)
+        val postValue = TransitWrapper(<CC007A>test</CC007A>)
+
+        val result = connector.post(postValue, messageType, localDateTime)
 
         whenReady(result.failed) {
           response =>

@@ -18,10 +18,11 @@ package models
 
 import scala.xml.Elem
 import scala.xml.Node
+import scala.xml.NodeSeq
 
-object TransitWrapper {
+case class TransitWrapper(xml: NodeSeq) {
 
-  def toXml(xml: Node): Node = {
+  def toXml: Node = {
 
     val transitWrapperNode: Node = {
       <transitRequest
