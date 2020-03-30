@@ -25,7 +25,7 @@ import play.api.mvc.BodyParsers
 
 import scala.concurrent.ExecutionContext
 
-class GetArrivalForEditActionProvider @Inject()(
+class GetArrivalForWriteActionProvider @Inject()(
   lock: LockActionProvider,
   getArrival: GetArrivalActionProvider,
   ec: ExecutionContext,

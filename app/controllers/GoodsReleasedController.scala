@@ -16,7 +16,7 @@
 
 package controllers
 
-import controllers.actions.GetArrivalForEditActionProvider
+import controllers.actions.GetArrivalForWriteActionProvider
 import javax.inject.Inject
 import models.MessageReceived
 import models.MessageSender
@@ -35,7 +35,7 @@ import scala.xml.NodeSeq
 class GoodsReleasedController @Inject()(
   cc: ControllerComponents,
   arrivalMovementService: ArrivalMovementService,
-  getArrival: GetArrivalForEditActionProvider,
+  getArrival: GetArrivalForWriteActionProvider,
   arrivalMovementRepository: ArrivalMovementRepository
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {

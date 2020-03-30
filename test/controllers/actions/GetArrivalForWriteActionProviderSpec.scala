@@ -40,7 +40,7 @@ import repositories.LockRepository
 
 import scala.concurrent.Future
 
-class GetArrivalForEditActionProviderSpec
+class GetArrivalForWriteActionProviderSpec
     extends FreeSpec
     with MustMatchers
     with MockitoSugar
@@ -50,7 +50,7 @@ class GetArrivalForEditActionProviderSpec
 
   def fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest("", "")
 
-  class Harness(getAndLock: GetArrivalForEditActionProvider) {
+  class Harness(getAndLock: GetArrivalForWriteActionProvider) {
 
     def get(arrivalId: ArrivalId): Action[AnyContent] = getAndLock(arrivalId) {
       request =>
@@ -82,7 +82,7 @@ class GetArrivalForEditActionProviderSpec
           bind[LockRepository].toInstance(mockLockRepository)
         )
 
-      val actionProvider = application.injector.instanceOf[GetArrivalForEditActionProvider]
+      val actionProvider = application.injector.instanceOf[GetArrivalForWriteActionProvider]
 
       val controller = new Harness(actionProvider)
       val result     = controller.get(arrival.arrivalId)(fakeRequest)
@@ -110,7 +110,7 @@ class GetArrivalForEditActionProviderSpec
           bind[LockRepository].toInstance(mockLockRepository)
         )
 
-      val actionProvider = application.injector.instanceOf[GetArrivalForEditActionProvider]
+      val actionProvider = application.injector.instanceOf[GetArrivalForWriteActionProvider]
 
       val controller = new Harness(actionProvider)
       val result     = controller.get(arrival.arrivalId)(fakeRequest)
@@ -135,7 +135,7 @@ class GetArrivalForEditActionProviderSpec
           bind[LockRepository].toInstance(mockLockRepository)
         )
 
-      val actionProvider = application.injector.instanceOf[GetArrivalForEditActionProvider]
+      val actionProvider = application.injector.instanceOf[GetArrivalForWriteActionProvider]
 
       val controller = new Harness(actionProvider)
       val result     = controller.get(arrival.arrivalId)(fakeRequest)
@@ -162,7 +162,7 @@ class GetArrivalForEditActionProviderSpec
           bind[LockRepository].toInstance(mockLockRepository)
         )
 
-      val actionProvider = application.injector.instanceOf[GetArrivalForEditActionProvider]
+      val actionProvider = application.injector.instanceOf[GetArrivalForWriteActionProvider]
 
       val controller = new Harness(actionProvider)
       val result     = controller.failingAction(arrival.arrivalId)(fakeRequest)
