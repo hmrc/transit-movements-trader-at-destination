@@ -35,6 +35,7 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import repositories.ArrivalMovementRepository
 import repositories.LockRepository
+import services.XmlValidationService
 import utils.Format
 
 import scala.concurrent.Future
@@ -50,6 +51,7 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
       "must lock the arrival, add the message, set the state to Goods Released, unlock it and return OK" in {
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
         val mockLockRepository            = mock[LockRepository]
+        val mockXmlValidationService      = mock[XmlValidationService]
 
         val arrivalId     = ArrivalId(1)
         val version       = 1
@@ -70,11 +72,13 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
         when(mockArrivalMovementRepository.addMessage(any(), any(), any())).thenReturn(Future.successful(Success(())))
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
+        when(mockXmlValidationService.validate(any(), any())).thenReturn(Success(""))
 
         val application = baseApplicationBuilder
           .overrides(
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
-            bind[LockRepository].toInstance(mockLockRepository)
+            bind[LockRepository].toInstance(mockLockRepository),
+            bind[XmlValidationService].toInstance(mockXmlValidationService)
           )
           .build()
 

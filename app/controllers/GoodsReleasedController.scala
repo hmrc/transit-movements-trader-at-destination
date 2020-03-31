@@ -18,12 +18,14 @@ package controllers
 
 import controllers.actions.GetArrivalForWriteActionProvider
 import javax.inject.Inject
+import models.GoodsReleasedXSD
 import models.MessageReceived
 import models.MessageSender
 import play.api.mvc.Action
 import play.api.mvc.ControllerComponents
 import repositories.ArrivalMovementRepository
 import services.ArrivalMovementService
+import services.XmlValidationService
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.ExecutionContext
@@ -36,21 +38,27 @@ class GoodsReleasedController @Inject()(
   cc: ControllerComponents,
   arrivalMovementService: ArrivalMovementService,
   getArrival: GetArrivalForWriteActionProvider,
-  arrivalMovementRepository: ArrivalMovementRepository
+  arrivalMovementRepository: ArrivalMovementRepository,
+  xmlValidationService: XmlValidationService
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
   def post(messageSender: MessageSender): Action[NodeSeq] = getArrival(messageSender.arrivalId)(parse.xml).async {
     implicit request =>
-      arrivalMovementService.makeGoodsReleasedMessage()(request.request.body) match {
-        case Some(message) =>
-          val newState = request.arrival.state.transition(MessageReceived.GoodsReleased)
-          arrivalMovementRepository.addMessage(request.arrival.arrivalId, message, newState).map {
-            case Success(_) => Ok
-            case Failure(_) => InternalServerError
+      val xml = request.request.body
+
+      Future.fromTry(xmlValidationService.validate(xml.toString, GoodsReleasedXSD)).flatMap {
+        _ =>
+          arrivalMovementService.makeGoodsReleasedMessage()(xml) match {
+            case Some(message) =>
+              val newState = request.arrival.state.transition(MessageReceived.GoodsReleased)
+              arrivalMovementRepository.addMessage(request.arrival.arrivalId, message, newState).map {
+                case Success(_) => Ok
+                case Failure(_) => InternalServerError
+              }
+            case None =>
+              Future.successful(InternalServerError)
           }
-        case None =>
-          Future.successful(InternalServerError)
       }
   }
 }
