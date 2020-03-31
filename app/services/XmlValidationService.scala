@@ -21,7 +21,6 @@ import java.net.URL
 
 import javax.xml.parsers.SAXParserFactory
 import javax.xml.validation.Schema
-import models.XSDFile
 import org.xml.sax.InputSource
 import org.xml.sax.helpers.DefaultHandler
 import play.api.Logger
@@ -29,10 +28,10 @@ import play.api.Logger
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
-import scala.xml.factory.XMLLoader
 import scala.xml.Elem
 import scala.xml.SAXParseException
 import scala.xml.SAXParser
+import scala.xml.factory.XMLLoader
 
 class XmlValidationService {
 
@@ -46,29 +45,23 @@ class XmlValidationService {
     saxParser.newSAXParser()
   }
 
-  def validate(xml: String, xsdFile: XSDFile): Try[String] =
+  def validate(xml: String, filePath: String): Try[String] =
     try {
 
-      val url: URL = getClass.getResource(xsdFile.filePath)
+      val url: URL = getClass.getResource(filePath)
 
       val schema: Schema = javax.xml.validation.SchemaFactory.newInstance(schemaLang).newSchema(url)
 
       class CustomParseHandler extends DefaultHandler {
-
-        override def error(e: SAXParseException): Unit = {
-          logger.warn(e.getMessage)
+        override def error(e: SAXParseException): Unit =
           throw new SAXParseException(e.getMessage, e.getPublicId, e.getSystemId, e.getLineNumber, e.getColumnNumber)
-        }
       }
 
       val xmlResponse: XMLLoader[Elem] = new scala.xml.factory.XMLLoader[scala.xml.Elem] {
         override def parser: SAXParser = saxParser(schema)
-
-        override def adapter =
-          new scala.xml.parsing.NoBindingFactoryAdapter with scala.xml.parsing.ConsoleErrorHandler
       }
 
-      xmlResponse.parser.parse(new InputSource(new StringReader(xml)), new CustomParseHandler)
+      xmlResponse.parser.parse(new InputSource(new StringReader(xml)), new CustomParseHandler())
 
       Success("successfully parsed xml")
 

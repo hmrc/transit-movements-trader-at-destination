@@ -16,9 +16,9 @@
 
 package controllers
 
+import config.AppConfig
 import controllers.actions.GetArrivalForWriteActionProvider
 import javax.inject.Inject
-import models.GoodsReleasedXSD
 import models.MessageReceived
 import models.MessageSender
 import play.api.mvc.Action
@@ -34,21 +34,20 @@ import scala.util.Failure
 import scala.util.Success
 import scala.xml.NodeSeq
 
-class GoodsReleasedController @Inject()(
-  cc: ControllerComponents,
-  arrivalMovementService: ArrivalMovementService,
-  getArrival: GetArrivalForWriteActionProvider,
-  arrivalMovementRepository: ArrivalMovementRepository,
-  xmlValidationService: XmlValidationService
-)(implicit ec: ExecutionContext)
+class GoodsReleasedController @Inject()(cc: ControllerComponents,
+                                        appConfig: AppConfig,
+                                        arrivalMovementService: ArrivalMovementService,
+                                        getArrival: GetArrivalForWriteActionProvider,
+                                        arrivalMovementRepository: ArrivalMovementRepository,
+                                        xmlValidationService: XmlValidationService)(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
   def post(messageSender: MessageSender): Action[NodeSeq] = getArrival(messageSender.arrivalId)(parse.xml).async {
     implicit request =>
-      val xml = request.request.body
+      val xml: NodeSeq = request.request.body
 
-      Future.fromTry(xmlValidationService.validate(xml.toString, GoodsReleasedXSD)).flatMap {
-        _ =>
+      xmlValidationService.validate(xml.toString, appConfig.goodsReleasedXsdPath) match {
+        case Success(_) =>
           arrivalMovementService.makeGoodsReleasedMessage()(xml) match {
             case Some(message) =>
               val newState = request.arrival.state.transition(MessageReceived.GoodsReleased)
@@ -59,6 +58,7 @@ class GoodsReleasedController @Inject()(
             case None =>
               Future.successful(InternalServerError)
           }
+        case _ => Future.successful(BadRequest)
       }
   }
 }

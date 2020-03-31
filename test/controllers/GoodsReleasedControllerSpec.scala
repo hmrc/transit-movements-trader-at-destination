@@ -36,6 +36,7 @@ import play.api.test.Helpers._
 import repositories.ArrivalMovementRepository
 import repositories.LockRepository
 import services.XmlValidationService
+import uk.gov.hmrc.http.BadRequestException
 import utils.Format
 
 import scala.concurrent.Future
@@ -143,6 +144,7 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
       "must lock, return Internal Server Error and release the lock if the message is not Goods Released" in {
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
         val mockLockRepository            = mock[LockRepository]
+        val mockXmlValidationService      = mock[XmlValidationService]
 
         val arrivalId     = ArrivalId(1)
         val version       = 1
@@ -164,11 +166,13 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
         when(mockArrivalMovementRepository.addMessage(any(), any(), any())).thenReturn(Future.successful(Success(())))
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
+        when(mockXmlValidationService.validate(any(), any())).thenReturn(Success(""))
 
         val application = baseApplicationBuilder
           .overrides(
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
-            bind[LockRepository].toInstance(mockLockRepository)
+            bind[LockRepository].toInstance(mockLockRepository),
+            bind[XmlValidationService].toInstance(mockXmlValidationService)
           )
           .build()
 
@@ -196,6 +200,7 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
       "must lock, return Internal Server Error and unlock if adding the message to the movement fails" in {
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
         val mockLockRepository            = mock[LockRepository]
+        val mockXmlValidationService      = mock[XmlValidationService]
 
         val arrivalId     = ArrivalId(1)
         val version       = 1
@@ -217,11 +222,13 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
         when(mockArrivalMovementRepository.addMessage(any(), any(), any())).thenReturn(Future.successful(Failure(new Exception())))
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
+        when(mockXmlValidationService.validate(any(), any())).thenReturn(Success(""))
 
         val application = baseApplicationBuilder
           .overrides(
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
-            bind[LockRepository].toInstance(mockLockRepository)
+            bind[LockRepository].toInstance(mockLockRepository),
+            bind[XmlValidationService].toInstance(mockXmlValidationService)
           )
           .build()
 
@@ -240,6 +247,60 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
           val result = route(application, request).value
 
           status(result) mustEqual INTERNAL_SERVER_ERROR
+          verify(mockLockRepository, times(1)).lock(arrivalId)
+          verify(mockLockRepository, times(1)).unlock(arrivalId)
+        }
+      }
+
+      "must lock, return Bad request and unlock if input message fails to validate against the schema" in {
+        val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+        val mockLockRepository            = mock[LockRepository]
+        val mockXmlValidationService      = mock[XmlValidationService]
+
+        val arrivalId     = ArrivalId(1)
+        val version       = 1
+        val messageSender = MessageSender(arrivalId, version)
+        val dateOfPrep    = LocalDate.now()
+        val timeOfPrep    = LocalTime.of(1, 1)
+
+        val arrival = Arrival(
+          arrivalId,
+          MovementReferenceNumber("mrn"),
+          "eori",
+          State.Submitted,
+          ArrivalDateTime(dateOfPrep, timeOfPrep),
+          ArrivalDateTime(dateOfPrep, timeOfPrep),
+          Seq.empty
+        )
+
+        when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
+        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
+        when(mockXmlValidationService.validate(any(), any())).thenReturn(Failure(new BadRequestException("")))
+        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
+
+        val application = baseApplicationBuilder
+          .overrides(
+            bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
+            bind[LockRepository].toInstance(mockLockRepository),
+            bind[XmlValidationService].toInstance(mockXmlValidationService)
+          )
+          .build()
+
+        running(application) {
+          val dateOfPrep = LocalDate.now()
+          val timeOfPrep = LocalTime.of(1, 1)
+
+          val requestXmlBody =
+            <CC025A>
+              <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+              <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+            </CC025A>
+
+          val request = FakeRequest(POST, routes.GoodsReleasedController.post(messageSender).url).withXmlBody(requestXmlBody)
+
+          val result = route(application, request).value
+
+          status(result) mustEqual BAD_REQUEST
           verify(mockLockRepository, times(1)).lock(arrivalId)
           verify(mockLockRepository, times(1)).unlock(arrivalId)
         }

@@ -23,7 +23,9 @@ import controllers.actions.AuthenticateActionProviderImpl
 
 class Module extends AbstractModule {
 
-  override def configure(): Unit =
+  override def configure(): Unit = {
+    bind(classOf[AppConfig]).asEagerSingleton()
     bind(classOf[AuthenticateActionProvider]).to(classOf[AuthenticateActionProviderImpl]).asEagerSingleton()
+  }
 
 }

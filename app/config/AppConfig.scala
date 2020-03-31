@@ -36,7 +36,8 @@ class AppConfig @Inject()(config: Configuration, servicesConfig: ServicesConfig)
   val eisUrl: String         = eisBaseUrl ++ config.get[String]("microservice.services.eis.uri")
   val eisBearerToken: String = config.get[String]("microservice.services.eis.headers.bearerToken")
 
-  val enrolmentKey: String = config.get[String]("keys.enrolmentKey")
+  val enrolmentKey: String         = config.get[String]("keys.enrolmentKey")
+  val goodsReleasedXsdPath: String = config.get[String]("xsd.goodsReleased")
 
   val lockRepositoryTtl: Int = config.get[Int]("mongodb.lockRepository.timeToLiveInSeconds")
 }

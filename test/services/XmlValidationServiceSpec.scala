@@ -17,11 +17,12 @@
 package services
 
 import base.SpecBase
-import models.GoodsReleasedXSD
 
 class XmlValidationServiceSpec extends SpecBase {
 
-  private val xmlValidationService = new XmlValidationService
+  private val xmlValidationService: XmlValidationService = new XmlValidationService()
+
+  var goodsReleasedXSDPath: String = appConfig.goodsReleasedXsdPath
 
   "validate" - {
 
@@ -60,7 +61,7 @@ class XmlValidationServiceSpec extends SpecBase {
           </CC025A>
         }
 
-        val result = xmlValidationService.validate(validXml.toString, GoodsReleasedXSD)
+        val result = xmlValidationService.validate(validXml.toString, appConfig.goodsReleasedXsdPath)
 
         result.isSuccess mustBe true
       }
@@ -83,7 +84,7 @@ class XmlValidationServiceSpec extends SpecBase {
           </CC025A>
         }
 
-        val result = xmlValidationService.validate(invalidXml.toString, GoodsReleasedXSD)
+        val result = xmlValidationService.validate(invalidXml.toString, goodsReleasedXSDPath)
 
         result.isFailure mustBe true
       }
@@ -121,7 +122,7 @@ class XmlValidationServiceSpec extends SpecBase {
           </CC025A>
         }
 
-        val result = xmlValidationService.validate(invalidXml.toString, GoodsReleasedXSD)
+        val result = xmlValidationService.validate(invalidXml.toString, goodsReleasedXSDPath)
 
         result.isFailure mustBe true
       }
