@@ -58,6 +58,7 @@ class MessageConnectorSpec
             .withHeader("Date", equalTo(s"$dateTimeFormatted"))
             .withHeader("X-Message-Sender", equalTo(messageSender))
             .withHeader("Accept", equalTo("application/xml"))
+            .withRequestBody(matchingXPath("/transitRequest"))
             .willReturn(
               aResponse()
                 .withStatus(200)

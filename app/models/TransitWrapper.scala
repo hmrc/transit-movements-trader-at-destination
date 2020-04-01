@@ -22,6 +22,8 @@ import scala.xml.NodeSeq
 
 case class TransitWrapper(xml: NodeSeq) {
 
+  override def toString: String = toXml.toString
+
   def toXml: Node = {
 
     val transitWrapperNode: Node = {
