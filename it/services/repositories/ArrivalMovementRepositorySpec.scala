@@ -38,7 +38,6 @@ class ArrivalMovementRepositorySpec
     with FailOnUnindexedQueries
     with ScalaFutures
     with IntegrationPatience
-    with BeforeAndAfterEach
     with OptionValues
     with EitherValues
     with ScalaCheckPropertyChecks
@@ -48,14 +47,10 @@ class ArrivalMovementRepositorySpec
 
   private lazy val builder = new GuiceApplicationBuilder()
 
-  override def beforeEach(): Unit = {
-    super.beforeEach()
-    database.flatMap(_.drop()).futureValue
-  }
-
   "ArrivalMovementRepository" - {
     "insert" - {
       "must persist ArrivalMovement within mongoDB" in {
+        database.flatMap(_.drop()).futureValue
 
         val app: Application = builder.build()
 
@@ -82,6 +77,7 @@ class ArrivalMovementRepositorySpec
 
     "setState" - {
       "must update the state of an existing record" in {
+        database.flatMap(_.drop()).futureValue
 
         val app: Application = builder.build()
 
@@ -109,6 +105,7 @@ class ArrivalMovementRepositorySpec
 
     "addMessage" - {
       "must add a message and update the state of a document" in {
+        database.flatMap(_.drop()).futureValue
 
         val app: Application = builder.build()
 
@@ -153,6 +150,7 @@ class ArrivalMovementRepositorySpec
       }
 
       "must fail if the arrival cannot be found" in {
+        database.flatMap(_.drop()).futureValue
 
         val app: Application = builder.build()
 
@@ -187,6 +185,8 @@ class ArrivalMovementRepositorySpec
 
     "get" - {
       "must get an arrival when it exists" in {
+        database.flatMap(_.drop()).futureValue
+
         val app: Application = builder.build()
 
         running(app) {
@@ -204,6 +204,7 @@ class ArrivalMovementRepositorySpec
       }
 
       "must return None when an arrival does not exist" in {
+        database.flatMap(_.drop()).futureValue
 
         val app: Application = builder.build()
 
@@ -224,6 +225,8 @@ class ArrivalMovementRepositorySpec
 
     "fetchAllArrivals" - {
       "must return Arrival Movements that match an eoriNumber" in {
+        database.flatMap(_.drop()).futureValue
+
         val app: Application = builder.build()
 
         val arrivalMovement1 = arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber)
@@ -250,6 +253,8 @@ class ArrivalMovementRepositorySpec
       }
 
       "must return an empty sequence when there are no movements with the same eori" in {
+        database.flatMap(_.drop()).futureValue
+
         val app: Application = builder.build()
         val arrivalMovement1 = arbitrary[Arrival].suchThat(_.eoriNumber != eoriNumber).sample.value
         val arrivalMovement2 = arbitrary[Arrival].suchThat(_.eoriNumber != eoriNumber).sample.value
