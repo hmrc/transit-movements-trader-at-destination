@@ -111,7 +111,7 @@ class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: React
       "$set" -> Json.obj(
         "state" -> state.toString
       ),
-      "$addToSet" -> Json.obj(
+      "$push" -> Json.obj(
         "messages" -> Json.toJson(message)
       )
     )
