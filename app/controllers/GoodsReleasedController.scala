@@ -57,13 +57,17 @@ class GoodsReleasedController @Inject()(cc: ControllerComponents,
               val newState = request.arrival.state.transition(MessageReceived.GoodsReleased)
               arrivalMovementRepository.addMessage(request.arrival.arrivalId, message, newState).map {
                 case Success(_) => Ok
-                case Failure(_) => InternalServerError
+                case Failure(e) => {
+                  logger.error(s"Failure to add message to movement. Exception: ${e.getMessage}")
+                  InternalServerError
+                }
               }
             case None =>
+              logger.error(s"Failure to parse message GoodsReleased")
               Future.successful(InternalServerError)
           }
         case Failure(e) =>
-          logger.error(e.getMessage)
+          logger.error(s"Failure to validate against XSD. Exception: ${e.getMessage}")
           Future.successful(BadRequest)
       }
   }
