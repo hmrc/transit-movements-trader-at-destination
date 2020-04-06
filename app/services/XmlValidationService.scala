@@ -21,6 +21,7 @@ import java.net.URL
 
 import javax.xml.parsers.SAXParserFactory
 import javax.xml.validation.Schema
+import models.XSDFile
 import org.xml.sax.InputSource
 import org.xml.sax.helpers.DefaultHandler
 
@@ -41,9 +42,9 @@ class XmlValidationService {
     saxParser.newSAXParser()
   }
 
-  def validate(xml: String, filePath: String): Try[Unit] =
+  def validate(xml: String, xsdFile: XSDFile): Try[Unit] =
     Try {
-      val url: URL = getClass.getResource(filePath)
+      val url: URL = getClass.getResource(xsdFile.filePath)
 
       val schema: Schema = javax.xml.validation.SchemaFactory.newInstance(schemaLang).newSchema(url)
 

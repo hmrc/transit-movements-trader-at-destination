@@ -21,6 +21,7 @@ import controllers.actions.GetArrivalForWriteActionProvider
 import javax.inject.Inject
 import models.MessageReceived
 import models.MessageSender
+import models.XSDFile.GoodsReleasedXSD
 import play.api.Logger
 import play.api.mvc.Action
 import play.api.mvc.ControllerComponents
@@ -49,7 +50,7 @@ class GoodsReleasedController @Inject()(cc: ControllerComponents,
     implicit request =>
       val xml: NodeSeq = request.request.body
 
-      xmlValidationService.validate(xml.toString, appConfig.goodsReleasedXsdPath) match {
+      xmlValidationService.validate(xml.toString, GoodsReleasedXSD) match {
         case Success(_) =>
           arrivalMovementService.makeGoodsReleasedMessage()(xml) match {
             case Some(message) =>
