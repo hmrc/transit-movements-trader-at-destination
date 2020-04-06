@@ -45,7 +45,7 @@ class ArrivalMovementRepositorySpec
 
   private val eoriNumber: String = arbitrary[String].sample.value
 
-  private lazy val builder = new GuiceApplicationBuilder()
+  private def builder = new GuiceApplicationBuilder()
 
   "ArrivalMovementRepository" - {
     "insert" - {
