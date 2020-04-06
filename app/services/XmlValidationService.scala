@@ -23,10 +23,7 @@ import javax.xml.parsers.SAXParserFactory
 import javax.xml.validation.Schema
 import org.xml.sax.InputSource
 import org.xml.sax.helpers.DefaultHandler
-import play.api.Logger
 
-import scala.util.Failure
-import scala.util.Success
 import scala.util.Try
 import scala.xml.Elem
 import scala.xml.SAXParseException
@@ -35,7 +32,6 @@ import scala.xml.factory.XMLLoader
 
 class XmlValidationService {
 
-  private val logger     = Logger(getClass)
   private val schemaLang = javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI
 
   private def saxParser(schema: Schema): SAXParser = {
@@ -45,9 +41,8 @@ class XmlValidationService {
     saxParser.newSAXParser()
   }
 
-  def validate(xml: String, filePath: String): Try[String] =
-    try {
-
+  def validate(xml: String, filePath: String): Try[Unit] =
+    Try {
       val url: URL = getClass.getResource(filePath)
 
       val schema: Schema = javax.xml.validation.SchemaFactory.newInstance(schemaLang).newSchema(url)
@@ -62,13 +57,5 @@ class XmlValidationService {
       }
 
       xmlResponse.parser.parse(new InputSource(new StringReader(xml)), new CustomParseHandler())
-
-      Success("successfully parsed xml")
-
-    } catch {
-      case e: Throwable =>
-        logger.warn(e.getMessage)
-        Failure(e)
     }
-
 }

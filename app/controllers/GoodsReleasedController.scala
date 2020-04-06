@@ -21,6 +21,7 @@ import controllers.actions.GetArrivalForWriteActionProvider
 import javax.inject.Inject
 import models.MessageReceived
 import models.MessageSender
+import play.api.Logger
 import play.api.mvc.Action
 import play.api.mvc.ControllerComponents
 import repositories.ArrivalMovementRepository
@@ -42,6 +43,8 @@ class GoodsReleasedController @Inject()(cc: ControllerComponents,
                                         xmlValidationService: XmlValidationService)(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
+  private val logger = Logger(getClass)
+
   def post(messageSender: MessageSender): Action[NodeSeq] = getArrival(messageSender.arrivalId)(parse.xml).async {
     implicit request =>
       val xml: NodeSeq = request.request.body
@@ -58,7 +61,9 @@ class GoodsReleasedController @Inject()(cc: ControllerComponents,
             case None =>
               Future.successful(InternalServerError)
           }
-        case _ => Future.successful(BadRequest)
+        case Failure(e) =>
+          logger.error(e.getMessage)
+          Future.successful(BadRequest)
       }
   }
 }

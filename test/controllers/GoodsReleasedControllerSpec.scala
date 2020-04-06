@@ -88,7 +88,7 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
         when(mockArrivalMovementRepository.addMessage(any(), any(), any())).thenReturn(Future.successful(Success(())))
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
-        when(mockXmlValidationService.validate(any(), any())).thenReturn(Success(""))
+        when(mockXmlValidationService.validate(any(), any())).thenReturn(Success(()))
 
         val application = baseApplicationBuilder
           .overrides(
@@ -139,7 +139,7 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
         when(mockArrivalMovementRepository.addMessage(any(), any(), any())).thenReturn(Future.successful(Success(())))
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
-        when(mockXmlValidationService.validate(any(), any())).thenReturn(Success(""))
+        when(mockXmlValidationService.validate(any(), any())).thenReturn(Success(()))
 
         val application = baseApplicationBuilder
           .overrides(
@@ -175,7 +175,7 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
         when(mockArrivalMovementRepository.addMessage(any(), any(), any())).thenReturn(Future.successful(Failure(new Exception())))
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
-        when(mockXmlValidationService.validate(any(), any())).thenReturn(Success(""))
+        when(mockXmlValidationService.validate(any(), any())).thenReturn(Success(()))
 
         val application = baseApplicationBuilder
           .overrides(
