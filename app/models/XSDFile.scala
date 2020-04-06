@@ -14,18 +14,10 @@
  * limitations under the License.
  */
 
-package config
+package models
 
-import com.google.inject.AbstractModule
-import connectors.MessageConnector
-import controllers.actions.AuthenticateActionProvider
-import controllers.actions.AuthenticateActionProviderImpl
+abstract class XSDFile(val filePath: String)
 
-class Module extends AbstractModule {
-
-  override def configure(): Unit = {
-    bind(classOf[AppConfig]).asEagerSingleton()
-    bind(classOf[AuthenticateActionProvider]).to(classOf[AuthenticateActionProviderImpl]).asEagerSingleton()
-  }
-
+object XSDFile {
+  object GoodsReleasedXSD extends XSDFile("/xsd/CC025A.xsd")
 }

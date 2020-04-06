@@ -40,5 +40,4 @@ trait SpecBase extends FreeSpec with MustMatchers with MockitoSugar with ScalaFu
       .overrides(
         bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider]
       )
-
 }

@@ -16,14 +16,18 @@
 
 package controllers
 
+import config.AppConfig
 import controllers.actions.GetArrivalForWriteActionProvider
 import javax.inject.Inject
 import models.MessageReceived
 import models.MessageSender
+import models.XSDFile.GoodsReleasedXSD
+import play.api.Logger
 import play.api.mvc.Action
 import play.api.mvc.ControllerComponents
 import repositories.ArrivalMovementRepository
 import services.ArrivalMovementService
+import services.XmlValidationService
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.ExecutionContext
@@ -32,25 +36,39 @@ import scala.util.Failure
 import scala.util.Success
 import scala.xml.NodeSeq
 
-class GoodsReleasedController @Inject()(
-  cc: ControllerComponents,
-  arrivalMovementService: ArrivalMovementService,
-  getArrival: GetArrivalForWriteActionProvider,
-  arrivalMovementRepository: ArrivalMovementRepository
-)(implicit ec: ExecutionContext)
+class GoodsReleasedController @Inject()(cc: ControllerComponents,
+                                        appConfig: AppConfig,
+                                        arrivalMovementService: ArrivalMovementService,
+                                        getArrival: GetArrivalForWriteActionProvider,
+                                        arrivalMovementRepository: ArrivalMovementRepository,
+                                        xmlValidationService: XmlValidationService)(implicit ec: ExecutionContext)
     extends BackendController(cc) {
+
+  private val logger = Logger(getClass)
 
   def post(messageSender: MessageSender): Action[NodeSeq] = getArrival(messageSender.arrivalId)(parse.xml).async {
     implicit request =>
-      arrivalMovementService.makeGoodsReleasedMessage()(request.request.body) match {
-        case Some(message) =>
-          val newState = request.arrival.state.transition(MessageReceived.GoodsReleased)
-          arrivalMovementRepository.addMessage(request.arrival.arrivalId, message, newState).map {
-            case Success(_) => Ok
-            case Failure(_) => InternalServerError
+      val xml: NodeSeq = request.request.body
+
+      xmlValidationService.validate(xml.toString, GoodsReleasedXSD) match {
+        case Success(_) =>
+          arrivalMovementService.makeGoodsReleasedMessage()(xml) match {
+            case Some(message) =>
+              val newState = request.arrival.state.transition(MessageReceived.GoodsReleased)
+              arrivalMovementRepository.addMessage(request.arrival.arrivalId, message, newState).map {
+                case Success(_) => Ok
+                case Failure(e) => {
+                  logger.error(s"Failure to add message to movement. Exception: ${e.getMessage}")
+                  InternalServerError
+                }
+              }
+            case None =>
+              logger.error(s"Failure to parse message GoodsReleased")
+              Future.successful(InternalServerError)
           }
-        case None =>
-          Future.successful(InternalServerError)
+        case Failure(e) =>
+          logger.error(s"Failure to validate against XSD. Exception: ${e.getMessage}")
+          Future.successful(BadRequest)
       }
   }
 }
