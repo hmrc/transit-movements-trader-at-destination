@@ -14,14 +14,12 @@
     <xs:element name="message">
         <xs:complexType>
             <xs:sequence>
-                <xs:element ref="goodsReleased" minOccurs='0' maxOccurs='1'/>
-                <xs:element ref="rejected" minOccurs='0' maxOccurs='1'/>
-                <xs:element ref="unload" minOccurs='0' maxOccurs='1'/>
+                <xs:element ref="testString" minOccurs='0' maxOccurs='1'/>
+                <xs:element ref="testNumber" minOccurs='0' maxOccurs='1'/>
             </xs:sequence>
         </xs:complexType>
     </xs:element>
 
-    <xs:element name="goodsReleased" type='xs:string'/>
-    <xs:element name="rejected" type='xs:string'/>
-    <xs:element name="unload" type='xs:string'/>
+    <xs:element name="testString" type='xs:string'/>
+    <xs:element name="testNumber" type='xs:int'/>
 </xs:schema>

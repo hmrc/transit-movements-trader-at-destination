@@ -16,7 +16,7 @@
 
 package models
 
-sealed abstract class XSDFile(val filePath: String)
+abstract class XSDFile(val filePath: String)
 
 object XSDFile {
   object GoodsReleasedXSD extends XSDFile("/xsd/CC025A.xsd")
