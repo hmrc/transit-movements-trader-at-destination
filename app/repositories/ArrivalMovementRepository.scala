@@ -78,7 +78,17 @@ class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: React
     }
   }
 
-  def get(eoriNumber: String, mrn: MovementReferenceNumber): Future[Option[Arrival]] = ???
+  def get(eoriNumber: String, mrn: MovementReferenceNumber): Future[Option[Arrival]] = {
+    val selector = Json.obj(
+      "movementReferenceNumber" -> mrn.value,
+      "eoriNumber"              -> eoriNumber
+    )
+
+    collection.flatMap {
+      _.find(selector, None)
+        .one[Arrival]
+    }
+  }
 
   def fetchAllArrivals(eoriNumber: String): Future[Seq[Arrival]] =
     collection.flatMap {
