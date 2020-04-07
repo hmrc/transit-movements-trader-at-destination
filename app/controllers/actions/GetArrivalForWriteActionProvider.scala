@@ -17,7 +17,7 @@
 package controllers.actions
 
 import javax.inject.Inject
-import models.request.ArrivalId
+import models.ArrivalId
 import models.request.ArrivalRequest
 import play.api.mvc.ActionBuilder
 import play.api.mvc.AnyContent

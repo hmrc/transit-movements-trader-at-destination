@@ -31,7 +31,6 @@ import utils.Format
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.xml.NodeSeq
 
 class MessageConnector @Inject()(config: AppConfig, http: HttpClient)(implicit ec: ExecutionContext) {
 
@@ -41,6 +40,7 @@ class MessageConnector @Inject()(config: AppConfig, http: HttpClient)(implicit e
 
     val newHeaders = headerCarrier.withExtraHeaders(addHeaders(messageType, dateTime): _*)
 
+    // TODO: Don't throw exceptions here
     http.POSTString(url, xml.toString)(rds = HttpReads.readRaw, hc = newHeaders, ec = ec)
   }
 

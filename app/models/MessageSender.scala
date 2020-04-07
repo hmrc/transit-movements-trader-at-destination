@@ -16,7 +16,6 @@
 
 package models
 
-import models.request.ArrivalId
 import play.api.mvc.PathBindable
 
 import scala.util.Try

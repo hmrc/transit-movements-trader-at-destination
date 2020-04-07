@@ -22,11 +22,11 @@ import java.time.LocalTime
 
 import base.SpecBase
 import models.Arrival
+import models.ArrivalId
 import models.MessageType
 import models.MovementMessage
 import models.MovementReferenceNumber
 import models.State
-import models.request.ArrivalId
 import org.mockito.Mockito.when
 import org.scalatest.concurrent.IntegrationPatience
 import play.api.inject.bind

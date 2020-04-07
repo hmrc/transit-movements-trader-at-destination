@@ -3,8 +3,13 @@ package services.repositories
 import java.time.{LocalDate, LocalDateTime, LocalTime}
 
 import generators.MessageGenerators
-import models.{Arrival, MessageType, MovementMessage, MongoDateTimeFormats, MovementReferenceNumber, State}
-import models.request.ArrivalId
+import models.MongoDateTimeFormats
+import models.Arrival
+import models.ArrivalId
+import models.MessageType
+import models.MovementMessage
+import models.MovementReferenceNumber
+import models.State
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.EitherValues
 import org.scalatest.FreeSpec
@@ -231,8 +236,8 @@ class ArrivalMovementRepositorySpec
           val repository = app.injector.instanceOf[ArrivalMovementRepository]
 
           val movementReferenceNumber = arbitrary[MovementReferenceNumber].sample.value
-          val eori = "eori"
-          val arrival = arbitrary[Arrival].sample.value copy (eoriNumber = eori, movementReferenceNumber = movementReferenceNumber)
+          val eori                    = "eori"
+          val arrival                 = arbitrary[Arrival].sample.value copy (eoriNumber = eori, movementReferenceNumber = movementReferenceNumber)
 
           repository.insert(arrival).futureValue
 
@@ -252,10 +257,10 @@ class ArrivalMovementRepositorySpec
 
           val repository = app.injector.instanceOf[ArrivalMovementRepository]
 
-          val movementReferenceNumber = arbitrary[MovementReferenceNumber].sample.value
+          val movementReferenceNumber      = arbitrary[MovementReferenceNumber].sample.value
           val otherMovementReferenceNumber = arbitrary[MovementReferenceNumber].sample.value
 
-          val eori = "eori"
+          val eori    = "eori"
           val arrival = arbitrary[Arrival].sample.value copy (eoriNumber = eori, movementReferenceNumber = otherMovementReferenceNumber)
 
           repository.insert(arrival).futureValue
@@ -266,7 +271,6 @@ class ArrivalMovementRepositorySpec
         }
       }
 
-      //Do we want to Log this out?
       "must return a None if any exist with a matching mrn but no matching eoriNumber" in {
         database.flatMap(_.drop()).futureValue
 
@@ -279,9 +283,9 @@ class ArrivalMovementRepositorySpec
 
           val movementReferenceNumber = arbitrary[MovementReferenceNumber].sample.value
 
-          val eori = "eori"
+          val eori      = "eori"
           val otherEori = "otherEori"
-          val arrival = arbitrary[Arrival].sample.value copy (eoriNumber = otherEori, movementReferenceNumber = movementReferenceNumber)
+          val arrival   = arbitrary[Arrival].sample.value copy (eoriNumber = otherEori, movementReferenceNumber = movementReferenceNumber)
 
           repository.insert(arrival).futureValue
 
@@ -301,12 +305,12 @@ class ArrivalMovementRepositorySpec
 
           val repository = app.injector.instanceOf[ArrivalMovementRepository]
 
-          val movementReferenceNumber = arbitrary[MovementReferenceNumber].sample.value
+          val movementReferenceNumber      = arbitrary[MovementReferenceNumber].sample.value
           val otherMovementReferenceNumber = arbitrary[MovementReferenceNumber].sample.value
 
-          val eori = "eori"
+          val eori      = "eori"
           val otherEori = "otherEori"
-          val arrival = arbitrary[Arrival].sample.value copy (eoriNumber = otherEori, movementReferenceNumber = otherMovementReferenceNumber)
+          val arrival   = arbitrary[Arrival].sample.value copy (eoriNumber = otherEori, movementReferenceNumber = otherMovementReferenceNumber)
 
           repository.insert(arrival).futureValue
 

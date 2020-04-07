@@ -20,11 +20,11 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 import models.Arrival
+import models.ArrivalId
 import models.MessageType
 import models.MovementMessage
 import models.MovementReferenceNumber
 import models.State
-import models.request.ArrivalId
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen

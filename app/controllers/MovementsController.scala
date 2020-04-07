@@ -20,7 +20,9 @@ import java.time.OffsetDateTime
 
 import connectors.MessageConnector
 import controllers.actions.AuthenticateActionProvider
+import controllers.actions.AuthenticatedGetArrivalForWriteActionProvider
 import javax.inject.Inject
+import models.ArrivalId
 import models.Arrivals
 import models.MessageType
 import models.SubmissionResult
@@ -46,6 +48,7 @@ class MovementsController @Inject()(
   arrivalMovementRepository: ArrivalMovementRepository,
   arrivalMovementService: ArrivalMovementService,
   authenticate: AuthenticateActionProvider,
+  authenticateForWrite: AuthenticatedGetArrivalForWriteActionProvider,
   messageConnector: MessageConnector
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
@@ -107,6 +110,8 @@ class MovementsController @Inject()(
       }
 
   }
+
+  def updateArrival(arrivalId: ArrivalId): Action[AnyContent] = ???
 
   def getArrivals: Action[AnyContent] = authenticate().async {
     implicit request =>

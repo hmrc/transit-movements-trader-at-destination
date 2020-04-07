@@ -19,10 +19,10 @@ package repositories
 import com.google.inject.Inject
 import models.Arrival
 import models.MongoDateTimeFormats
+import models.ArrivalId
 import models.MovementMessage
 import models.MovementReferenceNumber
 import models.State
-import models.request.ArrivalId
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
