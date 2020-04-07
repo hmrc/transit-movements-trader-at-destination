@@ -28,6 +28,7 @@ import models.MessageType
 import models.MovementMessage
 import models.MovementReferenceNumber
 import repositories.ArrivalIdRepository
+import repositories.ArrivalMovementRepository
 import utils.Format
 import models.State.PendingSubmission
 
@@ -36,8 +37,12 @@ import scala.concurrent.Future
 import scala.util.Try
 import scala.xml.NodeSeq
 
-class ArrivalMovementService @Inject()(arrivalIdRepository: ArrivalIdRepository)(implicit ec: ExecutionContext) {
+class ArrivalMovementService @Inject()(arrivalIdRepository: ArrivalIdRepository, arrivalMovementRepository: ArrivalMovementRepository)(
+  implicit ec: ExecutionContext) {
   import ArrivalMovementService._
+
+  def getArrivalMovement(eoriNumber: String, xml: NodeSeq): Future[Option[Arrival]] =
+    mrnR(xml).map((x: MovementReferenceNumber) => arrivalMovementRepository.get(eoriNumber, x)).getOrElse(Future.successful(None))
 
   def makeArrivalMovement(eori: String): ReaderT[Option, NodeSeq, Future[Arrival]] =
     for {

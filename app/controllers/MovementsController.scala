@@ -54,53 +54,58 @@ class MovementsController @Inject()(
 
   def createMovement: Action[NodeSeq] = authenticate().async(parse.xml) {
     implicit request =>
-      arrivalMovementService.makeArrivalMovement(request.eoriNumber)(request.body) match {
+      arrivalMovementService.getArrivalMovement(request.eoriNumber, request.body) flatMap {
+        case Some(x) => Future.successful(SeeOther(s"/movements/arrivals/${x.arrivalId}"))
+
         case None =>
-          Future.successful(BadRequest("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5"))
+          arrivalMovementService.makeArrivalMovement(request.eoriNumber)(request.body) match {
+            case None =>
+              Future.successful(BadRequest("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5"))
 
-        case Some(x) =>
-          x.flatMap {
-              arrival =>
-                arrivalMovementRepository.insert(arrival) flatMap {
-                  _ =>
-                    messageConnector
-                      .post(TransitWrapper(request.body), MessageType.ArrivalNotification, OffsetDateTime.now)
-                      .flatMap {
-                        _ =>
-                          val newState = arrival.state.transition(SubmissionResult.Success)
-                          arrivalMovementRepository
-                            .setState(arrival.arrivalId, newState)
-                            .map {
-                              _ =>
-                                Accepted("Message accepted")
-                                // TODO: This needs to be replaced url to arrival movement resource, for which we need an Arrival Movement number
-                                  .withHeaders("Location" -> arrival.arrivalId.index.toString)
-
-                            }
-                            .recoverWith {
-                              case e: Exception =>
-                                logger.error(s"setState failed with following Exception: ${e.getMessage}")
-                                Future.successful(InternalServerError)
-                            }
-                      }
-                      .recoverWith {
-                        case error: Exception =>
-                          logger.error(s"Call to EIS failed with the following Exception: ${error.getMessage}")
-                          val newState = arrival.state.transition(SubmissionResult.Failure)
-                          arrivalMovementRepository.setState(arrival.arrivalId, newState).map {
+            case Some(x) =>
+              x.flatMap {
+                  arrival =>
+                    arrivalMovementRepository.insert(arrival) flatMap {
+                      _ =>
+                        messageConnector
+                          .post(TransitWrapper(request.body), MessageType.ArrivalNotification, OffsetDateTime.now)
+                          .flatMap {
                             _ =>
-                              BadGateway
+                              val newState = arrival.state.transition(SubmissionResult.Success)
+                              arrivalMovementRepository
+                                .setState(arrival.arrivalId, newState)
+                                .map {
+                                  _ =>
+                                    Accepted("Message accepted")
+                                    // TODO: This needs to be replaced url to arrival movement resource, for which we need an Arrival Movement number
+                                      .withHeaders("Location" -> arrival.arrivalId.index.toString)
+
+                                }
+                                .recoverWith {
+                                  case e: Exception =>
+                                    logger.error(s"setState failed with following Exception: ${e.getMessage}")
+                                    Future.successful(InternalServerError)
+                                }
                           }
+                          .recoverWith {
+                            case error: Exception =>
+                              logger.error(s"Call to EIS failed with the following Exception: ${error.getMessage}")
+                              val newState = arrival.state.transition(SubmissionResult.Failure)
+                              arrivalMovementRepository.setState(arrival.arrivalId, newState).map {
+                                _ =>
+                                  BadGateway
+                              }
+                        }
+                    }
+                    .recover {
+                      case _ => {
+                        // TODO: Add logging here so that we can be alerted to these issues.
+                        InternalServerError
                       }
-                }
-            }
-            .recover {
-              case _ => {
-                // TODO: Add logging here so that we can be alerted to these issues.
-                InternalServerError
+                    }
               }
-            }
       }
+
   }
 
   def getArrivals: Action[AnyContent] = authenticate().async {
