@@ -3,7 +3,7 @@ package services.repositories
 import java.time.{LocalDate, LocalDateTime, LocalTime}
 
 import generators.MessageGenerators
-import models.{Arrival, MessageType, MongoDateTimeFormats, MovementMessage, State}
+import models.{Arrival, MessageType, MovementMessage, MongoDateTimeFormats, MovementReferenceNumber, State}
 import models.request.ArrivalId
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.EitherValues
@@ -179,7 +179,7 @@ class ArrivalMovementRepositorySpec
       }
     }
 
-    "get" - {
+    "get(arrivalId: ArrivalId)" - {
       "must get an arrival when it exists" in {
         database.flatMap(_.drop()).futureValue
 
@@ -215,6 +215,104 @@ class ArrivalMovementRepositorySpec
           val result = repository.get(ArrivalId(2)).futureValue
 
           result must not be defined
+        }
+      }
+    }
+
+    "get(eoriNumber: String, mrn: MovementReferenceNumber)" - {
+      "must get an arrival if one exists with a matching eoriNumber and mrn" in {
+        database.flatMap(_.drop()).futureValue
+
+        val app: Application = builder.build()
+
+        running(app) {
+          started(app).futureValue
+
+          val repository = app.injector.instanceOf[ArrivalMovementRepository]
+
+          val movementReferenceNumber = arbitrary[MovementReferenceNumber].sample.value
+          val eori = "eori"
+          val arrival = arbitrary[Arrival].sample.value copy (eoriNumber = eori, movementReferenceNumber = movementReferenceNumber)
+
+          repository.insert(arrival).futureValue
+
+          val result = repository.get(eori, movementReferenceNumber).futureValue
+
+          result.value mustEqual arrival
+        }
+      }
+
+      "must return a None if any exist with a matching eoriNumber but no matching mrn" in {
+        database.flatMap(_.drop()).futureValue
+
+        val app: Application = builder.build()
+
+        running(app) {
+          started(app).futureValue
+
+          val repository = app.injector.instanceOf[ArrivalMovementRepository]
+
+          val movementReferenceNumber = arbitrary[MovementReferenceNumber].sample.value
+          val otherMovementReferenceNumber = arbitrary[MovementReferenceNumber].sample.value
+
+          val eori = "eori"
+          val arrival = arbitrary[Arrival].sample.value copy (eoriNumber = eori, movementReferenceNumber = otherMovementReferenceNumber)
+
+          repository.insert(arrival).futureValue
+
+          val result = repository.get(eori, movementReferenceNumber).futureValue
+
+          result mustEqual None
+        }
+      }
+
+      //Do we want to Log this out?
+      "must return a None if any exist with a matching mrn but no matching eoriNumber" in {
+        database.flatMap(_.drop()).futureValue
+
+        val app: Application = builder.build()
+
+        running(app) {
+          started(app).futureValue
+
+          val repository = app.injector.instanceOf[ArrivalMovementRepository]
+
+          val movementReferenceNumber = arbitrary[MovementReferenceNumber].sample.value
+
+          val eori = "eori"
+          val otherEori = "otherEori"
+          val arrival = arbitrary[Arrival].sample.value copy (eoriNumber = otherEori, movementReferenceNumber = movementReferenceNumber)
+
+          repository.insert(arrival).futureValue
+
+          val result = repository.get(eori, movementReferenceNumber).futureValue
+
+          result mustEqual None
+        }
+      }
+
+      "must return a None when an arrival does not exist" in {
+        database.flatMap(_.drop()).futureValue
+
+        val app: Application = builder.build()
+
+        running(app) {
+          started(app).futureValue
+
+          val repository = app.injector.instanceOf[ArrivalMovementRepository]
+
+          val movementReferenceNumber = arbitrary[MovementReferenceNumber].sample.value
+          val otherMovementReferenceNumber = arbitrary[MovementReferenceNumber].sample.value
+
+          val eori = "eori"
+          val otherEori = "otherEori"
+          val arrival = arbitrary[Arrival].sample.value copy (eoriNumber = otherEori, movementReferenceNumber = otherMovementReferenceNumber)
+
+          repository.insert(arrival).futureValue
+
+          val result = repository.get(eori, movementReferenceNumber).futureValue
+
+          result mustEqual None
         }
       }
     }

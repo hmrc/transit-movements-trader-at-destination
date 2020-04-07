@@ -20,6 +20,7 @@ import com.google.inject.Inject
 import models.Arrival
 import models.MongoDateTimeFormats
 import models.MovementMessage
+import models.MovementReferenceNumber
 import models.State
 import models.request.ArrivalId
 import play.api.libs.json.JsObject
@@ -76,6 +77,8 @@ class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: React
         .one[Arrival]
     }
   }
+
+  def get(eoriNumber: String, mrn: MovementReferenceNumber): Future[Option[Arrival]] = ???
 
   def fetchAllArrivals(eoriNumber: String): Future[Seq[Arrival]] =
     collection.flatMap {
