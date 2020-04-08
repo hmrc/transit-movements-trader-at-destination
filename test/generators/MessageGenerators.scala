@@ -19,7 +19,7 @@ package generators
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-import models.{Arrival, ArrivalId, MessageState, MessageType, MovementMessage, MovementReferenceNumber, State}
+import models.{Arrival, ArrivalId, MessageState, MessageType, MovementMessage, MovementMessageWithState, MovementReferenceNumber, State}
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
@@ -29,7 +29,7 @@ trait MessageGenerators extends ModelGenerators {
   private val pastDate: LocalDate = LocalDate.of(1900, 1, 1)
   private val dateNow: LocalDate  = LocalDate.now
 
-  implicit lazy val arbitraryMessageXml: Arbitrary[MovementMessage] = {
+  implicit lazy val arbitraryMessageXml: Arbitrary[MovementMessageWithState] = {
     Arbitrary {
       for {
         date        <- datesBetween(pastDate, dateNow)
@@ -37,7 +37,7 @@ trait MessageGenerators extends ModelGenerators {
         xml         <- Gen.const(<blankXml>message</blankXml>)
         messageType <- Gen.oneOf(MessageType.values)
         state       <- Gen.oneOf(MessageState.values)
-      } yield MovementMessage(LocalDateTime.of(date, time), messageType, xml, state)
+      } yield MovementMessageWithState(LocalDateTime.of(date, time), messageType, xml, state)
     }
   }
 
@@ -63,7 +63,7 @@ trait MessageGenerators extends ModelGenerators {
         state                   <- arbitrary[State]
         created                 <- arbitrary[LocalDateTime]
         updated                 <- arbitrary[LocalDateTime]
-        messages                <- seqWithMaxLength[MovementMessage](2)
+        messages                <- seqWithMaxLength[MovementMessageWithState](2)
       } yield
         Arrival(
           arrivalId = arrivalId,

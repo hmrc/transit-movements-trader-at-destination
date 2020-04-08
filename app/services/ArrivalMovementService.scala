@@ -25,7 +25,7 @@ import cats.implicits._
 import com.google.inject.Inject
 import models.Arrival
 import models.MessageType
-import models.MovementMessage
+import models.MovementMessageWithState
 import models.MovementReferenceNumber
 import repositories.ArrivalIdRepository
 import repositories.ArrivalMovementRepository
@@ -65,7 +65,7 @@ class ArrivalMovementService @Inject()(arrivalIdRepository: ArrivalIdRepository,
           ))
     }
 
-  def makeGoodsReleasedMessage(): ReaderT[Option, NodeSeq, MovementMessage] =
+  def makeGoodsReleasedMessage(): ReaderT[Option, NodeSeq, MovementMessageWithState] =
     for {
       _          <- correctRootNodeR(MessageType.GoodsReleased)
       dateTime   <- dateTimeOfPrepR

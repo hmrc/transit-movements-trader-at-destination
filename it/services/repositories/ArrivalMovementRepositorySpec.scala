@@ -8,7 +8,7 @@ import models.Arrival
 import models.ArrivalId
 import models.MessageState.{SubmissionPending, SubmissionSucceeded}
 import models.MessageType
-import models.MovementMessage
+import models.MovementMessageWithState
 import models.MovementReferenceNumber
 import models.State
 import models.State.PendingSubmission
@@ -54,7 +54,7 @@ class ArrivalMovementRepositorySpec
 
   val arrivalWithOneMessage: Gen[Arrival] = for {
     arrival <- arbitrary[Arrival]
-    movementMessage <- arbitrary[MovementMessage]
+    movementMessage <- arbitrary[MovementMessageWithState]
   } yield arrival.copy(messages = Seq(movementMessage.copy(state = SubmissionPending)))
 
   "ArrivalMovementRepository" - {

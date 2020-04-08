@@ -114,7 +114,7 @@ class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: React
     }
   }
 
-  def addMessage(arrivalId: ArrivalId, message: MovementMessage, state: State): Future[Try[Unit]] = {
+  def addMessage(arrivalId: ArrivalId, message: MovementMessageWithState, state: State): Future[Try[Unit]] = {
 
     val selector = Json.obj(
       "_id" -> arrivalId

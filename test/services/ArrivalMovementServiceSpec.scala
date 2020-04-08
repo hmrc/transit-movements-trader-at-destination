@@ -24,7 +24,7 @@ import base.SpecBase
 import models.Arrival
 import models.ArrivalId
 import models.MessageType
-import models.MovementMessage
+import models.MovementMessageWithState
 import models.MovementReferenceNumber
 import models.State
 import org.mockito.Mockito.when
