@@ -97,6 +97,8 @@ class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: React
         .collect[Seq](-1, Cursor.FailOnError())
     }
 
+  def setMessageState(arrivalId: ArrivalId, state: State): Future[Unit] = ???
+
   def setState(id: ArrivalId, state: State): Future[Unit] = {
 
     val selector = Json.obj(

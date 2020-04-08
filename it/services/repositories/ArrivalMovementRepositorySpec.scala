@@ -104,6 +104,12 @@ class ArrivalMovementRepositorySpec
       }
     }
 
+    "setMessageState" - {
+      "must update the state of a specific message in an existing arrival" in {
+
+      }
+    }
+
     "addMessage" - {
       "must add a message and update the state of a document" in {
         database.flatMap(_.drop()).futureValue

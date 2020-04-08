@@ -518,7 +518,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
         when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
         when(mockArrivalMovementRepository.addMessage(eqTo(arrival.arrivalId), any(), any())).thenReturn(Future.successful(Success(())))
-//        when(mockArrivalMovementRepository.setMessageState(eqTo(arrival.arrivalId, eqTo(2))
+        //when(mockArrivalMovementRepository.setMessageState(eqTo(arrival.arrivalId, eqTo(2)))
 
         val application = baseApplicationBuilder
           .overrides(
