@@ -25,12 +25,14 @@ import models.Arrivals
 import models.MessageType
 import models.SubmissionResult
 import models.TransitWrapper
+import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import repositories.ArrivalMovementRepository
 import services.ArrivalMovementService
+import uk.gov.hmrc.http.BadGatewayException
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.ExecutionContext
@@ -45,6 +47,8 @@ class MovementsController @Inject()(
   messageConnector: MessageConnector
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
+
+  private val logger = Logger(getClass)
 
   def createMovement: Action[NodeSeq] = authenticate().async(parse.xml) {
     implicit request =>
@@ -70,10 +74,18 @@ class MovementsController @Inject()(
                           }
                       }
                       .recoverWith {
-                        case _ =>
+                        case bge: BadGatewayException =>
                           val newState = arrival.state.transition(SubmissionResult.Failure)
                           arrivalMovementRepository.setState(arrival.arrivalId, newState).map {
                             _ =>
+                              logger.error(s"Call to EIS failed with the following Exception: ${bge.getMessage}")
+                              BadGateway
+                          }
+                        case e: Exception =>
+                          val newState = arrival.state.transition(SubmissionResult.Failure)
+                          arrivalMovementRepository.setState(arrival.arrivalId, newState).map {
+                            _ =>
+                              logger.error(s"Failed with the following Exception: ${e.getMessage}")
                               InternalServerError
                           }
                       }
