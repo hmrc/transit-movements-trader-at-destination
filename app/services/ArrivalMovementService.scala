@@ -17,6 +17,7 @@
 package services
 
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 
 import cats.data._
@@ -55,8 +56,8 @@ class ArrivalMovementService @Inject()(arrivalIdRepository: ArrivalIdRepository)
             mrn,
             eori,
             PendingSubmission,
-            ArrivalDateTime(date, time),
-            ArrivalDateTime(date, time),
+            ArrivalDateTime(LocalDateTime.of(date, time)),
+            ArrivalDateTime(LocalDateTime.of(date, time)),
             Seq(MovementMessage(date, time, MessageType.ArrivalNotification, xmlMessage))
           ))
     }

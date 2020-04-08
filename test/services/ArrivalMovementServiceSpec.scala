@@ -17,6 +17,7 @@
 package services
 
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 
 import base.SpecBase
@@ -70,8 +71,8 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
         movementReferenceNumber = mrn,
         eoriNumber = eori,
         state = State.PendingSubmission,
-        ArrivalDateTime(dateOfPrep, timeOfPrep),
-        ArrivalDateTime(dateOfPrep, timeOfPrep),
+        ArrivalDateTime(LocalDateTime.of(dateOfPrep, timeOfPrep)),
+        ArrivalDateTime(LocalDateTime.of(dateOfPrep, timeOfPrep)),
         messages = Seq(
           MovementMessage(dateOfPrep, timeOfPrep, MessageType.ArrivalNotification, movement)
         )

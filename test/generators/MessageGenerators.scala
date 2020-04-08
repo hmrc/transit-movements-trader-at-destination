@@ -17,6 +17,7 @@
 package generators
 
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 
 import models.request.ArrivalId
@@ -86,9 +87,8 @@ trait MessageGenerators extends ModelGenerators {
 
     Arbitrary {
       for {
-        date <- arbitrary[LocalDate]
-        time <- arbitrary[LocalTime]
-      } yield ArrivalDateTime(date, time)
+        dateTime <- arbitrary[LocalDateTime]
+      } yield ArrivalDateTime(dateTime)
     }
   }
 
