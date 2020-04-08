@@ -42,7 +42,9 @@ import play.api.test.Helpers._
 import repositories.ArrivalIdRepository
 import repositories.ArrivalMovementRepository
 import uk.gov.hmrc.http.BadGatewayException
+import uk.gov.hmrc.http.GatewayTimeoutException
 import uk.gov.hmrc.http.HttpResponse
+import uk.gov.hmrc.http.ServiceUnavailableException
 import uk.gov.hmrc.http.Upstream5xxResponse
 import utils.Format
 
@@ -328,6 +330,92 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           val result = route(application, request).value
 
           status(result) mustEqual BAD_GATEWAY
+          verify(mockArrivalMovementRepository, times(1)).setState(arrivalId, State.SubmissionFailed)
+        }
+      }
+
+      "must return ServiceUnavailable and update the status to SubmissionFailed if sending the message upstream fails with Service Unavailable error" in {
+
+        val mockArrivalIdRepository       = mock[ArrivalIdRepository]
+        val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+        val mockMessageConnector          = mock[MessageConnector]
+        val arrivalId                     = ArrivalId(1)
+
+        when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
+        when(mockArrivalMovementRepository.insert(any())).thenReturn(Future.successful(()))
+        when(mockArrivalMovementRepository.setState(any(), any())).thenReturn(Future.successful(()))
+        when(mockMessageConnector.post(any(), any(), any())(any())).thenReturn(Future.failed(new ServiceUnavailableException("")))
+
+        val application = baseApplicationBuilder
+          .overrides(
+            bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
+            bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
+            bind[MessageConnector].toInstance(mockMessageConnector)
+          )
+          .build()
+
+        running(application) {
+
+          val dateOfPrep = LocalDate.now()
+          val timeOfPrep = LocalTime.of(1, 1)
+
+          val requestXmlBody =
+            <CC007A>
+              <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+              <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+              <HEAHEA>
+                <DocNumHEA5>MRN</DocNumHEA5>
+              </HEAHEA>
+            </CC007A>
+
+          val request = FakeRequest(POST, routes.MovementsController.createMovement().url).withXmlBody(requestXmlBody)
+
+          val result = route(application, request).value
+
+          status(result) mustEqual SERVICE_UNAVAILABLE
+          verify(mockArrivalMovementRepository, times(1)).setState(arrivalId, State.SubmissionFailed)
+        }
+      }
+
+      "must return GatewayTimeout and update the status to SubmissionFailed if sending the message upstream fails with Gateway Timeout error" in {
+
+        val mockArrivalIdRepository       = mock[ArrivalIdRepository]
+        val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+        val mockMessageConnector          = mock[MessageConnector]
+        val arrivalId                     = ArrivalId(1)
+
+        when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
+        when(mockArrivalMovementRepository.insert(any())).thenReturn(Future.successful(()))
+        when(mockArrivalMovementRepository.setState(any(), any())).thenReturn(Future.successful(()))
+        when(mockMessageConnector.post(any(), any(), any())(any())).thenReturn(Future.failed(new GatewayTimeoutException("")))
+
+        val application = baseApplicationBuilder
+          .overrides(
+            bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
+            bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
+            bind[MessageConnector].toInstance(mockMessageConnector)
+          )
+          .build()
+
+        running(application) {
+
+          val dateOfPrep = LocalDate.now()
+          val timeOfPrep = LocalTime.of(1, 1)
+
+          val requestXmlBody =
+            <CC007A>
+              <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+              <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+              <HEAHEA>
+                <DocNumHEA5>MRN</DocNumHEA5>
+              </HEAHEA>
+            </CC007A>
+
+          val request = FakeRequest(POST, routes.MovementsController.createMovement().url).withXmlBody(requestXmlBody)
+
+          val result = route(application, request).value
+
+          status(result) mustEqual GATEWAY_TIMEOUT
           verify(mockArrivalMovementRepository, times(1)).setState(arrivalId, State.SubmissionFailed)
         }
       }

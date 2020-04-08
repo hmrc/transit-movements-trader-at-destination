@@ -33,6 +33,8 @@ import play.api.mvc.ControllerComponents
 import repositories.ArrivalMovementRepository
 import services.ArrivalMovementService
 import uk.gov.hmrc.http.BadGatewayException
+import uk.gov.hmrc.http.GatewayTimeoutException
+import uk.gov.hmrc.http.ServiceUnavailableException
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.ExecutionContext
@@ -80,6 +82,20 @@ class MovementsController @Inject()(
                             _ =>
                               logger.error(s"Call to EIS failed with the following Exception: ${bge.getMessage}")
                               BadGateway
+                          }
+                        case sue: ServiceUnavailableException =>
+                          val newState = arrival.state.transition(SubmissionResult.Failure)
+                          arrivalMovementRepository.setState(arrival.arrivalId, newState).map {
+                            _ =>
+                              logger.error(s"Call to EIS failed with the following Exception: ${sue.getMessage}")
+                              ServiceUnavailable
+                          }
+                        case gte: GatewayTimeoutException =>
+                          val newState = arrival.state.transition(SubmissionResult.Failure)
+                          arrivalMovementRepository.setState(arrival.arrivalId, newState).map {
+                            _ =>
+                              logger.error(s"Call to EIS failed with the following Exception: ${gte.getMessage}")
+                              GatewayTimeout
                           }
                         case e: Exception =>
                           val newState = arrival.state.transition(SubmissionResult.Failure)
