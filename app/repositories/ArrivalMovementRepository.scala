@@ -17,12 +17,8 @@
 package repositories
 
 import com.google.inject.Inject
-import models.Arrival
 import models.MongoDateTimeFormats
-import models.ArrivalId
-import models.MovementMessage
-import models.MovementReferenceNumber
-import models.State
+import models.{Arrival, ArrivalId, MessageState, MovementMessage, MovementReferenceNumber, State}
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
@@ -97,8 +93,9 @@ class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: React
         .collect[Seq](-1, Cursor.FailOnError())
     }
 
-  def setMessageState(arrivalId: ArrivalId, state: State): Future[Unit] = ???
+  def setMessageState(arrivalId: ArrivalId, messageId: Int, state: MessageState): Future[Try[Unit]] = ???
 
+  // TODO: Set return type to Future[Try[Unit]] ?
   def setState(id: ArrivalId, state: State): Future[Unit] = {
 
     val selector = Json.obj(

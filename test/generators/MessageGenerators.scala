@@ -19,12 +19,7 @@ package generators
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-import models.Arrival
-import models.ArrivalId
-import models.MessageType
-import models.MovementMessage
-import models.MovementReferenceNumber
-import models.State
+import models.{Arrival, ArrivalId, MessageState, MessageType, MovementMessage, MovementReferenceNumber, State}
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
@@ -41,7 +36,8 @@ trait MessageGenerators extends ModelGenerators {
         time        <- timesBetween(pastDate, dateNow)
         xml         <- Gen.const(<blankXml>message</blankXml>)
         messageType <- Gen.oneOf(MessageType.values)
-      } yield MovementMessage(LocalDateTime.of(date, time), messageType, xml)
+        state       <- Gen.oneOf(MessageState.values)
+      } yield MovementMessage(LocalDateTime.of(date, time), messageType, xml, state)
     }
   }
 

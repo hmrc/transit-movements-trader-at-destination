@@ -6,11 +6,14 @@ import generators.MessageGenerators
 import models.MongoDateTimeFormats
 import models.Arrival
 import models.ArrivalId
+import models.MessageState.{SubmissionPending, SubmissionSucceeded}
 import models.MessageType
 import models.MovementMessage
 import models.MovementReferenceNumber
 import models.State
+import models.State.PendingSubmission
 import org.scalacheck.Arbitrary.arbitrary
+import org.scalacheck.Gen
 import org.scalatest.EitherValues
 import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers
@@ -28,6 +31,7 @@ import repositories.ArrivalMovementRepository
 import utils.Format
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.util.Failure
 import scala.util.Success
 
@@ -47,6 +51,11 @@ class ArrivalMovementRepositorySpec
   private val eoriNumber: String = arbitrary[String].sample.value
 
   private def builder = new GuiceApplicationBuilder()
+
+  val arrivalWithOneMessage: Gen[Arrival] = for {
+    arrival <- arbitrary[Arrival]
+    movementMessage <- arbitrary[MovementMessage]
+  } yield arrival.copy(messages = Seq(movementMessage.copy(state = SubmissionPending)))
 
   "ArrivalMovementRepository" - {
     "insert" - {
@@ -106,7 +115,61 @@ class ArrivalMovementRepositorySpec
 
     "setMessageState" - {
       "must update the state of a specific message in an existing arrival" in {
+        database.flatMap(_.drop()).futureValue
 
+        val app: Application = builder.build()
+
+        val arrival = arrivalWithOneMessage.sample.value
+
+        running(app) {
+          started(app).futureValue
+
+          val repository = app.injector.instanceOf[ArrivalMovementRepository]
+
+          repository.insert(arrival).futureValue
+          repository.setMessageState(arrival.arrivalId, 0, SubmissionSucceeded)
+
+          val updatedArrival = repository.get(arrival.arrivalId).futureValue.get
+          updatedArrival.messages.head.state mustEqual SubmissionSucceeded
+        }
+      }
+
+      "must fail if the arrival cannot be found" in {
+        database.flatMap(_.drop()).futureValue
+
+        val app: Application = builder.build()
+
+        val arrival = arrivalWithOneMessage.sample.value copy(arrivalId = ArrivalId(1))
+
+        running(app) {
+          started(app).futureValue
+
+          val repository = app.injector.instanceOf[ArrivalMovementRepository]
+
+          repository.insert(arrival).futureValue
+          val result = repository.setMessageState(ArrivalId(2), 0, SubmissionSucceeded).futureValue
+
+          result mustBe a[Failure[Unit]]
+        }
+      }
+
+      "must fail if the message doesn't exist" in {
+        database.flatMap(_.drop()).futureValue
+
+        val app: Application = builder.build()
+
+        val arrival = arrivalWithOneMessage.sample.value copy(arrivalId = ArrivalId(1))
+
+        running(app) {
+          started(app).futureValue
+
+          val repository = app.injector.instanceOf[ArrivalMovementRepository]
+
+          repository.insert(arrival).futureValue
+          val result = repository.setMessageState(ArrivalId(1), 5, SubmissionSucceeded).futureValue
+
+          result mustBe a[Failure[Unit]]
+        }
       }
     }
 

@@ -22,7 +22,7 @@ import play.api.libs.json._
 import scala.xml.NodeSeq
 import scala.xml.XML
 
-final case class MovementMessage(dateTime: LocalDateTime, messageType: MessageType, message: NodeSeq)
+final case class MovementMessage(dateTime: LocalDateTime, messageType: MessageType, message: NodeSeq, state: MessageState)
 
 object MovementMessage {
 
