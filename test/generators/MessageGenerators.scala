@@ -18,15 +18,13 @@ package generators
 
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.LocalTime
 
-import models.request.ArrivalId
 import models.Arrival
-import models.ArrivalDateTime
 import models.MessageType
 import models.MovementMessage
 import models.MovementReferenceNumber
 import models.State
+import models.request.ArrivalId
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
@@ -67,8 +65,8 @@ trait MessageGenerators extends ModelGenerators {
         movementReferenceNumber <- arbitrary[MovementReferenceNumber]
         eoriNumber              <- arbitrary[String]
         state                   <- arbitrary[State]
-        created                 <- arbitrary[ArrivalDateTime]
-        updated                 <- arbitrary[ArrivalDateTime]
+        created                 <- arbitrary[LocalDateTime]
+        updated                 <- arbitrary[LocalDateTime]
         messages                <- seqWithMaxLength[MovementMessage](2)
       } yield
         Arrival(
@@ -82,14 +80,4 @@ trait MessageGenerators extends ModelGenerators {
         )
     }
   }
-
-  implicit lazy val arbitraryArrivalDateTime: Arbitrary[ArrivalDateTime] = {
-
-    Arbitrary {
-      for {
-        dateTime <- arbitrary[LocalDateTime]
-      } yield ArrivalDateTime(dateTime)
-    }
-  }
-
 }

@@ -22,7 +22,6 @@ import java.time.LocalTime
 
 import base.SpecBase
 import models.Arrival
-import models.ArrivalDateTime
 import models.MessageType
 import models.MovementMessage
 import models.MovementReferenceNumber
@@ -71,8 +70,8 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
         movementReferenceNumber = mrn,
         eoriNumber = eori,
         state = State.PendingSubmission,
-        ArrivalDateTime(LocalDateTime.of(dateOfPrep, timeOfPrep)),
-        ArrivalDateTime(LocalDateTime.of(dateOfPrep, timeOfPrep)),
+        LocalDateTime.of(dateOfPrep, timeOfPrep),
+        LocalDateTime.of(dateOfPrep, timeOfPrep),
         messages = Seq(
           MovementMessage(dateOfPrep, timeOfPrep, MessageType.ArrivalNotification, movement)
         )

@@ -24,7 +24,6 @@ import cats.data._
 import cats.implicits._
 import com.google.inject.Inject
 import models.Arrival
-import models.ArrivalDateTime
 import models.MessageType
 import models.MovementMessage
 import models.MovementReferenceNumber
@@ -56,8 +55,8 @@ class ArrivalMovementService @Inject()(arrivalIdRepository: ArrivalIdRepository)
             mrn,
             eori,
             PendingSubmission,
-            ArrivalDateTime(LocalDateTime.of(date, time)),
-            ArrivalDateTime(LocalDateTime.of(date, time)),
+            LocalDateTime.of(date, time),
+            LocalDateTime.of(date, time),
             Seq(MovementMessage(date, time, MessageType.ArrivalNotification, xmlMessage))
           ))
     }

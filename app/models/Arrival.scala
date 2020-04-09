@@ -16,17 +16,21 @@
 
 package models
 
+import java.time.LocalDateTime
+
 import models.request.ArrivalId
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
+
+import models.MongoDateTimeFormats._
 
 case class Arrival(
   arrivalId: ArrivalId,
   movementReferenceNumber: MovementReferenceNumber,
   eoriNumber: String,
   state: State,
-  created: ArrivalDateTime,
-  updated: ArrivalDateTime,
+  created: LocalDateTime,
+  updated: LocalDateTime,
   messages: Seq[MovementMessage]
 )
 
@@ -38,8 +42,8 @@ object Arrival {
         (__ \ "movementReferenceNumber").read[MovementReferenceNumber] and
         (__ \ "eoriNumber").read[String] and
         (__ \ "state").read[State] and
-        (__ \ "created").read[ArrivalDateTime] and
-        (__ \ "updated").read[ArrivalDateTime] and
+        (__ \ "created").read(MongoDateTimeFormats.localDateTimeRead) and
+        (__ \ "updated").read(MongoDateTimeFormats.localDateTimeRead) and
         (__ \ "messages").read[Seq[MovementMessage]]
     )(Arrival.apply _)
 
@@ -49,8 +53,8 @@ object Arrival {
         (__ \ "movementReferenceNumber").write[MovementReferenceNumber] and
         (__ \ "eoriNumber").write[String] and
         (__ \ "state").write[State] and
-        (__ \ "created").write[ArrivalDateTime] and
-        (__ \ "updated").write[ArrivalDateTime] and
+        (__ \ "created").write(MongoDateTimeFormats.localDateTimeWrite) and
+        (__ \ "updated").write(MongoDateTimeFormats.localDateTimeWrite) and
         (__ \ "messages").write[Seq[MovementMessage]]
     )(unlift(Arrival.unapply))
 
