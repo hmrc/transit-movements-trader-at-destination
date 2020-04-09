@@ -25,12 +25,16 @@ import models.Arrivals
 import models.MessageType
 import models.SubmissionResult
 import models.TransitWrapper
+import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import repositories.ArrivalMovementRepository
 import services.ArrivalMovementService
+import uk.gov.hmrc.http.BadGatewayException
+import uk.gov.hmrc.http.GatewayTimeoutException
+import uk.gov.hmrc.http.ServiceUnavailableException
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.ExecutionContext
@@ -45,6 +49,8 @@ class MovementsController @Inject()(
   messageConnector: MessageConnector
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
+
+  private val logger = Logger(getClass)
 
   def createMovement: Action[NodeSeq] = authenticate().async(parse.xml) {
     implicit request =>
@@ -62,19 +68,28 @@ class MovementsController @Inject()(
                       .flatMap {
                         _ =>
                           val newState = arrival.state.transition(SubmissionResult.Success)
-                          arrivalMovementRepository.setState(arrival.arrivalId, newState).map {
-                            _ =>
-                              Accepted("Message accepted")
-                              // TODO: This needs to be replaced url to arrival movement resource, for which we need an Arrival Movement number
-                                .withHeaders("Location" -> arrival.arrivalId.index.toString)
-                          }
+                          arrivalMovementRepository
+                            .setState(arrival.arrivalId, newState)
+                            .map {
+                              _ =>
+                                Accepted("Message accepted")
+                                // TODO: This needs to be replaced url to arrival movement resource, for which we need an Arrival Movement number
+                                  .withHeaders("Location" -> arrival.arrivalId.index.toString)
+
+                            }
+                            .recoverWith {
+                              case e: Exception =>
+                                logger.error(s"setState failed with following Exception: ${e.getMessage}")
+                                Future.successful(InternalServerError)
+                            }
                       }
                       .recoverWith {
-                        case _ =>
+                        case error: Exception =>
+                          logger.error(s"Call to EIS failed with the following Exception: ${error.getMessage}")
                           val newState = arrival.state.transition(SubmissionResult.Failure)
                           arrivalMovementRepository.setState(arrival.arrivalId, newState).map {
                             _ =>
-                              InternalServerError
+                              BadGateway
                           }
                       }
                 }
