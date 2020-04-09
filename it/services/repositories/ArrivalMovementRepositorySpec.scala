@@ -122,9 +122,14 @@ class ArrivalMovementRepositorySpec
           val repository = app.injector.instanceOf[ArrivalMovementRepository]
 
           repository.insert(arrival).futureValue
+
+          val insertedArrival = repository.get(arrival.arrivalId).futureValue.get
+          println(insertedArrival)
+
           repository.setMessageState(arrival.arrivalId, 0, SubmissionSucceeded)
 
           val updatedArrival = repository.get(arrival.arrivalId).futureValue.get
+          println(updatedArrival)
 
           //TODO: Is it worth having this as a method on the trait to return the true model in an either/option/something graceful?
           updatedArrival.messages.head.asInstanceOf[MovementMessageWithState].state mustEqual SubmissionSucceeded

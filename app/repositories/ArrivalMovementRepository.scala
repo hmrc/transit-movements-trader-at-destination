@@ -96,30 +96,63 @@ class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: React
 
   def setMessageState(arrivalId: ArrivalId, messageId: Int, state: MessageState): Future[Try[Unit]] = {
 
-    val selector = Json.obj("_id" -> arrivalId, s"messages.$messageId.state" -> "$exists: true")
+    //      s"messages.state" ->
+    //        Json.obj("$elemMatch" ->
+    //          Json.obj("state" -> Json.obj("$exists" -> true))))
+
+//    val selector = Json.obj(
+//      "_id" -> arrivalId,
+//      s"messages.$messageId" -> Json.obj("$elemMatch" ->
+//              Json.obj("state" -> Json.obj("$exists" -> true)))
+
+//    {$and: [{"_id": 123}, {"messages.0.state": { "$exists": true}}]}
+    val selector = Json.obj(
+      "$and" ->
+        Json.arr(Json.obj("_id" -> arrivalId),
+                 Json.obj(s"messages.$messageId.state" ->
+                   Json.obj("$exists" -> true))))
 
     val modifier = Json.obj(
       "$set" -> Json.obj(
-        "messages.$messageId.state" -> state.toString
+        s"messages.$messageId.state" -> state.toString
       )
     )
+    println(state.toString)
 
     collection.flatMap {
-      _.findAndUpdate(selector, modifier)
-        .map {
-          _.lastError
-            .map {
-              le =>
-                if (le.updatedExisting) Success(())
-                else
-                  Failure(new Exception(le.err match {
-                    case Some(err) => err
-                    case None      => "Unknown Error"
-                  }))
+      x =>
+        val builder = x.update(false)
+          builder.one(selector, modifier).map {
+          x =>
+            {
+              println(x.code)
+              println(x.nModified)
+              println(x.writeErrors)
+              println(x.ok)
+              println(x.errmsg)
+              Success(())
             }
-            .getOrElse(Failure(new Exception("Failed to update arrival")))
         }
     }
+
+//    collection.flatMap {
+//      _.findAndUpdate(selector, modifier)
+//        .map(_ => Success(()))
+
+    //        .map {
+//          _.lastError
+//            .map {
+//              le =>
+//                if (le.updatedExisting) Success(())
+//                else
+//                  Failure(new Exception(le.err match {
+//                    case Some(err) => err
+//                    case None      => "Unknown Error"
+//                  }))
+//            }
+//            .getOrElse(Failure(new Exception("Failed to update arrival")))
+//        }
+//    }
   }
 
   // TODO: Set return type to Future[Try[Unit]] ?
