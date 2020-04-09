@@ -126,9 +126,10 @@ class ArrivalMovementRepositorySpec
           val insertedArrival = repository.get(arrival.arrivalId).futureValue.get
           println(insertedArrival)
 
-          repository.setMessageState(arrival.arrivalId, 0, SubmissionSucceeded)
+          repository.setMessageState(arrival.arrivalId, 0, SubmissionSucceeded).futureValue
 
           val updatedArrival = repository.get(arrival.arrivalId).futureValue.get
+
           println(updatedArrival)
 
           //TODO: Is it worth having this as a method on the trait to return the true model in an either/option/something graceful?

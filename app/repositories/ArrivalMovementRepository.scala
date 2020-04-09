@@ -122,7 +122,7 @@ class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: React
     collection.flatMap {
       x =>
         val builder = x.update(false)
-          builder.one(selector, modifier).map {
+        builder.one(selector, modifier).map {
           x =>
             {
               println(x.code)
