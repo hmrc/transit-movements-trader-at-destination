@@ -68,41 +68,28 @@ class MovementsController @Inject()(
                       .flatMap {
                         _ =>
                           val newState = arrival.state.transition(SubmissionResult.Success)
-                          arrivalMovementRepository.setState(arrival.arrivalId, newState).map {
-                            _ =>
-                              Accepted("Message accepted")
-                              // TODO: This needs to be replaced url to arrival movement resource, for which we need an Arrival Movement number
-                                .withHeaders("Location" -> arrival.arrivalId.index.toString)
-                          }
+                          arrivalMovementRepository
+                            .setState(arrival.arrivalId, newState)
+                            .map {
+                              _ =>
+                                Accepted("Message accepted")
+                                // TODO: This needs to be replaced url to arrival movement resource, for which we need an Arrival Movement number
+                                  .withHeaders("Location" -> arrival.arrivalId.index.toString)
+
+                            }
+                            .recoverWith {
+                              case e: Exception =>
+                                logger.error(s"setState failed with following Exception: ${e.getMessage}")
+                                Future.successful(InternalServerError)
+                            }
                       }
                       .recoverWith {
-                        case bge: BadGatewayException =>
+                        case error: Exception =>
+                          logger.error(s"Call to EIS failed with the following Exception: ${error.getMessage}")
                           val newState = arrival.state.transition(SubmissionResult.Failure)
                           arrivalMovementRepository.setState(arrival.arrivalId, newState).map {
                             _ =>
-                              logger.error(s"Call to EIS failed with the following Exception: ${bge.getMessage}")
                               BadGateway
-                          }
-                        case sue: ServiceUnavailableException =>
-                          val newState = arrival.state.transition(SubmissionResult.Failure)
-                          arrivalMovementRepository.setState(arrival.arrivalId, newState).map {
-                            _ =>
-                              logger.error(s"Call to EIS failed with the following Exception: ${sue.getMessage}")
-                              ServiceUnavailable
-                          }
-                        case gte: GatewayTimeoutException =>
-                          val newState = arrival.state.transition(SubmissionResult.Failure)
-                          arrivalMovementRepository.setState(arrival.arrivalId, newState).map {
-                            _ =>
-                              logger.error(s"Call to EIS failed with the following Exception: ${gte.getMessage}")
-                              GatewayTimeout
-                          }
-                        case e: Exception =>
-                          val newState = arrival.state.transition(SubmissionResult.Failure)
-                          arrivalMovementRepository.setState(arrival.arrivalId, newState).map {
-                            _ =>
-                              logger.error(s"Failed with the following Exception: ${e.getMessage}")
-                              InternalServerError
                           }
                       }
                 }
