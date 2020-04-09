@@ -23,8 +23,10 @@ import java.time.LocalTime
 import cats.data._
 import cats.implicits._
 import com.google.inject.Inject
+import models.MessageState.SubmissionPending
 import models.Arrival
 import models.MessageType
+import models.MovementMessage
 import models.MovementMessageWithState
 import models.MovementReferenceNumber
 import repositories.ArrivalIdRepository
@@ -65,7 +67,8 @@ class ArrivalMovementService @Inject()(arrivalIdRepository: ArrivalIdRepository,
           ))
     }
 
-  def makeGoodsReleasedMessage(): ReaderT[Option, NodeSeq, MovementMessageWithState] =
+  //TODO: Double check if this needs to use WithoutState
+  def makeGoodsReleasedMessage(): ReaderT[Option, NodeSeq, MovementMessage] =
     for {
       _          <- correctRootNodeR(MessageType.GoodsReleased)
       dateTime   <- dateTimeOfPrepR

@@ -16,27 +16,51 @@
 
 package models
 
-import java.time.LocalDateTime
+import java.time.LocalDate
+import java.time.LocalTime
+
 import play.api.libs.json._
 
 import scala.xml.NodeSeq
-import scala.xml.XML
 
-final case class MovementMessage(dateTime: LocalDateTime, messageType: MessageType, message: NodeSeq, state: MessageState)
+import utils.NodeSeqFormat._
+
+sealed trait MovementMessage
+
+final case class MovementMessageWithState(date: LocalDate, time: LocalTime, messageType: MessageType, message: NodeSeq, state: MessageState)
+    extends MovementMessage
+
+final case class MovementMessageWithoutState(date: LocalDate, time: LocalTime, messageType: MessageType, message: NodeSeq) extends MovementMessage
 
 object MovementMessage {
-
-  implicit val writesNodeSeq: Writes[NodeSeq] = new Writes[NodeSeq] {
-    override def writes(o: NodeSeq): JsValue = JsString(o.mkString)
-  }
-
-  implicit val readsNodeSeq: Reads[NodeSeq] = new Reads[NodeSeq] {
-    override def reads(json: JsValue): JsResult[NodeSeq] = json match {
-      case JsString(value) => JsSuccess(XML.loadString(value))
-      case _               => JsError("Value cannot be parsed as XML")
+  implicit lazy val reads: Reads[MovementMessage] = new Reads[MovementMessage] {
+    override def reads(json: JsValue): JsResult[MovementMessage] = (json \ "state").toOption match {
+      case Some(_) =>
+        json.validate[MovementMessageWithState]
+      case None =>
+        json.validate[MovementMessageWithoutState]
     }
   }
 
-  implicit val formatsMovementMessage: OFormat[MovementMessage] =
-    Json.format[MovementMessage]
+  implicit lazy val writes: Writes[MovementMessage] = Writes {
+    case ns: MovementMessageWithState    => Json.toJson(ns)(MovementMessageWithState.formatsMovementMessage)
+    case ws: MovementMessageWithoutState => Json.toJson(ws)(MovementMessageWithoutState.formatsMovementMessage)
+  }
+
+  def apply(date: LocalDate, time: LocalTime, messageType: MessageType, message: NodeSeq) = MovementMessageWithoutState(date, time, messageType, message)
+
+  def apply(date: LocalDate, time: LocalTime, messageType: MessageType, message: NodeSeq, state: MessageState) =
+    MovementMessageWithState(date, time, messageType, message, state)
+}
+
+object MovementMessageWithState {
+
+  implicit val formatsMovementMessage: OFormat[MovementMessageWithState] =
+    Json.format[MovementMessageWithState]
+}
+
+object MovementMessageWithoutState {
+
+  implicit val formatsMovementMessage: OFormat[MovementMessageWithoutState] =
+    Json.format[MovementMessageWithoutState]
 }
