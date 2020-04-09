@@ -29,7 +29,7 @@ trait MessageGenerators extends ModelGenerators {
   private val pastDate: LocalDate = LocalDate.of(1900, 1, 1)
   private val dateNow: LocalDate  = LocalDate.now
 
-  implicit lazy val arbitraryMessageXml: Arbitrary[MovementMessageWithState] = {
+  implicit lazy val arbitraryMessageWithStateXml: Arbitrary[MovementMessageWithState] = {
     Arbitrary {
       for {
         date        <- datesBetween(pastDate, dateNow)
@@ -38,6 +38,17 @@ trait MessageGenerators extends ModelGenerators {
         messageType <- Gen.oneOf(MessageType.values)
         state       <- Gen.oneOf(MessageState.values)
       } yield MovementMessageWithState(LocalDateTime.of(date, time), messageType, xml, state)
+    }
+  }
+
+  implicit lazy val arbitraryMessageWithoutStateXml: Arbitrary[MovementMessageWithoutState] = {
+    Arbitrary {
+      for {
+        date        <- datesBetween(pastDate, dateNow)
+        time        <- timesBetween(pastDate, dateNow)
+        xml         <- Gen.const(<blankXml>message</blankXml>) // TODO: revisit this
+        messageType <- Gen.oneOf(MessageType.values)
+      } yield MovementMessageWithoutState(date, time, messageType, xml)
     }
   }
 

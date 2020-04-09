@@ -94,7 +94,33 @@ class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: React
         .collect[Seq](-1, Cursor.FailOnError())
     }
 
-  def setMessageState(arrivalId: ArrivalId, messageId: Int, state: MessageState): Future[Try[Unit]] = ???
+  def setMessageState(arrivalId: ArrivalId, messageId: Int, state: MessageState): Future[Try[Unit]] = {
+
+    val selector = Json.obj("_id" -> arrivalId, s"messages.$messageId.state" -> "$exists: true")
+
+    val modifier = Json.obj(
+      "$set" -> Json.obj(
+        "messages.$messageId.state" -> state.toString
+      )
+    )
+
+    collection.flatMap {
+      _.findAndUpdate(selector, modifier)
+        .map {
+          _.lastError
+            .map {
+              le =>
+                if (le.updatedExisting) Success(())
+                else
+                  Failure(new Exception(le.err match {
+                    case Some(err) => err
+                    case None      => "Unknown Error"
+                  }))
+            }
+            .getOrElse(Failure(new Exception("Failed to update arrival")))
+        }
+    }
+  }
 
   // TODO: Set return type to Future[Try[Unit]] ?
   def setState(id: ArrivalId, state: State): Future[Unit] = {
@@ -115,6 +141,7 @@ class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: React
     }
   }
 
+  //TODO: Return index position of the new message.
   def addMessage(arrivalId: ArrivalId, message: MovementMessage, state: State): Future[Try[Unit]] = {
 
     val selector = Json.obj(

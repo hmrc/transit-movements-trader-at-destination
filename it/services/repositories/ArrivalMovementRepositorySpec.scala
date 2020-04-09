@@ -4,13 +4,8 @@ import java.time.{LocalDate, LocalDateTime, LocalTime}
 
 import generators.MessageGenerators
 import models.MongoDateTimeFormats
-import models.Arrival
-import models.ArrivalId
+import models.{Arrival, ArrivalId, MessageType, MovementMessage, MovementMessageWithState, MovementMessageWithoutState, MovementReferenceNumber, State}
 import models.MessageState.{SubmissionPending, SubmissionSucceeded}
-import models.MessageType
-import models.MovementMessageWithState
-import models.MovementReferenceNumber
-import models.State
 import models.State.PendingSubmission
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
@@ -130,7 +125,9 @@ class ArrivalMovementRepositorySpec
           repository.setMessageState(arrival.arrivalId, 0, SubmissionSucceeded)
 
           val updatedArrival = repository.get(arrival.arrivalId).futureValue.get
-          updatedArrival.messages.head.state mustEqual SubmissionSucceeded
+
+          //TODO: Is it worth having this as a method on the trait to return the true model in an either/option/something graceful?
+          updatedArrival.messages.head.asInstanceOf[MovementMessageWithState].state mustEqual SubmissionSucceeded
         }
       }
 
@@ -167,6 +164,27 @@ class ArrivalMovementRepositorySpec
 
           repository.insert(arrival).futureValue
           val result = repository.setMessageState(ArrivalId(1), 5, SubmissionSucceeded).futureValue
+
+          result mustBe a[Failure[Unit]]
+        }
+      }
+
+      "must fail is the message does not have a state" in {
+        database.flatMap(_.drop()).futureValue
+
+        val app: Application = builder.build()
+
+        val pregenArrival = arrivalWithOneMessage.sample.value
+        val arrival = pregenArrival.copy(arrivalId = ArrivalId(1),
+          messages = Seq(arbitrary[MovementMessageWithoutState].sample.value))
+
+        running(app) {
+          started(app).futureValue
+
+          val repository = app.injector.instanceOf[ArrivalMovementRepository]
+
+          repository.insert(arrival).futureValue
+          val result = repository.setMessageState(ArrivalId(1), 0, SubmissionSucceeded).futureValue
 
           result mustBe a[Failure[Unit]]
         }
