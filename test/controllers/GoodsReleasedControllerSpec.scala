@@ -63,7 +63,8 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
     State.Submitted,
     LocalDateTime.of(dateOfPrep, timeOfPrep),
     LocalDateTime.of(dateOfPrep, timeOfPrep),
-    Seq.empty
+    Seq.empty,
+    1
   )
 
   private val requestXmlBody =

@@ -6,8 +6,7 @@ import java.time.format.DateTimeFormatter
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.matching.StringValuePattern
 import generators.MessageGenerators
-import models.MessageType
-import models.TransitWrapper
+import models.{ArrivalId, MessageSender, MessageType, TransitWrapper}
 import org.scalacheck.Gen
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatest.concurrent.ScalaFutures
@@ -48,7 +47,7 @@ class MessageConnectorSpec
 
       "return OK when post is successful" in {
 
-        val messageSender = "mdtp-userseori"
+        val messageSender = "MDTP-123-1"
         server.stubFor(
           post(urlEqualTo(postUrl))
             .withHeader("Content-Type", equalTo("application/xml;charset=UTF-8"))
@@ -67,7 +66,7 @@ class MessageConnectorSpec
 
         val postValue = TransitWrapper(<CC007A>test</CC007A>)
 
-        val result = connector.post(postValue, messageType, localDateTime)
+        val result = connector.post(postValue, messageType, localDateTime, MessageSender(ArrivalId(123), 1))
 
         whenReady(result) {
           response =>
@@ -77,7 +76,7 @@ class MessageConnectorSpec
 
       "return an exception when post is unsuccessful" in {
 
-        val messageSender = "mdtp-userseori"
+        val messageSender = "MDTP-123-1"
 
         server.stubFor(
           post(urlEqualTo(postUrl))
@@ -96,7 +95,7 @@ class MessageConnectorSpec
 
         val postValue = TransitWrapper(<CC007A>test</CC007A>)
 
-        val result = connector.post(postValue, messageType, localDateTime)
+        val result = connector.post(postValue, messageType, localDateTime, MessageSender(ArrivalId(123), 1))
 
         whenReady(result.failed) {
           response =>

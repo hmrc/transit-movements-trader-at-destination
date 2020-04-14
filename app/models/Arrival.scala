@@ -27,7 +27,8 @@ case class Arrival(
   state: State,
   created: LocalDateTime,
   updated: LocalDateTime,
-  messages: Seq[MovementMessage]
+  messages: Seq[MovementMessage],
+  nextMessageCorrelationId: Int
 )
 
 object Arrival {
@@ -40,7 +41,8 @@ object Arrival {
         (__ \ "state").read[State] and
         (__ \ "created").read(MongoDateTimeFormats.localDateTimeRead) and
         (__ \ "updated").read(MongoDateTimeFormats.localDateTimeRead) and
-        (__ \ "messages").read[Seq[MovementMessage]]
+        (__ \ "messages").read[Seq[MovementMessage]] and
+        (__ \ "nextMessageCorrelationId").read[Int]
     )(Arrival.apply _)
 
   implicit def writesArrival(implicit write: Writes[LocalDateTime]): OWrites[Arrival] =
@@ -51,7 +53,8 @@ object Arrival {
         (__ \ "state").write[State] and
         (__ \ "created").write(write) and
         (__ \ "updated").write(write) and
-        (__ \ "messages").write[Seq[MovementMessage]]
+        (__ \ "messages").write[Seq[MovementMessage]] and
+        (__ \ "nextMessageCorrelationId").write[Int]
     )(unlift(Arrival.unapply))
 
 }

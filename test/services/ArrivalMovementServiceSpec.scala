@@ -40,7 +40,7 @@ import scala.concurrent.Future
 class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
 
   "makeArrivalMovement" - {
-    "creates an arrival movement with an internal ref number and a mrn, date and time of creation from the message submitted" in {
+    "creates an arrival movement with an internal ref number and a mrn, date and time of creation from the message submitted with a message id of 1 and next correlation id of 2" in {
       val dateOfPrep = LocalDate.now()
       val timeOfPrep = LocalTime.of(1, 1)
 
@@ -75,8 +75,9 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
         LocalDateTime.of(dateOfPrep, timeOfPrep),
         LocalDateTime.of(dateOfPrep, timeOfPrep),
         messages = Seq(
-          MovementMessage(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.ArrivalNotification, movement)
-        )
+          MovementMessage(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.ArrivalNotification, movement, SubmissionPending, messageCorrelationId = 1)
+        ),
+        nextMessageCorrelationId = 2
       )
 
       service.makeArrivalMovement(eori)(movement).value.futureValue mustEqual expectedArrival
@@ -124,9 +125,11 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
           <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
         </CC025A>
 
-      val expectedMessage = MovementMessage(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.GoodsReleased, movement)
+      val messageCorrelationId = 1
 
-      service.makeGoodsReleasedMessage()(movement).value mustEqual expectedMessage
+      val expectedMessage = MovementMessage(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.GoodsReleased, movement, messageCorrelationId)
+
+      service.makeGoodsReleasedMessage(messageCorrelationId)(movement).value mustEqual expectedMessage
     }
 
     "returns None when the root node is not <CC025A>" in {
@@ -146,7 +149,7 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
 
       val expectedMessage = MovementMessage(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.GoodsReleased, movement)
 
-      service.makeGoodsReleasedMessage()(movement) must not be defined
+      service.makeGoodsReleasedMessage(1)(movement) must not be defined
     }
   }
 

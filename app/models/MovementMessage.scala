@@ -25,12 +25,22 @@ import scala.xml.NodeSeq
 
 import utils.NodeSeqFormat._
 
-sealed trait MovementMessage
+abstract class MovementMessage(val messageCorrelationId: Int)
 
-final case class MovementMessageWithState(date: LocalDate, time: LocalTime, messageType: MessageType, message: NodeSeq, state: MessageState)
-    extends MovementMessage
+final case class MovementMessageWithState(date: LocalDate,
+                                          time: LocalTime,
+                                          messageType: MessageType,
+                                          message: NodeSeq,
+                                          state: MessageState,
+                                          override val messageCorrelationId: Int)
+    extends MovementMessage(messageCorrelationId)
 
-final case class MovementMessageWithoutState(date: LocalDate, time: LocalTime, messageType: MessageType, message: NodeSeq) extends MovementMessage
+final case class MovementMessageWithoutState(date: LocalDate,
+                                             time: LocalTime,
+                                             messageType: MessageType,
+                                             message: NodeSeq,
+                                             override val messageCorrelationId: Int)
+    extends MovementMessage(messageCorrelationId)
 
 object MovementMessage {
   implicit lazy val reads: Reads[MovementMessage] = new Reads[MovementMessage] {
@@ -47,10 +57,11 @@ object MovementMessage {
     case ws: MovementMessageWithoutState => Json.toJson(ws)(MovementMessageWithoutState.formatsMovementMessage)
   }
 
-  def apply(date: LocalDate, time: LocalTime, messageType: MessageType, message: NodeSeq) = MovementMessageWithoutState(date, time, messageType, message)
+  def apply(date: LocalDate, time: LocalTime, messageType: MessageType, message: NodeSeq, messageCorrelationId: Int) =
+    MovementMessageWithoutState(date, time, messageType, message, messageCorrelationId)
 
-  def apply(date: LocalDate, time: LocalTime, messageType: MessageType, message: NodeSeq, state: MessageState) =
-    MovementMessageWithState(date, time, messageType, message, state)
+  def apply(date: LocalDate, time: LocalTime, messageType: MessageType, message: NodeSeq, state: MessageState, messageCorrelationId: Int) =
+    MovementMessageWithState(date, time, messageType, message, state, messageCorrelationId)
 }
 
 object MovementMessageWithState {

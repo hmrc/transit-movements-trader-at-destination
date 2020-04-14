@@ -63,17 +63,18 @@ class ArrivalMovementService @Inject()(arrivalIdRepository: ArrivalIdRepository,
             PendingSubmission,
             dateTime,
             dateTime,
-            Seq(MovementMessage(dateTime, MessageType.ArrivalNotification, xmlMessage))
+            Seq(MovementMessage(dateTime, MessageType.ArrivalNotification, xmlMessage, SubmissionPending, 1))
+            2
           ))
     }
 
   //TODO: Double check if this needs to use WithoutState
-  def makeGoodsReleasedMessage(): ReaderT[Option, NodeSeq, MovementMessage] =
+  def makeGoodsReleasedMessage(messageCorrelationId: Int): ReaderT[Option, NodeSeq, MovementMessage] =
     for {
       _          <- correctRootNodeR(MessageType.GoodsReleased)
       dateTime   <- dateTimeOfPrepR
       xmlMessage <- ReaderT[Option, NodeSeq, NodeSeq](Option.apply)
-    } yield MovementMessage(dateTime, MessageType.GoodsReleased, xmlMessage)
+    } yield MovementMessage(dateTime, MessageType.GoodsReleased, xmlMessage, messageCorrelationId)
 }
 
 object ArrivalMovementService {

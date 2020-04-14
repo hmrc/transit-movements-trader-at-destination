@@ -37,7 +37,7 @@ trait MessageGenerators extends ModelGenerators {
         xml         <- Gen.const(<blankXml>message</blankXml>)
         messageType <- Gen.oneOf(MessageType.values)
         state       <- Gen.oneOf(MessageState.values)
-      } yield MovementMessageWithState(LocalDateTime.of(date, time), messageType, xml, state)
+      } yield MovementMessageWithState(LocalDateTime.of(date, time), messageType, xml, state, 1) // TODO: revisit message correlation id
     }
   }
 
@@ -48,7 +48,7 @@ trait MessageGenerators extends ModelGenerators {
         time        <- timesBetween(pastDate, dateNow)
         xml         <- Gen.const(<blankXml>message</blankXml>) // TODO: revisit this
         messageType <- Gen.oneOf(MessageType.values)
-      } yield MovementMessageWithoutState(date, time, messageType, xml)
+      } yield MovementMessageWithoutState(date, time, messageType, xml, 1) // TODO: revisit message correlation id
     }
   }
 
@@ -83,7 +83,8 @@ trait MessageGenerators extends ModelGenerators {
           state = state,
           created = created,
           updated = updated,
-          messages = messages
+          messages = messages,
+          nextMessageCorrelationId = messages.length + 1
         )
     }
   }

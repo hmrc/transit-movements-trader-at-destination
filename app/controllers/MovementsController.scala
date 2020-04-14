@@ -24,6 +24,7 @@ import controllers.actions.AuthenticatedGetArrivalForWriteActionProvider
 import javax.inject.Inject
 import models.ArrivalId
 import models.Arrivals
+import models.MessageSender
 import models.MessageType
 import models.SubmissionResult
 import models.TransitWrapper
@@ -71,7 +72,12 @@ class MovementsController @Inject()(
                     arrivalMovementRepository.insert(arrival) flatMap {
                       _ =>
                         messageConnector
-                          .post(TransitWrapper(request.body), MessageType.ArrivalNotification, OffsetDateTime.now)
+                          .post(
+                            TransitWrapper(request.body),
+                            MessageType.ArrivalNotification,
+                            OffsetDateTime.now,
+                            MessageSender(arrival.arrivalId, arrival.messages.head.messageCorrelationId)
+                          )
                           .flatMap {
                             _ =>
                               val newState = arrival.state.transition(SubmissionResult.Success)
