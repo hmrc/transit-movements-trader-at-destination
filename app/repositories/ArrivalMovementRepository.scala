@@ -25,6 +25,7 @@ import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
 import play.modules.reactivemongo.ReactiveMongoApi
 import reactivemongo.api.Cursor
+import reactivemongo.api.commands.WriteResult
 import reactivemongo.api.indexes.Index
 import reactivemongo.api.indexes.IndexType
 import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
@@ -95,17 +96,6 @@ class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: React
     }
 
   def setMessageState(arrivalId: ArrivalId, messageId: Int, state: MessageState): Future[Try[Unit]] = {
-
-    //      s"messages.state" ->
-    //        Json.obj("$elemMatch" ->
-    //          Json.obj("state" -> Json.obj("$exists" -> true))))
-
-//    val selector = Json.obj(
-//      "_id" -> arrivalId,
-//      s"messages.$messageId" -> Json.obj("$elemMatch" ->
-//              Json.obj("state" -> Json.obj("$exists" -> true)))
-
-//    {$and: [{"_id": 123}, {"messages.0.state": { "$exists": true}}]}
     val selector = Json.obj(
       "$and" ->
         Json.arr(Json.obj("_id" -> arrivalId),
@@ -117,42 +107,26 @@ class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: React
         s"messages.$messageId.state" -> state.toString
       )
     )
-    println(state.toString)
 
     collection.flatMap {
       x =>
         val builder = x.update(false)
         builder.one(selector, modifier).map {
-          x =>
-            {
-              println(x.code)
-              println(x.nModified)
-              println(x.writeErrors)
-              println(x.ok)
-              println(x.errmsg)
-              Success(())
-            }
+          y =>
+            WriteResult
+              .lastError(y)
+              .map {
+                le =>
+                  if (le.updatedExisting) Success(())
+                  else
+                    Failure(new Exception(le.errmsg match {
+                      case Some(err) => err
+                      case None      => "Unable to update message state"
+                    }))
+              }
+              .getOrElse(Failure(new Exception("Unable to update message state")))
         }
     }
-
-//    collection.flatMap {
-//      _.findAndUpdate(selector, modifier)
-//        .map(_ => Success(()))
-
-    //        .map {
-//          _.lastError
-//            .map {
-//              le =>
-//                if (le.updatedExisting) Success(())
-//                else
-//                  Failure(new Exception(le.err match {
-//                    case Some(err) => err
-//                    case None      => "Unknown Error"
-//                  }))
-//            }
-//            .getOrElse(Failure(new Exception("Failed to update arrival")))
-//        }
-//    }
   }
 
   // TODO: Set return type to Future[Try[Unit]] ?
