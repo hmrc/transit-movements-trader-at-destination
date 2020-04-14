@@ -18,6 +18,7 @@ package repositories
 
 import com.google.inject.Inject
 import models.Arrival
+import models.MongoDateTimeFormats
 import models.MovementMessage
 import models.State
 import models.request.ArrivalId
@@ -37,7 +38,7 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 
-class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: ReactiveMongoApi)(implicit ec: ExecutionContext) {
+class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: ReactiveMongoApi)(implicit ec: ExecutionContext) extends MongoDateTimeFormats {
 
   private val index = Index(
     key = Seq("eoriNumber" -> IndexType.Ascending),

@@ -47,14 +47,14 @@ object Arrival {
         (__ \ "messages").read[Seq[MovementMessage]]
     )(Arrival.apply _)
 
-  implicit val writesArrival: OWrites[Arrival] =
+  implicit def writesArrival(implicit write: Writes[LocalDateTime]): OWrites[Arrival] =
     (
       (__ \ "_id").write[ArrivalId] and
         (__ \ "movementReferenceNumber").write[MovementReferenceNumber] and
         (__ \ "eoriNumber").write[String] and
         (__ \ "state").write[State] and
-        (__ \ "created").write(MongoDateTimeFormats.localDateTimeWrite) and
-        (__ \ "updated").write(MongoDateTimeFormats.localDateTimeWrite) and
+        (__ \ "created").write(write) and
+        (__ \ "updated").write(write) and
         (__ \ "messages").write[Seq[MovementMessage]]
     )(unlift(Arrival.unapply))
 

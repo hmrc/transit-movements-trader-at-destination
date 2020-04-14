@@ -4,17 +4,13 @@ import java.time.LocalDate
 import java.time.LocalTime
 
 import generators.MessageGenerators
-import models.Arrival
-import models.MessageType
-import models.MovementMessage
-import models.State
+import models.{Arrival, MessageType, MongoDateTimeFormats, MovementMessage, State}
 import models.request.ArrivalId
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.EitherValues
 import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers
 import org.scalatest.OptionValues
-import org.scalatest._
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
@@ -41,7 +37,8 @@ class ArrivalMovementRepositorySpec
     with OptionValues
     with EitherValues
     with ScalaCheckPropertyChecks
-    with MessageGenerators {
+    with MessageGenerators
+    with MongoDateTimeFormats {
 
   private val eoriNumber: String = arbitrary[String].sample.value
 
