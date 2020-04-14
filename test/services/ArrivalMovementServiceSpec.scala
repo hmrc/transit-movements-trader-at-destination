@@ -28,7 +28,7 @@ import models.MessageType
 import models.MovementMessage
 import models.MovementMessageWithState
 import models.MovementReferenceNumber
-import models.State
+import models.ArrivalState
 import org.mockito.Mockito.when
 import org.scalatest.concurrent.IntegrationPatience
 import play.api.inject.bind
@@ -71,7 +71,7 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
         arrivalId = id,
         movementReferenceNumber = mrn,
         eoriNumber = eori,
-        state = State.PendingSubmission,
+  state = ArrivalState.ArrivalSubmitted,
         LocalDateTime.of(dateOfPrep, timeOfPrep),
         LocalDateTime.of(dateOfPrep, timeOfPrep),
         messages = Seq(

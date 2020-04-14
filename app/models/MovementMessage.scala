@@ -25,7 +25,15 @@ import scala.xml.NodeSeq
 
 import utils.NodeSeqFormat._
 
-abstract class MovementMessage(val messageCorrelationId: Int)
+abstract class MovementMessage(val messageCorrelationId: Int) {
+
+  def getState(): Option[MessageState] =
+    if (this.isInstanceOf[MovementMessageWithState]) {
+      Some(this.asInstanceOf[MovementMessageWithState].state)
+    } else {
+      None
+    }
+}
 
 final case class MovementMessageWithState(date: LocalDate,
                                           time: LocalTime,
@@ -51,6 +59,13 @@ object MovementMessage {
         json.validate[MovementMessageWithoutState]
     }
   }
+
+  /*
+  implicit lazy val writes: OWrites[MovementMessage] = OWrites {
+    case ns: MovementMessageWithState    => Json.toJsObject(ns)(MovementMessageWithState.formatsMovementMessage)
+    case ws: MovementMessageWithoutState => Json.toJsObject(ws)(MovementMessageWithoutState.formatsMovementMessage)
+  }
+   */
 
   implicit lazy val writes: Writes[MovementMessage] = Writes {
     case ns: MovementMessageWithState    => Json.toJson(ns)(MovementMessageWithState.formatsMovementMessage)

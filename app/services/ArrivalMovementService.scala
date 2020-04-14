@@ -32,7 +32,7 @@ import models.MovementReferenceNumber
 import repositories.ArrivalIdRepository
 import repositories.ArrivalMovementRepository
 import utils.Format
-import models.State.PendingSubmission
+import models.ArrivalState.ArrivalSubmitted
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -60,7 +60,7 @@ class ArrivalMovementService @Inject()(arrivalIdRepository: ArrivalIdRepository,
             _,
             mrn,
             eori,
-            PendingSubmission,
+            ArrivalSubmitted,
             dateTime,
             dateTime,
             Seq(MovementMessage(dateTime, MessageType.ArrivalNotification, xmlMessage, SubmissionPending, 1))

@@ -24,7 +24,7 @@ case class Arrival(
   arrivalId: ArrivalId,
   movementReferenceNumber: MovementReferenceNumber,
   eoriNumber: String,
-  state: State,
+  state: ArrivalState,
   created: LocalDateTime,
   updated: LocalDateTime,
   messages: Seq[MovementMessage],
@@ -38,7 +38,7 @@ object Arrival {
       (__ \ "_id").read[ArrivalId] and
         (__ \ "movementReferenceNumber").read[MovementReferenceNumber] and
         (__ \ "eoriNumber").read[String] and
-        (__ \ "state").read[State] and
+        (__ \ "state").read[ArrivalState] and
         (__ \ "created").read(MongoDateTimeFormats.localDateTimeRead) and
         (__ \ "updated").read(MongoDateTimeFormats.localDateTimeRead) and
         (__ \ "messages").read[Seq[MovementMessage]] and
@@ -50,7 +50,7 @@ object Arrival {
       (__ \ "_id").write[ArrivalId] and
         (__ \ "movementReferenceNumber").write[MovementReferenceNumber] and
         (__ \ "eoriNumber").write[String] and
-        (__ \ "state").write[State] and
+        (__ \ "state").write[ArrivalState] and
         (__ \ "created").write(write) and
         (__ \ "updated").write(write) and
         (__ \ "messages").write[Seq[MovementMessage]] and

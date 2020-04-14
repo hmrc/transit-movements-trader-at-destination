@@ -19,7 +19,7 @@ package generators
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-import models.{Arrival, ArrivalId, MessageState, MessageType, MovementMessage, MovementMessageWithState, MovementReferenceNumber, State}
+import models.{Arrival, ArrivalId, MessageState, MessageType, MovementMessage, MovementMessageWithState, MovementReferenceNumber, ArrivalState}
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
@@ -60,9 +60,9 @@ trait MessageGenerators extends ModelGenerators {
     }
   }
 
-  implicit lazy val arbitraryState: Arbitrary[State] =
+  implicit lazy val arbitraryState: Arbitrary[ArrivalState] =
     Arbitrary {
-      Gen.oneOf(State.values)
+      Gen.oneOf(ArrivalState.values)
     }
 
   implicit lazy val arbitraryArrival: Arbitrary[Arrival] = {
@@ -71,7 +71,7 @@ trait MessageGenerators extends ModelGenerators {
         arrivalId               <- arbitrary[ArrivalId]
         movementReferenceNumber <- arbitrary[MovementReferenceNumber]
         eoriNumber              <- arbitrary[String]
-        state                   <- arbitrary[State]
+        state                   <- arbitrary[ArrivalState]
         created                 <- arbitrary[LocalDateTime]
         updated                 <- arbitrary[LocalDateTime]
         messages                <- seqWithMaxLength[MovementMessageWithState](2)

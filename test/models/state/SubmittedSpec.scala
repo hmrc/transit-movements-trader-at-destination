@@ -16,17 +16,17 @@
 
 package models.state
 
-import models.State._
+import models.ArrivalState._
 import models.MessageReceived
 import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers
 
-class SubmittedSpec extends FreeSpec with MustMatchers {
+class ArrivalSubmittedSpec extends FreeSpec with MustMatchers {
 
   "Submitted must transition" - {
 
     "to GoodsReceived when receiving a Goods Received event" in {
-      Submitted.transition(MessageReceived.GoodsReleased) mustEqual GoodsReleased
+      ArrivalSubmitted.transition(MessageReceived.GoodsReleased) mustEqual GoodsReleased
     }
   }
 }

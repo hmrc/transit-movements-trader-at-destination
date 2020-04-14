@@ -26,7 +26,8 @@ import models.Arrival
 import models.ArrivalId
 import models.Arrivals
 import models.MessageType
-import models.State
+import models.ArrivalState
+import models.MessageState.SubmissionFailed
 import models.TransitWrapper
 import org.mockito.Matchers.any
 import org.mockito.Matchers.{eq => eqTo}
@@ -66,7 +67,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(None))
 
         when(mockArrivalMovementRepository.insert(any())).thenReturn(Future.successful(()))
-        when(mockArrivalMovementRepository.setState(any(), any())).thenReturn(Future.successful(()))
+        when(mockArrivalMovementRepository.setMessageState(any(), any(), any())).thenReturn(Future.successful((Success(()))))
         when(mockMessageConnector.post(any(), any(), any(), any())(any())).thenReturn(Future.successful(HttpResponse(ACCEPTED)))
 
         val application = baseApplicationBuilder
@@ -99,7 +100,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           header("Location", result).value must be(arrivalId.index.toString)
           verify(mockArrivalMovementRepository, times(1)).insert(any())
           verify(mockMessageConnector, times(1)).post(eqTo(TransitWrapper(requestXmlBody)), eqTo(MessageType.ArrivalNotification), any(), any())(any())
-          verify(mockArrivalMovementRepository, times(1)).setState(any(), eqTo(State.Submitted))
+          verify(mockArrivalMovementRepository, times(1)).setState(any(), eqTo(ArrivalState.ArrivalSubmitted))
         }
       }
 
@@ -258,7 +259,8 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         }
       }
 
-      "must return Internal Server Error when set the state fails" in {
+      "must return InternalServerError and update the message status to SubmissionFailed if sending the message upstream fails" in {
+
         val mockArrivalIdRepository       = mock[ArrivalIdRepository]
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
         val mockMessageConnector          = mock[MessageConnector]
@@ -268,9 +270,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
         when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
         when(mockArrivalMovementRepository.insert(any())).thenReturn(Future.successful(()))
-        when(mockMessageConnector.post(any(), any(), any())(any())).thenReturn(Future.successful(HttpResponse(ACCEPTED)))
-        when(mockArrivalMovementRepository.setState(any(), any())).thenReturn(Future.failed(new Exception))
-        when(mockArrivalMovementRepository.setState(any(), any())).thenReturn(Future.successful(()))
+        when(mockArrivalMovementRepository.setMessageState(any(), any(), any())).thenReturn(Future.successful((Success(()))))
         when(mockMessageConnector.post(any(), any(), any(), any())(any())).thenReturn(Future.failed(Upstream5xxResponse("message", 500, 500)))
 
         val application = baseApplicationBuilder
@@ -318,7 +318,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
               when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
               when(mockArrivalMovementRepository.insert(any())).thenReturn(Future.successful(()))
               when(mockArrivalMovementRepository.setState(any(), any())).thenReturn(Future.successful(()))
-              when(mockMessageConnector.post(any(), any(), any())(any())).thenReturn(Future.failed(new HttpException("Could not submit to EIS", responseCode)))
+              when(mockMessageConnector.post(any(), any(), any(), any())(any())).thenReturn(Future.failed(new HttpException("Could not submit to EIS", responseCode)))
 
               val application = baseApplicationBuilder
                 .overrides(
@@ -347,7 +347,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
                 val result = route(application, request).value
 
                 status(result) mustEqual BAD_GATEWAY
-                verify(mockArrivalMovementRepository, times(1)).setState(arrivalId, State.SubmissionFailed)
+                verify(mockArrivalMovementRepository, times(1)).setMessageState(arrivalId, any(), SubmissionFailed)
               }
           }
         }
@@ -437,7 +437,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           header("Location", result).value must be(arrival.arrivalId.index.toString)
           verify(mockArrivalMovementRepository, times(1)).addMessage(any(), any(), any())
           verify(mockMessageConnector, times(1)).post(eqTo(TransitWrapper(requestXmlBody)), eqTo(MessageType.ArrivalNotification), any(), any())(any())
-          verify(mockArrivalMovementRepository, times(1)).setState(any(), eqTo(State.Submitted))
+          verify(mockArrivalMovementRepository, times(1)).setState(any(), eqTo(ArrivalState.ArrivalSubmitted))
         }
       }
 

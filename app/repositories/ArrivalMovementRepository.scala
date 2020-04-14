@@ -18,8 +18,11 @@ package repositories
 
 import com.google.inject.Inject
 import models.MongoDateTimeFormats
-import models.{Arrival, ArrivalId, MessageState, MovementMessage, MovementReferenceNumber, State}
+import models.{Arrival, ArrivalId, MessageState, MovementMessage, MovementReferenceNumber, ArrivalState}
 import models.MovementMessageWithState
+import models.MovementReferenceNumber
+import models.ArrivalState
+import play.api.libs.json.JsArray
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
@@ -95,6 +98,25 @@ class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: React
         .collect[Seq](-1, Cursor.FailOnError())
     }
 
+  // TODO: Fix query below before PR
+  def fetchMessagesForArrival(arrivalId: ArrivalId): Future[Seq[MovementMessage]] =
+    /*
+    collection.flatMap {
+      _.find(Json.obj("_id" -> arrivalId), None)
+        .cursor[MovementMessage]()
+        .collect[Seq](-1, Cursor.FailOnError())
+    }
+     */
+    get(arrivalId).map {
+      arrival: Option[Arrival] =>
+        arrival match {
+          case Some(arr) =>
+            arr.messages
+          case _ =>
+            Nil
+        }
+    }
+
   def setMessageState(arrivalId: ArrivalId, messageId: Int, state: MessageState): Future[Try[Unit]] = {
     val selector = Json.obj(
       "$and" ->
@@ -130,7 +152,7 @@ class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: React
   }
 
   // TODO: Set return type to Future[Try[Unit]] ?
-  def setState(id: ArrivalId, state: State): Future[Unit] = {
+  def setState(id: ArrivalId, state: ArrivalState): Future[Unit] = {
 
     val selector = Json.obj(
       "_id" -> id
@@ -149,7 +171,7 @@ class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: React
   }
 
   //TODO: Return index position of the new message.
-  def addMessage(arrivalId: ArrivalId, message: MovementMessage, state: State): Future[Try[Unit]] = {
+  def addMessage(arrivalId: ArrivalId, message: MovementMessage, state: ArrivalState): Future[Try[Unit]] = {
 
     val selector = Json.obj(
       "_id" -> arrivalId

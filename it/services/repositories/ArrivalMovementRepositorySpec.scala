@@ -4,9 +4,8 @@ import java.time.{LocalDate, LocalDateTime, LocalTime}
 
 import generators.MessageGenerators
 import models.MongoDateTimeFormats
-import models.{Arrival, ArrivalId, MessageType, MovementMessage, MovementMessageWithState, MovementMessageWithoutState, MovementReferenceNumber, State}
+import models.{Arrival, ArrivalId, MessageType, MovementMessage, MovementMessageWithState, MovementMessageWithoutState, MovementReferenceNumber, ArrivalState}
 import models.MessageState.{SubmissionPending, SubmissionSucceeded}
-import models.State.PendingSubmission
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
 import org.scalatest.EitherValues
@@ -86,7 +85,7 @@ class ArrivalMovementRepositorySpec
 
         val app: Application = builder.build()
 
-        val arrival = arbitrary[Arrival].sample.value copy (state = State.PendingSubmission)
+        val arrival = arbitrary[Arrival].sample.value copy (state = ArrivalState.ArrivalSubmitted)
 
         running(app) {
           started(app).futureValue
@@ -94,7 +93,7 @@ class ArrivalMovementRepositorySpec
           val repository = app.injector.instanceOf[ArrivalMovementRepository]
 
           repository.insert(arrival).futureValue
-          repository.setState(arrival.arrivalId, State.Submitted).futureValue
+          repository.setState(arrival.arrivalId, ArrivalState.ArrivalSubmitted).futureValue
 
           val selector = Json.obj("_id" -> arrival.arrivalId)
 
@@ -103,7 +102,7 @@ class ArrivalMovementRepositorySpec
               result.collection[JSONCollection](ArrivalMovementRepository.collectionName).find(selector, None).one[Arrival]
           }.futureValue
 
-          result.value.state mustEqual State.Submitted
+          result.value.state mustEqual ArrivalState.ArrivalSubmitted
         }
       }
     }
@@ -212,7 +211,7 @@ class ArrivalMovementRepositorySpec
           </CC025A>
 
         val goodsReleasedMessage = MovementMessage(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.GoodsReleased, messageBody, messageCorrelationId = 1)
-        val newState             = State.GoodsReleased
+        val newState             = ArrivalState.GoodsReleased
 
         running(app) {
           started(app).futureValue
@@ -243,7 +242,7 @@ class ArrivalMovementRepositorySpec
 
         val app: Application = builder.build()
 
-        val arrival = arbitrary[Arrival].sample.value copy (state = State.Submitted, arrivalId = ArrivalId(1))
+        val arrival = arbitrary[Arrival].sample.value copy (state = ArrivalState.ArrivalSubmitted, arrivalId = ArrivalId(1))
 
         val dateOfPrep = LocalDate.now()
         val timeOfPrep = LocalTime.of(1, 1)
@@ -257,7 +256,7 @@ class ArrivalMovementRepositorySpec
           </CC025A>
 
         val goodsReleasedMessage = MovementMessage(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.GoodsReleased, messageBody, messageCorrelationId = 1)
-        val newState             = State.GoodsReleased
+        val newState             = ArrivalState.GoodsReleased
 
         running(app) {
           started(app).futureValue
@@ -462,6 +461,85 @@ class ArrivalMovementRepositorySpec
           val result = service.fetchAllArrivals(eoriNumber).futureValue
 
           result mustBe Seq.empty[Arrival]
+        }
+      }
+
+    }
+
+    "fetchMessagesForArrivalId" - {
+      "must return Movement Messages that match passed in ArrivalId" in {
+        database.flatMap(_.drop()).futureValue
+
+        val app: Application = builder.build()
+
+        val movementMessages1 = arbitrary[MovementMessageWithState].sample.value
+        val movementMessages2 = arbitrary[MovementMessageWithoutState].sample.value
+
+        running(app) {
+          started(app).futureValue
+
+          val service: ArrivalMovementRepository = app.injector.instanceOf[ArrivalMovementRepository]
+
+          val allMessages = Seq(movementMessages1, movementMessages2)
+
+          val arrivalMovement: Arrival = arbitrary[Arrival].sample.value.copy(messages = allMessages)
+
+          database.flatMap {
+            db =>
+              db.collection[JSONCollection](ArrivalMovementRepository.collectionName).insert(false).one(arrivalMovement)
+          }.futureValue
+
+          val result: Seq[MovementMessage] = service.fetchMessagesForArrival(arrivalMovement.arrivalId).futureValue
+
+          result mustBe allMessages
+        }
+      }
+
+      "must return an empty sequence when there are no messages with a valid arrival id" in {
+        database.flatMap(_.drop()).futureValue
+
+        val app: Application = builder.build()
+
+        running(app) {
+          started(app).futureValue
+
+          val service: ArrivalMovementRepository = app.injector.instanceOf[ArrivalMovementRepository]
+
+          val allMessages = Seq()
+
+          val arrivalMovement = arbitrary[Arrival].sample.value.copy(messages = allMessages)
+
+          database.flatMap {
+            db =>
+              db.collection[JSONCollection](ArrivalMovementRepository.collectionName).insert(false).one(arrivalMovement)
+          }.futureValue
+
+          val result = service.fetchMessagesForArrival(arrivalMovement.arrivalId).futureValue
+
+          result mustBe Seq.empty[MovementMessage]
+        }
+      }
+
+      "must return an empty sequence when there are no messages with an invalid arrival id" in {
+        database.flatMap(_.drop()).futureValue
+
+        val app: Application = builder.build()
+
+        val arrivalMovement = arbitrary[Arrival].sample.value.copy(arrivalId = ArrivalId(1))
+
+        running(app) {
+          started(app).futureValue
+
+          val service: ArrivalMovementRepository = app.injector.instanceOf[ArrivalMovementRepository]
+
+          database.flatMap {
+            db =>
+              db.collection[JSONCollection](ArrivalMovementRepository.collectionName).insert(false).one(arrivalMovement)
+          }.futureValue
+
+          val result = service.fetchMessagesForArrival(ArrivalId(2)).futureValue
+
+          result mustBe Seq.empty[MovementMessage]
         }
       }
 

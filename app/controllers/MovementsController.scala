@@ -26,13 +26,16 @@ import models.ArrivalId
 import models.Arrivals
 import models.MessageSender
 import models.MessageType
+import models.MovementMessageWithState
 import models.SubmissionResult
 import models.TransitWrapper
 import play.api.Logger
+import models.MessageState.SubmissionSucceeded
 import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
+import play.api.mvc.Result
 import repositories.ArrivalMovementRepository
 import services.ArrivalMovementService
 import uk.gov.hmrc.http.BadGatewayException
