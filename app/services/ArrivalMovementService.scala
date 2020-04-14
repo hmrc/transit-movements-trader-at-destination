@@ -42,8 +42,7 @@ class ArrivalMovementService @Inject()(arrivalIdRepository: ArrivalIdRepository)
   def makeArrivalMovement(eori: String): ReaderT[Option, NodeSeq, Future[Arrival]] =
     for {
       _          <- correctRootNodeR(MessageType.ArrivalNotification)
-      date       <- dateOfPrepR
-      time       <- timeOfPrepR
+      dateTime   <- dateTimeOfPrepR
       mrn        <- mrnR
       xmlMessage <- ReaderT[Option, NodeSeq, NodeSeq](Option.apply)
     } yield {
@@ -55,19 +54,18 @@ class ArrivalMovementService @Inject()(arrivalIdRepository: ArrivalIdRepository)
             mrn,
             eori,
             PendingSubmission,
-            LocalDateTime.of(date, time),
-            LocalDateTime.of(date, time),
-            Seq(MovementMessage(LocalDateTime.of(date, time), MessageType.ArrivalNotification, xmlMessage))
+            dateTime,
+            dateTime,
+            Seq(MovementMessage(dateTime, MessageType.ArrivalNotification, xmlMessage))
           ))
     }
 
   def makeGoodsReleasedMessage(): ReaderT[Option, NodeSeq, MovementMessage] =
     for {
       _          <- correctRootNodeR(MessageType.GoodsReleased)
-      date       <- dateOfPrepR
-      time       <- timeOfPrepR
+      dateTime   <- dateTimeOfPrepR
       xmlMessage <- ReaderT[Option, NodeSeq, NodeSeq](Option.apply)
-    } yield MovementMessage(LocalDateTime.of(date, time), MessageType.GoodsReleased, xmlMessage)
+    } yield MovementMessage(dateTime, MessageType.GoodsReleased, xmlMessage)
 }
 
 object ArrivalMovementService {
@@ -101,6 +99,12 @@ object ArrivalMovementService {
         }
       }
     })
+
+  val dateTimeOfPrepR: ReaderT[Option, NodeSeq, LocalDateTime] =
+    for {
+      date <- dateOfPrepR
+      time <- timeOfPrepR
+    } yield LocalDateTime.of(date, time)
 
   val mrnR: ReaderT[Option, NodeSeq, MovementReferenceNumber] =
     ReaderT[Option, NodeSeq, MovementReferenceNumber](xml =>

@@ -272,4 +272,74 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
     }
   }
 
+  "dateTimeOfPrepR" - {
+    "returns the date from the DatOfPreMES9 node" in {
+      val dateOfPrep: LocalDate = LocalDate.now()
+      val timeOfPrep: LocalTime = LocalTime.of(1, 1)
+
+      val movement =
+        <CC007A>
+          <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+          <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+        </CC007A>
+
+      ArrivalMovementService.dateTimeOfPrepR(movement).value mustEqual LocalDateTime.of(dateOfPrep, timeOfPrep)
+
+    }
+
+    "will return a None when the date in the DatOfPreMES9 node is malformed" in {
+      val dateOfPrep: LocalDate = LocalDate.now()
+      val timeOfPrep: LocalTime = LocalTime.of(1, 1)
+
+      val movement =
+        <CC007A>
+          <DatOfPreMES9>{Format.dateFormatted(dateOfPrep) ++ "1"}</DatOfPreMES9>
+          <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+        </CC007A>
+
+      ArrivalMovementService.dateTimeOfPrepR(movement) must not be (defined)
+    }
+
+    "will return a None when the date in the DatOfPreMES10 node is malformed" in {
+      val dateOfPrep: LocalDate = LocalDate.now()
+      val timeOfPrep: LocalTime = LocalTime.of(1, 1)
+
+      val movement =
+        <CC007A>
+          <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+          <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)  ++ "1" }</TimOfPreMES10>
+        </CC007A>
+
+      ArrivalMovementService.dateTimeOfPrepR(movement) must not be (defined)
+    }
+
+    "will return a None when the date in the DatOfPreMES9 node is missing" in {
+
+      val timeOfPrep: LocalTime = LocalTime.of(1, 1)
+
+      val movement =
+        <CC007A>
+          <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+        </CC007A>
+
+      ArrivalMovementService.dateTimeOfPrepR(movement) must not be (defined)
+
+    }
+
+    "will return a None when the date in the DatOfPreMES10 node is missing" in {
+
+      val dateOfPrep: LocalDate = LocalDate.now()
+      val timeOfPrep: LocalTime = LocalTime.of(1, 1)
+
+      val movement =
+        <CC007A>
+          <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+        </CC007A>
+
+      ArrivalMovementService.dateTimeOfPrepR(movement) must not be (defined)
+
+    }
+
+  }
+
 }
