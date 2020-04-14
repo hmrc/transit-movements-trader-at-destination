@@ -57,7 +57,7 @@ class ArrivalMovementService @Inject()(arrivalIdRepository: ArrivalIdRepository)
             PendingSubmission,
             LocalDateTime.of(date, time),
             LocalDateTime.of(date, time),
-            Seq(MovementMessage(date, time, MessageType.ArrivalNotification, xmlMessage))
+            Seq(MovementMessage(LocalDateTime.of(date, time), MessageType.ArrivalNotification, xmlMessage))
           ))
     }
 
@@ -67,7 +67,7 @@ class ArrivalMovementService @Inject()(arrivalIdRepository: ArrivalIdRepository)
       date       <- dateOfPrepR
       time       <- timeOfPrepR
       xmlMessage <- ReaderT[Option, NodeSeq, NodeSeq](Option.apply)
-    } yield MovementMessage(date, time, MessageType.GoodsReleased, xmlMessage)
+    } yield MovementMessage(LocalDateTime.of(date, time), MessageType.GoodsReleased, xmlMessage)
 }
 
 object ArrivalMovementService {

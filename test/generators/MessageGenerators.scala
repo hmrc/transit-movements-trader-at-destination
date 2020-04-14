@@ -39,9 +39,9 @@ trait MessageGenerators extends ModelGenerators {
       for {
         date        <- datesBetween(pastDate, dateNow)
         time        <- timesBetween(pastDate, dateNow)
-        xml         <- Gen.const(<blankXml>message</blankXml>) // TODO: revisit this
+        xml         <- Gen.const(<blankXml>message</blankXml>)
         messageType <- Gen.oneOf(MessageType.values)
-      } yield MovementMessage(date, time, messageType, xml)
+      } yield MovementMessage(LocalDateTime.of(date, time), messageType, xml)
     }
   }
 

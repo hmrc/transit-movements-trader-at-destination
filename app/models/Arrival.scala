@@ -22,8 +22,6 @@ import models.request.ArrivalId
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 
-import models.MongoDateTimeFormats._
-
 case class Arrival(
   arrivalId: ArrivalId,
   movementReferenceNumber: MovementReferenceNumber,

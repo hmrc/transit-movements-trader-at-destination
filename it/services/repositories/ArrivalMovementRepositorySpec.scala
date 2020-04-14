@@ -1,7 +1,6 @@
 package services.repositories
 
-import java.time.LocalDate
-import java.time.LocalTime
+import java.time.{LocalDate, LocalDateTime, LocalTime}
 
 import generators.MessageGenerators
 import models.{Arrival, MessageType, MongoDateTimeFormats, MovementMessage, State}
@@ -119,7 +118,7 @@ class ArrivalMovementRepositorySpec
             </HEAHEA>
           </CC025A>
 
-        val goodsReleasedMessage = MovementMessage(dateOfPrep, timeOfPrep, MessageType.GoodsReleased, messageBody)
+        val goodsReleasedMessage = MovementMessage(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.GoodsReleased, messageBody)
         val newState             = State.GoodsReleased
 
         running(app) {
@@ -164,7 +163,7 @@ class ArrivalMovementRepositorySpec
             </HEAHEA>
           </CC025A>
 
-        val goodsReleasedMessage = MovementMessage(dateOfPrep, timeOfPrep, MessageType.GoodsReleased, messageBody)
+        val goodsReleasedMessage = MovementMessage(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.GoodsReleased, messageBody)
         val newState             = State.GoodsReleased
 
         running(app) {

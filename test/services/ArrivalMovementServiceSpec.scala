@@ -73,7 +73,7 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
         LocalDateTime.of(dateOfPrep, timeOfPrep),
         LocalDateTime.of(dateOfPrep, timeOfPrep),
         messages = Seq(
-          MovementMessage(dateOfPrep, timeOfPrep, MessageType.ArrivalNotification, movement)
+          MovementMessage(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.ArrivalNotification, movement)
         )
       )
 
@@ -122,7 +122,7 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
           <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
         </CC025A>
 
-      val expectedMessage = MovementMessage(dateOfPrep, timeOfPrep, MessageType.GoodsReleased, movement)
+      val expectedMessage = MovementMessage(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.GoodsReleased, movement)
 
       service.makeGoodsReleasedMessage()(movement).value mustEqual expectedMessage
     }
@@ -142,7 +142,7 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
           <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
         </Foo>
 
-      val expectedMessage = MovementMessage(dateOfPrep, timeOfPrep, MessageType.GoodsReleased, movement)
+      val expectedMessage = MovementMessage(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.GoodsReleased, movement)
 
       service.makeGoodsReleasedMessage()(movement) must not be defined
     }
