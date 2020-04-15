@@ -28,6 +28,7 @@ import models.Arrival
 import models.MessageType
 import models.MovementMessage
 import models.MovementMessageWithState
+import models.MovementMessageWithoutState
 import models.MovementReferenceNumber
 import repositories.ArrivalIdRepository
 import repositories.ArrivalMovementRepository
@@ -49,10 +50,10 @@ class ArrivalMovementService @Inject()(arrivalIdRepository: ArrivalIdRepository,
 
   def makeArrivalMovement(eori: String): ReaderT[Option, NodeSeq, Future[Arrival]] =
     for {
-      _          <- correctRootNodeR(MessageType.ArrivalNotification)
-      dateTime   <- dateTimeOfPrepR
-      mrn        <- mrnR
-      xmlMessage <- ReaderT[Option, NodeSeq, NodeSeq](Option.apply)
+      message <- makeArrivalNotificationMessage(1)
+      date = message.date
+      time = message.time
+      mrn <- mrnR
     } yield {
       arrivalIdRepository
         .nextId()
@@ -69,13 +70,24 @@ class ArrivalMovementService @Inject()(arrivalIdRepository: ArrivalIdRepository,
           ))
     }
 
-  //TODO: Double check if this needs to use WithoutState
-  def makeGoodsReleasedMessage(messageCorrelationId: Int): ReaderT[Option, NodeSeq, MovementMessage] =
+  def makeArrivalNotificationMessage(messageCorrelationId: Int): ReaderT[Option, NodeSeq, MovementMessageWithState] =
+    for {
+      _          <- correctRootNodeR(MessageType.ArrivalNotification)
+      date       <- dateOfPrepR
+      time       <- timeOfPrepR
+      xmlMessage <- ReaderT[Option, NodeSeq, NodeSeq](Option.apply)
+    } yield MovementMessageWithState(date, time, MessageType.ArrivalNotification, xmlMessage, SubmissionPending, messageCorrelationId)
+
+  def makeGoodsReleasedMessage(messageCorrelationId: Int): ReaderT[Option, NodeSeq, MovementMessageWithoutState] =
     for {
       _          <- correctRootNodeR(MessageType.GoodsReleased)
       dateTime   <- dateTimeOfPrepR
       xmlMessage <- ReaderT[Option, NodeSeq, NodeSeq](Option.apply)
+<<<<<<< HEAD
     } yield MovementMessage(dateTime, MessageType.GoodsReleased, xmlMessage, messageCorrelationId)
+=======
+    } yield MovementMessageWithoutState(date, time, MessageType.GoodsReleased, xmlMessage, messageCorrelationId)
+>>>>>>> 5172e23... Refactor ArrivalMovementService methods
 }
 
 object ArrivalMovementService {

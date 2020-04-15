@@ -31,6 +31,7 @@ import models.SubmissionResult
 import models.TransitWrapper
 import play.api.Logger
 import models.MessageState.SubmissionSucceeded
+import models.request.ArrivalRequest
 import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
@@ -120,7 +121,14 @@ class MovementsController @Inject()(
 
   }
 
-  def updateArrival(arrivalId: ArrivalId): Action[AnyContent] = ???
+  def updateArrival(arrivalId: ArrivalId): Action[NodeSeq] = authenticateForWrite(arrivalId).async(parse.xml) {
+    /*
+    implicit request: ArrivalRequest[NodeSeq] =>
+      request.arrival
+
+     */
+    ???
+  }
 
   def getArrivals: Action[AnyContent] = authenticate().async {
     implicit request =>
