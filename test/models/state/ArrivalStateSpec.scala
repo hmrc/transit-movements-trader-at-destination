@@ -21,9 +21,24 @@ import models.MessageReceived
 import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers
 
-class ArrivalSubmittedSpec extends FreeSpec with MustMatchers {
+class ArrivalStateSpec extends FreeSpec with MustMatchers {
+
+  "Initialized must transition" - {
+
+    "to Submitted when receiving a ArrivalSubmitted event" in {
+      Initialized.transition(MessageReceived.ArrivalSubmitted) mustEqual ArrivalSubmitted
+    }
+
+    "to Goods Released when receiving a GoodsReleased event" in {
+      Initialized.transition(MessageReceived.GoodsReleased) mustEqual GoodsReleased
+    }
+  }
 
   "Submitted must transition" - {
+
+    "to Submitted when receiving an ArrivalSubmitted event" in {
+      ArrivalSubmitted.transition(MessageReceived.ArrivalSubmitted) mustEqual ArrivalSubmitted
+    }
 
     "to GoodsReceived when receiving a Goods Received event" in {
       ArrivalSubmitted.transition(MessageReceived.GoodsReleased) mustEqual GoodsReleased

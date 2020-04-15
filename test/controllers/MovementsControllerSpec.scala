@@ -27,7 +27,9 @@ import models.ArrivalId
 import models.Arrivals
 import models.MessageType
 import models.ArrivalState
+import models.ArrivalState.ArrivalSubmitted
 import models.MessageState.SubmissionFailed
+import models.MessageState.SubmissionSucceeded
 import models.TransitWrapper
 import org.mockito.Matchers.any
 import org.mockito.Matchers.{eq => eqTo}
@@ -67,6 +69,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(None))
 
         when(mockArrivalMovementRepository.insert(any())).thenReturn(Future.successful(()))
+        when(mockArrivalMovementRepository.setState(any(), any())).thenReturn(Future.successful(()))
         when(mockArrivalMovementRepository.setMessageState(any(), any(), any())).thenReturn(Future.successful((Success(()))))
         when(mockMessageConnector.post(any(), any(), any(), any())(any())).thenReturn(Future.successful(HttpResponse(ACCEPTED)))
 
@@ -100,7 +103,8 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           header("Location", result).value must be(arrivalId.index.toString)
           verify(mockArrivalMovementRepository, times(1)).insert(any())
           verify(mockMessageConnector, times(1)).post(eqTo(TransitWrapper(requestXmlBody)), eqTo(MessageType.ArrivalNotification), any(), any())(any())
-          verify(mockArrivalMovementRepository, times(1)).setState(any(), eqTo(ArrivalState.ArrivalSubmitted))
+          verify(mockArrivalMovementRepository, times(1)).setState(any(), eqTo(ArrivalSubmitted))
+          verify(mockArrivalMovementRepository, times(1)).setMessageState(any(), any(), eqTo(SubmissionSucceeded))
         }
       }
 
@@ -300,56 +304,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           val result = route(application, request).value
 
           status(result) mustEqual INTERNAL_SERVER_ERROR
-        }
-      }
-
-      "must return BadGateway" - {
-        "must return BadGateway and update the status to SubmissionFailed if sending the message upstream fails" in {
-
-          val errorResponseCode5xx: Gen[Int] = Gen.choose(500, 599)
-
-          forAll(errorResponseCode5xx) {
-            responseCode =>
-              val mockArrivalIdRepository       = mock[ArrivalIdRepository]
-              val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
-              val mockMessageConnector          = mock[MessageConnector]
-              val arrivalId                     = ArrivalId(1)
-
-              when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
-              when(mockArrivalMovementRepository.insert(any())).thenReturn(Future.successful(()))
-              when(mockArrivalMovementRepository.setState(any(), any())).thenReturn(Future.successful(()))
-              when(mockMessageConnector.post(any(), any(), any(), any())(any())).thenReturn(Future.failed(new HttpException("Could not submit to EIS", responseCode)))
-
-              val application = baseApplicationBuilder
-                .overrides(
-                  bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
-                  bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
-                  bind[MessageConnector].toInstance(mockMessageConnector)
-                )
-                .build()
-
-              running(application) {
-
-                val dateOfPrep = LocalDate.now()
-                val timeOfPrep = LocalTime.of(1, 1)
-
-                val requestXmlBody =
-                  <CC007A>
-                    <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
-                    <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
-                    <HEAHEA>
-                      <DocNumHEA5>MRN</DocNumHEA5>
-                    </HEAHEA>
-                  </CC007A>
-
-                val request = FakeRequest(POST, routes.MovementsController.createMovement().url).withXmlBody(requestXmlBody)
-
-                val result = route(application, request).value
-
-                status(result) mustEqual BAD_GATEWAY
-                verify(mockArrivalMovementRepository, times(1)).setMessageState(arrivalId, any(), SubmissionFailed)
-              }
-          }
+          verify(mockArrivalMovementRepository, times(1)).setMessageState(eqTo(arrivalId), any(), eqTo(SubmissionFailed))
         }
       }
 

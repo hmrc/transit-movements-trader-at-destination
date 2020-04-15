@@ -26,9 +26,17 @@ object ArrivalState extends Enumerable.Implicits {
     025 -> Goods submitted event
    */
 
+  case object Initialized extends ArrivalState {
+    override def transition(messageReceived: MessageReceived): ArrivalState = messageReceived match {
+      case MessageReceived.ArrivalSubmitted => ArrivalSubmitted
+      case MessageReceived.GoodsReleased    => GoodsReleased
+    }
+  }
+
   case object ArrivalSubmitted extends ArrivalState {
     override def transition(messageReceived: MessageReceived): ArrivalState = messageReceived match {
-      case MessageReceived.GoodsReleased => GoodsReleased
+      case MessageReceived.ArrivalSubmitted => ArrivalSubmitted
+      case MessageReceived.GoodsReleased    => GoodsReleased
     }
   }
 
@@ -39,6 +47,7 @@ object ArrivalState extends Enumerable.Implicits {
   }
 
   val values = Seq(
+    Initialized,
     ArrivalSubmitted,
     GoodsReleased
   )

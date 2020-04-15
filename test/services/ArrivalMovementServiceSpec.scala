@@ -71,7 +71,7 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
         arrivalId = id,
         movementReferenceNumber = mrn,
         eoriNumber = eori,
-  state = ArrivalState.ArrivalSubmitted,
+  state = ArrivalState.Initialized,
         LocalDateTime.of(dateOfPrep, timeOfPrep),
         LocalDateTime.of(dateOfPrep, timeOfPrep),
         messages = Seq(
