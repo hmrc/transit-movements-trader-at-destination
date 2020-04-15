@@ -17,11 +17,11 @@
 package services
 
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 
 import base.SpecBase
 import models.Arrival
-import models.ArrivalDateTime
 import models.MessageType
 import models.MovementMessage
 import models.MovementReferenceNumber
@@ -70,10 +70,10 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
         movementReferenceNumber = mrn,
         eoriNumber = eori,
         state = State.PendingSubmission,
-        ArrivalDateTime(dateOfPrep, timeOfPrep),
-        ArrivalDateTime(dateOfPrep, timeOfPrep),
+        LocalDateTime.of(dateOfPrep, timeOfPrep),
+        LocalDateTime.of(dateOfPrep, timeOfPrep),
         messages = Seq(
-          MovementMessage(dateOfPrep, timeOfPrep, MessageType.ArrivalNotification, movement)
+          MovementMessage(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.ArrivalNotification, movement)
         )
       )
 
@@ -122,7 +122,7 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
           <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
         </CC025A>
 
-      val expectedMessage = MovementMessage(dateOfPrep, timeOfPrep, MessageType.GoodsReleased, movement)
+      val expectedMessage = MovementMessage(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.GoodsReleased, movement)
 
       service.makeGoodsReleasedMessage()(movement).value mustEqual expectedMessage
     }
@@ -142,7 +142,7 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
           <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
         </Foo>
 
-      val expectedMessage = MovementMessage(dateOfPrep, timeOfPrep, MessageType.GoodsReleased, movement)
+      val expectedMessage = MovementMessage(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.GoodsReleased, movement)
 
       service.makeGoodsReleasedMessage()(movement) must not be defined
     }
@@ -270,6 +270,76 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
 
       ArrivalMovementService.correctRootNodeR(MessageType.ArrivalNotification)(movement) must not be defined
     }
+  }
+
+  "dateTimeOfPrepR" - {
+    "returns the date from the DatOfPreMES9 node" in {
+      val dateOfPrep: LocalDate = LocalDate.now()
+      val timeOfPrep: LocalTime = LocalTime.of(1, 1)
+
+      val movement =
+        <CC007A>
+          <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+          <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+        </CC007A>
+
+      ArrivalMovementService.dateTimeOfPrepR(movement).value mustEqual LocalDateTime.of(dateOfPrep, timeOfPrep)
+
+    }
+
+    "will return a None when the date in the DatOfPreMES9 node is malformed" in {
+      val dateOfPrep: LocalDate = LocalDate.now()
+      val timeOfPrep: LocalTime = LocalTime.of(1, 1)
+
+      val movement =
+        <CC007A>
+          <DatOfPreMES9>{Format.dateFormatted(dateOfPrep) ++ "1"}</DatOfPreMES9>
+          <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+        </CC007A>
+
+      ArrivalMovementService.dateTimeOfPrepR(movement) must not be (defined)
+    }
+
+    "will return a None when the date in the DatOfPreMES10 node is malformed" in {
+      val dateOfPrep: LocalDate = LocalDate.now()
+      val timeOfPrep: LocalTime = LocalTime.of(1, 1)
+
+      val movement =
+        <CC007A>
+          <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+          <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)  ++ "1" }</TimOfPreMES10>
+        </CC007A>
+
+      ArrivalMovementService.dateTimeOfPrepR(movement) must not be (defined)
+    }
+
+    "will return a None when the date in the DatOfPreMES9 node is missing" in {
+
+      val timeOfPrep: LocalTime = LocalTime.of(1, 1)
+
+      val movement =
+        <CC007A>
+          <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+        </CC007A>
+
+      ArrivalMovementService.dateTimeOfPrepR(movement) must not be (defined)
+
+    }
+
+    "will return a None when the date in the DatOfPreMES10 node is missing" in {
+
+      val dateOfPrep: LocalDate = LocalDate.now()
+      val timeOfPrep: LocalTime = LocalTime.of(1, 1)
+
+      val movement =
+        <CC007A>
+          <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+        </CC007A>
+
+      ArrivalMovementService.dateTimeOfPrepR(movement) must not be (defined)
+
+    }
+
   }
 
 }

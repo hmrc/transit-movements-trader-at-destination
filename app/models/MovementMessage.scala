@@ -16,16 +16,13 @@
 
 package models
 
-import java.time.LocalDate
-import java.time.LocalTime
-
-import play.api.libs.functional.syntax._
+import java.time.LocalDateTime
 import play.api.libs.json._
 
 import scala.xml.NodeSeq
 import scala.xml.XML
 
-final case class MovementMessage(date: LocalDate, time: LocalTime, messageType: MessageType, message: NodeSeq)
+final case class MovementMessage(dateTime: LocalDateTime, messageType: MessageType, message: NodeSeq)
 
 object MovementMessage {
 

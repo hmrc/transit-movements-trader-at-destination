@@ -16,6 +16,8 @@
 
 package models
 
+import java.time.LocalDateTime
+
 import models.request.ArrivalId
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
@@ -25,8 +27,8 @@ case class Arrival(
   movementReferenceNumber: MovementReferenceNumber,
   eoriNumber: String,
   state: State,
-  created: ArrivalDateTime,
-  updated: ArrivalDateTime,
+  created: LocalDateTime,
+  updated: LocalDateTime,
   messages: Seq[MovementMessage]
 )
 
@@ -38,19 +40,19 @@ object Arrival {
         (__ \ "movementReferenceNumber").read[MovementReferenceNumber] and
         (__ \ "eoriNumber").read[String] and
         (__ \ "state").read[State] and
-        (__ \ "created").read[ArrivalDateTime] and
-        (__ \ "updated").read[ArrivalDateTime] and
+        (__ \ "created").read(MongoDateTimeFormats.localDateTimeRead) and
+        (__ \ "updated").read(MongoDateTimeFormats.localDateTimeRead) and
         (__ \ "messages").read[Seq[MovementMessage]]
     )(Arrival.apply _)
 
-  implicit val writesArrival: OWrites[Arrival] =
+  implicit def writesArrival(implicit write: Writes[LocalDateTime]): OWrites[Arrival] =
     (
       (__ \ "_id").write[ArrivalId] and
         (__ \ "movementReferenceNumber").write[MovementReferenceNumber] and
         (__ \ "eoriNumber").write[String] and
         (__ \ "state").write[State] and
-        (__ \ "created").write[ArrivalDateTime] and
-        (__ \ "updated").write[ArrivalDateTime] and
+        (__ \ "created").write(write) and
+        (__ \ "updated").write(write) and
         (__ \ "messages").write[Seq[MovementMessage]]
     )(unlift(Arrival.unapply))
 

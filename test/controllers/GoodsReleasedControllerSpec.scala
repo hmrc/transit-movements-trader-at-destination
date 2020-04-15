@@ -17,12 +17,12 @@
 package controllers
 
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 
 import base.SpecBase
 import generators.ModelGenerators
 import models.Arrival
-import models.ArrivalDateTime
 import models.MessageSender
 import models.MovementReferenceNumber
 import models.State
@@ -61,8 +61,8 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
     MovementReferenceNumber("mrn"),
     "eori",
     State.Submitted,
-    ArrivalDateTime(dateOfPrep, timeOfPrep),
-    ArrivalDateTime(dateOfPrep, timeOfPrep),
+    LocalDateTime.of(dateOfPrep, timeOfPrep),
+    LocalDateTime.of(dateOfPrep, timeOfPrep),
     Seq.empty
   )
 
