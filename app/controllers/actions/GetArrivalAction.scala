@@ -47,8 +47,10 @@ private[actions] class GetArrivalAction(
   override protected def refine[A](request: Request[A]): Future[Either[Result, ArrivalRequest[A]]] =
     repository.get(arrivalId).map {
       case Some(arrival) =>
+        println("F")
         Right(ArrivalRequest(request, arrival))
       case None =>
+        println("E")
         Left(NotFound)
     }
 }
@@ -70,11 +72,14 @@ private[actions] class AuthenticatedGetArrivalAction(
   override protected def refine[A](request: AuthenticatedRequest[A]): Future[Either[Result, ArrivalRequest[A]]] =
     repository.get(arrivalId).map {
       case Some(arrival) if arrival.eoriNumber == request.eoriNumber =>
+        println("some(arrival)")
         Right(ArrivalRequest(request.request, arrival))
       case Some(_) =>
         Logger.warn("Attempt to retrieve an arrival for another EORI")
+        println("some(_)")
         Left(NotFound)
       case None =>
+        println("nono")
         Left(NotFound)
     }
 }

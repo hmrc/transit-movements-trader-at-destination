@@ -38,7 +38,7 @@ class FakeAuthenticateActionProvider @Inject()(defaultActionBuilder: DefaultActi
 
 class FakeAuthenticateAction extends ActionRefiner[Request, AuthenticatedRequest] {
   override protected def refine[A](request: Request[A]): Future[Either[Result, AuthenticatedRequest[A]]] =
-    Future.successful(Right(AuthenticatedRequest(request, "id")))
+    Future.successful(Right(AuthenticatedRequest(request, "eori")))
 
   override protected def executionContext: ExecutionContext =
     scala.concurrent.ExecutionContext.Implicits.global

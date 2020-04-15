@@ -26,7 +26,6 @@ import models.ArrivalId
 import models.Arrivals
 import models.MessageSender
 import models.MessageType
-import models.MovementMessageWithState
 import models.SubmissionResult
 import models.TransitWrapper
 import play.api.Logger
@@ -36,7 +35,6 @@ import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
-import play.api.mvc.Result
 import repositories.ArrivalMovementRepository
 import services.ArrivalMovementService
 import uk.gov.hmrc.http.BadGatewayException
@@ -46,6 +44,8 @@ import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.util.Failure
+import scala.util.Success
 import scala.xml.NodeSeq
 
 class MovementsController @Inject()(
@@ -84,11 +84,15 @@ class MovementsController @Inject()(
                           )
                           .flatMap {
                             _ =>
-                              val newState = arrival.state.transition(SubmissionResult.Success)
-                              arrivalMovementRepository
-                                .setState(arrival.arrivalId, newState)
-                                .map {
-                                  _ =>
+                              arrival.messages.last.getState() match {
+                                case Some(state) =>
+                                  //TODO: Unpack this for-yield to add recover block
+                                  for {
+                                    _ <- arrivalMovementRepository.setMessageState(arrival.arrivalId,
+                                                                                   arrival.messages.length - 1,
+                                                                                   state.transition(SubmissionResult.Success))
+                                    _ <- arrivalMovementRepository.setState(arrival.arrivalId, arrival.state.transition(ArrivalSubmitted))
+                                  } yield {
                                     Accepted("Message accepted")
                                     // TODO: This needs to be replaced url to arrival movement resource, for which we need an Arrival Movement number
                                       .withHeaders("Location" -> arrival.arrivalId.index.toString)
@@ -122,12 +126,52 @@ class MovementsController @Inject()(
   }
 
   def updateArrival(arrivalId: ArrivalId): Action[NodeSeq] = authenticateForWrite(arrivalId).async(parse.xml) {
-    /*
     implicit request: ArrivalRequest[NodeSeq] =>
-      request.arrival
+      {
+        println("abc")
+        arrivalMovementService.makeArrivalNotificationMessage(request.arrival.nextMessageCorrelationId)(request.body) match {
+          case None =>
+            Future.successful(BadRequest("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5"))
 
-     */
-    ???
+          case Some(message) => {
+            {
+              println("happy path")
+              arrivalMovementRepository.addMessage(arrivalId, message).flatMap {
+                case Success(()) =>
+                  messageConnector
+                    .post(TransitWrapper(request.body),
+                          MessageType.ArrivalNotification,
+                          OffsetDateTime.now,
+                          MessageSender(arrivalId, request.arrival.nextMessageCorrelationId))
+                    .flatMap {
+                      _ =>
+                        arrivalMovementRepository
+                          .setMessageState(arrivalId, request.arrival.messages.length, message.state.transition(SubmissionResult.Success))
+                          .flatMap {
+                            _ =>
+                              arrivalMovementRepository.setState(arrivalId, request.arrival.state.transition(ArrivalSubmitted)).map {
+                                _ =>
+                                  Accepted.withHeaders("Location" -> request.arrival.arrivalId.index.toString)
+                              }
+                          }
+                    }
+                case Failure(e) => {
+                  println("A")
+                  e.printStackTrace()
+                  Future.successful(InternalServerError)
+                }
+              }
+            }.recover {
+              case _ => {
+                println("B")
+                // TODO: Add logging here so that we can be alerted to these issues.
+                InternalServerError
+              }
+            }
+          }
+        }
+      }
+
   }
 
   def getArrivals: Action[AnyContent] = authenticate().async {

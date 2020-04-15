@@ -219,7 +219,7 @@ class ArrivalMovementRepositorySpec
           val repository = app.injector.instanceOf[ArrivalMovementRepository]
 
           repository.insert(arrival).futureValue
-          val addMessageResult = repository.addMessage(arrival.arrivalId, goodsReleasedMessage, newState).futureValue
+          val addMessageResult = repository.addMessage(arrival.arrivalId, goodsReleasedMessage, Some(newState)).futureValue
 
           val selector = Json.obj("_id" -> arrival.arrivalId)
 
@@ -264,7 +264,7 @@ class ArrivalMovementRepositorySpec
           val repository = app.injector.instanceOf[ArrivalMovementRepository]
 
           repository.insert(arrival).futureValue
-          val result = repository.addMessage(ArrivalId(2), goodsReleasedMessage, newState).futureValue
+          val result = repository.addMessage(ArrivalId(2), goodsReleasedMessage, Some(newState)).futureValue
 
           result mustBe a[Failure[Unit]]
         }

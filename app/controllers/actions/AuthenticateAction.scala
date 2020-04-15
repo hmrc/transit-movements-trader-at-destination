@@ -44,21 +44,23 @@ private[actions] class AuthenticateAction @Inject()(override val authConnector: 
   private val enrolmentIdentifierKey: String = "VATRegNoTURN"
 
   override protected def refine[A](request: Request[A]): Future[Either[Result, AuthenticatedRequest[A]]] = {
-
+    println("authRefine")
     implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
-
+    println("headers")
     authorised(Enrolment(config.enrolmentKey)).retrieve(Retrievals.authorisedEnrolments) {
       enrolments =>
+        println("enrolements")
         val eoriNumber = (for {
           enrolment  <- enrolments.enrolments.find(_.key.equals(config.enrolmentKey))
           identifier <- enrolment.getIdentifier(enrolmentIdentifierKey)
         } yield identifier.value).getOrElse(throw InsufficientEnrolments(s"Unable to retrieve enrolment for $enrolmentIdentifierKey"))
-
+        println("C")
         Future.successful(Right(AuthenticatedRequest(request, eoriNumber)))
     }
   }.recover {
     case e: AuthorisationException =>
       Logger.warn(s"Failed to authorise with the following exception: $e")
+      println("D")
       Left(Unauthorized)
   }
 }

@@ -106,7 +106,7 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
 
           status(result) mustEqual OK
           verify(mockLockRepository, times(1)).lock(arrivalId)
-          verify(mockArrivalMovementRepository, times(1)).addMessage(any(), any(), eqTo(ArrivalState.GoodsReleased))
+          verify(mockArrivalMovementRepository, times(1)).addMessage(any(), any(), eqTo(Some(ArrivalState.GoodsReleased)))
           verify(mockLockRepository, times(1)).unlock(arrivalId)
         }
       }

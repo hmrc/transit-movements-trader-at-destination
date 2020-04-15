@@ -170,21 +170,32 @@ class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: React
     }
   }
 
-  //TODO: Return index position of the new message.
-  def addMessage(arrivalId: ArrivalId, message: MovementMessage, state: ArrivalState): Future[Try[Unit]] = {
+  //TODO: Add Tests for Match Statement
+  def addMessage(arrivalId: ArrivalId, message: MovementMessage, state: Option[ArrivalState] = None): Future[Try[Unit]] = {
 
     val selector = Json.obj(
       "_id" -> arrivalId
     )
 
-    val modifier = Json.obj(
-      "$set" -> Json.obj(
-        "state" -> state.toString
-      ),
-      "$push" -> Json.obj(
-        "messages" -> Json.toJson(message)
-      )
-    )
+    val modifier = state match {
+      case Some(state) => {
+        Json.obj(
+          "$set" -> Json.obj(
+            "state" -> state.toString
+          ),
+          "$push" -> Json.obj(
+            "messages" -> Json.toJson(message)
+          )
+        )
+      }
+      case None =>
+        Json.obj(
+          "$push" -> Json.obj(
+            "messages" -> Json.toJson(message)
+          )
+        )
+
+    }
 
     collection.flatMap {
       _.findAndUpdate(selector, modifier)
