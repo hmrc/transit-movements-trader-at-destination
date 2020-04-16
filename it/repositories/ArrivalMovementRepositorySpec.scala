@@ -1,4 +1,4 @@
-package services.repositories
+package repositories
 
 import java.time.{LocalDate, LocalDateTime, LocalTime}
 
@@ -18,7 +18,6 @@ import play.api.libs.json.Json
 import play.api.test.Helpers._
 import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 import reactivemongo.play.json.collection.JSONCollection
-import repositories.ArrivalMovementRepository
 import utils.Format
 
 import scala.concurrent.ExecutionContext.Implicits.global

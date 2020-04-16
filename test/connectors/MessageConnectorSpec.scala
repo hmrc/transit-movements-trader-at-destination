@@ -1,24 +1,34 @@
+/*
+ * Copyright 2020 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package connectors
 
 import java.time.{LocalDateTime, OffsetDateTime}
-import java.time.format.DateTimeFormatter
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.matching.StringValuePattern
 import generators.MessageGenerators
-import models.{ArrivalId, MessageSender, MessageState, MessageType, MovementMessageWithState, TransitWrapper}
+import models.{ArrivalId, MessageState, MessageType, MovementMessageWithState}
 import org.scalacheck.Gen
-import org.scalatest.concurrent.IntegrationPatience
-import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.FreeSpec
-import org.scalatest.MustMatchers
-import org.scalatest.OptionValues
+import org.scalatest.{FreeSpec, MustMatchers, OptionValues}
+import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.logging.SessionId
-
-import scala.concurrent.ExecutionContext.Implicits.global
 
 class MessageConnectorSpec
     extends FreeSpec
@@ -78,6 +88,8 @@ class MessageConnectorSpec
 
         val messageSender = "MDTP-123-1"
 
+        val failedStatus = genFailedStatusCodes.sample.value
+
         server.stubFor(
           post(urlEqualTo(postUrl))
             .withHeader("Content-Type", equalTo("application/xml;charset=UTF-8"))
@@ -101,6 +113,7 @@ class MessageConnectorSpec
           response =>
             response mustBe an[Exception]
         }
+
       }
     }
   }

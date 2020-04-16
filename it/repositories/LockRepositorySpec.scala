@@ -1,4 +1,4 @@
-package services.repositories
+package repositories
 
 import generators.MessageGenerators
 import models.ArrivalId
@@ -16,7 +16,6 @@ import play.api.libs.json.Json
 import play.api.test.Helpers._
 import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 import reactivemongo.play.json.collection.JSONCollection
-import repositories.LockRepository
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
