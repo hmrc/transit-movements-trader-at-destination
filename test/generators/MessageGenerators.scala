@@ -19,7 +19,14 @@ package generators
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-import models.{Arrival, ArrivalId, MessageState, MessageType, MovementMessage, MovementMessageWithState, MovementReferenceNumber, ArrivalState}
+import models.Arrival
+import models.ArrivalId
+import models.ArrivalState
+import models.MessageState
+import models.MessageType
+import models.MovementMessageWithState
+import models.MovementMessageWithoutState
+import models.MovementReferenceNumber
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
@@ -32,12 +39,11 @@ trait MessageGenerators extends ModelGenerators {
   implicit lazy val arbitraryMessageWithStateXml: Arbitrary[MovementMessageWithState] = {
     Arbitrary {
       for {
-        date        <- datesBetween(pastDate, dateNow)
-        time        <- timesBetween(pastDate, dateNow)
-        xml         <- Gen.const(<blankXml>message</blankXml>)
+        dateTime    <- arbitrary[LocalDateTime]
+        xml         <- Gen.const(<blankXml>message</blankXml>) // TODO: revisit this
         messageType <- Gen.oneOf(MessageType.values)
         state       <- Gen.oneOf(MessageState.values)
-      } yield MovementMessageWithState(LocalDateTime.of(date, time), messageType, xml, state, 1) // TODO: revisit message correlation id
+      } yield MovementMessageWithState(dateTime, messageType, xml, state, 1) // TODO: revisit message correlation id
     }
   }
 
@@ -46,9 +52,9 @@ trait MessageGenerators extends ModelGenerators {
       for {
         date        <- datesBetween(pastDate, dateNow)
         time        <- timesBetween(pastDate, dateNow)
-        xml         <- Gen.const(<blankXml>message</blankXml>) // TODO: revisit this
+        xml         <- Gen.const(<blankXml>message</blankXml>)
         messageType <- Gen.oneOf(MessageType.values)
-      } yield MovementMessageWithoutState(date, time, messageType, xml, 1) // TODO: revisit message correlation id
+      } yield MovementMessageWithoutState(LocalDateTime.of(date, time), messageType, xml, 1)
     }
   }
 

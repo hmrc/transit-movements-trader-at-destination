@@ -27,7 +27,7 @@ import play.api.libs.json.Writes
 import scala.xml.NodeSeq
 import scala.xml.XML
 
-object NodeSeqFormat {
+trait NodeSeqFormat {
   implicit val writesNodeSeq: Writes[NodeSeq] = new Writes[NodeSeq] {
     override def writes(o: NodeSeq): JsValue = JsString(o.mkString)
   }
@@ -39,3 +39,5 @@ object NodeSeqFormat {
     }
   }
 }
+
+object NodeSeqFormat extends NodeSeqFormat

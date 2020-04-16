@@ -52,7 +52,9 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import repositories.ArrivalIdRepository
 import repositories.ArrivalMovementRepository
-import uk.gov.hmrc.http.{HttpException, HttpResponse, Upstream5xxResponse}
+import uk.gov.hmrc.http.HttpException
+import uk.gov.hmrc.http.HttpResponse
+import uk.gov.hmrc.http.Upstream5xxResponse
 import repositories.LockRepository
 import uk.gov.hmrc.http.HttpResponse
 import uk.gov.hmrc.http.Upstream5xxResponse

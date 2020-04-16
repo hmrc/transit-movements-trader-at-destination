@@ -3,17 +3,13 @@ package services.repositories
 import java.time.{LocalDate, LocalDateTime, LocalTime}
 
 import generators.MessageGenerators
-import models.MongoDateTimeFormats
-import models.{Arrival, ArrivalId, MessageType, MovementMessage, MovementMessageWithState, MovementMessageWithoutState, MovementReferenceNumber, ArrivalState}
+import models.ArrivalState.ArrivalSubmitted
 import models.MessageState.{SubmissionPending, SubmissionSucceeded}
+import models.{Arrival, ArrivalId, ArrivalState, MessageType, MongoDateTimeFormats, MovementMessage, MovementMessageWithState, MovementMessageWithoutState, MovementReferenceNumber}
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
-import org.scalatest.EitherValues
-import org.scalatest.FreeSpec
-import org.scalatest.MustMatchers
-import org.scalatest.OptionValues
-import org.scalatest.concurrent.IntegrationPatience
-import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.{EitherValues, FreeSpec, MustMatchers, OptionValues}
+import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -25,12 +21,10 @@ import repositories.ArrivalMovementRepository
 import utils.Format
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
-import scala.util.Failure
-import scala.util.Success
+import scala.util.{Failure, Success}
 
 class ArrivalMovementRepositorySpec
-    extends FreeSpec
+  extends FreeSpec
     with MustMatchers
     with MongoSuite
     with FailOnUnindexedQueries
@@ -264,7 +258,7 @@ class ArrivalMovementRepositorySpec
             </HEAHEA>
           </CC025A>
 
-        val goodsReleasedMessage = MovementMessage(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.GoodsReleased, messageBody, messageCorrelationId = 1)
+        val goodsReleasedMessage = MovementMessage(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.GoodsReleased, messageBody, arrival.nextMessageCorrelationId)
         val newState             = ArrivalState.GoodsReleased
 
         running(app) {

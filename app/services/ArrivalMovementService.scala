@@ -23,6 +23,7 @@ import java.time.LocalTime
 import cats.data._
 import cats.implicits._
 import com.google.inject.Inject
+import models.ArrivalState.Initialized
 import models.MessageState.SubmissionPending
 import models.Arrival
 import models.MessageType
@@ -33,8 +34,6 @@ import models.MovementReferenceNumber
 import repositories.ArrivalIdRepository
 import repositories.ArrivalMovementRepository
 import utils.Format
-import models.ArrivalState.ArrivalSubmitted
-import models.ArrivalState.Initialized
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -46,14 +45,14 @@ class ArrivalMovementService @Inject()(arrivalIdRepository: ArrivalIdRepository,
   import ArrivalMovementService._
 
   def getArrivalMovement(eoriNumber: String, xml: NodeSeq): Future[Option[Arrival]] =
-    mrnR(xml).map((x: MovementReferenceNumber) => arrivalMovementRepository.get(eoriNumber, x)).getOrElse(Future.successful(None))
+    mrnR(xml).map(arrivalMovementRepository.get(eoriNumber, _)).getOrElse(Future.successful(None))
 
   def makeArrivalMovement(eori: String): ReaderT[Option, NodeSeq, Future[Arrival]] =
     for {
-      message <- makeArrivalNotificationMessage(1)
-      date = message.date
-      time = message.time
-      mrn <- mrnR
+      _        <- correctRootNodeR(MessageType.ArrivalNotification)
+      dateTime <- dateTimeOfPrepR
+      message  <- makeArrivalNotificationMessage(1)
+      mrn      <- mrnR
     } yield {
       arrivalIdRepository
         .nextId()
@@ -65,7 +64,7 @@ class ArrivalMovementService @Inject()(arrivalIdRepository: ArrivalIdRepository,
             Initialized,
             dateTime,
             dateTime,
-            Seq(MovementMessage(dateTime, MessageType.ArrivalNotification, xmlMessage, SubmissionPending, 1))
+            Seq(message),
             2
           ))
     }
@@ -73,21 +72,16 @@ class ArrivalMovementService @Inject()(arrivalIdRepository: ArrivalIdRepository,
   def makeArrivalNotificationMessage(messageCorrelationId: Int): ReaderT[Option, NodeSeq, MovementMessageWithState] =
     for {
       _          <- correctRootNodeR(MessageType.ArrivalNotification)
-      date       <- dateOfPrepR
-      time       <- timeOfPrepR
+      dateTime   <- dateTimeOfPrepR
       xmlMessage <- ReaderT[Option, NodeSeq, NodeSeq](Option.apply)
-    } yield MovementMessageWithState(date, time, MessageType.ArrivalNotification, xmlMessage, SubmissionPending, messageCorrelationId)
+    } yield MovementMessageWithState(dateTime, MessageType.ArrivalNotification, xmlMessage, SubmissionPending, messageCorrelationId)
 
   def makeGoodsReleasedMessage(messageCorrelationId: Int): ReaderT[Option, NodeSeq, MovementMessageWithoutState] =
     for {
       _          <- correctRootNodeR(MessageType.GoodsReleased)
       dateTime   <- dateTimeOfPrepR
       xmlMessage <- ReaderT[Option, NodeSeq, NodeSeq](Option.apply)
-<<<<<<< HEAD
     } yield MovementMessage(dateTime, MessageType.GoodsReleased, xmlMessage, messageCorrelationId)
-=======
-    } yield MovementMessageWithoutState(date, time, MessageType.GoodsReleased, xmlMessage, messageCorrelationId)
->>>>>>> 5172e23... Refactor ArrivalMovementService methods
 }
 
 object ArrivalMovementService {

@@ -22,15 +22,15 @@ import connectors.MessageConnector
 import controllers.actions.AuthenticateActionProvider
 import controllers.actions.AuthenticatedGetArrivalForWriteActionProvider
 import javax.inject.Inject
+import models.MessageReceived.ArrivalSubmitted
 import models.ArrivalId
 import models.Arrivals
 import models.MessageSender
 import models.MessageType
 import models.SubmissionResult
 import models.TransitWrapper
-import play.api.Logger
-import models.MessageState.SubmissionSucceeded
 import models.request.ArrivalRequest
+import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
@@ -38,9 +38,6 @@ import play.api.mvc.ControllerComponents
 import play.api.mvc.DefaultActionBuilder
 import repositories.ArrivalMovementRepository
 import services.ArrivalMovementService
-import uk.gov.hmrc.http.BadGatewayException
-import uk.gov.hmrc.http.GatewayTimeoutException
-import uk.gov.hmrc.http.ServiceUnavailableException
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.ExecutionContext
@@ -103,22 +100,29 @@ class MovementsController @Inject()(
                               }
                           }
                           .recoverWith {
-                            case error: Exception =>
+                            case error =>
                               logger.error(s"Call to EIS failed with the following Exception: ${error.getMessage}")
-                              val newState = arrival.state.transition(SubmissionResult.Failure)
-                              arrivalMovementRepository.setState(arrival.arrivalId, newState).map {
-                                _ =>
-                                  BadGateway
+
+                              arrival.messages.last.getState() match {
+                                case Some(state) =>
+                                  arrivalMovementRepository
+                                    .setMessageState(arrival.arrivalId, arrival.messages.length - 1, state.transition(SubmissionResult.Failure))
+                                    .map {
+                                      _ =>
+                                        BadGateway
+                                    }
+                                case None =>
+                                  Future.successful(BadGateway)
                               }
-                        }
+                          }
                     }
-                    .recover {
-                      case _ => {
-                        // TODO: Add logging here so that we can be alerted to these issues.
-                        InternalServerError
-                      }
-                    }
-              }
+                }
+                .recover {
+                  case _ => {
+                    InternalServerError
+                  }
+                }
+          }
       }
 
   }
@@ -126,14 +130,12 @@ class MovementsController @Inject()(
   def updateArrival(arrivalId: ArrivalId): Action[NodeSeq] = authenticateForWrite(arrivalId).async(parse.xml) {
     implicit request: ArrivalRequest[NodeSeq] =>
       {
-        println("abc")
         arrivalMovementService.makeArrivalNotificationMessage(request.arrival.nextMessageCorrelationId)(request.body) match {
           case None =>
             Future.successful(BadRequest("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5"))
 
           case Some(message) => {
             {
-              println("happy path")
               arrivalMovementRepository.addMessage(arrivalId, message).flatMap {
                 case Success(()) =>
                   messageConnector

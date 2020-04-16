@@ -16,14 +16,12 @@
 
 package models
 
-import java.time.LocalDate
-import java.time.LocalTime
+import java.time.LocalDateTime
 
 import play.api.libs.json._
+import utils.NodeSeqFormat
 
 import scala.xml.NodeSeq
-
-import utils.NodeSeqFormat._
 
 abstract class MovementMessage(val messageCorrelationId: Int) {
 
@@ -35,22 +33,17 @@ abstract class MovementMessage(val messageCorrelationId: Int) {
     }
 }
 
-final case class MovementMessageWithState(date: LocalDate,
-                                          time: LocalTime,
+final case class MovementMessageWithState(dateTime: LocalDateTime,
                                           messageType: MessageType,
                                           message: NodeSeq,
                                           state: MessageState,
                                           override val messageCorrelationId: Int)
     extends MovementMessage(messageCorrelationId)
 
-final case class MovementMessageWithoutState(date: LocalDate,
-                                             time: LocalTime,
-                                             messageType: MessageType,
-                                             message: NodeSeq,
-                                             override val messageCorrelationId: Int)
+final case class MovementMessageWithoutState(dateTime: LocalDateTime, messageType: MessageType, message: NodeSeq, override val messageCorrelationId: Int)
     extends MovementMessage(messageCorrelationId)
 
-object MovementMessage {
+object MovementMessage extends NodeSeqFormat {
   implicit lazy val reads: Reads[MovementMessage] = new Reads[MovementMessage] {
     override def reads(json: JsValue): JsResult[MovementMessage] = (json \ "state").toOption match {
       case Some(_) =>
@@ -72,20 +65,20 @@ object MovementMessage {
     case ws: MovementMessageWithoutState => Json.toJson(ws)(MovementMessageWithoutState.formatsMovementMessage)
   }
 
-  def apply(date: LocalDate, time: LocalTime, messageType: MessageType, message: NodeSeq, messageCorrelationId: Int) =
-    MovementMessageWithoutState(date, time, messageType, message, messageCorrelationId)
+  def apply(dateTime: LocalDateTime, messageType: MessageType, message: NodeSeq, messageCorrelationId: Int) =
+    MovementMessageWithoutState(dateTime, messageType, message, messageCorrelationId)
 
-  def apply(date: LocalDate, time: LocalTime, messageType: MessageType, message: NodeSeq, state: MessageState, messageCorrelationId: Int) =
-    MovementMessageWithState(date, time, messageType, message, state, messageCorrelationId)
+  def apply(dateTime: LocalDateTime, messageType: MessageType, message: NodeSeq, state: MessageState, messageCorrelationId: Int) =
+    MovementMessageWithState(dateTime, messageType, message, state, messageCorrelationId)
 }
 
-object MovementMessageWithState {
+object MovementMessageWithState extends NodeSeqFormat {
 
   implicit val formatsMovementMessage: OFormat[MovementMessageWithState] =
     Json.format[MovementMessageWithState]
 }
 
-object MovementMessageWithoutState {
+object MovementMessageWithoutState extends NodeSeqFormat {
 
   implicit val formatsMovementMessage: OFormat[MovementMessageWithoutState] =
     Json.format[MovementMessageWithoutState]

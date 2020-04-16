@@ -18,7 +18,12 @@ package repositories
 
 import com.google.inject.Inject
 import models.MongoDateTimeFormats
-import models.{Arrival, ArrivalId, MessageState, MovementMessage, MovementReferenceNumber, ArrivalState}
+import models.Arrival
+import models.ArrivalId
+import models.MessageState
+import models.MovementMessage
+import models.MovementReferenceNumber
+import models.ArrivalState
 import models.MovementMessageWithState
 import models.MovementReferenceNumber
 import models.ArrivalState
