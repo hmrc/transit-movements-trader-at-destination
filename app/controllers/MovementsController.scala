@@ -35,6 +35,7 @@ import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
+import play.api.mvc.DefaultActionBuilder
 import repositories.ArrivalMovementRepository
 import services.ArrivalMovementService
 import uk.gov.hmrc.http.BadGatewayException
@@ -49,6 +50,7 @@ import scala.util.Success
 import scala.xml.NodeSeq
 
 class MovementsController @Inject()(
+  defaultActionBuilder: DefaultActionBuilder,
   cc: ControllerComponents,
   arrivalMovementRepository: ArrivalMovementRepository,
   arrivalMovementService: ArrivalMovementService,
@@ -63,7 +65,8 @@ class MovementsController @Inject()(
   def createMovement: Action[NodeSeq] = authenticate().async(parse.xml) {
     implicit request =>
       arrivalMovementService.getArrivalMovement(request.eoriNumber, request.body) flatMap {
-        case Some(x) => Future.successful(SeeOther(s"/movements/arrivals/${x.arrivalId}"))
+        case Some(x) =>
+          Future.successful(SeeOther(routes.MovementsController.get(x.arrivalId).url))
 
         case None =>
           arrivalMovementService.makeArrivalMovement(request.eoriNumber)(request.body) match {
@@ -86,7 +89,6 @@ class MovementsController @Inject()(
                             _ =>
                               arrival.messages.last.getState() match {
                                 case Some(state) =>
-                                  //TODO: Unpack this for-yield to add recover block
                                   for {
                                     _ <- arrivalMovementRepository.setMessageState(arrival.arrivalId,
                                                                                    arrival.messages.length - 1,
@@ -94,15 +96,11 @@ class MovementsController @Inject()(
                                     _ <- arrivalMovementRepository.setState(arrival.arrivalId, arrival.state.transition(ArrivalSubmitted))
                                   } yield {
                                     Accepted("Message accepted")
-                                    // TODO: This needs to be replaced url to arrival movement resource, for which we need an Arrival Movement number
-                                      .withHeaders("Location" -> arrival.arrivalId.index.toString)
-
-                                }
-                                .recoverWith {
-                                  case e: Exception =>
-                                    logger.error(s"setState failed with following Exception: ${e.getMessage}")
-                                    Future.successful(InternalServerError)
-                                }
+                                      .withHeaders("Location" -> routes.MovementsController.get(arrival.arrivalId).url)
+                                  }
+                                case None =>
+                                  Future.successful(InternalServerError)
+                              }
                           }
                           .recoverWith {
                             case error: Exception =>
@@ -151,20 +149,31 @@ class MovementsController @Inject()(
                             _ =>
                               arrivalMovementRepository.setState(arrivalId, request.arrival.state.transition(ArrivalSubmitted)).map {
                                 _ =>
-                                  Accepted.withHeaders("Location" -> request.arrival.arrivalId.index.toString)
+                                  Accepted.withHeaders("Location" -> routes.MovementsController.get(request.arrival.arrivalId).url)
                               }
+                          }
+                          .recover {
+                            case _ => {
+                              InternalServerError
+                            }
+                          }
+                    }
+                    .recoverWith {
+                      case error =>
+                        logger.error(s"Call to EIS failed with the following Exception: ${error.getMessage}")
+                        arrivalMovementRepository
+                          .setMessageState(arrivalId, request.arrival.messages.length, message.state.transition(SubmissionResult.Failure))
+                          .map {
+                            _ =>
+                              BadGateway
                           }
                     }
                 case Failure(e) => {
-                  println("A")
-                  e.printStackTrace()
                   Future.successful(InternalServerError)
                 }
               }
             }.recover {
               case _ => {
-                println("B")
-                // TODO: Add logging here so that we can be alerted to these issues.
                 InternalServerError
               }
             }
@@ -187,4 +196,6 @@ class MovementsController @Inject()(
             InternalServerError(s"Failed with the following error: $e")
         }
   }
+
+  def get(arrivalId: ArrivalId): Action[AnyContent] = defaultActionBuilder(_ => NotImplemented)
 }

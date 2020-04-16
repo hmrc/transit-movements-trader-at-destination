@@ -85,7 +85,7 @@ class ArrivalMovementRepositorySpec
 
         val app: Application = builder.build()
 
-        val arrival = arbitrary[Arrival].sample.value copy (state = ArrivalState.ArrivalSubmitted)
+        val arrival = arbitrary[Arrival].sample.value copy (state = ArrivalState.Initialized)
 
         running(app) {
           started(app).futureValue
@@ -93,7 +93,7 @@ class ArrivalMovementRepositorySpec
           val repository = app.injector.instanceOf[ArrivalMovementRepository]
 
           repository.insert(arrival).futureValue
-          repository.setState(arrival.arrivalId, ArrivalState.ArrivalSubmitted).futureValue
+          val setStateResult = repository.setState(arrival.arrivalId, ArrivalState.ArrivalSubmitted).futureValue
 
           val selector = Json.obj("_id" -> arrival.arrivalId)
 
@@ -103,6 +103,61 @@ class ArrivalMovementRepositorySpec
           }.futureValue
 
           result.value.state mustEqual ArrivalState.ArrivalSubmitted
+          setStateResult.isDefined mustBe true
+        }
+      }
+
+      "must update the state of an existing record to the same value it was before and return a Some" in {
+        database.flatMap(_.drop()).futureValue
+
+        val app: Application = builder.build()
+
+        val arrival = arbitrary[Arrival].sample.value copy (state = ArrivalState.ArrivalSubmitted)
+
+        running(app) {
+          started(app).futureValue
+
+          val repository = app.injector.instanceOf[ArrivalMovementRepository]
+
+          repository.insert(arrival).futureValue
+          val setStateResult = repository.setState(arrival.arrivalId, ArrivalState.ArrivalSubmitted).futureValue
+
+          val selector = Json.obj("_id" -> arrival.arrivalId)
+
+          val result = database.flatMap {
+            result =>
+              result.collection[JSONCollection](ArrivalMovementRepository.collectionName).find(selector, None).one[Arrival]
+          }.futureValue
+
+          result.value.state mustEqual ArrivalState.ArrivalSubmitted
+          setStateResult.isDefined mustBe true
+        }
+      }
+
+      "must not update the state of a record that does not exist" in {
+        database.flatMap(_.drop()).futureValue
+
+        val app: Application = builder.build()
+
+        val arrival = arbitrary[Arrival].sample.value copy (state = ArrivalState.Initialized)
+
+        running(app) {
+          started(app).futureValue
+
+          val repository = app.injector.instanceOf[ArrivalMovementRepository]
+
+          repository.insert(arrival).futureValue
+          val setStateResult = repository.setState(ArrivalId(arrival.arrivalId.index + 1), ArrivalState.ArrivalSubmitted).futureValue
+
+          val selector = Json.obj("_id" -> arrival.arrivalId)
+
+          val result = database.flatMap {
+            result =>
+              result.collection[JSONCollection](ArrivalMovementRepository.collectionName).find(selector, None).one[Arrival]
+          }.futureValue
+
+          result.value.state mustNot equal(ArrivalState.ArrivalSubmitted)
+          setStateResult.isEmpty mustBe true
         }
       }
     }
@@ -126,8 +181,7 @@ class ArrivalMovementRepositorySpec
 
           val updatedArrival = repository.get(arrival.arrivalId).futureValue.get
 
-          //TODO: Is it worth having this as a method on the trait to return the true model in an either/option/something graceful?
-          updatedArrival.messages.head.asInstanceOf[MovementMessageWithState].state mustEqual SubmissionSucceeded
+          updatedArrival.messages.head.getState().get mustEqual SubmissionSucceeded
         }
       }
 
@@ -146,7 +200,7 @@ class ArrivalMovementRepositorySpec
           repository.insert(arrival).futureValue
           val result = repository.setMessageState(ArrivalId(2), 0, SubmissionSucceeded).futureValue
 
-          result mustBe a[Failure[Unit]]
+          result mustBe a[Failure[_]]
         }
       }
 
@@ -165,7 +219,7 @@ class ArrivalMovementRepositorySpec
           repository.insert(arrival).futureValue
           val result = repository.setMessageState(ArrivalId(1), 5, SubmissionSucceeded).futureValue
 
-          result mustBe a[Failure[Unit]]
+          result mustBe a[Failure[_]]
         }
       }
 
@@ -186,12 +240,12 @@ class ArrivalMovementRepositorySpec
           repository.insert(arrival).futureValue
           val result = repository.setMessageState(ArrivalId(1), 0, SubmissionSucceeded).futureValue
 
-          result mustBe a[Failure[Unit]]
+          result mustBe a[Failure[_]]
         }
       }
     }
 
-    "addMessage" - {
+    "addMessage with arrival state" - {
       "must add a message and update the state of a document" in {
         database.flatMap(_.drop()).futureValue
 
@@ -230,7 +284,7 @@ class ArrivalMovementRepositorySpec
 
           val updatedArrival = result.value
 
-          addMessageResult mustBe a[Success[Unit]]
+          addMessageResult mustBe a[Success[_]]
           updatedArrival.state mustEqual newState
           updatedArrival.messages.size mustEqual arrival.messages.size + 1
           updatedArrival.messages.last mustEqual goodsReleasedMessage
@@ -266,10 +320,91 @@ class ArrivalMovementRepositorySpec
           repository.insert(arrival).futureValue
           val result = repository.addMessage(ArrivalId(2), goodsReleasedMessage, Some(newState)).futureValue
 
-          result mustBe a[Failure[Unit]]
+          result mustBe a[Failure[_]]
         }
       }
     }
+
+    "addMessage without arrival state" - {
+      "must add a message and update the state of a document" in {
+        database.flatMap(_.drop()).futureValue
+
+        val app: Application = builder.build()
+
+        val arrival = arbitrary[Arrival].sample.value
+
+        val dateOfPrep = LocalDate.now()
+        val timeOfPrep = LocalTime.of(1, 1)
+        val messageBody =
+          <CC025A>
+            <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+            <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+            <HEAHEA>
+              <DocNumHEA5>MRN</DocNumHEA5>
+            </HEAHEA>
+          </CC025A>
+
+        val goodsReleasedMessage = MovementMessage(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.GoodsReleased, messageBody, arrival.nextMessageCorrelationId)
+        val newState             = ArrivalState.GoodsReleased
+
+        running(app) {
+          started(app).futureValue
+
+          val repository = app.injector.instanceOf[ArrivalMovementRepository]
+
+          repository.insert(arrival).futureValue
+          val addMessageResult = repository.addMessage(arrival.arrivalId, goodsReleasedMessage, None).futureValue
+
+          val selector = Json.obj("_id" -> arrival.arrivalId)
+
+          val result = database.flatMap {
+            result =>
+              result.collection[JSONCollection](ArrivalMovementRepository.collectionName).find(selector, None).one[Arrival]
+          }.futureValue
+
+          val updatedArrival = result.value
+
+          addMessageResult mustBe a[Success[_]]
+          updatedArrival.state must not equal(newState)
+          updatedArrival.messages.size mustEqual arrival.messages.size + 1
+          updatedArrival.messages.last mustEqual goodsReleasedMessage
+        }
+      }
+
+      "must fail if the arrival cannot be found" in {
+        database.flatMap(_.drop()).futureValue
+
+        val app: Application = builder.build()
+
+        val arrival = arbitrary[Arrival].sample.value copy (state = ArrivalState.ArrivalSubmitted, arrivalId = ArrivalId(1))
+
+        val dateOfPrep = LocalDate.now()
+        val timeOfPrep = LocalTime.of(1, 1)
+        val messageBody =
+          <CC025A>
+            <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+            <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+            <HEAHEA>
+              <DocNumHEA5>MRN</DocNumHEA5>
+            </HEAHEA>
+          </CC025A>
+
+        val goodsReleasedMessage = MovementMessage(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.GoodsReleased, messageBody, messageCorrelationId = 1)
+        val newState             = ArrivalState.GoodsReleased
+
+        running(app) {
+          started(app).futureValue
+
+          val repository = app.injector.instanceOf[ArrivalMovementRepository]
+
+          repository.insert(arrival).futureValue
+          val result = repository.addMessage(ArrivalId(2), goodsReleasedMessage, None).futureValue
+
+          result mustBe a[Failure[_]]
+        }
+      }
+    }
+
 
     "get(arrivalId: ArrivalId)" - {
       "must get an arrival when it exists" in {
@@ -461,85 +596,6 @@ class ArrivalMovementRepositorySpec
           val result = service.fetchAllArrivals(eoriNumber).futureValue
 
           result mustBe Seq.empty[Arrival]
-        }
-      }
-
-    }
-
-    "fetchMessagesForArrivalId" - {
-      "must return Movement Messages that match passed in ArrivalId" in {
-        database.flatMap(_.drop()).futureValue
-
-        val app: Application = builder.build()
-
-        val movementMessages1 = arbitrary[MovementMessageWithState].sample.value
-        val movementMessages2 = arbitrary[MovementMessageWithoutState].sample.value
-
-        running(app) {
-          started(app).futureValue
-
-          val service: ArrivalMovementRepository = app.injector.instanceOf[ArrivalMovementRepository]
-
-          val allMessages = Seq(movementMessages1, movementMessages2)
-
-          val arrivalMovement: Arrival = arbitrary[Arrival].sample.value.copy(messages = allMessages)
-
-          database.flatMap {
-            db =>
-              db.collection[JSONCollection](ArrivalMovementRepository.collectionName).insert(false).one(arrivalMovement)
-          }.futureValue
-
-          val result: Seq[MovementMessage] = service.fetchMessagesForArrival(arrivalMovement.arrivalId).futureValue
-
-          result mustBe allMessages
-        }
-      }
-
-      "must return an empty sequence when there are no messages with a valid arrival id" in {
-        database.flatMap(_.drop()).futureValue
-
-        val app: Application = builder.build()
-
-        running(app) {
-          started(app).futureValue
-
-          val service: ArrivalMovementRepository = app.injector.instanceOf[ArrivalMovementRepository]
-
-          val allMessages = Seq()
-
-          val arrivalMovement = arbitrary[Arrival].sample.value.copy(messages = allMessages)
-
-          database.flatMap {
-            db =>
-              db.collection[JSONCollection](ArrivalMovementRepository.collectionName).insert(false).one(arrivalMovement)
-          }.futureValue
-
-          val result = service.fetchMessagesForArrival(arrivalMovement.arrivalId).futureValue
-
-          result mustBe Seq.empty[MovementMessage]
-        }
-      }
-
-      "must return an empty sequence when there are no messages with an invalid arrival id" in {
-        database.flatMap(_.drop()).futureValue
-
-        val app: Application = builder.build()
-
-        val arrivalMovement = arbitrary[Arrival].sample.value.copy(arrivalId = ArrivalId(1))
-
-        running(app) {
-          started(app).futureValue
-
-          val service: ArrivalMovementRepository = app.injector.instanceOf[ArrivalMovementRepository]
-
-          database.flatMap {
-            db =>
-              db.collection[JSONCollection](ArrivalMovementRepository.collectionName).insert(false).one(arrivalMovement)
-          }.futureValue
-
-          val result = service.fetchMessagesForArrival(ArrivalId(2)).futureValue
-
-          result mustBe Seq.empty[MovementMessage]
         }
       }
 
