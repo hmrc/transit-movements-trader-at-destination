@@ -325,27 +325,27 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         }
       }
 
-      "must return SeeOther if Arrival Movement already exists" in {
-        val mockArrivalIdRepository       = mock[ArrivalIdRepository]
+      "must attempt to submit against the existing arrival if Arrival Movement already exists" in {
+
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
         val mockMessageConnector          = mock[MessageConnector]
-
-        val arrival = Arbitrary.arbitrary[Arrival].sample.value
+        val arrival                       = Arbitrary.arbitrary[Arrival].sample.value.copy(state = ArrivalState.Initialized)
 
         when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(arrival)))
-
-        when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrival.arrivalId))
-        when(mockArrivalMovementRepository.insert(any())).thenReturn(Future.failed(new Exception))
+        when(mockArrivalMovementRepository.addMessage(any(), any(), any())).thenReturn(Future.successful(Success(())))
+        when(mockMessageConnector.post(any(), any(), any(), any())(any())).thenReturn(Future.successful(HttpResponse(ACCEPTED)))
+        when(mockArrivalMovementRepository.setMessageState(any(), any(), any())).thenReturn(Future.successful((Success(()))))
+        when(mockArrivalMovementRepository.setState(any(), any())).thenReturn(Future.successful(Some(())))
 
         val application = baseApplicationBuilder
           .overrides(
-            bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
             bind[MessageConnector].toInstance(mockMessageConnector)
           )
           .build()
 
         running(application) {
+
           val dateOfPrep = LocalDate.now()
           val timeOfPrep = LocalTime.of(1, 1)
 
@@ -354,7 +354,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
               <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
               <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
               <HEAHEA>
-                <DocNumHEA5>{arrival.movementReferenceNumber}</DocNumHEA5>
+                <DocNumHEA5>MRN</DocNumHEA5>
               </HEAHEA>
             </CC007A>
 
@@ -362,8 +362,12 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
           val result = route(application, request).value
 
-          status(result) mustEqual SEE_OTHER
-          header("Location", result).value mustBe routes.MovementsController.get(arrival.arrivalId).url
+          status(result) mustEqual ACCEPTED
+          header("Location", result).value must be(routes.MovementsController.get(arrival.arrivalId).url)
+          verify(mockArrivalMovementRepository, times(1)).addMessage(any(), any(), any())
+          verify(mockMessageConnector, times(1)).post(eqTo(TransitWrapper(requestXmlBody)), eqTo(MessageType.ArrivalNotification), any(), any())(any())
+          verify(mockArrivalMovementRepository, times(1)).setState(any(), eqTo(ArrivalSubmitted))
+          verify(mockArrivalMovementRepository, times(1)).setMessageState(any(), any(), eqTo(SubmissionSucceeded))
         }
       }
     }

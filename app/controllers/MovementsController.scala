@@ -25,7 +25,9 @@ import javax.inject.Inject
 import models.MessageReceived.ArrivalSubmitted
 import models.ArrivalId
 import models.Arrivals
+import models.MessageReceived
 import models.MessageSender
+import models.MessageState
 import models.MessageType
 import models.SubmissionResult
 import models.TransitWrapper
@@ -62,9 +64,36 @@ class MovementsController @Inject()(
   def createMovement: Action[NodeSeq] = authenticate().async(parse.xml) {
     implicit request =>
       arrivalMovementService.getArrivalMovement(request.eoriNumber, request.body) flatMap {
-        case Some(x) =>
-          Future.successful(SeeOther(routes.MovementsController.get(x.arrivalId).url))
-
+        case Some(arrival) =>
+          arrivalMovementService.makeArrivalNotificationMessage(arrival.nextMessageCorrelationId)(request.body) match {
+            case None => Future.successful(BadRequest("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5"))
+            case Some(message) => {
+              arrivalMovementRepository.addMessage(arrival.arrivalId, message).flatMap {
+                case Failure(_) => Future.successful(InternalServerError)
+                case Success(()) => {
+                  messageConnector
+                    .post(TransitWrapper(request.body),
+                          MessageType.ArrivalNotification,
+                          OffsetDateTime.now,
+                          MessageSender(arrival.arrivalId, arrival.nextMessageCorrelationId))
+                    .flatMap {
+                      _ =>
+                        arrivalMovementRepository.setMessageState(arrival.arrivalId, arrival.messages.length, MessageState.SubmissionSucceeded).flatMap {
+                          _ =>
+                            arrivalMovementRepository.setState(arrival.arrivalId, arrival.state.transition(MessageReceived.ArrivalSubmitted)).map {
+                              _ =>
+                                Accepted("Message accepted")
+                                  .withHeaders("Location" -> routes.MovementsController.get(arrival.arrivalId).url)
+                            }
+                        }
+                    }
+                    .recover {
+                      case _ => InternalServerError
+                    }
+                }
+              }
+            }
+          }
         case None =>
           arrivalMovementService.makeArrivalMovement(request.eoriNumber)(request.body) match {
             case None =>
