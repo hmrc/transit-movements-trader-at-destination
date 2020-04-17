@@ -21,6 +21,7 @@ import java.time.OffsetDateTime
 import connectors.MessageConnector
 import controllers.actions.AuthenticateActionProvider
 import controllers.actions.AuthenticatedGetArrivalForWriteActionProvider
+import controllers.actions.LockActionProvider
 import javax.inject.Inject
 import models.MessageReceived.ArrivalSubmitted
 import models.ArrivalId
@@ -65,6 +66,7 @@ class MovementsController @Inject()(
     implicit request =>
       arrivalMovementService.getArrivalMovement(request.eoriNumber, request.body) flatMap {
         case Some(arrival) =>
+          //TODO: Should this just be a redirect to the update endpoint? Will that work?
           arrivalMovementService.makeArrivalNotificationMessage(arrival.nextMessageCorrelationId)(request.body) match {
             case None => Future.successful(BadRequest("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5"))
             case Some(message) => {
