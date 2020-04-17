@@ -31,9 +31,11 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.JsBoolean
+import play.api.libs.json.JsString
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.AnyContentAsEmpty
+import play.api.mvc.AnyContentAsXml
 import play.api.mvc.Results
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
@@ -43,6 +45,7 @@ import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.auth.core.Enrolment
 import uk.gov.hmrc.auth.core.EnrolmentIdentifier
 import uk.gov.hmrc.auth.core.Enrolments
+import utils.Format
 
 import scala.concurrent.Future
 
@@ -54,7 +57,11 @@ class AuthenticatedGetOptionalArrivalForWriteActionProviderSpec
     with MessageGenerators
     with OptionValues {
 
-  def fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest("", "")
+  def fakeRequest: FakeRequest[AnyContentAsXml] = FakeRequest("", "").withXmlBody(<CC007A>
+      <HEAHEA>
+        <DocNumHEA5>{MovementReferenceNumber("MRN").value}</DocNumHEA5>
+      </HEAHEA>
+    </CC007A>)
 
   class Harness(authOptionalGet: AuthenticatedGetOptionalArrivalForWriteActionProvider) {
 
@@ -251,6 +258,51 @@ class AuthenticatedGetOptionalArrivalForWriteActionProviderSpec
         val result     = controller.get()(fakeRequest)
 
         status(result) mustBe LOCKED
+      }
+    }
+
+    "when we can't parse an mrn from the body" - {
+      "must return BadRequest" in {
+        val mockAuthConnector: AuthConnector = mock[AuthConnector]
+
+        when(mockAuthConnector.authorise[Enrolments](any(), any())(any(), any()))
+          .thenReturn(Future.successful(validEnrolments))
+
+        val application = new GuiceApplicationBuilder()
+          .overrides(
+            bind[AuthConnector].toInstance(mockAuthConnector)
+          )
+
+        val actionProvider = application.injector().instanceOf[AuthenticatedGetOptionalArrivalForWriteActionProvider]
+
+        val controller = new Harness(actionProvider)
+
+        val result = controller.get()(FakeRequest().withXmlBody(<CC007A>
+          <HEAHEA>
+          </HEAHEA>
+        </CC007A>))
+        status(result) mustBe BAD_REQUEST
+      }
+    }
+
+    "when have something other than xml in the body" - {
+      "must return BadRequest" in {
+        val mockAuthConnector: AuthConnector = mock[AuthConnector]
+
+        when(mockAuthConnector.authorise[Enrolments](any(), any())(any(), any()))
+          .thenReturn(Future.successful(validEnrolments))
+
+        val application = new GuiceApplicationBuilder()
+          .overrides(
+            bind[AuthConnector].toInstance(mockAuthConnector)
+          )
+
+        val actionProvider = application.injector().instanceOf[AuthenticatedGetOptionalArrivalForWriteActionProvider]
+
+        val controller = new Harness(actionProvider)
+
+        val result = controller.get()(FakeRequest().withJsonBody(JsString("Happy Apples")))
+        status(result) mustBe BAD_REQUEST
       }
     }
   }
