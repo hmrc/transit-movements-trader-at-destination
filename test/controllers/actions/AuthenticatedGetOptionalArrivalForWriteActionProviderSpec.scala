@@ -18,7 +18,6 @@ package controllers.actions
 
 import generators.MessageGenerators
 import models.Arrival
-import models.ArrivalId
 import models.MovementReferenceNumber
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito._
@@ -34,8 +33,8 @@ import play.api.libs.json.JsBoolean
 import play.api.libs.json.JsString
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
-import play.api.mvc.AnyContentAsEmpty
 import play.api.mvc.AnyContentAsXml
+import play.api.mvc.PlayBodyParsers
 import play.api.mvc.Results
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
@@ -45,9 +44,9 @@ import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.auth.core.Enrolment
 import uk.gov.hmrc.auth.core.EnrolmentIdentifier
 import uk.gov.hmrc.auth.core.Enrolments
-import utils.Format
 
 import scala.concurrent.Future
+import scala.xml.NodeSeq
 
 class AuthenticatedGetOptionalArrivalForWriteActionProviderSpec
     extends FreeSpec

@@ -16,6 +16,7 @@
 
 package controllers.actions
 
+import scala.xml.Elem
 import scala.xml.XML
 import javax.inject.Inject
 import models.ArrivalId
@@ -60,17 +61,20 @@ class AuthenticateGetOptionalArrivalForWriteAction(
 
   override def invokeBlock[A](request: AuthenticatedRequest[A], block: AuthenticatedOptionalArrivalRequest[A] => Future[Result]): Future[Result] =
     request.body match {
-      case body: AnyContentAsXml =>
-        ArrivalMovementService.mrnR(XML.loadString(body.xml.toString())) match {
-          case None => Future.successful(BadRequest)
+      case body: Elem =>
+        ArrivalMovementService.mrnR(body) match {
+          case None => {
+            println("bad mrn")
+            Future.successful(BadRequest)
+          }
           case Some(mrn) => {
             arrivalMovementRepository.get(request.eoriNumber, mrn).flatMap {
-              case None => block(AuthenticatedOptionalArrivalRequest(request, None))
+              case None => block(AuthenticatedOptionalArrivalRequest(request, None, request.eoriNumber))
               case Some(arrival) =>
                 lockRepository.lock(arrival.arrivalId).flatMap {
                   case false => Future.successful(Locked)
                   case true =>
-                    block(AuthenticatedOptionalArrivalRequest(request, Some(arrival)))
+                    block(AuthenticatedOptionalArrivalRequest(request, Some(arrival), request.eoriNumber))
                       .flatMap {
                         result =>
                           lockRepository.unlock(arrival.arrivalId).map {
@@ -82,6 +86,7 @@ class AuthenticateGetOptionalArrivalForWriteAction(
                         case e: Exception =>
                           lockRepository.unlock(arrival.arrivalId).map {
                             _ =>
+                              println("actionRecover")
                               InternalServerError
                           }
                       }
@@ -89,7 +94,11 @@ class AuthenticateGetOptionalArrivalForWriteAction(
             }
           }
         }
-      case _ => Future.successful(BadRequest)
+      case x => {
+        println("bad content")
+        println(x.getClass)
+        Future.successful(BadRequest)
+      }
     }
 
 }

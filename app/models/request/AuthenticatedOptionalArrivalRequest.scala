@@ -20,4 +20,5 @@ import models.Arrival
 import play.api.mvc.Request
 import play.api.mvc.WrappedRequest
 
-case class AuthenticatedOptionalArrivalRequest[A](request: Request[A], arrival: Option[Arrival]) extends WrappedRequest[A](request)
+case class AuthenticatedOptionalArrivalRequest[A](request: AuthenticatedRequest[A], arrival: Option[Arrival], eoriNumber: String)
+    extends WrappedRequest[A](request)

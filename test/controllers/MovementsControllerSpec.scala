@@ -33,6 +33,7 @@ import models.MessageState
 import models.MessageType
 import models.MovementMessage
 import models.MovementMessageWithState
+import models.MovementReferenceNumber
 import models.TransitWrapper
 import models.ArrivalState.ArrivalSubmitted
 import models.MessageState.SubmissionFailed
@@ -104,7 +105,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
               <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
               <HEAHEA>
                 <DocNumHEA5>MRN</DocNumHEA5>
-              </HEAHEA>
+              </HEAHEA> 
             </CC007A>
 
           val request = FakeRequest(POST, routes.MovementsController.createMovement().url).withXmlBody(requestXmlBody)
