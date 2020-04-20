@@ -16,37 +16,26 @@
 
 package controllers.actions
 
-import scala.xml.Elem
-import scala.xml.XML
 import javax.inject.Inject
-import models.ArrivalId
 import models.request.AuthenticatedOptionalArrivalRequest
 import models.request.AuthenticatedRequest
+import play.api.mvc._
+import play.api.mvc.Results.BadRequest
 import play.api.mvc.Results.InternalServerError
 import play.api.mvc.Results.Locked
-import play.api.mvc.Results.BadRequest
-import play.api.mvc.ActionBuilder
-import play.api.mvc.ActionFunction
-import play.api.mvc.AnyContent
-import play.api.mvc.AnyContentAsXml
-import play.api.mvc.BodyParser
-import play.api.mvc.BodyParsers
-import play.api.mvc.ControllerComponents
-import play.api.mvc.Request
-import play.api.mvc.Result
 import repositories.ArrivalMovementRepository
 import repositories.LockRepository
 import services.ArrivalMovementService
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.xml.NodeSeq
 
 class AuthenticatedGetOptionalArrivalForWriteActionProvider @Inject()(
   authenticate: AuthenticateActionProvider,
   arrivalMovementRepository: ArrivalMovementRepository,
   lockRepository: LockRepository,
-  ec: ExecutionContext,
-  parser: BodyParsers.Default
+  ec: ExecutionContext
 ) {
 
   def apply(): ActionBuilder[AuthenticatedOptionalArrivalRequest, AnyContent] =
@@ -61,12 +50,11 @@ class AuthenticateGetOptionalArrivalForWriteAction(
 
   override def invokeBlock[A](request: AuthenticatedRequest[A], block: AuthenticatedOptionalArrivalRequest[A] => Future[Result]): Future[Result] =
     request.body match {
-      case body: Elem =>
+      case body: NodeSeq =>
         ArrivalMovementService.mrnR(body) match {
-          case None => {
-            println("bad mrn")
+          case None =>
             Future.successful(BadRequest)
-          }
+
           case Some(mrn) => {
             arrivalMovementRepository.get(request.eoriNumber, mrn).flatMap {
               case None => block(AuthenticatedOptionalArrivalRequest(request, None, request.eoriNumber))
@@ -86,7 +74,6 @@ class AuthenticateGetOptionalArrivalForWriteAction(
                         case e: Exception =>
                           lockRepository.unlock(arrival.arrivalId).map {
                             _ =>
-                              println("actionRecover")
                               InternalServerError
                           }
                       }
@@ -94,11 +81,8 @@ class AuthenticateGetOptionalArrivalForWriteAction(
             }
           }
         }
-      case x => {
-        println("bad content")
-        println(x.getClass)
+      case _ =>
         Future.successful(BadRequest)
-      }
     }
 
 }

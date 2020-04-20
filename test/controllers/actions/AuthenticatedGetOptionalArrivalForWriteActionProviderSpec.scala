@@ -33,8 +33,7 @@ import play.api.libs.json.JsBoolean
 import play.api.libs.json.JsString
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
-import play.api.mvc.AnyContentAsXml
-import play.api.mvc.PlayBodyParsers
+import play.api.mvc.ControllerComponents
 import play.api.mvc.Results
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
@@ -44,6 +43,7 @@ import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.auth.core.Enrolment
 import uk.gov.hmrc.auth.core.EnrolmentIdentifier
 import uk.gov.hmrc.auth.core.Enrolments
+import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.Future
 import scala.xml.NodeSeq
@@ -56,20 +56,25 @@ class AuthenticatedGetOptionalArrivalForWriteActionProviderSpec
     with MessageGenerators
     with OptionValues {
 
-  def fakeRequest: FakeRequest[AnyContentAsXml] = FakeRequest("", "").withXmlBody(<CC007A>
+  def fakeRequest: FakeRequest[NodeSeq] = FakeRequest("", "").withBody(<CC007A>
       <HEAHEA>
         <DocNumHEA5>{MovementReferenceNumber("MRN").value}</DocNumHEA5>
       </HEAHEA>
     </CC007A>)
 
-  class Harness(authOptionalGet: AuthenticatedGetOptionalArrivalForWriteActionProvider) {
+  class Harness(authOptionalGet: AuthenticatedGetOptionalArrivalForWriteActionProvider, cc: ControllerComponents) extends BackendController(cc) {
 
-    def get: Action[AnyContent] = authOptionalGet() {
+    def get: Action[NodeSeq] = authOptionalGet()(parse.xml) {
       request =>
         Results.Ok(JsBoolean(request.arrival.isDefined))
     }
 
-    def failingAction: Action[AnyContent] = authOptionalGet().async {
+    def getJson: Action[AnyContent] = authOptionalGet() {
+      request =>
+        Results.Ok(JsBoolean(request.arrival.isDefined))
+    }
+
+    def failingAction: Action[NodeSeq] = authOptionalGet()(cc.parsers.xml).async {
       _ =>
         Future.failed(new Exception)
     }
@@ -122,8 +127,9 @@ class AuthenticatedGetOptionalArrivalForWriteActionProviderSpec
           )
 
         val actionProvider = application.injector().instanceOf[AuthenticatedGetOptionalArrivalForWriteActionProvider]
+        val cc             = application.injector().instanceOf[ControllerComponents]
 
-        val controller = new Harness(actionProvider)
+        val controller = new Harness(actionProvider, cc)
 
         val result = controller.get()(fakeRequest)
         status(result) mustBe OK
@@ -150,10 +156,12 @@ class AuthenticatedGetOptionalArrivalForWriteActionProviderSpec
             bind[AuthConnector].toInstance(mockAuthConnector),
             bind[LockRepository].toInstance(mockLockRepository)
           )
+          .build()
 
-        val actionProvider = application.injector().instanceOf[AuthenticatedGetOptionalArrivalForWriteActionProvider]
+        val actionProvider = application.injector.instanceOf[AuthenticatedGetOptionalArrivalForWriteActionProvider]
+        val cc             = application.injector.instanceOf[ControllerComponents]
 
-        val controller = new Harness(actionProvider)
+        val controller = new Harness(actionProvider, cc)
         val result     = controller.get()(fakeRequest)
 
         status(result) mustBe OK
@@ -184,8 +192,9 @@ class AuthenticatedGetOptionalArrivalForWriteActionProviderSpec
           )
 
         val actionProvider = application.injector().instanceOf[AuthenticatedGetOptionalArrivalForWriteActionProvider]
+        val cc             = application.injector().instanceOf[ControllerComponents]
 
-        val controller = new Harness(actionProvider)
+        val controller = new Harness(actionProvider, cc)
         val result     = controller.failingAction()(fakeRequest)
 
         status(result) mustBe INTERNAL_SERVER_ERROR
@@ -222,8 +231,9 @@ class AuthenticatedGetOptionalArrivalForWriteActionProviderSpec
           )
 
         val actionProvider = application.injector().instanceOf[AuthenticatedGetOptionalArrivalForWriteActionProvider]
+        val cc             = application.injector().instanceOf[ControllerComponents]
 
-        val controller = new Harness(actionProvider)
+        val controller = new Harness(actionProvider, cc)
         val result     = controller.get(fakeRequest)
 
         status(result) mustBe UNAUTHORIZED
@@ -252,8 +262,9 @@ class AuthenticatedGetOptionalArrivalForWriteActionProviderSpec
           )
 
         val actionProvider = application.injector().instanceOf[AuthenticatedGetOptionalArrivalForWriteActionProvider]
+        val cc             = application.injector().instanceOf[ControllerComponents]
 
-        val controller = new Harness(actionProvider)
+        val controller = new Harness(actionProvider, cc)
         val result     = controller.get()(fakeRequest)
 
         status(result) mustBe LOCKED
@@ -273,13 +284,15 @@ class AuthenticatedGetOptionalArrivalForWriteActionProviderSpec
           )
 
         val actionProvider = application.injector().instanceOf[AuthenticatedGetOptionalArrivalForWriteActionProvider]
+        val cc             = application.injector().instanceOf[ControllerComponents]
 
-        val controller = new Harness(actionProvider)
+        val controller = new Harness(actionProvider, cc)
 
-        val result = controller.get()(FakeRequest().withXmlBody(<CC007A>
+        val result = controller.get()(FakeRequest().withBody(<CC007A>
           <HEAHEA>
           </HEAHEA>
         </CC007A>))
+
         status(result) mustBe BAD_REQUEST
       }
     }
@@ -297,10 +310,14 @@ class AuthenticatedGetOptionalArrivalForWriteActionProviderSpec
           )
 
         val actionProvider = application.injector().instanceOf[AuthenticatedGetOptionalArrivalForWriteActionProvider]
+        val cc             = application.injector().instanceOf[ControllerComponents]
 
-        val controller = new Harness(actionProvider)
+        val controller = new Harness(actionProvider, cc)
 
-        val result = controller.get()(FakeRequest().withJsonBody(JsString("Happy Apples")))
+        val request: FakeRequest[AnyContent] = FakeRequest().withBody(AnyContent(JsString("Happy Apples")))
+
+        val result = controller.getJson()(request)
+
         status(result) mustBe BAD_REQUEST
       }
     }

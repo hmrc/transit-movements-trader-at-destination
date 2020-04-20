@@ -136,11 +136,10 @@ class MovementsController @Inject()(
       case None => Future.successful(BadRequest("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5"))
       case Some(message) => {
         arrivalMovementRepository.addMessage(arrival.arrivalId, message).flatMap {
-          case Failure(_) => {
-            println("FailureCase")
+          case Failure(_) =>
             Future.successful(InternalServerError)
-          }
-          case Success(()) => {
+
+          case Success(()) =>
             messageConnector
               .post(TransitWrapper(body),
                     MessageType.ArrivalNotification,
@@ -174,7 +173,7 @@ class MovementsController @Inject()(
                         BadGateway
                     }
               }
-          }
+
         }
       }
     }
@@ -199,4 +198,5 @@ class MovementsController @Inject()(
   }
 
   def get(arrivalId: ArrivalId): Action[AnyContent] = defaultActionBuilder(_ => NotImplemented)
+
 }
