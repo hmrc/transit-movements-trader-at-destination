@@ -23,7 +23,7 @@ import utils.NodeSeqFormat
 
 import scala.xml.NodeSeq
 
-abstract class MovementMessage(val messageCorrelationId: Int) {
+abstract class MovementMessage(val dateTime: LocalDateTime, val messageCorrelationId: Int) {
 
   def getState(): Option[MessageState] =
     if (this.isInstanceOf[MovementMessageWithState]) {
@@ -33,15 +33,18 @@ abstract class MovementMessage(val messageCorrelationId: Int) {
     }
 }
 
-final case class MovementMessageWithState(dateTime: LocalDateTime,
+final case class MovementMessageWithState(override val dateTime: LocalDateTime,
                                           messageType: MessageType,
                                           message: NodeSeq,
                                           state: MessageState,
                                           override val messageCorrelationId: Int)
-    extends MovementMessage(messageCorrelationId)
+    extends MovementMessage(dateTime, messageCorrelationId)
 
-final case class MovementMessageWithoutState(dateTime: LocalDateTime, messageType: MessageType, message: NodeSeq, override val messageCorrelationId: Int)
-    extends MovementMessage(messageCorrelationId)
+final case class MovementMessageWithoutState(override val dateTime: LocalDateTime,
+                                             messageType: MessageType,
+                                             message: NodeSeq,
+                                             override val messageCorrelationId: Int)
+    extends MovementMessage(dateTime, messageCorrelationId)
 
 object MovementMessage extends NodeSeqFormat {
   implicit lazy val reads: Reads[MovementMessage] = new Reads[MovementMessage] {

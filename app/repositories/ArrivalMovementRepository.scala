@@ -158,31 +158,53 @@ class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: React
     }
   }
 
-  def addMessage(arrivalId: ArrivalId, message: MovementMessage, state: Option[ArrivalState] = None): Future[Try[Unit]] = {
+  def addNewMessage(arrivalId: ArrivalId, message: MovementMessage): Future[Try[Unit]] = {
 
     val selector = Json.obj(
       "_id" -> arrivalId
     )
 
-    val modifier = state match {
-      case Some(state) => {
-        Json.obj(
-          "$set" -> Json.obj(
-            "state" -> state.toString
-          ),
-          "$push" -> Json.obj(
-            "messages" -> Json.toJson(message)
-          )
+    val modifier =
+      Json.obj(
+        "$set" -> Json.obj(
+          "updated" -> message.dateTime
+        ),
+        "$inc" -> Json.obj(
+          "nextMessageCorrelationId" -> 1
+        ),
+        "$push" -> Json.obj(
+          "messages" -> Json.toJson(message)
         )
-      }
-      case None =>
-        Json.obj(
-          "$push" -> Json.obj(
-            "messages" -> Json.toJson(message)
-          )
-        )
+      )
 
+    collection.flatMap {
+      _.findAndUpdate(selector, modifier)
+        .map {
+          _.lastError
+            .map {
+              le =>
+                if (le.updatedExisting) Success(()) else Failure(new Exception(s"Could not find arrival $arrivalId"))
+            }
+            .getOrElse(Failure(new Exception("Failed to update arrival")))
+        }
     }
+  }
+
+  def addResponseMessage(arrivalId: ArrivalId, message: MovementMessage, state: ArrivalState): Future[Try[Unit]] = {
+    val selector = Json.obj(
+      "_id" -> arrivalId
+    )
+
+    val modifier =
+      Json.obj(
+        "$set" -> Json.obj(
+          "updated" -> message.dateTime,
+          "state"   -> state.toString
+        ),
+        "$push" -> Json.obj(
+          "messages" -> Json.toJson(message)
+        )
+      )
 
     collection.flatMap {
       _.findAndUpdate(selector, modifier)

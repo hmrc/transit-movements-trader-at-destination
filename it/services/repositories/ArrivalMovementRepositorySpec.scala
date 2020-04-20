@@ -240,8 +240,8 @@ class ArrivalMovementRepositorySpec
       }
     }
 
-    "addMessage with arrival state" - {
-      "must add a message and update the state of a document" in {
+    "addResponseMessage" - {
+      "must add a message, update the state of a document and update the timestamp" in {
         database.flatMap(_.drop()).futureValue
 
         val app: Application = builder.build()
@@ -268,7 +268,7 @@ class ArrivalMovementRepositorySpec
           val repository = app.injector.instanceOf[ArrivalMovementRepository]
 
           repository.insert(arrival).futureValue
-          val addMessageResult = repository.addMessage(arrival.arrivalId, goodsReleasedMessage, Some(newState)).futureValue
+          val addMessageResult = repository.addResponseMessage(arrival.arrivalId, goodsReleasedMessage, newState).futureValue
 
           val selector = Json.obj("_id" -> arrival.arrivalId)
 
@@ -280,8 +280,10 @@ class ArrivalMovementRepositorySpec
           val updatedArrival = result.value
 
           addMessageResult mustBe a[Success[_]]
+          updatedArrival.nextMessageCorrelationId - arrival.nextMessageCorrelationId mustBe 0
+          updatedArrival.updated mustEqual goodsReleasedMessage.dateTime
           updatedArrival.state mustEqual newState
-          updatedArrival.messages.size mustEqual arrival.messages.size + 1
+          updatedArrival.messages.size - arrival.messages.size mustEqual 1
           updatedArrival.messages.last mustEqual goodsReleasedMessage
         }
       }
@@ -313,15 +315,15 @@ class ArrivalMovementRepositorySpec
           val repository = app.injector.instanceOf[ArrivalMovementRepository]
 
           repository.insert(arrival).futureValue
-          val result = repository.addMessage(ArrivalId(2), goodsReleasedMessage, Some(newState)).futureValue
+          val result = repository.addResponseMessage(ArrivalId(2), goodsReleasedMessage, newState).futureValue
 
           result mustBe a[Failure[_]]
         }
       }
     }
 
-    "addMessage without arrival state" - {
-      "must add a message and not update the state of a document" in {
+    "addNewMessage" - {
+      "must add a message, update the timestamp and increment nextCorrelationId" in {
         database.flatMap(_.drop()).futureValue
 
         val app: Application = builder.build()
@@ -347,7 +349,7 @@ class ArrivalMovementRepositorySpec
           val repository = app.injector.instanceOf[ArrivalMovementRepository]
 
           repository.insert(arrival).futureValue
-          val addMessageResult = repository.addMessage(arrival.arrivalId, goodsReleasedMessage, None).futureValue.success
+          repository.addNewMessage(arrival.arrivalId, goodsReleasedMessage).futureValue.success
 
           val selector = Json.obj("_id" -> arrival.arrivalId)
 
@@ -358,8 +360,10 @@ class ArrivalMovementRepositorySpec
 
           val updatedArrival = result.value
 
+          updatedArrival.nextMessageCorrelationId - arrival.nextMessageCorrelationId mustBe 1
+          updatedArrival.updated mustEqual goodsReleasedMessage.dateTime
           updatedArrival.state mustEqual arrival.state
-          updatedArrival.messages.size mustEqual arrival.messages.size + 1
+          updatedArrival.messages.size - arrival.messages.size mustEqual 1
           updatedArrival.messages.last mustEqual goodsReleasedMessage
         }
       }
@@ -390,13 +394,13 @@ class ArrivalMovementRepositorySpec
           val repository = app.injector.instanceOf[ArrivalMovementRepository]
 
           repository.insert(arrival).futureValue
-          val result = repository.addMessage(ArrivalId(2), goodsReleasedMessage, None).futureValue
+          val result = repository.addNewMessage(ArrivalId(2), goodsReleasedMessage).futureValue
 
           result mustBe a[Failure[_]]
         }
       }
-    }
 
+    }
 
     "get(arrivalId: ArrivalId)" - {
       "must get an arrival when it exists" in {

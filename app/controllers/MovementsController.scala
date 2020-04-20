@@ -135,10 +135,9 @@ class MovementsController @Inject()(
     arrivalMovementService.makeArrivalNotificationMessage(arrival.nextMessageCorrelationId)(body) match {
       case None => Future.successful(BadRequest("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5"))
       case Some(message) => {
-        arrivalMovementRepository.addMessage(arrival.arrivalId, message).flatMap {
+        arrivalMovementRepository.addNewMessage(arrival.arrivalId, message).flatMap {
           case Failure(_) =>
             Future.successful(InternalServerError)
-
           case Success(()) =>
             messageConnector
               .post(TransitWrapper(body),

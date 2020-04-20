@@ -55,7 +55,7 @@ class GoodsReleasedController @Inject()(cc: ControllerComponents,
           arrivalMovementService.makeGoodsReleasedMessage(messageSender.messageCorrelationId)(xml) match {
             case Some(message) =>
               val newState = request.arrival.state.transition(MessageReceived.GoodsReleased)
-              arrivalMovementRepository.addMessage(request.arrival.arrivalId, message, Some(newState)).map {
+              arrivalMovementRepository.addResponseMessage(request.arrival.arrivalId, message, newState).map {
                 case Success(_) => Ok
                 case Failure(e) => {
                   logger.error(s"Failure to add message to movement. Exception: ${e.getMessage}")
