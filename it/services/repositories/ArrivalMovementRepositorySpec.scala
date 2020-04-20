@@ -8,7 +8,7 @@ import models.MessageState.{SubmissionPending, SubmissionSucceeded}
 import models.{Arrival, ArrivalId, ArrivalState, MessageType, MongoDateTimeFormats, MovementMessage, MovementMessageWithState, MovementMessageWithoutState, MovementReferenceNumber}
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
-import org.scalatest.{EitherValues, FreeSpec, MustMatchers, OptionValues}
+import org.scalatest.{EitherValues, FreeSpec, MustMatchers, OptionValues, TryValues}
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.Application
@@ -32,6 +32,7 @@ class ArrivalMovementRepositorySpec
     with IntegrationPatience
     with OptionValues
     with EitherValues
+    with TryValues
     with ScalaCheckPropertyChecks
     with MessageGenerators
     with MongoDateTimeFormats {
@@ -320,12 +321,12 @@ class ArrivalMovementRepositorySpec
     }
 
     "addMessage without arrival state" - {
-      "must add a message and update the state of a document" in {
+      "must add a message and not update the state of a document" in {
         database.flatMap(_.drop()).futureValue
 
         val app: Application = builder.build()
 
-        val arrival = arbitrary[Arrival].sample.value
+        val arrival = arbitrary[Arrival].sample.value.copy(state = ArrivalState.ArrivalSubmitted)
 
         val dateOfPrep = LocalDate.now()
         val timeOfPrep = LocalTime.of(1, 1)
@@ -339,7 +340,6 @@ class ArrivalMovementRepositorySpec
           </CC025A>
 
         val goodsReleasedMessage = MovementMessage(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.GoodsReleased, messageBody, arrival.nextMessageCorrelationId)
-        val newState             = ArrivalState.GoodsReleased
 
         running(app) {
           started(app).futureValue
@@ -347,7 +347,7 @@ class ArrivalMovementRepositorySpec
           val repository = app.injector.instanceOf[ArrivalMovementRepository]
 
           repository.insert(arrival).futureValue
-          val addMessageResult = repository.addMessage(arrival.arrivalId, goodsReleasedMessage, None).futureValue
+          val addMessageResult = repository.addMessage(arrival.arrivalId, goodsReleasedMessage, None).futureValue.success
 
           val selector = Json.obj("_id" -> arrival.arrivalId)
 
@@ -358,8 +358,7 @@ class ArrivalMovementRepositorySpec
 
           val updatedArrival = result.value
 
-          addMessageResult mustBe a[Success[_]]
-          updatedArrival.state must not equal(newState)
+          updatedArrival.state mustEqual arrival.state
           updatedArrival.messages.size mustEqual arrival.messages.size + 1
           updatedArrival.messages.last mustEqual goodsReleasedMessage
         }
@@ -384,7 +383,6 @@ class ArrivalMovementRepositorySpec
           </CC025A>
 
         val goodsReleasedMessage = MovementMessage(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.GoodsReleased, messageBody, messageCorrelationId = 1)
-        val newState             = ArrivalState.GoodsReleased
 
         running(app) {
           started(app).futureValue
