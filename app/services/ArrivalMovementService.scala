@@ -27,12 +27,10 @@ import models.ArrivalState.Initialized
 import models.MessageState.SubmissionPending
 import models.Arrival
 import models.MessageType
-import models.MovementMessage
 import models.MovementMessageWithState
 import models.MovementMessageWithoutState
 import models.MovementReferenceNumber
 import repositories.ArrivalIdRepository
-import repositories.ArrivalMovementRepository
 import utils.Format
 
 import scala.concurrent.ExecutionContext
@@ -40,12 +38,8 @@ import scala.concurrent.Future
 import scala.util.Try
 import scala.xml.NodeSeq
 
-class ArrivalMovementService @Inject()(arrivalIdRepository: ArrivalIdRepository, arrivalMovementRepository: ArrivalMovementRepository)(
-  implicit ec: ExecutionContext) {
+class ArrivalMovementService @Inject()(arrivalIdRepository: ArrivalIdRepository)(implicit ec: ExecutionContext) {
   import ArrivalMovementService._
-
-  def getArrivalMovement(eoriNumber: String, xml: NodeSeq): Future[Option[Arrival]] =
-    mrnR(xml).map(arrivalMovementRepository.get(eoriNumber, _)).getOrElse(Future.successful(None))
 
   def makeArrivalMovement(eori: String): ReaderT[Option, NodeSeq, Future[Arrival]] =
     for {
