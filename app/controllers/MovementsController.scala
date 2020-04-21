@@ -23,14 +23,14 @@ import controllers.actions.AuthenticatedGetArrivalForWriteActionProvider
 import controllers.actions.AuthenticatedGetOptionalArrivalForWriteActionProvider
 import javax.inject.Inject
 import models.MessageReceived.ArrivalSubmitted
+import models.MessageState.SubmissionFailed
+import models.MessageState.SubmissionSucceeded
 import models.Arrival
 import models.ArrivalId
 import models.MessageReceived
-import models.MessageSender
 import models.MessageState
-import models.MessageType
+import models.MovementMessageWithState
 import models.SubmissionResult
-import models.TransitWrapper
 import models.request.ArrivalRequest
 import play.api.Logger
 import play.api.mvc.Action
@@ -72,44 +72,25 @@ class MovementsController @Inject()(
                     arrivalMovementRepository.insert(arrival) flatMap {
                       _ =>
                         messageConnector
-                          .post(
-                            TransitWrapper(request.body),
-                            MessageType.ArrivalNotification,
-                            OffsetDateTime.now,
-                            MessageSender(arrival.arrivalId, arrival.messages.head.messageCorrelationId)
-                          )
+                        // TODO: Fix this casting
+                          .post(arrival.arrivalId, arrival.messages.head.asInstanceOf[MovementMessageWithState], OffsetDateTime.now)
                           .flatMap {
                             _ =>
-                              arrival.messages.last.getState() match {
-                                case Some(state) =>
-                                  for {
-                                    _ <- arrivalMovementRepository.setMessageState(arrival.arrivalId,
-                                                                                   arrival.messages.length - 1,
-                                                                                   state.transition(SubmissionResult.Success))
-                                    _ <- arrivalMovementRepository.setState(arrival.arrivalId, arrival.state.transition(ArrivalSubmitted))
-                                  } yield {
-                                    Accepted("Message accepted")
-                                      .withHeaders("Location" -> routes.GetArrivalController.getArrival(arrival.arrivalId).url)
-                                  }
-                                case None =>
-                                  Future.successful(InternalServerError)
+                              for {
+                                _ <- arrivalMovementRepository
+                                  .setMessageState(arrival.arrivalId, 0, SubmissionSucceeded) // TODO: use the message's state transition here and don't hard code the index of the message
+                                _ <- arrivalMovementRepository.setState(arrival.arrivalId, arrival.state.transition(ArrivalSubmitted))
+                              } yield {
+                                Accepted("Message accepted")
+                                  .withHeaders("Location" -> routes.GetArrivalController.getArrival(arrival.arrivalId).url)
                               }
                           }
                           .recoverWith {
                             case error =>
                               logger.error(s"Call to EIS failed with the following Exception: ${error.getMessage}")
-
-                              arrival.messages.last.getState() match {
-                                case Some(state) =>
-                                  arrivalMovementRepository
-                                    .setMessageState(arrival.arrivalId, arrival.messages.length - 1, state.transition(SubmissionResult.Failure))
-                                    .map {
-                                      _ =>
-                                        BadGateway
-                                    }
-                                case None =>
-                                  Future.successful(BadGateway)
-                              }
+                              arrivalMovementRepository
+                                .setMessageState(arrival.arrivalId, arrival.messages.length - 1, SubmissionFailed)
+                                .map(_ => BadGateway)
                           }
                     }
                 }
@@ -132,10 +113,7 @@ class MovementsController @Inject()(
             Future.successful(InternalServerError)
           case Success(()) =>
             messageConnector
-              .post(TransitWrapper(body),
-                    MessageType.ArrivalNotification,
-                    OffsetDateTime.now,
-                    MessageSender(arrival.arrivalId, arrival.nextMessageCorrelationId))
+              .post(arrival.arrivalId, message, OffsetDateTime.now)
               .flatMap {
                 _ =>
                   arrivalMovementRepository

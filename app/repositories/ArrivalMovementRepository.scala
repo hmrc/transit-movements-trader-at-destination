@@ -17,17 +17,13 @@
 package repositories
 
 import com.google.inject.Inject
-import models.MongoDateTimeFormats
 import models.Arrival
 import models.ArrivalId
+import models.ArrivalState
 import models.MessageState
+import models.MongoDateTimeFormats
 import models.MovementMessage
 import models.MovementReferenceNumber
-import models.ArrivalState
-import models.MovementMessageWithState
-import models.MovementReferenceNumber
-import models.ArrivalState
-import play.api.libs.json.JsArray
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents

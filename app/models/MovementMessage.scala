@@ -23,28 +23,15 @@ import utils.NodeSeqFormat
 
 import scala.xml.NodeSeq
 
-abstract class MovementMessage(val dateTime: LocalDateTime, val messageCorrelationId: Int) {
-
-  def getState(): Option[MessageState] =
-    if (this.isInstanceOf[MovementMessageWithState]) {
-      Some(this.asInstanceOf[MovementMessageWithState].state)
-    } else {
-      None
-    }
+abstract class MovementMessage {
+  def dateTime: LocalDateTime
 }
 
-final case class MovementMessageWithState(override val dateTime: LocalDateTime,
-                                          messageType: MessageType,
-                                          message: NodeSeq,
-                                          state: MessageState,
-                                          override val messageCorrelationId: Int)
-    extends MovementMessage(dateTime, messageCorrelationId)
+final case class MovementMessageWithState(dateTime: LocalDateTime, messageType: MessageType, message: NodeSeq, state: MessageState, messageCorrelationId: Int)
+    extends MovementMessage
 
-final case class MovementMessageWithoutState(override val dateTime: LocalDateTime,
-                                             messageType: MessageType,
-                                             message: NodeSeq,
-                                             override val messageCorrelationId: Int)
-    extends MovementMessage(dateTime, messageCorrelationId)
+final case class MovementMessageWithoutState(dateTime: LocalDateTime, messageType: MessageType, message: NodeSeq, messageCorrelationId: Int)
+    extends MovementMessage
 
 object MovementMessage extends NodeSeqFormat {
   implicit lazy val reads: Reads[MovementMessage] = new Reads[MovementMessage] {
@@ -56,23 +43,11 @@ object MovementMessage extends NodeSeqFormat {
     }
   }
 
-  /*
   implicit lazy val writes: OWrites[MovementMessage] = OWrites {
     case ns: MovementMessageWithState    => Json.toJsObject(ns)(MovementMessageWithState.formatsMovementMessage)
     case ws: MovementMessageWithoutState => Json.toJsObject(ws)(MovementMessageWithoutState.formatsMovementMessage)
   }
-   */
 
-  implicit lazy val writes: Writes[MovementMessage] = Writes {
-    case ns: MovementMessageWithState    => Json.toJson(ns)(MovementMessageWithState.formatsMovementMessage)
-    case ws: MovementMessageWithoutState => Json.toJson(ws)(MovementMessageWithoutState.formatsMovementMessage)
-  }
-
-  def apply(dateTime: LocalDateTime, messageType: MessageType, message: NodeSeq, messageCorrelationId: Int) =
-    MovementMessageWithoutState(dateTime, messageType, message, messageCorrelationId)
-
-  def apply(dateTime: LocalDateTime, messageType: MessageType, message: NodeSeq, state: MessageState, messageCorrelationId: Int) =
-    MovementMessageWithState(dateTime, messageType, message, state, messageCorrelationId)
 }
 
 object MovementMessageWithState extends NodeSeqFormat {

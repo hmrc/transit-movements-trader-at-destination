@@ -1,12 +1,12 @@
 package connectors
 
-import java.time.OffsetDateTime
+import java.time.{LocalDateTime, OffsetDateTime}
 import java.time.format.DateTimeFormatter
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.matching.StringValuePattern
 import generators.MessageGenerators
-import models.{ArrivalId, MessageSender, MessageType, TransitWrapper}
+import models.{ArrivalId, MessageSender, MessageState, MessageType, MovementMessageWithState, TransitWrapper}
 import org.scalacheck.Gen
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatest.concurrent.ScalaFutures
@@ -45,7 +45,7 @@ class MessageConnectorSpec
 
     "post" - {
 
-      "return OK when post is successful" in {
+      "return HttpResponse with status Accepted when when post is successful with Accepted" in {
 
         val messageSender = "MDTP-123-1"
         server.stubFor(
@@ -54,23 +54,23 @@ class MessageConnectorSpec
             .withHeader("X-Message-Type", equalTo(messageType.toString))
             .withHeader("X-Correlation-ID", headerCarrierPattern)
             .withHeader("X-Forwarded-Host", equalTo("mdtp"))
-            .withHeader("Date", equalTo(s"$dateTimeFormatted"))
             .withHeader("X-Message-Sender", equalTo(messageSender))
             .withHeader("Accept", equalTo("application/xml"))
             .withRequestBody(matchingXPath("/transitRequest"))
             .willReturn(
               aResponse()
-                .withStatus(200)
+                .withStatus(202)
             )
         )
 
-        val postValue = TransitWrapper(<CC007A>test</CC007A>)
+        val postValue = MovementMessageWithState(LocalDateTime.now(), messageType, <CC007A>test</CC007A>, MessageState.SubmissionPending, 1)
+        val arrivalId = ArrivalId(123)
 
-        val result = connector.post(postValue, messageType, localDateTime, MessageSender(ArrivalId(123), 1))
+        val result = connector.post(arrivalId, postValue, OffsetDateTime.now())
 
         whenReady(result) {
           response =>
-            response.status mustBe 200
+            response.status mustBe 202
         }
       }
 
@@ -85,7 +85,6 @@ class MessageConnectorSpec
             .withHeader("X-Correlation-ID", headerCarrierPattern)
             .withHeader("X-Forwarded-Host", equalTo("mdtp"))
             .withHeader("X-Message-Sender", equalTo(messageSender))
-            .withHeader("Date", equalTo("test"))
             .withHeader("Accept", equalTo("application/xml"))
             .willReturn(
               aResponse()
@@ -93,9 +92,10 @@ class MessageConnectorSpec
             )
         )
 
-        val postValue = TransitWrapper(<CC007A>test</CC007A>)
+        val postValue = MovementMessageWithState(LocalDateTime.now(), messageType, <CC007A>test</CC007A>, MessageState.SubmissionPending, 1)
+        val arrivalId = ArrivalId(123)
 
-        val result = connector.post(postValue, messageType, localDateTime, MessageSender(ArrivalId(123), 1))
+        val result = connector.post(arrivalId, postValue, OffsetDateTime.now())
 
         whenReady(result.failed) {
           response =>
@@ -120,9 +120,5 @@ object MessageConnectorSpec {
   private val headerCarrier              = HeaderCarrier()
 
   private val genFailedStatusCodes: Gen[Int] = Gen.choose(400, 599)
-  private val genHeaderCarrier               = Gen.oneOf(Seq(headerCarrierWithSessionId, headerCarrier))
 
-  private val localDateTime                    = OffsetDateTime.now
-  private val dateFormatter: DateTimeFormatter = DateTimeFormatter.RFC_1123_DATE_TIME
-  private val dateTimeFormatted: String        = localDateTime.format(dateFormatter)
 }

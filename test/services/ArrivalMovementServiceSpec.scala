@@ -26,7 +26,6 @@ import models.ArrivalId
 import models.ArrivalState
 import models.MessageState
 import models.MessageType
-import models.MovementMessage
 import models.MovementMessageWithState
 import models.MovementMessageWithoutState
 import models.MovementReferenceNumber
@@ -128,7 +127,7 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
         </CC025A>
 
       val messageCorrelationId = 1
-      val expectedMessage      = MovementMessage(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.GoodsReleased, movement, messageCorrelationId)
+      val expectedMessage      = MovementMessageWithoutState(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.GoodsReleased, movement, messageCorrelationId)
 
       service.makeGoodsReleasedMessage(messageCorrelationId)(movement).value mustEqual expectedMessage
     }
