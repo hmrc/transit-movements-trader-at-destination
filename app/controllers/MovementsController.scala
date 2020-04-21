@@ -22,7 +22,6 @@ import connectors.MessageConnector
 import controllers.actions.AuthenticateActionProvider
 import controllers.actions.AuthenticatedGetArrivalForWriteActionProvider
 import controllers.actions.AuthenticatedGetOptionalArrivalForWriteActionProvider
-import controllers.actions.LockActionProvider
 import javax.inject.Inject
 import models.MessageReceived.ArrivalSubmitted
 import models.Arrival
@@ -40,7 +39,6 @@ import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
-import play.api.mvc.DefaultActionBuilder
 import repositories.ArrivalMovementRepository
 import services.ArrivalMovementService
 import uk.gov.hmrc.http.HeaderCarrier
@@ -53,7 +51,6 @@ import scala.util.Success
 import scala.xml.NodeSeq
 
 class MovementsController @Inject()(
-  defaultActionBuilder: DefaultActionBuilder,
   cc: ControllerComponents,
   arrivalMovementRepository: ArrivalMovementRepository,
   arrivalMovementService: ArrivalMovementService,
@@ -97,7 +94,7 @@ class MovementsController @Inject()(
                                     _ <- arrivalMovementRepository.setState(arrival.arrivalId, arrival.state.transition(ArrivalSubmitted))
                                   } yield {
                                     Accepted("Message accepted")
-                                      .withHeaders("Location" -> routes.MovementsController.get(arrival.arrivalId).url)
+                                      .withHeaders("Location" -> routes.GetArrivalController.getArrival(arrival.arrivalId).url)
                                   }
                                 case None =>
                                   Future.successful(InternalServerError)
@@ -153,7 +150,7 @@ class MovementsController @Inject()(
                         arrivalMovementRepository.setState(arrival.arrivalId, arrival.state.transition(MessageReceived.ArrivalSubmitted)).map {
                           _ =>
                             Accepted("Message accepted")
-                              .withHeaders("Location" -> routes.MovementsController.get(arrival.arrivalId).url)
+                              .withHeaders("Location" -> routes.GetArrivalController.getArrival(arrival.arrivalId).url)
                         }
                     }
                     .recover {
@@ -195,7 +192,5 @@ class MovementsController @Inject()(
             InternalServerError(s"Failed with the following error: $e")
         }
   }
-
-  def get(arrivalId: ArrivalId): Action[AnyContent] = defaultActionBuilder(_ => NotImplemented)
 
 }

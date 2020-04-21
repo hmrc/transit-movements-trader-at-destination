@@ -113,7 +113,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           val result = route(application, request).value
 
           status(result) mustEqual ACCEPTED
-          header("Location", result).value must be(routes.MovementsController.get(arrivalId).url)
+          header("Location", result).value must be(routes.GetArrivalController.getArrival(arrivalId).url)
           verify(mockArrivalMovementRepository, times(1)).insert(any())
           verify(mockMessageConnector, times(1)).post(eqTo(TransitWrapper(requestXmlBody)), eqTo(MessageType.ArrivalNotification), any(), any())(any())
           verify(mockArrivalMovementRepository, times(1)).setState(any(), eqTo(ArrivalSubmitted))
@@ -364,7 +364,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           val result = route(application, request).value
 
           status(result) mustEqual ACCEPTED
-          header("Location", result).value must be(routes.MovementsController.get(arrival.arrivalId).url)
+          header("Location", result).value must be(routes.GetArrivalController.getArrival(arrival.arrivalId).url)
           verify(mockArrivalMovementRepository, times(1)).addNewMessage(any(), any())
           verify(mockMessageConnector, times(1)).post(eqTo(TransitWrapper(requestXmlBody)), eqTo(MessageType.ArrivalNotification), any(), any())(any())
           verify(mockArrivalMovementRepository, times(1)).setState(any(), eqTo(ArrivalSubmitted))
@@ -420,7 +420,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           val result  = route(application, request).value
 
           status(result) mustEqual ACCEPTED
-          header("Location", result).value must be(routes.MovementsController.get(arrival.arrivalId).url)
+          header("Location", result).value must be(routes.GetArrivalController.getArrival(arrival.arrivalId).url)
           verify(mockArrivalMovementRepository, times(1)).addNewMessage(any(), any())
           verify(mockMessageConnector, times(1)).post(eqTo(TransitWrapper(requestXmlBody)), eqTo(MessageType.ArrivalNotification), any(), any())(any())
           verify(mockArrivalMovementRepository, times(1)).setState(any(), eqTo(ArrivalState.ArrivalSubmitted))
