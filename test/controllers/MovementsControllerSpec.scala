@@ -21,42 +21,31 @@ import java.time.LocalTime
 
 import base.SpecBase
 import connectors.MessageConnector
-import controllers.actions.AuthenticateActionProvider
-import controllers.actions.FakeAuthenticateAction
-import controllers.actions.FakeAuthenticateActionProvider
 import generators.MessageGenerators
+import models.ArrivalState.ArrivalSubmitted
+import models.MessageState.SubmissionSucceeded
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalState
-import models.Arrivals
 import models.MessageState
 import models.MessageType
-import models.MovementMessage
 import models.MovementMessageWithState
-import models.MovementReferenceNumber
 import models.TransitWrapper
-import models.ArrivalState.ArrivalSubmitted
-import models.MessageState.SubmissionFailed
-import models.MessageState.SubmissionSucceeded
 import org.mockito.Matchers.any
 import org.mockito.Matchers.{eq => eqTo}
-import org.mockito.Mockito.reset
 import org.mockito.Mockito._
-import org.scalacheck.Gen
 import org.scalacheck.Arbitrary
+import org.scalacheck.Gen
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.inject.bind
-import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import repositories.ArrivalIdRepository
 import repositories.ArrivalMovementRepository
-import uk.gov.hmrc.http.HttpException
-import uk.gov.hmrc.http.HttpResponse
-import uk.gov.hmrc.http.Upstream5xxResponse
 import repositories.LockRepository
+import uk.gov.hmrc.http.HttpException
 import uk.gov.hmrc.http.HttpResponse
 import uk.gov.hmrc.http.Upstream5xxResponse
 import utils.Format
@@ -755,54 +744,6 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         }
       }
 
-    }
-
-    "getArrivals" - {
-
-      "must return Ok with the retrieved arrivals" in {
-        val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
-
-        val application =
-          baseApplicationBuilder
-            .overrides(bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository))
-            .build()
-
-        running(application) {
-          forAll(seqWithMaxLength[Arrival](10)) {
-            arrivals =>
-              when(mockArrivalMovementRepository.fetchAllArrivals(any())).thenReturn(Future.successful(arrivals))
-
-              val request = FakeRequest(GET, routes.MovementsController.getArrivals().url)
-
-              val result = route(application, request).value
-
-              status(result) mustEqual OK
-              contentAsJson(result) mustEqual Json.toJson(Arrivals(arrivals))
-
-              reset(mockArrivalMovementRepository)
-          }
-        }
-      }
-
-      "must return an INTERNAL_SERVER_ERROR when we cannot retrieve the Arrival Movements" in {
-        val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
-        when(mockArrivalMovementRepository.fetchAllArrivals(any()))
-          .thenReturn(Future.failed(new Exception))
-
-        val application =
-          baseApplicationBuilder
-            .overrides(bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository))
-            .build()
-
-        running(application) {
-
-          val request = FakeRequest(GET, routes.MovementsController.getArrivals().url)
-
-          val result = route(application, request).value
-
-          status(result) mustEqual INTERNAL_SERVER_ERROR
-        }
-      }
     }
 
   }

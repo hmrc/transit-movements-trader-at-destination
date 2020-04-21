@@ -19,14 +19,12 @@ package controllers
 import java.time.OffsetDateTime
 
 import connectors.MessageConnector
-import controllers.actions.AuthenticateActionProvider
 import controllers.actions.AuthenticatedGetArrivalForWriteActionProvider
 import controllers.actions.AuthenticatedGetOptionalArrivalForWriteActionProvider
 import javax.inject.Inject
 import models.MessageReceived.ArrivalSubmitted
 import models.Arrival
 import models.ArrivalId
-import models.Arrivals
 import models.MessageReceived
 import models.MessageSender
 import models.MessageState
@@ -35,9 +33,7 @@ import models.SubmissionResult
 import models.TransitWrapper
 import models.request.ArrivalRequest
 import play.api.Logger
-import play.api.libs.json.Json
 import play.api.mvc.Action
-import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import repositories.ArrivalMovementRepository
 import services.ArrivalMovementService
@@ -55,7 +51,6 @@ class MovementsController @Inject()(
   arrivalMovementRepository: ArrivalMovementRepository,
   arrivalMovementService: ArrivalMovementService,
   authenticatedOptionalArrival: AuthenticatedGetOptionalArrivalForWriteActionProvider,
-  authenticate: AuthenticateActionProvider,
   authenticateForWrite: AuthenticatedGetArrivalForWriteActionProvider,
   messageConnector: MessageConnector
 )(implicit ec: ExecutionContext)
@@ -178,19 +173,4 @@ class MovementsController @Inject()(
     implicit request: ArrivalRequest[NodeSeq] =>
       update_internal(request.arrival, request.body)
   }
-
-  def getArrivals: Action[AnyContent] = authenticate().async {
-    implicit request =>
-      arrivalMovementRepository
-        .fetchAllArrivals(request.eoriNumber)
-        .map {
-          allArrivals =>
-            Ok(Json.toJsObject(Arrivals(allArrivals)))
-        }
-        .recover {
-          case e =>
-            InternalServerError(s"Failed with the following error: $e")
-        }
-  }
-
 }
