@@ -61,7 +61,7 @@ class MovementsController @Inject()(
   def createMovement: Action[NodeSeq] = authenticatedOptionalArrival().async(parse.xml) {
     implicit request =>
       request.arrival match {
-        case Some(arrival) => update_internal(arrival, request.body)
+        case Some(arrival) => appendNewArrivalMessageToMovement(arrival, request.body)
         case None =>
           arrivalMovementService.makeArrivalMovement(request.eoriNumber)(request.body) match {
             case None =>
@@ -123,7 +123,7 @@ class MovementsController @Inject()(
 
   }
 
-  private def update_internal(arrival: Arrival, body: NodeSeq)(implicit hc: HeaderCarrier) =
+  private def appendNewArrivalMessageToMovement(arrival: Arrival, body: NodeSeq)(implicit hc: HeaderCarrier) =
     arrivalMovementService.makeArrivalNotificationMessage(arrival.nextMessageCorrelationId)(body) match {
       case None => Future.successful(BadRequest("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5"))
       case Some(message) => {
@@ -171,6 +171,6 @@ class MovementsController @Inject()(
 
   def updateArrival(arrivalId: ArrivalId): Action[NodeSeq] = authenticateForWrite(arrivalId).async(parse.xml) {
     implicit request: ArrivalRequest[NodeSeq] =>
-      update_internal(request.arrival, request.body)
+      appendNewArrivalMessageToMovement(request.arrival, request.body)
   }
 }
