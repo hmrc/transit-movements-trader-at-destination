@@ -21,7 +21,6 @@ import java.time._
 import models.MessageType
 import models.MovementReferenceNumber
 import models.RejectionError
-import models.StateAffectingEvent
 import models.SubmissionResult
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen.choose

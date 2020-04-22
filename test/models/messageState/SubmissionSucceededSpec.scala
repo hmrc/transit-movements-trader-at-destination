@@ -30,8 +30,8 @@ class SubmissionSucceededSpec extends FreeSpec with MustMatchers with ScalaCheck
 
     "to SubmissionSuceeded when receiving any Submission event" in {
       forAll(Arbitrary.arbitrary[SubmissionResult]) {
-        x =>
-          SubmissionSucceeded.transition(x) mustEqual SubmissionSucceeded
+        submissionResult =>
+          SubmissionSucceeded.transition(submissionResult) mustEqual SubmissionSucceeded
       }
     }
   }
