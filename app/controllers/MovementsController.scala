@@ -19,6 +19,7 @@ package controllers
 import java.time.OffsetDateTime
 
 import connectors.MessageConnector
+import controllers.actions.AuthenticateActionProvider
 import controllers.actions.AuthenticatedGetArrivalForWriteActionProvider
 import controllers.actions.AuthenticatedGetOptionalArrivalForWriteActionProvider
 import javax.inject.Inject
@@ -27,14 +28,18 @@ import models.MessageState.SubmissionFailed
 import models.MessageState.SubmissionSucceeded
 import models.Arrival
 import models.ArrivalId
+import models.Arrivals
 import models.MessageReceived
 import models.MessageState
 import models.MovementMessageWithState
 import models.SubmissionResult
 import models.request.ArrivalRequest
 import play.api.Logger
+import play.api.libs.json.Json
 import play.api.mvc.Action
+import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
+import play.api.mvc.DefaultActionBuilder
 import repositories.ArrivalMovementRepository
 import services.ArrivalMovementService
 import uk.gov.hmrc.http.HeaderCarrier
@@ -50,15 +55,17 @@ class MovementsController @Inject()(
   cc: ControllerComponents,
   arrivalMovementRepository: ArrivalMovementRepository,
   arrivalMovementService: ArrivalMovementService,
+  authenticate: AuthenticateActionProvider,
   authenticatedOptionalArrival: AuthenticatedGetOptionalArrivalForWriteActionProvider,
   authenticateForWrite: AuthenticatedGetArrivalForWriteActionProvider,
+  defaultActionBuilder: DefaultActionBuilder,
   messageConnector: MessageConnector
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
   private val logger = Logger(getClass)
 
-  def createMovement: Action[NodeSeq] = authenticatedOptionalArrival().async(parse.xml) {
+  def post: Action[NodeSeq] = authenticatedOptionalArrival().async(parse.xml) {
     implicit request =>
       request.arrival match {
         case Some(arrival) => appendNewArrivalMessageToMovement(arrival, request.body)
@@ -82,7 +89,7 @@ class MovementsController @Inject()(
                                 _ <- arrivalMovementRepository.setState(arrival.arrivalId, arrival.state.transition(ArrivalSubmitted))
                               } yield {
                                 Accepted("Message accepted")
-                                  .withHeaders("Location" -> routes.GetArrivalController.getArrival(arrival.arrivalId).url)
+                                  .withHeaders("Location" -> routes.MovementsController.getArrival(arrival.arrivalId).url)
                               }
                           }
                           .recoverWith {
@@ -123,7 +130,7 @@ class MovementsController @Inject()(
                         arrivalMovementRepository.setState(arrival.arrivalId, arrival.state.transition(MessageReceived.ArrivalSubmitted)).map {
                           _ =>
                             Accepted("Message accepted")
-                              .withHeaders("Location" -> routes.GetArrivalController.getArrival(arrival.arrivalId).url)
+                              .withHeaders("Location" -> routes.MovementsController.getArrival(arrival.arrivalId).url)
                         }
                     }
                     .recover {
@@ -147,8 +154,24 @@ class MovementsController @Inject()(
       }
     }
 
-  def updateArrival(arrivalId: ArrivalId): Action[NodeSeq] = authenticateForWrite(arrivalId).async(parse.xml) {
+  def putArrival(arrivalId: ArrivalId): Action[NodeSeq] = authenticateForWrite(arrivalId).async(parse.xml) {
     implicit request: ArrivalRequest[NodeSeq] =>
       appendNewArrivalMessageToMovement(request.arrival, request.body)
+  }
+
+  def getArrival(arrivalId: ArrivalId): Action[AnyContent] = defaultActionBuilder(_ => NotImplemented)
+
+  def getArrivals(): Action[AnyContent] = authenticate().async {
+    implicit request =>
+      arrivalMovementRepository
+        .fetchAllArrivals(request.eoriNumber)
+        .map {
+          allArrivals =>
+            Ok(Json.toJsObject(Arrivals(allArrivals)))
+        }
+        .recover {
+          case e =>
+            InternalServerError(s"Failed with the following error: $e")
+        }
   }
 }

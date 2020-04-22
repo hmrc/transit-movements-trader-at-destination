@@ -1,9 +1,9 @@
 # microservice specific routes
 
-POST                    /movements/arrivals                 controllers.MovementsController.createMovement
-GET                     /movements/arrivals                 controllers.GetArrivalsController.get()
+POST                    /movements/arrivals                 controllers.MovementsController.post
+GET                     /movements/arrivals                 controllers.MovementsController.getArrivals()
 
-GET                    /movements/arrivals/:arrivalId                 controllers.GetArrivalController.getArrival(arrivalId: ArrivalId)
-PUT                    /movements/arrivals/:arrivalId                 controllers.MovementsController.updateArrival(arrivalId: ArrivalId)
+GET                    /movements/arrivals/:arrivalId                 controllers.MovementsController.getArrival(arrivalId: ArrivalId)
+PUT                    /movements/arrivals/:arrivalId                 controllers.MovementsController.putArrival(arrivalId: ArrivalId)
 
 POST                    /movements/arrivals/:messageSender/messages    controllers.GoodsReleasedController.post(messageSender: MessageSender)
