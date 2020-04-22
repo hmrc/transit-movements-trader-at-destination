@@ -113,22 +113,21 @@ class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: React
     )
 
     collection.flatMap {
-      x =>
-        val builder = x.update(false)
-        builder.one(selector, modifier).map {
-          y =>
-            WriteResult
-              .lastError(y)
-              .map {
-                le =>
-                  if (le.updatedExisting) Success(())
-                  else
-                    Failure(new Exception(le.errmsg match {
-                      case Some(err) => err
-                      case None      => "Unable to update message state"
-                    }))
-              }
-              .getOrElse(Failure(new Exception("Unable to update message state")))
+      _.update(false)
+        .one(selector, modifier)
+        .map {
+          WriteResult
+            .lastError(_)
+            .map {
+              le =>
+                if (le.updatedExisting) Success(())
+                else
+                  Failure(new Exception(le.errmsg match {
+                    case Some(err) => err
+                    case None      => "Unable to update message state"
+                  }))
+            }
+            .getOrElse(Failure(new Exception("Unable to update message state")))
         }
     }
   }

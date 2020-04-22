@@ -74,7 +74,8 @@ class MovementsController @Inject()(
             case None =>
               Future.successful(BadRequest("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5"))
             case Some(arrivalFuture) =>
-              arrivalFuture.flatMap {
+              arrivalFuture
+                .flatMap {
                   arrival =>
                     arrivalMovementRepository.insert(arrival) flatMap {
                       _ =>
