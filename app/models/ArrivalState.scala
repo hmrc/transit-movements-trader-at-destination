@@ -21,10 +21,6 @@ sealed trait ArrivalState {
 }
 
 object ArrivalState extends Enumerable.Implicits {
-  /*
-    007 -> Default state would be ArrivalSubmitted
-    025 -> Goods submitted event
-   */
 
   case object Initialized extends ArrivalState {
     override def transition(messageReceived: MessageReceived): ArrivalState = messageReceived match {
