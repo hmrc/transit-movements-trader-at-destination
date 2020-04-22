@@ -148,7 +148,6 @@ class MovementsController @Inject()(
 
   def putArrival(arrivalId: ArrivalId): Action[NodeSeq] = authenticateForWrite(arrivalId).async(parse.xml) {
     implicit request: ArrivalRequest[NodeSeq] =>
-
       arrivalMovementService.makeArrivalNotificationMessage(request.arrival.nextMessageCorrelationId)(request.body) match {
         case None => Future.successful(BadRequest("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5"))
         case Some(message) => {

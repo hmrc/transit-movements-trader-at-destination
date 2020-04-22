@@ -132,6 +132,11 @@ class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: React
     }
   }
 
+  /*
+  TODO: Can we simplify the API here?
+   Mongo may not modified the document because it is in the correct state
+   already, but consumers don't care about this.
+   */
   def setState(id: ArrivalId, state: ArrivalState): Future[Option[Unit]] = {
 
     val selector = Json.obj(
@@ -145,11 +150,13 @@ class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: React
     )
 
     collection.flatMap {
-      _.update(false).one(selector, modifier).map {
-        y =>
-          if (y.n == 1) Some(())
-          else None
-      }
+      _.update(false)
+        .one(selector, modifier)
+        .map {
+          y =>
+            if (y.n == 1) Some(())
+            else None
+        }
     }
   }
 

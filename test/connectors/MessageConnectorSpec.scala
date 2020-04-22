@@ -16,15 +16,22 @@
 
 package connectors
 
-import java.time.{LocalDateTime, OffsetDateTime}
+import java.time.LocalDateTime
+import java.time.OffsetDateTime
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.matching.StringValuePattern
 import generators.MessageGenerators
-import models.{ArrivalId, MessageState, MessageType, MovementMessageWithState}
+import models.ArrivalId
+import models.MessageState
+import models.MessageType
+import models.MovementMessageWithState
 import org.scalacheck.Gen
-import org.scalatest.{FreeSpec, MustMatchers, OptionValues}
-import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
+import org.scalatest.FreeSpec
+import org.scalatest.MustMatchers
+import org.scalatest.OptionValues
+import org.scalatest.concurrent.IntegrationPatience
+import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import uk.gov.hmrc.http.HeaderCarrier

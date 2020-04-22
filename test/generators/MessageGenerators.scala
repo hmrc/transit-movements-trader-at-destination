@@ -23,6 +23,7 @@ import models.Arrival
 import models.ArrivalId
 import models.ArrivalState
 import models.MessageState
+import models.MessageState.SubmissionPending
 import models.MessageType
 import models.MovementMessageWithState
 import models.MovementMessageWithoutState
@@ -42,7 +43,7 @@ trait MessageGenerators extends ModelGenerators {
         dateTime    <- arbitrary[LocalDateTime]
         xml         <- Gen.const(<blankXml>message</blankXml>) // TODO: revisit this
         messageType <- Gen.oneOf(MessageType.values)
-        state       <- Gen.oneOf(MessageState.values)
+        state = SubmissionPending
       } yield MovementMessageWithState(dateTime, messageType, xml, state, 1) // TODO: revisit message correlation id
     }
   }
