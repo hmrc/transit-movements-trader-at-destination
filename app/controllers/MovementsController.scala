@@ -73,8 +73,8 @@ class MovementsController @Inject()(
           arrivalMovementService.makeArrivalMovement(request.eoriNumber)(request.body) match {
             case None =>
               Future.successful(BadRequest("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5"))
-            case Some(x) =>
-              x.flatMap {
+            case Some(arrivalFuture) =>
+              arrivalFuture.flatMap {
                   arrival =>
                     arrivalMovementRepository.insert(arrival) flatMap {
                       _ =>
@@ -123,21 +123,14 @@ class MovementsController @Inject()(
               .post(arrival.arrivalId, message, OffsetDateTime.now)
               .flatMap {
                 _ =>
-                  arrivalMovementRepository
-                    .setMessageState(arrival.arrivalId, arrival.messages.length, MessageState.SubmissionSucceeded)
-                    .flatMap {
-                      _ =>
-                        arrivalMovementRepository.setState(arrival.arrivalId, arrival.state.transition(MessageReceived.ArrivalSubmitted)).map {
-                          _ =>
-                            Accepted("Message accepted")
-                              .withHeaders("Location" -> routes.MovementsController.getArrival(arrival.arrivalId).url)
-                        }
-                    }
-                    .recover {
-                      case _ => {
-                        InternalServerError
-                      }
-                    }
+                  for {
+                    _ <- arrivalMovementRepository
+                      .setMessageState(arrival.arrivalId, arrival.messages.length, MessageState.SubmissionSucceeded)
+                    _ <- arrivalMovementRepository.setState(arrival.arrivalId, arrival.state.transition(MessageReceived.ArrivalSubmitted))
+                  } yield {
+                    Accepted("Message accepted")
+                      .withHeaders("Location" -> routes.MovementsController.getArrival(arrival.arrivalId).url)
+                  }
               }
               .recoverWith {
                 case error =>
