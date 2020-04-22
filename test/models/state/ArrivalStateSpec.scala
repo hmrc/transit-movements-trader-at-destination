@@ -16,32 +16,58 @@
 
 package models.state
 
+import base.SpecBase
+import generators.ModelGenerators
 import models.ArrivalState._
+import models.ArrivalState
 import models.MessageReceived
 import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers
+import org.scalacheck.Arbitrary.arbitrary
+import org.scalacheck.Gen
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
-class ArrivalStateSpec extends FreeSpec with MustMatchers {
+class ArrivalStateSpec extends SpecBase with ScalaCheckDrivenPropertyChecks with ModelGenerators {
 
   "Initialized must transition" - {
 
-    "to Submitted when receiving a ArrivalSubmitted event" in {
+    "to ArrivalSubmitted when receiving a ArrivalSubmitted event" in {
       Initialized.transition(MessageReceived.ArrivalSubmitted) mustEqual ArrivalSubmitted
     }
 
     "to Goods Released when receiving a GoodsReleased event" in {
       Initialized.transition(MessageReceived.GoodsReleased) mustEqual GoodsReleased
     }
+
   }
 
-  "Submitted must transition" - {
+  "Intitialized should not be transitioned to from any other state" in {
+    val nonIntializedGen = arbitrary[ArrivalState].suchThat(_ != Initialized)
 
-    "to Submitted when receiving an ArrivalSubmitted event" in {
+    forAll(nonIntializedGen, arbitrary[MessageReceived]) {
+      case (state, event) =>
+        state.transition(event) must not equal (Initialized)
+
+    }
+
+  }
+
+  "ArrivalSubmitted must transition" - {
+
+    "to ArrivalSubmitted when receiving an ArrivalSubmitted event" in {
       ArrivalSubmitted.transition(MessageReceived.ArrivalSubmitted) mustEqual ArrivalSubmitted
     }
 
-    "to GoodsReceived when receiving a Goods Received event" in {
+    "to GoodsReceived when receiving a GoodsReleased event" in {
       ArrivalSubmitted.transition(MessageReceived.GoodsReleased) mustEqual GoodsReleased
     }
   }
+
+  "GoodsReleased will always transition to GoodsReleased" in {
+    forAll(arbitrary[MessageReceived]) {
+      messageReceivedEvent =>
+        GoodsReleased.transition(messageReceivedEvent) mustEqual GoodsReleased
+    }
+  }
+
 }

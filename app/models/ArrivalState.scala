@@ -37,9 +37,7 @@ object ArrivalState extends Enumerable.Implicits {
   }
 
   case object GoodsReleased extends ArrivalState {
-    override def transition(messageReceived: MessageReceived): ArrivalState = messageReceived match {
-      case _ => ???
-    }
+    override def transition(messageReceived: MessageReceived): ArrivalState = this
   }
 
   val values = Seq(
