@@ -185,6 +185,34 @@ class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: React
     }
   }
 
+  def addResponseMessage(arrivalId: ArrivalId, message: MovementMessage): Future[Try[Unit]] = {
+    val selector = Json.obj(
+      "_id" -> arrivalId
+    )
+
+    val modifier =
+      Json.obj(
+        "$set" -> Json.obj(
+          "updated" -> message.dateTime
+        ),
+        "$push" -> Json.obj(
+          "messages" -> Json.toJson(message)
+        )
+      )
+
+    collection.flatMap {
+      _.findAndUpdate(selector, modifier)
+        .map {
+          _.lastError
+            .map {
+              le =>
+                if (le.updatedExisting) Success(()) else Failure(new Exception(s"Could not find arrival $arrivalId"))
+            }
+            .getOrElse(Failure(new Exception("Failed to update arrival")))
+        }
+    }
+  }
+
   def addResponseMessage(arrivalId: ArrivalId, message: MovementMessage, state: ArrivalState): Future[Try[Unit]] = {
     val selector = Json.obj(
       "_id" -> arrivalId

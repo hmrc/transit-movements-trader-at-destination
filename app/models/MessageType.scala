@@ -32,6 +32,7 @@ object MessageType extends Enumerable.Implicits {
 
   case object ArrivalNotification extends IeMetadata("IE007", "CC007A") with MessageType
   case object GoodsReleased       extends IeMetadata("IE025", "CC025A") with MessageType
+  case object UnloadingRemarks    extends IeMetadata("IE044", "CC044A") with MessageType
 
   val values: Seq[MessageType] = Seq(ArrivalNotification, GoodsReleased)
 
