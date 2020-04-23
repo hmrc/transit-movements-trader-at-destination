@@ -18,9 +18,11 @@ package controllers
 
 import controllers.actions.GetArrivalForWriteActionProvider
 import javax.inject.Inject
-import models.MessageReceived
+import models.GoodsReleasedResponse
+import models.MessageResponse
 import models.MessageSender
-import models.MessageType
+import models.State
+import models.UnloadingPermissionResponse
 import play.api.Logger
 import play.api.mvc.Action
 import play.api.mvc.ControllerComponents
@@ -48,37 +50,40 @@ class MessageResponseController @Inject()(cc: ControllerComponents,
     implicit request =>
       val xml: NodeSeq = request.request.body
 
-      val messageReceived: MessageReceived = request.headers.get("X-Message-Type") match {
-        case Some("IE025") => MessageReceived.GoodsReleased
-        case Some("IE043") => MessageReceived.UnloadingPermission
-        case _             => ???
+      val messageResponse: Option[MessageResponse] = request.headers.get("X-Message-Type").map {
+        case "IE025" => GoodsReleasedResponse
+        case "IE043" => UnloadingPermissionResponse
       }
 
-      val messageType: MessageType = request.headers.get("X-Message-Type") match {
-        case Some("IE025") => MessageType.GoodsReleased
-        case Some("IE043") => MessageType.UnloadingPermission
-        case _             => ???
-      }
-
-      xmlValidationService.validate(xml.toString, messageReceived) match {
-        case Success(_) =>
-          arrivalMovementService.makeMessage(messageType)(xml) match {
-            case Some(message) =>
-              val newState = request.arrival.state.transition(messageReceived)
-              arrivalMovementRepository.addMessage(request.arrival.arrivalId, message, newState).map {
-                case Success(_) => Ok
-                case Failure(e) => {
-                  logger.error(s"Failure to add message to movement. Exception: ${e.getMessage}")
-                  InternalServerError
-                }
+      messageResponse match {
+        case Some(response) =>
+          xmlValidationService.validate(xml.toString, response.xsdFile) match {
+            case Success(_) =>
+              arrivalMovementService.makeMessage(response.messageType)(xml) match {
+                case Some(message) =>
+                  println(s"\n\n GOT HERE\n\n")
+                  val newState: State = request.arrival.state.transition(response.messageReceived)
+                  println(s"\n\n GOT HERE 1\n\n")
+                  arrivalMovementRepository.addMessage(request.arrival.arrivalId, message, newState).map {
+                    case Success(_) => {
+                      Ok
+                    }
+                    case Failure(e) =>
+                      logger.error(s"Failure to add message to movement. Exception: ${e.getMessage}")
+                      InternalServerError
+                  }
+                case None =>
+                  logger.error(s"Failure to parse message GoodsReleased")
+                  Future.successful(InternalServerError)
               }
-            case None =>
-              logger.error(s"Failure to parse message GoodsReleased")
-              Future.successful(InternalServerError)
+            case Failure(e) =>
+              logger.error(s"Failure to validate against XSD. Exception: ${e.getMessage}")
+              Future.successful(BadRequest)
           }
-        case Failure(e) =>
-          logger.error(s"Failure to validate against XSD. Exception: ${e.getMessage}")
-          Future.successful(BadRequest)
+        case None =>
+          logger.error(s"Invalid or empty X-Message-Type")
+          Future.successful(InternalServerError)
       }
+
   }
 }

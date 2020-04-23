@@ -21,10 +21,7 @@ import java.net.URL
 
 import javax.xml.parsers.SAXParserFactory
 import javax.xml.validation.Schema
-import models.MessageReceived
-import models.MessageType
-import models.XSDFile.GoodsReleasedXSD
-import models.XSDFile.UnloadingPermissionXSD
+import models.XSDFile
 import org.xml.sax.InputSource
 import org.xml.sax.helpers.DefaultHandler
 
@@ -45,13 +42,8 @@ class XmlValidationService {
     saxParser.newSAXParser()
   }
 
-  def validate(xml: String, messageType: MessageReceived): Try[Unit] =
+  def validate(xml: String, xsdFile: XSDFile): Try[Unit] =
     Try {
-
-      val xsdFile = messageType match {
-        case MessageReceived.GoodsReleased       => GoodsReleasedXSD
-        case MessageReceived.UnloadingPermission => UnloadingPermissionXSD
-      }
 
       val url: URL = getClass.getResource(xsdFile.filePath)
 

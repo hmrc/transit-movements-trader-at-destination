@@ -26,9 +26,12 @@ import models.Arrival
 import models.MessageSender
 import models.MovementReferenceNumber
 import models.State
+import models.State.GoodsReleased
+import models.State.UnloadingPermission
 import models.request.ArrivalId
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito._
+import org.scalacheck.Gen
 import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.inject.bind
@@ -66,11 +69,17 @@ class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChec
     Seq.empty
   )
 
-  private val requestXmlBody =
+  private val requestGoodsReleasedXmlBody =
     <CC025A>
       <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
       <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
     </CC025A>
+
+  private val requestUnloadingPermissionXmlBody =
+    <CC043A>
+      <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+      <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+    </CC043A>
 
   override def beforeEach: Unit = {
     super.beforeEach()
@@ -79,11 +88,18 @@ class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChec
     reset(mockXmlValidationService)
   }
 
+  private val genXMessageType = Gen.oneOf("IE025", "IE043").sample.value
+
+  private def state: State = genXMessageType match {
+    case "IE025" => GoodsReleased
+    case "IE043" => UnloadingPermission
+  }
+
   "post" - {
 
     "when a lock can be acquired" - {
 
-      "must lock the arrival, add the message, set the state to Goods Released, unlock it and return OK" in {
+      "must lock the arrival, add the message, set the correct state based on header, unlock it and return OK" in {
         when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
         when(mockArrivalMovementRepository.addMessage(any(), any(), any())).thenReturn(Future.successful(Success(())))
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
@@ -100,14 +116,14 @@ class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChec
 
         running(application) {
           val request = FakeRequest(POST, routes.MessageResponseController.post(messageSender).url)
-            .withXmlBody(requestXmlBody)
-            .withHeaders("X-Message-Type" -> "IE025")
+            .withXmlBody(requestUnloadingPermissionXmlBody) // TODO switch to GoodsReleased xml
+            .withHeaders("X-Message-Type" -> "IE043") // TODO switch to GoodsReleased code
 
           val result = route(application, request).value
 
           status(result) mustEqual OK
           verify(mockLockRepository, times(1)).lock(arrivalId)
-          verify(mockArrivalMovementRepository, times(1)).addMessage(any(), any(), eqTo(State.GoodsReleased))
+          verify(mockArrivalMovementRepository, times(1)).addMessage(any(), any(), eqTo(State.UnloadingPermission))
           verify(mockLockRepository, times(1)).unlock(arrivalId)
         }
       }
@@ -126,8 +142,8 @@ class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChec
 
         running(application) {
           val request = FakeRequest(POST, routes.MessageResponseController.post(messageSender).url)
-            .withXmlBody(requestXmlBody)
-            .withHeaders("X-Message-Type" -> "IE025")
+            .withXmlBody(requestGoodsReleasedXmlBody)
+            .withHeaders("X-Message-Type" -> genXMessageType)
 
           val result = route(application, request).value
 
@@ -138,7 +154,7 @@ class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChec
         }
       }
 
-      "must lock, return Internal Server Error and release the lock if the message is not Goods Released" in {
+      "must lock, return Internal Server Error and release the lock if the message is an invalid Arrival" in {
         when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
         when(mockArrivalMovementRepository.addMessage(any(), any(), any())).thenReturn(Future.successful(Success(())))
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
@@ -157,15 +173,15 @@ class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChec
           val dateOfPrep = LocalDate.now()
           val timeOfPrep = LocalTime.of(1, 1)
 
-          val requestXmlBody =
+          val requestGoodsReleasedXmlBody =
             <InvalidRootNode>
               <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
               <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
             </InvalidRootNode>
 
           val request = FakeRequest(POST, routes.MessageResponseController.post(messageSender).url)
-            .withXmlBody(requestXmlBody)
-            .withHeaders("X-Message-Type" -> "IE025")
+            .withXmlBody(requestGoodsReleasedXmlBody)
+            .withHeaders("X-Message-Type" -> genXMessageType)
 
           val result = route(application, request).value
 
@@ -192,7 +208,9 @@ class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChec
           .build()
 
         running(application) {
-          val request = FakeRequest(POST, routes.MessageResponseController.post(messageSender).url).withXmlBody(requestXmlBody)
+          val request = FakeRequest(POST, routes.MessageResponseController.post(messageSender).url)
+            .withXmlBody(requestGoodsReleasedXmlBody)
+            .withHeaders("X-Message-Type" -> genXMessageType)
 
           val result = route(application, request).value
 
@@ -218,8 +236,8 @@ class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChec
 
         running(application) {
           val request = FakeRequest(POST, routes.MessageResponseController.post(messageSender).url)
-            .withXmlBody(requestXmlBody)
-            .withHeaders("X-Message-Type" -> "IE025")
+            .withXmlBody(requestGoodsReleasedXmlBody)
+            .withHeaders("X-Message-Type" -> genXMessageType)
 
           val result = route(application, request).value
 
@@ -228,6 +246,30 @@ class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChec
           verify(mockLockRepository, times(1)).unlock(arrivalId)
         }
       }
+
+      "must lock the arrival, return InternalServerError and unlock when an XMessageType is invalid" in {
+
+        val application = baseApplicationBuilder
+          .overrides(
+            bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
+            bind[LockRepository].toInstance(mockLockRepository),
+            bind[XmlValidationService].toInstance(mockXmlValidationService)
+          )
+          .build()
+
+        running(application) {
+          val request = FakeRequest(POST, routes.MessageResponseController.post(messageSender).url)
+            .withXmlBody(requestGoodsReleasedXmlBody)
+            .withHeaders("X-Message-Type" -> "invalidXMessageType")
+
+          val result = route(application, request).value
+
+          status(result) mustEqual INTERNAL_SERVER_ERROR
+          verify(mockLockRepository, times(1)).lock(arrivalId)
+          verify(mockLockRepository, times(1)).unlock(arrivalId)
+        }
+      }
+
     }
 
     "when a lock cannot be acquired" - {
@@ -245,8 +287,8 @@ class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChec
 
         running(application) {
           val request = FakeRequest(POST, routes.MessageResponseController.post(messageSender).url)
-            .withXmlBody(requestXmlBody)
-            .withHeaders("X-Message-Type" -> "IE025")
+            .withXmlBody(requestGoodsReleasedXmlBody)
+            .withHeaders("X-Message-Type" -> genXMessageType)
 
           val result = route(application, request).value
 
