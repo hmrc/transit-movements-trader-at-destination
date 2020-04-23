@@ -30,5 +30,6 @@ sealed trait MessageReceived extends StateAffectingEvent
 
 object MessageReceived {
 
-  case object GoodsReleased extends MessageReceived
+  case object GoodsReleased       extends MessageReceived
+  case object UnloadingPermission extends MessageReceived
 }

@@ -44,7 +44,7 @@ import scala.concurrent.Future
 import scala.util.Failure
 import scala.util.Success
 
-class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks with ModelGenerators with BeforeAndAfterEach {
+class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChecks with ModelGenerators with BeforeAndAfterEach {
 
   private val mockArrivalMovementRepository: ArrivalMovementRepository = mock[ArrivalMovementRepository]
   private val mockLockRepository: LockRepository                       = mock[LockRepository]
@@ -99,7 +99,9 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
           .build()
 
         running(application) {
-          val request = FakeRequest(POST, routes.GoodsReleasedController.post(messageSender).url).withXmlBody(requestXmlBody)
+          val request = FakeRequest(POST, routes.MessageResponseController.post(messageSender).url)
+            .withXmlBody(requestXmlBody)
+            .withHeaders("X-Message-Type" -> "IE025")
 
           val result = route(application, request).value
 
@@ -123,7 +125,9 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
           .build()
 
         running(application) {
-          val request = FakeRequest(POST, routes.GoodsReleasedController.post(messageSender).url).withXmlBody(requestXmlBody)
+          val request = FakeRequest(POST, routes.MessageResponseController.post(messageSender).url)
+            .withXmlBody(requestXmlBody)
+            .withHeaders("X-Message-Type" -> "IE025")
 
           val result = route(application, request).value
 
@@ -159,7 +163,9 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
               <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
             </InvalidRootNode>
 
-          val request = FakeRequest(POST, routes.GoodsReleasedController.post(messageSender).url).withXmlBody(requestXmlBody)
+          val request = FakeRequest(POST, routes.MessageResponseController.post(messageSender).url)
+            .withXmlBody(requestXmlBody)
+            .withHeaders("X-Message-Type" -> "IE025")
 
           val result = route(application, request).value
 
@@ -186,7 +192,7 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
           .build()
 
         running(application) {
-          val request = FakeRequest(POST, routes.GoodsReleasedController.post(messageSender).url).withXmlBody(requestXmlBody)
+          val request = FakeRequest(POST, routes.MessageResponseController.post(messageSender).url).withXmlBody(requestXmlBody)
 
           val result = route(application, request).value
 
@@ -211,7 +217,9 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
           .build()
 
         running(application) {
-          val request = FakeRequest(POST, routes.GoodsReleasedController.post(messageSender).url).withXmlBody(requestXmlBody)
+          val request = FakeRequest(POST, routes.MessageResponseController.post(messageSender).url)
+            .withXmlBody(requestXmlBody)
+            .withHeaders("X-Message-Type" -> "IE025")
 
           val result = route(application, request).value
 
@@ -236,7 +244,9 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
           .build()
 
         running(application) {
-          val request = FakeRequest(POST, routes.GoodsReleasedController.post(messageSender).url).withXmlBody(requestXmlBody)
+          val request = FakeRequest(POST, routes.MessageResponseController.post(messageSender).url)
+            .withXmlBody(requestXmlBody)
+            .withHeaders("X-Message-Type" -> "IE025")
 
           val result = route(application, request).value
 

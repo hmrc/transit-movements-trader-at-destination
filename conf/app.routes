@@ -1,6 +1,6 @@
 # microservice specific routes
 
-POST                    /movements/arrivals                 controllers.MovementsController.createMovement
-GET                     /movements/arrivals                 controllers.MovementsController.getArrivals
+POST                    /movements/arrivals                             controllers.MovementsController.createMovement
+GET                     /movements/arrivals                             controllers.MovementsController.getArrivals
 
-POST                    /movements/arrivals/:messageSender/messages    controllers.GoodsReleasedController.post(messageSender: MessageSender)
+POST                    /movements/arrivals/:messageSender/messages     controllers.MessageResponseController.post(messageSender: MessageSender)

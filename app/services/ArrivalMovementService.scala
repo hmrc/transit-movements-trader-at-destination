@@ -24,6 +24,7 @@ import cats.data._
 import cats.implicits._
 import com.google.inject.Inject
 import models.Arrival
+import models.MessageReceived
 import models.MessageType
 import models.MovementMessage
 import models.MovementReferenceNumber
@@ -60,12 +61,12 @@ class ArrivalMovementService @Inject()(arrivalIdRepository: ArrivalIdRepository)
           ))
     }
 
-  def makeGoodsReleasedMessage(): ReaderT[Option, NodeSeq, MovementMessage] =
+  def makeMessage(messageType: MessageType): ReaderT[Option, NodeSeq, MovementMessage] =
     for {
-      _          <- correctRootNodeR(MessageType.GoodsReleased)
+      _          <- correctRootNodeR(messageType)
       dateTime   <- dateTimeOfPrepR
       xmlMessage <- ReaderT[Option, NodeSeq, NodeSeq](Option.apply)
-    } yield MovementMessage(dateTime, MessageType.GoodsReleased, xmlMessage)
+    } yield MovementMessage(dateTime, messageType, xmlMessage)
 }
 
 object ArrivalMovementService {

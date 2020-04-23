@@ -17,13 +17,11 @@
 package services
 
 import base.SpecBase
-import models.XSDFile
+import models.MessageReceived.GoodsReleased
 
 class XmlValidationServiceSpec extends SpecBase {
 
   private val xmlValidationService: XmlValidationService = new XmlValidationService()
-
-  object SimpleXSD extends XSDFile("/xsd/simple.xsd")
 
   "validate" - {
 
@@ -36,7 +34,7 @@ class XmlValidationServiceSpec extends SpecBase {
           </message>
         </messages>
 
-      val result = xmlValidationService.validate(validXml.toString, SimpleXSD)
+      val result = xmlValidationService.validate(validXml.toString, GoodsReleased)
 
       result.isSuccess mustBe true
     }
@@ -45,7 +43,7 @@ class XmlValidationServiceSpec extends SpecBase {
 
       val invalidXml = <messages></messages>
 
-      val result = xmlValidationService.validate(invalidXml.toString, SimpleXSD)
+      val result = xmlValidationService.validate(invalidXml.toString, GoodsReleased)
 
       result.isFailure mustBe true
     }
@@ -59,7 +57,7 @@ class XmlValidationServiceSpec extends SpecBase {
           </message>
         </messages>
 
-      val result = xmlValidationService.validate(invalidXml.toString, SimpleXSD)
+      val result = xmlValidationService.validate(invalidXml.toString, GoodsReleased)
 
       result.isFailure mustBe true
     }

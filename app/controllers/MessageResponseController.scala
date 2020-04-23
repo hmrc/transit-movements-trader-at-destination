@@ -16,12 +16,11 @@
 
 package controllers
 
-import config.AppConfig
 import controllers.actions.GetArrivalForWriteActionProvider
 import javax.inject.Inject
 import models.MessageReceived
 import models.MessageSender
-import models.XSDFile.GoodsReleasedXSD
+import models.MessageType
 import play.api.Logger
 import play.api.mvc.Action
 import play.api.mvc.ControllerComponents
@@ -36,12 +35,11 @@ import scala.util.Failure
 import scala.util.Success
 import scala.xml.NodeSeq
 
-class GoodsReleasedController @Inject()(cc: ControllerComponents,
-                                        appConfig: AppConfig,
-                                        arrivalMovementService: ArrivalMovementService,
-                                        getArrival: GetArrivalForWriteActionProvider,
-                                        arrivalMovementRepository: ArrivalMovementRepository,
-                                        xmlValidationService: XmlValidationService)(implicit ec: ExecutionContext)
+class MessageResponseController @Inject()(cc: ControllerComponents,
+                                          arrivalMovementService: ArrivalMovementService,
+                                          getArrival: GetArrivalForWriteActionProvider,
+                                          arrivalMovementRepository: ArrivalMovementRepository,
+                                          xmlValidationService: XmlValidationService)(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
   private val logger = Logger(getClass)
@@ -50,11 +48,23 @@ class GoodsReleasedController @Inject()(cc: ControllerComponents,
     implicit request =>
       val xml: NodeSeq = request.request.body
 
-      xmlValidationService.validate(xml.toString, GoodsReleasedXSD) match {
+      val messageReceived: MessageReceived = request.headers.get("X-Message-Type") match {
+        case Some("IE025") => MessageReceived.GoodsReleased
+        case Some("IE043") => MessageReceived.UnloadingPermission
+        case _             => ???
+      }
+
+      val messageType: MessageType = request.headers.get("X-Message-Type") match {
+        case Some("IE025") => MessageType.GoodsReleased
+        case Some("IE043") => MessageType.UnloadingPermission
+        case _             => ???
+      }
+
+      xmlValidationService.validate(xml.toString, messageReceived) match {
         case Success(_) =>
-          arrivalMovementService.makeGoodsReleasedMessage()(xml) match {
+          arrivalMovementService.makeMessage(messageType)(xml) match {
             case Some(message) =>
-              val newState = request.arrival.state.transition(MessageReceived.GoodsReleased)
+              val newState = request.arrival.state.transition(messageReceived)
               arrivalMovementRepository.addMessage(request.arrival.arrivalId, message, newState).map {
                 case Success(_) => Ok
                 case Failure(e) => {

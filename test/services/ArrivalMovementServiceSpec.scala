@@ -124,7 +124,7 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
 
       val expectedMessage = MovementMessage(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.GoodsReleased, movement)
 
-      service.makeGoodsReleasedMessage()(movement).value mustEqual expectedMessage
+      service.makeMessage(MessageType.GoodsReleased)(movement).value mustEqual expectedMessage
     }
 
     "returns None when the root node is not <CC025A>" in {
@@ -142,9 +142,7 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
           <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
         </Foo>
 
-      val expectedMessage = MovementMessage(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.GoodsReleased, movement)
-
-      service.makeGoodsReleasedMessage()(movement) must not be defined
+      service.makeMessage(MessageType.GoodsReleased)(movement) must not be defined
     }
   }
 

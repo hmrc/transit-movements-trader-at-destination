@@ -24,9 +24,10 @@ object State extends Enumerable.Implicits {
 
   case object PendingSubmission extends State {
     override def transition(event: StateAffectingEvent): State = event match {
-      case SubmissionResult.Success      => Submitted
-      case SubmissionResult.Failure      => SubmissionFailed
-      case MessageReceived.GoodsReleased => GoodsReleased
+      case SubmissionResult.Success            => Submitted
+      case SubmissionResult.Failure            => SubmissionFailed
+      case MessageReceived.GoodsReleased       => GoodsReleased
+      case MessageReceived.UnloadingPermission => UnloadingPermission
     }
   }
 
@@ -48,11 +49,18 @@ object State extends Enumerable.Implicits {
     }
   }
 
+  case object UnloadingPermission extends State {
+    override def transition(event: StateAffectingEvent): State = event match {
+      case _ => ???
+    }
+  }
+
   val values = Seq(
     PendingSubmission,
     Submitted,
     SubmissionFailed,
-    GoodsReleased
+    GoodsReleased,
+    UnloadingPermission
   )
 
   implicit val enumerable: Enumerable[State] =
