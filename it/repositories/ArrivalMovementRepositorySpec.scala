@@ -3,7 +3,7 @@ package repositories
 import java.time.{LocalDate, LocalDateTime, LocalTime}
 
 import generators.ModelGenerators
-import models.ArrivalState.ArrivalSubmitted
+import models.ArrivalState.{ArrivalSubmitted, Initialized}
 import models.MessageState.{SubmissionPending, SubmissionSucceeded}
 import models.{Arrival, ArrivalId, ArrivalState, MessageType, MongoDateTimeFormats, MovementMessageWithState, MovementMessageWithoutState, MovementReferenceNumber}
 import org.scalacheck.Arbitrary.arbitrary
@@ -246,6 +246,60 @@ class ArrivalMovementRepositorySpec
           val result = repository.setMessageState(ArrivalId(1), 0, SubmissionSucceeded).futureValue
 
           result mustBe a[Failure[_]]
+        }
+      }
+    }
+
+    "setArrivalStateAndMessageState" - {
+      "must update the state of the arrival and the message in an arrival" in {
+        database.flatMap(_.drop()).futureValue
+
+        val app: Application = builder.build()
+
+        val arrival = arrivalWithOneMessage.sample.value.copy(state = ArrivalState.Initialized)
+        val messageId = new models.MessageId(0)
+
+        running(app) {
+          started(app).futureValue
+
+          val repository = app.injector.instanceOf[ArrivalMovementRepository]
+
+          repository.insert(arrival).futureValue
+          repository.setArrivalStateAndMessageState(arrival.arrivalId, messageId, ArrivalSubmitted, SubmissionSucceeded).futureValue
+
+          val updatedArrival = repository.get(arrival.arrivalId).futureValue
+
+          updatedArrival.value.state mustEqual ArrivalSubmitted
+
+          typeMatchOnTestValue(updatedArrival.value.messages.head) {
+            result: MovementMessageWithState => result.state mustEqual SubmissionSucceeded
+          }
+
+        }
+      }
+
+      "must fail if the arrival cannot be found" in {
+        database.flatMap(_.drop()).futureValue
+
+        val app: Application = builder.build()
+
+        val arrival = arrivalWithOneMessage.sample.value.copy(arrivalId = ArrivalId(1), state = Initialized)
+        val messageId = new models.MessageId(0)
+
+        running(app) {
+          started(app).futureValue
+
+          val repository = app.injector.instanceOf[ArrivalMovementRepository]
+          repository.insert(arrival).futureValue
+
+          val setResult = repository.setArrivalStateAndMessageState(ArrivalId(2), messageId, ArrivalSubmitted, SubmissionSucceeded)
+          setResult.futureValue must not be(defined)
+
+          val result = repository.get(arrival.arrivalId).futureValue.value
+          result.state mustEqual Initialized
+          typeMatchOnTestValue(result.messages.head) {
+            result: MovementMessageWithState => result.state mustEqual SubmissionPending
+          }
         }
       }
     }

@@ -20,6 +20,7 @@ import com.google.inject.Inject
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalState
+import models.MessageId
 import models.MessageState
 import models.MongoDateTimeFormats
 import models.MovementMessage
@@ -101,10 +102,11 @@ class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: React
 
   def setMessageState(arrivalId: ArrivalId, messageId: Int, state: MessageState): Future[Try[Unit]] = {
     val selector = Json.obj(
-      "$and" ->
-        Json.arr(Json.obj("_id" -> arrivalId),
-                 Json.obj(s"messages.$messageId.state" ->
-                   Json.obj("$exists" -> true))))
+      "$and" -> Json.arr(
+        Json.obj("_id"                        -> arrivalId),
+        Json.obj(s"messages.$messageId.state" -> Json.obj("$exists" -> true))
+      )
+    )
 
     val modifier = Json.obj(
       "$set" -> Json.obj(
@@ -132,11 +134,6 @@ class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: React
     }
   }
 
-  /*
-  TODO: Can we simplify the API here?
-   Mongo may not modified the document because it is in the correct state
-   already, but consumers don't care about this.
-   */
   def setState(id: ArrivalId, state: ArrivalState): Future[Option[Unit]] = {
 
     val selector = Json.obj(
@@ -146,6 +143,31 @@ class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: React
     val modifier = Json.obj(
       "$set" -> Json.obj(
         "state" -> state.toString
+      )
+    )
+
+    collection.flatMap {
+      _.update(false)
+        .one(selector, modifier)
+        .map {
+          y =>
+            if (y.n == 1) Some(())
+            else None
+        }
+    }
+  }
+
+  def setArrivalStateAndMessageState(arrivalId: ArrivalId,
+                                     messageId: MessageId,
+                                     arrivalState: ArrivalState,
+                                     messageState: MessageState): Future[Option[Unit]] = {
+
+    val selector = Json.obj("_id" -> arrivalId)
+
+    val modifier = Json.obj(
+      "$set" -> Json.obj(
+        s"messages.${messageId.index}.state" -> messageState.toString,
+        "state"                              -> arrivalState.toString
       )
     )
 
