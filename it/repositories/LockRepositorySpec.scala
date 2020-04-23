@@ -1,6 +1,6 @@
 package repositories
 
-import generators.MessageGenerators
+import generators.ModelGenerators
 import models.ArrivalId
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatest.concurrent.ScalaFutures
@@ -29,7 +29,7 @@ class LockRepositorySpec
     with OptionValues
     with EitherValues
     with ScalaCheckPropertyChecks
-    with MessageGenerators {
+    with ModelGenerators {
 
   "lock" - {
     "must lock an arrivalId when it is not already locked" in {

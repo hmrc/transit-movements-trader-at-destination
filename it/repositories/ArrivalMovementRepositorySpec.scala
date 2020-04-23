@@ -2,7 +2,8 @@ package repositories
 
 import java.time.{LocalDate, LocalDateTime, LocalTime}
 
-import generators.MessageGenerators
+import generators.ModelGenerators
+import models.ArrivalState.ArrivalSubmitted
 import models.MessageState.{SubmissionPending, SubmissionSucceeded}
 import models.{Arrival, ArrivalId, ArrivalState, MessageType, MongoDateTimeFormats, MovementMessageWithState, MovementMessageWithoutState, MovementReferenceNumber}
 import org.scalacheck.Arbitrary.arbitrary
@@ -35,7 +36,7 @@ class ArrivalMovementRepositorySpec
     with EitherValues
     with TryValues
     with ScalaCheckPropertyChecks
-    with MessageGenerators
+    with ModelGenerators
     with MongoDateTimeFormats {
 
   def typeMatchOnTestValue[A, B](testValue: A)(test: B => Unit)(implicit bClassTag: ClassTag[B]) = testValue match {

@@ -21,7 +21,7 @@ import java.time.OffsetDateTime
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.matching.StringValuePattern
-import generators.MessageGenerators
+import generators.ModelGenerators
 import models.ArrivalId
 import models.MessageState
 import models.MessageType
@@ -45,7 +45,7 @@ class MessageConnectorSpec
     with IntegrationPatience
     with WiremockSuite
     with ScalaCheckPropertyChecks
-    with MessageGenerators
+    with ModelGenerators
     with OptionValues {
 
   import MessageConnectorSpec._

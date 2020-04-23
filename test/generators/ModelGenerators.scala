@@ -18,82 +18,84 @@ package generators
 
 import java.time._
 
+import models.MessageState.SubmissionPending
+import models.Arrival
+import models.ArrivalId
 import models.ArrivalState
 import models.MessageReceived
 import models.MessageType
+import models.MovementMessageWithState
+import models.MovementMessageWithoutState
 import models.MovementReferenceNumber
 import models.RejectionError
 import models.SubmissionResult
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalacheck.Gen.choose
-import org.scalacheck.Gen.listOfN
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
 
-trait ModelGenerators {
+trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
 
-  def dateTimesBetween(min: LocalDateTime, max: LocalDateTime): Gen[LocalDateTime] = {
+  private val pastDate: LocalDate = LocalDate.of(1900, 1, 1)
+  private val dateNow: LocalDate  = LocalDate.now
 
-    def toMillis(date: LocalDateTime): Long =
-      date.atZone(ZoneOffset.UTC).toInstant.toEpochMilli
-
-    Gen.choose(toMillis(min), toMillis(max)).map {
-      millis =>
-        Instant.ofEpochMilli(millis).atOffset(ZoneOffset.UTC).toLocalDateTime
+  implicit lazy val arbitraryMessageWithStateXml: Arbitrary[MovementMessageWithState] = {
+    Arbitrary {
+      for {
+        dateTime    <- arbitrary[LocalDateTime]
+        xml         <- Gen.const(<blankXml>message</blankXml>) // TODO: revisit this
+        messageType <- Gen.oneOf(MessageType.values)
+        state = SubmissionPending
+      } yield MovementMessageWithState(dateTime, messageType, xml, state, 1) // TODO: revisit message correlation id
     }
   }
 
-  def datesBetween(min: LocalDate, max: LocalDate): Gen[LocalDate] = {
-
-    def toMillis(date: LocalDate): Long =
-      date.atStartOfDay.atZone(ZoneOffset.UTC).toInstant.toEpochMilli
-
-    Gen.choose(toMillis(min), toMillis(max)).map {
-      millis =>
-        Instant.ofEpochMilli(millis).atOffset(ZoneOffset.UTC).toLocalDate
+  implicit lazy val arbitraryMessageWithoutStateXml: Arbitrary[MovementMessageWithoutState] = {
+    Arbitrary {
+      for {
+        date        <- datesBetween(pastDate, dateNow)
+        time        <- timesBetween(pastDate, dateNow)
+        xml         <- Gen.const(<blankXml>message</blankXml>)
+        messageType <- Gen.oneOf(MessageType.values)
+      } yield MovementMessageWithoutState(LocalDateTime.of(date, time), messageType, xml, 1)
     }
   }
 
-  def timesBetween(min: LocalDate, max: LocalDate): Gen[LocalTime] = {
-
-    def toMillis(date: LocalDate): Long =
-      date.atStartOfDay.atZone(ZoneOffset.UTC).toInstant.toEpochMilli
-
-    Gen.choose(toMillis(min), toMillis(max)).map {
-      millis =>
-        Instant.ofEpochMilli(millis).atOffset(ZoneOffset.UTC).toLocalTime
+  implicit lazy val arbitraryArrivalId: Arbitrary[ArrivalId] = {
+    Arbitrary {
+      for {
+        id <- arbitrary[Int]
+      } yield ArrivalId(id)
     }
   }
 
-  def stringsWithMaxLength(maxLength: Int): Gen[String] =
-    for {
-      length <- choose(1, maxLength)
-      chars  <- listOfN(length, arbitrary[Char])
-    } yield chars.mkString
+  implicit lazy val arbitraryState: Arbitrary[ArrivalState] =
+    Arbitrary {
+      Gen.oneOf(ArrivalState.values)
+    }
 
-  implicit lazy val arbitraryLocalDate: Arbitrary[LocalDate] = Arbitrary {
-    datesBetween(LocalDate.of(1900, 1, 1), LocalDate.of(2100, 1, 1))
+  implicit lazy val arbitraryArrival: Arbitrary[Arrival] = {
+    Arbitrary {
+      for {
+        arrivalId               <- arbitrary[ArrivalId]
+        movementReferenceNumber <- arbitrary[MovementReferenceNumber]
+        eoriNumber              <- arbitrary[String]
+        state                   <- arbitrary[ArrivalState]
+        created                 <- arbitrary[LocalDateTime]
+        updated                 <- arbitrary[LocalDateTime]
+        messages                <- listWithMaxLength[MovementMessageWithState](2)
+      } yield
+        Arrival(
+          arrivalId = arrivalId,
+          movementReferenceNumber = movementReferenceNumber,
+          eoriNumber = eoriNumber,
+          state = state,
+          created = created,
+          updated = updated,
+          messages = messages,
+          nextMessageCorrelationId = messages.length + 1
+        )
+    }
   }
-
-  implicit lazy val arbitraryLocalTime: Arbitrary[LocalTime] = Arbitrary {
-    dateTimesBetween(
-      LocalDateTime.of(1900, 1, 1, 0, 0, 0),
-      LocalDateTime.of(2100, 1, 1, 0, 0, 0)
-    ).map(_.toLocalTime)
-  }
-
-  implicit lazy val arbitraryLocalDateTime: Arbitrary[LocalDateTime] = Arbitrary {
-    dateTimesBetween(
-      LocalDateTime.of(1900, 1, 1, 0, 0, 0),
-      LocalDateTime.of(2100, 1, 1, 0, 0, 0)
-    )
-  }
-
-  def seqWithMaxLength[A](maxLength: Int)(implicit a: Arbitrary[A]): Gen[Seq[A]] =
-    for {
-      length <- choose(1, maxLength)
-      seq    <- listOfN(length, arbitrary[A])
-    } yield seq
 
   implicit lazy val arbitraryMovementReferenceNumber: Arbitrary[MovementReferenceNumber] =
     Arbitrary {
@@ -115,12 +117,6 @@ trait ModelGenerators {
       } yield RejectionError(errorType, pointer, reason, originalValue)
     }
 
-  def listWithMaxLength[A](maxLength: Int)(implicit a: Arbitrary[A]): Gen[List[A]] =
-    for {
-      length <- choose(1, maxLength)
-      seq    <- listOfN(length, arbitrary[A])
-    } yield seq
-
   implicit lazy val arbitraryMessageType: Arbitrary[MessageType] =
     Arbitrary(Gen.oneOf(MessageType.values))
 
@@ -130,6 +126,4 @@ trait ModelGenerators {
   implicit lazy val arbitraryMessageReceived: Arbitrary[MessageReceived] =
     Arbitrary(Gen.oneOf(MessageReceived.values))
 
-  implicit lazy val arbitraryArrivalState: Arbitrary[ArrivalState] =
-    Arbitrary(Gen.oneOf(ArrivalState.values))
 }

@@ -18,7 +18,6 @@ package services
 
 import base.SpecBase
 import connectors.MessageConnector
-import generators.MessageGenerators
 import generators.ModelGenerators
 import models.ArrivalId
 import models.ArrivalState
@@ -42,7 +41,7 @@ import scala.concurrent.Future
 import scala.util.Failure
 import scala.util.Success
 
-class SubmitMessageServiceSpec extends SpecBase with MessageGenerators {
+class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
 
   "submit" - {
     "return SubmissionResult.Success when the message is successfully saved, submitted and the state is updated" in {

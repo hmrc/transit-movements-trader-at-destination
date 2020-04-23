@@ -21,7 +21,7 @@ import java.time.LocalTime
 
 import base.SpecBase
 import connectors.MessageConnector
-import generators.MessageGenerators
+import generators.ModelGenerators
 import models.ArrivalState.ArrivalSubmitted
 import models.MessageState.SubmissionSucceeded
 import models.Arrival
@@ -54,7 +54,7 @@ import scala.concurrent.Future
 import scala.util.Failure
 import scala.util.Success
 
-class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks with MessageGenerators with BeforeAndAfterEach with IntegrationPatience {
+class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks with ModelGenerators with BeforeAndAfterEach with IntegrationPatience {
 
   "MovementsController" - {
 
@@ -756,7 +756,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
             .build()
 
         running(application) {
-          forAll(seqWithMaxLength[Arrival](10)) {
+          forAll(listWithMaxLength[Arrival](10)) {
             arrivals =>
               when(mockArrivalMovementRepository.fetchAllArrivals(any())).thenReturn(Future.successful(arrivals))
 
