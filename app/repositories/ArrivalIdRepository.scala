@@ -17,7 +17,7 @@
 package repositories
 
 import com.google.inject.Inject
-import models.request.ArrivalId
+import models.ArrivalId
 import play.api.libs.json.Json
 import play.api.libs.json.Reads
 import play.modules.reactivemongo.ReactiveMongoApi

@@ -21,7 +21,10 @@ import java.util.UUID
 
 import com.google.inject.Inject
 import config.AppConfig
+import models.ArrivalId
+import models.MessageSender
 import models.MessageType
+import models.MovementMessageWithState
 import models.TransitWrapper
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HttpReads
@@ -31,23 +34,29 @@ import utils.Format
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.xml.NodeSeq
 
 class MessageConnector @Inject()(config: AppConfig, http: HttpClient)(implicit ec: ExecutionContext) {
 
-  def post(xml: TransitWrapper, messageType: MessageType, dateTime: OffsetDateTime)(implicit headerCarrier: HeaderCarrier): Future[HttpResponse] = {
+  def post(arrivalId: ArrivalId, message: MovementMessageWithState, dateTime: OffsetDateTime)(
+    implicit headerCarrier: HeaderCarrier
+  ): Future[HttpResponse] = {
+
+    val xmlMessage = TransitWrapper(message.message).toString
 
     val url = config.eisUrl
 
-    val newHeaders = headerCarrier.withExtraHeaders(addHeaders(messageType, dateTime): _*)
+    lazy val messageSender = MessageSender(arrivalId, message.messageCorrelationId)
 
-    http.POSTString(url, xml.toString)(rds = HttpReads.readRaw, hc = newHeaders, ec = ec)
+    val newHeaders = headerCarrier.withExtraHeaders(addHeaders(message.messageType, dateTime, messageSender): _*)
+
+    // TODO: Don't throw exceptions here
+    http.POSTString(url, xmlMessage)(rds = HttpReads.readRaw, hc = newHeaders, ec = ec)
   }
 
-  private def addHeaders(messageType: MessageType, dateTime: OffsetDateTime)(implicit headerCarrier: HeaderCarrier): Seq[(String, String)] = {
+  private def addHeaders(messageType: MessageType, dateTime: OffsetDateTime, messageSender: MessageSender)(
+    implicit headerCarrier: HeaderCarrier): Seq[(String, String)] = {
 
-    val bearerToken   = config.eisBearerToken
-    val messageSender = "mdtp-userseori" //TODO: This will be a unique message sender i.e. mdtp-0001-1
+    val bearerToken = config.eisBearerToken
 
     Seq(
       "Content-Type"   -> "application/xml;charset=UTF-8",
@@ -57,7 +66,7 @@ class MessageConnector @Inject()(config: AppConfig, http: HttpClient)(implicit e
           .map(_.value)
           .getOrElse(UUID.randomUUID().toString)
       },
-      "X-Message-Sender" -> messageSender,
+      "X-Message-Sender" -> messageSender.toString,
       "X-Forwarded-Host" -> "mdtp",
       "Date"             -> Format.dateFormattedForHeader(dateTime),
       "Accept"           -> "application/xml"

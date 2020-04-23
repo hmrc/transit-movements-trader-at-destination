@@ -18,9 +18,12 @@ package generators
 
 import java.time._
 
+import models.ArrivalState
+import models.MessageReceived
 import models.MessageType
 import models.MovementReferenceNumber
 import models.RejectionError
+import models.SubmissionResult
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen.choose
 import org.scalacheck.Gen.listOfN
@@ -120,4 +123,13 @@ trait ModelGenerators {
 
   implicit lazy val arbitraryMessageType: Arbitrary[MessageType] =
     Arbitrary(Gen.oneOf(MessageType.values))
+
+  implicit lazy val arbitrarySubmissionResult: Arbitrary[SubmissionResult] =
+    Arbitrary(Gen.oneOf(SubmissionResult.values))
+
+  implicit lazy val arbitraryMessageReceived: Arbitrary[MessageReceived] =
+    Arbitrary(Gen.oneOf(MessageReceived.values))
+
+  implicit lazy val arbitraryArrivalState: Arbitrary[ArrivalState] =
+    Arbitrary(Gen.oneOf(ArrivalState.values))
 }

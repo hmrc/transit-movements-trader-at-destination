@@ -18,7 +18,7 @@ package controllers.actions
 
 import generators.MessageGenerators
 import models.Arrival
-import models.request.ArrivalId
+import models.ArrivalId
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito._
 import org.scalacheck.Arbitrary.arbitrary

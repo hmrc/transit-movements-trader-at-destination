@@ -17,7 +17,7 @@
 package controllers.actions
 
 import javax.inject.Inject
-import models.request.ArrivalId
+import models.ArrivalId
 import models.request.ArrivalRequest
 import models.request.AuthenticatedRequest
 import play.api.Logger

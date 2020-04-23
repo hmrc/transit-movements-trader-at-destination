@@ -17,7 +17,7 @@
 package controllers.actions
 
 import javax.inject.Inject
-import models.request.ArrivalId
+import models.ArrivalId
 import models.request.ArrivalRequest
 import play.api.mvc.ActionBuilder
 import play.api.mvc.AnyContent
@@ -27,12 +27,12 @@ import scala.concurrent.ExecutionContext
 
 class AuthenticatedGetArrivalForWriteActionProvider @Inject()(
   lock: LockActionProvider,
-  authenticate: AuthenticateAction,
+  authenticate: AuthenticateActionProvider,
   getArrival: AuthenticatedGetArrivalActionProvider,
   ec: ExecutionContext,
   parser: BodyParsers.Default
 ) {
 
   def apply(arrivalId: ArrivalId): ActionBuilder[ArrivalRequest, AnyContent] =
-    lock(arrivalId) andThen authenticate andThen getArrival(arrivalId)
+    lock(arrivalId) andThen authenticate() andThen getArrival(arrivalId)
 }

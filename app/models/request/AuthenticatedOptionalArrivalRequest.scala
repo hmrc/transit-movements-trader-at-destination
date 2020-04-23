@@ -14,32 +14,10 @@
  * limitations under the License.
  */
 
-package models
+package models.request
 
-sealed trait StateAffectingEvent
+import models.Arrival
+import play.api.mvc.WrappedRequest
 
-sealed trait SubmissionResult extends StateAffectingEvent
-
-object SubmissionResult {
-
-  case object Success extends SubmissionResult
-  case object Failure extends SubmissionResult
-
-  val values = Seq(
-    Success,
-    Failure
-  )
-}
-
-sealed trait MessageReceived extends StateAffectingEvent
-
-object MessageReceived {
-
-  case object GoodsReleased    extends MessageReceived
-  case object ArrivalSubmitted extends MessageReceived
-
-  val values: Seq[MessageReceived] = Seq(
-    GoodsReleased,
-    ArrivalSubmitted
-  )
-}
+case class AuthenticatedOptionalArrivalRequest[A](request: AuthenticatedRequest[A], arrival: Option[Arrival], eoriNumber: String)
+    extends WrappedRequest[A](request)

@@ -20,7 +20,7 @@ import java.time.LocalDateTime
 
 import config.AppConfig
 import javax.inject.Inject
-import models.request.ArrivalId
+import models.ArrivalId
 import play.api.libs.json.Json
 import play.modules.reactivemongo.ReactiveMongoApi
 import reactivemongo.api.commands.LastError

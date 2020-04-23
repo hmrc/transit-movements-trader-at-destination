@@ -16,13 +16,12 @@
 
 package models
 
-import models.request.ArrivalId
 import play.api.mvc.PathBindable
 
 import scala.util.Try
 
-final case class MessageSender(arrivalId: ArrivalId, version: Int) {
-  override val toString = s"MDTP-${arrivalId.index}-$version"
+final case class MessageSender(arrivalId: ArrivalId, messageCorrelationId: Int) {
+  override val toString = s"MDTP-${arrivalId.index}-$messageCorrelationId"
 }
 
 object MessageSender {
@@ -31,12 +30,12 @@ object MessageSender {
 
   def apply(value: String): Option[MessageSender] =
     value match {
-      case pattern(id, version) =>
+      case pattern(id, messageCorrelationId) =>
         (for {
-          id <- Try(id.toInt)
-          v  <- Try(version.toInt)
+          id            <- Try(id.toInt)
+          correlationId <- Try(messageCorrelationId.toInt)
         } yield {
-          MessageSender(ArrivalId(id), v)
+          MessageSender(ArrivalId(id), correlationId)
         }).toOption
       case _ => None
     }

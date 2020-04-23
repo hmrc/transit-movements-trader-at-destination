@@ -23,13 +23,15 @@ import java.time.LocalTime
 import cats.data._
 import cats.implicits._
 import com.google.inject.Inject
+import models.ArrivalState.Initialized
+import models.MessageState.SubmissionPending
 import models.Arrival
 import models.MessageType
-import models.MovementMessage
+import models.MovementMessageWithState
+import models.MovementMessageWithoutState
 import models.MovementReferenceNumber
 import repositories.ArrivalIdRepository
 import utils.Format
-import models.State.PendingSubmission
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -41,10 +43,10 @@ class ArrivalMovementService @Inject()(arrivalIdRepository: ArrivalIdRepository)
 
   def makeArrivalMovement(eori: String): ReaderT[Option, NodeSeq, Future[Arrival]] =
     for {
-      _          <- correctRootNodeR(MessageType.ArrivalNotification)
-      dateTime   <- dateTimeOfPrepR
-      mrn        <- mrnR
-      xmlMessage <- ReaderT[Option, NodeSeq, NodeSeq](Option.apply)
+      _        <- correctRootNodeR(MessageType.ArrivalNotification)
+      dateTime <- dateTimeOfPrepR
+      message  <- makeArrivalNotificationMessage(1)
+      mrn      <- mrnR
     } yield {
       arrivalIdRepository
         .nextId()
@@ -53,19 +55,27 @@ class ArrivalMovementService @Inject()(arrivalIdRepository: ArrivalIdRepository)
             _,
             mrn,
             eori,
-            PendingSubmission,
+            Initialized,
             dateTime,
             dateTime,
-            Seq(MovementMessage(dateTime, MessageType.ArrivalNotification, xmlMessage))
+            Seq(message),
+            2
           ))
     }
 
-  def makeGoodsReleasedMessage(): ReaderT[Option, NodeSeq, MovementMessage] =
+  def makeArrivalNotificationMessage(messageCorrelationId: Int): ReaderT[Option, NodeSeq, MovementMessageWithState] =
+    for {
+      _          <- correctRootNodeR(MessageType.ArrivalNotification)
+      dateTime   <- dateTimeOfPrepR
+      xmlMessage <- ReaderT[Option, NodeSeq, NodeSeq](Option.apply)
+    } yield MovementMessageWithState(dateTime, MessageType.ArrivalNotification, xmlMessage, SubmissionPending, messageCorrelationId)
+
+  def makeGoodsReleasedMessage(messageCorrelationId: Int): ReaderT[Option, NodeSeq, MovementMessageWithoutState] =
     for {
       _          <- correctRootNodeR(MessageType.GoodsReleased)
       dateTime   <- dateTimeOfPrepR
       xmlMessage <- ReaderT[Option, NodeSeq, NodeSeq](Option.apply)
-    } yield MovementMessage(dateTime, MessageType.GoodsReleased, xmlMessage)
+    } yield MovementMessageWithoutState(dateTime, MessageType.GoodsReleased, xmlMessage, messageCorrelationId)
 }
 
 object ArrivalMovementService {

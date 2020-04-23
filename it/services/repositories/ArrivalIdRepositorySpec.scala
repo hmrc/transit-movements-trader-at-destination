@@ -1,8 +1,10 @@
 package services.repositories
 
-import models.request.ArrivalId
-import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
-import org.scalatest.{FreeSpec, MustMatchers}
+import models.ArrivalId
+import org.scalatest.concurrent.IntegrationPatience
+import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.FreeSpec
+import org.scalatest.MustMatchers
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.libs.json.Json
 import reactivemongo.play.json.collection.JSONCollection
@@ -13,7 +15,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 class ArrivalIdRepositorySpec extends FreeSpec with MustMatchers with ScalaFutures with MongoSuite with GuiceOneAppPerSuite with IntegrationPatience {
 
-  private val service =  app.injector.instanceOf[ArrivalIdRepository]
+  private val service = app.injector.instanceOf[ArrivalIdRepository]
 
   "ArrivalIdRepository" - {
 
@@ -21,7 +23,7 @@ class ArrivalIdRepositorySpec extends FreeSpec with MustMatchers with ScalaFutur
 
       database.flatMap(_.drop()).futureValue
 
-      val first = service.nextId().futureValue
+      val first  = service.nextId().futureValue
       val second = service.nextId().futureValue
 
       first mustBe ArrivalId(1)
@@ -38,13 +40,13 @@ class ArrivalIdRepositorySpec extends FreeSpec with MustMatchers with ScalaFutur
                 .insert(ordered = false)
                 .one(
                   Json.obj(
-                    "_id" -> "record_id",
+                    "_id"        -> "record_id",
                     "last-index" -> 1
                   ))
           }
       }.futureValue
 
-      val first = service.nextId().futureValue
+      val first  = service.nextId().futureValue
       val second = service.nextId().futureValue
 
       first mustBe ArrivalId(2)

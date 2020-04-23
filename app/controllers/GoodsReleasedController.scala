@@ -52,10 +52,10 @@ class GoodsReleasedController @Inject()(cc: ControllerComponents,
 
       xmlValidationService.validate(xml.toString, GoodsReleasedXSD) match {
         case Success(_) =>
-          arrivalMovementService.makeGoodsReleasedMessage()(xml) match {
+          arrivalMovementService.makeGoodsReleasedMessage(messageSender.messageCorrelationId)(xml) match {
             case Some(message) =>
               val newState = request.arrival.state.transition(MessageReceived.GoodsReleased)
-              arrivalMovementRepository.addMessage(request.arrival.arrivalId, message, newState).map {
+              arrivalMovementRepository.addResponseMessage(request.arrival.arrivalId, message, newState).map {
                 case Success(_) => Ok
                 case Failure(e) => {
                   logger.error(s"Failure to add message to movement. Exception: ${e.getMessage}")

@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package models.request
+package models
+
 import play.api.libs.json._
+import play.api.mvc.PathBindable
 
 import scala.util.Try
 
@@ -36,4 +38,13 @@ object ArrivalId {
 
     override def writes(o: ArrivalId): JsNumber = JsNumber(o.index)
   }
+
+  implicit lazy val pathBindable: PathBindable[ArrivalId] = new PathBindable[ArrivalId] {
+    override def bind(key: String, value: String): Either[String, ArrivalId] =
+      implicitly[PathBindable[Int]].bind(key, value).right.map(ArrivalId(_))
+
+    override def unbind(key: String, value: ArrivalId): String =
+      value.index.toString
+  }
+
 }
