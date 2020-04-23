@@ -42,7 +42,7 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 
-class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: ReactiveMongoApi)(implicit ec: ExecutionContext) extends MongoDateTimeFormats {
+class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi)(implicit ec: ExecutionContext) extends MongoDateTimeFormats {
 
   private val index = Index(
     key = Seq("eoriNumber" -> IndexType.Ascending),
@@ -100,6 +100,7 @@ class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: React
         .collect[Seq](-1, Cursor.FailOnError())
     }
 
+  // TODO: Refactor this to take a MessageId
   def setMessageState(arrivalId: ArrivalId, messageId: Int, state: MessageState): Future[Try[Unit]] = {
     val selector = Json.obj(
       "$and" -> Json.arr(

@@ -26,7 +26,7 @@ import play.api.mvc.PathBindable
 
 import scala.util.Try
 
-final class MessageId(val index: Int) extends AnyVal
+final class MessageId(val index: Int)
 
 object MessageId {
 

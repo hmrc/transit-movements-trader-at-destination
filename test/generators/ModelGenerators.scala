@@ -22,6 +22,7 @@ import models.MessageState.SubmissionPending
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalState
+import models.MessageId
 import models.MessageReceived
 import models.MessageType
 import models.MovementMessageWithState
@@ -125,5 +126,10 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
 
   implicit lazy val arbitraryMessageReceived: Arbitrary[MessageReceived] =
     Arbitrary(Gen.oneOf(MessageReceived.values))
+
+  implicit lazy val arbitraryMessageId: Arbitrary[MessageId] =
+    Arbitrary {
+      intsAboveValue(0).map(new MessageId(_))
+    }
 
 }

@@ -22,14 +22,12 @@ import connectors.MessageConnector
 import javax.inject.Inject
 import models.ArrivalId
 import models.ArrivalState
+import models.MessageId
 import models.MessageState
-import models.MovementMessage
 import models.MovementMessageWithState
 import models.SubmissionResult
-import models.ArrivalState.ArrivalSubmitted
 import repositories.ArrivalMovementRepository
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.http.HttpErrorFunctions
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -39,10 +37,9 @@ import scala.util.Success
 class SubmitMessageService @Inject()(
   arrivalMovementRepository: ArrivalMovementRepository,
   messageConnector: MessageConnector
-)(implicit ec: ExecutionContext)
-    extends HttpErrorFunctions {
+)(implicit ec: ExecutionContext) {
 
-  def submit(arrivalId: ArrivalId, messageId: Int, message: MovementMessageWithState)(implicit hc: HeaderCarrier): Future[SubmissionResult] =
+  def submit(arrivalId: ArrivalId, messageId: MessageId, message: MovementMessageWithState)(implicit hc: HeaderCarrier): Future[SubmissionResult] =
     arrivalMovementRepository.addNewMessage(arrivalId, message) flatMap {
       case Failure(_) =>
         Future.successful(SubmissionResult.Failure)
@@ -50,13 +47,12 @@ class SubmitMessageService @Inject()(
       case Success(_) =>
         (for {
           _ <- messageConnector.post(arrivalId, message, OffsetDateTime.now)
-          x <- arrivalMovementRepository.setState(arrivalId, ArrivalState.ArrivalSubmitted)
-          y <- arrivalMovementRepository.setMessageState(arrivalId, messageId, message.state.transition(SubmissionResult.Success))
+          _ <- arrivalMovementRepository.setArrivalStateAndMessageState(arrivalId, messageId, ArrivalState.ArrivalSubmitted, MessageState.SubmissionSucceeded)
         } yield {
           SubmissionResult.Success
         }).recoverWith {
           case _ =>
-            arrivalMovementRepository.setMessageState(arrivalId, messageId, message.state.transition(SubmissionResult.Failure)) map {
+            arrivalMovementRepository.setMessageState(arrivalId, messageId.index, message.state.transition(SubmissionResult.Failure)) map {
               _ =>
                 SubmissionResult.Failure
             }

@@ -21,21 +21,19 @@ import connectors.MessageConnector
 import generators.ModelGenerators
 import models.ArrivalId
 import models.ArrivalState
+import models.MessageId
 import models.MessageState
-import models.MovementMessage
 import models.MovementMessageWithState
 import models.SubmissionResult
-import org.mockito.Matchers.any
+import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito.when
+import org.mockito.Mockito._
+import org.scalacheck.Arbitrary.arbitrary
 import play.api.inject.bind
 import play.api.test.Helpers.ACCEPTED
 import play.api.test.Helpers.running
-import repositories.ArrivalIdRepository
 import repositories.ArrivalMovementRepository
 import uk.gov.hmrc.http.HttpResponse
-import org.scalacheck.Arbitrary.arbitrary
-import org.mockito.Mockito._
-import org.mockito.Matchers.{eq => eqTo}
 
 import scala.concurrent.Future
 import scala.util.Failure
@@ -45,12 +43,11 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
 
   "submit" - {
     "return SubmissionResult.Success when the message is successfully saved, submitted and the state is updated" in {
-      val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
-      val mockMessageConnector          = mock[MessageConnector]
+      lazy val mockArrivalMovementRepository: ArrivalMovementRepository = mock[ArrivalMovementRepository]
+      lazy val mockMessageConnector: MessageConnector                   = mock[MessageConnector]
 
       when(mockArrivalMovementRepository.addNewMessage(any(), any())).thenReturn(Future.successful(Success(())))
-      when(mockArrivalMovementRepository.setState(any(), any())).thenReturn(Future.successful(Some(())))
-      when(mockArrivalMovementRepository.setMessageState(any(), any(), any())).thenReturn(Future.successful((Success(()))))
+      when(mockArrivalMovementRepository.setArrivalStateAndMessageState(any(), any(), any(), any())).thenReturn(Future.successful(Some(())))
       when(mockMessageConnector.post(any(), any(), any())(any())).thenReturn(Future.successful(HttpResponse(ACCEPTED)))
 
       val application = baseApplicationBuilder
@@ -65,15 +62,20 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
         val service = application.injector.instanceOf[SubmitMessageService]
 
         val arrivalId       = arbitrary[ArrivalId].sample.value
+        val messageId       = arbitrary[MessageId].sample.value
         val movementMessage = arbitrary[MovementMessageWithState].sample.value
 
-        val result = service.submit(arrivalId, 0, movementMessage)
+        val result = service.submit(arrivalId, messageId, movementMessage)
 
         result.futureValue mustEqual SubmissionResult.Success
+
         verify(mockArrivalMovementRepository, times(1)).addNewMessage(eqTo(arrivalId), eqTo(movementMessage))
         verify(mockMessageConnector, times(1)).post(eqTo(arrivalId), eqTo(movementMessage), any())(any())
-        verify(mockArrivalMovementRepository, times(1)).setState(eqTo(arrivalId), eqTo(ArrivalState.ArrivalSubmitted))
-        verify(mockArrivalMovementRepository, times(1)).setMessageState(eqTo(arrivalId), eqTo(0), eqTo(MessageState.SubmissionSucceeded))
+        verify(mockArrivalMovementRepository, times(1)).setArrivalStateAndMessageState(eqTo(arrivalId),
+                                                                                       eqTo(messageId),
+                                                                                       eqTo(ArrivalState.ArrivalSubmitted),
+                                                                                       eqTo(MessageState.SubmissionSucceeded))
+
       }
 
     }
@@ -83,8 +85,7 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
       val mockMessageConnector          = mock[MessageConnector]
 
       when(mockArrivalMovementRepository.addNewMessage(any(), any())).thenReturn(Future.successful(Success(())))
-      when(mockArrivalMovementRepository.setState(any(), any())).thenReturn(Future.successful(Some(())))
-      when(mockArrivalMovementRepository.setMessageState(any(), any(), any())).thenReturn(Future.successful((Failure(new Exception))))
+      when(mockArrivalMovementRepository.setArrivalStateAndMessageState(any(), any(), any(), any())).thenReturn(Future.successful(None))
       when(mockMessageConnector.post(any(), any(), any())(any())).thenReturn(Future.successful(HttpResponse(ACCEPTED)))
 
       val application = baseApplicationBuilder
@@ -99,15 +100,18 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
         val service = application.injector.instanceOf[SubmitMessageService]
 
         val arrivalId       = arbitrary[ArrivalId].sample.value
+        val messageId       = arbitrary[MessageId].sample.value
         val movementMessage = arbitrary[MovementMessageWithState].sample.value
 
-        val result = service.submit(arrivalId, 0, movementMessage)
+        val result = service.submit(arrivalId, messageId, movementMessage)
 
         result.futureValue mustEqual SubmissionResult.Success
         verify(mockArrivalMovementRepository, times(1)).addNewMessage(eqTo(arrivalId), eqTo(movementMessage))
         verify(mockMessageConnector, times(1)).post(eqTo(arrivalId), eqTo(movementMessage), any())(any())
-        verify(mockArrivalMovementRepository, times(1)).setState(eqTo(arrivalId), eqTo(ArrivalState.ArrivalSubmitted))
-        verify(mockArrivalMovementRepository, times(1)).setMessageState(eqTo(arrivalId), eqTo(0), eqTo(MessageState.SubmissionSucceeded))
+        verify(mockArrivalMovementRepository, times(1)).setArrivalStateAndMessageState(eqTo(arrivalId),
+                                                                                       eqTo(messageId),
+                                                                                       eqTo(ArrivalState.ArrivalSubmitted),
+                                                                                       eqTo(MessageState.SubmissionSucceeded))
       }
 
     }
@@ -118,8 +122,8 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
       val mockMessageConnector          = mock[MessageConnector]
 
       when(mockArrivalMovementRepository.addNewMessage(any(), any())).thenReturn(Future.successful(Success(())))
-      when(mockArrivalMovementRepository.setState(any(), any())).thenReturn(Future.successful(None))
       when(mockMessageConnector.post(any(), any(), any())(any())).thenReturn(Future.successful(HttpResponse(ACCEPTED)))
+      when(mockArrivalMovementRepository.setState(any(), any())).thenReturn(Future.successful(None))
 
       val application = baseApplicationBuilder
         .overrides(
@@ -133,15 +137,15 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
         val service = application.injector.instanceOf[SubmitMessageService]
 
         val arrivalId       = arbitrary[ArrivalId].sample.value
+        val messageId       = arbitrary[MessageId].sample.value
         val movementMessage = arbitrary[MovementMessageWithState].sample.value
 
-        val result = service.submit(arrivalId, 0, movementMessage)
+        val result = service.submit(arrivalId, messageId, movementMessage)
 
         result.futureValue mustEqual SubmissionResult.Success
         verify(mockArrivalMovementRepository, times(1)).addNewMessage(eqTo(arrivalId), eqTo(movementMessage))
         verify(mockMessageConnector, times(1)).post(eqTo(arrivalId), eqTo(movementMessage), any())(any())
-        verify(mockArrivalMovementRepository, times(1)).setState(eqTo(arrivalId), eqTo(ArrivalState.ArrivalSubmitted))
-        verify(mockArrivalMovementRepository, never()).setMessageState(eqTo(arrivalId), eqTo(0), eqTo(MessageState.SubmissionFailed))
+        verify(mockArrivalMovementRepository, never()).setArrivalStateAndMessageState(any(), any(), any(), any())
       }
 
     }
@@ -163,9 +167,10 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
         val service = application.injector.instanceOf[SubmitMessageService]
 
         val arrivalId       = arbitrary[ArrivalId].sample.value
+        val messageId       = arbitrary[MessageId].sample.value
         val movementMessage = arbitrary[MovementMessageWithState].sample.value
 
-        val result = service.submit(arrivalId, 0, movementMessage)
+        val result = service.submit(arrivalId, messageId, movementMessage)
 
         result.futureValue mustEqual SubmissionResult.Failure
         verify(mockMessageConnector, never()).post(eqTo(arrivalId), eqTo(movementMessage), any())(any())
@@ -193,14 +198,15 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
         val service = application.injector.instanceOf[SubmitMessageService]
 
         val arrivalId       = arbitrary[ArrivalId].sample.value
+        val messageId       = arbitrary[MessageId].sample.value
         val movementMessage = arbitrary[MovementMessageWithState].sample.value
 
-        val result = service.submit(arrivalId, 0, movementMessage)
+        val result = service.submit(arrivalId, messageId, movementMessage)
 
         result.futureValue mustEqual SubmissionResult.Failure
         verify(mockArrivalMovementRepository, times(1)).addNewMessage(eqTo(arrivalId), eqTo(movementMessage))
         verify(mockMessageConnector, times(1)).post(eqTo(arrivalId), eqTo(movementMessage), any())(any())
-        verify(mockArrivalMovementRepository, times(1)).setMessageState(eqTo(arrivalId), eqTo(0), eqTo(MessageState.SubmissionFailed))
+        verify(mockArrivalMovementRepository, times(1)).setMessageState(eqTo(arrivalId), eqTo(messageId.index), eqTo(MessageState.SubmissionFailed))
       }
 
     }
