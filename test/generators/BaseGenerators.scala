@@ -68,13 +68,13 @@ trait BaseGenerators {
       .map(_.formatted("%f"))
 
   def intsBelowValue(value: Int): Gen[Int] =
-    arbitrary[Int] suchThat (_ < value)
+    Gen.choose(Int.MinValue, value - 1)
 
   def intsAboveValue(value: Int): Gen[Int] =
-    arbitrary[Int] suchThat (_ > value)
+    Gen.choose(value + 1, Int.MaxValue)
 
   def intsOutsideRange(min: Int, max: Int): Gen[Int] =
-    arbitrary[Int] suchThat (x => x < min || x > max)
+    Gen.oneOf(intsBelowValue(min - 1), intsAboveValue(max + 1))
 
   def nonBooleans: Gen[String] =
     arbitrary[String]
