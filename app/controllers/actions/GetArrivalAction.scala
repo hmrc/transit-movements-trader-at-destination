@@ -70,11 +70,14 @@ private[actions] class AuthenticatedGetArrivalAction(
   override protected def refine[A](request: AuthenticatedRequest[A]): Future[Either[Result, ArrivalRequest[A]]] =
     repository.get(arrivalId).map {
       case Some(arrival) if arrival.eoriNumber == request.eoriNumber =>
+        println("found")
         Right(ArrivalRequest(request.request, arrival))
-      case Some(_) =>
+      case Some(a) =>
+        println(s"${a.eoriNumber} : ${request.eoriNumber}")
         Logger.warn("Attempt to retrieve an arrival for another EORI")
         Left(NotFound)
       case None =>
+        println("nonefound")
         Left(NotFound)
     }
 }

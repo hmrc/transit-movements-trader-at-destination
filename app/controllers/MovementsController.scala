@@ -20,6 +20,7 @@ import java.time.OffsetDateTime
 
 import connectors.MessageConnector
 import controllers.actions.AuthenticateActionProvider
+import controllers.actions.AuthenticatedGetArrivalForReadActionProvider
 import controllers.actions.AuthenticatedGetArrivalForWriteActionProvider
 import controllers.actions.AuthenticatedGetOptionalArrivalForWriteActionProvider
 import javax.inject.Inject
@@ -32,6 +33,7 @@ import models.Arrivals
 import models.MessageReceived
 import models.MessageState
 import models.MovementMessageWithState
+import models.MovementMessageWithoutState
 import models.SubmissionResult
 import models.request.ArrivalRequest
 import play.api.Logger
@@ -56,6 +58,7 @@ class MovementsController @Inject()(
   arrivalMovementRepository: ArrivalMovementRepository,
   arrivalMovementService: ArrivalMovementService,
   authenticate: AuthenticateActionProvider,
+  authenticateForRead: AuthenticatedGetArrivalForReadActionProvider,
   authenticatedOptionalArrival: AuthenticatedGetOptionalArrivalForWriteActionProvider,
   authenticateForWrite: AuthenticatedGetArrivalForWriteActionProvider,
   defaultActionBuilder: DefaultActionBuilder,
@@ -169,5 +172,12 @@ class MovementsController @Inject()(
         }
   }
 
-  def getMessage(arrivalId: ArrivalId, messageId: Int): Action[AnyContent] = ???
+  def getMessage(arrivalId: ArrivalId, messageId: Int): Action[AnyContent] = authenticateForRead(arrivalId) {
+    implicit request =>
+      if (request.arrival.messages.isDefinedAt(messageId) && (
+        (request.arrival.messages(messageId).isInstanceOf[MovementMessageWithState] && request.arrival.messages(messageId).asInstanceOf[MovementMessageWithState].state == SubmissionSucceeded)
+          || request.arrival.messages(messageId).isInstanceOf[MovementMessageWithoutState]))
+        Ok(Json.toJson(request.arrival.messages(messageId)))
+      else NotFound
+  }
 }
