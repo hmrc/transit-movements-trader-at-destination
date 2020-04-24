@@ -30,6 +30,7 @@ import models.MovementMessageWithoutState
 import models.MovementReferenceNumber
 import models.RejectionError
 import models.SubmissionResult
+import models.SubmissionResult._
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
@@ -43,10 +44,10 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
     Arbitrary {
       for {
         dateTime    <- arbitrary[LocalDateTime]
-        xml         <- Gen.const(<blankXml>message</blankXml>) // TODO: revisit this
+        xml         <- Gen.const(<blankXml>message</blankXml>)
         messageType <- Gen.oneOf(MessageType.values)
         state = SubmissionPending
-      } yield MovementMessageWithState(dateTime, messageType, xml, state, 1) // TODO: revisit message correlation id
+      } yield MovementMessageWithState(dateTime, messageType, xml, state, 1)
     }
   }
 
@@ -132,4 +133,6 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
       intsAboveValue(0).map(new MessageId(_))
     }
 
+  implicit lazy val arbitraryFailure: Arbitrary[Failure] =
+    Arbitrary(Gen.oneOf(FailureInternal, FailureExternal))
 }

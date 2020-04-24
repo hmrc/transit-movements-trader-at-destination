@@ -26,7 +26,14 @@ import play.api.mvc.PathBindable
 
 import scala.util.Try
 
-final class MessageId(val index: Int)
+final class MessageId(val index: Int) {
+  override def equals(obj: Any): Boolean = obj match {
+    case x: MessageId => x.index == this.index
+    case _            => false
+  }
+
+  override def toString: String = s"MessageId($index)"
+}
 
 object MessageId {
 

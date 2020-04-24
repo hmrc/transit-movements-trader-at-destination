@@ -42,21 +42,32 @@ class SubmitMessageService @Inject()(
   def submit(arrivalId: ArrivalId, messageId: MessageId, message: MovementMessageWithState)(implicit hc: HeaderCarrier): Future[SubmissionResult] =
     arrivalMovementRepository.addNewMessage(arrivalId, message) flatMap {
       case Failure(_) =>
-        Future.successful(SubmissionResult.Failure)
+        Future.successful(SubmissionResult.FailureInternal)
 
-      case Success(_) =>
-        (for {
-          _ <- messageConnector.post(arrivalId, message, OffsetDateTime.now)
-          _ <- arrivalMovementRepository.setArrivalStateAndMessageState(arrivalId, messageId, ArrivalState.ArrivalSubmitted, MessageState.SubmissionSucceeded)
-        } yield {
-          SubmissionResult.Success
-        }).recoverWith {
-          case _ =>
-            arrivalMovementRepository.setMessageState(arrivalId, messageId.index, message.state.transition(SubmissionResult.Failure)) map {
-              _ =>
-                SubmissionResult.Failure
-            }
-        }
+      case Success(_) => {
+        messageConnector
+          .post(arrivalId, message, OffsetDateTime.now)
+          .flatMap {
+            _ =>
+              arrivalMovementRepository
+                .setArrivalStateAndMessageState(arrivalId, messageId, ArrivalState.ArrivalSubmitted, MessageState.SubmissionSucceeded)
+                .map {
+                  _ =>
+                    SubmissionResult.Success
+                }
+                .recover({
+                  case _ =>
+                    SubmissionResult.FailureInternal
+                })
+          }
+          .recoverWith {
+            case _ =>
+              arrivalMovementRepository.setMessageState(arrivalId, messageId.index, message.state.transition(SubmissionResult.FailureInternal)) map {
+                _ =>
+                  SubmissionResult.FailureExternal
+              }
+          }
+      }
     }
 
 }

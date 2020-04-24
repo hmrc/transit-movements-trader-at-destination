@@ -29,6 +29,7 @@ import models.MessageState.SubmissionSucceeded
 import models.Arrival
 import models.ArrivalId
 import models.Arrivals
+import models.MessageId
 import models.MessageReceived
 import models.MessageState
 import models.MovementMessageWithState
@@ -40,8 +41,10 @@ import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import play.api.mvc.DefaultActionBuilder
+import play.api.mvc.Result
 import repositories.ArrivalMovementRepository
 import services.ArrivalMovementService
+import services.SubmitMessageService
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
@@ -55,6 +58,7 @@ class MovementsController @Inject()(
   cc: ControllerComponents,
   arrivalMovementRepository: ArrivalMovementRepository,
   arrivalMovementService: ArrivalMovementService,
+  submitMessageService: SubmitMessageService,
   authenticate: AuthenticateActionProvider,
   authenticatedOptionalArrival: AuthenticatedGetOptionalArrivalForWriteActionProvider,
   authenticateForWrite: AuthenticatedGetArrivalForWriteActionProvider,
@@ -93,7 +97,7 @@ class MovementsController @Inject()(
                       case error =>
                         logger.error(s"Call to EIS failed with the following Exception: ${error.getMessage}")
                         arrivalMovementRepository
-                          .setMessageState(arrival.arrivalId, arrival.messages.length, message.state.transition(SubmissionResult.Failure))
+                          .setMessageState(arrival.arrivalId, arrival.messages.length, message.state.transition(SubmissionResult.FailureInternal))
                           .map {
                             _ =>
                               BadGateway
@@ -148,40 +152,25 @@ class MovementsController @Inject()(
 
   def putArrival(arrivalId: ArrivalId): Action[NodeSeq] = authenticateForWrite(arrivalId).async(parse.xml) {
     implicit request: ArrivalRequest[NodeSeq] =>
-      arrivalMovementService.makeArrivalNotificationMessage(request.arrival.nextMessageCorrelationId)(request.body) match {
-        case None => Future.successful(BadRequest("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5"))
-        case Some(message) => {
-          arrivalMovementRepository.addNewMessage(request.arrival.arrivalId, message).flatMap {
-            case Failure(_) =>
-              Future.successful(InternalServerError)
-            case Success(()) =>
-              messageConnector
-                .post(request.arrival.arrivalId, message, OffsetDateTime.now)
-                .flatMap {
-                  _ =>
-                    for {
-                      _ <- arrivalMovementRepository
-                        .setMessageState(request.arrival.arrivalId, request.arrival.messages.length, MessageState.SubmissionSucceeded)
-                      _ <- arrivalMovementRepository.setState(request.arrival.arrivalId, request.arrival.state.transition(MessageReceived.ArrivalSubmitted))
-                    } yield {
-                      Accepted("Message accepted")
-                        .withHeaders("Location" -> routes.MovementsController.getArrival(request.arrival.arrivalId).url)
-                    }
-                }
-                .recoverWith {
-                  case error =>
-                    logger.error(s"Call to EIS failed with the following Exception: ${error.getMessage}")
-                    arrivalMovementRepository
-                      .setMessageState(request.arrival.arrivalId, request.arrival.messages.length, message.state.transition(SubmissionResult.Failure))
-                      .map {
-                        _ =>
-                          BadGateway
-                      }
-                }
+      arrivalMovementService
+        .makeArrivalNotificationMessage(request.arrival.nextMessageCorrelationId)(request.body)
+        .map {
+          message =>
+            submitMessageService
+              .submit(arrivalId, new MessageId(request.arrival.messages.length - 1), message)
+              .map {
+                case SubmissionResult.Success =>
+                  Accepted("Message accepted")
+                    .withHeaders("Location" -> routes.MovementsController.getArrival(request.arrival.arrivalId).url)
 
-          }
+                case SubmissionResult.FailureInternal =>
+                  InternalServerError
+
+                case SubmissionResult.FailureExternal =>
+                  BadGateway
+              }
         }
-      }
+        .getOrElse(Future.successful(BadRequest("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5")))
 
   }
 
