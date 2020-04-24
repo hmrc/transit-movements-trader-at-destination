@@ -50,9 +50,10 @@ class MessageResponseController @Inject()(cc: ControllerComponents,
     implicit request =>
       val xml: NodeSeq = request.request.body
 
-      val messageResponse: Option[MessageResponse] = request.headers.get("X-Message-Type").map {
-        case "IE025" => GoodsReleasedResponse
-        case "IE043" => UnloadingPermissionResponse
+      val messageResponse: Option[MessageResponse] = request.headers.get("X-Message-Type") match {
+        case Some("IE025") => Some(GoodsReleasedResponse)
+        case Some("IE043") => Some(UnloadingPermissionResponse)
+        case _             => None
       }
 
       messageResponse match {
@@ -61,9 +62,7 @@ class MessageResponseController @Inject()(cc: ControllerComponents,
             case Success(_) =>
               arrivalMovementService.makeMessage(response.messageType)(xml) match {
                 case Some(message) =>
-                  println(s"\n\n GOT HERE\n\n")
                   val newState: State = request.arrival.state.transition(response.messageReceived)
-                  println(s"\n\n GOT HERE 1\n\n")
                   arrivalMovementRepository.addMessage(request.arrival.arrivalId, message, newState).map {
                     case Success(_) => {
                       Ok

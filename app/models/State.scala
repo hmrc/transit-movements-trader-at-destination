@@ -33,7 +33,8 @@ object State extends Enumerable.Implicits {
 
   case object Submitted extends State {
     override def transition(event: StateAffectingEvent): State = event match {
-      case MessageReceived.GoodsReleased => GoodsReleased
+      case MessageReceived.GoodsReleased       => GoodsReleased
+      case MessageReceived.UnloadingPermission => UnloadingPermission
     }
   }
 
