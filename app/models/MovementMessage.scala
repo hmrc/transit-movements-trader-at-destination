@@ -25,6 +25,8 @@ import scala.xml.NodeSeq
 
 abstract class MovementMessage {
   def dateTime: LocalDateTime
+  def messageType: MessageType
+  def message: NodeSeq
 }
 
 final case class MovementMessageWithState(dateTime: LocalDateTime, messageType: MessageType, message: NodeSeq, state: MessageState, messageCorrelationId: Int)

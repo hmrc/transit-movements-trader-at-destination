@@ -33,6 +33,7 @@ import models.MessageState
 import models.MovementMessage
 import models.MovementMessageWithState
 import models.MovementMessageWithoutState
+import models.response.ResponseMovementMessage
 import org.mockito.Matchers.any
 import org.mockito.Matchers.{eq => eqTo}
 import org.mockito.Mockito._
@@ -816,7 +817,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           val result  = route(application, request).value
 
           status(result) mustEqual OK
-          contentAsJson(result) mustEqual Json.toJson(message)
+          contentAsJson(result) mustEqual Json.toJson(ResponseMovementMessage.build(arrival.arrivalId, 0, message))
         }
       }
 
@@ -838,7 +839,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           val result  = route(application, request).value
 
           status(result) mustEqual OK
-          contentAsJson(result) mustEqual Json.toJson(message)
+          contentAsJson(result) mustEqual Json.toJson(ResponseMovementMessage.build(arrival.arrivalId, 0, message))
         }
       }
 

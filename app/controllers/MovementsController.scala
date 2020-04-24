@@ -36,6 +36,7 @@ import models.MovementMessageWithState
 import models.MovementMessageWithoutState
 import models.SubmissionResult
 import models.request.ArrivalRequest
+import models.response.ResponseMovementMessage
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.Action
@@ -174,10 +175,11 @@ class MovementsController @Inject()(
 
   def getMessage(arrivalId: ArrivalId, messageId: Int): Action[AnyContent] = authenticateForRead(arrivalId) {
     implicit request =>
-      if (request.arrival.messages.isDefinedAt(messageId) && (
-        (request.arrival.messages(messageId).isInstanceOf[MovementMessageWithState] && request.arrival.messages(messageId).asInstanceOf[MovementMessageWithState].state == SubmissionSucceeded)
+      if (request.arrival.messages.isDefinedAt(messageId) && ((request.arrival
+            .messages(messageId)
+            .isInstanceOf[MovementMessageWithState] && request.arrival.messages(messageId).asInstanceOf[MovementMessageWithState].state == SubmissionSucceeded)
           || request.arrival.messages(messageId).isInstanceOf[MovementMessageWithoutState]))
-        Ok(Json.toJson(request.arrival.messages(messageId)))
+        Ok(Json.toJson(ResponseMovementMessage.build(arrivalId, messageId, request.arrival.messages(messageId))))
       else NotFound
   }
 }
