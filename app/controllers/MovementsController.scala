@@ -168,4 +168,6 @@ class MovementsController @Inject()(
             InternalServerError(s"Failed with the following error: $e")
         }
   }
+
+  def getMessage(arrivalId: ArrivalId, messageId: Int): Action[AnyContent] = ???
 }
