@@ -24,16 +24,11 @@ import base.SpecBase
 import generators.ModelGenerators
 import models.Arrival
 import models.ArrivalId
+import models.ArrivalState
 import models.MessageSender
 import models.MovementReferenceNumber
-import models.ArrivalState
-import models.State
-import models.State.GoodsReleased
-import models.State.UnloadingPermission
-import models.request.ArrivalId
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito._
-import org.scalacheck.Gen
 import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.inject.bind
@@ -65,7 +60,7 @@ class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChec
     arrivalId,
     MovementReferenceNumber("mrn"),
     "eori",
-    State.Submitted,
+    ArrivalState.ArrivalSubmitted,
     LocalDateTime.of(dateOfPrep, timeOfPrep),
     LocalDateTime.of(dateOfPrep, timeOfPrep),
     Seq.empty,
@@ -97,7 +92,7 @@ class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChec
 
       "must lock the arrival, add the message, set the correct state to GoodsReleased, unlock it and return OK" in {
         when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
-        when(mockArrivalMovementRepository.addMessage(any(), any(), any())).thenReturn(Future.successful(Success(())))
+        when(mockArrivalMovementRepository.addResponseMessage(any(), any(), any())).thenReturn(Future.successful(Success(())))
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
         when(mockXmlValidationService.validate(any(), any())).thenReturn(Success(()))
@@ -119,7 +114,7 @@ class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChec
 
           status(result) mustEqual OK
           verify(mockLockRepository, times(1)).lock(arrivalId)
-          verify(mockArrivalMovementRepository, times(1)).addMessage(any(), any(), eqTo(GoodsReleased))
+          verify(mockArrivalMovementRepository, times(1)).addResponseMessage(any(), any(), eqTo(ArrivalState.GoodsReleased))
           verify(mockLockRepository, times(1)).unlock(arrivalId)
         }
       }
@@ -148,7 +143,7 @@ class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChec
 
           status(result) mustEqual OK
           verify(mockLockRepository, times(1)).lock(arrivalId)
-          verify(mockArrivalMovementRepository, times(1)).addResponseMessage(any(), any(), eqTo(ArrivalState.GoodsReleased))
+          verify(mockArrivalMovementRepository, times(1)).addResponseMessage(any(), any(), eqTo(ArrivalState.UnloadingPermission))
           verify(mockLockRepository, times(1)).unlock(arrivalId)
         }
       }

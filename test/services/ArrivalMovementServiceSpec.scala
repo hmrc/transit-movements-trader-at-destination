@@ -129,8 +129,7 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
       val messageCorrelationId = 1
       val expectedMessage      = MovementMessageWithoutState(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.GoodsReleased, movement, messageCorrelationId)
 
-      service.makeGoodsReleasedMessage(messageCorrelationId)(movement).value mustEqual expectedMessage
-      service.makeMessage(MessageType.GoodsReleased)(movement).value mustEqual expectedMessage
+      service.makeMessage(messageCorrelationId, MessageType.GoodsReleased)(movement).value mustEqual expectedMessage
     }
 
     "returns None when the root node is not <CC025A>" in {
@@ -148,8 +147,9 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
           <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
         </Foo>
 
-      service.makeGoodsReleasedMessage(1)(movement) must not be defined
-      service.makeMessage(MessageType.GoodsReleased)(movement) must not be defined
+      val messageCorrelationId = 1
+
+      service.makeMessage(messageCorrelationId, MessageType.GoodsReleased)(movement) must not be defined
     }
   }
 
@@ -179,14 +179,11 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
     }
 
     "will return a None when the date in the DatOfPreMES9 node is missing" in {
-      val dateOfPrep: LocalDate = LocalDate.now()
-
       val movement =
         <CC007A>
         </CC007A>
 
       ArrivalMovementService.dateOfPrepR(movement) must not be (defined)
-
     }
 
   }
@@ -217,8 +214,6 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
     }
 
     "returns a None if TimOfPreMES10 is missing" in {
-      val timeOfPrep: LocalTime = LocalTime.of(1, 1)
-
       val movement =
         <CC007A>
         </CC007A>
@@ -245,8 +240,6 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
     }
 
     "returns None if DocNumHEA5 node is missing" in {
-      val mrn = MovementReferenceNumber("MRN")
-
       val movement =
         <CC007A>
           <HEAHEA>
@@ -334,7 +327,6 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
     "will return a None when the date in the DatOfPreMES10 node is missing" in {
 
       val dateOfPrep: LocalDate = LocalDate.now()
-      val timeOfPrep: LocalTime = LocalTime.of(1, 1)
 
       val movement =
         <CC007A>
@@ -346,4 +338,5 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
     }
 
   }
+
 }

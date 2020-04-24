@@ -18,10 +18,10 @@ package controllers
 
 import controllers.actions.GetArrivalForWriteActionProvider
 import javax.inject.Inject
+import models.ArrivalState
 import models.GoodsReleasedResponse
 import models.MessageResponse
 import models.MessageSender
-import models.State
 import models.UnloadingPermissionResponse
 import play.api.Logger
 import play.api.mvc.Action
@@ -60,19 +60,17 @@ class MessageResponseController @Inject()(cc: ControllerComponents,
         case Some(response) =>
           xmlValidationService.validate(xml.toString, response.xsdFile) match {
             case Success(_) =>
-              arrivalMovementService.makeMessage(response.messageType)(xml) match {
+              arrivalMovementService.makeMessage(messageSender.messageCorrelationId, response.messageType)(xml) match {
                 case Some(message) =>
-                  val newState: State = request.arrival.state.transition(response.messageReceived)
-                  arrivalMovementRepository.addMessage(request.arrival.arrivalId, message, newState).map {
-                    case Success(_) => {
-                      Ok
-                    }
+                  val newState: ArrivalState = request.arrival.state.transition(response.messageReceived)
+                  arrivalMovementRepository.addResponseMessage(request.arrival.arrivalId, message, newState).map {
+                    case Success(_) => Ok
                     case Failure(e) =>
                       logger.error(s"Failure to add message to movement. Exception: ${e.getMessage}")
                       InternalServerError
                   }
                 case None =>
-                  logger.error(s"Failure to parse message GoodsReleased")
+                  logger.error(s"Failure to parse message")
                   Future.successful(InternalServerError)
               }
             case Failure(e) =>
