@@ -54,23 +54,19 @@ class MessageConnector @Inject()(config: AppConfig, http: HttpClient)(implicit e
   }
 
   private def addHeaders(messageType: MessageType, dateTime: OffsetDateTime, messageSender: MessageSender)(
-    implicit headerCarrier: HeaderCarrier): Seq[(String, String)] = {
-
-    val bearerToken = config.eisBearerToken
-
+    implicit headerCarrier: HeaderCarrier): Seq[(String, String)] =
     Seq(
-      "Content-Type"   -> "application/xml;charset=UTF-8",
-      "X-Message-Type" -> messageType.toString,
+      "X-Forwarded-Host" -> "mdtp",
       "X-Correlation-ID" -> {
         headerCarrier.sessionId
           .map(_.value)
           .getOrElse(UUID.randomUUID().toString)
-      },
-      "X-Message-Sender" -> messageSender.toString,
-      "X-Forwarded-Host" -> "mdtp",
+      }, // TODO double check this is correct
       "Date"             -> Format.dateFormattedForHeader(dateTime),
-      "Accept"           -> "application/xml"
-      //"Authorization"    -> s"Bearer $bearerToken"
+      "Content-Type"     -> "application/xml",
+      "Accept"           -> "application/xml",
+      "Authorization"    -> "Bearer securityToken", //TODO placeholder, will be provided later
+      "X-Message-Type"   -> messageType.toString,
+      "X-Message-Sender" -> messageSender.toString
     )
-  }
 }

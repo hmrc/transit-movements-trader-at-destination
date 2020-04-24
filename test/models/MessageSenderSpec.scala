@@ -28,9 +28,9 @@ class MessageSenderSpec extends FreeSpec with MustMatchers with ScalaCheckProper
 
   "Message Sender" - {
 
-    "must build from a valid string" in {
+    "must build from a valid string with correct padding" in {
 
-      val validString = "MDTP-123-1"
+      val validString = "MDTP-000000000000000000000000123-01"
 
       MessageSender(validString).value mustEqual MessageSender(ArrivalId(123), 1)
     }
