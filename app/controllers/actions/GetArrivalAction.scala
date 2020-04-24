@@ -71,7 +71,7 @@ private[actions] class AuthenticatedGetArrivalAction(
     repository.get(arrivalId).map {
       case Some(arrival) if arrival.eoriNumber == request.eoriNumber =>
         Right(ArrivalRequest(request.request, arrival))
-      case Some(a) =>
+      case Some(_) =>
         Logger.warn("Attempt to retrieve an arrival for another EORI")
         Left(NotFound)
       case None =>
