@@ -213,8 +213,6 @@ class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: React
         }
     }
   }
-
-  def getMessage(arrivalId: ArrivalId, messageId: Int): Future[Option[MovementMessage]] = ???
 }
 
 object ArrivalMovementRepository {
