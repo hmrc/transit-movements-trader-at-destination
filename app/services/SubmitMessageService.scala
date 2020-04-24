@@ -20,6 +20,7 @@ import java.time.OffsetDateTime
 
 import connectors.MessageConnector
 import javax.inject.Inject
+import models.Arrival
 import models.ArrivalId
 import models.ArrivalState
 import models.MessageId
@@ -69,5 +70,42 @@ class SubmitMessageService @Inject()(
           }
       }
     }
+
+  def submitNewArrival(arrival: Arrival)(implicit hc: HeaderCarrier): Future[SubmissionResult] =
+    arrivalMovementRepository
+      .insert(arrival)
+      .flatMap {
+        _ =>
+          val message   = arrival.messages.head.asInstanceOf[MovementMessageWithState]
+          val messageId = new MessageId(arrival.messages.length - 1)
+
+          messageConnector
+            .post(arrival.arrivalId, message, OffsetDateTime.now)
+            .flatMap {
+              _ =>
+                arrivalMovementRepository
+                  .setArrivalStateAndMessageState(arrival.arrivalId, messageId, ArrivalState.ArrivalSubmitted, MessageState.SubmissionSucceeded)
+                  .map {
+                    _ =>
+                      SubmissionResult.Success
+                  }
+                  .recover({
+                    case _ =>
+                      SubmissionResult.FailureInternal
+                  })
+            }
+            .recoverWith {
+              case _ =>
+                arrivalMovementRepository.setMessageState(arrival.arrivalId, messageId.index, message.state.transition(SubmissionResult.FailureInternal)) map {
+                  _ =>
+                    SubmissionResult.FailureExternal
+                }
+            }
+
+      }
+      .recover {
+        case _ =>
+          SubmissionResult.FailureInternal
+      }
 
 }
