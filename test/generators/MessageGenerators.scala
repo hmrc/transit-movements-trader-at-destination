@@ -20,11 +20,13 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 import models.Arrival
+import models.ArrivalId
+import models.ArrivalState
+import models.MessageState
 import models.MessageType
-import models.MovementMessage
+import models.MovementMessageWithState
+import models.MovementMessageWithoutState
 import models.MovementReferenceNumber
-import models.State
-import models.request.ArrivalId
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
@@ -34,14 +36,25 @@ trait MessageGenerators extends ModelGenerators {
   private val pastDate: LocalDate = LocalDate.of(1900, 1, 1)
   private val dateNow: LocalDate  = LocalDate.now
 
-  implicit lazy val arbitraryMessageXml: Arbitrary[MovementMessage] = {
+  implicit lazy val arbitraryMessageWithStateXml: Arbitrary[MovementMessageWithState] = {
+    Arbitrary {
+      for {
+        dateTime    <- arbitrary[LocalDateTime]
+        xml         <- Gen.const(<blankXml>message</blankXml>) // TODO: revisit this
+        messageType <- Gen.oneOf(MessageType.values)
+        state       <- Gen.oneOf(MessageState.values)
+      } yield MovementMessageWithState(dateTime, messageType, xml, state, 1) // TODO: revisit message correlation id
+    }
+  }
+
+  implicit lazy val arbitraryMessageWithoutStateXml: Arbitrary[MovementMessageWithoutState] = {
     Arbitrary {
       for {
         date        <- datesBetween(pastDate, dateNow)
         time        <- timesBetween(pastDate, dateNow)
         xml         <- Gen.const(<blankXml>message</blankXml>)
         messageType <- Gen.oneOf(MessageType.values)
-      } yield MovementMessage(LocalDateTime.of(date, time), messageType, xml)
+      } yield MovementMessageWithoutState(LocalDateTime.of(date, time), messageType, xml, 1)
     }
   }
 
@@ -53,9 +66,9 @@ trait MessageGenerators extends ModelGenerators {
     }
   }
 
-  implicit lazy val arbitraryState: Arbitrary[State] =
+  implicit lazy val arbitraryState: Arbitrary[ArrivalState] =
     Arbitrary {
-      Gen.oneOf(State.values)
+      Gen.oneOf(ArrivalState.values)
     }
 
   implicit lazy val arbitraryArrival: Arbitrary[Arrival] = {
@@ -64,10 +77,10 @@ trait MessageGenerators extends ModelGenerators {
         arrivalId               <- arbitrary[ArrivalId]
         movementReferenceNumber <- arbitrary[MovementReferenceNumber]
         eoriNumber              <- arbitrary[String]
-        state                   <- arbitrary[State]
+        state                   <- arbitrary[ArrivalState]
         created                 <- arbitrary[LocalDateTime]
         updated                 <- arbitrary[LocalDateTime]
-        messages                <- seqWithMaxLength[MovementMessage](2)
+        messages                <- seqWithMaxLength[MovementMessageWithState](2)
       } yield
         Arrival(
           arrivalId = arrivalId,
@@ -76,7 +89,8 @@ trait MessageGenerators extends ModelGenerators {
           state = state,
           created = created,
           updated = updated,
-          messages = messages
+          messages = messages,
+          nextMessageCorrelationId = messages.length + 1
         )
     }
   }

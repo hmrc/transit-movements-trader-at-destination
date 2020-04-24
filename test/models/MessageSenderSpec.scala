@@ -16,7 +16,6 @@
 
 package models
 
-import models.request.ArrivalId
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.EitherValues
 import org.scalatest.FreeSpec

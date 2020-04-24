@@ -23,8 +23,10 @@ import java.time.LocalTime
 import base.SpecBase
 import generators.ModelGenerators
 import models.Arrival
+import models.ArrivalId
 import models.MessageSender
 import models.MovementReferenceNumber
+import models.ArrivalState
 import models.State
 import models.State.GoodsReleased
 import models.State.UnloadingPermission
@@ -66,7 +68,8 @@ class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChec
     State.Submitted,
     LocalDateTime.of(dateOfPrep, timeOfPrep),
     LocalDateTime.of(dateOfPrep, timeOfPrep),
-    Seq.empty
+    Seq.empty,
+    1
   )
 
   private val requestGoodsReleasedXmlBody =
@@ -123,7 +126,7 @@ class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChec
 
       "must lock the arrival, add the message, set the correct state to UnloadingPermission, unlock it and return OK" in {
         when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
-        when(mockArrivalMovementRepository.addMessage(any(), any(), any())).thenReturn(Future.successful(Success(())))
+        when(mockArrivalMovementRepository.addResponseMessage(any(), any(), any())).thenReturn(Future.successful(Success(())))
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
         when(mockXmlValidationService.validate(any(), any())).thenReturn(Success(()))
@@ -145,7 +148,7 @@ class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChec
 
           status(result) mustEqual OK
           verify(mockLockRepository, times(1)).lock(arrivalId)
-          verify(mockArrivalMovementRepository, times(1)).addMessage(any(), any(), eqTo(UnloadingPermission))
+          verify(mockArrivalMovementRepository, times(1)).addResponseMessage(any(), any(), eqTo(ArrivalState.GoodsReleased))
           verify(mockLockRepository, times(1)).unlock(arrivalId)
         }
       }
@@ -170,7 +173,7 @@ class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChec
           val result = route(application, request).value
 
           status(result) mustEqual NOT_FOUND
-          verify(mockArrivalMovementRepository, never).addMessage(any(), any(), any())
+          verify(mockArrivalMovementRepository, never).addResponseMessage(any(), any(), any())
           verify(mockLockRepository, times(1)).lock(arrivalId)
           verify(mockLockRepository, times(1)).unlock(arrivalId)
         }
@@ -178,7 +181,7 @@ class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChec
 
       "must lock, return Internal Server Error and release the lock if the message is an invalid Arrival" in {
         when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
-        when(mockArrivalMovementRepository.addMessage(any(), any(), any())).thenReturn(Future.successful(Success(())))
+        when(mockArrivalMovementRepository.addResponseMessage(any(), any(), any())).thenReturn(Future.successful(Success(())))
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
         when(mockXmlValidationService.validate(any(), any())).thenReturn(Success(()))
@@ -208,7 +211,7 @@ class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChec
           val result = route(application, request).value
 
           status(result) mustEqual INTERNAL_SERVER_ERROR
-          verify(mockArrivalMovementRepository, never).addMessage(any(), any(), any())
+          verify(mockArrivalMovementRepository, never).addResponseMessage(any(), any(), any())
           verify(mockLockRepository, times(1)).lock(arrivalId)
           verify(mockLockRepository, times(1)).unlock(arrivalId)
         }
@@ -216,7 +219,7 @@ class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChec
 
       "must lock, return Internal Server Error and unlock if adding the message to the movement fails" in {
         when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
-        when(mockArrivalMovementRepository.addMessage(any(), any(), any())).thenReturn(Future.successful(Failure(new Exception())))
+        when(mockArrivalMovementRepository.addResponseMessage(any(), any(), any())).thenReturn(Future.successful(Failure(new Exception())))
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
         when(mockXmlValidationService.validate(any(), any())).thenReturn(Success(()))
@@ -271,7 +274,7 @@ class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChec
 
       "must lock the arrival, return InternalServerError and unlock when an XMessageType is invalid" in {
         when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
-        when(mockArrivalMovementRepository.addMessage(any(), any(), any())).thenReturn(Future.successful(Success(())))
+        when(mockArrivalMovementRepository.addResponseMessage(any(), any(), any())).thenReturn(Future.successful(Success(())))
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
         when(mockXmlValidationService.validate(any(), any())).thenReturn(Success(()))
@@ -292,7 +295,7 @@ class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChec
 
           status(result) mustEqual INTERNAL_SERVER_ERROR
           verify(mockLockRepository, times(1)).lock(arrivalId)
-          verify(mockArrivalMovementRepository, never()).addMessage(any(), any(), any())
+          verify(mockArrivalMovementRepository, never()).addResponseMessage(any(), any(), any())
           verify(mockLockRepository, times(1)).unlock(arrivalId)
         }
       }

@@ -17,26 +17,47 @@
 package models
 
 import java.time.LocalDateTime
+
 import play.api.libs.json._
+import utils.NodeSeqFormat
 
 import scala.xml.NodeSeq
-import scala.xml.XML
 
-final case class MovementMessage(dateTime: LocalDateTime, messageType: MessageType, message: NodeSeq)
+abstract class MovementMessage {
+  def dateTime: LocalDateTime
+}
 
-object MovementMessage {
+final case class MovementMessageWithState(dateTime: LocalDateTime, messageType: MessageType, message: NodeSeq, state: MessageState, messageCorrelationId: Int)
+    extends MovementMessage
 
-  implicit val writesNodeSeq: Writes[NodeSeq] = new Writes[NodeSeq] {
-    override def writes(o: NodeSeq): JsValue = JsString(o.mkString)
-  }
+final case class MovementMessageWithoutState(dateTime: LocalDateTime, messageType: MessageType, message: NodeSeq, messageCorrelationId: Int)
+    extends MovementMessage
 
-  implicit val readsNodeSeq: Reads[NodeSeq] = new Reads[NodeSeq] {
-    override def reads(json: JsValue): JsResult[NodeSeq] = json match {
-      case JsString(value) => JsSuccess(XML.loadString(value))
-      case _               => JsError("Value cannot be parsed as XML")
+object MovementMessage extends NodeSeqFormat {
+  implicit lazy val reads: Reads[MovementMessage] = new Reads[MovementMessage] {
+    override def reads(json: JsValue): JsResult[MovementMessage] = (json \ "state").toOption match {
+      case Some(_) =>
+        json.validate[MovementMessageWithState]
+      case None =>
+        json.validate[MovementMessageWithoutState]
     }
   }
 
-  implicit val formatsMovementMessage: OFormat[MovementMessage] =
-    Json.format[MovementMessage]
+  implicit lazy val writes: OWrites[MovementMessage] = OWrites {
+    case ns: MovementMessageWithState    => Json.toJsObject(ns)(MovementMessageWithState.formatsMovementMessage)
+    case ws: MovementMessageWithoutState => Json.toJsObject(ws)(MovementMessageWithoutState.formatsMovementMessage)
+  }
+
+}
+
+object MovementMessageWithState extends NodeSeqFormat {
+
+  implicit val formatsMovementMessage: OFormat[MovementMessageWithState] =
+    Json.format[MovementMessageWithState]
+}
+
+object MovementMessageWithoutState extends NodeSeqFormat {
+
+  implicit val formatsMovementMessage: OFormat[MovementMessageWithoutState] =
+    Json.format[MovementMessageWithoutState]
 }

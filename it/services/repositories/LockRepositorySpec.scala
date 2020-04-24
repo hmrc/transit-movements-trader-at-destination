@@ -1,7 +1,7 @@
 package services.repositories
 
 import generators.MessageGenerators
-import models.request.ArrivalId
+import models.ArrivalId
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.EitherValues

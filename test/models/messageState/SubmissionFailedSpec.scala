@@ -14,28 +14,24 @@
  * limitations under the License.
  */
 
-package models.state
+package models.messageState
 
-import models.State._
-import models.MessageReceived
+import models.MessageState.SubmissionFailed
+import models.MessageState.SubmissionSucceeded
 import models.SubmissionResult
 import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers
 
-class PendingSubmissionSpec extends FreeSpec with MustMatchers {
+class SubmissionFailedSpec extends FreeSpec with MustMatchers {
 
-  "Pending Submission must transition" - {
+  "SubmissionFailed must transition" - {
 
     "to Submitted when receiving a Submission Success event" in {
-      PendingSubmission.transition(SubmissionResult.Success) mustEqual Submitted
+      SubmissionFailed.transition(SubmissionResult.Success) mustEqual SubmissionSucceeded
     }
 
     "to Submission Failed when receiving a Submission Failure event" in {
-      PendingSubmission.transition(SubmissionResult.Failure) mustEqual SubmissionFailed
-    }
-
-    "to Goods Released when receiving a Goods Released event" in {
-      PendingSubmission.transition(MessageReceived.GoodsReleased) mustEqual GoodsReleased
+      SubmissionFailed.transition(SubmissionResult.Failure) mustEqual SubmissionFailed
     }
   }
 }

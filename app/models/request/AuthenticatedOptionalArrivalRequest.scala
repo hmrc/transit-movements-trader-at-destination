@@ -14,22 +14,10 @@
  * limitations under the License.
  */
 
-package controllers.actions
+package models.request
 
-import javax.inject.Inject
-import models.ArrivalId
-import models.request.ArrivalRequest
-import play.api.mvc.ActionBuilder
-import play.api.mvc.AnyContent
-import play.api.mvc.BodyParsers
+import models.Arrival
+import play.api.mvc.WrappedRequest
 
-import scala.concurrent.ExecutionContext
-
-class GetArrivalForWriteActionProvider @Inject()(
-  lock: LockActionProvider,
-  getArrival: GetArrivalActionProvider
-) {
-
-  def apply(arrivalId: ArrivalId): ActionBuilder[ArrivalRequest, AnyContent] =
-    lock(arrivalId) andThen getArrival(arrivalId)
-}
+case class AuthenticatedOptionalArrivalRequest[A](request: AuthenticatedRequest[A], arrival: Option[Arrival], eoriNumber: String)
+    extends WrappedRequest[A](request)

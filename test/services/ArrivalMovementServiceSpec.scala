@@ -22,11 +22,13 @@ import java.time.LocalTime
 
 import base.SpecBase
 import models.Arrival
+import models.ArrivalId
+import models.ArrivalState
+import models.MessageState
 import models.MessageType
-import models.MovementMessage
+import models.MovementMessageWithState
+import models.MovementMessageWithoutState
 import models.MovementReferenceNumber
-import models.State
-import models.request.ArrivalId
 import org.mockito.Mockito.when
 import org.scalatest.concurrent.IntegrationPatience
 import play.api.inject.bind
@@ -38,9 +40,10 @@ import scala.concurrent.Future
 class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
 
   "makeArrivalMovement" - {
-    "creates an arrival movement with an internal ref number and a mrn, date and time of creation from the message submitted" in {
+    "creates an arrival movement with an internal ref number and a mrn, date and time of creation from the message submitted with a message id of 1 and next correlation id of 2" in {
       val dateOfPrep = LocalDate.now()
       val timeOfPrep = LocalTime.of(1, 1)
+      val dateTime   = LocalDateTime.of(dateOfPrep, timeOfPrep)
 
       val id   = ArrivalId(1)
       val mrn  = MovementReferenceNumber("MRN")
@@ -58,23 +61,24 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
 
       val movement =
         <CC007A>
-            <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
-            <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
-            <HEAHEA>
-              <DocNumHEA5>{mrn.value}</DocNumHEA5>
-            </HEAHEA>
-          </CC007A>
+          <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+          <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+          <HEAHEA>
+            <DocNumHEA5>{mrn.value}</DocNumHEA5>
+          </HEAHEA>
+        </CC007A>
 
       val expectedArrival = Arrival(
         arrivalId = id,
         movementReferenceNumber = mrn,
         eoriNumber = eori,
-        state = State.PendingSubmission,
-        LocalDateTime.of(dateOfPrep, timeOfPrep),
-        LocalDateTime.of(dateOfPrep, timeOfPrep),
+        state = ArrivalState.Initialized,
+        dateTime,
+        dateTime,
         messages = Seq(
-          MovementMessage(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.ArrivalNotification, movement)
-        )
+          MovementMessageWithState(dateTime, MessageType.ArrivalNotification, movement, MessageState.SubmissionPending, 1)
+        ),
+        nextMessageCorrelationId = 2
       )
 
       service.makeArrivalMovement(eori)(movement).value.futureValue mustEqual expectedArrival
@@ -122,8 +126,10 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
           <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
         </CC025A>
 
-      val expectedMessage = MovementMessage(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.GoodsReleased, movement)
+      val messageCorrelationId = 1
+      val expectedMessage      = MovementMessageWithoutState(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.GoodsReleased, movement, messageCorrelationId)
 
+      service.makeGoodsReleasedMessage(messageCorrelationId)(movement).value mustEqual expectedMessage
       service.makeMessage(MessageType.GoodsReleased)(movement).value mustEqual expectedMessage
     }
 
@@ -142,6 +148,7 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
           <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
         </Foo>
 
+      service.makeGoodsReleasedMessage(1)(movement) must not be defined
       service.makeMessage(MessageType.GoodsReleased)(movement) must not be defined
     }
   }
@@ -152,8 +159,8 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
 
       val movement =
         <CC007A>
-            <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
-          </CC007A>
+          <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+        </CC007A>
 
       ArrivalMovementService.dateOfPrepR(movement).value mustEqual dateOfPrep
 
@@ -164,8 +171,8 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
 
       val movement =
         <CC007A>
-            <DatOfPreMES9>{Format.dateFormatted(dateOfPrep) ++ "1"}</DatOfPreMES9>
-          </CC007A>
+          <DatOfPreMES9>{Format.dateFormatted(dateOfPrep) ++ "1"}</DatOfPreMES9>
+        </CC007A>
 
       ArrivalMovementService.dateOfPrepR(movement) must not be (defined)
 
@@ -176,7 +183,7 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
 
       val movement =
         <CC007A>
-          </CC007A>
+        </CC007A>
 
       ArrivalMovementService.dateOfPrepR(movement) must not be (defined)
 
@@ -190,8 +197,8 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
 
       val movement =
         <CC007A>
-            <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
-          </CC007A>
+          <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+        </CC007A>
 
       ArrivalMovementService.timeOfPrepR(movement).value mustEqual timeOfPrep
 
@@ -339,5 +346,4 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
     }
 
   }
-
 }

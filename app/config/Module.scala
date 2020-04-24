@@ -17,7 +17,6 @@
 package config
 
 import com.google.inject.AbstractModule
-import connectors.MessageConnector
 import controllers.actions.AuthenticateActionProvider
 import controllers.actions.AuthenticateActionProviderImpl
 

@@ -17,7 +17,7 @@
 package controllers.actions
 
 import javax.inject.Inject
-import models.request.ArrivalId
+import models.ArrivalId
 import play.api.mvc.ActionBuilder
 import play.api.mvc.ActionFunction
 import play.api.mvc.AnyContent
@@ -53,7 +53,7 @@ private[actions] class LockAction(
 
   override def invokeBlock[A](request: Request[A], block: Request[A] => Future[Result]): Future[Result] =
     lockRepository.lock(arrivalId).flatMap {
-      case true =>
+      case true => {
         block(request)
           .flatMap {
             result =>
@@ -69,6 +69,7 @@ private[actions] class LockAction(
                   InternalServerError
               }
           }
+      }
       case false =>
         Future.successful(Locked)
     }
