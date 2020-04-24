@@ -20,6 +20,7 @@ import java.time.OffsetDateTime
 
 import connectors.MessageConnector
 import javax.inject.Inject
+import play.api.Logger
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalState
@@ -39,6 +40,8 @@ class SubmitMessageService @Inject()(
   arrivalMovementRepository: ArrivalMovementRepository,
   messageConnector: MessageConnector
 )(implicit ec: ExecutionContext) {
+
+  private val logger = Logger(getClass)
 
   def submit(arrivalId: ArrivalId, messageId: MessageId, message: MovementMessageWithState)(implicit hc: HeaderCarrier): Future[SubmissionResult] =
     arrivalMovementRepository.addNewMessage(arrivalId, message) flatMap {
@@ -62,11 +65,14 @@ class SubmitMessageService @Inject()(
                 })
           }
           .recoverWith {
-            case _ =>
+            case error => {
+              logger.error(s"Existing Movement - Call to EIS failed with the following Exception: ${error.getMessage}")
+
               arrivalMovementRepository.setMessageState(arrivalId, messageId.index, message.state.transition(SubmissionResult.FailureInternal)) map {
                 _ =>
                   SubmissionResult.FailureExternal
               }
+            }
           }
       }
     }
@@ -95,7 +101,9 @@ class SubmitMessageService @Inject()(
                   })
             }
             .recoverWith {
-              case _ =>
+              case error =>
+                logger.error(s"New Movement - Call to EIS failed with the following Exception: ${error.getMessage}")
+
                 arrivalMovementRepository.setMessageState(arrival.arrivalId, messageId.index, message.state.transition(SubmissionResult.FailureInternal)) map {
                   _ =>
                     SubmissionResult.FailureExternal

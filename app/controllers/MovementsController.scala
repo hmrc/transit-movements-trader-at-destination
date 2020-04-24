@@ -16,42 +16,27 @@
 
 package controllers
 
-import java.time.OffsetDateTime
-
-import connectors.MessageConnector
 import controllers.actions.AuthenticateActionProvider
 import controllers.actions.AuthenticatedGetArrivalForWriteActionProvider
 import controllers.actions.AuthenticatedGetOptionalArrivalForWriteActionProvider
 import javax.inject.Inject
-import models.MessageReceived.ArrivalSubmitted
-import models.MessageState.SubmissionFailed
-import models.MessageState.SubmissionSucceeded
-import models.Arrival
+import models.request.ArrivalRequest
 import models.ArrivalId
 import models.Arrivals
 import models.MessageId
-import models.MessageReceived
-import models.MessageState
-import models.MovementMessageWithState
 import models.SubmissionResult
-import models.request.ArrivalRequest
-import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import play.api.mvc.DefaultActionBuilder
-import play.api.mvc.Result
 import repositories.ArrivalMovementRepository
 import services.ArrivalMovementService
 import services.SubmitMessageService
-import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.util.Failure
-import scala.util.Success
 import scala.xml.NodeSeq
 
 class MovementsController @Inject()(
@@ -62,12 +47,9 @@ class MovementsController @Inject()(
   authenticate: AuthenticateActionProvider,
   authenticatedOptionalArrival: AuthenticatedGetOptionalArrivalForWriteActionProvider,
   authenticateForWrite: AuthenticatedGetArrivalForWriteActionProvider,
-  defaultActionBuilder: DefaultActionBuilder,
-  messageConnector: MessageConnector
+  defaultActionBuilder: DefaultActionBuilder
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
-
-  private val logger = Logger(getClass)
 
   def post: Action[NodeSeq] = authenticatedOptionalArrival().async(parse.xml) {
     implicit request =>
@@ -101,29 +83,14 @@ class MovementsController @Inject()(
               arrivalFuture
                 .flatMap {
                   arrival =>
-                    arrivalMovementRepository.insert(arrival) flatMap {
-                      _ =>
-                        messageConnector
-                        // TODO: Fix this casting
-                          .post(arrival.arrivalId, arrival.messages.head.asInstanceOf[MovementMessageWithState], OffsetDateTime.now)
-                          .flatMap {
-                            _ =>
-                              for {
-                                _ <- arrivalMovementRepository
-                                  .setMessageState(arrival.arrivalId, 0, SubmissionSucceeded) // TODO: use the message's state transition here and don't hard code the index of the message
-                                _ <- arrivalMovementRepository.setState(arrival.arrivalId, arrival.state.transition(ArrivalSubmitted))
-                              } yield {
-                                Accepted("Message accepted")
-                                  .withHeaders("Location" -> routes.MovementsController.getArrival(arrival.arrivalId).url)
-                              }
-                          }
-                          .recoverWith {
-                            case error =>
-                              logger.error(s"Call to EIS failed with the following Exception: ${error.getMessage}")
-                              arrivalMovementRepository
-                                .setMessageState(arrival.arrivalId, arrival.messages.length - 1, SubmissionFailed)
-                                .map(_ => BadGateway)
-                          }
+                    submitMessageService.submitNewArrival(arrival) map {
+                      case SubmissionResult.Success =>
+                        Accepted("Message accepted")
+                          .withHeaders("Location" -> routes.MovementsController.getArrival(arrival.arrivalId).url)
+                      case SubmissionResult.FailureExternal =>
+                        BadGateway
+                      case SubmissionResult.FailureInternal =>
+                        InternalServerError
                     }
                 }
                 .recover {
