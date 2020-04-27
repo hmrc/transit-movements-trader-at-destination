@@ -16,6 +16,7 @@
 
 package models
 
+import cats.data.ReaderT
 import play.api.libs.json.Format
 import play.api.libs.json.JsError
 import play.api.libs.json.JsResult
@@ -40,11 +41,11 @@ object MessageType extends Enumerable.Implicits {
 
   val supportedMessageTypes = Seq(UnloadingRemarks)
 
-  def isMessageTypeSupported(message: NodeSeq): Boolean =
-    message.nonEmpty && (message.head.label == UnloadingRemarks.rootNode)
-
-  def getMessageType(message: NodeSeq): Option[MessageType] =
-    supportedMessageTypes.find(_.rootNode == message.head.label)
+  def getMessageType: ReaderT[Option, NodeSeq, MessageType] =
+    ReaderT[Option, NodeSeq, MessageType] {
+      nodeSeq =>
+        supportedMessageTypes.find(_.rootNode == nodeSeq.head.label)
+    }
 
   implicit val enumerable: Enumerable[MessageType] =
     Enumerable(values.map(v => v.code -> v): _*)

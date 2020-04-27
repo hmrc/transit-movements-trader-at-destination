@@ -51,63 +51,59 @@ class MessagesController @Inject()(
 
   def post(arrivalId: ArrivalId): Action[NodeSeq] = authenticateForWrite(arrivalId).async(parse.xml) {
     implicit request =>
-      if (MessageType.isMessageTypeSupported(request.body)) {
-        MessageType.getMessageType(request.body) match {
-          case Some(messageType) =>
-            arrivalMovementService.makeMovementMessageWithState(request.arrival.nextMessageCorrelationId, messageType)(request.body) match {
-              case None =>
-                Future.successful(BadRequest("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5"))
-              case Some(message) =>
-                arrivalMovementRepository
-                  .addNewMessage(request.arrival.arrivalId, message)
-                  .flatMap {
-                    case Failure(t) => Future.failed(t)
-                    case Success(_) =>
-                      messageConnector
-                        .post(request.arrival.arrivalId, message, OffsetDateTime.now)
-                        .flatMap {
-                          _ =>
-                            arrivalMovementRepository
-                              .setMessageState(request.arrival.arrivalId, request.arrival.messages.length, message.state.transition(SubmissionResult.Success))
-                              .flatMap {
-                                case Failure(t) =>
-                                  Future.failed(t)
-                                case Success(_) =>
-                                  Future.successful(Accepted.withHeaders("Location" -> routes.MessagesController.post(request.arrival.arrivalId).url))
-                              }
-                              .recover {
-                                case _ =>
-                                  InternalServerError
-                              }
-                        }
-                        .recoverWith {
-                          case error =>
-                            logger.error(s"Call to EIS failed with the following exception:", error)
-                            arrivalMovementRepository
-                              .setMessageState(request.arrival.arrivalId, request.arrival.messages.length, message.state.transition(SubmissionResult.Failure))
-                              .flatMap {
-                                case Failure(t) =>
-                                  Future.failed(t)
-                                case Success(_) =>
-                                  Future.successful(BadGateway)
-                              }
-                              .recover {
-                                case _ =>
-                                  BadGateway
-                              }
-                        }
+      MessageType.getMessageType(request.body) match {
+        case Some(messageType) =>
+          arrivalMovementService.makeMovementMessageWithState(request.arrival.nextMessageCorrelationId, messageType)(request.body) match {
+            case None =>
+              Future.successful(BadRequest("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5"))
+            case Some(message) =>
+              arrivalMovementRepository
+                .addNewMessage(request.arrival.arrivalId, message)
+                .flatMap {
+                  case Failure(t) => Future.failed(t)
+                  case Success(_) =>
+                    messageConnector
+                      .post(request.arrival.arrivalId, message, OffsetDateTime.now)
+                      .flatMap {
+                        _ =>
+                          arrivalMovementRepository
+                            .setMessageState(request.arrival.arrivalId, request.arrival.messages.length, message.state.transition(SubmissionResult.Success))
+                            .flatMap {
+                              case Failure(t) =>
+                                Future.failed(t)
+                              case Success(_) =>
+                                Future.successful(Accepted.withHeaders("Location" -> routes.MessagesController.post(request.arrival.arrivalId).url))
+                            }
+                            .recover {
+                              case _ =>
+                                InternalServerError
+                            }
+                      }
+                      .recoverWith {
+                        case error =>
+                          logger.error(s"Call to EIS failed with the following exception:", error)
+                          arrivalMovementRepository
+                            .setMessageState(request.arrival.arrivalId, request.arrival.messages.length, message.state.transition(SubmissionResult.Failure))
+                            .flatMap {
+                              case Failure(t) =>
+                                Future.failed(t)
+                              case Success(_) =>
+                                Future.successful(BadGateway)
+                            }
+                            .recover {
+                              case _ =>
+                                BadGateway
+                            }
+                      }
+                }
+                .recover {
+                  case _ => {
+                    InternalServerError
                   }
-                  .recover {
-                    case _ => {
-                      InternalServerError
-                    }
-                  }
-            }
-          case None =>
-            Future.successful(NotImplemented)
-        }
-      } else {
-        Future.successful(NotImplemented)
+                }
+          }
+        case None =>
+          Future.successful(NotImplemented)
       }
   }
 }
