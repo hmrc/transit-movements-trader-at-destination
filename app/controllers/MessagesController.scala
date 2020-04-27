@@ -54,7 +54,7 @@ class MessagesController @Inject()(
       if (MessageType.isMessageTypeSupported(request.body)) {
         MessageType.getMessageType(request.body) match {
           case Some(messageType) =>
-            arrivalMovementService.makeMessage(request.arrival.nextMessageCorrelationId, messageType)(request.body) match {
+            arrivalMovementService.makeMovementMessageWithState(request.arrival.nextMessageCorrelationId, messageType)(request.body) match {
               case None =>
                 Future.successful(BadRequest("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5"))
               case Some(message) =>
