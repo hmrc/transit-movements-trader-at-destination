@@ -22,11 +22,9 @@ import connectors.MessageConnector
 import controllers.actions.AuthenticatedGetArrivalForWriteActionProvider
 import javax.inject.Inject
 import models.ArrivalId
-import models.MessageSender
 import models.MessageType
 import models.MovementMessageWithState
 import models.SubmissionResult
-import models.TransitWrapper
 import play.api.Logger
 import play.api.mvc.Action
 import play.api.mvc.ControllerComponents
@@ -53,55 +51,64 @@ class MessagesController @Inject()(
 
   def post(arrivalId: ArrivalId): Action[NodeSeq] = authenticateForWrite(arrivalId).async(parse.xml) {
     implicit request =>
-      arrivalMovementService.makeUnloadingRemarksMessage(request.arrival.nextMessageCorrelationId)(request.body) match {
-        case None =>
-          Future.successful(BadRequest("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5"))
-        case Some(message) =>
-          arrivalMovementRepository
-            .addResponseMessage(request.arrival.arrivalId, message)
-            .flatMap {
-              case Failure(t) => Future.failed(t)
-              case Success(_) =>
-                messageConnector
-                // TODO: Fix this casting
-                  .post(request.arrival.arrivalId, request.arrival.messages.head.asInstanceOf[MovementMessageWithState], OffsetDateTime.now)
+      if (MessageType.isMessageTypeSupported(request.body)) {
+        MessageType.getMessageType(request.body) match {
+          case Some(messageType) =>
+            arrivalMovementService.makeMessage(request.arrival.nextMessageCorrelationId, messageType)(request.body) match {
+              case None =>
+                Future.successful(BadRequest("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5"))
+              case Some(message) =>
+                arrivalMovementRepository
+                  .addNewMessage(request.arrival.arrivalId, message)
                   .flatMap {
-                    _ =>
-                      arrivalMovementRepository
-                        .setMessageState(request.arrival.arrivalId, request.arrival.messages.length, message.state.transition(SubmissionResult.Success))
+                    case Failure(t) => Future.failed(t)
+                    case Success(_) =>
+                      messageConnector
+                      // TODO: Fix this casting
+                        .post(request.arrival.arrivalId, request.arrival.messages.head.asInstanceOf[MovementMessageWithState], OffsetDateTime.now)
                         .flatMap {
-                          case Failure(t) =>
-                            Future.failed(t)
-                          case Success(_) =>
-                            Future.successful(Accepted.withHeaders("Location" -> routes.MessagesController.post(request.arrival.arrivalId).url))
+                          _ =>
+                            arrivalMovementRepository
+                              .setMessageState(request.arrival.arrivalId, request.arrival.messages.length, message.state.transition(SubmissionResult.Success))
+                              .flatMap {
+                                case Failure(t) =>
+                                  Future.failed(t)
+                                case Success(_) =>
+                                  Future.successful(Accepted.withHeaders("Location" -> routes.MessagesController.post(request.arrival.arrivalId).url))
+                              }
+                              .recover {
+                                case _ =>
+                                  InternalServerError
+                              }
                         }
-                        .recover {
-                          case _ =>
-                            InternalServerError
+                        .recoverWith {
+                          case error =>
+                            logger.error(s"Call to EIS failed with the following exception:", error)
+                            arrivalMovementRepository
+                              .setMessageState(request.arrival.arrivalId, request.arrival.messages.length, message.state.transition(SubmissionResult.Failure))
+                              .flatMap {
+                                case Failure(t) =>
+                                  Future.failed(t)
+                                case Success(_) =>
+                                  Future.successful(BadGateway)
+                              }
+                              .recover {
+                                case _ =>
+                                  BadGateway
+                              }
                         }
                   }
-                  .recoverWith {
-                    case error =>
-                      logger.error(s"Call to EIS failed with the following exception:", error)
-                      arrivalMovementRepository
-                        .setMessageState(request.arrival.arrivalId, request.arrival.messages.length, message.state.transition(SubmissionResult.Failure))
-                        .flatMap {
-                          case Failure(t) =>
-                            Future.failed(t)
-                          case Success(_) =>
-                            Future.successful(BadGateway)
-                        }
-                        .recover {
-                          case _ =>
-                            BadGateway
-                        }
+                  .recover {
+                    case _ => {
+                      InternalServerError
+                    }
                   }
             }
-            .recover {
-              case _ => {
-                InternalServerError
-              }
-            }
+          case None =>
+            Future.successful(NotImplemented)
+        }
+      } else {
+        Future.successful(NotImplemented)
       }
   }
 }

@@ -23,6 +23,8 @@ import play.api.libs.json.JsString
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.JsValue
 
+import scala.xml.NodeSeq
+
 sealed trait MessageType extends IeMetadata {
   def code: String
   def rootNode: String
@@ -35,6 +37,14 @@ object MessageType extends Enumerable.Implicits {
   case object UnloadingRemarks    extends IeMetadata("IE044", "CC044A") with MessageType
 
   val values: Seq[MessageType] = Seq(ArrivalNotification, GoodsReleased)
+
+  val supportedMessageTypes = Seq(UnloadingRemarks)
+
+  def isMessageTypeSupported(message: NodeSeq): Boolean =
+    message.nonEmpty && (message.head.label == UnloadingRemarks.rootNode)
+
+  def getMessageType(message: NodeSeq): Option[MessageType] =
+    supportedMessageTypes.find(_.rootNode == message.head.label)
 
   implicit val enumerable: Enumerable[MessageType] =
     Enumerable(values.map(v => v.code -> v): _*)
