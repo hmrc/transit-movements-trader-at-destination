@@ -16,7 +16,9 @@
 
 package models
 
+import generators.MessageGenerators
 import org.scalacheck.Arbitrary.arbitrary
+import org.scalacheck.Gen
 import org.scalatest.EitherValues
 import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers
@@ -24,13 +26,13 @@ import org.scalatest.OptionValues
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.mvc.PathBindable
 
-class MessageSenderSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with OptionValues with EitherValues {
+class MessageSenderSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with OptionValues with EitherValues with MessageGenerators {
 
   "Message Sender" - {
 
-    "must build from a valid string with correct padding" in {
+    "must build from a valid string" in {
 
-      val validString = "MDTP-000000000000000000000000123-01"
+      val validString = "MDTP-123-1"
 
       MessageSender(validString).value mustEqual MessageSender(ArrivalId(123), 1)
     }
@@ -51,7 +53,19 @@ class MessageSenderSpec extends FreeSpec with MustMatchers with ScalaCheckProper
 
       val messageSender = MessageSender(ArrivalId(123), 1)
 
-      messageSender.toString mustEqual "MDTP-123-1"
+      messageSender.toString mustEqual "MDTP-000000000000000000000000123-01"
+    }
+
+    "must convert to string and apply correct format" in {
+
+      val genMessageCorrelationId = intWithMaxLength(2)
+
+      forAll(arbitrary[ArrivalId], genMessageCorrelationId) {
+        (arrivalId, messageCorrelation) =>
+          val messageSender = MessageSender(arrivalId, messageCorrelation)
+
+          messageSender.toString.length mustBe 35
+      }
     }
 
     val pathBindable = implicitly[PathBindable[MessageSender]]

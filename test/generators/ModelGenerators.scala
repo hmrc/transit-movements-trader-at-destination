@@ -27,6 +27,7 @@ import models.SubmissionResult
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen.choose
 import org.scalacheck.Gen.listOfN
+import org.scalacheck.Gen.numChar
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
 
@@ -120,6 +121,12 @@ trait ModelGenerators {
       length <- choose(1, maxLength)
       seq    <- listOfN(length, arbitrary[A])
     } yield seq
+
+  def intWithMaxLength(maxLength: Int): Gen[Int] =
+    for {
+      length        <- choose(1, maxLength)
+      listOfCharNum <- listOfN(length, numChar)
+    } yield listOfCharNum.mkString.toInt
 
   implicit lazy val arbitraryMessageType: Arbitrary[MessageType] =
     Arbitrary(Gen.oneOf(MessageType.values))

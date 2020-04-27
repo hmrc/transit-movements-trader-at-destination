@@ -61,7 +61,7 @@ trait MessageGenerators extends ModelGenerators {
   implicit lazy val arbitraryArrivalId: Arbitrary[ArrivalId] = {
     Arbitrary {
       for {
-        id <- arbitrary[Int]
+        id <- intWithMaxLength(9)
       } yield ArrivalId(id)
     }
   }
