@@ -31,8 +31,6 @@ final class MessageId(val index: Int) {
     case x: MessageId => x.index == this.index
     case _            => false
   }
-
-  override def toString: String = s"MessageId($index)"
 }
 
 object MessageId {

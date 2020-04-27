@@ -60,7 +60,7 @@ class MovementsController @Inject()(
             .map {
               message =>
                 submitMessageService
-                  .submit(arrival.arrivalId, new MessageId(arrival.messages.length - 1), message)
+                  .submitMessage(arrival.arrivalId, new MessageId(arrival.messages.length - 1), message)
                   .map {
                     case SubmissionResult.Success =>
                       Accepted("Message accepted")
@@ -83,7 +83,7 @@ class MovementsController @Inject()(
               arrivalFuture
                 .flatMap {
                   arrival =>
-                    submitMessageService.submitNewArrival(arrival) map {
+                    submitMessageService.submitArrival(arrival) map {
                       case SubmissionResult.Success =>
                         Accepted("Message accepted")
                           .withHeaders("Location" -> routes.MovementsController.getArrival(arrival.arrivalId).url)
@@ -109,7 +109,7 @@ class MovementsController @Inject()(
         .map {
           message =>
             submitMessageService
-              .submit(arrivalId, new MessageId(request.arrival.messages.length - 1), message)
+              .submitMessage(arrivalId, new MessageId(request.arrival.messages.length - 1), message)
               .map {
                 case SubmissionResult.Success =>
                   Accepted("Message accepted")

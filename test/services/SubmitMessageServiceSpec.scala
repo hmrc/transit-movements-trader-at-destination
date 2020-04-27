@@ -106,7 +106,7 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
         val messageId       = arbitrary[MessageId].sample.value
         val movementMessage = arbitrary[MovementMessageWithState].sample.value
 
-        val result = service.submit(arrivalId, messageId, movementMessage)
+        val result = service.submitMessage(arrivalId, messageId, movementMessage)
 
         result.futureValue mustEqual SubmissionResult.Success
 
@@ -144,7 +144,7 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
         val messageId       = arbitrary[MessageId].sample.value
         val movementMessage = arbitrary[MovementMessageWithState].sample.value
 
-        val result = service.submit(arrivalId, messageId, movementMessage)
+        val result = service.submitMessage(arrivalId, messageId, movementMessage)
 
         result.futureValue mustEqual SubmissionResult.Success
         verify(mockArrivalMovementRepository, times(1)).addNewMessage(eqTo(arrivalId), eqTo(movementMessage))
@@ -177,7 +177,7 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
         val messageId       = arbitrary[MessageId].sample.value
         val movementMessage = arbitrary[MovementMessageWithState].sample.value
 
-        val result = service.submit(arrivalId, messageId, movementMessage)
+        val result = service.submitMessage(arrivalId, messageId, movementMessage)
 
         result.futureValue mustEqual SubmissionResult.FailureInternal
         verify(mockMessageConnector, never()).post(eqTo(arrivalId), eqTo(movementMessage), any())(any())
@@ -208,7 +208,7 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
         val messageId       = arbitrary[MessageId].sample.value
         val movementMessage = arbitrary[MovementMessageWithState].sample.value
 
-        val result = service.submit(arrivalId, messageId, movementMessage)
+        val result = service.submitMessage(arrivalId, messageId, movementMessage)
 
         result.futureValue mustEqual SubmissionResult.FailureExternal
         verify(mockArrivalMovementRepository, times(1)).addNewMessage(eqTo(arrivalId), eqTo(movementMessage))
@@ -242,7 +242,7 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
 
         val service = application.injector.instanceOf[SubmitMessageService]
 
-        val result = service.submitNewArrival(arrival)
+        val result = service.submitArrival(arrival)
 
         result.futureValue mustEqual SubmissionResult.Success
 
@@ -277,7 +277,7 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
 
         val service = application.injector.instanceOf[SubmitMessageService]
 
-        val result = service.submitNewArrival(arrival)
+        val result = service.submitArrival(arrival)
 
         result.futureValue mustEqual SubmissionResult.Success
         verify(mockArrivalMovementRepository, times(1)).insert(eqTo(arrival))
@@ -306,7 +306,7 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
 
         val service = application.injector.instanceOf[SubmitMessageService]
 
-        val result = service.submitNewArrival(arrival)
+        val result = service.submitArrival(arrival)
 
         result.futureValue mustEqual SubmissionResult.FailureInternal
         verify(mockMessageConnector, never()).post(eqTo(arrival.arrivalId), eqTo(movementMessage), any())(any())
@@ -333,7 +333,7 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
 
         val service = application.injector.instanceOf[SubmitMessageService]
 
-        val result = service.submitNewArrival(arrival)
+        val result = service.submitArrival(arrival)
 
         result.futureValue mustEqual SubmissionResult.FailureExternal
         verify(mockArrivalMovementRepository, times(1)).insert(eqTo(arrival))
