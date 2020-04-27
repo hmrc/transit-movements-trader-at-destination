@@ -27,13 +27,14 @@ abstract class MovementMessage {
   def dateTime: LocalDateTime
   def messageType: MessageType
   def message: NodeSeq
+  def optState: Option[MessageState]
 }
 
 final case class MovementMessageWithState(dateTime: LocalDateTime, messageType: MessageType, message: NodeSeq, state: MessageState, messageCorrelationId: Int)
-    extends MovementMessage
+    extends MovementMessage { def optState = Some(state) }
 
 final case class MovementMessageWithoutState(dateTime: LocalDateTime, messageType: MessageType, message: NodeSeq, messageCorrelationId: Int)
-    extends MovementMessage
+    extends MovementMessage { def optState = None }
 
 object MovementMessage extends NodeSeqFormat {
   implicit lazy val reads: Reads[MovementMessage] = new Reads[MovementMessage] {
