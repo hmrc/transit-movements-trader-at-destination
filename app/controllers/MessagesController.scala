@@ -64,8 +64,7 @@ class MessagesController @Inject()(
                     case Failure(t) => Future.failed(t)
                     case Success(_) =>
                       messageConnector
-                      // TODO: Fix this casting
-                        .post(request.arrival.arrivalId, request.arrival.messages.head.asInstanceOf[MovementMessageWithState], OffsetDateTime.now)
+                        .post(request.arrival.arrivalId, message, OffsetDateTime.now)
                         .flatMap {
                           _ =>
                             arrivalMovementRepository
