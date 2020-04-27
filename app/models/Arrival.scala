@@ -24,7 +24,7 @@ case class Arrival(
   arrivalId: ArrivalId,
   movementReferenceNumber: MovementReferenceNumber,
   eoriNumber: String,
-  state: ArrivalState,
+  status: ArrivalState,
   created: LocalDateTime,
   updated: LocalDateTime,
   messages: Seq[MovementMessage],

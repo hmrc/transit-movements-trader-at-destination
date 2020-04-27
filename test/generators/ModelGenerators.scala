@@ -90,7 +90,7 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
           arrivalId = arrivalId,
           movementReferenceNumber = movementReferenceNumber,
           eoriNumber = eoriNumber,
-          state = state,
+          status = state,
           created = created,
           updated = updated,
           messages = messages,

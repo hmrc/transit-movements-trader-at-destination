@@ -77,7 +77,7 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
     arrival <- arbitrary[Arrival]
   } yield {
     arrival.copy(eoriNumber = "eori",
-                 state = ArrivalState.ArrivalSubmitted,
+                 status = ArrivalState.ArrivalSubmitted,
                  messages = Seq(movementMessage),
                  nextMessageCorrelationId = movementMessage.messageCorrelationId)
   }
