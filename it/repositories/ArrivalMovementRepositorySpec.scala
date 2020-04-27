@@ -28,14 +28,11 @@ import scala.util.{Failure, Success}
 class ArrivalMovementRepositorySpec
   extends FreeSpec
     with MustMatchers
-    with MongoSuite
     with FailOnUnindexedQueries
-    with ScalaFutures
     with IntegrationPatience
     with OptionValues
     with EitherValues
     with TryValues
-    with ScalaCheckPropertyChecks
     with ModelGenerators
     with MongoDateTimeFormats {
 
