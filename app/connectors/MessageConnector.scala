@@ -29,6 +29,7 @@ import models.TransitWrapper
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HttpReads
 import uk.gov.hmrc.http.HttpResponse
+import uk.gov.hmrc.http.logging.Authorization
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import utils.Format
 
@@ -47,7 +48,9 @@ class MessageConnector @Inject()(config: AppConfig, http: HttpClient)(implicit e
 
     lazy val messageSender = MessageSender(arrivalId, message.messageCorrelationId)
 
-    val newHeaders = headerCarrier.withExtraHeaders(addHeaders(message.messageType, dateTime, messageSender): _*)
+    val newHeaders = headerCarrier
+      .copy(authorization = Some(Authorization("Bearer securityToken"))) //TODO placeholder, will be provided later
+      .withExtraHeaders(addHeaders(message.messageType, dateTime, messageSender): _*)
 
     // TODO: Don't throw exceptions here
     http.POSTString(url, xmlMessage)(rds = HttpReads.readRaw, hc = newHeaders, ec = ec)
@@ -65,7 +68,6 @@ class MessageConnector @Inject()(config: AppConfig, http: HttpClient)(implicit e
       "Date"             -> Format.dateFormattedForHeader(dateTime),
       "Content-Type"     -> "application/xml",
       "Accept"           -> "application/xml",
-      "Authorization"    -> "Bearer securityToken", //TODO placeholder, will be provided later
       "X-Message-Type"   -> messageType.toString,
       "X-Message-Sender" -> messageSender.toString
     )
