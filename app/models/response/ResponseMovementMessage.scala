@@ -20,6 +20,7 @@ import java.time.LocalDateTime
 
 import controllers.routes
 import models.ArrivalId
+import models.MessageId
 import models.MovementMessage
 import play.api.libs.json.Json
 import play.api.libs.json.Writes
@@ -31,7 +32,7 @@ case class ResponseMovementMessage(location: String, dateTime: LocalDateTime, me
 
 object ResponseMovementMessage extends NodeSeqFormat {
 
-  def build(a: ArrivalId, mId: Int, m: MovementMessage) =
+  def build(a: ArrivalId, mId: MessageId, m: MovementMessage) =
     ResponseMovementMessage(routes.MovementsController.getMessage(a, mId).url, m.dateTime, m.messageType.code, m.message)
 
   implicit lazy val writes: Writes[ResponseMovementMessage] = Json.writes[ResponseMovementMessage]
