@@ -32,6 +32,7 @@ import reactivemongo.play.json.collection.JSONCollection
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import models.MongoDateTimeFormats._
 
 class LockRepository @Inject()(mongo: ReactiveMongoApi, appConfig: AppConfig)(implicit ec: ExecutionContext) {
 

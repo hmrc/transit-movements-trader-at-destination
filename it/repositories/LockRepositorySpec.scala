@@ -22,7 +22,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class LockRepositorySpec
     extends FreeSpec
     with MustMatchers
-    with MongoSuite
     with FailOnUnindexedQueries
     with ScalaFutures
     with IntegrationPatience
@@ -40,9 +39,9 @@ class LockRepositorySpec
       val arrivalId = ArrivalId(1)
 
       running(app) {
-        val repository = app.injector.instanceOf[LockRepository]
+        started(app).futureValue
 
-        repository.started.futureValue
+        val repository = app.injector.instanceOf[LockRepository]
 
         val result = repository.lock(arrivalId).futureValue
 
@@ -66,9 +65,9 @@ class LockRepositorySpec
       val arrivalId = ArrivalId(1)
 
       running(app) {
-        val repository = app.injector.instanceOf[LockRepository]
+        started(app).futureValue
 
-        repository.started.futureValue
+        val repository = app.injector.instanceOf[LockRepository]
 
         val result1 = repository.lock(arrivalId).futureValue
         val result2 = repository.lock(arrivalId).futureValue
@@ -88,10 +87,9 @@ class LockRepositorySpec
       val arrivalId = ArrivalId(1)
 
       running(app) {
+        started(app).futureValue
 
         val repository = app.injector.instanceOf[LockRepository]
-
-        repository.started.futureValue
 
         repository.lock(arrivalId).futureValue
         repository.unlock(arrivalId).futureValue
@@ -114,13 +112,39 @@ class LockRepositorySpec
       val arrivalId = ArrivalId(1)
 
       running(app) {
+        started(app).futureValue
 
         val repository = app.injector.instanceOf[LockRepository]
 
-        repository.started.futureValue
-
         repository.unlock(arrivalId).futureValue
       }
+    }
+  }
+
+  "BSON formatting for ttl index" - {
+    "a lock's created field must be a date for the ttl index" in {
+      database.flatMap(_.drop()).futureValue
+
+      val app = new GuiceApplicationBuilder().build()
+
+      val arrivalId = ArrivalId(1)
+
+      running(app) {
+        started(app).futureValue
+
+        val repository = app.injector.instanceOf[LockRepository]
+
+        val result = repository.lock(arrivalId).futureValue
+
+        result mustEqual true
+
+        val selector = Json.obj("_id" -> arrivalId, "created" -> Json.obj("$type" -> "date"))
+
+        val lock = database.flatMap(_.collection[JSONCollection](LockRepository.collectionName).find(selector, None).one[JsObject]).futureValue
+
+        lock must be(defined)
+      }
+
     }
   }
 }

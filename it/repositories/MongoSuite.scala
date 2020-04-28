@@ -41,13 +41,14 @@ object MongoSuite {
 trait MongoSuite {
   self: TestSuite =>
 
-  def started(app: Application): Future[_] = {
+  def started(app: Application): Future[Unit] = {
 
-    val arrivalMovementRepo = app.injector.instanceOf[ArrivalMovementRepository]
+    val arrivalMovementRepository = app.injector.instanceOf[ArrivalMovementRepository]
+    val lockRepository = app.injector.instanceOf[LockRepository]
 
-    val services = Seq(arrivalMovementRepo.started)
+    val services = Seq(arrivalMovementRepository.started, lockRepository.started)
 
-    Future.sequence(services)
+    Future.sequence(services).map(_ => ())
   }
 
   def database: Future[DefaultDB] = {
