@@ -23,7 +23,6 @@ import java.time.LocalTime
 import base.SpecBase
 import connectors.MessageConnector
 import generators.ModelGenerators
-import models.ArrivalState.ArrivalSubmitted
 import models.MessageState.SubmissionFailed
 import models.MessageState.SubmissionPending
 import models.MessageState.SubmissionSucceeded
@@ -32,9 +31,6 @@ import models.ArrivalId
 import models.ArrivalState
 import models.Arrivals
 import models.MessageId
-import models.MessageState
-import models.MovementMessage
-import models.MovementMessageWithState
 import models.MovementMessageWithoutState
 import models.response.ResponseMovementMessage
 import models.MessageType
@@ -58,14 +54,9 @@ import repositories.ArrivalIdRepository
 import repositories.ArrivalMovementRepository
 import repositories.LockRepository
 import services.SubmitMessageService
-import uk.gov.hmrc.http.HttpException
-import uk.gov.hmrc.http.HttpResponse
-import uk.gov.hmrc.http.Upstream5xxResponse
 import utils.Format
 
 import scala.concurrent.Future
-import scala.util.Failure
-import scala.util.Success
 
 class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks with ModelGenerators with BeforeAndAfterEach with IntegrationPatience {
 
