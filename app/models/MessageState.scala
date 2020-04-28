@@ -25,21 +25,19 @@ object MessageState extends Enumerable.Implicits {
   case object SubmissionPending extends MessageState {
     override def transition(event: SubmissionResult): MessageState = event match {
       case SubmissionResult.Success => SubmissionSucceeded
-      case SubmissionResult.Failure => SubmissionFailed
+      case _                        => SubmissionFailed
     }
   }
 
   case object SubmissionFailed extends MessageState {
     override def transition(event: SubmissionResult): MessageState = event match {
       case SubmissionResult.Success => SubmissionSucceeded
-      case SubmissionResult.Failure => SubmissionFailed
+      case _                        => SubmissionFailed
     }
   }
 
   case object SubmissionSucceeded extends MessageState {
-    override def transition(event: SubmissionResult): MessageState = event match {
-      case _ => SubmissionSucceeded
-    }
+    override def transition(event: SubmissionResult): MessageState = SubmissionSucceeded
   }
 
   val values = Seq(

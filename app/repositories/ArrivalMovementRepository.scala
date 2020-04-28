@@ -20,6 +20,7 @@ import com.google.inject.Inject
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalState
+import models.MessageId
 import models.MessageState
 import models.MongoDateTimeFormats
 import models.MovementMessage
@@ -41,7 +42,7 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 
-class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: ReactiveMongoApi)(implicit ec: ExecutionContext) extends MongoDateTimeFormats {
+class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi)(implicit ec: ExecutionContext) extends MongoDateTimeFormats {
 
   private val index = Index(
     key = Seq("eoriNumber" -> IndexType.Ascending),
@@ -99,12 +100,14 @@ class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: React
         .collect[Seq](-1, Cursor.FailOnError())
     }
 
+  // TODO: Refactor this to take a MessageId
   def setMessageState(arrivalId: ArrivalId, messageId: Int, state: MessageState): Future[Try[Unit]] = {
     val selector = Json.obj(
-      "$and" ->
-        Json.arr(Json.obj("_id" -> arrivalId),
-                 Json.obj(s"messages.$messageId.state" ->
-                   Json.obj("$exists" -> true))))
+      "$and" -> Json.arr(
+        Json.obj("_id"                        -> arrivalId),
+        Json.obj(s"messages.$messageId.state" -> Json.obj("$exists" -> true))
+      )
+    )
 
     val modifier = Json.obj(
       "$set" -> Json.obj(
@@ -145,11 +148,38 @@ class ArrivalMovementRepository @Inject()(cc: ControllerComponents, mongo: React
     )
 
     collection.flatMap {
-      _.update(false).one(selector, modifier).map {
-        y =>
-          if (y.n == 1) Some(())
-          else None
-      }
+      _.update(false)
+        .one(selector, modifier)
+        .map {
+          y =>
+            if (y.n == 1) Some(())
+            else None
+        }
+    }
+  }
+
+  def setArrivalStateAndMessageState(arrivalId: ArrivalId,
+                                     messageId: MessageId,
+                                     arrivalState: ArrivalState,
+                                     messageState: MessageState): Future[Option[Unit]] = {
+
+    val selector = Json.obj("_id" -> arrivalId)
+
+    val modifier = Json.obj(
+      "$set" -> Json.obj(
+        s"messages.${messageId.index}.state" -> messageState.toString,
+        "state"                              -> arrivalState.toString
+      )
+    )
+
+    collection.flatMap {
+      _.update(false)
+        .one(selector, modifier)
+        .map {
+          y =>
+            if (y.n == 1) Some(())
+            else None
+        }
     }
   }
 

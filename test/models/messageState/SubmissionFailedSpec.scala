@@ -16,13 +16,17 @@
 
 package models.messageState
 
+import generators.ModelGenerators
 import models.MessageState.SubmissionFailed
 import models.MessageState.SubmissionSucceeded
 import models.SubmissionResult
+import models.SubmissionResult.Failure
 import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers
+import org.scalacheck.Arbitrary.arbitrary
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
-class SubmissionFailedSpec extends FreeSpec with MustMatchers {
+class SubmissionFailedSpec extends FreeSpec with MustMatchers with ScalaCheckDrivenPropertyChecks with ModelGenerators {
 
   "SubmissionFailed must transition" - {
 
@@ -31,7 +35,11 @@ class SubmissionFailedSpec extends FreeSpec with MustMatchers {
     }
 
     "to Submission Failed when receiving a Submission Failure event" in {
-      SubmissionFailed.transition(SubmissionResult.Failure) mustEqual SubmissionFailed
+      forAll(arbitrary[Failure]) {
+        failure =>
+          SubmissionFailed.transition(failure) mustEqual SubmissionFailed
+      }
+
     }
   }
 }
