@@ -26,7 +26,7 @@ import models.Arrival
 import models.ArrivalId
 import models.MessageSender
 import models.MovementReferenceNumber
-import models.ArrivalState
+import models.ArrivalStatus
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
@@ -60,7 +60,7 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
     arrivalId,
     MovementReferenceNumber("mrn"),
     "eori",
-    ArrivalState.ArrivalSubmitted,
+    ArrivalStatus.ArrivalSubmitted,
     LocalDateTime.of(dateOfPrep, timeOfPrep),
     LocalDateTime.of(dateOfPrep, timeOfPrep),
     Seq.empty,
@@ -106,7 +106,7 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
 
           status(result) mustEqual OK
           verify(mockLockRepository, times(1)).lock(arrivalId)
-          verify(mockArrivalMovementRepository, times(1)).addResponseMessage(any(), any(), eqTo(ArrivalState.GoodsReleased))
+          verify(mockArrivalMovementRepository, times(1)).addResponseMessage(any(), any(), eqTo(ArrivalStatus.GoodsReleased))
           verify(mockLockRepository, times(1)).unlock(arrivalId)
         }
       }

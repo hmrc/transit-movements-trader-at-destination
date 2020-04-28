@@ -23,8 +23,8 @@ import java.time.LocalTime
 import cats.data._
 import cats.implicits._
 import com.google.inject.Inject
-import models.ArrivalState.Initialized
-import models.MessageState.SubmissionPending
+import models.ArrivalStatus.Initialized
+import models.MessageStatus.SubmissionPending
 import models.Arrival
 import models.MessageType
 import models.MovementMessageWithState

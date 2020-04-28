@@ -54,7 +54,7 @@ class GoodsReleasedController @Inject()(cc: ControllerComponents,
         case Success(_) =>
           arrivalMovementService.makeGoodsReleasedMessage(messageSender.messageCorrelationId)(xml) match {
             case Some(message) =>
-              val newState = request.arrival.state.transition(MessageReceived.GoodsReleased)
+              val newState = request.arrival.status.transition(MessageReceived.GoodsReleased)
               arrivalMovementRepository.addResponseMessage(request.arrival.arrivalId, message, newState).map {
                 case Success(_) => Ok
                 case Failure(e) => {

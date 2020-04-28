@@ -21,11 +21,11 @@ import java.time.LocalTime
 
 import base.SpecBase
 import connectors.MessageConnector
-import generators.MessageGenerators
+import generators.ModelGenerators
 import models.Arrival
 import models.ArrivalId
-import models.ArrivalState
-import models.MessageState
+import models.ArrivalStatus
+import models.MessageStatus
 import models.MovementMessageWithState
 import org.mockito.Matchers.any
 import org.mockito.Matchers.{eq => eqTo}
@@ -47,7 +47,7 @@ import scala.concurrent.Future
 import scala.util.Failure
 import scala.util.Success
 
-class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with MessageGenerators with BeforeAndAfterEach with IntegrationPatience {
+class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with ModelGenerators with BeforeAndAfterEach with IntegrationPatience {
 
   "MessagesController" - {
 
@@ -62,7 +62,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
             .arbitrary[Arrival]
             .sample
             .value
-            .copy(eoriNumber = "eori", messages = Seq(Arbitrary.arbitrary[MovementMessageWithState].sample.value), state = ArrivalState.ArrivalSubmitted)
+            .copy(eoriNumber = "eori", messages = Seq(Arbitrary.arbitrary[MovementMessageWithState].sample.value), status = ArrivalStatus.ArrivalSubmitted)
 
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
@@ -100,7 +100,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           header("Location", result).value must be(routes.MessagesController.post(arrival.arrivalId).url)
           verify(mockArrivalMovementRepository, times(1)).addNewMessage(any(), any())
           verify(mockMessageConnector, times(1)).post(any(), any(), any())(any())
-          verify(mockArrivalMovementRepository, times(1)).setMessageState(any(), any(), eqTo(MessageState.SubmissionSucceeded))
+          verify(mockArrivalMovementRepository, times(1)).setMessageState(any(), any(), eqTo(MessageStatus.SubmissionSucceeded))
         }
       }
 
@@ -297,7 +297,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           status(result) mustEqual BAD_GATEWAY
           verify(mockArrivalMovementRepository, times(1)).setMessageState(eqTo(arrival.arrivalId),
                                                                           eqTo(arrival.messages.length),
-                                                                          eqTo(MessageState.SubmissionFailed))
+                                                                          eqTo(MessageStatus.SubmissionFailed))
         }
       }
 

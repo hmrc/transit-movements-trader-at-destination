@@ -23,9 +23,9 @@ import java.time.LocalTime
 import base.SpecBase
 import models.Arrival
 import models.ArrivalId
-import models.ArrivalState
-import models.MessageState
-import models.MessageState.SubmissionPending
+import models.ArrivalStatus
+import models.MessageStatus
+import models.MessageStatus.SubmissionPending
 import models.MessageType
 import models.MovementMessageWithState
 import models.MovementMessageWithoutState
@@ -73,11 +73,11 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
         arrivalId = id,
         movementReferenceNumber = mrn,
         eoriNumber = eori,
-        state = ArrivalState.Initialized,
+        status = ArrivalStatus.Initialized,
         dateTime,
         dateTime,
         messages = Seq(
-          MovementMessageWithState(dateTime, MessageType.ArrivalNotification, movement, MessageState.SubmissionPending, 1)
+          MovementMessageWithState(dateTime, MessageType.ArrivalNotification, movement, MessageStatus.SubmissionPending, 1)
         ),
         nextMessageCorrelationId = 2
       )

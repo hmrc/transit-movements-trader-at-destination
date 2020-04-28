@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package services.repositories
+package repositories
 
 import com.typesafe.config.ConfigFactory
 import org.scalatest._

@@ -19,12 +19,14 @@ package config
 import com.google.inject.AbstractModule
 import controllers.actions.AuthenticateActionProvider
 import controllers.actions.AuthenticateActionProviderImpl
+import repositories.ArrivalMovementRepository
 
 class Module extends AbstractModule {
 
   override def configure(): Unit = {
     bind(classOf[AppConfig]).asEagerSingleton()
     bind(classOf[AuthenticateActionProvider]).to(classOf[AuthenticateActionProviderImpl]).asEagerSingleton()
+    bind(classOf[ArrivalMovementRepository]).asEagerSingleton()
   }
 
 }

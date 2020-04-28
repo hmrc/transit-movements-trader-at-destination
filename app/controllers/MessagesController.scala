@@ -23,7 +23,6 @@ import controllers.actions.AuthenticatedGetArrivalForWriteActionProvider
 import javax.inject.Inject
 import models.ArrivalId
 import models.MessageType
-import models.MovementMessageWithState
 import models.SubmissionResult
 import play.api.Logger
 import play.api.mvc.Action
@@ -67,7 +66,7 @@ class MessagesController @Inject()(
                       .flatMap {
                         _ =>
                           arrivalMovementRepository
-                            .setMessageState(request.arrival.arrivalId, request.arrival.messages.length, message.state.transition(SubmissionResult.Success))
+                            .setMessageState(request.arrival.arrivalId, request.arrival.messages.length, message.status.transition(SubmissionResult.Success))
                             .flatMap {
                               case Failure(t) =>
                                 Future.failed(t)
@@ -83,7 +82,9 @@ class MessagesController @Inject()(
                         case error =>
                           logger.error(s"Call to EIS failed with the following exception:", error)
                           arrivalMovementRepository
-                            .setMessageState(request.arrival.arrivalId, request.arrival.messages.length, message.state.transition(SubmissionResult.Failure))
+                            .setMessageState(request.arrival.arrivalId,
+                                             request.arrival.messages.length,
+                                             message.status.transition(SubmissionResult.FailureExternal))
                             .flatMap {
                               case Failure(t) =>
                                 Future.failed(t)
