@@ -3,9 +3,9 @@ package repositories
 import java.time.{LocalDate, LocalDateTime, LocalTime}
 
 import generators.ModelGenerators
-import models.ArrivalState.{ArrivalSubmitted, Initialized}
-import models.MessageState.{SubmissionPending, SubmissionSucceeded}
-import models.{Arrival, ArrivalId, ArrivalState, MessageType, MongoDateTimeFormats, MovementMessageWithState, MovementMessageWithoutState, MovementReferenceNumber}
+import models.ArrivalStatus.{ArrivalSubmitted, Initialized}
+import models.MessageStatus.{SubmissionPending, SubmissionSucceeded}
+import models.{Arrival, ArrivalId, ArrivalStatus, MessageType, MongoDateTimeFormats, MovementMessageWithState, MovementMessageWithoutState, MovementReferenceNumber}
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
 import org.scalactic.source
@@ -48,7 +48,7 @@ class ArrivalMovementRepositorySpec
   val arrivalWithOneMessage: Gen[Arrival] = for {
     arrival <- arbitrary[Arrival]
     movementMessage <- arbitrary[MovementMessageWithState]
-  } yield arrival.copy(messages = Seq(movementMessage.copy(state = SubmissionPending)))
+  } yield arrival.copy(messages = Seq(movementMessage.copy(status = SubmissionPending)))
 
   "ArrivalMovementRepository" - {
     "insert" - {
@@ -78,13 +78,13 @@ class ArrivalMovementRepositorySpec
       }
     }
 
-    "setState" - {
-      "must update the state of an existing record" in {
+    "setStatus" - {
+      "must update the status of an existing record" in {
         database.flatMap(_.drop()).futureValue
 
         val app: Application = builder.build()
 
-        val arrival = arbitrary[Arrival].sample.value copy (state = ArrivalState.Initialized)
+        val arrival = arbitrary[Arrival].sample.value copy (status = ArrivalStatus.Initialized)
 
         running(app) {
           started(app).futureValue
@@ -92,7 +92,7 @@ class ArrivalMovementRepositorySpec
           val repository = app.injector.instanceOf[ArrivalMovementRepository]
 
           repository.insert(arrival).futureValue
-          val setStateResult = repository.setState(arrival.arrivalId, ArrivalState.ArrivalSubmitted).futureValue
+          val setStateResult = repository.setState(arrival.arrivalId, ArrivalStatus.ArrivalSubmitted).futureValue
 
           val selector = Json.obj("_id" -> arrival.arrivalId)
 
@@ -101,17 +101,17 @@ class ArrivalMovementRepositorySpec
               result.collection[JSONCollection](ArrivalMovementRepository.collectionName).find(selector, None).one[Arrival]
           }.futureValue
 
-          result.value.state mustEqual ArrivalState.ArrivalSubmitted
+          result.value.status mustEqual ArrivalStatus.ArrivalSubmitted
           setStateResult.isDefined mustBe true
         }
       }
 
-      "must update the state of an existing record to the same value it was before and return a Some" in {
+      "must update the status of an existing record to the same value it was before and return a Some" in {
         database.flatMap(_.drop()).futureValue
 
         val app: Application = builder.build()
 
-        val arrival = arbitrary[Arrival].sample.value copy (state = ArrivalState.ArrivalSubmitted)
+        val arrival = arbitrary[Arrival].sample.value copy (status = ArrivalStatus.ArrivalSubmitted)
 
         running(app) {
           started(app).futureValue
@@ -119,7 +119,7 @@ class ArrivalMovementRepositorySpec
           val repository = app.injector.instanceOf[ArrivalMovementRepository]
 
           repository.insert(arrival).futureValue
-          val setStateResult = repository.setState(arrival.arrivalId, ArrivalState.ArrivalSubmitted).futureValue
+          val setStateResult = repository.setState(arrival.arrivalId, ArrivalStatus.ArrivalSubmitted).futureValue
 
           val selector = Json.obj("_id" -> arrival.arrivalId)
 
@@ -128,17 +128,17 @@ class ArrivalMovementRepositorySpec
               result.collection[JSONCollection](ArrivalMovementRepository.collectionName).find(selector, None).one[Arrival]
           }.futureValue
 
-          result.value.state mustEqual ArrivalState.ArrivalSubmitted
+          result.value.status mustEqual ArrivalStatus.ArrivalSubmitted
           setStateResult.isDefined mustBe true
         }
       }
 
-      "must not update the state of a record that does not exist" in {
+      "must not update the status of a record that does not exist" in {
         database.flatMap(_.drop()).futureValue
 
         val app: Application = builder.build()
 
-        val arrival = arbitrary[Arrival].sample.value copy (state = ArrivalState.Initialized)
+        val arrival = arbitrary[Arrival].sample.value copy (status = ArrivalStatus.Initialized)
 
         running(app) {
           started(app).futureValue
@@ -146,7 +146,7 @@ class ArrivalMovementRepositorySpec
           val repository = app.injector.instanceOf[ArrivalMovementRepository]
 
           repository.insert(arrival).futureValue
-          val setStateResult = repository.setState(ArrivalId(arrival.arrivalId.index + 1), ArrivalState.ArrivalSubmitted).futureValue
+          val setStateResult = repository.setState(ArrivalId(arrival.arrivalId.index + 1), ArrivalStatus.ArrivalSubmitted).futureValue
 
           val selector = Json.obj("_id" -> arrival.arrivalId)
 
@@ -155,14 +155,14 @@ class ArrivalMovementRepositorySpec
               result.collection[JSONCollection](ArrivalMovementRepository.collectionName).find(selector, None).one[Arrival]
           }.futureValue
 
-          result.value.state mustNot equal(ArrivalState.ArrivalSubmitted)
+          result.value.status mustNot equal(ArrivalStatus.ArrivalSubmitted)
           setStateResult.isEmpty mustBe true
         }
       }
     }
 
     "setMessageState" - {
-      "must update the state of a specific message in an existing arrival" in {
+      "must update the status of a specific message in an existing arrival" in {
         database.flatMap(_.drop()).futureValue
 
         val app: Application = builder.build()
@@ -181,7 +181,7 @@ class ArrivalMovementRepositorySpec
           val updatedArrival = repository.get(arrival.arrivalId).futureValue.value
 
           typeMatchOnTestValue(updatedArrival.messages.head) {
-            result: MovementMessageWithState => result.state mustEqual SubmissionSucceeded
+            result: MovementMessageWithState => result.status mustEqual SubmissionSucceeded
           }
 
         }
@@ -225,7 +225,7 @@ class ArrivalMovementRepositorySpec
         }
       }
 
-      "must fail is the message does not have a state" in {
+      "must fail if the message does not have a status" in {
         database.flatMap(_.drop()).futureValue
 
         val app: Application = builder.build()
@@ -248,12 +248,12 @@ class ArrivalMovementRepositorySpec
     }
 
     "setArrivalStateAndMessageState" - {
-      "must update the state of the arrival and the message in an arrival" in {
+      "must update the status of the arrival and the message in an arrival" in {
         database.flatMap(_.drop()).futureValue
 
         val app: Application = builder.build()
 
-        val arrival = arrivalWithOneMessage.sample.value.copy(state = ArrivalState.Initialized)
+        val arrival = arrivalWithOneMessage.sample.value.copy(status = ArrivalStatus.Initialized)
         val messageId = new models.MessageId(0)
 
         running(app) {
@@ -266,10 +266,10 @@ class ArrivalMovementRepositorySpec
 
           val updatedArrival = repository.get(arrival.arrivalId).futureValue
 
-          updatedArrival.value.state mustEqual ArrivalSubmitted
+          updatedArrival.value.status mustEqual ArrivalSubmitted
 
           typeMatchOnTestValue(updatedArrival.value.messages.head) {
-            result: MovementMessageWithState => result.state mustEqual SubmissionSucceeded
+            result: MovementMessageWithState => result.status mustEqual SubmissionSucceeded
           }
 
         }
@@ -280,7 +280,7 @@ class ArrivalMovementRepositorySpec
 
         val app: Application = builder.build()
 
-        val arrival = arrivalWithOneMessage.sample.value.copy(arrivalId = ArrivalId(1), state = Initialized)
+        val arrival = arrivalWithOneMessage.sample.value.copy(arrivalId = ArrivalId(1), status = Initialized)
         val messageId = new models.MessageId(0)
 
         running(app) {
@@ -293,16 +293,16 @@ class ArrivalMovementRepositorySpec
           setResult.futureValue must not be(defined)
 
           val result = repository.get(arrival.arrivalId).futureValue.value
-          result.state mustEqual Initialized
+          result.status mustEqual Initialized
           typeMatchOnTestValue(result.messages.head) {
-            result: MovementMessageWithState => result.state mustEqual SubmissionPending
+            result: MovementMessageWithState => result.status mustEqual SubmissionPending
           }
         }
       }
     }
 
     "addResponseMessage" - {
-      "must add a message, update the state of a document and update the timestamp" in {
+      "must add a message, update the status of a document and update the timestamp" in {
         database.flatMap(_.drop()).futureValue
 
         val app: Application = builder.build()
@@ -321,7 +321,7 @@ class ArrivalMovementRepositorySpec
           </CC025A>
 
         val goodsReleasedMessage = MovementMessageWithoutState(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.GoodsReleased, messageBody, arrival.nextMessageCorrelationId)
-        val newState             = ArrivalState.GoodsReleased
+        val newState             = ArrivalStatus.GoodsReleased
 
         running(app) {
           started(app).futureValue
@@ -343,7 +343,7 @@ class ArrivalMovementRepositorySpec
           addMessageResult mustBe a[Success[_]]
           updatedArrival.nextMessageCorrelationId - arrival.nextMessageCorrelationId mustBe 0
           updatedArrival.updated mustEqual goodsReleasedMessage.dateTime
-          updatedArrival.state mustEqual newState
+          updatedArrival.status mustEqual newState
           updatedArrival.messages.size - arrival.messages.size mustEqual 1
           updatedArrival.messages.last mustEqual goodsReleasedMessage
         }
@@ -354,7 +354,7 @@ class ArrivalMovementRepositorySpec
 
         val app: Application = builder.build()
 
-        val arrival = arbitrary[Arrival].sample.value copy (state = ArrivalState.ArrivalSubmitted, arrivalId = ArrivalId(1))
+        val arrival = arbitrary[Arrival].sample.value copy (status = ArrivalStatus.ArrivalSubmitted, arrivalId = ArrivalId(1))
 
         val dateOfPrep = LocalDate.now()
         val timeOfPrep = LocalTime.of(1, 1)
@@ -368,7 +368,7 @@ class ArrivalMovementRepositorySpec
           </CC025A>
 
         val goodsReleasedMessage = MovementMessageWithoutState(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.GoodsReleased, messageBody, messageCorrelationId = 1)
-        val newState             = ArrivalState.GoodsReleased
+        val newState             = ArrivalStatus.GoodsReleased
 
         running(app) {
           started(app).futureValue
@@ -389,7 +389,7 @@ class ArrivalMovementRepositorySpec
 
         val app: Application = builder.build()
 
-        val arrival = arbitrary[Arrival].sample.value.copy(state = ArrivalState.ArrivalSubmitted)
+        val arrival = arbitrary[Arrival].sample.value.copy(status = ArrivalStatus.ArrivalSubmitted)
 
         val dateOfPrep = LocalDate.now()
         val timeOfPrep = LocalTime.of(1, 1)
@@ -423,7 +423,7 @@ class ArrivalMovementRepositorySpec
 
           updatedArrival.nextMessageCorrelationId - arrival.nextMessageCorrelationId mustBe 1
           updatedArrival.updated mustEqual goodsReleasedMessage.dateTime
-          updatedArrival.state mustEqual arrival.state
+          updatedArrival.status mustEqual arrival.status
           updatedArrival.messages.size - arrival.messages.size mustEqual 1
           updatedArrival.messages.last mustEqual goodsReleasedMessage
         }
@@ -434,7 +434,7 @@ class ArrivalMovementRepositorySpec
 
         val app: Application = builder.build()
 
-        val arrival = arbitrary[Arrival].sample.value copy (state = ArrivalState.ArrivalSubmitted, arrivalId = ArrivalId(1))
+        val arrival = arbitrary[Arrival].sample.value copy (status = ArrivalStatus.ArrivalSubmitted, arrivalId = ArrivalId(1))
 
         val dateOfPrep = LocalDate.now()
         val timeOfPrep = LocalTime.of(1, 1)

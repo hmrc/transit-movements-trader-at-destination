@@ -18,10 +18,10 @@ package generators
 
 import java.time._
 
-import models.MessageState.SubmissionPending
+import models.MessageStatus.SubmissionPending
 import models.Arrival
 import models.ArrivalId
-import models.ArrivalState
+import models.ArrivalStatus
 import models.MessageId
 import models.MessageReceived
 import models.MessageType
@@ -46,8 +46,8 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
         dateTime    <- arbitrary[LocalDateTime]
         xml         <- Gen.const(<blankXml>message</blankXml>)
         messageType <- Gen.oneOf(MessageType.values)
-        state = SubmissionPending
-      } yield MovementMessageWithState(dateTime, messageType, xml, state, 1)
+        status = SubmissionPending
+      } yield MovementMessageWithState(dateTime, messageType, xml, status, 1)
     }
   }
 
@@ -70,9 +70,9 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
     }
   }
 
-  implicit lazy val arbitraryState: Arbitrary[ArrivalState] =
+  implicit lazy val arbitraryState: Arbitrary[ArrivalStatus] =
     Arbitrary {
-      Gen.oneOf(ArrivalState.values)
+      Gen.oneOf(ArrivalStatus.values)
     }
 
   implicit lazy val arbitraryArrival: Arbitrary[Arrival] = {
@@ -81,7 +81,7 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
         arrivalId               <- arbitrary[ArrivalId]
         movementReferenceNumber <- arbitrary[MovementReferenceNumber]
         eoriNumber              <- arbitrary[String]
-        state                   <- arbitrary[ArrivalState]
+        status                  <- arbitrary[ArrivalStatus]
         created                 <- arbitrary[LocalDateTime]
         updated                 <- arbitrary[LocalDateTime]
         messages                <- listWithMaxLength[MovementMessageWithState](2)
@@ -90,7 +90,7 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
           arrivalId = arrivalId,
           movementReferenceNumber = movementReferenceNumber,
           eoriNumber = eoriNumber,
-          state = state,
+          status = status,
           created = created,
           updated = updated,
           messages = messages,

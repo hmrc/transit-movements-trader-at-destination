@@ -23,9 +23,9 @@ import javax.inject.Inject
 import play.api.Logger
 import models.Arrival
 import models.ArrivalId
-import models.ArrivalState
+import models.ArrivalStatus
 import models.MessageId
-import models.MessageState
+import models.MessageStatus
 import models.MovementMessageWithState
 import models.SubmissionResult
 import repositories.ArrivalMovementRepository
@@ -54,7 +54,7 @@ class SubmitMessageService @Inject()(
           .flatMap {
             _ =>
               arrivalMovementRepository
-                .setArrivalStateAndMessageState(arrivalId, messageId, ArrivalState.ArrivalSubmitted, MessageState.SubmissionSucceeded)
+                .setArrivalStateAndMessageState(arrivalId, messageId, ArrivalStatus.ArrivalSubmitted, MessageStatus.SubmissionSucceeded)
                 .map {
                   _ =>
                     SubmissionResult.Success
@@ -68,7 +68,7 @@ class SubmitMessageService @Inject()(
             case error => {
               logger.error(s"Existing Movement - Call to EIS failed with the following Exception: ${error.getMessage}")
 
-              arrivalMovementRepository.setMessageState(arrivalId, messageId.index, message.state.transition(SubmissionResult.FailureInternal)) map {
+              arrivalMovementRepository.setMessageState(arrivalId, messageId.index, message.status.transition(SubmissionResult.FailureInternal)) map {
                 _ =>
                   SubmissionResult.FailureExternal
               }
@@ -90,7 +90,7 @@ class SubmitMessageService @Inject()(
             .flatMap {
               _ =>
                 arrivalMovementRepository
-                  .setArrivalStateAndMessageState(arrival.arrivalId, messageId, ArrivalState.ArrivalSubmitted, MessageState.SubmissionSucceeded)
+                  .setArrivalStateAndMessageState(arrival.arrivalId, messageId, ArrivalStatus.ArrivalSubmitted, MessageStatus.SubmissionSucceeded)
                   .map {
                     _ =>
                       SubmissionResult.Success
@@ -104,7 +104,7 @@ class SubmitMessageService @Inject()(
               case error =>
                 logger.error(s"New Movement - Call to EIS failed with the following Exception: ${error.getMessage}")
 
-                arrivalMovementRepository.setMessageState(arrival.arrivalId, messageId.index, message.state.transition(SubmissionResult.FailureInternal)) map {
+                arrivalMovementRepository.setMessageState(arrival.arrivalId, messageId.index, message.status.transition(SubmissionResult.FailureInternal)) map {
                   _ =>
                     SubmissionResult.FailureExternal
                 }

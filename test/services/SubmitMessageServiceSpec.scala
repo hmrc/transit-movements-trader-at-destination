@@ -23,12 +23,12 @@ import java.time.LocalTime
 import base.SpecBase
 import connectors.MessageConnector
 import generators.ModelGenerators
-import models.MessageState.SubmissionPending
+import models.MessageStatus.SubmissionPending
 import models.Arrival
 import models.ArrivalId
-import models.ArrivalState
+import models.ArrivalStatus
 import models.MessageId
-import models.MessageState
+import models.MessageStatus
 import models.MessageType
 import models.MovementMessageWithState
 import models.SubmissionResult
@@ -77,7 +77,7 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
     arrival <- arbitrary[Arrival]
   } yield {
     arrival.copy(eoriNumber = "eori",
-                 state = ArrivalState.ArrivalSubmitted,
+                 status = ArrivalStatus.ArrivalSubmitted,
                  messages = Seq(movementMessage),
                  nextMessageCorrelationId = movementMessage.messageCorrelationId)
   }
@@ -114,8 +114,8 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
         verify(mockMessageConnector, times(1)).post(eqTo(arrivalId), eqTo(movementMessage), any())(any())
         verify(mockArrivalMovementRepository, times(1)).setArrivalStateAndMessageState(eqTo(arrivalId),
                                                                                        eqTo(messageId),
-                                                                                       eqTo(ArrivalState.ArrivalSubmitted),
-                                                                                       eqTo(MessageState.SubmissionSucceeded))
+                                                                                       eqTo(ArrivalStatus.ArrivalSubmitted),
+                                                                                       eqTo(MessageStatus.SubmissionSucceeded))
 
       }
 
@@ -151,8 +151,8 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
         verify(mockMessageConnector, times(1)).post(eqTo(arrivalId), eqTo(movementMessage), any())(any())
         verify(mockArrivalMovementRepository, times(1)).setArrivalStateAndMessageState(eqTo(arrivalId),
                                                                                        eqTo(messageId),
-                                                                                       eqTo(ArrivalState.ArrivalSubmitted),
-                                                                                       eqTo(MessageState.SubmissionSucceeded))
+                                                                                       eqTo(ArrivalStatus.ArrivalSubmitted),
+                                                                                       eqTo(MessageStatus.SubmissionSucceeded))
       }
 
     }
@@ -213,7 +213,7 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
         result.futureValue mustEqual SubmissionResult.FailureExternal
         verify(mockArrivalMovementRepository, times(1)).addNewMessage(eqTo(arrivalId), eqTo(movementMessage))
         verify(mockMessageConnector, times(1)).post(eqTo(arrivalId), eqTo(movementMessage), any())(any())
-        verify(mockArrivalMovementRepository, times(1)).setMessageState(eqTo(arrivalId), eqTo(messageId.index), eqTo(MessageState.SubmissionFailed))
+        verify(mockArrivalMovementRepository, times(1)).setMessageState(eqTo(arrivalId), eqTo(messageId.index), eqTo(MessageStatus.SubmissionFailed))
       }
 
     }
@@ -251,8 +251,8 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
         verify(mockArrivalMovementRepository, times(1)).setArrivalStateAndMessageState(
           eqTo(arrival.arrivalId),
           eqTo(messageId),
-          eqTo(ArrivalState.ArrivalSubmitted),
-          eqTo(MessageState.SubmissionSucceeded)
+          eqTo(ArrivalStatus.ArrivalSubmitted),
+          eqTo(MessageStatus.SubmissionSucceeded)
         )
 
       }
@@ -284,8 +284,8 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
         verify(mockMessageConnector, times(1)).post(eqTo(arrival.arrivalId), eqTo(movementMessage), any())(any())
         verify(mockArrivalMovementRepository, times(1)).setArrivalStateAndMessageState(eqTo(arrival.arrivalId),
                                                                                        eqTo(messageId),
-                                                                                       eqTo(ArrivalState.ArrivalSubmitted),
-                                                                                       eqTo(MessageState.SubmissionSucceeded))
+                                                                                       eqTo(ArrivalStatus.ArrivalSubmitted),
+                                                                                       eqTo(MessageStatus.SubmissionSucceeded))
       }
 
     }
@@ -338,7 +338,7 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
         result.futureValue mustEqual SubmissionResult.FailureExternal
         verify(mockArrivalMovementRepository, times(1)).insert(eqTo(arrival))
         verify(mockMessageConnector, times(1)).post(eqTo(arrival.arrivalId), eqTo(movementMessage), any())(any())
-        verify(mockArrivalMovementRepository, times(1)).setMessageState(eqTo(arrival.arrivalId), eqTo(messageId.index), eqTo(MessageState.SubmissionFailed))
+        verify(mockArrivalMovementRepository, times(1)).setMessageState(eqTo(arrival.arrivalId), eqTo(messageId.index), eqTo(MessageStatus.SubmissionFailed))
       }
 
     }

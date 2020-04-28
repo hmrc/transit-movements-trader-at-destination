@@ -23,10 +23,10 @@ import controllers.actions.AuthenticatedGetOptionalArrivalForWriteActionProvider
 import javax.inject.Inject
 import models.ArrivalId
 import models.Arrivals
-import models.MessageState.SubmissionFailed
 import models.request.ArrivalRequest
 import models.response.ResponseMovementMessage
 import models.MessageId
+import models.MessageStatus.SubmissionFailed
 import models.SubmissionResult
 import play.api.libs.json.Json
 import play.api.mvc.Action
@@ -148,7 +148,7 @@ class MovementsController @Inject()(
 
   def getMessage(arrivalId: ArrivalId, messageId: MessageId): Action[AnyContent] = authenticateForRead(arrivalId) {
     implicit request =>
-      if (request.arrival.messages.isDefinedAt(messageId.index) && request.arrival.messages(messageId.index).optState != Some(SubmissionFailed))
+      if (request.arrival.messages.isDefinedAt(messageId.index) && request.arrival.messages(messageId.index).optStatus != Some(SubmissionFailed))
         Ok(Json.toJson(ResponseMovementMessage.build(arrivalId, messageId, request.arrival.messages(messageId.index))))
       else NotFound
   }

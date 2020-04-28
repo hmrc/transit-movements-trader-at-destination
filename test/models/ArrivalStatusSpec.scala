@@ -14,20 +14,15 @@
  * limitations under the License.
  */
 
-package models.state
+package models
 
 import base.SpecBase
 import generators.ModelGenerators
-import models.ArrivalState._
-import models.ArrivalState
-import models.MessageReceived
-import org.scalatest.FreeSpec
-import org.scalatest.MustMatchers
+import models.ArrivalStatus._
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalacheck.Gen
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
-class ArrivalStateSpec extends SpecBase with ScalaCheckDrivenPropertyChecks with ModelGenerators {
+class ArrivalStatusSpec extends SpecBase with ScalaCheckDrivenPropertyChecks with ModelGenerators {
 
   "Initialized must transition" - {
 
@@ -42,11 +37,11 @@ class ArrivalStateSpec extends SpecBase with ScalaCheckDrivenPropertyChecks with
   }
 
   "Intitialized should not be transitioned to from any other state" in {
-    val nonIntializedGen = arbitrary[ArrivalState].suchThat(_ != Initialized)
+    val nonIntializedGen = arbitrary[ArrivalStatus].suchThat(_ != Initialized)
 
     forAll(nonIntializedGen, arbitrary[MessageReceived]) {
-      case (state, event) =>
-        state.transition(event) must not equal (Initialized)
+      case (status, event) =>
+        status.transition(event) must not equal (Initialized)
 
     }
 

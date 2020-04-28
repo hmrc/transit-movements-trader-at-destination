@@ -23,7 +23,7 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.matching.StringValuePattern
 import generators.ModelGenerators
 import models.ArrivalId
-import models.MessageState
+import models.MessageStatus
 import models.MessageType
 import models.MovementMessageWithState
 import org.scalacheck.Gen
@@ -81,7 +81,7 @@ class MessageConnectorSpec
             )
         )
 
-        val postValue = MovementMessageWithState(LocalDateTime.now(), messageType, <CC007A>test</CC007A>, MessageState.SubmissionPending, 1)
+        val postValue = MovementMessageWithState(LocalDateTime.now(), messageType, <CC007A>test</CC007A>, MessageStatus.SubmissionPending, 1)
         val arrivalId = ArrivalId(123)
 
         val result = connector.post(arrivalId, postValue, OffsetDateTime.now())
@@ -111,7 +111,7 @@ class MessageConnectorSpec
             )
         )
 
-        val postValue = MovementMessageWithState(LocalDateTime.now(), messageType, <CC007A>test</CC007A>, MessageState.SubmissionPending, 1)
+        val postValue = MovementMessageWithState(LocalDateTime.now(), messageType, <CC007A>test</CC007A>, MessageStatus.SubmissionPending, 1)
         val arrivalId = ArrivalId(123)
 
         val result = connector.post(arrivalId, postValue, OffsetDateTime.now())
