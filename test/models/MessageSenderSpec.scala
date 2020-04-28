@@ -16,9 +16,8 @@
 
 package models
 
-import generators.MessageGenerators
+import generators.ModelGenerators
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalacheck.Gen
 import org.scalatest.EitherValues
 import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers
@@ -26,7 +25,7 @@ import org.scalatest.OptionValues
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.mvc.PathBindable
 
-class MessageSenderSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with OptionValues with EitherValues with MessageGenerators {
+class MessageSenderSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with OptionValues with EitherValues with ModelGenerators {
 
   "Message Sender" - {
 
@@ -56,7 +55,7 @@ class MessageSenderSpec extends FreeSpec with MustMatchers with ScalaCheckProper
       messageSender.toString mustEqual "MDTP-000000000000000000000000123-01"
     }
 
-    "must convert to string and apply correct format" in {
+    "must convert to string and apply correct padding to specified length" in {
 
       val genMessageCorrelationId = intWithMaxLength(2)
 

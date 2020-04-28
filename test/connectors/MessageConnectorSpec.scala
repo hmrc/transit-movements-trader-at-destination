@@ -35,7 +35,6 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.http.logging.SessionId
 
 class MessageConnectorSpec
     extends FreeSpec
@@ -95,18 +94,17 @@ class MessageConnectorSpec
 
       "return an exception when post is unsuccessful" in {
 
-        val messageSender = "MDTP-123-1"
-
-        val failedStatus = genFailedStatusCodes.sample.value
+        val messageSender = "MDTP-000000000000000000000000123-01"
 
         server.stubFor(
           post(urlEqualTo(postUrl))
-            .withHeader("Content-Type", equalTo("application/xml"))
-            .withHeader("X-Message-Type", equalTo(messageType.toString))
-            .withHeader("X-Correlation-ID", headerCarrierPattern)
+            .withHeader("Authorization", equalTo("Bearer securityToken"))
             .withHeader("X-Forwarded-Host", equalTo("mdtp"))
-            .withHeader("X-Message-Sender", equalTo(messageSender))
+            .withHeader("X-Correlation-ID", headerCarrierPattern)
+            .withHeader("Content-Type", equalTo("application/xml"))
             .withHeader("Accept", equalTo("application/xml"))
+            .withHeader("X-Message-Type", equalTo(messageType.toString))
+            .withHeader("X-Message-Sender", equalTo(messageSender))
             .willReturn(
               aResponse()
                 .withStatus(genFailedStatusCodes.sample.value)
@@ -136,11 +134,6 @@ object MessageConnectorSpec {
       case _       => matching("""\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b""")
     }
 
-  private val postUrl = "/common-transit-convention-trader-at-destination/message-notification"
-
-  private val headerCarrierWithSessionId = HeaderCarrier(sessionId = Some(SessionId("sessionId")))
-  private val headerCarrier              = HeaderCarrier()
-
+  private val postUrl                        = "/common-transit-convention-trader-at-destination/message-notification"
   private val genFailedStatusCodes: Gen[Int] = Gen.choose(400, 599)
-
 }
