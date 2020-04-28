@@ -16,7 +16,7 @@
 
 package controllers.actions
 
-import generators.MessageGenerators
+import generators.ModelGenerators
 import models.Arrival
 import models.MovementReferenceNumber
 import org.mockito.Matchers.{eq => eqTo, _}
@@ -53,7 +53,7 @@ class AuthenticatedGetOptionalArrivalForWriteActionProviderSpec
     with MustMatchers
     with MockitoSugar
     with ScalaCheckPropertyChecks
-    with MessageGenerators
+    with ModelGenerators
     with OptionValues {
 
   def fakeRequest: FakeRequest[NodeSeq] = FakeRequest("", "").withBody(<CC007A>

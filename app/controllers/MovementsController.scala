@@ -16,28 +16,18 @@
 
 package controllers
 
-import java.time.OffsetDateTime
-
-import connectors.MessageConnector
 import controllers.actions.AuthenticateActionProvider
 import controllers.actions.AuthenticatedGetArrivalForReadActionProvider
 import controllers.actions.AuthenticatedGetArrivalForWriteActionProvider
 import controllers.actions.AuthenticatedGetOptionalArrivalForWriteActionProvider
 import javax.inject.Inject
-import models.MessageReceived.ArrivalSubmitted
-import models.MessageState.SubmissionFailed
-import models.MessageState.SubmissionSucceeded
-import models.Arrival
 import models.ArrivalId
 import models.Arrivals
-import models.MessageReceived
-import models.MessageState
-import models.MovementMessageWithState
-import models.MovementMessageWithoutState
-import models.SubmissionResult
+import models.MessageState.SubmissionFailed
 import models.request.ArrivalRequest
 import models.response.ResponseMovementMessage
-import play.api.Logger
+import models.MessageId
+import models.SubmissionResult
 import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
@@ -45,34 +35,50 @@ import play.api.mvc.ControllerComponents
 import play.api.mvc.DefaultActionBuilder
 import repositories.ArrivalMovementRepository
 import services.ArrivalMovementService
-import uk.gov.hmrc.http.HeaderCarrier
+import services.SubmitMessageService
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.util.Failure
-import scala.util.Success
 import scala.xml.NodeSeq
 
 class MovementsController @Inject()(
   cc: ControllerComponents,
   arrivalMovementRepository: ArrivalMovementRepository,
   arrivalMovementService: ArrivalMovementService,
+  submitMessageService: SubmitMessageService,
   authenticate: AuthenticateActionProvider,
   authenticateForRead: AuthenticatedGetArrivalForReadActionProvider,
   authenticatedOptionalArrival: AuthenticatedGetOptionalArrivalForWriteActionProvider,
   authenticateForWrite: AuthenticatedGetArrivalForWriteActionProvider,
-  defaultActionBuilder: DefaultActionBuilder,
-  messageConnector: MessageConnector
+  defaultActionBuilder: DefaultActionBuilder
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
-
-  private val logger = Logger(getClass)
 
   def post: Action[NodeSeq] = authenticatedOptionalArrival().async(parse.xml) {
     implicit request =>
       request.arrival match {
-        case Some(arrival) => appendNewArrivalMessageToMovement(arrival, request.body)
+        case Some(arrival) =>
+          arrivalMovementService
+            .makeArrivalNotificationMessage(arrival.nextMessageCorrelationId)(request.body)
+            .map {
+              message =>
+                submitMessageService
+                  .submitMessage(arrival.arrivalId, new MessageId(arrival.messages.length - 1), message)
+                  .map {
+                    case SubmissionResult.Success =>
+                      Accepted("Message accepted")
+                        .withHeaders("Location" -> routes.MovementsController.getArrival(arrival.arrivalId).url)
+
+                    case SubmissionResult.FailureInternal =>
+                      InternalServerError
+
+                    case SubmissionResult.FailureExternal =>
+                      BadGateway
+                  }
+            }
+            .getOrElse(Future.successful(BadRequest("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5")))
+
         case None =>
           arrivalMovementService.makeArrivalMovement(request.eoriNumber)(request.body) match {
             case None =>
@@ -81,29 +87,14 @@ class MovementsController @Inject()(
               arrivalFuture
                 .flatMap {
                   arrival =>
-                    arrivalMovementRepository.insert(arrival) flatMap {
-                      _ =>
-                        messageConnector
-                        // TODO: Fix this casting
-                          .post(arrival.arrivalId, arrival.messages.head.asInstanceOf[MovementMessageWithState], OffsetDateTime.now)
-                          .flatMap {
-                            _ =>
-                              for {
-                                _ <- arrivalMovementRepository
-                                  .setMessageState(arrival.arrivalId, 0, SubmissionSucceeded) // TODO: use the message's state transition here and don't hard code the index of the message
-                                _ <- arrivalMovementRepository.setState(arrival.arrivalId, arrival.state.transition(ArrivalSubmitted))
-                              } yield {
-                                Accepted("Message accepted")
-                                  .withHeaders("Location" -> routes.MovementsController.getArrival(arrival.arrivalId).url)
-                              }
-                          }
-                          .recoverWith {
-                            case error =>
-                              logger.error(s"Call to EIS failed with the following Exception: ${error.getMessage}")
-                              arrivalMovementRepository
-                                .setMessageState(arrival.arrivalId, arrival.messages.length - 1, SubmissionFailed)
-                                .map(_ => BadGateway)
-                          }
+                    submitMessageService.submitArrival(arrival) map {
+                      case SubmissionResult.Success =>
+                        Accepted("Message accepted")
+                          .withHeaders("Location" -> routes.MovementsController.getArrival(arrival.arrivalId).url)
+                      case SubmissionResult.FailureExternal =>
+                        BadGateway
+                      case SubmissionResult.FailureInternal =>
+                        InternalServerError
                     }
                 }
                 .recover {
@@ -113,48 +104,30 @@ class MovementsController @Inject()(
                 }
           }
       }
-
   }
-
-  private def appendNewArrivalMessageToMovement(arrival: Arrival, body: NodeSeq)(implicit hc: HeaderCarrier) =
-    arrivalMovementService.makeArrivalNotificationMessage(arrival.nextMessageCorrelationId)(body) match {
-      case None => Future.successful(BadRequest("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5"))
-      case Some(message) => {
-        arrivalMovementRepository.addNewMessage(arrival.arrivalId, message).flatMap {
-          case Failure(_) =>
-            Future.successful(InternalServerError)
-          case Success(()) =>
-            messageConnector
-              .post(arrival.arrivalId, message, OffsetDateTime.now)
-              .flatMap {
-                _ =>
-                  for {
-                    _ <- arrivalMovementRepository
-                      .setMessageState(arrival.arrivalId, arrival.messages.length, MessageState.SubmissionSucceeded)
-                    _ <- arrivalMovementRepository.setState(arrival.arrivalId, arrival.state.transition(MessageReceived.ArrivalSubmitted))
-                  } yield {
-                    Accepted("Message accepted")
-                      .withHeaders("Location" -> routes.MovementsController.getArrival(arrival.arrivalId).url)
-                  }
-              }
-              .recoverWith {
-                case error =>
-                  logger.error(s"Call to EIS failed with the following Exception: ${error.getMessage}")
-                  arrivalMovementRepository
-                    .setMessageState(arrival.arrivalId, arrival.messages.length, message.state.transition(SubmissionResult.Failure))
-                    .map {
-                      _ =>
-                        BadGateway
-                    }
-              }
-
-        }
-      }
-    }
 
   def putArrival(arrivalId: ArrivalId): Action[NodeSeq] = authenticateForWrite(arrivalId).async(parse.xml) {
     implicit request: ArrivalRequest[NodeSeq] =>
-      appendNewArrivalMessageToMovement(request.arrival, request.body)
+      arrivalMovementService
+        .makeArrivalNotificationMessage(request.arrival.nextMessageCorrelationId)(request.body)
+        .map {
+          message =>
+            submitMessageService
+              .submitMessage(arrivalId, new MessageId(request.arrival.messages.length - 1), message)
+              .map {
+                case SubmissionResult.Success =>
+                  Accepted("Message accepted")
+                    .withHeaders("Location" -> routes.MovementsController.getArrival(request.arrival.arrivalId).url)
+
+                case SubmissionResult.FailureInternal =>
+                  InternalServerError
+
+                case SubmissionResult.FailureExternal =>
+                  BadGateway
+              }
+        }
+        .getOrElse(Future.successful(BadRequest("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5")))
+
   }
 
   def getArrival(arrivalId: ArrivalId): Action[AnyContent] = defaultActionBuilder(_ => NotImplemented)

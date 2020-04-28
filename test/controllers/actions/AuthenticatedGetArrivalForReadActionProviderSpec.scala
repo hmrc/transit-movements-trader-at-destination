@@ -16,7 +16,7 @@
 
 package controllers.actions
 
-import generators.MessageGenerators
+import generators.ModelGenerators
 import models.Arrival
 import models.ArrivalId
 import org.mockito.Matchers.any
@@ -48,7 +48,7 @@ class AuthenticatedGetArrivalForReadActionProviderSpec
     with MustMatchers
     with MockitoSugar
     with ScalaCheckPropertyChecks
-    with MessageGenerators
+    with ModelGenerators
     with OptionValues {
 
   def fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest("", "")

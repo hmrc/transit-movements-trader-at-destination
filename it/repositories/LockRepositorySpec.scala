@@ -1,6 +1,6 @@
-package services.repositories
+package repositories
 
-import generators.MessageGenerators
+import generators.ModelGenerators
 import models.ArrivalId
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatest.concurrent.ScalaFutures
@@ -16,7 +16,6 @@ import play.api.libs.json.Json
 import play.api.test.Helpers._
 import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 import reactivemongo.play.json.collection.JSONCollection
-import repositories.LockRepository
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -30,7 +29,7 @@ class LockRepositorySpec
     with OptionValues
     with EitherValues
     with ScalaCheckPropertyChecks
-    with MessageGenerators {
+    with ModelGenerators {
 
   "lock" - {
     "must lock an arrivalId when it is not already locked" in {

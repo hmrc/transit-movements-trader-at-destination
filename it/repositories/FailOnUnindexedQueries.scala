@@ -1,4 +1,4 @@
-package services.repositories
+package repositories
 
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
