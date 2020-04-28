@@ -6,4 +6,6 @@ GET                     /movements/arrivals                 controllers.Movement
 GET                    /movements/arrivals/:arrivalId                 controllers.MovementsController.getArrival(arrivalId: ArrivalId)
 PUT                    /movements/arrivals/:arrivalId                 controllers.MovementsController.putArrival(arrivalId: ArrivalId)
 
+GET                    /movements/arrivals/:arrivalId/messages/:messageId           controllers.MovementsController.getMessage(arrivalId: ArrivalId, messageId: MessageId)
+
 POST                    /movements/arrivals/:messageSender/messages    controllers.GoodsReleasedController.post(messageSender: MessageSender)
