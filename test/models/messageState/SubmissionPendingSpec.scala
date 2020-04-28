@@ -17,9 +17,9 @@
 package models.messageState
 
 import generators.ModelGenerators
-import models.MessageState.SubmissionFailed
-import models.MessageState.SubmissionPending
-import models.MessageState.SubmissionSucceeded
+import models.MessageStatus.SubmissionFailed
+import models.MessageStatus.SubmissionPending
+import models.MessageStatus.SubmissionSucceeded
 import models.SubmissionResult
 import models.SubmissionResult.Failure
 import org.scalatest.FreeSpec

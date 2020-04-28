@@ -27,7 +27,7 @@ abstract class MovementMessage {
   def dateTime: LocalDateTime
 }
 
-final case class MovementMessageWithState(dateTime: LocalDateTime, messageType: MessageType, message: NodeSeq, state: MessageState, messageCorrelationId: Int)
+final case class MovementMessageWithState(dateTime: LocalDateTime, messageType: MessageType, message: NodeSeq, status: MessageStatus, messageCorrelationId: Int)
     extends MovementMessage
 
 final case class MovementMessageWithoutState(dateTime: LocalDateTime, messageType: MessageType, message: NodeSeq, messageCorrelationId: Int)
@@ -35,7 +35,7 @@ final case class MovementMessageWithoutState(dateTime: LocalDateTime, messageTyp
 
 object MovementMessage extends NodeSeqFormat {
   implicit lazy val reads: Reads[MovementMessage] = new Reads[MovementMessage] {
-    override def reads(json: JsValue): JsResult[MovementMessage] = (json \ "state").toOption match {
+    override def reads(json: JsValue): JsResult[MovementMessage] = (json \ "status").toOption match {
       case Some(_) =>
         json.validate[MovementMessageWithState]
       case None =>

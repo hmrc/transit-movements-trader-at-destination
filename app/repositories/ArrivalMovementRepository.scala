@@ -19,15 +19,14 @@ package repositories
 import com.google.inject.Inject
 import models.Arrival
 import models.ArrivalId
-import models.ArrivalState
+import models.ArrivalStatus
 import models.MessageId
-import models.MessageState
+import models.MessageStatus
 import models.MongoDateTimeFormats
 import models.MovementMessage
 import models.MovementReferenceNumber
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
-import play.api.mvc.ControllerComponents
 import play.modules.reactivemongo.ReactiveMongoApi
 import reactivemongo.api.Cursor
 import reactivemongo.api.commands.WriteResult
@@ -101,17 +100,17 @@ class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi)(implicit ec: 
     }
 
   // TODO: Refactor this to take a MessageId
-  def setMessageState(arrivalId: ArrivalId, messageId: Int, state: MessageState): Future[Try[Unit]] = {
+  def setMessageState(arrivalId: ArrivalId, messageId: Int, status: MessageStatus): Future[Try[Unit]] = {
     val selector = Json.obj(
       "$and" -> Json.arr(
-        Json.obj("_id"                        -> arrivalId),
-        Json.obj(s"messages.$messageId.state" -> Json.obj("$exists" -> true))
+        Json.obj("_id"                         -> arrivalId),
+        Json.obj(s"messages.$messageId.status" -> Json.obj("$exists" -> true))
       )
     )
 
     val modifier = Json.obj(
       "$set" -> Json.obj(
-        s"messages.$messageId.state" -> state.toString
+        s"messages.$messageId.status" -> status.toString
       )
     )
 
@@ -127,15 +126,15 @@ class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi)(implicit ec: 
                 else
                   Failure(new Exception(le.errmsg match {
                     case Some(err) => err
-                    case None      => "Unable to update message state"
+                    case None      => "Unable to update message status"
                   }))
             }
-            .getOrElse(Failure(new Exception("Unable to update message state")))
+            .getOrElse(Failure(new Exception("Unable to update message status")))
         }
     }
   }
 
-  def setState(id: ArrivalId, state: ArrivalState): Future[Option[Unit]] = {
+  def setState(id: ArrivalId, status: ArrivalStatus): Future[Option[Unit]] = {
 
     val selector = Json.obj(
       "_id" -> id
@@ -143,7 +142,7 @@ class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi)(implicit ec: 
 
     val modifier = Json.obj(
       "$set" -> Json.obj(
-        "state" -> state.toString
+        "status" -> status.toString
       )
     )
 
@@ -160,15 +159,15 @@ class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi)(implicit ec: 
 
   def setArrivalStateAndMessageState(arrivalId: ArrivalId,
                                      messageId: MessageId,
-                                     arrivalState: ArrivalState,
-                                     messageState: MessageState): Future[Option[Unit]] = {
+                                     arrivalState: ArrivalStatus,
+                                     messageState: MessageStatus): Future[Option[Unit]] = {
 
     val selector = Json.obj("_id" -> arrivalId)
 
     val modifier = Json.obj(
       "$set" -> Json.obj(
-        s"messages.${messageId.index}.state" -> messageState.toString,
-        "state"                              -> arrivalState.toString
+        s"messages.${messageId.index}.status" -> messageState.toString,
+        "status"                              -> arrivalState.toString
       )
     )
 
@@ -215,7 +214,7 @@ class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi)(implicit ec: 
     }
   }
 
-  def addResponseMessage(arrivalId: ArrivalId, message: MovementMessage, state: ArrivalState): Future[Try[Unit]] = {
+  def addResponseMessage(arrivalId: ArrivalId, message: MovementMessage, status: ArrivalStatus): Future[Try[Unit]] = {
     val selector = Json.obj(
       "_id" -> arrivalId
     )
@@ -224,7 +223,7 @@ class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi)(implicit ec: 
       Json.obj(
         "$set" -> Json.obj(
           "updated" -> message.dateTime,
-          "state"   -> state.toString
+          "status"  -> status.toString
         ),
         "$push" -> Json.obj(
           "messages" -> Json.toJson(message)

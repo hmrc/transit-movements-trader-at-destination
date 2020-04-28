@@ -23,15 +23,15 @@ import java.time.LocalTime
 import base.SpecBase
 import connectors.MessageConnector
 import generators.ModelGenerators
-import models.ArrivalState.ArrivalSubmitted
-import models.MessageState.SubmissionPending
-import models.MessageState.SubmissionSucceeded
+import models.ArrivalStatus.ArrivalSubmitted
+import models.MessageStatus.SubmissionPending
+import models.MessageStatus.SubmissionSucceeded
 import models.Arrival
 import models.ArrivalId
-import models.ArrivalState
+import models.ArrivalStatus
 import models.Arrivals
 import models.MessageId
-import models.MessageState
+import models.MessageStatus
 import models.MessageType
 import models.MovementMessageWithState
 import models.MovementReferenceNumber
@@ -97,7 +97,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
       arrivalId = arrivalId,
       movementReferenceNumber = mrn,
       eoriNumber = "eori",
-      status = ArrivalState.Initialized,
+      status = ArrivalStatus.Initialized,
       messages = Seq(movementMessge),
       nextMessageCorrelationId = movementMessge.messageCorrelationId,
       created = localDateTime,
