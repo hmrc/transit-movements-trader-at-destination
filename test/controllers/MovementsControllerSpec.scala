@@ -31,7 +31,6 @@ import models.ArrivalId
 import models.ArrivalStatus
 import models.Arrivals
 import models.MessageId
-import models.MessageStatus
 import models.MovementMessageWithoutState
 import models.response.ResponseMovementMessage
 import models.MessageType
@@ -716,7 +715,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
     "getMessage" - {
       "must return Ok with the retrieved message and state SubmissionSuccessful" in {
 
-        val message = Arbitrary.arbitrary[MovementMessageWithState].sample.value.copy(state = SubmissionSucceeded)
+        val message = Arbitrary.arbitrary[MovementMessageWithState].sample.value.copy(status = SubmissionSucceeded)
         val arrival = Arbitrary.arbitrary[Arrival].sample.value.copy(messages = Seq(message), eoriNumber = "eori")
 
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
@@ -779,7 +778,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         }
 
         "when message does not exist" in {
-          val message = Arbitrary.arbitrary[MovementMessageWithState].sample.value.copy(state = SubmissionSucceeded)
+          val message = Arbitrary.arbitrary[MovementMessageWithState].sample.value.copy(status = SubmissionSucceeded)
           val arrival = Arbitrary.arbitrary[Arrival].sample.value.copy(messages = Seq(message), eoriNumber = "eori")
 
           val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
@@ -800,7 +799,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         }
 
         "when status is not equal to successful" in {
-          val message = Arbitrary.arbitrary[MovementMessageWithState].sample.value.copy(state = SubmissionFailed)
+          val message = Arbitrary.arbitrary[MovementMessageWithState].sample.value.copy(status = SubmissionFailed)
           val arrival = Arbitrary.arbitrary[Arrival].sample.value.copy(messages = Seq(message), eoriNumber = "eori")
 
           val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
@@ -821,7 +820,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         }
 
         "when message belongs to an arrival the user cannot access" in {
-          val message = Arbitrary.arbitrary[MovementMessageWithState].sample.value.copy(state = SubmissionSucceeded)
+          val message = Arbitrary.arbitrary[MovementMessageWithState].sample.value.copy(status = SubmissionSucceeded)
           val arrival = Arbitrary.arbitrary[Arrival].sample.value.copy(messages = Seq(message), eoriNumber = "eori2")
 
           val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
