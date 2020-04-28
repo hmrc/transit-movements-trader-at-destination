@@ -728,11 +728,11 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
             .build()
 
         running(application) {
-          val request = FakeRequest(GET, routes.MovementsController.getMessage(arrival.arrivalId, new MessageId(1)).url)
+          val request = FakeRequest(GET, routes.MovementsController.getMessage(arrival.arrivalId, new MessageId(0)).url)
           val result  = route(application, request).value
 
           status(result) mustEqual OK
-          contentAsJson(result) mustEqual Json.toJson(ResponseMovementMessage.build(arrival.arrivalId, new MessageId(1), message))
+          contentAsJson(result) mustEqual Json.toJson(ResponseMovementMessage.build(arrival.arrivalId, new MessageId(0), message))
         }
       }
 
@@ -750,11 +750,11 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
             .build()
 
         running(application) {
-          val request = FakeRequest(GET, routes.MovementsController.getMessage(arrival.arrivalId, new MessageId(1)).url)
+          val request = FakeRequest(GET, routes.MovementsController.getMessage(arrival.arrivalId, new MessageId(0)).url)
           val result  = route(application, request).value
 
           status(result) mustEqual OK
-          contentAsJson(result) mustEqual Json.toJson(ResponseMovementMessage.build(arrival.arrivalId, new MessageId(1), message))
+          contentAsJson(result) mustEqual Json.toJson(ResponseMovementMessage.build(arrival.arrivalId, new MessageId(0), message))
         }
       }
 
@@ -770,7 +770,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
               .build()
 
           running(application) {
-            val request = FakeRequest(GET, routes.MovementsController.getMessage(ArrivalId(1), new MessageId(1)).url)
+            val request = FakeRequest(GET, routes.MovementsController.getMessage(ArrivalId(1), new MessageId(0)).url)
             val result  = route(application, request).value
 
             status(result) mustEqual NOT_FOUND
@@ -791,7 +791,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
               .build()
 
           running(application) {
-            val request = FakeRequest(GET, routes.MovementsController.getMessage(arrival.arrivalId, new MessageId(6)).url)
+            val request = FakeRequest(GET, routes.MovementsController.getMessage(arrival.arrivalId, new MessageId(5)).url)
             val result  = route(application, request).value
 
             status(result) mustEqual NOT_FOUND
@@ -812,7 +812,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
               .build()
 
           running(application) {
-            val request = FakeRequest(GET, routes.MovementsController.getMessage(arrival.arrivalId, new MessageId(1)).url)
+            val request = FakeRequest(GET, routes.MovementsController.getMessage(arrival.arrivalId, new MessageId(0)).url)
             val result  = route(application, request).value
 
             status(result) mustEqual NOT_FOUND
@@ -833,7 +833,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
               .build()
 
           running(application) {
-            val request = FakeRequest(GET, routes.MovementsController.getMessage(arrival.arrivalId, new MessageId(1)).url)
+            val request = FakeRequest(GET, routes.MovementsController.getMessage(arrival.arrivalId, new MessageId(0)).url)
             val result  = route(application, request).value
 
             status(result) mustEqual NOT_FOUND

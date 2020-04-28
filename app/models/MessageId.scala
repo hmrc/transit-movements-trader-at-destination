@@ -31,8 +31,6 @@ final class MessageId(val index: Int) {
     case x: MessageId => x.index == this.index
     case _            => false
   }
-
-  def zIndex = index - 1
 }
 
 object MessageId {

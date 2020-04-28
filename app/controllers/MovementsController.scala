@@ -148,8 +148,8 @@ class MovementsController @Inject()(
 
   def getMessage(arrivalId: ArrivalId, messageId: MessageId): Action[AnyContent] = authenticateForRead(arrivalId) {
     implicit request =>
-      if (request.arrival.messages.isDefinedAt(messageId.zIndex) && request.arrival.messages(messageId.zIndex).optState != Some(SubmissionFailed))
-        Ok(Json.toJson(ResponseMovementMessage.build(arrivalId, messageId, request.arrival.messages(messageId.zIndex))))
+      if (request.arrival.messages.isDefinedAt(messageId.index) && request.arrival.messages(messageId.index).optState != Some(SubmissionFailed))
+        Ok(Json.toJson(ResponseMovementMessage.build(arrivalId, messageId, request.arrival.messages(messageId.index))))
       else NotFound
   }
 }
