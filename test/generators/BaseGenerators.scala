@@ -22,6 +22,7 @@ import org.scalacheck.Gen.alphaStr
 import org.scalacheck.Gen.choose
 import org.scalacheck.Gen.chooseNum
 import org.scalacheck.Gen.listOfN
+import org.scalacheck.Gen.numChar
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
 import org.scalacheck.Shrink
@@ -129,5 +130,11 @@ trait BaseGenerators {
       length <- choose(1, maxLength)
       seq    <- listOfN(length, arbitrary[A])
     } yield seq
+
+  def intWithMaxLength(maxLength: Int): Gen[Int] =
+    for {
+      length        <- choose(1, maxLength)
+      listOfCharNum <- listOfN(length, numChar)
+    } yield listOfCharNum.mkString.toInt
 
 }

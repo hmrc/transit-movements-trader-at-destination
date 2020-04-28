@@ -64,7 +64,7 @@ class MessageConnector @Inject()(config: AppConfig, http: HttpClient)(implicit e
         headerCarrier.sessionId
           .map(_.value)
           .getOrElse(UUID.randomUUID().toString)
-      }, // TODO double check this is correct
+      },
       "Date"             -> Format.dateFormattedForHeader(dateTime),
       "Content-Type"     -> "application/xml",
       "Accept"           -> "application/xml",
