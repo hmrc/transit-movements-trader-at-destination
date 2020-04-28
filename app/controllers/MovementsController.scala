@@ -17,12 +17,15 @@
 package controllers
 
 import controllers.actions.AuthenticateActionProvider
+import controllers.actions.AuthenticatedGetArrivalForReadActionProvider
 import controllers.actions.AuthenticatedGetArrivalForWriteActionProvider
 import controllers.actions.AuthenticatedGetOptionalArrivalForWriteActionProvider
 import javax.inject.Inject
-import models.request.ArrivalRequest
 import models.ArrivalId
 import models.Arrivals
+import models.MessageState.SubmissionFailed
+import models.request.ArrivalRequest
+import models.response.ResponseMovementMessage
 import models.MessageId
 import models.SubmissionResult
 import play.api.libs.json.Json
@@ -45,6 +48,7 @@ class MovementsController @Inject()(
   arrivalMovementService: ArrivalMovementService,
   submitMessageService: SubmitMessageService,
   authenticate: AuthenticateActionProvider,
+  authenticateForRead: AuthenticatedGetArrivalForReadActionProvider,
   authenticatedOptionalArrival: AuthenticatedGetOptionalArrivalForWriteActionProvider,
   authenticateForWrite: AuthenticatedGetArrivalForWriteActionProvider,
   defaultActionBuilder: DefaultActionBuilder
@@ -140,5 +144,12 @@ class MovementsController @Inject()(
           case e =>
             InternalServerError(s"Failed with the following error: $e")
         }
+  }
+
+  def getMessage(arrivalId: ArrivalId, messageId: MessageId): Action[AnyContent] = authenticateForRead(arrivalId) {
+    implicit request =>
+      if (request.arrival.messages.isDefinedAt(messageId.index) && request.arrival.messages(messageId.index).optState != Some(SubmissionFailed))
+        Ok(Json.toJson(ResponseMovementMessage.build(arrivalId, messageId, request.arrival.messages(messageId.index))))
+      else NotFound
   }
 }

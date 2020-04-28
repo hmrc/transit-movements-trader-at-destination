@@ -13,22 +13,3 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package controllers.actions
-
-import javax.inject.Inject
-import models.ArrivalId
-import models.request.ArrivalRequest
-import play.api.mvc.ActionBuilder
-import play.api.mvc.AnyContent
-import play.api.mvc.DefaultActionBuilder
-
-class AuthenticatedGetArrivalForReadActionProvider @Inject()(
-  authenticate: AuthenticateActionProvider,
-  getArrival: AuthenticatedGetArrivalActionProvider,
-  buildDefault: DefaultActionBuilder
-) {
-
-  def apply(arrivalId: ArrivalId): ActionBuilder[ArrivalRequest, AnyContent] =
-    buildDefault andThen authenticate() andThen getArrival(arrivalId)
-}

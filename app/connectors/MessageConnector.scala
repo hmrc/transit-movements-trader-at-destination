@@ -29,6 +29,7 @@ import models.TransitWrapper
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HttpReads
 import uk.gov.hmrc.http.HttpResponse
+import uk.gov.hmrc.http.logging.Authorization
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import utils.Format
 
@@ -47,30 +48,27 @@ class MessageConnector @Inject()(config: AppConfig, http: HttpClient)(implicit e
 
     lazy val messageSender = MessageSender(arrivalId, message.messageCorrelationId)
 
-    val newHeaders = headerCarrier.withExtraHeaders(addHeaders(message.messageType, dateTime, messageSender): _*)
+    val newHeaders = headerCarrier
+      .copy(authorization = Some(Authorization("Bearer securityToken")))
+      .withExtraHeaders(addHeaders(message.messageType, dateTime, messageSender): _*)
 
     // TODO: Don't throw exceptions here
     http.POSTString(url, xmlMessage)(rds = HttpReads.readRaw, hc = newHeaders, ec = ec)
   }
 
   private def addHeaders(messageType: MessageType, dateTime: OffsetDateTime, messageSender: MessageSender)(
-    implicit headerCarrier: HeaderCarrier): Seq[(String, String)] = {
-
-    val bearerToken = config.eisBearerToken
-
+    implicit headerCarrier: HeaderCarrier): Seq[(String, String)] =
     Seq(
-      "Content-Type"   -> "application/xml;charset=UTF-8",
-      "X-Message-Type" -> messageType.toString,
+      "X-Forwarded-Host" -> "mdtp",
       "X-Correlation-ID" -> {
         headerCarrier.sessionId
           .map(_.value)
           .getOrElse(UUID.randomUUID().toString)
       },
-      "X-Message-Sender" -> messageSender.toString,
-      "X-Forwarded-Host" -> "mdtp",
       "Date"             -> Format.dateFormattedForHeader(dateTime),
-      "Accept"           -> "application/xml"
-      //"Authorization"    -> s"Bearer $bearerToken"
+      "Content-Type"     -> "application/xml",
+      "Accept"           -> "application/xml",
+      "X-Message-Type"   -> messageType.toString,
+      "X-Message-Sender" -> messageSender.toString
     )
-  }
 }
