@@ -21,7 +21,12 @@ import play.api.mvc.PathBindable
 import scala.util.Try
 
 final case class MessageSender(arrivalId: ArrivalId, messageCorrelationId: Int) {
-  override val toString = s"MDTP-${arrivalId.index}-$messageCorrelationId"
+  override val toString: String = {
+    s"MDTP-${pad(arrivalId.index, 27)}-${pad(messageCorrelationId, 2)}"
+  }
+
+  private def pad(value: Int, length: Int): String =
+    s"%0${length}d".format(value)
 }
 
 object MessageSender {
