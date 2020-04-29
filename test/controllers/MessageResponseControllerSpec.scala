@@ -27,6 +27,7 @@ import models.ArrivalId
 import models.ArrivalState
 import models.MessageSender
 import models.MovementReferenceNumber
+import models.ArrivalStatus
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
@@ -60,7 +61,7 @@ class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChec
     arrivalId,
     MovementReferenceNumber("mrn"),
     "eori",
-    ArrivalState.ArrivalSubmitted,
+    ArrivalStatus.ArrivalSubmitted,
     LocalDateTime.of(dateOfPrep, timeOfPrep),
     LocalDateTime.of(dateOfPrep, timeOfPrep),
     Seq.empty,

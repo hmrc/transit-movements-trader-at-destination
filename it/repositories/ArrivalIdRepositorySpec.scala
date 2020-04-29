@@ -1,4 +1,4 @@
-package services.repositories
+package repositories
 
 import models.ArrivalId
 import org.scalatest.concurrent.IntegrationPatience
@@ -9,7 +9,6 @@ import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.libs.json.Json
 import reactivemongo.play.json.collection.JSONCollection
 import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
-import repositories.ArrivalIdRepository
 
 import scala.concurrent.ExecutionContext.Implicits.global
 

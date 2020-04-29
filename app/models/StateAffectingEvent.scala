@@ -23,11 +23,15 @@ sealed trait SubmissionResult extends StateAffectingEvent
 object SubmissionResult {
 
   case object Success extends SubmissionResult
-  case object Failure extends SubmissionResult
+
+  sealed trait Failure        extends SubmissionResult
+  case object FailureInternal extends Failure
+  case object FailureExternal extends Failure
 
   val values = Seq(
     Success,
-    Failure
+    FailureInternal,
+    FailureExternal
   )
 }
 

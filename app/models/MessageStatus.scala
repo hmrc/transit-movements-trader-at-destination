@@ -16,30 +16,28 @@
 
 package models
 
-sealed trait MessageState {
-  def transition(event: SubmissionResult): MessageState
+sealed trait MessageStatus {
+  def transition(event: SubmissionResult): MessageStatus
 }
 
-object MessageState extends Enumerable.Implicits {
+object MessageStatus extends Enumerable.Implicits {
 
-  case object SubmissionPending extends MessageState {
-    override def transition(event: SubmissionResult): MessageState = event match {
+  case object SubmissionPending extends MessageStatus {
+    override def transition(event: SubmissionResult): MessageStatus = event match {
       case SubmissionResult.Success => SubmissionSucceeded
-      case SubmissionResult.Failure => SubmissionFailed
+      case _                        => SubmissionFailed
     }
   }
 
-  case object SubmissionFailed extends MessageState {
-    override def transition(event: SubmissionResult): MessageState = event match {
+  case object SubmissionFailed extends MessageStatus {
+    override def transition(event: SubmissionResult): MessageStatus = event match {
       case SubmissionResult.Success => SubmissionSucceeded
-      case SubmissionResult.Failure => SubmissionFailed
+      case _                        => SubmissionFailed
     }
   }
 
-  case object SubmissionSucceeded extends MessageState {
-    override def transition(event: SubmissionResult): MessageState = event match {
-      case _ => SubmissionSucceeded
-    }
+  case object SubmissionSucceeded extends MessageStatus {
+    override def transition(event: SubmissionResult): MessageStatus = SubmissionSucceeded
   }
 
   val values = Seq(
@@ -48,6 +46,6 @@ object MessageState extends Enumerable.Implicits {
     SubmissionSucceeded
   )
 
-  implicit val enumerable: Enumerable[MessageState] =
+  implicit val enumerable: Enumerable[MessageStatus] =
     Enumerable(values.map(v => v.toString -> v): _*)
 }

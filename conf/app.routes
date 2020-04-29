@@ -7,3 +7,5 @@ GET                     /movements/arrivals/:arrivalId                 controlle
 PUT                     /movements/arrivals/:arrivalId                 controllers.MovementsController.putArrival(arrivalId: ArrivalId)
 
 POST                    /movements/arrivals/:messageSender/messages     controllers.MessageResponseController.post(messageSender: MessageSender)
+GET                    /movements/arrivals/:arrivalId/messages/:messageId           controllers.MovementsController.getMessage(arrivalId: ArrivalId, messageId: MessageId)
+

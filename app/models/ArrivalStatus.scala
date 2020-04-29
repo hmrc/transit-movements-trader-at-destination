@@ -16,12 +16,16 @@
 
 package models
 
-sealed trait ArrivalState {
-  def transition(messageReceived: MessageReceived): ArrivalState
+sealed trait ArrivalStatus {
+  def transition(messageReceived: MessageReceived): ArrivalStatus
 }
 
-object ArrivalState extends Enumerable.Implicits {
+object ArrivalStatus extends Enumerable.Implicits {
 
+  case object Initialized extends ArrivalStatus {
+    override def transition(messageReceived: MessageReceived): ArrivalStatus = messageReceived match {
+      case MessageReceived.ArrivalSubmitted => ArrivalSubmitted
+      case MessageReceived.GoodsReleased    => GoodsReleased
   case object Initialized extends ArrivalState {
     override def transition(messageReceived: MessageReceived): ArrivalState = messageReceived match {
       case MessageReceived.ArrivalSubmitted    => ArrivalSubmitted
@@ -30,6 +34,10 @@ object ArrivalState extends Enumerable.Implicits {
     }
   }
 
+  case object ArrivalSubmitted extends ArrivalStatus {
+    override def transition(messageReceived: MessageReceived): ArrivalStatus = messageReceived match {
+      case MessageReceived.ArrivalSubmitted => ArrivalSubmitted
+      case MessageReceived.GoodsReleased    => GoodsReleased
   case object ArrivalSubmitted extends ArrivalState {
     override def transition(messageReceived: MessageReceived): ArrivalState = messageReceived match {
       case MessageReceived.ArrivalSubmitted    => ArrivalSubmitted
@@ -38,8 +46,8 @@ object ArrivalState extends Enumerable.Implicits {
     }
   }
 
-  case object GoodsReleased extends ArrivalState {
-    override def transition(messageReceived: MessageReceived): ArrivalState = this
+  case object GoodsReleased extends ArrivalStatus {
+    override def transition(messageReceived: MessageReceived): ArrivalStatus = this
   }
 
   case object UnloadingPermission extends ArrivalState {
@@ -53,6 +61,6 @@ object ArrivalState extends Enumerable.Implicits {
     UnloadingPermission
   )
 
-  implicit val enumerable: Enumerable[ArrivalState] =
+  implicit val enumerable: Enumerable[ArrivalStatus] =
     Enumerable(values.map(v => v.toString -> v): _*)
 }
