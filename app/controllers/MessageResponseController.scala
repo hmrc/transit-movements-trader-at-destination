@@ -53,7 +53,9 @@ class MessageResponseController @Inject()(cc: ControllerComponents,
       val messageResponse: Option[MessageResponse] = request.headers.get("X-Message-Type") match {
         case Some("IE025") => Some(GoodsReleasedResponse)
         case Some("IE043") => Some(UnloadingPermissionResponse)
-        case _             => None
+        case invalidResponse =>
+          logger.error(s"Received the following invalid response for X-Message-Type: $invalidResponse")
+          None
       }
 
       messageResponse match {
@@ -78,8 +80,7 @@ class MessageResponseController @Inject()(cc: ControllerComponents,
               Future.successful(BadRequest)
           }
         case None =>
-          logger.error(s"Invalid or empty X-Message-Type")
-          Future.successful(InternalServerError)
+          Future.successful(BadRequest)
       }
 
   }
