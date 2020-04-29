@@ -74,7 +74,7 @@ class MessageResponseController @Inject()(cc: ControllerComponents,
                   }
                 case None =>
                   logger.error(s"Failure to parse message")
-                  Future.successful(InternalServerError)
+                  Future.successful(BadRequest)
               }
             case Failure(e) =>
               logger.error(s"Failure to validate against XSD. Exception: ${e.getMessage}")

@@ -32,14 +32,12 @@ object MessageType extends Enumerable.Implicits {
   case object UnloadingRemarks    extends IeMetadata("IE044", "CC044A") with MessageType
   case object UnloadingPermission extends IeMetadata("IE043", "CC043A") with MessageType
 
-  val values: Seq[MessageType] = Seq(ArrivalNotification, GoodsReleased, UnloadingPermission)
-
-  val supportedMessageTypes = Seq(UnloadingRemarks)
+  val values: Seq[MessageType] = Seq(ArrivalNotification, GoodsReleased, UnloadingPermission, UnloadingRemarks)
 
   def getMessageType: ReaderT[Option, NodeSeq, MessageType] =
     ReaderT[Option, NodeSeq, MessageType] {
       nodeSeq =>
-        supportedMessageTypes.find(_.rootNode == nodeSeq.head.label)
+        values.find(_.rootNode == nodeSeq.head.label)
     }
 
   implicit val enumerable: Enumerable[MessageType] =

@@ -175,7 +175,7 @@ class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChec
         }
       }
 
-      "must lock, return Internal Server Error and release the lock if the message is an invalid Arrival" in {
+      "must lock, return BadRequest and release the lock if the message is an invalid Arrival" in {
         when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
         when(mockArrivalMovementRepository.addResponseMessage(any(), any(), any())).thenReturn(Future.successful(Success(())))
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
@@ -206,7 +206,7 @@ class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChec
 
           val result = route(application, request).value
 
-          status(result) mustEqual INTERNAL_SERVER_ERROR
+          status(result) mustEqual BAD_REQUEST
           verify(mockArrivalMovementRepository, never).addResponseMessage(any(), any(), any())
           verify(mockLockRepository, times(1)).lock(arrivalId)
           verify(mockLockRepository, times(1)).unlock(arrivalId)
