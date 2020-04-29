@@ -26,6 +26,7 @@ object ArrivalStatus extends Enumerable.Implicits {
     override def transition(messageReceived: MessageReceived): ArrivalStatus = messageReceived match {
       case MessageReceived.ArrivalSubmitted => ArrivalSubmitted
       case MessageReceived.GoodsReleased    => GoodsReleased
+      case _                                => throw new Exception(s"Tried to transition from Initialized to $messageReceived.")
     }
   }
 
@@ -33,6 +34,15 @@ object ArrivalStatus extends Enumerable.Implicits {
     override def transition(messageReceived: MessageReceived): ArrivalStatus = messageReceived match {
       case MessageReceived.ArrivalSubmitted => ArrivalSubmitted
       case MessageReceived.GoodsReleased    => GoodsReleased
+      case _                                => throw new Exception(s"Tried to transition from ArrivalSubmitted to $messageReceived.")
+    }
+  }
+
+  case object UnloadingRemarksSubmitted extends ArrivalStatus {
+    override def transition(messageReceived: MessageReceived): ArrivalStatus = messageReceived match {
+      case MessageReceived.UnloadingRemarksSubmitted => UnloadingRemarksSubmitted
+      case MessageReceived.GoodsReleased             => GoodsReleased
+      case _                                         => throw new Exception(s"Tried to transition from UnloadingRemarksSubmitted to $messageReceived.")
     }
   }
 
@@ -43,7 +53,8 @@ object ArrivalStatus extends Enumerable.Implicits {
   val values = Seq(
     Initialized,
     ArrivalSubmitted,
-    GoodsReleased
+    GoodsReleased,
+    UnloadingRemarksSubmitted
   )
 
   implicit val enumerable: Enumerable[ArrivalStatus] =

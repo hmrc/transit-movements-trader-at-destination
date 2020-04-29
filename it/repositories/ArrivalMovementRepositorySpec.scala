@@ -5,7 +5,7 @@ import java.time.{LocalDate, LocalDateTime, LocalTime}
 import generators.ModelGenerators
 import models.ArrivalStatus.{ArrivalSubmitted, Initialized}
 import models.MessageStatus.{SubmissionPending, SubmissionSucceeded}
-import models.{Arrival, ArrivalId, ArrivalStatus, MessageType, MongoDateTimeFormats, MovementMessageWithState, MovementMessageWithoutState, MovementReferenceNumber}
+import models.{Arrival, ArrivalId, ArrivalStatus, MessageType, MongoDateTimeFormats, MovementMessageWithStatus, MovementMessageWithoutStatus, MovementReferenceNumber}
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
 import org.scalactic.source
@@ -47,7 +47,7 @@ class ArrivalMovementRepositorySpec
 
   val arrivalWithOneMessage: Gen[Arrival] = for {
     arrival <- arbitrary[Arrival]
-    movementMessage <- arbitrary[MovementMessageWithState]
+    movementMessage <- arbitrary[MovementMessageWithStatus]
   } yield arrival.copy(messages = Seq(movementMessage.copy(status = SubmissionPending)))
 
   "ArrivalMovementRepository" - {
@@ -181,7 +181,7 @@ class ArrivalMovementRepositorySpec
           val updatedArrival = repository.get(arrival.arrivalId).futureValue.value
 
           typeMatchOnTestValue(updatedArrival.messages.head) {
-            result: MovementMessageWithState => result.status mustEqual SubmissionSucceeded
+            result: MovementMessageWithStatus => result.status mustEqual SubmissionSucceeded
           }
 
         }
@@ -232,7 +232,7 @@ class ArrivalMovementRepositorySpec
 
         val pregenArrival = arrivalWithOneMessage.sample.value
         val arrival = pregenArrival.copy(arrivalId = ArrivalId(1),
-          messages = Seq(arbitrary[MovementMessageWithoutState].sample.value))
+          messages = Seq(arbitrary[MovementMessageWithoutStatus].sample.value))
 
         running(app) {
           started(app).futureValue
@@ -269,7 +269,7 @@ class ArrivalMovementRepositorySpec
           updatedArrival.value.status mustEqual ArrivalSubmitted
 
           typeMatchOnTestValue(updatedArrival.value.messages.head) {
-            result: MovementMessageWithState => result.status mustEqual SubmissionSucceeded
+            result: MovementMessageWithStatus => result.status mustEqual SubmissionSucceeded
           }
 
         }
@@ -295,7 +295,7 @@ class ArrivalMovementRepositorySpec
           val result = repository.get(arrival.arrivalId).futureValue.value
           result.status mustEqual Initialized
           typeMatchOnTestValue(result.messages.head) {
-            result: MovementMessageWithState => result.status mustEqual SubmissionPending
+            result: MovementMessageWithStatus => result.status mustEqual SubmissionPending
           }
         }
       }
@@ -320,7 +320,7 @@ class ArrivalMovementRepositorySpec
             </HEAHEA>
           </CC025A>
 
-        val goodsReleasedMessage = MovementMessageWithoutState(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.GoodsReleased, messageBody, arrival.nextMessageCorrelationId)
+        val goodsReleasedMessage = MovementMessageWithoutStatus(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.GoodsReleased, messageBody, arrival.nextMessageCorrelationId)
         val newState             = ArrivalStatus.GoodsReleased
 
         running(app) {
@@ -367,7 +367,7 @@ class ArrivalMovementRepositorySpec
             </HEAHEA>
           </CC025A>
 
-        val goodsReleasedMessage = MovementMessageWithoutState(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.GoodsReleased, messageBody, messageCorrelationId = 1)
+        val goodsReleasedMessage = MovementMessageWithoutStatus(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.GoodsReleased, messageBody, messageCorrelationId = 1)
         val newState             = ArrivalStatus.GoodsReleased
 
         running(app) {
@@ -402,7 +402,7 @@ class ArrivalMovementRepositorySpec
             </HEAHEA>
           </CC025A>
 
-        val goodsReleasedMessage = MovementMessageWithoutState(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.GoodsReleased, messageBody, arrival.nextMessageCorrelationId)
+        val goodsReleasedMessage = MovementMessageWithoutStatus(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.GoodsReleased, messageBody, arrival.nextMessageCorrelationId)
 
         running(app) {
           started(app).futureValue
@@ -447,7 +447,7 @@ class ArrivalMovementRepositorySpec
             </HEAHEA>
           </CC025A>
 
-        val goodsReleasedMessage = MovementMessageWithoutState(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.GoodsReleased, messageBody, messageCorrelationId = 1)
+        val goodsReleasedMessage = MovementMessageWithoutStatus(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.GoodsReleased, messageBody, messageCorrelationId = 1)
 
         running(app) {
           started(app).futureValue

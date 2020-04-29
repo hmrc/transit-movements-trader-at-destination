@@ -27,8 +27,8 @@ import models.ArrivalStatus
 import models.MessageStatus
 import models.MessageStatus.SubmissionPending
 import models.MessageType
-import models.MovementMessageWithState
-import models.MovementMessageWithoutState
+import models.MovementMessageWithStatus
+import models.MovementMessageWithoutStatus
 import models.MovementReferenceNumber
 import org.mockito.Mockito.when
 import org.scalatest.concurrent.IntegrationPatience
@@ -77,7 +77,7 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
         dateTime,
         dateTime,
         messages = Seq(
-          MovementMessageWithState(dateTime, MessageType.ArrivalNotification, movement, MessageStatus.SubmissionPending, 1)
+          MovementMessageWithStatus(dateTime, MessageType.ArrivalNotification, movement, MessageStatus.SubmissionPending, 1)
         ),
         nextMessageCorrelationId = 2
       )
@@ -128,7 +128,7 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
         </CC025A>
 
       val messageCorrelationId = 1
-      val expectedMessage      = MovementMessageWithoutState(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.GoodsReleased, movement, messageCorrelationId)
+      val expectedMessage      = MovementMessageWithoutStatus(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.GoodsReleased, movement, messageCorrelationId)
 
       service.makeGoodsReleasedMessage(messageCorrelationId)(movement).value mustEqual expectedMessage
     }
@@ -171,9 +171,9 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
 
       val messageCorrelationId = 1
       val expectedMessage =
-        MovementMessageWithState(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.UnloadingRemarks, movement, SubmissionPending, messageCorrelationId)
+        MovementMessageWithStatus(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.UnloadingRemarks, movement, SubmissionPending, messageCorrelationId)
 
-      service.makeMovementMessageWithState(messageCorrelationId, MessageType.UnloadingRemarks)(movement).value mustEqual expectedMessage
+      service.makeMovementMessageWithStatus(messageCorrelationId, MessageType.UnloadingRemarks)(movement).value mustEqual expectedMessage
     }
 
     "returns None when the root node is not <CC044A>" in {
@@ -191,7 +191,7 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
           <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
         </Foo>
 
-      service.makeMovementMessageWithState(1, MessageType.UnloadingRemarks)(movement) must not be defined
+      service.makeMovementMessageWithStatus(1, MessageType.UnloadingRemarks)(movement) must not be defined
     }
   }
 
