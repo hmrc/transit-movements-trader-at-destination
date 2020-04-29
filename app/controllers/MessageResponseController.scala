@@ -22,6 +22,7 @@ import models.ArrivalStatus
 import models.GoodsReleasedResponse
 import models.MessageResponse
 import models.MessageSender
+import models.MessageType
 import models.UnloadingPermissionResponse
 import play.api.Logger
 import play.api.mvc.Action
@@ -51,8 +52,8 @@ class MessageResponseController @Inject()(cc: ControllerComponents,
       val xml: NodeSeq = request.request.body
 
       val messageResponse: Option[MessageResponse] = request.headers.get("X-Message-Type") match {
-        case Some("IE025") => Some(GoodsReleasedResponse)
-        case Some("IE043") => Some(UnloadingPermissionResponse)
+        case Some(MessageType.GoodsReleased.code)       => Some(GoodsReleasedResponse)
+        case Some(MessageType.UnloadingPermission.code) => Some(UnloadingPermissionResponse)
         case invalidResponse =>
           logger.error(s"Received the following invalid response for X-Message-Type: $invalidResponse")
           None
