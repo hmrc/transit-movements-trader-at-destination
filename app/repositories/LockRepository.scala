@@ -23,6 +23,7 @@ import javax.inject.Inject
 import models.ArrivalId
 import play.api.libs.json.Json
 import play.modules.reactivemongo.ReactiveMongoApi
+import reactivemongo.api.WriteConcern
 import reactivemongo.api.commands.LastError
 import reactivemongo.api.indexes.Index
 import reactivemongo.api.indexes.IndexType
@@ -74,8 +75,15 @@ class LockRepository @Inject()(mongo: ReactiveMongoApi, appConfig: AppConfig)(im
 
   def unlock(arrivalId: ArrivalId): Future[Unit] =
     collection.flatMap {
-      _.findAndRemove(Json.obj("_id" -> arrivalId))
-        .map(_ => ())
+      _.findAndRemove(
+        Json.obj("_id" -> arrivalId),
+        sort = Option.empty,
+        fields = Option.empty,
+        writeConcern = WriteConcern.Default,
+        maxTime = Option.empty,
+        collation = Option.empty,
+        arrayFilters = Seq.empty
+      ).map(_ => ())
     }
 }
 

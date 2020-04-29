@@ -29,6 +29,7 @@ import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import play.modules.reactivemongo.ReactiveMongoApi
 import reactivemongo.api.Cursor
+import reactivemongo.api.WriteConcern
 import reactivemongo.api.commands.WriteResult
 import reactivemongo.api.indexes.Index
 import reactivemongo.api.indexes.IndexType
@@ -202,15 +203,26 @@ class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi)(implicit ec: 
       )
 
     collection.flatMap {
-      _.findAndUpdate(selector, modifier)
-        .map {
-          _.lastError
-            .map {
-              le =>
-                if (le.updatedExisting) Success(()) else Failure(new Exception(s"Could not find arrival $arrivalId"))
-            }
-            .getOrElse(Failure(new Exception("Failed to update arrival")))
-        }
+      _.findAndUpdate(
+        selector = selector,
+        update = modifier,
+        fetchNewObject = true,
+        upsert = true,
+        sort = Option.empty,
+        fields = Option.empty,
+        bypassDocumentValidation = false,
+        writeConcern = WriteConcern.Default,
+        maxTime = Option.empty,
+        collation = Option.empty,
+        arrayFilters = Seq.empty
+      ).map {
+        _.lastError
+          .map {
+            le =>
+              if (le.updatedExisting) Success(()) else Failure(new Exception(s"Could not find arrival $arrivalId"))
+          }
+          .getOrElse(Failure(new Exception("Failed to update arrival")))
+      }
     }
   }
 
@@ -231,8 +243,19 @@ class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi)(implicit ec: 
       )
 
     collection.flatMap {
-      _.findAndUpdate(selector, modifier)
-        .map {
+      _.findAndUpdate[JsObject, JsObject](
+        selector = selector,
+        update = modifier,
+        fetchNewObject = true,
+        upsert = true,
+        sort = Option.empty,
+        fields = Option.empty,
+        bypassDocumentValidation = false,
+        writeConcern = WriteConcern.Default,
+        maxTime = Option.empty,
+        collation = Option.empty,
+        arrayFilters = Seq.empty
+      ).map {
           _.lastError
             .map {
               le =>

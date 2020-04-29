@@ -44,6 +44,8 @@ class ArrivalIdRepository @Inject()(mongo: ReactiveMongoApi) {
 
   def nextId(): Future[ArrivalId] = {
 
+    import reactivemongo.api.WriteConcern
+
     val update = Json.obj(
       "$inc" -> Json.obj(lastIndexKey -> 1)
     )
@@ -51,11 +53,22 @@ class ArrivalIdRepository @Inject()(mongo: ReactiveMongoApi) {
     val selector = Json.obj("_id" -> primaryValue)
 
     collection.flatMap(
-      _.findAndUpdate(selector, update, upsert = true, fetchNewObject = true)
-        .map(
-          x =>
-            x.result(indexKeyReads)
-              .getOrElse(throw new Exception(s"Unable to generate ArrivalId")))
+      _.findAndUpdate(
+        selector = selector,
+        update = update,
+        fetchNewObject = true,
+        upsert = true,
+        sort = Option.empty,
+        fields = Option.empty,
+        bypassDocumentValidation = false,
+        writeConcern = WriteConcern.Default,
+        maxTime = Option.empty,
+        collation = Option.empty,
+        arrayFilters = Seq.empty
+      ).map(
+        x =>
+          x.result(indexKeyReads)
+            .getOrElse(throw new Exception(s"Unable to generate ArrivalId")))
     )
   }
 }
