@@ -18,7 +18,7 @@ package controllers
 
 import controllers.actions.GetArrivalForWriteActionProvider
 import javax.inject.Inject
-import models.ArrivalState
+import models.ArrivalStatus
 import models.GoodsReleasedResponse
 import models.MessageResponse
 import models.MessageSender
@@ -62,7 +62,7 @@ class MessageResponseController @Inject()(cc: ControllerComponents,
             case Success(_) =>
               arrivalMovementService.makeMessage(messageSender.messageCorrelationId, response.messageType)(xml) match {
                 case Some(message) =>
-                  val newState: ArrivalState = request.arrival.state.transition(response.messageReceived)
+                  val newState: ArrivalStatus = request.arrival.status.transition(response.messageReceived)
                   arrivalMovementRepository.addResponseMessage(request.arrival.arrivalId, message, newState).map {
                     case Success(_) => Ok
                     case Failure(e) =>

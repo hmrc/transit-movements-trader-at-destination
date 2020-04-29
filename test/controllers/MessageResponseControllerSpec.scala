@@ -24,10 +24,9 @@ import base.SpecBase
 import generators.ModelGenerators
 import models.Arrival
 import models.ArrivalId
-import models.ArrivalState
+import models.ArrivalStatus
 import models.MessageSender
 import models.MovementReferenceNumber
-import models.ArrivalStatus
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
@@ -115,7 +114,7 @@ class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChec
 
           status(result) mustEqual OK
           verify(mockLockRepository, times(1)).lock(arrivalId)
-          verify(mockArrivalMovementRepository, times(1)).addResponseMessage(any(), any(), eqTo(ArrivalState.GoodsReleased))
+          verify(mockArrivalMovementRepository, times(1)).addResponseMessage(any(), any(), eqTo(ArrivalStatus.GoodsReleased))
           verify(mockLockRepository, times(1)).unlock(arrivalId)
         }
       }
@@ -144,7 +143,7 @@ class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChec
 
           status(result) mustEqual OK
           verify(mockLockRepository, times(1)).lock(arrivalId)
-          verify(mockArrivalMovementRepository, times(1)).addResponseMessage(any(), any(), eqTo(ArrivalState.UnloadingPermission))
+          verify(mockArrivalMovementRepository, times(1)).addResponseMessage(any(), any(), eqTo(ArrivalStatus.UnloadingPermission))
           verify(mockLockRepository, times(1)).unlock(arrivalId)
         }
       }
