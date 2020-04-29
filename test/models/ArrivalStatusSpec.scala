@@ -36,7 +36,7 @@ class ArrivalStatusSpec extends SpecBase with ScalaCheckDrivenPropertyChecks wit
 
   }
 
-  "Intitialized should not be transitioned to from any other state" in {
+  "Intitialized should not be transitioned to from any other state" ignore {
     val nonIntializedGen = arbitrary[ArrivalStatus].suchThat(_ != Initialized)
 
     forAll(nonIntializedGen, arbitrary[MessageReceived]) {

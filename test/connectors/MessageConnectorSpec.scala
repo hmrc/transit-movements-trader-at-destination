@@ -25,7 +25,7 @@ import generators.ModelGenerators
 import models.ArrivalId
 import models.MessageStatus
 import models.MessageType
-import models.MovementMessageWithState
+import models.MovementMessageWithStatus
 import org.scalacheck.Gen
 import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers
@@ -81,7 +81,7 @@ class MessageConnectorSpec
             )
         )
 
-        val postValue = MovementMessageWithState(LocalDateTime.now(), messageType, <CC007A>test</CC007A>, MessageStatus.SubmissionPending, 1)
+        val postValue = MovementMessageWithStatus(LocalDateTime.now(), messageType, <CC007A>test</CC007A>, MessageStatus.SubmissionPending, 1)
         val arrivalId = ArrivalId(123)
 
         val result = connector.post(arrivalId, postValue, OffsetDateTime.now())
@@ -111,7 +111,7 @@ class MessageConnectorSpec
             )
         )
 
-        val postValue = MovementMessageWithState(LocalDateTime.now(), messageType, <CC007A>test</CC007A>, MessageStatus.SubmissionPending, 1)
+        val postValue = MovementMessageWithStatus(LocalDateTime.now(), messageType, <CC007A>test</CC007A>, MessageStatus.SubmissionPending, 1)
         val arrivalId = ArrivalId(123)
 
         val result = connector.post(arrivalId, postValue, OffsetDateTime.now())

@@ -49,7 +49,7 @@ class MessagesController @Inject()(
           Future.successful(NotImplemented)
         case Some(messageType) =>
           arrivalMovementService
-            .makeMovementMessageWithState(request.arrival.nextMessageCorrelationId, messageType)(request.body)
+            .makeMovementMessageWithStatus(request.arrival.nextMessageCorrelationId, messageType)(request.body)
             .map {
               message =>
                 submitMessageService

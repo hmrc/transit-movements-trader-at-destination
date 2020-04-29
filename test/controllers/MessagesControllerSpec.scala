@@ -29,7 +29,7 @@ import models.ArrivalId
 import models.ArrivalStatus
 import models.MessageId
 import models.MessageType
-import models.MovementMessageWithState
+import models.MovementMessageWithStatus
 import models.MovementReferenceNumber
 import models.SubmissionResult
 import org.mockito.Matchers.any
@@ -67,7 +67,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
       </HEAHEA>
     </CC044A>
 
-  val movementMessge = MovementMessageWithState(
+  val movementMessge = MovementMessageWithStatus(
     localDateTime,
     MessageType.UnloadingRemarks,
     requestXmlBody,

@@ -24,7 +24,7 @@ import config.AppConfig
 import models.ArrivalId
 import models.MessageSender
 import models.MessageType
-import models.MovementMessageWithState
+import models.MovementMessageWithStatus
 import models.TransitWrapper
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HttpReads
@@ -38,7 +38,7 @@ import scala.concurrent.Future
 
 class MessageConnector @Inject()(config: AppConfig, http: HttpClient)(implicit ec: ExecutionContext) {
 
-  def post(arrivalId: ArrivalId, message: MovementMessageWithState, dateTime: OffsetDateTime)(
+  def post(arrivalId: ArrivalId, message: MovementMessageWithStatus, dateTime: OffsetDateTime)(
     implicit headerCarrier: HeaderCarrier
   ): Future[HttpResponse] = {
 

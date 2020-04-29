@@ -27,8 +27,8 @@ import models.ArrivalStatus.Initialized
 import models.MessageStatus.SubmissionPending
 import models.Arrival
 import models.MessageType
-import models.MovementMessageWithState
-import models.MovementMessageWithoutState
+import models.MovementMessageWithStatus
+import models.MovementMessageWithoutStatus
 import models.MovementReferenceNumber
 import repositories.ArrivalIdRepository
 import utils.Format
@@ -63,26 +63,26 @@ class ArrivalMovementService @Inject()(arrivalIdRepository: ArrivalIdRepository)
           ))
     }
 
-  def makeArrivalNotificationMessage(messageCorrelationId: Int): ReaderT[Option, NodeSeq, MovementMessageWithState] =
+  def makeArrivalNotificationMessage(messageCorrelationId: Int): ReaderT[Option, NodeSeq, MovementMessageWithStatus] =
     for {
       _          <- correctRootNodeR(MessageType.ArrivalNotification)
       dateTime   <- dateTimeOfPrepR
       xmlMessage <- ReaderT[Option, NodeSeq, NodeSeq](Option.apply)
-    } yield MovementMessageWithState(dateTime, MessageType.ArrivalNotification, xmlMessage, SubmissionPending, messageCorrelationId)
+    } yield MovementMessageWithStatus(dateTime, MessageType.ArrivalNotification, xmlMessage, SubmissionPending, messageCorrelationId)
 
-  def makeGoodsReleasedMessage(messageCorrelationId: Int): ReaderT[Option, NodeSeq, MovementMessageWithoutState] =
+  def makeGoodsReleasedMessage(messageCorrelationId: Int): ReaderT[Option, NodeSeq, MovementMessageWithoutStatus] =
     for {
       _          <- correctRootNodeR(MessageType.GoodsReleased)
       dateTime   <- dateTimeOfPrepR
       xmlMessage <- ReaderT[Option, NodeSeq, NodeSeq](Option.apply)
-    } yield MovementMessageWithoutState(dateTime, MessageType.GoodsReleased, xmlMessage, messageCorrelationId)
+    } yield MovementMessageWithoutStatus(dateTime, MessageType.GoodsReleased, xmlMessage, messageCorrelationId)
 
-  def makeMovementMessageWithState(messageCorrelationId: Int, messageType: MessageType): ReaderT[Option, NodeSeq, MovementMessageWithState] =
+  def makeMovementMessageWithStatus(messageCorrelationId: Int, messageType: MessageType): ReaderT[Option, NodeSeq, MovementMessageWithStatus] =
     for {
       _          <- correctRootNodeR(messageType)
       dateTime   <- dateTimeOfPrepR
       xmlMessage <- ReaderT[Option, NodeSeq, NodeSeq](Option.apply)
-    } yield MovementMessageWithState(dateTime, messageType, xmlMessage, SubmissionPending, messageCorrelationId)
+    } yield MovementMessageWithStatus(dateTime, messageType, xmlMessage, SubmissionPending, messageCorrelationId)
 }
 
 object ArrivalMovementService {

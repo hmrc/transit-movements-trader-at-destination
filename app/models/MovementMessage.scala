@@ -30,37 +30,41 @@ abstract class MovementMessage {
   def optStatus: Option[MessageStatus]
 }
 
-final case class MovementMessageWithState(dateTime: LocalDateTime, messageType: MessageType, message: NodeSeq, status: MessageStatus, messageCorrelationId: Int)
+final case class MovementMessageWithStatus(dateTime: LocalDateTime,
+                                           messageType: MessageType,
+                                           message: NodeSeq,
+                                           status: MessageStatus,
+                                           messageCorrelationId: Int)
     extends MovementMessage { def optStatus = Some(status) }
 
-final case class MovementMessageWithoutState(dateTime: LocalDateTime, messageType: MessageType, message: NodeSeq, messageCorrelationId: Int)
+final case class MovementMessageWithoutStatus(dateTime: LocalDateTime, messageType: MessageType, message: NodeSeq, messageCorrelationId: Int)
     extends MovementMessage { def optStatus = None }
 
 object MovementMessage extends NodeSeqFormat {
   implicit lazy val reads: Reads[MovementMessage] = new Reads[MovementMessage] {
     override def reads(json: JsValue): JsResult[MovementMessage] = (json \ "status").toOption match {
       case Some(_) =>
-        json.validate[MovementMessageWithState]
+        json.validate[MovementMessageWithStatus]
       case None =>
-        json.validate[MovementMessageWithoutState]
+        json.validate[MovementMessageWithoutStatus]
     }
   }
 
   implicit lazy val writes: OWrites[MovementMessage] = OWrites {
-    case ns: MovementMessageWithState    => Json.toJsObject(ns)(MovementMessageWithState.formatsMovementMessage)
-    case ws: MovementMessageWithoutState => Json.toJsObject(ws)(MovementMessageWithoutState.formatsMovementMessage)
+    case ns: MovementMessageWithStatus    => Json.toJsObject(ns)(MovementMessageWithStatus.formatsMovementMessage)
+    case ws: MovementMessageWithoutStatus => Json.toJsObject(ws)(MovementMessageWithoutStatus.formatsMovementMessage)
   }
 
 }
 
-object MovementMessageWithState extends NodeSeqFormat {
+object MovementMessageWithStatus extends NodeSeqFormat {
 
-  implicit val formatsMovementMessage: OFormat[MovementMessageWithState] =
-    Json.format[MovementMessageWithState]
+  implicit val formatsMovementMessage: OFormat[MovementMessageWithStatus] =
+    Json.format[MovementMessageWithStatus]
 }
 
-object MovementMessageWithoutState extends NodeSeqFormat {
+object MovementMessageWithoutStatus extends NodeSeqFormat {
 
-  implicit val formatsMovementMessage: OFormat[MovementMessageWithoutState] =
-    Json.format[MovementMessageWithoutState]
+  implicit val formatsMovementMessage: OFormat[MovementMessageWithoutStatus] =
+    Json.format[MovementMessageWithoutStatus]
 }

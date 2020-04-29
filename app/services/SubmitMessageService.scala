@@ -26,7 +26,7 @@ import models.ArrivalId
 import models.ArrivalStatus
 import models.MessageId
 import models.MessageStatus
-import models.MovementMessageWithState
+import models.MovementMessageWithStatus
 import models.SubmissionResult
 import repositories.ArrivalMovementRepository
 import uk.gov.hmrc.http.HeaderCarrier
@@ -43,7 +43,7 @@ class SubmitMessageService @Inject()(
 
   private val logger = Logger(getClass)
 
-  def submitMessage(arrivalId: ArrivalId, messageId: MessageId, message: MovementMessageWithState, arrivalStatus: ArrivalStatus)(
+  def submitMessage(arrivalId: ArrivalId, messageId: MessageId, message: MovementMessageWithStatus, arrivalStatus: ArrivalStatus)(
     implicit hc: HeaderCarrier): Future[SubmissionResult] =
     arrivalMovementRepository.addNewMessage(arrivalId, message) flatMap {
       case Failure(_) =>
@@ -83,7 +83,7 @@ class SubmitMessageService @Inject()(
       .insert(arrival)
       .flatMap {
         _ =>
-          val message   = arrival.messages.head.asInstanceOf[MovementMessageWithState]
+          val message   = arrival.messages.head.asInstanceOf[MovementMessageWithStatus]
           val messageId = new MessageId(arrival.messages.length - 1)
 
           messageConnector
