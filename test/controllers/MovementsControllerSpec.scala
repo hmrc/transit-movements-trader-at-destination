@@ -31,10 +31,10 @@ import models.ArrivalId
 import models.ArrivalStatus
 import models.Arrivals
 import models.MessageId
-import models.MovementMessageWithoutState
+import models.MovementMessageWithoutStatus
 import models.response.ResponseMovementMessage
 import models.MessageType
-import models.MovementMessageWithState
+import models.MovementMessageWithStatus
 import models.MovementReferenceNumber
 import models.SubmissionResult
 import org.mockito.Matchers.any
@@ -78,7 +78,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
   val messageId = new MessageId(0)
 
-  val movementMessge = MovementMessageWithState(
+  val movementMessge = MovementMessageWithStatus(
     localDateTime,
     MessageType.ArrivalNotification,
     requestXmlBody,
@@ -300,7 +300,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
 
           when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(arrival)))
-          when(mockSubmitMessageService.submitMessage(any(), any(), any())(any())).thenReturn(Future.successful(SubmissionResult.Success))
+          when(mockSubmitMessageService.submitMessage(any(), any(), any(), any())(any())).thenReturn(Future.successful(SubmissionResult.Success))
 
           val application = baseApplicationBuilder
             .overrides(
@@ -331,7 +331,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
           when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(arrival)))
 
-          when(mockSubmitMessageService.submitMessage(any(), any(), any())(any())).thenReturn(Future.successful(SubmissionResult.FailureInternal))
+          when(mockSubmitMessageService.submitMessage(any(), any(), any(), any())(any())).thenReturn(Future.successful(SubmissionResult.FailureInternal))
 
           val application = baseApplicationBuilder
             .overrides(
@@ -363,7 +363,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
           when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(arrival)))
 
-          when(mockSubmitMessageService.submitMessage(any(), any(), any())(any())).thenReturn(Future.successful(SubmissionResult.FailureExternal))
+          when(mockSubmitMessageService.submitMessage(any(), any(), any(), any())(any())).thenReturn(Future.successful(SubmissionResult.FailureExternal))
 
           val app = baseApplicationBuilder
             .overrides(
@@ -454,7 +454,8 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
         when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
 
-        when(mockSubmitMessageService.submitMessage(any(), any(), any())(any())).thenReturn(Future.successful(SubmissionResult.Success))
+        when(mockSubmitMessageService.submitMessage(any(), any(), any(), eqTo(ArrivalStatus.ArrivalSubmitted))(any()))
+          .thenReturn(Future.successful(SubmissionResult.Success))
 
         val application = baseApplicationBuilder
           .overrides(
@@ -471,7 +472,10 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
           status(result) mustEqual ACCEPTED
           header("Location", result).value must be(routes.MovementsController.getArrival(arrival.arrivalId).url)
-          verify(mockSubmitMessageService, times(1)).submitMessage(eqTo(arrival.arrivalId), eqTo(messageId), eqTo(movementMessge))(any())
+          verify(mockSubmitMessageService, times(1)).submitMessage(eqTo(arrival.arrivalId),
+                                                                   eqTo(messageId),
+                                                                   eqTo(movementMessge),
+                                                                   eqTo(ArrivalStatus.ArrivalSubmitted))(any())
         }
       }
 
@@ -526,7 +530,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
         when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
 
-        when(mockSubmitMessageService.submitMessage(eqTo(arrival.arrivalId), eqTo(messageId), eqTo(movementMessge))(any()))
+        when(mockSubmitMessageService.submitMessage(eqTo(arrival.arrivalId), eqTo(messageId), eqTo(movementMessge), any())(any()))
           .thenReturn(Future.successful(SubmissionResult.Success))
 
         val application = baseApplicationBuilder
@@ -571,7 +575,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
         when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
 
-        when(mockSubmitMessageService.submitMessage(any(), any(), any())(any()))
+        when(mockSubmitMessageService.submitMessage(any(), any(), any(), any())(any()))
           .thenReturn(Future.successful(SubmissionResult.FailureExternal))
 
         val app = baseApplicationBuilder
@@ -715,7 +719,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
     "getMessage" - {
       "must return Ok with the retrieved message and state SubmissionSuccessful" in {
 
-        val message = Arbitrary.arbitrary[MovementMessageWithState].sample.value.copy(status = SubmissionSucceeded)
+        val message = Arbitrary.arbitrary[MovementMessageWithStatus].sample.value.copy(status = SubmissionSucceeded)
         val arrival = Arbitrary.arbitrary[Arrival].sample.value.copy(messages = Seq(message), eoriNumber = "eori")
 
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
@@ -737,7 +741,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
       }
 
       "must return Ok with the retrieved message when it has no state" in {
-        val message = Arbitrary.arbitrary[MovementMessageWithoutState].sample.value
+        val message = Arbitrary.arbitrary[MovementMessageWithoutStatus].sample.value
         val arrival = Arbitrary.arbitrary[Arrival].sample.value.copy(messages = Seq(message), eoriNumber = "eori")
 
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
@@ -778,7 +782,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         }
 
         "when message does not exist" in {
-          val message = Arbitrary.arbitrary[MovementMessageWithState].sample.value.copy(status = SubmissionSucceeded)
+          val message = Arbitrary.arbitrary[MovementMessageWithStatus].sample.value.copy(status = SubmissionSucceeded)
           val arrival = Arbitrary.arbitrary[Arrival].sample.value.copy(messages = Seq(message), eoriNumber = "eori")
 
           val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
@@ -799,7 +803,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         }
 
         "when status is not equal to successful" in {
-          val message = Arbitrary.arbitrary[MovementMessageWithState].sample.value.copy(status = SubmissionFailed)
+          val message = Arbitrary.arbitrary[MovementMessageWithStatus].sample.value.copy(status = SubmissionFailed)
           val arrival = Arbitrary.arbitrary[Arrival].sample.value.copy(messages = Seq(message), eoriNumber = "eori")
 
           val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
@@ -820,7 +824,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         }
 
         "when message belongs to an arrival the user cannot access" in {
-          val message = Arbitrary.arbitrary[MovementMessageWithState].sample.value.copy(status = SubmissionSucceeded)
+          val message = Arbitrary.arbitrary[MovementMessageWithStatus].sample.value.copy(status = SubmissionSucceeded)
           val arrival = Arbitrary.arbitrary[Arrival].sample.value.copy(messages = Seq(message), eoriNumber = "eori2")
 
           val mockArrivalMovementRepository = mock[ArrivalMovementRepository]

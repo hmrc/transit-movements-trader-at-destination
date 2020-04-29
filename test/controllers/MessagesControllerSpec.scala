@@ -17,20 +17,26 @@
 package controllers
 
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 
 import base.SpecBase
 import connectors.MessageConnector
 import generators.ModelGenerators
+import models.MessageStatus.SubmissionPending
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalStatus
-import models.MessageStatus
-import models.MovementMessageWithState
+import models.MessageId
+import models.MessageType
+import models.MovementMessageWithStatus
+import models.MovementReferenceNumber
+import models.SubmissionResult
 import org.mockito.Matchers.any
 import org.mockito.Matchers.{eq => eqTo}
 import org.mockito.Mockito._
-import org.scalacheck.Arbitrary
+import org.scalacheck.Arbitrary.arbitrary
+import org.scalacheck.Gen
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
@@ -39,68 +45,91 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import repositories.ArrivalMovementRepository
 import repositories.LockRepository
-import uk.gov.hmrc.http.HttpException
-import uk.gov.hmrc.http.HttpResponse
+import services.SubmitMessageService
 import utils.Format
 
 import scala.concurrent.Future
-import scala.util.Failure
-import scala.util.Success
 
 class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with ModelGenerators with BeforeAndAfterEach with IntegrationPatience {
+
+  val localDate     = LocalDate.now()
+  val localTime     = LocalTime.of(1, 1)
+  val localDateTime = LocalDateTime.of(localDate, localTime)
+
+  val mrn = arbitrary[MovementReferenceNumber].sample.value
+
+  val requestXmlBody =
+    <CC044A>
+      <DatOfPreMES9>{Format.dateFormatted(localDate)}</DatOfPreMES9>
+      <TimOfPreMES10>{Format.timeFormatted(localTime)}</TimOfPreMES10>
+      <HEAHEA>
+        <DocNumHEA5>{mrn.value}</DocNumHEA5>
+      </HEAHEA>
+    </CC044A>
+
+  val movementMessge = MovementMessageWithStatus(
+    localDateTime,
+    MessageType.UnloadingRemarks,
+    requestXmlBody,
+    SubmissionPending,
+    2
+  )
+
+  val messageId = new MessageId(0)
+
+  val arrivalId = arbitrary[ArrivalId].sample.value
+
+  val arrivalWithOneMessage: Gen[Arrival] = for {
+    arrival <- arbitrary[Arrival]
+  } yield {
+    arrival.copy(
+      arrivalId = arrivalId,
+      movementReferenceNumber = mrn,
+      eoriNumber = "eori",
+      status = ArrivalStatus.Initialized,
+      messages = Seq(movementMessge),
+      nextMessageCorrelationId = movementMessge.messageCorrelationId,
+      created = localDateTime,
+      updated = localDateTime
+    )
+  }
+
+  val arrival = arrivalWithOneMessage.sample.value
 
   "MessagesController" - {
 
     "post" - {
 
-      "must return Accepted, add the message to the movement, send the message upstream and set the message state to Submitted" in {
+      "must return Accepted, add the message to the movement, send the message upstream and set the message state to SubmissionSucceeded" in {
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
-        val mockMessageConnector          = mock[MessageConnector]
         val mockLockRepository            = mock[LockRepository]
-        val arrival =
-          Arbitrary
-            .arbitrary[Arrival]
-            .sample
-            .value
-            .copy(eoriNumber = "eori", messages = Seq(Arbitrary.arbitrary[MovementMessageWithState].sample.value), status = ArrivalStatus.ArrivalSubmitted)
+        val mockSubmitMessageService      = mock[SubmitMessageService]
 
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
         when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
-        when(mockArrivalMovementRepository.addNewMessage(eqTo(arrival.arrivalId), any())).thenReturn(Future.successful(Success(())))
-        when(mockMessageConnector.post(any(), any(), any())(any())).thenReturn(Future.successful(HttpResponse(ACCEPTED)))
-        when(mockArrivalMovementRepository.setMessageState(any(), any(), any())).thenReturn(Future.successful(Success(())))
+
+        when(mockSubmitMessageService.submitMessage(any(), any(), any(), eqTo(ArrivalStatus.UnloadingRemarksSubmitted))(any()))
+          .thenReturn(Future.successful(SubmissionResult.Success))
 
         val application = baseApplicationBuilder
           .overrides(
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
-            bind[MessageConnector].toInstance(mockMessageConnector),
-            bind[LockRepository].toInstance(mockLockRepository)
+            bind[LockRepository].toInstance(mockLockRepository),
+            bind[SubmitMessageService].toInstance(mockSubmitMessageService)
           )
           .build()
 
         running(application) {
-
-          val dateOfPrep = LocalDate.now()
-          val timeOfPrep = LocalTime.of(1, 1)
-
-          val requestXmlBody =
-            <CC044A>
-              <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
-              <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
-              <HEAHEA>
-                <DocNumHEA5>MRN</DocNumHEA5>
-              </HEAHEA>
-            </CC044A>
-
           val request = FakeRequest(POST, routes.MessagesController.post(arrival.arrivalId).url).withXmlBody(requestXmlBody)
           val result  = route(application, request).value
 
           status(result) mustEqual ACCEPTED
           header("Location", result).value must be(routes.MessagesController.post(arrival.arrivalId).url)
-          verify(mockArrivalMovementRepository, times(1)).addNewMessage(any(), any())
-          verify(mockMessageConnector, times(1)).post(any(), any(), any())(any())
-          verify(mockArrivalMovementRepository, times(1)).setMessageState(any(), any(), eqTo(MessageStatus.SubmissionSucceeded))
+          verify(mockSubmitMessageService, times(1)).submitMessage(eqTo(arrival.arrivalId),
+                                                                   eqTo(new MessageId(1)),
+                                                                   eqTo(movementMessge),
+                                                                   eqTo(ArrivalStatus.UnloadingRemarksSubmitted))(any())
         }
       }
 
@@ -121,75 +150,44 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           .build()
 
         running(application) {
-
-          val dateOfPrep = LocalDate.now()
-          val timeOfPrep = LocalTime.of(1, 1)
-
-          val requestXmlBody =
-            <CC044A>
-              <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
-              <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
-              <HEAHEA>
-                <DocNumHEA5>MRN</DocNumHEA5>
-              </HEAHEA>
-            </CC044A>
-
           val request = FakeRequest(POST, routes.MessagesController.post(ArrivalId(1)).url).withXmlBody(requestXmlBody)
 
           val result = route(application, request).value
 
           status(result) mustEqual NOT_FOUND
-
         }
       }
 
-      "must return InternalServerError if the database fails to update the message status to sent" in {
+      "must return InternalServerError if there was an internal failure when saving and sending" in {
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
-        val mockMessageConnector          = mock[MessageConnector]
         val mockLockRepository            = mock[LockRepository]
-
-        val arrival = Arbitrary.arbitrary[Arrival].sample.value.copy(eoriNumber = "eori")
+        val mockSubmitMessageService      = mock[SubmitMessageService]
 
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
-        when(mockMessageConnector.post(any(), any(), any())(any())).thenReturn(Future.successful(HttpResponse(ACCEPTED)))
         when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
-        when(mockArrivalMovementRepository.addNewMessage(eqTo(arrival.arrivalId), any())).thenReturn(Future.successful(Success(())))
-        when(mockArrivalMovementRepository.setMessageState(any(), any(), any())).thenReturn(Future.successful(Failure(new Exception)))
+
+        when(mockSubmitMessageService.submitMessage(any(), any(), any(), any())(any())).thenReturn(Future.successful(SubmissionResult.FailureInternal))
 
         val application = baseApplicationBuilder
           .overrides(
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
-            bind[MessageConnector].toInstance(mockMessageConnector)
+            bind[LockRepository].toInstance(mockLockRepository),
+            bind[SubmitMessageService].toInstance(mockSubmitMessageService)
           )
           .build()
 
         running(application) {
-
-          val dateOfPrep = LocalDate.now()
-          val timeOfPrep = LocalTime.of(1, 1)
-
-          val requestXmlBody =
-            <CC044A>
-              <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
-              <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
-              <HEAHEA>
-                <DocNumHEA5>MRN</DocNumHEA5>
-              </HEAHEA>
-            </CC044A>
-
           val request = FakeRequest(POST, routes.MessagesController.post(arrival.arrivalId).url).withXmlBody(requestXmlBody)
 
           val result = route(application, request).value
 
           status(result) mustEqual INTERNAL_SERVER_ERROR
-
         }
       }
 
       "must return BadRequest if the payload is malformed" in {
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
-        val arrival                       = Arbitrary.arbitrary[Arrival].sample.value.copy(eoriNumber = "eori")
         val mockLockRepository            = mock[LockRepository]
 
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
@@ -219,7 +217,6 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
         val mockMessageConnector          = mock[MessageConnector]
         val mockLockRepository            = mock[LockRepository]
 
-        val arrival = Arbitrary.arbitrary[Arrival].sample.value.copy(eoriNumber = "eori")
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
         when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
@@ -232,18 +229,8 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
             )
             .build()
 
-        val dateOfPrep = LocalDate.now()
-        val timeOfPrep = LocalTime.of(1, 1)
-
         running(application) {
-          val requestXmlBody =
-            <CC045A>
-              <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
-              <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
-              <HEAHEA>
-                <DocNumHEA5>MRN</DocNumHEA5>
-              </HEAHEA>
-            </CC045A>
+          val requestXmlBody = <CC045A><HEAHEA></HEAHEA></CC045A>
 
           val request = FakeRequest(POST, routes.MessagesController.post(arrival.arrivalId).url).withXmlBody(requestXmlBody)
 
@@ -253,55 +240,33 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
         }
       }
 
-      "must return BadGateway and update the message status to SubmissionFailed if sending the message upstream fails" in {
-
+      "must return BadGateway if there was an external failure when saving and sending" in {
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
-        val mockMessageConnector          = mock[MessageConnector]
         val mockLockRepository            = mock[LockRepository]
-        val arrival                       = Arbitrary.arbitrary[Arrival].sample.value.copy(eoriNumber = "eori")
+        val mockSubmitMessageService      = mock[SubmitMessageService]
 
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
         when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
-        when(mockArrivalMovementRepository.addNewMessage(eqTo(arrival.arrivalId), any())).thenReturn(Future.successful(Success(())))
-        when(mockMessageConnector.post(any(), any(), any())(any()))
-          .thenReturn(Future.failed(new HttpException("Could not submit to EIS", 500)))
-        when(mockArrivalMovementRepository.setMessageState(any(), any(), any())).thenReturn(Future.successful(Success(())))
 
-        val app = baseApplicationBuilder
+        when(mockSubmitMessageService.submitMessage(any(), any(), any(), any())(any())).thenReturn(Future.successful(SubmissionResult.FailureExternal))
+
+        val application = baseApplicationBuilder
           .overrides(
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
-            bind[MessageConnector].toInstance(mockMessageConnector),
-            bind[LockRepository].toInstance(mockLockRepository)
+            bind[LockRepository].toInstance(mockLockRepository),
+            bind[SubmitMessageService].toInstance(mockSubmitMessageService)
           )
           .build()
 
-        running(app) {
-
-          val dateOfPrep = LocalDate.now()
-          val timeOfPrep = LocalTime.of(1, 1)
-
-          val requestXmlBody =
-            <CC044A>
-                  <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
-                  <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
-                  <HEAHEA>
-                    <DocNumHEA5>MRN</DocNumHEA5>
-                  </HEAHEA>
-                </CC044A>
-
+        running(application) {
           val request = FakeRequest(POST, routes.MessagesController.post(arrival.arrivalId).url).withXmlBody(requestXmlBody)
 
-          val result = route(app, request).value
+          val result = route(application, request).value
 
           status(result) mustEqual BAD_GATEWAY
-          verify(mockArrivalMovementRepository, times(1)).setMessageState(eqTo(arrival.arrivalId),
-                                                                          eqTo(arrival.messages.length),
-                                                                          eqTo(MessageStatus.SubmissionFailed))
         }
       }
-
     }
-
   }
 }

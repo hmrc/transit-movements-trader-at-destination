@@ -22,12 +22,13 @@ import controllers.actions.AuthenticatedGetArrivalForWriteActionProvider
 import controllers.actions.AuthenticatedGetOptionalArrivalForWriteActionProvider
 import javax.inject.Inject
 import models.ArrivalId
+import models.ArrivalStatus
 import models.Arrivals
+import models.MessageId
+import models.SubmissionResult
 import models.request.ArrivalRequest
 import models.response.ResponseMovementMessage
-import models.MessageId
 import models.MessageStatus.SubmissionFailed
-import models.SubmissionResult
 import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
@@ -64,7 +65,7 @@ class MovementsController @Inject()(
             .map {
               message =>
                 submitMessageService
-                  .submitMessage(arrival.arrivalId, new MessageId(arrival.messages.length - 1), message)
+                  .submitMessage(arrival.arrivalId, new MessageId(arrival.messages.length - 1), message, ArrivalStatus.ArrivalSubmitted)
                   .map {
                     case SubmissionResult.Success =>
                       Accepted("Message accepted")
@@ -113,7 +114,7 @@ class MovementsController @Inject()(
         .map {
           message =>
             submitMessageService
-              .submitMessage(arrivalId, new MessageId(request.arrival.messages.length - 1), message)
+              .submitMessage(arrivalId, new MessageId(request.arrival.messages.length - 1), message, ArrivalStatus.ArrivalSubmitted)
               .map {
                 case SubmissionResult.Success =>
                   Accepted("Message accepted")

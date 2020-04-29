@@ -25,8 +25,8 @@ import models.ArrivalStatus
 import models.MessageId
 import models.MessageReceived
 import models.MessageType
-import models.MovementMessageWithState
-import models.MovementMessageWithoutState
+import models.MovementMessageWithStatus
+import models.MovementMessageWithoutStatus
 import models.MovementReferenceNumber
 import models.RejectionError
 import models.SubmissionResult
@@ -40,25 +40,25 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
   private val pastDate: LocalDate = LocalDate.of(1900, 1, 1)
   private val dateNow: LocalDate  = LocalDate.now
 
-  implicit lazy val arbitraryMessageWithStateXml: Arbitrary[MovementMessageWithState] = {
+  implicit lazy val arbitraryMessageWithStateXml: Arbitrary[MovementMessageWithStatus] = {
     Arbitrary {
       for {
         dateTime    <- arbitrary[LocalDateTime]
         xml         <- Gen.const(<blankXml>message</blankXml>)
         messageType <- Gen.oneOf(MessageType.values)
         status = SubmissionPending
-      } yield MovementMessageWithState(dateTime, messageType, xml, status, 1)
+      } yield MovementMessageWithStatus(dateTime, messageType, xml, status, 1)
     }
   }
 
-  implicit lazy val arbitraryMessageWithoutStateXml: Arbitrary[MovementMessageWithoutState] = {
+  implicit lazy val arbitraryMessageWithoutStateXml: Arbitrary[MovementMessageWithoutStatus] = {
     Arbitrary {
       for {
         date        <- datesBetween(pastDate, dateNow)
         time        <- timesBetween(pastDate, dateNow)
         xml         <- Gen.const(<blankXml>message</blankXml>)
         messageType <- Gen.oneOf(MessageType.values)
-      } yield MovementMessageWithoutState(LocalDateTime.of(date, time), messageType, xml, 1)
+      } yield MovementMessageWithoutStatus(LocalDateTime.of(date, time), messageType, xml, 1)
     }
   }
 
@@ -84,7 +84,7 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
         status                  <- arbitrary[ArrivalStatus]
         created                 <- arbitrary[LocalDateTime]
         updated                 <- arbitrary[LocalDateTime]
-        messages                <- listWithMaxLength[MovementMessageWithState](2)
+        messages                <- listWithMaxLength[MovementMessageWithStatus](2)
       } yield
         Arrival(
           arrivalId = arrivalId,
