@@ -76,4 +76,15 @@ class ArrivalStatusSpec extends SpecBase with ScalaCheckDrivenPropertyChecks wit
     }
   }
 
+  "UnloadingPermission must transition" - {
+
+    "to UnloadingPermission state when receiving an UnloadingPermission event" in {
+      UnloadingPermission.transition(MessageReceived.UnloadingPermission) mustEqual UnloadingPermission
+    }
+
+    "to UnloadingRemarksSubmitted state when receiving an UnloadingRemarksSubmitted event" in {
+      UnloadingPermission.transition(MessageReceived.UnloadingRemarksSubmitted) mustEqual UnloadingRemarksSubmitted
+    }
+  }
+
 }

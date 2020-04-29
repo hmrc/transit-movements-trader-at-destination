@@ -41,7 +41,10 @@ object ArrivalStatus extends Enumerable.Implicits {
   }
 
   case object UnloadingPermission extends ArrivalStatus {
-    override def transition(messageReceived: MessageReceived): ArrivalStatus = this
+    override def transition(messageReceived: MessageReceived): ArrivalStatus = messageReceived match {
+      case MessageReceived.UnloadingPermission       => UnloadingPermission
+      case MessageReceived.UnloadingRemarksSubmitted => UnloadingRemarksSubmitted
+    }
   }
 
   case object UnloadingRemarksSubmitted extends ArrivalStatus {
