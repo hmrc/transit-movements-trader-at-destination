@@ -109,48 +109,97 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
     }
   }
 
-  "makeGoodsReleasedMessage" - {
+  "makeMessage" - {
 
-    "returns a Goods Released message" in {
+    "when given a goodsReleasedMessage" - {
 
-      val dateOfPrep = LocalDate.now()
-      val timeOfPrep = LocalTime.of(1, 1)
+      "returns a Goods Released message" in {
 
-      val application = baseApplicationBuilder.build()
+        val dateOfPrep = LocalDate.now()
+        val timeOfPrep = LocalTime.of(1, 1)
 
-      val service = application.injector.instanceOf[ArrivalMovementService]
+        val application = baseApplicationBuilder.build()
 
-      val movement =
-        <CC025A>
-          <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
-          <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
-        </CC025A>
+        val service = application.injector.instanceOf[ArrivalMovementService]
 
-      val messageCorrelationId = 1
-      val expectedMessage      = MovementMessageWithoutState(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.GoodsReleased, movement, messageCorrelationId)
+        val movement =
+          <CC025A>
+            <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+            <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+          </CC025A>
 
-      service.makeMessage(messageCorrelationId, MessageType.GoodsReleased)(movement).value mustEqual expectedMessage
+        val messageCorrelationId = 1
+        val expectedMessage      = MovementMessageWithoutState(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.GoodsReleased, movement, messageCorrelationId)
+
+        service.makeMessage(messageCorrelationId, MessageType.GoodsReleased)(movement).value mustEqual expectedMessage
+      }
+
+      "returns None when the root node is not <CC025A>" in {
+
+        val dateOfPrep = LocalDate.now()
+        val timeOfPrep = LocalTime.of(1, 1)
+
+        val application = baseApplicationBuilder.build()
+
+        val service = application.injector.instanceOf[ArrivalMovementService]
+
+        val movement =
+          <Foo>
+            <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+            <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+          </Foo>
+
+        val messageCorrelationId = 1
+
+        service.makeMessage(messageCorrelationId, MessageType.GoodsReleased)(movement) must not be defined
+      }
     }
 
-    "returns None when the root node is not <CC025A>" in {
+    "when given a unloadingPermissionMessage" - {
 
-      val dateOfPrep = LocalDate.now()
-      val timeOfPrep = LocalTime.of(1, 1)
+      "returns a Unloading Permission message" in {
 
-      val application = baseApplicationBuilder.build()
+        val dateOfPrep = LocalDate.now()
+        val timeOfPrep = LocalTime.of(1, 1)
 
-      val service = application.injector.instanceOf[ArrivalMovementService]
+        val application = baseApplicationBuilder.build()
 
-      val movement =
-        <Foo>
-          <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
-          <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
-        </Foo>
+        val service = application.injector.instanceOf[ArrivalMovementService]
 
-      val messageCorrelationId = 1
+        val movement =
+          <CC043A>
+            <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+            <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+          </CC043A>
 
-      service.makeMessage(messageCorrelationId, MessageType.GoodsReleased)(movement) must not be defined
+        val messageCorrelationId = 1
+        val expectedMessage =
+          MovementMessageWithoutState(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.UnloadingPermission, movement, messageCorrelationId)
+
+        service.makeMessage(messageCorrelationId, MessageType.UnloadingPermission)(movement).value mustEqual expectedMessage
+      }
+
+      "returns None when the root node is not <CC043A>" in {
+
+        val dateOfPrep = LocalDate.now()
+        val timeOfPrep = LocalTime.of(1, 1)
+
+        val application = baseApplicationBuilder.build()
+
+        val service = application.injector.instanceOf[ArrivalMovementService]
+
+        val movement =
+          <Foo>
+            <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+            <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+          </Foo>
+
+        val messageCorrelationId = 1
+
+        service.makeMessage(messageCorrelationId, MessageType.UnloadingPermission)(movement) must not be defined
+      }
     }
+
   }
 
   "dateOfPrepR" - {
