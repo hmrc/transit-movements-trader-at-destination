@@ -26,7 +26,8 @@ import models.Arrival
 import models.ArrivalId
 import models.ArrivalStatus
 import models.MessageSender
-import models.{MovementReferenceNumber, MessageType}
+import models.MessageType
+import models.MovementReferenceNumber
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
@@ -34,13 +35,11 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import play.core.server.common.WebSocketFlowHandler.MessageType
 import repositories.ArrivalMovementRepository
 import repositories.LockRepository
 import services.XmlValidationService
 import uk.gov.hmrc.http.BadRequestException
 import utils.Format
-
 
 import scala.concurrent.Future
 import scala.util.Failure
@@ -110,7 +109,7 @@ class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChec
         running(application) {
           val request = FakeRequest(POST, routes.MessageResponseController.post(messageSender).url)
             .withXmlBody(requestGoodsReleasedXmlBody)
-            .withHeaders("X-Message-Type" -> "IE025")
+            .withHeaders("X-Message-Type" -> MessageType.GoodsReleased.code)
 
           val result = route(application, request).value
 
@@ -139,7 +138,7 @@ class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChec
         running(application) {
           val request = FakeRequest(POST, routes.MessageResponseController.post(messageSender).url)
             .withXmlBody(requestUnloadingPermissionXmlBody)
-            .withHeaders("X-Message-Type" -> "IE043")
+            .withHeaders("X-Message-Type" -> MessageType.UnloadingPermission.code)
 
           val result = route(application, request).value
 
@@ -165,7 +164,7 @@ class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChec
         running(application) {
           val request = FakeRequest(POST, routes.MessageResponseController.post(messageSender).url)
             .withXmlBody(requestGoodsReleasedXmlBody)
-            .withHeaders("X-Message-Type" -> "IE025")
+            .withHeaders("X-Message-Type" -> MessageType.GoodsReleased.code)
 
           val result = route(application, request).value
 
@@ -203,7 +202,7 @@ class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChec
 
           val request = FakeRequest(POST, routes.MessageResponseController.post(messageSender).url)
             .withXmlBody(requestGoodsReleasedXmlBody)
-            .withHeaders("X-Message-Type" -> "IE025")
+            .withHeaders("X-Message-Type" -> MessageType.GoodsReleased.code)
 
           val result = route(application, request).value
 
@@ -232,7 +231,7 @@ class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChec
         running(application) {
           val request = FakeRequest(POST, routes.MessageResponseController.post(messageSender).url)
             .withXmlBody(requestGoodsReleasedXmlBody)
-            .withHeaders("X-Message-Type" -> "IE025")
+            .withHeaders("X-Message-Type" -> MessageType.GoodsReleased.code)
 
           val result = route(application, request).value
 
@@ -259,7 +258,7 @@ class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChec
         running(application) {
           val request = FakeRequest(POST, routes.MessageResponseController.post(messageSender).url)
             .withXmlBody(requestGoodsReleasedXmlBody)
-            .withHeaders("X-Message-Type" -> "IE025")
+            .withHeaders("X-Message-Type" -> MessageType.GoodsReleased.code)
 
           val result = route(application, request).value
 
@@ -315,7 +314,7 @@ class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChec
         running(application) {
           val request = FakeRequest(POST, routes.MessageResponseController.post(messageSender).url)
             .withXmlBody(requestGoodsReleasedXmlBody)
-            .withHeaders("X-Message-Type" -> "IE025")
+            .withHeaders("X-Message-Type" -> MessageType.GoodsReleased.code)
 
           val result = route(application, request).value
 
