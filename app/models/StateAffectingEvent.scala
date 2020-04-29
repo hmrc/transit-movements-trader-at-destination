@@ -39,11 +39,13 @@ sealed trait MessageReceived extends StateAffectingEvent
 
 object MessageReceived {
 
-  case object GoodsReleased    extends MessageReceived
-  case object ArrivalSubmitted extends MessageReceived
+  case object GoodsReleased             extends MessageReceived
+  case object ArrivalSubmitted          extends MessageReceived
+  case object UnloadingRemarksSubmitted extends MessageReceived
 
   val values: Seq[MessageReceived] = Seq(
     GoodsReleased,
-    ArrivalSubmitted
+    ArrivalSubmitted,
+    UnloadingRemarksSubmitted
   )
 }

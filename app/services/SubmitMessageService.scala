@@ -43,7 +43,8 @@ class SubmitMessageService @Inject()(
 
   private val logger = Logger(getClass)
 
-  def submitMessage(arrivalId: ArrivalId, messageId: MessageId, message: MovementMessageWithState)(implicit hc: HeaderCarrier): Future[SubmissionResult] =
+  def submitMessage(arrivalId: ArrivalId, messageId: MessageId, message: MovementMessageWithState, arrivalStatus: ArrivalStatus)(
+    implicit hc: HeaderCarrier): Future[SubmissionResult] =
     arrivalMovementRepository.addNewMessage(arrivalId, message) flatMap {
       case Failure(_) =>
         Future.successful(SubmissionResult.FailureInternal)
@@ -54,7 +55,7 @@ class SubmitMessageService @Inject()(
           .flatMap {
             _ =>
               arrivalMovementRepository
-                .setArrivalStateAndMessageState(arrivalId, messageId, ArrivalStatus.ArrivalSubmitted, MessageStatus.SubmissionSucceeded)
+                .setArrivalStateAndMessageState(arrivalId, messageId, arrivalStatus, MessageStatus.SubmissionSucceeded)
                 .map {
                   _ =>
                     SubmissionResult.Success

@@ -19,6 +19,7 @@ package controllers
 import controllers.actions.AuthenticatedGetArrivalForWriteActionProvider
 import javax.inject.Inject
 import models.ArrivalId
+import models.ArrivalStatus
 import models.MessageId
 import models.MessageType
 import models.SubmissionResult
@@ -52,7 +53,7 @@ class MessagesController @Inject()(
             .map {
               message =>
                 submitMessageService
-                  .submitMessage(arrivalId, new MessageId(request.arrival.messages.length), message)
+                  .submitMessage(arrivalId, new MessageId(request.arrival.messages.length), message, ArrivalStatus.UnloadingRemarksSubmitted)
                   .map {
                     case SubmissionResult.Success =>
                       Accepted("Message accepted")

@@ -58,6 +58,17 @@ class ArrivalStatusSpec extends SpecBase with ScalaCheckDrivenPropertyChecks wit
     }
   }
 
+  "UnloadingRemarksSubmitted must transition" - {
+
+    "to UnloadingRemarksSubmitted when receiving an UnloadingRemarksSubmitted event" in {
+      UnloadingRemarksSubmitted.transition(MessageReceived.UnloadingRemarksSubmitted) mustEqual UnloadingRemarksSubmitted
+    }
+
+    "to GoodsReceived when receiving a GoodsReleased event" in {
+      UnloadingRemarksSubmitted.transition(MessageReceived.GoodsReleased) mustEqual GoodsReleased
+    }
+  }
+
   "GoodsReleased will always transition to GoodsReleased" in {
     forAll(arbitrary[MessageReceived]) {
       messageReceivedEvent =>
