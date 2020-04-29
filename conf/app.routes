@@ -9,3 +9,5 @@ PUT                     /movements/arrivals/:arrivalId                 controlle
 POST                    /movements/arrivals/:messageSender/messages     controllers.MessageResponseController.post(messageSender: MessageSender)
 GET                    /movements/arrivals/:arrivalId/messages/:messageId           controllers.MovementsController.getMessage(arrivalId: ArrivalId, messageId: MessageId)
 
+POST                    /movements/arrivals/:arrivalId/messages                   controllers.MessagesController.post(arrivalId: ArrivalId)
+POST                    /movements/arrivals/:messageSender/goods-released    controllers.GoodsReleasedController.post(messageSender: MessageSender)

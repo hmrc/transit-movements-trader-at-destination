@@ -16,26 +16,18 @@
 
 package services
 
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.LocalTime
+import java.time.{LocalDate, LocalDateTime, LocalTime}
 
 import cats.data._
 import cats.implicits._
 import com.google.inject.Inject
 import models.ArrivalStatus.Initialized
 import models.MessageStatus.SubmissionPending
-import models.Arrival
-import models.MessageReceived
-import models.MessageType
-import models.MovementMessageWithState
-import models.MovementMessageWithoutState
-import models.MovementReferenceNumber
+import models.{Arrival, MessageType, MovementMessageWithState, MovementMessageWithoutState, MovementReferenceNumber}
 import repositories.ArrivalIdRepository
 import utils.Format
 
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 import scala.xml.NodeSeq
 
@@ -77,6 +69,13 @@ class ArrivalMovementService @Inject()(arrivalIdRepository: ArrivalIdRepository)
       dateTime   <- dateTimeOfPrepR
       xmlMessage <- ReaderT[Option, NodeSeq, NodeSeq](Option.apply)
     } yield MovementMessageWithoutState(dateTime, messageType, xmlMessage, messageCorrelationId)
+
+  def makeMovementMessageWithState(messageCorrelationId: Int, messageType: MessageType): ReaderT[Option, NodeSeq, MovementMessageWithState] =
+    for {
+      _          <- correctRootNodeR(messageType)
+      dateTime   <- dateTimeOfPrepR
+      xmlMessage <- ReaderT[Option, NodeSeq, NodeSeq](Option.apply)
+    } yield MovementMessageWithState(dateTime, messageType, xmlMessage, SubmissionPending, messageCorrelationId)
 }
 
 object ArrivalMovementService {

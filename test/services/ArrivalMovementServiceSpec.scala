@@ -25,6 +25,7 @@ import models.Arrival
 import models.ArrivalId
 import models.ArrivalStatus
 import models.MessageStatus
+import models.MessageStatus.SubmissionPending
 import models.MessageType
 import models.MovementMessageWithState
 import models.MovementMessageWithoutState
@@ -200,6 +201,49 @@ class ArrivalMovementServiceSpec extends SpecBase with IntegrationPatience {
       }
     }
 
+  }
+
+  "makeMovementMessageWithState with MessageType.UnloadingRemarks" - {
+
+    "returns an Unloading Remarks message" in {
+
+      val dateOfPrep = LocalDate.now()
+      val timeOfPrep = LocalTime.of(1, 1)
+
+      val application = baseApplicationBuilder.build()
+
+      val service = application.injector.instanceOf[ArrivalMovementService]
+
+      val movement =
+        <CC044A>
+          <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+          <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+        </CC044A>
+
+      val messageCorrelationId = 1
+      val expectedMessage =
+        MovementMessageWithState(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.UnloadingRemarks, movement, SubmissionPending, messageCorrelationId)
+
+      service.makeMovementMessageWithState(messageCorrelationId, MessageType.UnloadingRemarks)(movement).value mustEqual expectedMessage
+    }
+
+    "returns None when the root node is not <CC044A>" in {
+
+      val dateOfPrep = LocalDate.now()
+      val timeOfPrep = LocalTime.of(1, 1)
+
+      val application = baseApplicationBuilder.build()
+
+      val service = application.injector.instanceOf[ArrivalMovementService]
+
+      val movement =
+        <Foo>
+          <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+          <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+        </Foo>
+
+      service.makeMovementMessageWithState(1, MessageType.UnloadingRemarks)(movement) must not be defined
+    }
   }
 
   "dateOfPrepR" - {

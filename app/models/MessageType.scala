@@ -16,6 +16,10 @@
 
 package models
 
+import cats.data.ReaderT
+
+import scala.xml.NodeSeq
+
 sealed trait MessageType extends IeMetadata {
   def code: String
   def rootNode: String
@@ -25,9 +29,18 @@ object MessageType extends Enumerable.Implicits {
 
   case object ArrivalNotification extends IeMetadata("IE007", "CC007A") with MessageType
   case object GoodsReleased       extends IeMetadata("IE025", "CC025A") with MessageType
+  case object UnloadingRemarks    extends IeMetadata("IE044", "CC044A") with MessageType
   case object UnloadingPermission extends IeMetadata("IE043", "CC043A") with MessageType
 
   val values: Seq[MessageType] = Seq(ArrivalNotification, GoodsReleased, UnloadingPermission)
+
+  val supportedMessageTypes = Seq(UnloadingRemarks)
+
+  def getMessageType: ReaderT[Option, NodeSeq, MessageType] =
+    ReaderT[Option, NodeSeq, MessageType] {
+      nodeSeq =>
+        supportedMessageTypes.find(_.rootNode == nodeSeq.head.label)
+    }
 
   implicit val enumerable: Enumerable[MessageType] =
     Enumerable(values.map(v => v.code -> v): _*)
