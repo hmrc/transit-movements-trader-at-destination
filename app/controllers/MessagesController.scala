@@ -45,11 +45,9 @@ class MessagesController @Inject()(
   def post(arrivalId: ArrivalId): Action[NodeSeq] = authenticateForWrite(arrivalId).async(parse.xml) {
     implicit request: ArrivalRequest[NodeSeq] =>
       MessageType.getMessageType(request.body) match {
-        case None =>
-          Future.successful(NotImplemented)
-        case Some(messageType) =>
+        case Some(MessageType.UnloadingRemarks) =>
           arrivalMovementService
-            .makeMovementMessageWithStatus(request.arrival.nextMessageCorrelationId, messageType)(request.body)
+            .makeMovementMessageWithStatus(request.arrival.nextMessageCorrelationId, MessageType.UnloadingRemarks)(request.body)
             .map {
               message =>
                 submitMessageService
@@ -67,6 +65,8 @@ class MessagesController @Inject()(
                   }
             }
             .getOrElse(Future.successful(BadRequest("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5")))
+        case _ =>
+          Future.successful(NotImplemented)
       }
   }
 }
