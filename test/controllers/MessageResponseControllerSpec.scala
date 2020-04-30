@@ -80,6 +80,12 @@ class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChec
       <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
     </CC043A>
 
+  private val requestArrivalRejectionXmlBody =
+    <CC008A>
+      <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+      <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+    </CC008A>
+
   override def beforeEach: Unit = {
     super.beforeEach()
     reset(mockArrivalMovementRepository)
@@ -139,6 +145,35 @@ class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChec
           val request = FakeRequest(POST, routes.MessageResponseController.post(messageSender).url)
             .withXmlBody(requestUnloadingPermissionXmlBody)
             .withHeaders("X-Message-Type" -> MessageType.UnloadingPermission.code)
+
+          val result = route(application, request).value
+
+          status(result) mustEqual OK
+          verify(mockLockRepository, times(1)).lock(arrivalId)
+          verify(mockArrivalMovementRepository, times(1)).addResponseMessage(any(), any(), eqTo(ArrivalStatus.UnloadingPermission))
+          verify(mockLockRepository, times(1)).unlock(arrivalId)
+        }
+      }
+
+      "must lock the arrival, add the message, set the correct state to GoodsRejected, unlock it and return OK" in {
+        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
+        when(mockArrivalMovementRepository.addResponseMessage(any(), any(), any())).thenReturn(Future.successful(Success(())))
+        when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
+        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
+        when(mockXmlValidationService.validate(any(), any())).thenReturn(Success(()))
+
+        val application = baseApplicationBuilder
+          .overrides(
+            bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
+            bind[LockRepository].toInstance(mockLockRepository),
+            bind[XmlValidationService].toInstance(mockXmlValidationService)
+          )
+          .build()
+
+        running(application) {
+          val request = FakeRequest(POST, routes.MessageResponseController.post(messageSender).url)
+            .withXmlBody(requestArrivalRejectionXmlBody)
+            .withHeaders("X-Message-Type" -> MessageType.ArrivalRejection.code)
 
           val result = route(application, request).value
 

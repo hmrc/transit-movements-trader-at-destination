@@ -34,6 +34,10 @@ class ArrivalStatusSpec extends SpecBase with ScalaCheckDrivenPropertyChecks wit
       Initialized.transition(MessageReceived.GoodsReleased) mustEqual GoodsReleased
     }
 
+    "to Goods Rejection when receiving a Goods Rejection event" in {
+      Initialized.transition(MessageReceived.GoodsRejected) mustEqual GoodsRejected
+    }
+
   }
 
   "Intitialized should not be transitioned to from any other state" ignore {
@@ -56,6 +60,10 @@ class ArrivalStatusSpec extends SpecBase with ScalaCheckDrivenPropertyChecks wit
     "to GoodsReceived when receiving a GoodsReleased event" in {
       ArrivalSubmitted.transition(MessageReceived.GoodsReleased) mustEqual GoodsReleased
     }
+
+    "to GoodsRejected when receiving a GoodsRejected event" in {
+      ArrivalSubmitted.transition(MessageReceived.GoodsRejected) mustEqual GoodsRejected
+    }
   }
 
   "UnloadingRemarksSubmitted must transition" - {
@@ -73,6 +81,13 @@ class ArrivalStatusSpec extends SpecBase with ScalaCheckDrivenPropertyChecks wit
     forAll(arbitrary[MessageReceived]) {
       messageReceivedEvent =>
         GoodsReleased.transition(messageReceivedEvent) mustEqual GoodsReleased
+    }
+  }
+
+  "GoodsRejected will always transition to GoodsRejected" in {
+    forAll(arbitrary[MessageReceived]) {
+      messageReceivedEvent =>
+        GoodsRejected.transition(messageReceivedEvent) mustEqual GoodsRejected
     }
   }
 
