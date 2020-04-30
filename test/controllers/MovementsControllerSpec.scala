@@ -521,22 +521,22 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
       "must return InternalServerError if there was an internal failure when saving and sending" in {
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+        val mockMessageConnector          = mock[MessageConnector]
         val mockLockRepository            = mock[LockRepository]
         val mockSubmitMessageService      = mock[SubmitMessageService]
-
-        val arrival = Arbitrary.arbitrary[Arrival].sample.value.copy(eoriNumber = "eori")
 
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
         when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
 
-        when(mockSubmitMessageService.submitMessage(eqTo(arrival.arrivalId), eqTo(messageId), eqTo(movementMessge), any())(any()))
-          .thenReturn(Future.successful(SubmissionResult.Success))
+        when(mockSubmitMessageService.submitMessage(any(), any(), any(), any())(any()))
+          .thenReturn(Future.successful(SubmissionResult.FailureInternal))
 
         val application = baseApplicationBuilder
           .overrides(
             bind[LockRepository].toInstance(mockLockRepository),
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
+            bind[MessageConnector].toInstance(mockMessageConnector),
             bind[SubmitMessageService].toInstance(mockSubmitMessageService)
           )
           .build()
