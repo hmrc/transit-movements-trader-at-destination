@@ -179,7 +179,7 @@ class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChec
 
           status(result) mustEqual OK
           verify(mockLockRepository, times(1)).lock(arrivalId)
-          verify(mockArrivalMovementRepository, times(1)).addResponseMessage(any(), any(), eqTo(ArrivalStatus.UnloadingPermission))
+          verify(mockArrivalMovementRepository, times(1)).addResponseMessage(any(), any(), eqTo(ArrivalStatus.GoodsRejected))
           verify(mockLockRepository, times(1)).unlock(arrivalId)
         }
       }

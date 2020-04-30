@@ -16,6 +16,7 @@
 
 package models
 
+import models.XSDFile.GoodsRejectedXSD
 import models.XSDFile.GoodsReleasedXSD
 import models.XSDFile.UnloadingPermissionXSD
 
@@ -30,6 +31,13 @@ case object GoodsReleasedResponse extends MessageResponse {
   override val messageType: MessageType         = MessageType.GoodsReleased
   override val xsdFile: XSDFile                 = GoodsReleasedXSD
 }
+
+case object GoodsRejectedResponse extends MessageResponse {
+  override val messageReceived: MessageReceived = MessageReceived.GoodsRejected
+  override val messageType: MessageType         = MessageType.ArrivalRejection
+  override val xsdFile: XSDFile                 = GoodsRejectedXSD
+}
+
 case object UnloadingPermissionResponse extends MessageResponse {
   override val messageReceived: MessageReceived = MessageReceived.UnloadingPermission
   override val messageType: MessageType         = MessageType.UnloadingPermission

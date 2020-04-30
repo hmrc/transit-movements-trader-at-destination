@@ -19,6 +19,7 @@ package controllers
 import controllers.actions.GetArrivalForWriteActionProvider
 import javax.inject.Inject
 import models.ArrivalStatus
+import models.GoodsRejectedResponse
 import models.GoodsReleasedResponse
 import models.MessageResponse
 import models.MessageSender
@@ -53,6 +54,7 @@ class MessageResponseController @Inject()(cc: ControllerComponents,
 
       val messageResponse: Option[MessageResponse] = request.headers.get("X-Message-Type") match {
         case Some(MessageType.GoodsReleased.code)       => Some(GoodsReleasedResponse)
+        case Some(MessageType.ArrivalRejection.code)    => Some(GoodsRejectedResponse)
         case Some(MessageType.UnloadingPermission.code) => Some(UnloadingPermissionResponse)
         case invalidResponse =>
           logger.error(s"Received the following invalid response for X-Message-Type: $invalidResponse")
