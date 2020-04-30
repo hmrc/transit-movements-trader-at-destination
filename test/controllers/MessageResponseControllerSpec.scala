@@ -24,9 +24,10 @@ import base.SpecBase
 import generators.ModelGenerators
 import models.Arrival
 import models.ArrivalId
-import models.MessageSender
-import models.MovementReferenceNumber
 import models.ArrivalStatus
+import models.MessageSender
+import models.MessageType
+import models.MovementReferenceNumber
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
@@ -44,7 +45,7 @@ import scala.concurrent.Future
 import scala.util.Failure
 import scala.util.Success
 
-class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks with ModelGenerators with BeforeAndAfterEach {
+class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChecks with ModelGenerators with BeforeAndAfterEach {
 
   private val mockArrivalMovementRepository: ArrivalMovementRepository = mock[ArrivalMovementRepository]
   private val mockLockRepository: LockRepository                       = mock[LockRepository]
@@ -67,11 +68,17 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
     1
   )
 
-  private val requestXmlBody =
+  private val requestGoodsReleasedXmlBody =
     <CC025A>
       <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
       <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
     </CC025A>
+
+  private val requestUnloadingPermissionXmlBody =
+    <CC043A>
+      <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+      <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+    </CC043A>
 
   override def beforeEach: Unit = {
     super.beforeEach()
@@ -84,7 +91,7 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
 
     "when a lock can be acquired" - {
 
-      "must lock the arrival, add the message, set the state to Goods Released, unlock it and return OK" in {
+      "must lock the arrival, add the message, set the correct state to GoodsReleased, unlock it and return OK" in {
         when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
         when(mockArrivalMovementRepository.addResponseMessage(any(), any(), any())).thenReturn(Future.successful(Success(())))
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
@@ -100,13 +107,44 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
           .build()
 
         running(application) {
-          val request = FakeRequest(POST, routes.GoodsReleasedController.post(messageSender).url).withXmlBody(requestXmlBody)
+          val request = FakeRequest(POST, routes.MessageResponseController.post(messageSender).url)
+            .withXmlBody(requestGoodsReleasedXmlBody)
+            .withHeaders("X-Message-Type" -> MessageType.GoodsReleased.code)
 
           val result = route(application, request).value
 
           status(result) mustEqual OK
           verify(mockLockRepository, times(1)).lock(arrivalId)
           verify(mockArrivalMovementRepository, times(1)).addResponseMessage(any(), any(), eqTo(ArrivalStatus.GoodsReleased))
+          verify(mockLockRepository, times(1)).unlock(arrivalId)
+        }
+      }
+
+      "must lock the arrival, add the message, set the correct state to UnloadingPermission, unlock it and return OK" in {
+        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
+        when(mockArrivalMovementRepository.addResponseMessage(any(), any(), any())).thenReturn(Future.successful(Success(())))
+        when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
+        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
+        when(mockXmlValidationService.validate(any(), any())).thenReturn(Success(()))
+
+        val application = baseApplicationBuilder
+          .overrides(
+            bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
+            bind[LockRepository].toInstance(mockLockRepository),
+            bind[XmlValidationService].toInstance(mockXmlValidationService)
+          )
+          .build()
+
+        running(application) {
+          val request = FakeRequest(POST, routes.MessageResponseController.post(messageSender).url)
+            .withXmlBody(requestUnloadingPermissionXmlBody)
+            .withHeaders("X-Message-Type" -> MessageType.UnloadingPermission.code)
+
+          val result = route(application, request).value
+
+          status(result) mustEqual OK
+          verify(mockLockRepository, times(1)).lock(arrivalId)
+          verify(mockArrivalMovementRepository, times(1)).addResponseMessage(any(), any(), eqTo(ArrivalStatus.UnloadingPermission))
           verify(mockLockRepository, times(1)).unlock(arrivalId)
         }
       }
@@ -124,7 +162,9 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
           .build()
 
         running(application) {
-          val request = FakeRequest(POST, routes.GoodsReleasedController.post(messageSender).url).withXmlBody(requestXmlBody)
+          val request = FakeRequest(POST, routes.MessageResponseController.post(messageSender).url)
+            .withXmlBody(requestGoodsReleasedXmlBody)
+            .withHeaders("X-Message-Type" -> MessageType.GoodsReleased.code)
 
           val result = route(application, request).value
 
@@ -135,7 +175,7 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
         }
       }
 
-      "must lock, return Internal Server Error and release the lock if the message is not Goods Released" in {
+      "must lock, return BadRequest and release the lock if the message is an invalid Arrival" in {
         when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
         when(mockArrivalMovementRepository.addResponseMessage(any(), any(), any())).thenReturn(Future.successful(Success(())))
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
@@ -154,17 +194,19 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
           val dateOfPrep = LocalDate.now()
           val timeOfPrep = LocalTime.of(1, 1)
 
-          val requestXmlBody =
+          val requestGoodsReleasedXmlBody =
             <InvalidRootNode>
               <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
               <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
             </InvalidRootNode>
 
-          val request = FakeRequest(POST, routes.GoodsReleasedController.post(messageSender).url).withXmlBody(requestXmlBody)
+          val request = FakeRequest(POST, routes.MessageResponseController.post(messageSender).url)
+            .withXmlBody(requestGoodsReleasedXmlBody)
+            .withHeaders("X-Message-Type" -> MessageType.GoodsReleased.code)
 
           val result = route(application, request).value
 
-          status(result) mustEqual INTERNAL_SERVER_ERROR
+          status(result) mustEqual BAD_REQUEST
           verify(mockArrivalMovementRepository, never).addResponseMessage(any(), any(), any())
           verify(mockLockRepository, times(1)).lock(arrivalId)
           verify(mockLockRepository, times(1)).unlock(arrivalId)
@@ -187,7 +229,9 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
           .build()
 
         running(application) {
-          val request = FakeRequest(POST, routes.GoodsReleasedController.post(messageSender).url).withXmlBody(requestXmlBody)
+          val request = FakeRequest(POST, routes.MessageResponseController.post(messageSender).url)
+            .withXmlBody(requestGoodsReleasedXmlBody)
+            .withHeaders("X-Message-Type" -> MessageType.GoodsReleased.code)
 
           val result = route(application, request).value
 
@@ -212,7 +256,9 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
           .build()
 
         running(application) {
-          val request = FakeRequest(POST, routes.GoodsReleasedController.post(messageSender).url).withXmlBody(requestXmlBody)
+          val request = FakeRequest(POST, routes.MessageResponseController.post(messageSender).url)
+            .withXmlBody(requestGoodsReleasedXmlBody)
+            .withHeaders("X-Message-Type" -> MessageType.GoodsReleased.code)
 
           val result = route(application, request).value
 
@@ -221,6 +267,35 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
           verify(mockLockRepository, times(1)).unlock(arrivalId)
         }
       }
+
+      "must lock the arrival, return BadRequest error and unlock when an XMessageType is invalid" in {
+        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
+        when(mockArrivalMovementRepository.addResponseMessage(any(), any(), any())).thenReturn(Future.successful(Success(())))
+        when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
+        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
+        when(mockXmlValidationService.validate(any(), any())).thenReturn(Success(()))
+
+        val application = baseApplicationBuilder
+          .overrides(
+            bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
+            bind[LockRepository].toInstance(mockLockRepository),
+            bind[XmlValidationService].toInstance(mockXmlValidationService)
+          )
+          .build()
+
+        running(application) {
+          val request = FakeRequest(POST, routes.MessageResponseController.post(messageSender).url)
+            .withXmlBody(requestGoodsReleasedXmlBody)
+
+          val result = route(application, request).value
+
+          status(result) mustEqual BAD_REQUEST
+          verify(mockLockRepository, times(1)).lock(arrivalId)
+          verify(mockArrivalMovementRepository, never()).addResponseMessage(any(), any(), any())
+          verify(mockLockRepository, times(1)).unlock(arrivalId)
+        }
+      }
+
     }
 
     "when a lock cannot be acquired" - {
@@ -237,7 +312,9 @@ class GoodsReleasedControllerSpec extends SpecBase with ScalaCheckPropertyChecks
           .build()
 
         running(application) {
-          val request = FakeRequest(POST, routes.GoodsReleasedController.post(messageSender).url).withXmlBody(requestXmlBody)
+          val request = FakeRequest(POST, routes.MessageResponseController.post(messageSender).url)
+            .withXmlBody(requestGoodsReleasedXmlBody)
+            .withHeaders("X-Message-Type" -> MessageType.GoodsReleased.code)
 
           val result = route(application, request).value
 

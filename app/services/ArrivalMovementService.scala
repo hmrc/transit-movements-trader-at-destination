@@ -70,12 +70,12 @@ class ArrivalMovementService @Inject()(arrivalIdRepository: ArrivalIdRepository)
       xmlMessage <- ReaderT[Option, NodeSeq, NodeSeq](Option.apply)
     } yield MovementMessageWithStatus(dateTime, MessageType.ArrivalNotification, xmlMessage, SubmissionPending, messageCorrelationId)
 
-  def makeGoodsReleasedMessage(messageCorrelationId: Int): ReaderT[Option, NodeSeq, MovementMessageWithoutStatus] =
+  def makeMessage(messageCorrelationId: Int, messageType: MessageType): ReaderT[Option, NodeSeq, MovementMessageWithoutStatus] =
     for {
-      _          <- correctRootNodeR(MessageType.GoodsReleased)
+      _          <- correctRootNodeR(messageType)
       dateTime   <- dateTimeOfPrepR
       xmlMessage <- ReaderT[Option, NodeSeq, NodeSeq](Option.apply)
-    } yield MovementMessageWithoutStatus(dateTime, MessageType.GoodsReleased, xmlMessage, messageCorrelationId)
+    } yield MovementMessageWithoutStatus(dateTime, messageType, xmlMessage, messageCorrelationId)
 
   def makeMovementMessageWithStatus(messageCorrelationId: Int, messageType: MessageType): ReaderT[Option, NodeSeq, MovementMessageWithStatus] =
     for {

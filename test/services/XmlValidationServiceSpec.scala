@@ -30,11 +30,11 @@ class XmlValidationServiceSpec extends SpecBase {
     "must return a success when given a valid xml" in {
 
       val validXml = <messages>
-          <message>
-            <testString>Goods are ready to be released</testString>
-            <testNumber>1</testNumber>
-          </message>
-        </messages>
+        <message>
+          <testString>Goods are ready to be released</testString>
+          <testNumber>1</testNumber>
+        </message>
+      </messages>
 
       val result = xmlValidationService.validate(validXml.toString, SimpleXSD)
 
@@ -53,11 +53,11 @@ class XmlValidationServiceSpec extends SpecBase {
     "must return a failure when given an xml with invalid fields" in {
 
       val invalidXml = <messages>
-          <message>
-            <testString>Goods are ready to be released</testString>
-            <testNumber>somestring</testNumber>
-          </message>
-        </messages>
+        <message>
+          <testString>Goods are ready to be released</testString>
+          <testNumber>somestring</testNumber>
+        </message>
+      </messages>
 
       val result = xmlValidationService.validate(invalidXml.toString, SimpleXSD)
 

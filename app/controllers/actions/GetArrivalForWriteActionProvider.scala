@@ -27,9 +27,7 @@ import scala.concurrent.ExecutionContext
 
 class GetArrivalForWriteActionProvider @Inject()(
   lock: LockActionProvider,
-  getArrival: GetArrivalActionProvider,
-  ec: ExecutionContext,
-  parser: BodyParsers.Default
+  getArrival: GetArrivalActionProvider
 ) {
 
   def apply(arrivalId: ArrivalId): ActionBuilder[ArrivalRequest, AnyContent] =
