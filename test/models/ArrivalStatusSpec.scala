@@ -35,7 +35,7 @@ class ArrivalStatusSpec extends SpecBase with ScalaCheckDrivenPropertyChecks wit
     }
 
     "to Goods Rejection when receiving a Goods Rejection event" in {
-      Initialized.transition(MessageReceived.GoodsRejected) mustEqual GoodsRejected
+      Initialized.transition(MessageReceived.ArrivalRejected) mustEqual GoodsRejected
     }
 
   }
@@ -62,7 +62,7 @@ class ArrivalStatusSpec extends SpecBase with ScalaCheckDrivenPropertyChecks wit
     }
 
     "to GoodsRejected when receiving a GoodsRejected event" in {
-      ArrivalSubmitted.transition(MessageReceived.GoodsRejected) mustEqual GoodsRejected
+      ArrivalSubmitted.transition(MessageReceived.ArrivalRejected) mustEqual GoodsRejected
     }
   }
 

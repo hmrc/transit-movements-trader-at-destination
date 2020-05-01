@@ -27,7 +27,7 @@ object ArrivalStatus extends Enumerable.Implicits {
       case MessageReceived.ArrivalSubmitted    => ArrivalSubmitted
       case MessageReceived.GoodsReleased       => GoodsReleased
       case MessageReceived.UnloadingPermission => UnloadingPermission
-      case MessageReceived.GoodsRejected       => GoodsRejected
+      case MessageReceived.ArrivalRejected     => GoodsRejected
       case _                                   => throw new Exception(s"Tried to transition from Initialized to $messageReceived.")
     }
   }
@@ -37,7 +37,7 @@ object ArrivalStatus extends Enumerable.Implicits {
       case MessageReceived.ArrivalSubmitted    => ArrivalSubmitted
       case MessageReceived.GoodsReleased       => GoodsReleased
       case MessageReceived.UnloadingPermission => UnloadingPermission
-      case MessageReceived.GoodsRejected       => GoodsRejected
+      case MessageReceived.ArrivalRejected     => GoodsRejected
       case _                                   => throw new Exception(s"Tried to transition from ArrivalSubmitted to $messageReceived.")
     }
   }
