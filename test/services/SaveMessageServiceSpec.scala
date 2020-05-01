@@ -21,18 +21,34 @@ import java.time.LocalTime
 
 import base.SpecBase
 import models.ArrivalId
+import models.ArrivalStatus._
 import models.GoodsReleasedResponse
 import models.MessageSender
-import models.SubmissionResult.Success
-import org.scalatest.FreeSpec
+import models.SubmissionResult
+import repositories.ArrivalMovementRepository
 import utils.Format
+import org.mockito.Matchers.{eq => eqTo, _}
+import org.mockito.Mockito._
+import play.api.inject.bind
+
+import scala.concurrent.Future
+import scala.util.Success
 
 class SaveMessageServiceSpec extends SpecBase {
 
-  "Methods tests" - {
-    "Returns success for valid input of message" in {
+  "asdf" - {
+    "Returns Success when we successfully save a message" in {
+      val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
 
-      val saveMessageService = new SaveMessageService
+      when(mockArrivalMovementRepository.addResponseMessage(any(), any(), any())).thenReturn(Future.successful(Success(())))
+
+      val application = baseApplicationBuilder
+        .overrides(
+          bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository)
+        )
+        .build()
+
+      val saveMessageService = application.injector.instanceOf[SaveMessageService]
 
       val dateOfPrep = LocalDate.now()
       val timeOfPrep = LocalTime.of(1, 1)
@@ -47,9 +63,10 @@ class SaveMessageServiceSpec extends SpecBase {
         <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
       </CC025A>
 
-      val result = saveMessageService.asdf(requestGoodsReleasedXmlBody, messageSender, GoodsReleasedResponse).futureValue
+      val result = saveMessageService.asdf(requestGoodsReleasedXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased).futureValue
 
-      result mustBe Success
+      result mustBe SubmissionResult.Success
+      verify(mockArrivalMovementRepository, times(1)).addResponseMessage(eqTo(arrivalId), any(), eqTo(GoodsReleased))
     }
 
   }

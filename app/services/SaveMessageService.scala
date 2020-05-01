@@ -16,15 +16,32 @@
 
 package services
 
+import com.google.inject.Inject
+import models.ArrivalStatus
 import models.MessageResponse
 import models.MessageSender
 import models.SubmissionResult
+import repositories.ArrivalMovementRepository
 
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.util.Failure
+import scala.util.Success
 import scala.xml.NodeSeq
 
-class SaveMessageService {
+class SaveMessageService @Inject()(arrivalMovementRepository: ArrivalMovementRepository, arrivalMovementService: ArrivalMovementService)(
+  implicit ec: ExecutionContext) {
 
-  def asdf(messageXml: NodeSeq, messageSender: MessageSender, messageResponse: MessageResponse): Future[SubmissionResult] =
-    ???
+  def asdf(messageXml: NodeSeq, messageSender: MessageSender, messageResponse: MessageResponse, arrivalStatus: ArrivalStatus): Future[SubmissionResult] = {
+    val message = arrivalMovementService.makeMessage(messageSender.messageCorrelationId, messageResponse.messageType)(messageXml)
+
+    message match {
+      case Some(m) =>
+        arrivalMovementRepository
+          .addResponseMessage(messageSender.arrivalId, m, arrivalStatus)
+          .map {
+            case Success(_) => SubmissionResult.Success
+          }
+    }
+  }
 }

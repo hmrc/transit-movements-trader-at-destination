@@ -179,7 +179,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
 
           status(result) mustEqual OK
           verify(mockLockRepository, times(1)).lock(arrivalId)
-          verify(mockArrivalMovementRepository, times(1)).addResponseMessage(any(), any(), eqTo(ArrivalStatus.GoodsRejected))
+          verify(mockArrivalMovementRepository, times(1)).addResponseMessage(any(), any(), eqTo(ArrivalStatus.ArrivalRejected))
           verify(mockLockRepository, times(1)).unlock(arrivalId)
         }
       }
