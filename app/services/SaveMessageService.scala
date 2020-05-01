@@ -32,10 +32,11 @@ import scala.xml.NodeSeq
 class SaveMessageService @Inject()(arrivalMovementRepository: ArrivalMovementRepository, arrivalMovementService: ArrivalMovementService)(
   implicit ec: ExecutionContext) {
 
-  def asdf(messageXml: NodeSeq, messageSender: MessageSender, messageResponse: MessageResponse, arrivalStatus: ArrivalStatus): Future[SubmissionResult] = {
-    val message = arrivalMovementService.makeMessage(messageSender.messageCorrelationId, messageResponse.messageType)(messageXml)
-
-    message match {
+  def doLotsOfThings(messageXml: NodeSeq,
+                     messageSender: MessageSender,
+                     messageResponse: MessageResponse,
+                     arrivalStatus: ArrivalStatus): Future[SubmissionResult] =
+    arrivalMovementService.makeMessage(messageSender.messageCorrelationId, messageResponse.messageType)(messageXml) match {
       case Some(m) =>
         arrivalMovementRepository
           .addResponseMessage(messageSender.arrivalId, m, arrivalStatus)
@@ -43,5 +44,4 @@ class SaveMessageService @Inject()(arrivalMovementRepository: ArrivalMovementRep
             case Success(_) => SubmissionResult.Success
           }
     }
-  }
 }

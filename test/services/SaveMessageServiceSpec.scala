@@ -32,11 +32,12 @@ import org.mockito.Mockito._
 import play.api.inject.bind
 
 import scala.concurrent.Future
+import scala.util.Failure
 import scala.util.Success
 
 class SaveMessageServiceSpec extends SpecBase {
 
-  "asdf" - {
+  "doLotsOfThings" - {
     "Returns Success when we successfully save a message" in {
       val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
 
@@ -63,11 +64,45 @@ class SaveMessageServiceSpec extends SpecBase {
         <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
       </CC025A>
 
-      val result = saveMessageService.asdf(requestGoodsReleasedXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased).futureValue
+      val result = saveMessageService.doLotsOfThings(requestGoodsReleasedXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased).futureValue
 
       result mustBe SubmissionResult.Success
       verify(mockArrivalMovementRepository, times(1)).addResponseMessage(eqTo(arrivalId), any(), eqTo(GoodsReleased))
     }
+
+    "return Failure when we cannot save the message" in {
+      val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+
+      when(mockArrivalMovementRepository.addResponseMessage(any(), any(), any())).thenReturn(Future.successful(Failure(new Exception)))
+
+      val application = baseApplicationBuilder
+        .overrides(
+          bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository)
+        )
+        .build()
+
+      val saveMessageService = application.injector.instanceOf[SaveMessageService]
+
+      val dateOfPrep = LocalDate.now()
+      val timeOfPrep = LocalTime.of(1, 1)
+
+      val arrivalId     = ArrivalId(1)
+      val version       = 1
+      val messageSender = MessageSender(arrivalId, version)
+
+      val requestGoodsReleasedXmlBody =
+        <CC025A>
+          <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+          <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+        </CC025A>
+
+      val result = saveMessageService.doLotsOfThings(requestGoodsReleasedXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased).futureValue
+
+      result mustBe SubmissionResult.FailureInternal
+      verify(mockArrivalMovementRepository, times(0)).addResponseMessage(any(), any(), any())
+    }
+
+    "return Faulire when we cannot parse the message" ignore {}
 
   }
 }
