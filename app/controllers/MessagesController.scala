@@ -16,15 +16,20 @@
 
 package controllers
 
+import controllers.actions.AuthenticatedGetArrivalForReadActionProvider
 import controllers.actions.AuthenticatedGetArrivalForWriteActionProvider
 import javax.inject.Inject
 import models.ArrivalId
 import models.ArrivalStatus
 import models.MessageId
+import models.MessageStatus.SubmissionFailed
 import models.MessageType
 import models.SubmissionResult
 import models.request.ArrivalRequest
+import models.response.ResponseMovementMessage
+import play.api.libs.json.Json
 import play.api.mvc.Action
+import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import services.ArrivalMovementService
 import services.SubmitMessageService
@@ -38,6 +43,7 @@ class MessagesController @Inject()(
   cc: ControllerComponents,
   arrivalMovementService: ArrivalMovementService,
   submitMessageService: SubmitMessageService,
+  authenticateForRead: AuthenticatedGetArrivalForReadActionProvider,
   authenticateForWrite: AuthenticatedGetArrivalForWriteActionProvider
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
@@ -69,4 +75,17 @@ class MessagesController @Inject()(
           Future.successful(NotImplemented)
       }
   }
+
+  def getMessage(arrivalId: ArrivalId, messageId: MessageId): Action[AnyContent] = authenticateForRead(arrivalId) {
+    implicit request =>
+      if (request.arrival.messages.isDefinedAt(messageId.index) && request.arrival.messages(messageId.index).optStatus != Some(SubmissionFailed))
+        Ok(Json.toJson(ResponseMovementMessage.build(arrivalId, messageId, request.arrival.messages(messageId.index))))
+      else NotFound
+  }
+
+  def getMessages(arrivalId: ArrivalId): Action[AnyContent] = ??? //authenticateForRead(arrivalId) {
+//    implicit request =>
+  //Use Zip
+//      request.arrival.messages.filterNot(x => x.optStatus == Some(SubmissionFailed)).map(x => ResponseMovementMessage.build(arrivalId, x.))
+//  }
 }

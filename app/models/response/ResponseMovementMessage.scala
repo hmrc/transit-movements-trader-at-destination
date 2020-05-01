@@ -33,7 +33,7 @@ case class ResponseMovementMessage(location: String, dateTime: LocalDateTime, me
 object ResponseMovementMessage extends NodeSeqFormat {
 
   def build(a: ArrivalId, mId: MessageId, m: MovementMessage) =
-    ResponseMovementMessage(routes.MovementsController.getMessage(a, mId).url, m.dateTime, m.messageType.code, m.message)
+    ResponseMovementMessage(routes.MessagesController.getMessage(a, mId).url, m.dateTime, m.messageType.code, m.message)
 
-  implicit lazy val writes: Writes[ResponseMovementMessage] = Json.writes[ResponseMovementMessage]
+  implicit val writes: Writes[ResponseMovementMessage] = Json.writes[ResponseMovementMessage]
 }
