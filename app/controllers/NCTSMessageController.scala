@@ -39,11 +39,11 @@ import scala.util.Failure
 import scala.util.Success
 import scala.xml.NodeSeq
 
-class MessageResponseController @Inject()(cc: ControllerComponents,
-                                          arrivalMovementService: ArrivalMovementService,
-                                          getArrival: GetArrivalForWriteActionProvider,
-                                          arrivalMovementRepository: ArrivalMovementRepository,
-                                          xmlValidationService: XmlValidationService)(implicit ec: ExecutionContext)
+class NCTSMessageController @Inject()(cc: ControllerComponents,
+                                      arrivalMovementService: ArrivalMovementService,
+                                      getArrival: GetArrivalForWriteActionProvider,
+                                      arrivalMovementRepository: ArrivalMovementRepository,
+                                      xmlValidationService: XmlValidationService)(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
   private val logger = Logger(getClass)

@@ -45,7 +45,7 @@ import scala.concurrent.Future
 import scala.util.Failure
 import scala.util.Success
 
-class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChecks with ModelGenerators with BeforeAndAfterEach {
+class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks with ModelGenerators with BeforeAndAfterEach {
 
   private val mockArrivalMovementRepository: ArrivalMovementRepository = mock[ArrivalMovementRepository]
   private val mockLockRepository: LockRepository                       = mock[LockRepository]
@@ -113,7 +113,7 @@ class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChec
           .build()
 
         running(application) {
-          val request = FakeRequest(POST, routes.MessageResponseController.post(messageSender).url)
+          val request = FakeRequest(POST, routes.NCTSMessageController.post(messageSender).url)
             .withXmlBody(requestGoodsReleasedXmlBody)
             .withHeaders("X-Message-Type" -> MessageType.GoodsReleased.code)
 
@@ -142,7 +142,7 @@ class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChec
           .build()
 
         running(application) {
-          val request = FakeRequest(POST, routes.MessageResponseController.post(messageSender).url)
+          val request = FakeRequest(POST, routes.NCTSMessageController.post(messageSender).url)
             .withXmlBody(requestUnloadingPermissionXmlBody)
             .withHeaders("X-Message-Type" -> MessageType.UnloadingPermission.code)
 
@@ -171,7 +171,7 @@ class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChec
           .build()
 
         running(application) {
-          val request = FakeRequest(POST, routes.MessageResponseController.post(messageSender).url)
+          val request = FakeRequest(POST, routes.NCTSMessageController.post(messageSender).url)
             .withXmlBody(requestArrivalRejectionXmlBody)
             .withHeaders("X-Message-Type" -> MessageType.ArrivalRejection.code)
 
@@ -197,7 +197,7 @@ class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChec
           .build()
 
         running(application) {
-          val request = FakeRequest(POST, routes.MessageResponseController.post(messageSender).url)
+          val request = FakeRequest(POST, routes.NCTSMessageController.post(messageSender).url)
             .withXmlBody(requestGoodsReleasedXmlBody)
             .withHeaders("X-Message-Type" -> MessageType.GoodsReleased.code)
 
@@ -235,7 +235,7 @@ class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChec
               <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
             </InvalidRootNode>
 
-          val request = FakeRequest(POST, routes.MessageResponseController.post(messageSender).url)
+          val request = FakeRequest(POST, routes.NCTSMessageController.post(messageSender).url)
             .withXmlBody(requestGoodsReleasedXmlBody)
             .withHeaders("X-Message-Type" -> MessageType.GoodsReleased.code)
 
@@ -264,7 +264,7 @@ class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChec
           .build()
 
         running(application) {
-          val request = FakeRequest(POST, routes.MessageResponseController.post(messageSender).url)
+          val request = FakeRequest(POST, routes.NCTSMessageController.post(messageSender).url)
             .withXmlBody(requestGoodsReleasedXmlBody)
             .withHeaders("X-Message-Type" -> MessageType.GoodsReleased.code)
 
@@ -291,7 +291,7 @@ class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChec
           .build()
 
         running(application) {
-          val request = FakeRequest(POST, routes.MessageResponseController.post(messageSender).url)
+          val request = FakeRequest(POST, routes.NCTSMessageController.post(messageSender).url)
             .withXmlBody(requestGoodsReleasedXmlBody)
             .withHeaders("X-Message-Type" -> MessageType.GoodsReleased.code)
 
@@ -319,7 +319,7 @@ class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChec
           .build()
 
         running(application) {
-          val request = FakeRequest(POST, routes.MessageResponseController.post(messageSender).url)
+          val request = FakeRequest(POST, routes.NCTSMessageController.post(messageSender).url)
             .withXmlBody(requestGoodsReleasedXmlBody)
 
           val result = route(application, request).value
@@ -347,7 +347,7 @@ class MessageResponseControllerSpec extends SpecBase with ScalaCheckPropertyChec
           .build()
 
         running(application) {
-          val request = FakeRequest(POST, routes.MessageResponseController.post(messageSender).url)
+          val request = FakeRequest(POST, routes.NCTSMessageController.post(messageSender).url)
             .withXmlBody(requestGoodsReleasedXmlBody)
             .withHeaders("X-Message-Type" -> MessageType.GoodsReleased.code)
 
