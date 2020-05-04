@@ -29,23 +29,35 @@ import repositories.ArrivalMovementRepository
 import utils.Format
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito._
+import org.scalatest.BeforeAndAfter
+import org.scalatest.BeforeAndAfterEach
 import play.api.inject.bind
 
 import scala.concurrent.Future
 import scala.util.Failure
 import scala.util.Success
 
-class SaveMessageServiceSpec extends SpecBase {
+class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach {
+
+  private val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+  private val mockXmlValidationService      = mock[XmlValidationService]
+
+  override def beforeEach = {
+    super.beforeEach()
+    reset(mockArrivalMovementRepository)
+    reset(mockXmlValidationService)
+  }
 
   "doLotsOfThings" - {
-    "Returns Success when we successfully save a message" in {
-      val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
 
+    "Returns Success when we successfully save a message" in {
       when(mockArrivalMovementRepository.addResponseMessage(any(), any(), any())).thenReturn(Future.successful(Success(())))
+      when(mockXmlValidationService.validate(any(), any())).thenReturn(Success(()))
 
       val application = baseApplicationBuilder
         .overrides(
-          bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository)
+          bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
+          bind[XmlValidationService].toInstance(mockXmlValidationService)
         )
         .build()
 
@@ -71,13 +83,13 @@ class SaveMessageServiceSpec extends SpecBase {
     }
 
     "return Failure when we cannot save the message" in {
-      val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
-
       when(mockArrivalMovementRepository.addResponseMessage(any(), any(), any())).thenReturn(Future.successful(Failure(new Exception)))
+      when(mockXmlValidationService.validate(any(), any())).thenReturn(Success(()))
 
       val application = baseApplicationBuilder
         .overrides(
-          bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository)
+          bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
+          bind[XmlValidationService].toInstance(mockXmlValidationService)
         )
         .build()
 
@@ -103,13 +115,12 @@ class SaveMessageServiceSpec extends SpecBase {
     }
 
     "return Failure when we cannot parse the message" in {
-      val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
-
-      when(mockArrivalMovementRepository.addResponseMessage(any(), any(), any())).thenReturn(Future.successful(Failure(new Exception)))
+      when(mockXmlValidationService.validate(any(), any())).thenReturn(Failure(new Exception))
 
       val application = baseApplicationBuilder
         .overrides(
-          bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository)
+          bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
+          bind[XmlValidationService].toInstance(mockXmlValidationService)
         )
         .build()
 

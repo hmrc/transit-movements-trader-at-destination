@@ -21,6 +21,7 @@ import models.ArrivalStatus
 import models.MessageResponse
 import models.MessageSender
 import models.SubmissionResult
+import models.XSDFile
 import repositories.ArrivalMovementRepository
 
 import scala.concurrent.ExecutionContext
@@ -29,21 +30,26 @@ import scala.util.Failure
 import scala.util.Success
 import scala.xml.NodeSeq
 
-class SaveMessageService @Inject()(arrivalMovementRepository: ArrivalMovementRepository, arrivalMovementService: ArrivalMovementService)(
-  implicit ec: ExecutionContext) {
+class SaveMessageService @Inject()(arrivalMovementRepository: ArrivalMovementRepository,
+                                   arrivalMovementService: ArrivalMovementService,
+                                   xmlValidationService: XmlValidationService)(implicit ec: ExecutionContext) {
 
   def validateXmlAndSaveMessage(messageXml: NodeSeq,
                                 messageSender: MessageSender,
                                 messageResponse: MessageResponse,
                                 arrivalStatus: ArrivalStatus): Future[SubmissionResult] =
-    arrivalMovementService.makeMessage(messageSender.messageCorrelationId, messageResponse.messageType)(messageXml) match {
-      case Some(message) =>
-        arrivalMovementRepository
-          .addResponseMessage(messageSender.arrivalId, message, arrivalStatus)
-          .map {
-            case Success(_) => SubmissionResult.Success
-            case Failure(_) => SubmissionResult.FailureInternal
-          }
-      case None => Future.successful(SubmissionResult.FailureExternal)
+    xmlValidationService.validate(messageXml.toString(), messageResponse.xsdFile) match {
+      case Success(_) =>
+        arrivalMovementService.makeMessage(messageSender.messageCorrelationId, messageResponse.messageType)(messageXml) match {
+          case Some(message) =>
+            arrivalMovementRepository
+              .addResponseMessage(messageSender.arrivalId, message, arrivalStatus)
+              .map {
+                case Success(_) => SubmissionResult.Success
+                case Failure(_) => SubmissionResult.FailureInternal
+              }
+          case None => Future.successful(SubmissionResult.FailureExternal)
+        }
+      case Failure(_) => Future.successful(SubmissionResult.FailureExternal)
     }
 }
