@@ -21,7 +21,7 @@ import models.ArrivalStatus
 import models.MessageResponse
 import models.MessageSender
 import models.SubmissionResult
-import models.XSDFile
+import play.api.Logger
 import repositories.ArrivalMovementRepository
 
 import scala.concurrent.ExecutionContext
@@ -33,6 +33,8 @@ import scala.xml.NodeSeq
 class SaveMessageService @Inject()(arrivalMovementRepository: ArrivalMovementRepository,
                                    arrivalMovementService: ArrivalMovementService,
                                    xmlValidationService: XmlValidationService)(implicit ec: ExecutionContext) {
+
+  private val logger = Logger(getClass)
 
   def validateXmlAndSaveMessage(messageXml: NodeSeq,
                                 messageSender: MessageSender,
@@ -50,6 +52,9 @@ class SaveMessageService @Inject()(arrivalMovementRepository: ArrivalMovementRep
               }
           case None => Future.successful(SubmissionResult.FailureExternal)
         }
-      case Failure(_) => Future.successful(SubmissionResult.FailureExternal)
+      case Failure(e) => {
+        logger.error(s"Failure to validate against XSD. Exception: ${e.getMessage}")
+        Future.successful(SubmissionResult.FailureExternal)
+      }
     }
 }

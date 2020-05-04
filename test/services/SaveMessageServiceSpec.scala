@@ -20,18 +20,17 @@ import java.time.LocalDate
 import java.time.LocalTime
 
 import base.SpecBase
-import models.ArrivalId
 import models.ArrivalStatus._
+import models.ArrivalId
 import models.GoodsReleasedResponse
 import models.MessageSender
 import models.SubmissionResult
-import repositories.ArrivalMovementRepository
-import utils.Format
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito._
-import org.scalatest.BeforeAndAfter
 import org.scalatest.BeforeAndAfterEach
 import play.api.inject.bind
+import repositories.ArrivalMovementRepository
+import utils.Format
 
 import scala.concurrent.Future
 import scala.util.Failure
@@ -48,7 +47,7 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach {
     reset(mockXmlValidationService)
   }
 
-  "doLotsOfThings" - {
+  "validateXmlAndSaveMessage" - {
 
     "Returns Success when we successfully save a message" in {
       when(mockArrivalMovementRepository.addResponseMessage(any(), any(), any())).thenReturn(Future.successful(Success(())))
@@ -80,6 +79,7 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach {
 
       result mustBe SubmissionResult.Success
       verify(mockArrivalMovementRepository, times(1)).addResponseMessage(eqTo(arrivalId), any(), eqTo(GoodsReleased))
+      verify(mockXmlValidationService, times(1)).validate(any(), any())
     }
 
     "return Failure when we cannot save the message" in {
@@ -112,6 +112,7 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach {
 
       result mustBe SubmissionResult.FailureInternal
       verify(mockArrivalMovementRepository, times(1)).addResponseMessage(any(), any(), any())
+      verify(mockXmlValidationService, times(1)).validate(any(), any())
     }
 
     "return Failure when we cannot parse the message" in {
@@ -136,8 +137,38 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach {
 
       result mustBe SubmissionResult.FailureExternal
       verify(mockArrivalMovementRepository, never()).addResponseMessage(any(), any(), any())
-
+      verify(mockXmlValidationService, times(1)).validate(any(), any())
     }
 
+    "return Failure when we cannot parse the message due malformed time" in {
+      when(mockXmlValidationService.validate(any(), any())).thenReturn(Success())
+
+      val application = baseApplicationBuilder
+        .overrides(
+          bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
+          bind[XmlValidationService].toInstance(mockXmlValidationService)
+        )
+        .build()
+
+      val saveMessageService = application.injector.instanceOf[SaveMessageService]
+
+      val arrivalId            = ArrivalId(1)
+      val messageCorrelationId = 1
+      val messageSender        = MessageSender(arrivalId, messageCorrelationId)
+      val dateOfPrep           = LocalDate.now()
+      val timeOfPrep           = LocalTime.of(1, 1)
+
+      val requestInvalidXmlBody =
+        <CC025A>
+        <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+        <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)+ "/"}</TimOfPreMES10>
+      </CC025A>
+
+      val result = saveMessageService.validateXmlAndSaveMessage(requestInvalidXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased).futureValue
+
+      result mustBe SubmissionResult.FailureExternal
+      verify(mockArrivalMovementRepository, never()).addResponseMessage(any(), any(), any())
+      verify(mockXmlValidationService, times(1)).validate(any(), any())
+    }
   }
 }
