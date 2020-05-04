@@ -37,11 +37,13 @@ class SaveMessageService @Inject()(arrivalMovementRepository: ArrivalMovementRep
                      messageResponse: MessageResponse,
                      arrivalStatus: ArrivalStatus): Future[SubmissionResult] =
     arrivalMovementService.makeMessage(messageSender.messageCorrelationId, messageResponse.messageType)(messageXml) match {
-      case Some(m) =>
+      case Some(message) =>
         arrivalMovementRepository
-          .addResponseMessage(messageSender.arrivalId, m, arrivalStatus)
+          .addResponseMessage(messageSender.arrivalId, message, arrivalStatus)
           .map {
             case Success(_) => SubmissionResult.Success
+            case Failure(_) => SubmissionResult.FailureInternal
           }
+      case None => Future.successful(SubmissionResult.FailureInternal)
     }
 }

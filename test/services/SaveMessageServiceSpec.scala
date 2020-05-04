@@ -99,10 +99,25 @@ class SaveMessageServiceSpec extends SpecBase {
       val result = saveMessageService.doLotsOfThings(requestGoodsReleasedXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased).futureValue
 
       result mustBe SubmissionResult.FailureInternal
-      verify(mockArrivalMovementRepository, times(0)).addResponseMessage(any(), any(), any())
+      verify(mockArrivalMovementRepository, times(1)).addResponseMessage(any(), any(), any())
     }
 
-    "return Faulire when we cannot parse the message" ignore {}
+    "return Failure when we cannot parse the message" in {
+      val application = baseApplicationBuilder
+        .build()
+
+      val saveMessageService = application.injector.instanceOf[SaveMessageService]
+
+      val arrivalId     = ArrivalId(1)
+      val version       = 1
+      val messageSender = MessageSender(arrivalId, version)
+
+      val requestInvalidXmlBody = <Invalid> invalid </Invalid>
+
+      val result = saveMessageService.doLotsOfThings(requestInvalidXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased).futureValue
+
+      result mustBe SubmissionResult.FailureInternal
+    }
 
   }
 }
