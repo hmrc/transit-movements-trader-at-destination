@@ -44,6 +44,7 @@ object ArrivalStatus extends Enumerable.Implicits {
     override def transition(messageReceived: MessageReceived): ArrivalStatus = messageReceived match {
       case MessageReceived.UnloadingPermission       => UnloadingPermission
       case MessageReceived.UnloadingRemarksSubmitted => UnloadingRemarksSubmitted
+      case MessageReceived.GoodsReleased             => GoodsReleased
     }
   }
 
