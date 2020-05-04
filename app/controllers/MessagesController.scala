@@ -26,6 +26,7 @@ import models.MessageStatus.SubmissionFailed
 import models.MessageType
 import models.SubmissionResult
 import models.request.ArrivalRequest
+import models.response.ResponseArrival
 import models.response.ResponseMovementMessage
 import play.api.libs.json.Json
 import play.api.mvc.Action
@@ -83,9 +84,18 @@ class MessagesController @Inject()(
       else NotFound
   }
 
-  def getMessages(arrivalId: ArrivalId): Action[AnyContent] = ??? //authenticateForRead(arrivalId) {
-//    implicit request =>
-  //Use Zip
-//      request.arrival.messages.filterNot(x => x.optStatus == Some(SubmissionFailed)).map(x => ResponseMovementMessage.build(arrivalId, x.))
-//  }
+  def getMessages(arrivalId: ArrivalId): Action[AnyContent] = authenticateForRead(arrivalId) {
+    implicit request =>
+      Ok(
+        Json.toJson(ResponseArrival.build(
+          request.arrival,
+          request.arrival.messages.view.zipWithIndex
+            .filterNot {
+              case (message, _) => message.optStatus == Some(SubmissionFailed)
+            }
+            .map {
+              case (message, count) => ResponseMovementMessage.build(arrivalId, new MessageId(count + 1), message)
+            }
+        )))
+  }
 }
