@@ -54,9 +54,9 @@ class SaveMessageServiceSpec extends SpecBase {
       val dateOfPrep = LocalDate.now()
       val timeOfPrep = LocalTime.of(1, 1)
 
-      val arrivalId     = ArrivalId(1)
-      val version       = 1
-      val messageSender = MessageSender(arrivalId, version)
+      val arrivalId            = ArrivalId(1)
+      val messageCorrelationId = 1
+      val messageSender        = MessageSender(arrivalId, messageCorrelationId)
 
       val requestGoodsReleasedXmlBody =
         <CC025A>
@@ -64,7 +64,7 @@ class SaveMessageServiceSpec extends SpecBase {
         <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
       </CC025A>
 
-      val result = saveMessageService.doLotsOfThings(requestGoodsReleasedXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased).futureValue
+      val result = saveMessageService.validateXmlAndSaveMessage(requestGoodsReleasedXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased).futureValue
 
       result mustBe SubmissionResult.Success
       verify(mockArrivalMovementRepository, times(1)).addResponseMessage(eqTo(arrivalId), any(), eqTo(GoodsReleased))
@@ -86,9 +86,9 @@ class SaveMessageServiceSpec extends SpecBase {
       val dateOfPrep = LocalDate.now()
       val timeOfPrep = LocalTime.of(1, 1)
 
-      val arrivalId     = ArrivalId(1)
-      val version       = 1
-      val messageSender = MessageSender(arrivalId, version)
+      val arrivalId            = ArrivalId(1)
+      val messageCorrelationId = 1
+      val messageSender        = MessageSender(arrivalId, messageCorrelationId)
 
       val requestGoodsReleasedXmlBody =
         <CC025A>
@@ -96,27 +96,36 @@ class SaveMessageServiceSpec extends SpecBase {
           <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
         </CC025A>
 
-      val result = saveMessageService.doLotsOfThings(requestGoodsReleasedXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased).futureValue
+      val result = saveMessageService.validateXmlAndSaveMessage(requestGoodsReleasedXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased).futureValue
 
       result mustBe SubmissionResult.FailureInternal
       verify(mockArrivalMovementRepository, times(1)).addResponseMessage(any(), any(), any())
     }
 
     "return Failure when we cannot parse the message" in {
+      val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+
+      when(mockArrivalMovementRepository.addResponseMessage(any(), any(), any())).thenReturn(Future.successful(Failure(new Exception)))
+
       val application = baseApplicationBuilder
+        .overrides(
+          bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository)
+        )
         .build()
 
       val saveMessageService = application.injector.instanceOf[SaveMessageService]
 
-      val arrivalId     = ArrivalId(1)
-      val version       = 1
-      val messageSender = MessageSender(arrivalId, version)
+      val arrivalId            = ArrivalId(1)
+      val messageCorrelationId = 1
+      val messageSender        = MessageSender(arrivalId, messageCorrelationId)
 
       val requestInvalidXmlBody = <Invalid> invalid </Invalid>
 
-      val result = saveMessageService.doLotsOfThings(requestInvalidXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased).futureValue
+      val result = saveMessageService.validateXmlAndSaveMessage(requestInvalidXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased).futureValue
 
-      result mustBe SubmissionResult.FailureInternal
+      result mustBe SubmissionResult.FailureExternal
+      verify(mockArrivalMovementRepository, never()).addResponseMessage(any(), any(), any())
+
     }
 
   }

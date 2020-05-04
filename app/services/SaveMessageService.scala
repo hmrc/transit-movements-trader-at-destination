@@ -32,10 +32,10 @@ import scala.xml.NodeSeq
 class SaveMessageService @Inject()(arrivalMovementRepository: ArrivalMovementRepository, arrivalMovementService: ArrivalMovementService)(
   implicit ec: ExecutionContext) {
 
-  def doLotsOfThings(messageXml: NodeSeq,
-                     messageSender: MessageSender,
-                     messageResponse: MessageResponse,
-                     arrivalStatus: ArrivalStatus): Future[SubmissionResult] =
+  def validateXmlAndSaveMessage(messageXml: NodeSeq,
+                                messageSender: MessageSender,
+                                messageResponse: MessageResponse,
+                                arrivalStatus: ArrivalStatus): Future[SubmissionResult] =
     arrivalMovementService.makeMessage(messageSender.messageCorrelationId, messageResponse.messageType)(messageXml) match {
       case Some(message) =>
         arrivalMovementRepository
@@ -44,6 +44,6 @@ class SaveMessageService @Inject()(arrivalMovementRepository: ArrivalMovementRep
             case Success(_) => SubmissionResult.Success
             case Failure(_) => SubmissionResult.FailureInternal
           }
-      case None => Future.successful(SubmissionResult.FailureInternal)
+      case None => Future.successful(SubmissionResult.FailureExternal)
     }
 }
