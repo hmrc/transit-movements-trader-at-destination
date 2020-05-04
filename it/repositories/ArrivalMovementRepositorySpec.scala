@@ -34,7 +34,18 @@ class ArrivalMovementRepositorySpec
     with EitherValues
     with TryValues
     with ModelGenerators
-    with MongoDateTimeFormats {
+    with MongoDateTimeFormats with BeforeAndAfterAll {
+
+  override def afterAll(): Unit = {
+    super.afterAll()
+    database.flatMap {
+      db =>
+        val arrivalMovement1 = arbitrary[Arrival].sample.value
+        val arrivalMovement2 = arbitrary[Arrival].sample.value
+
+        db.collection[JSONCollection](ArrivalMovementRepository.collectionName).insert(false).many(Seq(arrivalMovement1, arrivalMovement2))
+    }.futureValue
+  }
 
   def typeMatchOnTestValue[A, B](testValue: A)(test: B => Unit)(implicit bClassTag: ClassTag[B]) = testValue match {
     case result: B => test(result)

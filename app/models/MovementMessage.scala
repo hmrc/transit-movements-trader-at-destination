@@ -40,7 +40,8 @@ final case class MovementMessageWithStatus(dateTime: LocalDateTime,
 final case class MovementMessageWithoutStatus(dateTime: LocalDateTime, messageType: MessageType, message: NodeSeq, messageCorrelationId: Int)
     extends MovementMessage { def optStatus = None }
 
-object MovementMessage extends NodeSeqFormat {
+object MovementMessage extends NodeSeqFormat with MongoDateTimeFormats {
+
   implicit lazy val reads: Reads[MovementMessage] = new Reads[MovementMessage] {
     override def reads(json: JsValue): JsResult[MovementMessage] = (json \ "status").toOption match {
       case Some(_) =>
@@ -57,13 +58,13 @@ object MovementMessage extends NodeSeqFormat {
 
 }
 
-object MovementMessageWithStatus extends NodeSeqFormat {
+object MovementMessageWithStatus extends NodeSeqFormat with MongoDateTimeFormats {
 
   implicit val formatsMovementMessage: OFormat[MovementMessageWithStatus] =
     Json.format[MovementMessageWithStatus]
 }
 
-object MovementMessageWithoutStatus extends NodeSeqFormat {
+object MovementMessageWithoutStatus extends NodeSeqFormat with MongoDateTimeFormats {
 
   implicit val formatsMovementMessage: OFormat[MovementMessageWithoutStatus] =
     Json.format[MovementMessageWithoutStatus]
