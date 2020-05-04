@@ -65,7 +65,7 @@ class MovementsController @Inject()(
             .map {
               message =>
                 submitMessageService
-                  .submitMessage(arrival.arrivalId, new MessageId(arrival.messages.length - 1), message, ArrivalStatus.ArrivalSubmitted)
+                  .submitMessage(arrival.arrivalId, new MessageId(arrival.messages.length), message, ArrivalStatus.ArrivalSubmitted)
                   .map {
                     case SubmissionResult.Success =>
                       Accepted("Message accepted")
@@ -114,7 +114,7 @@ class MovementsController @Inject()(
         .map {
           message =>
             submitMessageService
-              .submitMessage(arrivalId, new MessageId(request.arrival.messages.length - 1), message, ArrivalStatus.ArrivalSubmitted)
+              .submitMessage(arrivalId, new MessageId(request.arrival.messages.length), message, ArrivalStatus.ArrivalSubmitted)
               .map {
                 case SubmissionResult.Success =>
                   Accepted("Message accepted")
