@@ -76,8 +76,6 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
       </HEAHEA>
     </CC007A>
 
-  val messageId = new MessageId(0)
-
   val movementMessge = MovementMessageWithStatus(
     localDateTime,
     MessageType.ArrivalNotification,
@@ -105,7 +103,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
   "MovementsController" - {
 
-    "createMovement" - {
+    "post" - {
       "when there are no previous failed attempts to submit" - {
         "must return Accepted, create movement, send the message upstream and set the state to Submitted" in {
           val mockArrivalIdRepository       = mock[ArrivalIdRepository]
@@ -319,6 +317,10 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
             status(result) mustEqual ACCEPTED
             header("Location", result).value must be(routes.MovementsController.getArrival(arrival.arrivalId).url)
+            verify(mockSubmitMessageService, times(1)).submitMessage(eqTo(arrival.arrivalId),
+                                                                     eqTo(new MessageId(1)),
+                                                                     eqTo(movementMessge),
+                                                                     eqTo(ArrivalStatus.ArrivalSubmitted))(any())
           }
         }
 
@@ -473,7 +475,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           status(result) mustEqual ACCEPTED
           header("Location", result).value must be(routes.MovementsController.getArrival(arrival.arrivalId).url)
           verify(mockSubmitMessageService, times(1)).submitMessage(eqTo(arrival.arrivalId),
-                                                                   eqTo(messageId),
+                                                                   eqTo(new MessageId(1)),
                                                                    eqTo(movementMessge),
                                                                    eqTo(ArrivalStatus.ArrivalSubmitted))(any())
         }
