@@ -34,6 +34,10 @@ class ArrivalStatusSpec extends SpecBase with ScalaCheckDrivenPropertyChecks wit
       Initialized.transition(MessageReceived.GoodsReleased) mustEqual GoodsReleased
     }
 
+    "to Arrival Rejected when receiving a Goods Rejection event" in {
+      Initialized.transition(MessageReceived.ArrivalRejected) mustEqual ArrivalRejected
+    }
+
   }
 
   "Intitialized should not be transitioned to from any other state" ignore {
@@ -56,6 +60,10 @@ class ArrivalStatusSpec extends SpecBase with ScalaCheckDrivenPropertyChecks wit
     "to GoodsReceived when receiving a GoodsReleased event" in {
       ArrivalSubmitted.transition(MessageReceived.GoodsReleased) mustEqual GoodsReleased
     }
+
+    "to ArrivalRejected when receiving a ArrivalRejected event" in {
+      ArrivalSubmitted.transition(MessageReceived.ArrivalRejected) mustEqual ArrivalRejected
+    }
   }
 
   "UnloadingRemarksSubmitted must transition" - {
@@ -73,6 +81,22 @@ class ArrivalStatusSpec extends SpecBase with ScalaCheckDrivenPropertyChecks wit
     forAll(arbitrary[MessageReceived]) {
       messageReceivedEvent =>
         GoodsReleased.transition(messageReceivedEvent) mustEqual GoodsReleased
+    }
+  }
+
+  "ArrivalRejected must " - {
+
+    "transform to ArrivalRejected state when receiving an ArrivalRejected event" in {
+      ArrivalRejected.transition(MessageReceived.ArrivalRejected) mustEqual ArrivalRejected
+    }
+
+    "transform to GoodsReleased state when receiving an GoodsReleased event" in {
+      ArrivalRejected.transition(MessageReceived.GoodsReleased) mustEqual GoodsReleased
+    }
+
+    "throw exception when received an invalid message event" in {
+      val exception = intercept[Exception](ArrivalRejected.transition(MessageReceived.UnloadingPermission))
+      exception.getMessage mustEqual s"Tried to transition from ArrivalRejected to ${MessageReceived.UnloadingPermission}."
     }
   }
 

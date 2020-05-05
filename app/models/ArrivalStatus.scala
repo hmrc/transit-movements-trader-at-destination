@@ -27,6 +27,7 @@ object ArrivalStatus extends Enumerable.Implicits {
       case MessageReceived.ArrivalSubmitted    => ArrivalSubmitted
       case MessageReceived.GoodsReleased       => GoodsReleased
       case MessageReceived.UnloadingPermission => UnloadingPermission
+      case MessageReceived.ArrivalRejected     => ArrivalRejected
       case _                                   => throw new Exception(s"Tried to transition from Initialized to $messageReceived.")
     }
   }
@@ -36,6 +37,7 @@ object ArrivalStatus extends Enumerable.Implicits {
       case MessageReceived.ArrivalSubmitted    => ArrivalSubmitted
       case MessageReceived.GoodsReleased       => GoodsReleased
       case MessageReceived.UnloadingPermission => UnloadingPermission
+      case MessageReceived.ArrivalRejected     => ArrivalRejected
       case _                                   => throw new Exception(s"Tried to transition from ArrivalSubmitted to $messageReceived.")
     }
   }
@@ -45,6 +47,7 @@ object ArrivalStatus extends Enumerable.Implicits {
       case MessageReceived.UnloadingPermission       => UnloadingPermission
       case MessageReceived.UnloadingRemarksSubmitted => UnloadingRemarksSubmitted
       case MessageReceived.GoodsReleased             => GoodsReleased
+      case _                                         => throw new Exception(s"Tried to transition from UnloadingPermission to $messageReceived.")
     }
   }
 
@@ -60,12 +63,22 @@ object ArrivalStatus extends Enumerable.Implicits {
     override def transition(messageReceived: MessageReceived): ArrivalStatus = this
   }
 
+  case object ArrivalRejected extends ArrivalStatus {
+    override def transition(messageReceived: MessageReceived): ArrivalStatus = messageReceived match {
+      case MessageReceived.ArrivalRejected => ArrivalRejected
+      case MessageReceived.GoodsReleased   => GoodsReleased
+      case _                               => throw new Exception(s"Tried to transition from ArrivalRejected to $messageReceived.")
+
+    }
+  }
+
   val values = Seq(
     Initialized,
     ArrivalSubmitted,
     UnloadingPermission,
     UnloadingRemarksSubmitted,
-    GoodsReleased
+    GoodsReleased,
+    ArrivalRejected
   )
 
   implicit val enumerable: Enumerable[ArrivalStatus] =
