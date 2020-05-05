@@ -95,8 +95,8 @@ class ArrivalStatusSpec extends SpecBase with ScalaCheckDrivenPropertyChecks wit
     }
 
     "throw exception when received an invalid message event" in {
-      val x = intercept[Exception](ArrivalRejected.transition(MessageReceived.UnloadingPermission))
-      x.getMessage mustEqual s"Tried to transition from ArrivalRejected to ${MessageReceived.UnloadingPermission}."
+      val exception = intercept[Exception](ArrivalRejected.transition(MessageReceived.UnloadingPermission))
+      exception.getMessage mustEqual s"Tried to transition from ArrivalRejected to ${MessageReceived.UnloadingPermission}."
     }
   }
 
