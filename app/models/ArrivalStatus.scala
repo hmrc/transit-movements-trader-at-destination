@@ -63,7 +63,12 @@ object ArrivalStatus extends Enumerable.Implicits {
   }
 
   case object ArrivalRejected extends ArrivalStatus {
-    override def transition(messageReceived: MessageReceived): ArrivalStatus = this
+    override def transition(messageReceived: MessageReceived): ArrivalStatus = messageReceived match {
+      case MessageReceived.ArrivalRejected => ArrivalRejected
+      case MessageReceived.GoodsReleased   => GoodsReleased
+      case _                               => throw new Exception(s"Tried to transition from ArrivalRejected to $messageReceived.")
+
+    }
   }
 
   val values = Seq(
