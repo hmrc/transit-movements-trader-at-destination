@@ -19,12 +19,14 @@ package models.response
 import java.time.LocalDateTime
 
 import controllers.routes
+import models.MessageStatus.SubmissionFailed
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalStatus
+import models.MessageId
 import models.MovementReferenceNumber
 import play.api.libs.json.Json
-import play.api.libs.json.Writes
+import play.api.libs.json.OWrites
 
 case class ResponseArrival(arrivalId: ArrivalId,
                            location: String,
@@ -37,7 +39,7 @@ case class ResponseArrival(arrivalId: ArrivalId,
 
 object ResponseArrival {
 
-  def build(arrival: Arrival, msgs: Seq[ResponseMovementMessage]): ResponseArrival =
+  def build(arrival: Arrival): ResponseArrival =
     ResponseArrival(
       arrival.arrivalId,
       routes.MovementsController.getArrival(arrival.arrivalId).url,
@@ -46,9 +48,15 @@ object ResponseArrival {
       arrival.status,
       arrival.created,
       arrival.updated,
-      msgs
+      arrival.messages.view.zipWithIndex
+        .filterNot {
+          case (message, _) => message.optStatus == Some(SubmissionFailed)
+        }
+        .map {
+          case (message, count) => ResponseMovementMessage.build(arrival.arrivalId, new MessageId(count + 1), message)
+        }
     )
 
-  implicit val writes: Writes[ResponseArrival] = Json.writes[ResponseArrival]
+  implicit val writes: OWrites[ResponseArrival] = Json.writes[ResponseArrival]
 
 }

@@ -419,7 +419,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           val arrival = Arbitrary.arbitrary[Arrival].sample.value.copy(messages = Seq(message), eoriNumber = "eori")
 
           val expectedMessages = ResponseMovementMessage.build(arrival.arrivalId, new MessageId(1), message)
-          val expectedArrival  = ResponseArrival.build(arrival, Seq(expectedMessages))
+          val expectedArrival  = ResponseArrival.build(arrival).copy(messages = Seq(expectedMessages))
 
           val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
           when(mockArrivalMovementRepository.get(any()))
@@ -436,6 +436,8 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
 
             status(result) mustEqual OK
             contentAsJson(result) mustEqual Json.toJson(expectedArrival)
+
+            println(contentAsJson(result))
           }
         }
 
@@ -445,7 +447,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           val arrival  = Arbitrary.arbitrary[Arrival].sample.value.copy(messages = Seq(message1, message2), eoriNumber = "eori")
 
           val expectedMessages = ResponseMovementMessage.build(arrival.arrivalId, new MessageId(1), message1)
-          val expectedArrival  = ResponseArrival.build(arrival, Seq(expectedMessages))
+          val expectedArrival  = ResponseArrival.build(arrival).copy(messages = Seq(expectedMessages))
 
           val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
           when(mockArrivalMovementRepository.get(any()))
@@ -475,7 +477,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
 
           val expectedMessage1 = ResponseMovementMessage.build(arrival.arrivalId, new MessageId(1), message1)
           val expectedMessage3 = ResponseMovementMessage.build(arrival.arrivalId, new MessageId(3), message3)
-          val expectedArrival  = ResponseArrival.build(arrival, Seq(expectedMessage1, expectedMessage3))
+          val expectedArrival  = ResponseArrival.build(arrival).copy(messages = Seq(expectedMessage1, expectedMessage3))
 
           val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
           when(mockArrivalMovementRepository.get(any()))
@@ -501,7 +503,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
 
           val arrival = Arbitrary.arbitrary[Arrival].sample.value.copy(messages = Seq(message1, message2), eoriNumber = "eori")
 
-          val expectedArrival = ResponseArrival.build(arrival, Nil)
+          val expectedArrival = ResponseArrival.build(arrival).copy(messages = Nil)
 
           val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
           when(mockArrivalMovementRepository.get(any()))

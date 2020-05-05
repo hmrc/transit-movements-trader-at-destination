@@ -80,22 +80,12 @@ class MessagesController @Inject()(
   def getMessage(arrivalId: ArrivalId, messageId: MessageId): Action[AnyContent] = authenticateForRead(arrivalId) {
     implicit request =>
       if (request.arrival.messages.isDefinedAt(messageId.index) && request.arrival.messages(messageId.index).optStatus != Some(SubmissionFailed))
-        Ok(Json.toJson(ResponseMovementMessage.build(arrivalId, messageId, request.arrival.messages(messageId.index))))
+        Ok(Json.toJsObject(ResponseMovementMessage.build(arrivalId, messageId, request.arrival.messages(messageId.index))))
       else NotFound
   }
 
   def getMessages(arrivalId: ArrivalId): Action[AnyContent] = authenticateForRead(arrivalId) {
     implicit request =>
-      Ok(
-        Json.toJson(ResponseArrival.build(
-          request.arrival,
-          request.arrival.messages.view.zipWithIndex
-            .filterNot {
-              case (message, _) => message.optStatus == Some(SubmissionFailed)
-            }
-            .map {
-              case (message, count) => ResponseMovementMessage.build(arrivalId, new MessageId(count + 1), message)
-            }
-        )))
+      Ok(Json.toJsObject(ResponseArrival.build(request.arrival)))
   }
 }

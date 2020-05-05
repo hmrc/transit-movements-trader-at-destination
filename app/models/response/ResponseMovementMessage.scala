@@ -23,7 +23,7 @@ import models.ArrivalId
 import models.MessageId
 import models.MovementMessage
 import play.api.libs.json.Json
-import play.api.libs.json.Writes
+import play.api.libs.json.OWrites
 import utils.NodeSeqFormat
 
 import scala.xml.NodeSeq
@@ -35,5 +35,5 @@ object ResponseMovementMessage extends NodeSeqFormat {
   def build(a: ArrivalId, mId: MessageId, m: MovementMessage) =
     ResponseMovementMessage(routes.MessagesController.getMessage(a, mId).url, m.dateTime, m.messageType.code, m.message)
 
-  implicit val writes: Writes[ResponseMovementMessage] = Json.writes[ResponseMovementMessage]
+  implicit val writes: OWrites[ResponseMovementMessage] = Json.writes[ResponseMovementMessage]
 }
