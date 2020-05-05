@@ -17,27 +17,27 @@
 package models
 
 sealed trait MessageStatus {
-  def transition(event: SubmissionResult): MessageStatus
+  def transition(event: SubmissionProcessingResult): MessageStatus
 }
 
 object MessageStatus extends Enumerable.Implicits {
 
   case object SubmissionPending extends MessageStatus {
-    override def transition(event: SubmissionResult): MessageStatus = event match {
-      case SubmissionResult.Success => SubmissionSucceeded
-      case _                        => SubmissionFailed
+    override def transition(event: SubmissionProcessingResult): MessageStatus = event match {
+      case SubmissionProcessingResult.SubmissionSuccess => SubmissionSucceeded
+      case _                                            => SubmissionFailed
     }
   }
 
   case object SubmissionFailed extends MessageStatus {
-    override def transition(event: SubmissionResult): MessageStatus = event match {
-      case SubmissionResult.Success => SubmissionSucceeded
-      case _                        => SubmissionFailed
+    override def transition(event: SubmissionProcessingResult): MessageStatus = event match {
+      case SubmissionProcessingResult.SubmissionSuccess => SubmissionSucceeded
+      case _                                            => SubmissionFailed
     }
   }
 
   case object SubmissionSucceeded extends MessageStatus {
-    override def transition(event: SubmissionResult): MessageStatus = SubmissionSucceeded
+    override def transition(event: SubmissionProcessingResult): MessageStatus = SubmissionSucceeded
   }
 
   val values = Seq(

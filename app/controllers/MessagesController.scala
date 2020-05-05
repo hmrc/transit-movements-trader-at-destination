@@ -22,7 +22,7 @@ import models.ArrivalId
 import models.ArrivalStatus
 import models.MessageId
 import models.MessageType
-import models.SubmissionResult
+import models.SubmissionProcessingResult
 import models.request.ArrivalRequest
 import play.api.mvc.Action
 import play.api.mvc.ControllerComponents
@@ -53,14 +53,14 @@ class MessagesController @Inject()(
                 submitMessageService
                   .submitMessage(arrivalId, new MessageId(request.arrival.messages.length), message, ArrivalStatus.UnloadingRemarksSubmitted)
                   .map {
-                    case SubmissionResult.Success =>
+                    case SubmissionProcessingResult.SubmissionSuccess =>
                       Accepted("Message accepted")
                         .withHeaders("Location" -> routes.MessagesController.post(request.arrival.arrivalId).url)
 
-                    case SubmissionResult.FailureInternal =>
+                    case SubmissionProcessingResult.SubmissionFailureInternal =>
                       InternalServerError
 
-                    case SubmissionResult.FailureExternal =>
+                    case SubmissionProcessingResult.SubmissionFailureExternal =>
                       BadGateway
                   }
             }

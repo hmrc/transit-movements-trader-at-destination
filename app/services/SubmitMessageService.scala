@@ -27,7 +27,7 @@ import models.ArrivalStatus
 import models.MessageId
 import models.MessageStatus
 import models.MovementMessageWithStatus
-import models.SubmissionResult
+import models.SubmissionProcessingResult
 import repositories.ArrivalMovementRepository
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -44,10 +44,10 @@ class SubmitMessageService @Inject()(
   private val logger = Logger(getClass)
 
   def submitMessage(arrivalId: ArrivalId, messageId: MessageId, message: MovementMessageWithStatus, arrivalStatus: ArrivalStatus)(
-    implicit hc: HeaderCarrier): Future[SubmissionResult] =
+    implicit hc: HeaderCarrier): Future[SubmissionProcessingResult] =
     arrivalMovementRepository.addNewMessage(arrivalId, message) flatMap {
       case Failure(_) =>
-        Future.successful(SubmissionResult.FailureInternal)
+        Future.successful(SubmissionProcessingResult.SubmissionFailureInternal)
 
       case Success(_) => {
         messageConnector
@@ -58,27 +58,29 @@ class SubmitMessageService @Inject()(
                 .setArrivalStateAndMessageState(arrivalId, messageId, arrivalStatus, MessageStatus.SubmissionSucceeded)
                 .map {
                   _ =>
-                    SubmissionResult.Success
+                    SubmissionProcessingResult.SubmissionSuccess
                 }
                 .recover({
                   case _ =>
-                    SubmissionResult.FailureInternal
+                    SubmissionProcessingResult.SubmissionFailureInternal
                 })
           }
           .recoverWith {
             case error => {
               logger.error(s"Existing Movement - Call to EIS failed with the following Exception: ${error.getMessage}")
 
-              arrivalMovementRepository.setMessageState(arrivalId, messageId.index, message.status.transition(SubmissionResult.FailureInternal)) map {
+              arrivalMovementRepository.setMessageState(arrivalId,
+                                                        messageId.index,
+                                                        message.status.transition(SubmissionProcessingResult.SubmissionFailureInternal)) map {
                 _ =>
-                  SubmissionResult.FailureExternal
+                  SubmissionProcessingResult.SubmissionFailureExternal
               }
             }
           }
       }
     }
 
-  def submitArrival(arrival: Arrival)(implicit hc: HeaderCarrier): Future[SubmissionResult] =
+  def submitArrival(arrival: Arrival)(implicit hc: HeaderCarrier): Future[SubmissionProcessingResult] =
     arrivalMovementRepository
       .insert(arrival)
       .flatMap {
@@ -94,27 +96,29 @@ class SubmitMessageService @Inject()(
                   .setArrivalStateAndMessageState(arrival.arrivalId, messageId, ArrivalStatus.ArrivalSubmitted, MessageStatus.SubmissionSucceeded)
                   .map {
                     _ =>
-                      SubmissionResult.Success
+                      SubmissionProcessingResult.SubmissionSuccess
                   }
                   .recover({
                     case _ =>
-                      SubmissionResult.FailureInternal
+                      SubmissionProcessingResult.SubmissionFailureInternal
                   })
             }
             .recoverWith {
               case error =>
                 logger.error(s"New Movement - Call to EIS failed with the following Exception: ${error.getMessage}")
 
-                arrivalMovementRepository.setMessageState(arrival.arrivalId, messageId.index, message.status.transition(SubmissionResult.FailureInternal)) map {
+                arrivalMovementRepository.setMessageState(arrival.arrivalId,
+                                                          messageId.index,
+                                                          message.status.transition(SubmissionProcessingResult.SubmissionFailureInternal)) map {
                   _ =>
-                    SubmissionResult.FailureExternal
+                    SubmissionProcessingResult.SubmissionFailureExternal
                 }
             }
 
       }
       .recover {
         case _ =>
-          SubmissionResult.FailureInternal
+          SubmissionProcessingResult.SubmissionFailureInternal
       }
 
 }

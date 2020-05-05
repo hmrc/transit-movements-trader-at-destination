@@ -31,7 +31,7 @@ import models.MessageId
 import models.MessageType
 import models.MovementMessageWithStatus
 import models.MovementReferenceNumber
-import models.SubmissionResult
+import models.SubmissionProcessingResult
 import org.mockito.Matchers.any
 import org.mockito.Matchers.{eq => eqTo}
 import org.mockito.Mockito._
@@ -110,7 +110,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
         when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
 
         when(mockSubmitMessageService.submitMessage(any(), any(), any(), eqTo(ArrivalStatus.UnloadingRemarksSubmitted))(any()))
-          .thenReturn(Future.successful(SubmissionResult.Success))
+          .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionSuccess))
 
         val application = baseApplicationBuilder
           .overrides(
@@ -167,7 +167,8 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
         when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
 
-        when(mockSubmitMessageService.submitMessage(any(), any(), any(), any())(any())).thenReturn(Future.successful(SubmissionResult.FailureInternal))
+        when(mockSubmitMessageService.submitMessage(any(), any(), any(), any())(any()))
+          .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureInternal))
 
         val application = baseApplicationBuilder
           .overrides(
@@ -249,7 +250,8 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
         when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
 
-        when(mockSubmitMessageService.submitMessage(any(), any(), any(), any())(any())).thenReturn(Future.successful(SubmissionResult.FailureExternal))
+        when(mockSubmitMessageService.submitMessage(any(), any(), any(), any())(any()))
+          .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureExternal))
 
         val application = baseApplicationBuilder
           .overrides(

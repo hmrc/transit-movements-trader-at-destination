@@ -25,7 +25,7 @@ import models.ArrivalId
 import models.ArrivalStatus
 import models.Arrivals
 import models.MessageId
-import models.SubmissionResult
+import models.SubmissionProcessingResult
 import models.request.ArrivalRequest
 import models.response.ResponseMovementMessage
 import models.MessageStatus.SubmissionFailed
@@ -67,14 +67,14 @@ class MovementsController @Inject()(
                 submitMessageService
                   .submitMessage(arrival.arrivalId, new MessageId(arrival.messages.length), message, ArrivalStatus.ArrivalSubmitted)
                   .map {
-                    case SubmissionResult.Success =>
+                    case SubmissionProcessingResult.SubmissionSuccess =>
                       Accepted("Message accepted")
                         .withHeaders("Location" -> routes.MovementsController.getArrival(arrival.arrivalId).url)
 
-                    case SubmissionResult.FailureInternal =>
+                    case SubmissionProcessingResult.SubmissionFailureInternal =>
                       InternalServerError
 
-                    case SubmissionResult.FailureExternal =>
+                    case SubmissionProcessingResult.SubmissionFailureExternal =>
                       BadGateway
                   }
             }
@@ -89,12 +89,12 @@ class MovementsController @Inject()(
                 .flatMap {
                   arrival =>
                     submitMessageService.submitArrival(arrival) map {
-                      case SubmissionResult.Success =>
+                      case SubmissionProcessingResult.SubmissionSuccess =>
                         Accepted("Message accepted")
                           .withHeaders("Location" -> routes.MovementsController.getArrival(arrival.arrivalId).url)
-                      case SubmissionResult.FailureExternal =>
+                      case SubmissionProcessingResult.SubmissionFailureExternal =>
                         BadGateway
-                      case SubmissionResult.FailureInternal =>
+                      case SubmissionProcessingResult.SubmissionFailureInternal =>
                         InternalServerError
                     }
                 }
@@ -116,14 +116,14 @@ class MovementsController @Inject()(
             submitMessageService
               .submitMessage(arrivalId, new MessageId(request.arrival.messages.length), message, ArrivalStatus.ArrivalSubmitted)
               .map {
-                case SubmissionResult.Success =>
+                case SubmissionProcessingResult.SubmissionSuccess =>
                   Accepted("Message accepted")
                     .withHeaders("Location" -> routes.MovementsController.getArrival(request.arrival.arrivalId).url)
 
-                case SubmissionResult.FailureInternal =>
+                case SubmissionProcessingResult.SubmissionFailureInternal =>
                   InternalServerError
 
-                case SubmissionResult.FailureExternal =>
+                case SubmissionProcessingResult.SubmissionFailureExternal =>
                   BadGateway
               }
         }

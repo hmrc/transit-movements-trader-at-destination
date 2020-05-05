@@ -21,25 +21,25 @@ import models.XSDFile.GoodsReleasedXSD
 import models.XSDFile.UnloadingPermissionXSD
 
 sealed trait MessageResponse {
-  val messageReceived: MessageReceived
+  val messageReceived: MessageReceivedEvent
   val messageType: MessageType
   val xsdFile: XSDFile
 }
 
 case object GoodsReleasedResponse extends MessageResponse {
-  override val messageReceived: MessageReceived = MessageReceived.GoodsReleased
-  override val messageType: MessageType         = MessageType.GoodsReleased
-  override val xsdFile: XSDFile                 = GoodsReleasedXSD
+  override val messageReceived          = MessageReceivedEvent.GoodsReleased
+  override val messageType: MessageType = MessageType.GoodsReleased
+  override val xsdFile: XSDFile         = GoodsReleasedXSD
 }
 
 case object ArrivalRejectedResponse extends MessageResponse {
-  override val messageReceived: MessageReceived = MessageReceived.ArrivalRejected
-  override val messageType: MessageType         = MessageType.ArrivalRejection
-  override val xsdFile: XSDFile                 = ArrivalRejectedXSD
+  override val messageReceived          = MessageReceivedEvent.ArrivalRejected
+  override val messageType: MessageType = MessageType.ArrivalRejection
+  override val xsdFile: XSDFile         = ArrivalRejectedXSD
 }
 
 case object UnloadingPermissionResponse extends MessageResponse {
-  override val messageReceived: MessageReceived = MessageReceived.UnloadingPermission
-  override val messageType: MessageType         = MessageType.UnloadingPermission
-  override val xsdFile: XSDFile                 = UnloadingPermissionXSD
+  override val messageReceived          = MessageReceivedEvent.UnloadingPermission
+  override val messageType: MessageType = MessageType.UnloadingPermission
+  override val xsdFile: XSDFile         = UnloadingPermissionXSD
 }

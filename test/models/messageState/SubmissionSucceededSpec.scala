@@ -18,7 +18,7 @@ package models.messageState
 
 import generators.ModelGenerators
 import models.MessageStatus.SubmissionSucceeded
-import models.SubmissionResult
+import models.SubmissionProcessingResult
 import org.scalacheck.Arbitrary
 import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers
@@ -29,7 +29,7 @@ class SubmissionSucceededSpec extends FreeSpec with MustMatchers with ScalaCheck
   "SubmissionSucceeded must transition" - {
 
     "to SubmissionSuceeded when receiving any Submission event" in {
-      forAll(Arbitrary.arbitrary[SubmissionResult]) {
+      forAll(Arbitrary.arbitrary[SubmissionProcessingResult]) {
         submissionResult =>
           SubmissionSucceeded.transition(submissionResult) mustEqual SubmissionSucceeded
       }

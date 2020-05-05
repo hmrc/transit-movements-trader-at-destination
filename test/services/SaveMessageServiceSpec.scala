@@ -24,7 +24,7 @@ import models.ArrivalStatus._
 import models.ArrivalId
 import models.GoodsReleasedResponse
 import models.MessageSender
-import models.SubmissionResult
+import models.SubmissionProcessingResult
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
@@ -77,7 +77,7 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach {
 
       val result = saveMessageService.validateXmlAndSaveMessage(requestGoodsReleasedXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased).futureValue
 
-      result mustBe SubmissionResult.Success
+      result mustBe SubmissionProcessingResult.SubmissionSuccess
       verify(mockArrivalMovementRepository, times(1)).addResponseMessage(eqTo(arrivalId), any(), eqTo(GoodsReleased))
       verify(mockXmlValidationService, times(1)).validate(any(), any())
     }
@@ -110,7 +110,7 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach {
 
       val result = saveMessageService.validateXmlAndSaveMessage(requestGoodsReleasedXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased).futureValue
 
-      result mustBe SubmissionResult.FailureInternal
+      result mustBe SubmissionProcessingResult.SubmissionFailureInternal
       verify(mockArrivalMovementRepository, times(1)).addResponseMessage(any(), any(), any())
       verify(mockXmlValidationService, times(1)).validate(any(), any())
     }
@@ -135,7 +135,7 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach {
 
       val result = saveMessageService.validateXmlAndSaveMessage(requestInvalidXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased).futureValue
 
-      result mustBe SubmissionResult.FailureExternal
+      result mustBe SubmissionProcessingResult.SubmissionFailureExternal
       verify(mockArrivalMovementRepository, never()).addResponseMessage(any(), any(), any())
       verify(mockXmlValidationService, times(1)).validate(any(), any())
     }
@@ -166,7 +166,7 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach {
 
       val result = saveMessageService.validateXmlAndSaveMessage(requestInvalidXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased).futureValue
 
-      result mustBe SubmissionResult.FailureExternal
+      result mustBe SubmissionProcessingResult.SubmissionFailureExternal
       verify(mockArrivalMovementRepository, never()).addResponseMessage(any(), any(), any())
       verify(mockXmlValidationService, times(1)).validate(any(), any())
     }

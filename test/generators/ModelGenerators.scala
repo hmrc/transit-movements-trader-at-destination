@@ -23,14 +23,14 @@ import models.Arrival
 import models.ArrivalId
 import models.ArrivalStatus
 import models.MessageId
-import models.MessageReceived
+import models.MessageReceivedEvent
 import models.MessageType
 import models.MovementMessageWithStatus
 import models.MovementMessageWithoutStatus
 import models.MovementReferenceNumber
 import models.RejectionError
-import models.SubmissionResult
-import models.SubmissionResult._
+import models.SubmissionProcessingResult
+import models.SubmissionProcessingResult._
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
@@ -122,17 +122,17 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
   implicit lazy val arbitraryMessageType: Arbitrary[MessageType] =
     Arbitrary(Gen.oneOf(MessageType.values))
 
-  implicit lazy val arbitrarySubmissionResult: Arbitrary[SubmissionResult] =
-    Arbitrary(Gen.oneOf(SubmissionResult.values))
+  implicit lazy val arbitrarySubmissionResult: Arbitrary[SubmissionProcessingResult] =
+    Arbitrary(Gen.oneOf(SubmissionProcessingResult.values))
 
-  implicit lazy val arbitraryMessageReceived: Arbitrary[MessageReceived] =
-    Arbitrary(Gen.oneOf(MessageReceived.values))
+  implicit lazy val arbitraryMessageReceived: Arbitrary[MessageReceivedEvent] =
+    Arbitrary(Gen.oneOf(MessageReceivedEvent.values))
 
   implicit lazy val arbitraryMessageId: Arbitrary[MessageId] =
     Arbitrary {
       intsAboveValue(0).map(new MessageId(_))
     }
 
-  implicit lazy val arbitraryFailure: Arbitrary[Failure] =
-    Arbitrary(Gen.oneOf(FailureInternal, FailureExternal))
+  implicit lazy val arbitraryFailure: Arbitrary[SubmissionFailure] =
+    Arbitrary(Gen.oneOf(SubmissionFailureInternal, SubmissionFailureExternal))
 }
