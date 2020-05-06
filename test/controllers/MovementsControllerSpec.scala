@@ -16,33 +16,19 @@
 
 package controllers
 
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.LocalTime
+import java.time.{LocalDate, LocalDateTime, LocalTime}
 
 import base.SpecBase
 import connectors.MessageConnector
+import controllers.actions.{AuthenticatedGetOptionalArrivalForWriteActionProvider, FakeAuthenticatedGetOptionalArrivalForWriteActionProvider}
 import generators.ModelGenerators
-import models.MessageStatus.SubmissionFailed
-import models.MessageStatus.SubmissionPending
-import models.MessageStatus.SubmissionSucceeded
-import models.Arrival
-import models.ArrivalId
-import models.ArrivalStatus
-import models.Arrivals
-import models.MessageId
-import models.MovementMessageWithoutStatus
+import models.MessageStatus.{SubmissionFailed, SubmissionPending, SubmissionSucceeded}
+import models.{Arrival, ArrivalId, ArrivalStatus, Arrivals, MessageId, MessageType, MovementMessageWithStatus, MovementMessageWithoutStatus, MovementReferenceNumber, SubmissionProcessingResult}
 import models.response.ResponseMovementMessage
-import models.MessageType
-import models.MovementMessageWithStatus
-import models.MovementReferenceNumber
-import models.SubmissionProcessingResult
-import org.mockito.Matchers.any
-import org.mockito.Matchers.{eq => eqTo}
+import org.mockito.Matchers.{any, eq => eqTo}
 import org.mockito.Mockito._
-import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalacheck.Gen
+import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
@@ -50,9 +36,7 @@ import play.api.inject.bind
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import repositories.ArrivalIdRepository
-import repositories.ArrivalMovementRepository
-import repositories.LockRepository
+import repositories.{ArrivalIdRepository, ArrivalMovementRepository, LockRepository}
 import services.SubmitMessageService
 import utils.Format
 
@@ -106,22 +90,20 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
     "post" - {
       "when there are no previous failed attempts to submit" - {
         "must return Accepted, create movement, send the message upstream and set the state to Submitted" in {
-          val mockArrivalIdRepository       = mock[ArrivalIdRepository]
-          val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
-          val mockSubmitMessageService      = mock[SubmitMessageService]
+          val mockArrivalIdRepository  = mock[ArrivalIdRepository]
+          val mockSubmitMessageService = mock[SubmitMessageService]
 
           val expectedMessage = movementMessge.copy(messageCorrelationId = 1)
           val newArrival      = arrival.copy(messages = Seq(expectedMessage))
 
           when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(newArrival.arrivalId))
-          when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(None))
           when(mockSubmitMessageService.submitArrival(any())(any())).thenReturn(Future.successful(SubmissionProcessingResult.SubmissionSuccess))
 
           val application = baseApplicationBuilder
             .overrides(
               bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
-              bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
-              bind[SubmitMessageService].toInstance(mockSubmitMessageService)
+              bind[SubmitMessageService].toInstance(mockSubmitMessageService),
+              bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider())
             )
             .build()
 
@@ -138,19 +120,14 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         }
 
         "must return InternalServerError if the InternalReference generation fails" in {
-          val mockArrivalIdRepository       = mock[ArrivalIdRepository]
-          val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
-          val mockMessageConnector          = mock[MessageConnector]
-
-          when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(None))
+          val mockArrivalIdRepository = mock[ArrivalIdRepository]
 
           when(mockArrivalIdRepository.nextId()).thenReturn(Future.failed(new Exception))
 
           val application = baseApplicationBuilder
             .overrides(
               bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
-              bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
-              bind[MessageConnector].toInstance(mockMessageConnector)
+              bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider())
             )
             .build()
 
@@ -162,18 +139,14 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
             status(result) mustEqual INTERNAL_SERVER_ERROR
             header("Location", result) must not be defined
-            verify(mockArrivalMovementRepository, never()).insert(any())
           }
         }
 
         "must return InternalServerError if there was an internal failure when saving and sending" in {
-          val mockArrivalIdRepository       = mock[ArrivalIdRepository]
-          val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
-          val mockSubmitMessageService      = mock[SubmitMessageService]
+          val mockArrivalIdRepository  = mock[ArrivalIdRepository]
+          val mockSubmitMessageService = mock[SubmitMessageService]
 
           val arrivalId = ArrivalId(1)
-
-          when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(None))
 
           when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
           when(mockSubmitMessageService.submitArrival(any())(any())).thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureInternal))
@@ -181,8 +154,8 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           val application = baseApplicationBuilder
             .overrides(
               bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
-              bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
-              bind[SubmitMessageService].toInstance(mockSubmitMessageService)
+              bind[SubmitMessageService].toInstance(mockSubmitMessageService),
+              bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider())
             )
             .build()
 
@@ -198,13 +171,10 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         }
 
         "must return BadGateway if there was an external failure when saving and sending" in {
-          val mockArrivalIdRepository       = mock[ArrivalIdRepository]
-          val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
-          val mockSubmitMessageService      = mock[SubmitMessageService]
+          val mockArrivalIdRepository  = mock[ArrivalIdRepository]
+          val mockSubmitMessageService = mock[SubmitMessageService]
 
           val arrivalId = ArrivalId(1)
-
-          when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(None))
 
           when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
           when(mockSubmitMessageService.submitArrival(any())(any())).thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureExternal))
@@ -212,8 +182,8 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           val application = baseApplicationBuilder
             .overrides(
               bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
-              bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
-              bind[SubmitMessageService].toInstance(mockSubmitMessageService)
+              bind[SubmitMessageService].toInstance(mockSubmitMessageService),
+              bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider())
             )
             .build()
 
@@ -227,21 +197,22 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           }
         }
 
-        "must return BadRequest if the payload is malformed" in {
-          val mockArrivalIdRepository       = mock[ArrivalIdRepository]
-          val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+        "asdf must return BadRequest if the payload is malformed" in {
+          val mockArrivalIdRepository  = mock[ArrivalIdRepository]
+          val mockSubmitMessageService = mock[SubmitMessageService]
 
           val application =
             baseApplicationBuilder
               .overrides(
                 bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
-                bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository)
+                bind[SubmitMessageService].toInstance(mockSubmitMessageService),
+                bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider())
               )
               .build()
 
           running(application) {
             val requestXmlBody =
-              <CC007A><HEAHEA></HEAHEA></CC007A>
+              <CC007A><HEAHEA><DocNumHEA5>MRN</DocNumHEA5></HEAHEA></CC007A>
 
             val request = FakeRequest(POST, routes.MovementsController.post().url).withXmlBody(requestXmlBody)
 
@@ -250,26 +221,19 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
             status(result) mustEqual BAD_REQUEST
             header("Location", result) must not be (defined)
             verify(mockArrivalIdRepository, never()).nextId()
-            verify(mockArrivalMovementRepository, never()).insert(any())
           }
         }
 
         "must return BadRequest if the message is not an arrival notification" in {
-          val mockArrivalIdRepository       = mock[ArrivalIdRepository]
-          val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
-
-          when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(None))
+          val mockArrivalIdRepository = mock[ArrivalIdRepository]
 
           val application =
             baseApplicationBuilder
               .overrides(
                 bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
-                bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository)
+                bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider())
               )
               .build()
-
-          val dateOfPrep = LocalDate.now()
-          val timeOfPrep = LocalTime.of(1, 1)
 
           running(application) {
             val requestXmlBody = <InvalidRootNode></InvalidRootNode>
@@ -281,7 +245,6 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
             status(result) mustEqual BAD_REQUEST
             header("Location", result) must not be (defined)
             verify(mockArrivalIdRepository, never()).nextId()
-            verify(mockArrivalMovementRepository, never()).insert(any())
           }
         }
       }
@@ -289,24 +252,15 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
       "when there has been a previous failed attempt to submit" - {
         "must return Accepted when submit against the existing arrival" in {
 
-          val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
-          val mockMessageConnector          = mock[MessageConnector]
-          val mockSubmitMessageService      = mock[SubmitMessageService]
-          val mockLockRepository            = mock[LockRepository]
+          val mockSubmitMessageService = mock[SubmitMessageService]
 
-          when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
-          when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
-
-          when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(arrival)))
           when(mockSubmitMessageService.submitMessage(any(), any(), any(), any())(any()))
             .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionSuccess))
 
           val application = baseApplicationBuilder
             .overrides(
-              bind[LockRepository].toInstance(mockLockRepository),
-              bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
-              bind[MessageConnector].toInstance(mockMessageConnector),
-              bind[SubmitMessageService].toInstance(mockSubmitMessageService)
+              bind[SubmitMessageService].toInstance(mockSubmitMessageService),
+              bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider(arrival))
             )
             .build()
 
@@ -326,22 +280,15 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         }
 
         "must return InternalServerError if there was an internal failure when saving and sending" in {
-          val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
-          val mockLockRepository            = mock[LockRepository]
-          val mockSubmitMessageService      = mock[SubmitMessageService]
-
-          when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
-          when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
-          when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(arrival)))
+          val mockSubmitMessageService = mock[SubmitMessageService]
 
           when(mockSubmitMessageService.submitMessage(any(), any(), any(), any())(any()))
             .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureInternal))
 
           val application = baseApplicationBuilder
             .overrides(
-              bind[LockRepository].toInstance(mockLockRepository),
-              bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
-              bind[SubmitMessageService].toInstance(mockSubmitMessageService)
+              bind[SubmitMessageService].toInstance(mockSubmitMessageService),
+              bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider(arrival))
             )
             .build()
 
@@ -357,25 +304,15 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         }
 
         "must return BadGateway if there was an external failure when saving and sending" in {
-
-          val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
-          val mockMessageConnector          = mock[MessageConnector]
-          val mockLockRepository            = mock[LockRepository]
-          val mockSubmitMessageService      = mock[SubmitMessageService]
-
-          when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
-          when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
-          when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(arrival)))
+          val mockSubmitMessageService = mock[SubmitMessageService]
 
           when(mockSubmitMessageService.submitMessage(any(), any(), any(), any())(any()))
             .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureExternal))
 
           val app = baseApplicationBuilder
             .overrides(
-              bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
-              bind[MessageConnector].toInstance(mockMessageConnector),
-              bind[LockRepository].toInstance(mockLockRepository),
-              bind[SubmitMessageService].toInstance(mockSubmitMessageService)
+              bind[SubmitMessageService].toInstance(mockSubmitMessageService),
+              bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider(arrival))
             )
             .build()
 
@@ -390,18 +327,12 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         }
 
         "must return BadRequest if the payload is malformed" in {
-          val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
-          val arrival                       = Arbitrary.arbitrary[Arrival].sample.value.copy(eoriNumber = "eori")
-          val mockLockRepository            = mock[LockRepository]
-
-          when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
-          when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
-          when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(arrival)))
+          val arrival = Arbitrary.arbitrary[Arrival].sample.value.copy(eoriNumber = "eori")
 
           val application =
             baseApplicationBuilder
               .overrides(
-                bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository)
+                bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider(arrival))
               )
               .build()
 
@@ -417,20 +348,11 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         }
 
         "must return BadRequest if the message is not an arrival notification" in {
-          val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
-          val mockMessageConnector          = mock[MessageConnector]
-          val mockLockRepository            = mock[LockRepository]
-
-          when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
-          when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
-          when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(arrival)))
 
           val application =
             baseApplicationBuilder
               .overrides(
-                bind[LockRepository].toInstance(mockLockRepository),
-                bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
-                bind[MessageConnector].toInstance(mockMessageConnector)
+                bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider(arrival))
               )
               .build()
 

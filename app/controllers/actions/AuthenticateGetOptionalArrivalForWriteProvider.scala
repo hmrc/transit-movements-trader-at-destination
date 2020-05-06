@@ -31,12 +31,16 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.xml.NodeSeq
 
-class AuthenticatedGetOptionalArrivalForWriteActionProvider @Inject()(
+trait AuthenticatedGetOptionalArrivalForWriteActionProvider {
+  def apply(): ActionBuilder[AuthenticatedOptionalArrivalRequest, AnyContent]
+}
+
+class AuthenticatedGetOptionalArrivalForWriteActionProviderImpl @Inject()(
   authenticate: AuthenticateActionProvider,
   arrivalMovementRepository: ArrivalMovementRepository,
   lockRepository: LockRepository,
   ec: ExecutionContext
-) {
+) extends AuthenticatedGetOptionalArrivalForWriteActionProvider {
 
   def apply(): ActionBuilder[AuthenticatedOptionalArrivalRequest, AnyContent] =
     authenticate() andThen new AuthenticateGetOptionalArrivalForWriteAction(arrivalMovementRepository, lockRepository, ec)
