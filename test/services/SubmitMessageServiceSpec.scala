@@ -31,7 +31,7 @@ import models.MessageId
 import models.MessageStatus
 import models.MessageType
 import models.MovementMessageWithStatus
-import models.SubmissionResult
+import models.SubmissionProcessingResult
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito.when
 import org.mockito.Mockito._
@@ -83,7 +83,7 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
   }
 
   "submit a new message" - {
-    "return SubmissionResult.Success when the message is successfully saved, submitted and the state is updated" in {
+    "return SubmissionProcessingResult.SubmissionSuccess when the message is successfully saved, submitted and the state is updated" in {
       lazy val mockArrivalMovementRepository: ArrivalMovementRepository = mock[ArrivalMovementRepository]
       lazy val mockMessageConnector: MessageConnector                   = mock[MessageConnector]
 
@@ -109,7 +109,7 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
 
         val result = service.submitMessage(arrivalId, messageId, movementMessage, arrivalStatus)
 
-        result.futureValue mustEqual SubmissionResult.Success
+        result.futureValue mustEqual SubmissionProcessingResult.SubmissionSuccess
 
         verify(mockArrivalMovementRepository, times(1)).addNewMessage(eqTo(arrivalId), eqTo(movementMessage))
         verify(mockMessageConnector, times(1)).post(eqTo(arrivalId), eqTo(movementMessage), any())(any())
@@ -122,7 +122,7 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
 
     }
 
-    "return SubmissionResult.Success when the message is successfully saved and submitted, but the state of message is not updated" in {
+    "return SubmissionProcessingResult.SubmissionSuccess when the message is successfully saved and submitted, but the state of message is not updated" in {
       val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
       val mockMessageConnector          = mock[MessageConnector]
 
@@ -148,7 +148,7 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
 
         val result = service.submitMessage(arrivalId, messageId, movementMessage, arrivalStatus)
 
-        result.futureValue mustEqual SubmissionResult.Success
+        result.futureValue mustEqual SubmissionProcessingResult.SubmissionSuccess
         verify(mockArrivalMovementRepository, times(1)).addNewMessage(eqTo(arrivalId), eqTo(movementMessage))
         verify(mockMessageConnector, times(1)).post(eqTo(arrivalId), eqTo(movementMessage), any())(any())
         verify(mockArrivalMovementRepository, times(1)).setArrivalStateAndMessageState(eqTo(arrivalId),
@@ -159,7 +159,7 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
 
     }
 
-    "return SubmissionResult.FailureInternal when the message is not saved" in {
+    "return SubmissionProcessingResult.SubmissionFailureInternal when the message is not saved" in {
       val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
       val mockMessageConnector          = mock[MessageConnector]
 
@@ -182,13 +182,13 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
 
         val result = service.submitMessage(arrivalId, messageId, movementMessage, arrivalStatus)
 
-        result.futureValue mustEqual SubmissionResult.FailureInternal
+        result.futureValue mustEqual SubmissionProcessingResult.SubmissionFailureInternal
         verify(mockMessageConnector, never()).post(eqTo(arrivalId), eqTo(movementMessage), any())(any())
       }
 
     }
 
-    "return SubmissionResult.FailureExternal when the message successfully saves, but is not submitted and set the message state to SubmissionFailed" in {
+    "return SubmissionProcessingResult.SubmissionFailureExternal when the message successfully saves, but is not submitted and set the message state to SubmissionFailed" in {
       val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
       val mockMessageConnector          = mock[MessageConnector]
 
@@ -214,7 +214,7 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
 
         val result = service.submitMessage(arrivalId, messageId, movementMessage, arrivalStatus)
 
-        result.futureValue mustEqual SubmissionResult.FailureExternal
+        result.futureValue mustEqual SubmissionProcessingResult.SubmissionFailureExternal
         verify(mockArrivalMovementRepository, times(1)).addNewMessage(eqTo(arrivalId), eqTo(movementMessage))
         verify(mockMessageConnector, times(1)).post(eqTo(arrivalId), eqTo(movementMessage), any())(any())
         verify(mockArrivalMovementRepository, times(1)).setMessageState(eqTo(arrivalId), eqTo(messageId.index), eqTo(MessageStatus.SubmissionFailed))
@@ -227,7 +227,7 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
   "submit a new arrival" - {
     val arrival = arbitrary[Arrival].sample.value.copy(messages = Seq(movementMessage))
 
-    "return SubmissionResult.Success when the message is successfully saved, submitted and the state is updated" in {
+    "return SubmissionProcessingResult.SubmissionSuccess when the message is successfully saved, submitted and the state is updated" in {
       lazy val mockArrivalMovementRepository: ArrivalMovementRepository = mock[ArrivalMovementRepository]
       lazy val mockMessageConnector: MessageConnector                   = mock[MessageConnector]
 
@@ -248,7 +248,7 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
 
         val result = service.submitArrival(arrival)
 
-        result.futureValue mustEqual SubmissionResult.Success
+        result.futureValue mustEqual SubmissionProcessingResult.SubmissionSuccess
 
         verify(mockArrivalMovementRepository, times(1)).insert(eqTo(arrival))
         verify(mockMessageConnector, times(1)).post(eqTo(arrival.arrivalId), eqTo(movementMessage), any())(any())
@@ -262,7 +262,7 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
       }
     }
 
-    "return SubmissionResult.Success when the message is successfully saved and submitted, but the state of message is not updated" in {
+    "return SubmissionProcessingResult.SubmissionSuccess when the message is successfully saved and submitted, but the state of message is not updated" in {
       val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
       val mockMessageConnector          = mock[MessageConnector]
 
@@ -283,7 +283,7 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
 
         val result = service.submitArrival(arrival)
 
-        result.futureValue mustEqual SubmissionResult.Success
+        result.futureValue mustEqual SubmissionProcessingResult.SubmissionSuccess
         verify(mockArrivalMovementRepository, times(1)).insert(eqTo(arrival))
         verify(mockMessageConnector, times(1)).post(eqTo(arrival.arrivalId), eqTo(movementMessage), any())(any())
         verify(mockArrivalMovementRepository, times(1)).setArrivalStateAndMessageState(eqTo(arrival.arrivalId),
@@ -294,7 +294,7 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
 
     }
 
-    "return SubmissionResult.FailureInternal when the message is not saved" in {
+    "return SubmissionProcessingResult.SubmissionFailureInternal when the message is not saved" in {
       val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
       val mockMessageConnector          = mock[MessageConnector]
 
@@ -312,13 +312,13 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
 
         val result = service.submitArrival(arrival)
 
-        result.futureValue mustEqual SubmissionResult.FailureInternal
+        result.futureValue mustEqual SubmissionProcessingResult.SubmissionFailureInternal
         verify(mockMessageConnector, never()).post(eqTo(arrival.arrivalId), eqTo(movementMessage), any())(any())
       }
 
     }
 
-    "return SubmissionResult.FailureExternal when the message successfully saves, but is not submitted and set the message state to SubmissionFailed" in {
+    "return SubmissionProcessingResult.SubmissionFailureExternal when the message successfully saves, but is not submitted and set the message state to SubmissionFailed" in {
       val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
       val mockMessageConnector          = mock[MessageConnector]
 
@@ -339,7 +339,7 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
 
         val result = service.submitArrival(arrival)
 
-        result.futureValue mustEqual SubmissionResult.FailureExternal
+        result.futureValue mustEqual SubmissionProcessingResult.SubmissionFailureExternal
         verify(mockArrivalMovementRepository, times(1)).insert(eqTo(arrival))
         verify(mockMessageConnector, times(1)).post(eqTo(arrival.arrivalId), eqTo(movementMessage), any())(any())
         verify(mockArrivalMovementRepository, times(1)).setMessageState(eqTo(arrival.arrivalId), eqTo(messageId.index), eqTo(MessageStatus.SubmissionFailed))

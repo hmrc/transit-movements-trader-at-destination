@@ -20,8 +20,8 @@ import generators.ModelGenerators
 import models.MessageStatus.SubmissionFailed
 import models.MessageStatus.SubmissionPending
 import models.MessageStatus.SubmissionSucceeded
-import models.SubmissionResult
-import models.SubmissionResult.Failure
+import models.SubmissionProcessingResult
+import models.SubmissionProcessingResult.SubmissionFailure
 import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers
 import org.scalacheck.Arbitrary.arbitrary
@@ -32,11 +32,11 @@ class SubmissionPendingSpec extends FreeSpec with MustMatchers with ScalaCheckDr
   "SubmissionPending must transition" - {
 
     "to SubmittedSucceeded when receiving a SubmittedSucceeded event" in {
-      SubmissionPending.transition(SubmissionResult.Success) mustEqual SubmissionSucceeded
+      SubmissionPending.transition(SubmissionProcessingResult.SubmissionSuccess) mustEqual SubmissionSucceeded
     }
 
     "to SubmissionFailed when receiving a SubmissionFailed event" in {
-      forAll(arbitrary[Failure]) {
+      forAll(arbitrary[SubmissionFailure]) {
         failure =>
           SubmissionPending.transition(failure) mustEqual SubmissionFailed
       }

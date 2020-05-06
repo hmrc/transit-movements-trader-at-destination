@@ -23,8 +23,9 @@ import models.GoodsReleasedResponse
 import models.MessageResponse
 import models.MessageSender
 import models.MessageType
-import models.SubmissionResult
+import models.SubmissionProcessingResult
 import models.UnloadingPermissionResponse
+import models.SubmissionProcessingResult._
 import play.api.Logger
 import play.api.mvc.Action
 import play.api.mvc.ControllerComponents
@@ -58,9 +59,9 @@ class NCTSMessageController @Inject()(cc: ControllerComponents, getArrival: GetA
         case Some(response) =>
           val newState = request.arrival.status.transition(response.messageReceived)
           saveMessageService.validateXmlAndSaveMessage(xml, messageSender, response, newState) map {
-            case SubmissionResult.Success         => Ok
-            case SubmissionResult.FailureInternal => InternalServerError
-            case SubmissionResult.FailureExternal => BadRequest
+            case SubmissionSuccess         => Ok
+            case SubmissionFailureInternal => InternalServerError
+            case SubmissionFailureExternal => BadRequest
           }
         case None =>
           Future.successful(BadRequest)

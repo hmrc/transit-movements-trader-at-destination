@@ -20,7 +20,8 @@ import com.google.inject.Inject
 import models.ArrivalStatus
 import models.MessageResponse
 import models.MessageSender
-import models.SubmissionResult
+import models.SubmissionProcessingResult
+import models.SubmissionProcessingResult._
 import play.api.Logger
 import repositories.ArrivalMovementRepository
 
@@ -39,7 +40,7 @@ class SaveMessageService @Inject()(arrivalMovementRepository: ArrivalMovementRep
   def validateXmlAndSaveMessage(messageXml: NodeSeq,
                                 messageSender: MessageSender,
                                 messageResponse: MessageResponse,
-                                arrivalStatus: ArrivalStatus): Future[SubmissionResult] =
+                                arrivalStatus: ArrivalStatus): Future[SubmissionProcessingResult] =
     xmlValidationService.validate(messageXml.toString(), messageResponse.xsdFile) match {
       case Success(_) =>
         arrivalMovementService.makeMessage(messageSender.messageCorrelationId, messageResponse.messageType)(messageXml) match {
@@ -47,14 +48,14 @@ class SaveMessageService @Inject()(arrivalMovementRepository: ArrivalMovementRep
             arrivalMovementRepository
               .addResponseMessage(messageSender.arrivalId, message, arrivalStatus)
               .map {
-                case Success(_) => SubmissionResult.Success
-                case Failure(_) => SubmissionResult.FailureInternal
+                case Success(_) => SubmissionSuccess
+                case Failure(_) => SubmissionFailureInternal
               }
-          case None => Future.successful(SubmissionResult.FailureExternal)
+          case None => Future.successful(SubmissionFailureExternal)
         }
       case Failure(e) => {
         logger.error(s"Failure to validate against XSD. Exception: ${e.getMessage}")
-        Future.successful(SubmissionResult.FailureExternal)
+        Future.successful(SubmissionFailureExternal)
       }
     }
 }

@@ -28,7 +28,7 @@ import models.ArrivalStatus
 import models.MessageSender
 import models.MessageType
 import models.MovementReferenceNumber
-import models.SubmissionResult
+import models.SubmissionProcessingResult
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.scalacheck.Gen
@@ -102,11 +102,11 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
   "post" - {
 
     "when a lock can be acquired" - {
-
       "must return OK, when the service validates and save the message" in {
 
         when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
-        when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any(), any())).thenReturn(Future.successful(SubmissionResult.Success))
+        when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any(), any()))
+          .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionSuccess))
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
 
@@ -160,7 +160,8 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
 
       "must lock, return Internal Server Error and unlock if adding the message to the movement fails" in {
         when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
-        when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any(), any())).thenReturn(Future.successful(SubmissionResult.FailureInternal))
+        when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any(), any()))
+          .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureInternal))
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
 
@@ -212,7 +213,8 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
 
       "must lock the arrival, return BadRequest error and unlock when fail to validate message" in {
         when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
-        when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any(), any())).thenReturn(Future.successful(SubmissionResult.FailureExternal))
+        when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any(), any()))
+          .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureExternal))
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
 
