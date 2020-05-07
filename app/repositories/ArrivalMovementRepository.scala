@@ -20,6 +20,7 @@ import com.google.inject.Inject
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalStatus
+import models.ArrivalUpdate
 import models.MessageId
 import models.MessageStatus
 import models.MongoDateTimeFormats
@@ -140,11 +141,7 @@ class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi)(implicit ec: 
       "_id" -> id
     )
 
-    val modifier = Json.obj(
-      "$set" -> Json.obj(
-        "status" -> status.toString
-      )
-    )
+    val modifier = ArrivalUpdate.updateModifier(status)
 
     collection.flatMap {
       _.update(false)
