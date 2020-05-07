@@ -16,19 +16,35 @@
 
 package controllers
 
-import java.time.{LocalDate, LocalDateTime, LocalTime}
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
 
 import base.SpecBase
 import connectors.MessageConnector
-import controllers.actions.{AuthenticatedGetOptionalArrivalForWriteActionProvider, FakeAuthenticatedGetOptionalArrivalForWriteActionProvider}
+import controllers.actions.AuthenticatedGetOptionalArrivalForWriteActionProvider
+import controllers.actions.FakeAuthenticatedGetOptionalArrivalForWriteActionProvider
 import generators.ModelGenerators
-import models.MessageStatus.{SubmissionFailed, SubmissionPending, SubmissionSucceeded}
-import models.{Arrival, ArrivalId, ArrivalStatus, Arrivals, MessageId, MessageType, MovementMessageWithStatus, MovementMessageWithoutStatus, MovementReferenceNumber, SubmissionProcessingResult}
+import models.MessageStatus.SubmissionFailed
+import models.MessageStatus.SubmissionPending
+import models.MessageStatus.SubmissionSucceeded
+import models.Arrival
+import models.ArrivalId
+import models.ArrivalStatus
+import models.Arrivals
+import models.MessageId
+import models.MessageType
+import models.MovementMessageWithStatus
+import models.MovementMessageWithoutStatus
+import models.MovementReferenceNumber
+import models.SubmissionProcessingResult
 import models.response.ResponseMovementMessage
-import org.mockito.Matchers.{any, eq => eqTo}
+import org.mockito.Matchers.any
+import org.mockito.Matchers.{eq => eqTo}
 import org.mockito.Mockito._
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalacheck.{Arbitrary, Gen}
+import org.scalacheck.Arbitrary
+import org.scalacheck.Gen
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
@@ -36,7 +52,9 @@ import play.api.inject.bind
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import repositories.{ArrivalIdRepository, ArrivalMovementRepository, LockRepository}
+import repositories.ArrivalIdRepository
+import repositories.ArrivalMovementRepository
+import repositories.LockRepository
 import services.SubmitMessageService
 import utils.Format
 
@@ -48,6 +66,8 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
   val localTime     = LocalTime.of(1, 1)
   val localDateTime = LocalDateTime.of(localDate, localTime)
 
+  val arrivalId = arbitrary[ArrivalId].sample.value
+  val mrn       = arbitrary[MovementReferenceNumber].sample.value
 
   val requestXmlBody =
     <CC007A>
@@ -66,9 +86,6 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
     1
   )
 
-  val arrivalId = arbitrary[ArrivalId].sample.value
-  val mrn       = arbitrary[MovementReferenceNumber].sample.value
-
   val initializedArrival = Arrival(
     arrivalId = arrivalId,
     movementReferenceNumber = mrn,
@@ -79,8 +96,6 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
     nextMessageCorrelationId = movementMessge.messageCorrelationId + 1,
     messages = Seq(movementMessge)
   )
-
-
 
   "MovementsController" - {
 
@@ -194,7 +209,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           }
         }
 
-        "asdf must return BadRequest if the payload is malformed" in {
+        "must return BadRequest if the payload is malformed" in {
           val mockArrivalIdRepository  = mock[ArrivalIdRepository]
           val mockSubmitMessageService = mock[SubmitMessageService]
 
@@ -248,7 +263,10 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
       "when there has been a previous failed attempt to submit" - {
 
-        "must return Accepted when submit against the existing arrival" in {
+        val failedToSubmit007     = movementMessge.copy(status = SubmissionFailed)
+        val failedToSubmitArrival = initializedArrival.copy(messages = Seq(failedToSubmit007))
+
+        "must return Accepted when submitted to upstream  against the existing arrival" in {
 
           val mockSubmitMessageService = mock[SubmitMessageService]
 
@@ -258,7 +276,51 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           val application = baseApplicationBuilder
             .overrides(
               bind[SubmitMessageService].toInstance(mockSubmitMessageService),
-              bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider(initializedArrival))
+              bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(
+                FakeAuthenticatedGetOptionalArrivalForWriteActionProvider(failedToSubmitArrival))
+            )
+            .build()
+
+          running(application) {
+
+            val request = FakeRequest(POST, routes.MovementsController.post().url).withXmlBody(requestXmlBody)
+
+            val result = route(application, request).value
+
+            val expectedMessage = movementMessge.copy(messageCorrelationId = 2)
+
+            status(result) mustEqual ACCEPTED
+            header("Location", result).value must be(routes.MovementsController.getArrival(initializedArrival.arrivalId).url)
+            verify(mockSubmitMessageService, times(1)).submitMessage(eqTo(initializedArrival.arrivalId),
+                                                                     eqTo(new MessageId(1)),
+                                                                     eqTo(expectedMessage),
+                                                                     eqTo(ArrivalStatus.ArrivalSubmitted))(any())
+          }
+        }
+
+        "must return Accepted when and saved as a new arrival movement when there has been a successful message" in {
+          val messages = Seq(
+            movementMessge.copy(status = SubmissionPending, messageCorrelationId = 1),
+            movementMessge.copy(status = SubmissionFailed, messageCorrelationId = 2),
+            movementMessge.copy(status = SubmissionSucceeded, messageCorrelationId = 3)
+          )
+          val arrival = initializedArrival.copy(messages = messages, nextMessageCorrelationId = 4)
+
+          val expectedArrival = initializedArrival.copy(messages = Seq(movementMessge))
+
+          val mockSubmitMessageService = mock[SubmitMessageService]
+          val mockArrivalIdRepository  = mock[ArrivalIdRepository]
+
+          when(mockSubmitMessageService.submitArrival(any())(any()))
+            .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionSuccess))
+
+          when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(expectedArrival.arrivalId))
+
+          val application = baseApplicationBuilder
+            .overrides(
+              bind[SubmitMessageService].toInstance(mockSubmitMessageService),
+              bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
+              bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider(arrival))
             )
             .build()
 
@@ -269,11 +331,8 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
             val result = route(application, request).value
 
             status(result) mustEqual ACCEPTED
-            header("Location", result).value must be(routes.MovementsController.getArrival(initializedArrival.arrivalId).url)
-            verify(mockSubmitMessageService, times(1)).submitMessage(eqTo(initializedArrival.arrivalId),
-                                                                     eqTo(new MessageId(1)),
-                                                                     eqTo(movementMessge),
-                                                                     eqTo(ArrivalStatus.ArrivalSubmitted))(any())
+            header("Location", result).value must be(routes.MovementsController.getArrival(expectedArrival.arrivalId).url)
+            verify(mockSubmitMessageService, times(1)).submitArrival(eqTo(expectedArrival))(any())
           }
         }
 
@@ -286,7 +345,8 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           val application = baseApplicationBuilder
             .overrides(
               bind[SubmitMessageService].toInstance(mockSubmitMessageService),
-              bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider(initializedArrival))
+              bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(
+                FakeAuthenticatedGetOptionalArrivalForWriteActionProvider(initializedArrival))
             )
             .build()
 
@@ -310,7 +370,8 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           val app = baseApplicationBuilder
             .overrides(
               bind[SubmitMessageService].toInstance(mockSubmitMessageService),
-              bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider(initializedArrival))
+              bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(
+                FakeAuthenticatedGetOptionalArrivalForWriteActionProvider(initializedArrival))
             )
             .build()
 
@@ -350,7 +411,8 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           val application =
             baseApplicationBuilder
               .overrides(
-                bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider(initializedArrival))
+                bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(
+                  FakeAuthenticatedGetOptionalArrivalForWriteActionProvider(initializedArrival))
               )
               .build()
 
@@ -389,6 +451,8 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           )
           .build()
 
+        val expectedMessage = movementMessge.copy(messageCorrelationId = 2)
+
         running(application) {
 
           val request = FakeRequest(PUT, routes.MovementsController.putArrival(initializedArrival.arrivalId).url).withXmlBody(requestXmlBody)
@@ -398,7 +462,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           header("Location", result).value must be(routes.MovementsController.getArrival(initializedArrival.arrivalId).url)
           verify(mockSubmitMessageService, times(1)).submitMessage(eqTo(initializedArrival.arrivalId),
                                                                    eqTo(new MessageId(1)),
-                                                                   eqTo(movementMessge),
+                                                                   eqTo(expectedMessage),
                                                                    eqTo(ArrivalStatus.ArrivalSubmitted))(any())
         }
       }

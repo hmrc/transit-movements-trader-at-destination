@@ -21,14 +21,16 @@ import controllers.actions.AuthenticatedGetArrivalForReadActionProvider
 import controllers.actions.AuthenticatedGetArrivalForWriteActionProvider
 import controllers.actions.AuthenticatedGetOptionalArrivalForWriteActionProvider
 import javax.inject.Inject
+import models.MessageStatus.SubmissionFailed
+import models.MessageStatus.SubmissionSucceeded
 import models.ArrivalId
 import models.ArrivalStatus
 import models.Arrivals
 import models.MessageId
+import models.MovementMessage
 import models.SubmissionProcessingResult
 import models.request.ArrivalRequest
 import models.response.ResponseMovementMessage
-import models.MessageStatus.SubmissionFailed
 import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
@@ -56,10 +58,13 @@ class MovementsController @Inject()(
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
+  private val atLeastOneMessageSent: Seq[MovementMessage] => Boolean =
+    _.exists(x => x.optStatus.contains(SubmissionSucceeded) || x.optStatus.isEmpty)
+
   def post: Action[NodeSeq] = authenticatedOptionalArrival().async(parse.xml) {
     implicit request =>
       request.arrival match {
-        case Some(arrival) =>
+        case Some(arrival) if !atLeastOneMessageSent(arrival.messages) =>
           arrivalMovementService
             .makeArrivalNotificationMessage(arrival.nextMessageCorrelationId)(request.body)
             .map {
@@ -80,7 +85,7 @@ class MovementsController @Inject()(
             }
             .getOrElse(Future.successful(BadRequest("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5")))
 
-        case None =>
+        case _ =>
           arrivalMovementService.makeArrivalMovement(request.eoriNumber)(request.body) match {
             case None =>
               Future.successful(BadRequest("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5"))
@@ -88,7 +93,7 @@ class MovementsController @Inject()(
               arrivalFuture
                 .flatMap {
                   arrival =>
-                    submitMessageService.submitArrival(arrival) map {
+                    submitMessageService.submitArrival(arrival).map {
                       case SubmissionProcessingResult.SubmissionSuccess =>
                         Accepted("Message accepted")
                           .withHeaders("Location" -> routes.MovementsController.getArrival(arrival.arrivalId).url)
