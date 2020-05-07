@@ -50,12 +50,13 @@ class MessagesController @Inject()(
             .makeMovementMessageWithStatus(request.arrival.nextMessageCorrelationId, MessageType.UnloadingRemarks)(request.body)
             .map {
               message =>
+                val messageId = new MessageId(request.arrival.messages.length)
                 submitMessageService
-                  .submitMessage(arrivalId, new MessageId(request.arrival.messages.length), message, ArrivalStatus.UnloadingRemarksSubmitted)
+                  .submitMessage(arrivalId, messageId, message, ArrivalStatus.UnloadingRemarksSubmitted)
                   .map {
                     case SubmissionProcessingResult.SubmissionSuccess =>
                       Accepted("Message accepted")
-                        .withHeaders("Location" -> routes.MessagesController.post(request.arrival.arrivalId).url)
+                        .withHeaders("Location" -> routes.MovementsController.getMessage(request.arrival.arrivalId, messageId).url)
 
                     case SubmissionProcessingResult.SubmissionFailureInternal =>
                       InternalServerError
