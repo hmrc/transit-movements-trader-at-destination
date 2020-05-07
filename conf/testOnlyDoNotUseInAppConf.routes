@@ -10,7 +10,7 @@
 # Failing to follow this rule may result in test routes deployed in production.
 
 
-DELETE  /transit-movements-trader-at-destination/dropArrivalMovementCollection controllers.testOnly.TestOnlyController.dropArrivalMovementCollection
+DELETE  /test-only/transit-movements-trader-at-destination/dropArrivalMovementCollection controllers.testOnly.TestOnlyController.dropArrivalMovementCollection
 
 # Add all the application routes to the prod.routes file
 ->         /                          prod.Routes
