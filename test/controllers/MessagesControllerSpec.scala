@@ -23,24 +23,31 @@ import java.time.LocalTime
 import base.SpecBase
 import connectors.MessageConnector
 import generators.ModelGenerators
+import models.MessageStatus.SubmissionFailed
 import models.MessageStatus.SubmissionPending
+import models.MessageStatus.SubmissionSucceeded
+import models.response.ResponseArrival
+import models.response.ResponseMovementMessage
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalStatus
 import models.MessageId
 import models.MessageType
 import models.MovementMessageWithStatus
+import models.MovementMessageWithoutStatus
 import models.MovementReferenceNumber
 import models.SubmissionProcessingResult
 import org.mockito.Matchers.any
 import org.mockito.Matchers.{eq => eqTo}
 import org.mockito.Mockito._
 import org.scalacheck.Arbitrary.arbitrary
+import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.inject.bind
+import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import repositories.ArrivalMovementRepository
@@ -51,6 +58,9 @@ import utils.Format
 import scala.concurrent.Future
 
 class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with ModelGenerators with BeforeAndAfterEach with IntegrationPatience {
+
+  implicit val responseArrivalWrite = ResponseArrival.writes
+  implicit val responseMessageWrite = ResponseMovementMessage.writes
 
   val localDate     = LocalDate.now()
   val localTime     = LocalTime.of(1, 1)
@@ -270,5 +280,294 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
         }
       }
     }
+
+    "getMessage" - {
+      "must return Ok with the retrieved message and state SubmissionSuccessful" in {
+
+        val message = Arbitrary.arbitrary[MovementMessageWithStatus].sample.value.copy(status = SubmissionSucceeded)
+        val arrival = Arbitrary.arbitrary[Arrival].sample.value.copy(messages = Seq(message), eoriNumber = "eori")
+
+        val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+        when(mockArrivalMovementRepository.get(any()))
+          .thenReturn(Future.successful(Some(arrival)))
+
+        val application =
+          baseApplicationBuilder
+            .overrides(bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository))
+            .build()
+
+        running(application) {
+          val request = FakeRequest(GET, routes.MessagesController.getMessage(arrival.arrivalId, new MessageId(0)).url)
+          val result  = route(application, request).value
+
+          status(result) mustEqual OK
+          contentAsJson(result) mustEqual Json.toJson(ResponseMovementMessage.build(arrival.arrivalId, new MessageId(0), message))
+        }
+      }
+
+      "must return Ok with the retrieved message when it has no state" in {
+        val message = Arbitrary.arbitrary[MovementMessageWithoutStatus].sample.value
+        val arrival = Arbitrary.arbitrary[Arrival].sample.value.copy(messages = Seq(message), eoriNumber = "eori")
+
+        val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+        when(mockArrivalMovementRepository.get(any()))
+          .thenReturn(Future.successful(Some(arrival)))
+
+        val application =
+          baseApplicationBuilder
+            .overrides(bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository))
+            .build()
+
+        running(application) {
+          val request = FakeRequest(GET, routes.MessagesController.getMessage(arrival.arrivalId, new MessageId(0)).url)
+          val result  = route(application, request).value
+
+          status(result) mustEqual OK
+          contentAsJson(result) mustEqual Json.toJson(ResponseMovementMessage.build(arrival.arrivalId, new MessageId(0), message))
+        }
+      }
+
+      "must return NOT FOUND" - {
+        "when arrival is not found" in {
+          val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+          when(mockArrivalMovementRepository.get(any()))
+            .thenReturn(Future.successful(None))
+
+          val application =
+            baseApplicationBuilder
+              .overrides(bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository))
+              .build()
+
+          running(application) {
+            val request = FakeRequest(GET, routes.MessagesController.getMessage(ArrivalId(1), new MessageId(0)).url)
+            val result  = route(application, request).value
+
+            status(result) mustEqual NOT_FOUND
+          }
+        }
+
+        "when message does not exist" in {
+          val message = Arbitrary.arbitrary[MovementMessageWithStatus].sample.value.copy(status = SubmissionSucceeded)
+          val arrival = Arbitrary.arbitrary[Arrival].sample.value.copy(messages = Seq(message), eoriNumber = "eori")
+
+          val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+          when(mockArrivalMovementRepository.get(any()))
+            .thenReturn(Future.successful(Some(arrival)))
+
+          val application =
+            baseApplicationBuilder
+              .overrides(bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository))
+              .build()
+
+          running(application) {
+            val request = FakeRequest(GET, routes.MessagesController.getMessage(arrival.arrivalId, new MessageId(5)).url)
+            val result  = route(application, request).value
+
+            status(result) mustEqual NOT_FOUND
+          }
+        }
+
+        "when status is not equal to successful" in {
+          val message = Arbitrary.arbitrary[MovementMessageWithStatus].sample.value.copy(status = SubmissionFailed)
+          val arrival = Arbitrary.arbitrary[Arrival].sample.value.copy(messages = Seq(message), eoriNumber = "eori")
+
+          val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+          when(mockArrivalMovementRepository.get(any()))
+            .thenReturn(Future.successful(Some(arrival)))
+
+          val application =
+            baseApplicationBuilder
+              .overrides(bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository))
+              .build()
+
+          running(application) {
+            val request = FakeRequest(GET, routes.MessagesController.getMessage(arrival.arrivalId, new MessageId(0)).url)
+            val result  = route(application, request).value
+
+            status(result) mustEqual NOT_FOUND
+          }
+        }
+
+        "when message belongs to an arrival the user cannot access" in {
+          val message = Arbitrary.arbitrary[MovementMessageWithStatus].sample.value.copy(status = SubmissionSucceeded)
+          val arrival = Arbitrary.arbitrary[Arrival].sample.value.copy(messages = Seq(message), eoriNumber = "eori2")
+
+          val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+          when(mockArrivalMovementRepository.get(any()))
+            .thenReturn(Future.successful(Some(arrival)))
+
+          val application =
+            baseApplicationBuilder
+              .overrides(bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository))
+              .build()
+
+          running(application) {
+            val request = FakeRequest(GET, routes.MessagesController.getMessage(arrival.arrivalId, new MessageId(0)).url)
+            val result  = route(application, request).value
+
+            status(result) mustEqual NOT_FOUND
+          }
+        }
+
+      }
+    }
+
+    "getMessages" - {
+
+      "must return OK" - {
+        "with the retrieved messages" in {
+
+          val message = Arbitrary.arbitrary[MovementMessageWithStatus].sample.value.copy(status = SubmissionSucceeded)
+          val arrival = Arbitrary.arbitrary[Arrival].sample.value.copy(messages = Seq(message), eoriNumber = "eori")
+
+          val expectedMessages = ResponseMovementMessage.build(arrival.arrivalId, new MessageId(1), message)
+          val expectedArrival  = ResponseArrival.build(arrival).copy(messages = Seq(expectedMessages))
+
+          val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+          when(mockArrivalMovementRepository.get(any()))
+            .thenReturn(Future.successful(Some(arrival)))
+
+          val application =
+            baseApplicationBuilder
+              .overrides(bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository))
+              .build()
+
+          running(application) {
+            val request = FakeRequest(GET, routes.MessagesController.getMessages(arrival.arrivalId).url)
+            val result  = route(application, request).value
+
+            status(result) mustEqual OK
+            contentAsJson(result) mustEqual Json.toJson(expectedArrival)
+
+            println(contentAsJson(result))
+          }
+        }
+
+        "with only messages that are successful" in {
+          val message1 = Arbitrary.arbitrary[MovementMessageWithStatus].sample.value.copy(status = SubmissionSucceeded)
+          val message2 = Arbitrary.arbitrary[MovementMessageWithStatus].sample.value.copy(status = SubmissionFailed)
+          val arrival  = Arbitrary.arbitrary[Arrival].sample.value.copy(messages = Seq(message1, message2), eoriNumber = "eori")
+
+          val expectedMessages = ResponseMovementMessage.build(arrival.arrivalId, new MessageId(1), message1)
+          val expectedArrival  = ResponseArrival.build(arrival).copy(messages = Seq(expectedMessages))
+
+          val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+          when(mockArrivalMovementRepository.get(any()))
+            .thenReturn(Future.successful(Some(arrival)))
+
+          val application =
+            baseApplicationBuilder
+              .overrides(bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository))
+              .build()
+
+          running(application) {
+            val request = FakeRequest(GET, routes.MessagesController.getMessages(arrival.arrivalId).url)
+            val result  = route(application, request).value
+
+            status(result) mustEqual OK
+            contentAsJson(result) mustEqual Json.toJson(expectedArrival)
+          }
+
+        }
+
+        "with only messages that are successful and stateless" in {
+          val message1 = Arbitrary.arbitrary[MovementMessageWithStatus].sample.value.copy(status = SubmissionSucceeded)
+          val message2 = Arbitrary.arbitrary[MovementMessageWithStatus].sample.value.copy(status = SubmissionFailed)
+          val message3 = Arbitrary.arbitrary[MovementMessageWithoutStatus].sample.value
+
+          val arrival = Arbitrary.arbitrary[Arrival].sample.value.copy(messages = Seq(message1, message2, message3), eoriNumber = "eori")
+
+          val expectedMessage1 = ResponseMovementMessage.build(arrival.arrivalId, new MessageId(1), message1)
+          val expectedMessage3 = ResponseMovementMessage.build(arrival.arrivalId, new MessageId(3), message3)
+          val expectedArrival  = ResponseArrival.build(arrival).copy(messages = Seq(expectedMessage1, expectedMessage3))
+
+          val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+          when(mockArrivalMovementRepository.get(any()))
+            .thenReturn(Future.successful(Some(arrival)))
+
+          val application =
+            baseApplicationBuilder
+              .overrides(bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository))
+              .build()
+
+          running(application) {
+            val request = FakeRequest(GET, routes.MessagesController.getMessages(arrival.arrivalId).url)
+            val result  = route(application, request).value
+
+            status(result) mustEqual OK
+            contentAsJson(result) mustEqual Json.toJson(expectedArrival)
+          }
+        }
+
+        "with no messages if they are all failures" in {
+          val message1 = Arbitrary.arbitrary[MovementMessageWithStatus].sample.value.copy(status = SubmissionFailed)
+          val message2 = Arbitrary.arbitrary[MovementMessageWithStatus].sample.value.copy(status = SubmissionFailed)
+
+          val arrival = Arbitrary.arbitrary[Arrival].sample.value.copy(messages = Seq(message1, message2), eoriNumber = "eori")
+
+          val expectedArrival = ResponseArrival.build(arrival).copy(messages = Nil)
+
+          val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+          when(mockArrivalMovementRepository.get(any()))
+            .thenReturn(Future.successful(Some(arrival)))
+
+          val application =
+            baseApplicationBuilder
+              .overrides(bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository))
+              .build()
+
+          running(application) {
+            val request = FakeRequest(GET, routes.MessagesController.getMessages(arrival.arrivalId).url)
+            val result  = route(application, request).value
+
+            status(result) mustEqual OK
+            contentAsJson(result) mustEqual Json.toJson(expectedArrival)
+          }
+        }
+      }
+
+      "must return NOT FOUND" - {
+        "when arrival is not found" in {
+          val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+          when(mockArrivalMovementRepository.get(any()))
+            .thenReturn(Future.successful(None))
+
+          val application =
+            baseApplicationBuilder
+              .overrides(bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository))
+              .build()
+
+          running(application) {
+            val request = FakeRequest(GET, routes.MessagesController.getMessages(ArrivalId(1)).url)
+            val result  = route(application, request).value
+
+            status(result) mustEqual NOT_FOUND
+          }
+        }
+
+        "when arrival is inaccessible to the user" in {
+          val message = Arbitrary.arbitrary[MovementMessageWithStatus].sample.value.copy(status = SubmissionSucceeded)
+          val arrival = Arbitrary.arbitrary[Arrival].sample.value.copy(messages = Seq(message), eoriNumber = "eori2")
+
+          val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+          when(mockArrivalMovementRepository.get(any()))
+            .thenReturn(Future.successful(Some(arrival)))
+
+          val application =
+            baseApplicationBuilder
+              .overrides(bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository))
+              .build()
+
+          running(application) {
+            val request = FakeRequest(GET, routes.MessagesController.getMessages(arrival.arrivalId).url)
+            val result  = route(application, request).value
+
+            status(result) mustEqual NOT_FOUND
+          }
+        }
+      }
+
+    }
+
   }
 }

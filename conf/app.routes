@@ -6,7 +6,8 @@ GET                     /movements/arrivals                                     
 GET                     /movements/arrivals/:arrivalId                          controllers.MovementsController.getArrival(arrivalId: ArrivalId)
 PUT                     /movements/arrivals/:arrivalId                          controllers.MovementsController.putArrival(arrivalId: ArrivalId)
 
-GET                     /movements/arrivals/:arrivalId/messages/:messageId      controllers.MovementsController.getMessage(arrivalId: ArrivalId, messageId: MessageId)
+GET                     /movements/arrivals/:arrivalId/messages/:messageId      controllers.MessagesController.getMessage(arrivalId: ArrivalId, messageId: MessageId)
+GET                     /movements/arrivals/:arrivalId/messages                 controllers.MessagesController.getMessages(arrivalId: ArrivalId)
 
 POST                    /movements/arrivals/:messageSender/messages/eis         controllers.NCTSMessageController.post(messageSender: MessageSender)
 POST                    /movements/arrivals/:arrivalId/messages                 controllers.MessagesController.post(arrivalId: ArrivalId)

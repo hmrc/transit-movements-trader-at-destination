@@ -51,7 +51,6 @@ class MovementsController @Inject()(
   arrivalMovementService: ArrivalMovementService,
   submitMessageService: SubmitMessageService,
   authenticate: AuthenticateActionProvider,
-  authenticateForRead: AuthenticatedGetArrivalForReadActionProvider,
   authenticatedOptionalArrival: AuthenticatedGetOptionalArrivalForWriteActionProvider,
   authenticateForWrite: AuthenticatedGetArrivalForWriteActionProvider,
   defaultActionBuilder: DefaultActionBuilder
@@ -155,10 +154,4 @@ class MovementsController @Inject()(
         }
   }
 
-  def getMessage(arrivalId: ArrivalId, messageId: MessageId): Action[AnyContent] = authenticateForRead(arrivalId) {
-    implicit request =>
-      if (request.arrival.messages.isDefinedAt(messageId.index) && request.arrival.messages(messageId.index).optStatus != Some(SubmissionFailed))
-        Ok(Json.toJson(ResponseMovementMessage.build(arrivalId, messageId, request.arrival.messages(messageId.index))))
-      else NotFound
-  }
 }
