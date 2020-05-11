@@ -63,7 +63,7 @@ class MessagesController @Inject()(
                   .map {
                     case SubmissionProcessingResult.SubmissionSuccess =>
                       Accepted("Message accepted")
-                        .withHeaders("Location" -> routes.MovementsController.getMessage(request.arrival.arrivalId, messageId).url)
+                        .withHeaders("Location" -> routes.MessagesController.getMessage(request.arrival.arrivalId, messageId).url)
 
                     case SubmissionProcessingResult.SubmissionFailureInternal =>
                       InternalServerError
