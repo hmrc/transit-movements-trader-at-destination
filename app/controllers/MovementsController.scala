@@ -58,13 +58,16 @@ class MovementsController @Inject()(
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
-  private val atLeastOneMessageSent: Seq[MovementMessage] => Boolean =
-    _.exists(x => x.optStatus.contains(SubmissionSucceeded) || x.optStatus.isEmpty)
+  private val allMessageUnsent: Seq[MovementMessage] => Boolean =
+    _.map(_.optStatus).forall {
+      case Some(messageStatus) if messageStatus != SubmissionSucceeded => true
+      case _                                                           => false
+    }
 
   def post: Action[NodeSeq] = authenticatedOptionalArrival().async(parse.xml) {
     implicit request =>
       request.arrival match {
-        case Some(arrival) if !atLeastOneMessageSent(arrival.messages) =>
+        case Some(arrival) if allMessageUnsent(arrival.messages) =>
           arrivalMovementService
             .makeArrivalNotificationMessage(arrival.nextMessageCorrelationId)(request.body)
             .map {
