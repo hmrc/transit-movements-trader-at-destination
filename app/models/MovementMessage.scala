@@ -23,7 +23,7 @@ import utils.NodeSeqFormat
 
 import scala.xml.NodeSeq
 
-abstract class MovementMessage {
+sealed trait MovementMessage {
   def dateTime: LocalDateTime
   def messageType: MessageType
   def message: NodeSeq
