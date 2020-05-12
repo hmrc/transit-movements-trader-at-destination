@@ -32,7 +32,7 @@ import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
-import services.ArrivalMovementService
+import services.ArrivalMovementMessageService
 import services.SubmitMessageService
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
@@ -42,7 +42,7 @@ import scala.xml.NodeSeq
 
 class MessagesController @Inject()(
   cc: ControllerComponents,
-  arrivalMovementService: ArrivalMovementService,
+  arrivalMovementService: ArrivalMovementMessageService,
   submitMessageService: SubmitMessageService,
   authenticateForRead: AuthenticatedGetArrivalForReadActionProvider,
   authenticateForWrite: AuthenticatedGetArrivalForWriteActionProvider

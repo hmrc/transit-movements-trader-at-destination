@@ -25,7 +25,7 @@ import play.api.mvc.Results.InternalServerError
 import play.api.mvc.Results.Locked
 import repositories.ArrivalMovementRepository
 import repositories.LockRepository
-import services.ArrivalMovementService
+import services.CtcXmlMessageParser
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -55,7 +55,7 @@ class AuthenticateGetOptionalArrivalForWriteAction(
   override def invokeBlock[A](request: AuthenticatedRequest[A], block: AuthenticatedOptionalArrivalRequest[A] => Future[Result]): Future[Result] =
     request.body match {
       case body: NodeSeq =>
-        ArrivalMovementService.mrnR(body) match {
+        CtcXmlMessageParser.mrnR(body) match {
           case None =>
             Future.successful(BadRequest)
 
