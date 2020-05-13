@@ -28,6 +28,7 @@ import models.SubmissionProcessingResult
 import models.request.ArrivalRequest
 import models.response.ResponseArrival
 import models.response.ResponseMovementMessage
+import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
@@ -48,6 +49,8 @@ class MessagesController @Inject()(
   authenticateForWrite: AuthenticatedGetArrivalForWriteActionProvider
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
+
+  private val logger = Logger(getClass)
 
   def post(arrivalId: ArrivalId): Action[NodeSeq] = authenticateForWrite(arrivalId).async(parse.xml) {
     implicit request: ArrivalRequest[NodeSeq] =>
@@ -72,7 +75,10 @@ class MessagesController @Inject()(
                       BadGateway
                   }
             }
-            .getOrElse(Future.successful(BadRequest("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5")))
+            .getOrElse {
+              logger.error("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5")
+              Future.successful(BadRequest("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5"))
+            }
         case _ =>
           Future.successful(NotImplemented)
       }
