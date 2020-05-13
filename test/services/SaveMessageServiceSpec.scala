@@ -141,7 +141,7 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach {
     }
 
     "return Failure when we cannot parse the message due malformed time" in {
-      when(mockXmlValidationService.validate(any(), any())).thenReturn(Success())
+      when(mockXmlValidationService.validate(any(), any())).thenReturn(Success(()))
 
       val application = baseApplicationBuilder
         .overrides(
