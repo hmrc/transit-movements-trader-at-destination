@@ -9,7 +9,7 @@
 # !!!WARNING!!! Every route defined in this file MUST be prefixed with "/test-only/". This is because NGINX is blocking every uri containing the string "test-only" in production.
 # Failing to follow this rule may result in test routes deployed in production.
 
-
++ nocsrf
 DELETE  /test-only/transit-movements-trader-at-destination/dropArrivalMovementCollection controllers.testOnly.TestOnlyController.dropArrivalMovementCollection
 
 # Add all the application routes to the prod.routes file
