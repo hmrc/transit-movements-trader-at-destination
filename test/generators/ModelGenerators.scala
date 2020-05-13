@@ -84,7 +84,7 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
         status                  <- arbitrary[ArrivalStatus]
         created                 <- arbitrary[LocalDateTime]
         updated                 <- arbitrary[LocalDateTime]
-        messages                <- listWithMaxLength[MovementMessageWithStatus](2)
+        messages                <- nonEmptyListOfMaxLength[MovementMessageWithStatus](2)
       } yield
         Arrival(
           arrivalId = arrivalId,

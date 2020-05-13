@@ -21,16 +21,20 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 
 import base.SpecBase
+import cats.data.NonEmptyList
 import generators.ModelGenerators
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalStatus
 import models.MessageSender
 import models.MessageType
+import models.MovementMessage
+import models.MovementMessageWithStatus
 import models.MovementReferenceNumber
 import models.SubmissionProcessingResult
 import org.mockito.Matchers._
 import org.mockito.Mockito._
+import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
 import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
@@ -56,6 +60,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
   private val arrivalId     = ArrivalId(1)
   private val version       = 1
   private val messageSender = MessageSender(arrivalId, version)
+  private val message       = Arbitrary.arbitrary[MovementMessageWithStatus].sample.value
   private val arrival = Arrival(
     arrivalId,
     MovementReferenceNumber("mrn"),
@@ -63,7 +68,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
     ArrivalStatus.ArrivalSubmitted,
     LocalDateTime.of(dateOfPrep, timeOfPrep),
     LocalDateTime.of(dateOfPrep, timeOfPrep),
-    Seq.empty,
+    NonEmptyList.one(message),
     1
   )
 

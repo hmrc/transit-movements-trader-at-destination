@@ -48,7 +48,7 @@ object ResponseArrival {
       arrival.status,
       arrival.created,
       arrival.updated,
-      arrival.messages.view.zipWithIndex
+      arrival.messages.toList.zipWithIndex
         .filterNot {
           case (message, _) => message.optStatus == Some(SubmissionFailed)
         }

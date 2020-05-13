@@ -21,6 +21,7 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 
 import base.SpecBase
+import cats.data.NonEmptyList
 import connectors.MessageConnector
 import controllers.actions.AuthenticatedGetOptionalArrivalForWriteActionProvider
 import controllers.actions.FakeAuthenticatedGetOptionalArrivalForWriteActionProvider
@@ -94,7 +95,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
     created = localDateTime,
     updated = localDateTime,
     nextMessageCorrelationId = movementMessge.messageCorrelationId + 1,
-    messages = Seq(movementMessge)
+    messages = NonEmptyList.one(movementMessge)
   )
 
   "MovementsController" - {
@@ -106,7 +107,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           val mockSubmitMessageService = mock[SubmitMessageService]
 
           val expectedMessage = movementMessge.copy(messageCorrelationId = 1)
-          val newArrival      = initializedArrival.copy(messages = Seq(expectedMessage))
+          val newArrival      = initializedArrival.copy(messages = NonEmptyList.one(expectedMessage))
 
           when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(newArrival.arrivalId))
           when(mockSubmitMessageService.submitArrival(any())(any())).thenReturn(Future.successful(SubmissionProcessingResult.SubmissionSuccess))
@@ -264,7 +265,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
       "when there has been a previous failed attempt to submit" - {
 
         val failedToSubmit007     = movementMessge.copy(status = SubmissionFailed)
-        val failedToSubmitArrival = initializedArrival.copy(messages = Seq(failedToSubmit007))
+        val failedToSubmitArrival = initializedArrival.copy(messages = NonEmptyList.one(failedToSubmit007))
 
         "must return Accepted when submitted to upstream  against the existing arrival" in {
 
@@ -299,14 +300,14 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         }
 
         "must return Accepted when and saved as a new arrival movement when there has been a successful message" in {
-          val messages = Seq(
+          val messages = NonEmptyList.of(
             movementMessge.copy(status = SubmissionPending, messageCorrelationId = 1),
             movementMessge.copy(status = SubmissionFailed, messageCorrelationId = 2),
             movementMessge.copy(status = SubmissionSucceeded, messageCorrelationId = 3)
           )
           val arrival = initializedArrival.copy(messages = messages, nextMessageCorrelationId = 4)
 
-          val expectedArrival = initializedArrival.copy(messages = Seq(movementMessge))
+          val expectedArrival = initializedArrival.copy(messages = NonEmptyList.of(movementMessge))
 
           val mockSubmitMessageService = mock[SubmitMessageService]
           val mockArrivalIdRepository  = mock[ArrivalIdRepository]

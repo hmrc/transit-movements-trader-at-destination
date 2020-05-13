@@ -22,9 +22,10 @@ import javax.inject.Inject
 import models.ArrivalId
 import models.ArrivalStatus
 import models.MessageId
-import models.MessageStatus.SubmissionFailed
 import models.MessageType
+import models.MovementMessage
 import models.SubmissionProcessingResult
+import models.MessageStatus.SubmissionFailed
 import models.request.ArrivalRequest
 import models.response.ResponseArrival
 import models.response.ResponseMovementMessage
@@ -80,8 +81,10 @@ class MessagesController @Inject()(
 
   def getMessage(arrivalId: ArrivalId, messageId: MessageId): Action[AnyContent] = authenticateForRead(arrivalId) {
     implicit request =>
-      if (request.arrival.messages.isDefinedAt(messageId.index) && request.arrival.messages(messageId.index).optStatus != Some(SubmissionFailed))
-        Ok(Json.toJsObject(ResponseMovementMessage.build(arrivalId, messageId, request.arrival.messages(messageId.index))))
+      val messages = request.arrival.messages.toList
+
+      if (messages.isDefinedAt(messageId.index) && messages(messageId.index).optStatus != Some(SubmissionFailed))
+        Ok(Json.toJsObject(ResponseMovementMessage.build(arrivalId, messageId, messages(messageId.index))))
       else NotFound
   }
 

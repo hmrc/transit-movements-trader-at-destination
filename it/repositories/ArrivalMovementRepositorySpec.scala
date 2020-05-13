@@ -2,6 +2,7 @@ package repositories
 
 import java.time.{LocalDate, LocalDateTime, LocalTime}
 
+import cats.data.NonEmptyList
 import generators.ModelGenerators
 import models.ArrivalStatus.{ArrivalSubmitted, Initialized}
 import models.MessageStatus.{SubmissionPending, SubmissionSucceeded}
@@ -48,7 +49,7 @@ class ArrivalMovementRepositorySpec
   val arrivalWithOneMessage: Gen[Arrival] = for {
     arrival <- arbitrary[Arrival]
     movementMessage <- arbitrary[MovementMessageWithStatus]
-  } yield arrival.copy(messages = Seq(movementMessage.copy(status = SubmissionPending)))
+  } yield arrival.copy(messages = NonEmptyList.one(movementMessage.copy(status = SubmissionPending)))
 
   "ArrivalMovementRepository" - {
     "insert" - {
@@ -232,7 +233,7 @@ class ArrivalMovementRepositorySpec
 
         val pregenArrival = arrivalWithOneMessage.sample.value
         val arrival = pregenArrival.copy(arrivalId = ArrivalId(1),
-          messages = Seq(arbitrary[MovementMessageWithoutStatus].sample.value))
+          messages = NonEmptyList.one(arbitrary[MovementMessageWithoutStatus].sample.value))
 
         running(app) {
           started(app).futureValue

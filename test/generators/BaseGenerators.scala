@@ -16,6 +16,7 @@
 
 package generators
 
+import cats.data.NonEmptyList
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen.alphaNumChar
 import org.scalacheck.Gen.alphaStr
@@ -130,6 +131,9 @@ trait BaseGenerators {
       length <- choose(1, maxLength)
       seq    <- listOfN(length, arbitrary[A])
     } yield seq
+
+  def nonEmptyListOfMaxLength[A: Arbitrary](maxLength: Int): Gen[NonEmptyList[A]] =
+    listWithMaxLength(maxLength).map(NonEmptyList.fromListUnsafe)
 
   def intWithMaxLength(maxLength: Int): Gen[Int] =
     for {
