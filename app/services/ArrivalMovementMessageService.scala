@@ -32,7 +32,7 @@ import scala.concurrent.Future
 import scala.xml.NodeSeq
 
 class ArrivalMovementMessageService @Inject()(arrivalIdRepository: ArrivalIdRepository)(implicit ec: ExecutionContext) {
-  import CtcXmlMessageParser._
+  import XmlMessageParser._
 
   def makeArrivalMovement(eori: String): ReaderT[Option, NodeSeq, Future[Arrival]] =
     for {

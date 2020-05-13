@@ -25,7 +25,7 @@ import models.MessageType
 import models.MovementReferenceNumber
 import utils.Format
 
-class CtcXmlMessageParserSpec extends SpecBase {
+class XmlMessageParserSpec extends SpecBase {
 
   "dateOfPrepR" - {
     "returns the date from the DatOfPreMES9 node" in {
@@ -36,7 +36,7 @@ class CtcXmlMessageParserSpec extends SpecBase {
           <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
         </CC007A>
 
-      CtcXmlMessageParser.dateOfPrepR(movement).value mustEqual dateOfPrep
+      XmlMessageParser.dateOfPrepR(movement).value mustEqual dateOfPrep
 
     }
 
@@ -48,7 +48,7 @@ class CtcXmlMessageParserSpec extends SpecBase {
           <DatOfPreMES9>{Format.dateFormatted(dateOfPrep) ++ "1"}</DatOfPreMES9>
         </CC007A>
 
-      CtcXmlMessageParser.dateOfPrepR(movement) must not be (defined)
+      XmlMessageParser.dateOfPrepR(movement) must not be (defined)
 
     }
 
@@ -57,7 +57,7 @@ class CtcXmlMessageParserSpec extends SpecBase {
         <CC007A>
         </CC007A>
 
-      CtcXmlMessageParser.dateOfPrepR(movement) must not be (defined)
+      XmlMessageParser.dateOfPrepR(movement) must not be (defined)
     }
 
   }
@@ -71,7 +71,7 @@ class CtcXmlMessageParserSpec extends SpecBase {
           <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
         </CC007A>
 
-      CtcXmlMessageParser.timeOfPrepR(movement).value mustEqual timeOfPrep
+      XmlMessageParser.timeOfPrepR(movement).value mustEqual timeOfPrep
 
     }
 
@@ -83,7 +83,7 @@ class CtcXmlMessageParserSpec extends SpecBase {
           <TimOfPreMES10>{Format.timeFormatted(timeOfPrep) ++ "a"}</TimOfPreMES10>
         </CC007A>
 
-      CtcXmlMessageParser.timeOfPrepR(movement) must not be (defined)
+      XmlMessageParser.timeOfPrepR(movement) must not be (defined)
 
     }
 
@@ -92,7 +92,7 @@ class CtcXmlMessageParserSpec extends SpecBase {
         <CC007A>
         </CC007A>
 
-      CtcXmlMessageParser.timeOfPrepR(movement) must not be (defined)
+      XmlMessageParser.timeOfPrepR(movement) must not be (defined)
 
     }
 
@@ -109,7 +109,7 @@ class CtcXmlMessageParserSpec extends SpecBase {
           </HEAHEA>
         </CC007A>
 
-      CtcXmlMessageParser.mrnR(movement).value mustEqual mrn
+      XmlMessageParser.mrnR(movement).value mustEqual mrn
 
     }
 
@@ -120,7 +120,7 @@ class CtcXmlMessageParserSpec extends SpecBase {
           </HEAHEA>
         </CC007A>
 
-      CtcXmlMessageParser.mrnR(movement) must not be (defined)
+      XmlMessageParser.mrnR(movement) must not be (defined)
 
     }
 
@@ -132,7 +132,7 @@ class CtcXmlMessageParserSpec extends SpecBase {
       val movement =
         <CC007A></CC007A>
 
-      CtcXmlMessageParser.correctRootNodeR(MessageType.ArrivalNotification)(movement) mustBe (defined)
+      XmlMessageParser.correctRootNodeR(MessageType.ArrivalNotification)(movement) mustBe (defined)
     }
 
     "returns false if the root node is not as expected" in {
@@ -140,7 +140,7 @@ class CtcXmlMessageParserSpec extends SpecBase {
       val movement =
         <Foo></Foo>
 
-      CtcXmlMessageParser.correctRootNodeR(MessageType.ArrivalNotification)(movement) must not be defined
+      XmlMessageParser.correctRootNodeR(MessageType.ArrivalNotification)(movement) must not be defined
     }
   }
 
@@ -155,7 +155,7 @@ class CtcXmlMessageParserSpec extends SpecBase {
           <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
         </CC007A>
 
-      CtcXmlMessageParser.dateTimeOfPrepR(movement).value mustEqual LocalDateTime.of(dateOfPrep, timeOfPrep)
+      XmlMessageParser.dateTimeOfPrepR(movement).value mustEqual LocalDateTime.of(dateOfPrep, timeOfPrep)
 
     }
 
@@ -169,7 +169,7 @@ class CtcXmlMessageParserSpec extends SpecBase {
           <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
         </CC007A>
 
-      CtcXmlMessageParser.dateTimeOfPrepR(movement) must not be (defined)
+      XmlMessageParser.dateTimeOfPrepR(movement) must not be (defined)
     }
 
     "will return a None when the date in the DatOfPreMES10 node is malformed" in {
@@ -182,7 +182,7 @@ class CtcXmlMessageParserSpec extends SpecBase {
           <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)  ++ "1" }</TimOfPreMES10>
         </CC007A>
 
-      CtcXmlMessageParser.dateTimeOfPrepR(movement) must not be (defined)
+      XmlMessageParser.dateTimeOfPrepR(movement) must not be (defined)
     }
 
     "will return a None when the date in the DatOfPreMES9 node is missing" in {
@@ -194,7 +194,7 @@ class CtcXmlMessageParserSpec extends SpecBase {
           <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
         </CC007A>
 
-      CtcXmlMessageParser.dateTimeOfPrepR(movement) must not be (defined)
+      XmlMessageParser.dateTimeOfPrepR(movement) must not be (defined)
 
     }
 
@@ -207,7 +207,7 @@ class CtcXmlMessageParserSpec extends SpecBase {
           <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
         </CC007A>
 
-      CtcXmlMessageParser.dateTimeOfPrepR(movement) must not be (defined)
+      XmlMessageParser.dateTimeOfPrepR(movement) must not be (defined)
 
     }
 

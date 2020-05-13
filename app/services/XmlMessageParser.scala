@@ -30,7 +30,7 @@ import utils.Format
 import scala.util.Try
 import scala.xml.NodeSeq
 
-object CtcXmlMessageParser {
+object XmlMessageParser {
 
   def correctRootNodeR(messageType: MessageType): ReaderT[Option, NodeSeq, Unit] =
     ReaderT[Option, NodeSeq, Unit] {
