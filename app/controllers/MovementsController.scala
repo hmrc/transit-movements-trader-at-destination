@@ -17,20 +17,18 @@
 package controllers
 
 import controllers.actions.AuthenticateActionProvider
-import controllers.actions.AuthenticatedGetArrivalForReadActionProvider
 import controllers.actions.AuthenticatedGetArrivalForWriteActionProvider
 import controllers.actions.AuthenticatedGetOptionalArrivalForWriteActionProvider
 import javax.inject.Inject
-import models.MessageStatus.SubmissionFailed
 import models.MessageStatus.SubmissionSucceeded
 import models.ArrivalId
 import models.ArrivalStatus
 import models.Arrivals
 import models.MessageId
+import models.MessageType
 import models.MovementMessage
 import models.SubmissionProcessingResult
 import models.request.ArrivalRequest
-import models.response.ResponseMovementMessage
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.Action
@@ -38,7 +36,7 @@ import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import play.api.mvc.DefaultActionBuilder
 import repositories.ArrivalMovementRepository
-import services.ArrivalMovementService
+import services.ArrivalMovementMessageService
 import services.SubmitMessageService
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
@@ -49,7 +47,7 @@ import scala.xml.NodeSeq
 class MovementsController @Inject()(
   cc: ControllerComponents,
   arrivalMovementRepository: ArrivalMovementRepository,
-  arrivalMovementService: ArrivalMovementService,
+  arrivalMovementService: ArrivalMovementMessageService,
   submitMessageService: SubmitMessageService,
   authenticate: AuthenticateActionProvider,
   authenticatedOptionalArrival: AuthenticatedGetOptionalArrivalForWriteActionProvider,
@@ -71,7 +69,7 @@ class MovementsController @Inject()(
       request.arrival match {
         case Some(arrival) if allMessageUnsent(arrival.messages) =>
           arrivalMovementService
-            .makeArrivalNotificationMessage(arrival.nextMessageCorrelationId)(request.body)
+            .makeMovementMessageWithStatus(arrival.nextMessageCorrelationId, MessageType.ArrivalNotification)(request.body)
             .map {
               message =>
                 submitMessageService
@@ -124,7 +122,7 @@ class MovementsController @Inject()(
   def putArrival(arrivalId: ArrivalId): Action[NodeSeq] = authenticateForWrite(arrivalId).async(parse.xml) {
     implicit request: ArrivalRequest[NodeSeq] =>
       arrivalMovementService
-        .makeArrivalNotificationMessage(request.arrival.nextMessageCorrelationId)(request.body)
+        .makeMovementMessageWithStatus(request.arrival.nextMessageCorrelationId, MessageType.ArrivalNotification)(request.body)
         .map {
           message =>
             submitMessageService
