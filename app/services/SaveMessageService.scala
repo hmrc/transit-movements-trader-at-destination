@@ -32,7 +32,7 @@ import scala.util.Success
 import scala.xml.NodeSeq
 
 class SaveMessageService @Inject()(arrivalMovementRepository: ArrivalMovementRepository,
-                                   arrivalMovementService: ArrivalMovementService,
+                                   arrivalMovementService: ArrivalMovementMessageService,
                                    xmlValidationService: XmlValidationService)(implicit ec: ExecutionContext) {
 
   private val logger = Logger(getClass)
