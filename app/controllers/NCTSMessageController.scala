@@ -40,8 +40,6 @@ class NCTSMessageController @Inject()(cc: ControllerComponents, getArrival: GetA
   implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
-  private val logger = Logger(getClass)
-
   def post(messageSender: MessageSender): Action[NodeSeq] = getArrival(messageSender.arrivalId)(parse.xml).async {
     implicit request =>
       val xml: NodeSeq = request.request.body
@@ -51,7 +49,7 @@ class NCTSMessageController @Inject()(cc: ControllerComponents, getArrival: GetA
         case Some(MessageType.ArrivalRejection.code)    => Some(ArrivalRejectedResponse)
         case Some(MessageType.UnloadingPermission.code) => Some(UnloadingPermissionResponse)
         case invalidResponse =>
-          logger.error(s"Received the following invalid response for X-Message-Type: $invalidResponse")
+          Logger.warn(s"Received the following invalid response for X-Message-Type: $invalidResponse")
           None
       }
 
@@ -63,16 +61,16 @@ class NCTSMessageController @Inject()(cc: ControllerComponents, getArrival: GetA
             case SubmissionSuccess => Ok
             case SubmissionFailureInternal =>
               val message = "Internal Submission Failure " + processingResult
-              logger.error(message)
+              Logger.warn(message)
               InternalServerError(message)
             case SubmissionFailureExternal =>
               val message = "External Submission Failure " + processingResult
-              logger.error(message)
+              Logger.warn(message)
               BadRequest(message)
           }
         case None =>
           val message = "No response from downstream NCTS";
-          logger.error(message)
+          Logger.warn(message)
           Future.successful(BadRequest(message))
       }
 

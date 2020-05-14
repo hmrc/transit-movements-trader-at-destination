@@ -53,14 +53,12 @@ class AuthenticateGetOptionalArrivalForWriteAction(
   implicit protected val executionContext: ExecutionContext
 ) extends ActionFunction[AuthenticatedRequest, AuthenticatedOptionalArrivalRequest] {
 
-  private val logger = Logger(getClass)
-
   override def invokeBlock[A](request: AuthenticatedRequest[A], block: AuthenticatedOptionalArrivalRequest[A] => Future[Result]): Future[Result] =
     request.body match {
       case body: NodeSeq =>
         XmlMessageParser.mrnR(body) match {
           case None =>
-            logger.error("Invalid mrn specified in request")
+            Logger.warn("Invalid mrn specified in request")
             Future.successful(BadRequest("Invalid mrn specified in request"))
 
           case Some(mrn) => {
@@ -90,7 +88,7 @@ class AuthenticateGetOptionalArrivalForWriteAction(
           }
         }
       case invalidBody =>
-        logger.error(s"Invalid request body: ${invalidBody.getClass}")
+        Logger.warn(s"Invalid request body: ${invalidBody.getClass}")
         Future.successful(BadRequest(s"Invalid request body: ${invalidBody.getClass}"))
     }
 }

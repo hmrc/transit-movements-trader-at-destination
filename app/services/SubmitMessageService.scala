@@ -41,8 +41,6 @@ class SubmitMessageService @Inject()(
   messageConnector: MessageConnector
 )(implicit ec: ExecutionContext) {
 
-  private val logger = Logger(getClass)
-
   def submitMessage(arrivalId: ArrivalId, messageId: MessageId, message: MovementMessageWithStatus, arrivalStatus: ArrivalStatus)(
     implicit hc: HeaderCarrier): Future[SubmissionProcessingResult] =
     arrivalMovementRepository.addNewMessage(arrivalId, message) flatMap {
@@ -67,7 +65,7 @@ class SubmitMessageService @Inject()(
           }
           .recoverWith {
             case error => {
-              logger.error(s"Existing Movement - Call to EIS failed with the following Exception: ${error.getMessage}")
+              Logger.warn(s"Existing Movement - Call to EIS failed with the following Exception: ${error.getMessage}")
 
               arrivalMovementRepository.setMessageState(arrivalId,
                                                         messageId.index,
@@ -105,7 +103,7 @@ class SubmitMessageService @Inject()(
             }
             .recoverWith {
               case error =>
-                logger.error(s"New Movement - Call to EIS failed with the following Exception: ${error.getMessage}")
+                Logger.warn(s"New Movement - Call to EIS failed with the following Exception: ${error.getMessage}")
 
                 arrivalMovementRepository.setMessageState(arrival.arrivalId,
                                                           messageId.index,
