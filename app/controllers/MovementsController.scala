@@ -30,6 +30,7 @@ import models.MessageType
 import models.MovementMessage
 import models.SubmissionProcessingResult
 import models.request.ArrivalRequest
+import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
@@ -55,6 +56,8 @@ class MovementsController @Inject()(
   defaultActionBuilder: DefaultActionBuilder
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
+
+  private val logger = Logger(getClass)
 
   private val allMessageUnsent: NonEmptyList[MovementMessage] => Boolean =
     _.map(_.optStatus).forall {
@@ -84,11 +87,15 @@ class MovementsController @Inject()(
                       BadGateway
                   }
             }
-            .getOrElse(Future.successful(BadRequest("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5")))
+            .getOrElse {
+              logger.error("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5")
+              Future.successful(BadRequest("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5"))
+            }
 
         case _ =>
           arrivalMovementService.makeArrivalMovement(request.eoriNumber)(request.body) match {
             case None =>
+              logger.error("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5")
               Future.successful(BadRequest("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5"))
             case Some(arrivalFuture) =>
               arrivalFuture
@@ -133,8 +140,10 @@ class MovementsController @Inject()(
                   BadGateway
               }
         }
-        .getOrElse(Future.successful(BadRequest("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5")))
-
+        .getOrElse {
+          logger.error("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5")
+          Future.successful(BadRequest("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5"))
+        }
   }
 
   def getArrival(arrivalId: ArrivalId): Action[AnyContent] = defaultActionBuilder(_ => NotImplemented)

@@ -57,14 +57,23 @@ class NCTSMessageController @Inject()(cc: ControllerComponents, getArrival: GetA
 
       messageResponse match {
         case Some(response) =>
-          val newState = request.arrival.status.transition(response.messageReceived)
-          saveMessageService.validateXmlAndSaveMessage(xml, messageSender, response, newState) map {
-            case SubmissionSuccess         => Ok
-            case SubmissionFailureInternal => InternalServerError
-            case SubmissionFailureExternal => BadRequest
+          val newState         = request.arrival.status.transition(response.messageReceived)
+          val processingResult = saveMessageService.validateXmlAndSaveMessage(xml, messageSender, response, newState)
+          processingResult map {
+            case SubmissionSuccess => Ok
+            case SubmissionFailureInternal =>
+              val message = "Internal Submission Failure " + processingResult
+              logger.error(message)
+              InternalServerError(message)
+            case SubmissionFailureExternal =>
+              val message = "External Submission Failure " + processingResult
+              logger.error(message)
+              BadRequest(message)
           }
         case None =>
-          Future.successful(BadRequest)
+          val message = "No response from downstream NCTS";
+          logger.error(message)
+          Future.successful(BadRequest(message))
       }
 
   }
