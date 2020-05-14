@@ -35,8 +35,6 @@ class SaveMessageService @Inject()(arrivalMovementRepository: ArrivalMovementRep
                                    arrivalMovementService: ArrivalMovementMessageService,
                                    xmlValidationService: XmlValidationService)(implicit ec: ExecutionContext) {
 
-  private val logger = Logger(getClass)
-
   def validateXmlAndSaveMessage(messageXml: NodeSeq,
                                 messageSender: MessageSender,
                                 messageResponse: MessageResponse,
@@ -54,7 +52,7 @@ class SaveMessageService @Inject()(arrivalMovementRepository: ArrivalMovementRep
           case None => Future.successful(SubmissionFailureExternal)
         }
       case Failure(e) => {
-        logger.error(s"Failure to validate against XSD. Exception: ${e.getMessage}")
+        Logger.warn(s"Failure to validate against XSD. Exception: ${e.getMessage}")
         Future.successful(SubmissionFailureExternal)
       }
     }

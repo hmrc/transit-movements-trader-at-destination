@@ -51,8 +51,6 @@ class MessagesController @Inject()(
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
-  private val logger = Logger(getClass)
-
   def post(arrivalId: ArrivalId): Action[NodeSeq] = authenticateForWrite(arrivalId).async(parse.xml) {
     implicit request: ArrivalRequest[NodeSeq] =>
       MessageType.getMessageType(request.body) match {
@@ -77,7 +75,7 @@ class MessagesController @Inject()(
                   }
             }
             .getOrElse {
-              logger.error("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5")
+              Logger.warn("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5")
               Future.successful(BadRequest("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5"))
             }
         case _ =>
