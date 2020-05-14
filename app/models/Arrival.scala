@@ -19,6 +19,9 @@ package models
 import java.time.LocalDateTime
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
+import cats._
+import cats.data._
+import cats.implicits._
 
 case class Arrival(
   arrivalId: ArrivalId,
@@ -27,11 +30,18 @@ case class Arrival(
   status: ArrivalStatus,
   created: LocalDateTime,
   updated: LocalDateTime,
-  messages: Seq[MovementMessage],
+  messages: NonEmptyList[MovementMessage],
   nextMessageCorrelationId: Int
 )
 
 object Arrival {
+
+  implicit def formatsNonEmptyList[A](implicit listReads: Reads[List[A]], listWrites: Writes[List[A]]): Format[NonEmptyList[A]] =
+    new Format[NonEmptyList[A]] {
+      override def writes(o: NonEmptyList[A]): JsValue = Json.toJson(o.toList)
+
+      override def reads(json: JsValue): JsResult[NonEmptyList[A]] = json.validate(listReads).map(NonEmptyList.fromListUnsafe)
+    }
 
   implicit val readsArrival: Reads[Arrival] =
     (
@@ -41,7 +51,7 @@ object Arrival {
         (__ \ "status").read[ArrivalStatus] and
         (__ \ "created").read(MongoDateTimeFormats.localDateTimeRead) and
         (__ \ "updated").read(MongoDateTimeFormats.localDateTimeRead) and
-        (__ \ "messages").read[Seq[MovementMessage]] and
+        (__ \ "messages").read[NonEmptyList[MovementMessage]] and
         (__ \ "nextMessageCorrelationId").read[Int]
     )(Arrival.apply _)
 
@@ -53,7 +63,7 @@ object Arrival {
         (__ \ "status").write[ArrivalStatus] and
         (__ \ "created").write(write) and
         (__ \ "updated").write(write) and
-        (__ \ "messages").write[Seq[MovementMessage]] and
+        (__ \ "messages").write[NonEmptyList[MovementMessage]] and
         (__ \ "nextMessageCorrelationId").write[Int]
     )(unlift(Arrival.unapply))
 

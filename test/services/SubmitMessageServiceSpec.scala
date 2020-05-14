@@ -21,6 +21,7 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 
 import base.SpecBase
+import cats.data.NonEmptyList
 import connectors.MessageConnector
 import generators.ModelGenerators
 import models.MessageStatus.SubmissionPending
@@ -76,10 +77,12 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
   val arrivalWithOneMessage: Gen[Arrival] = for {
     arrival <- arbitrary[Arrival]
   } yield {
-    arrival.copy(eoriNumber = "eori",
-                 status = ArrivalStatus.ArrivalSubmitted,
-                 messages = Seq(movementMessage),
-                 nextMessageCorrelationId = movementMessage.messageCorrelationId)
+    arrival.copy(
+      eoriNumber = "eori",
+      status = ArrivalStatus.ArrivalSubmitted,
+      messages = NonEmptyList.one(movementMessage),
+      nextMessageCorrelationId = movementMessage.messageCorrelationId
+    )
   }
 
   "submit a new message" - {
@@ -225,7 +228,7 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
   }
 
   "submit a new arrival" - {
-    val arrival = arbitrary[Arrival].sample.value.copy(messages = Seq(movementMessage))
+    val arrival = arbitrary[Arrival].sample.value.copy(messages = NonEmptyList.one(movementMessage))
 
     "return SubmissionProcessingResult.SubmissionSuccess when the message is successfully saved, submitted and the state is updated" in {
       lazy val mockArrivalMovementRepository: ArrivalMovementRepository = mock[ArrivalMovementRepository]

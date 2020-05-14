@@ -16,6 +16,7 @@
 
 package controllers
 
+import cats.data.NonEmptyList
 import controllers.actions.AuthenticateActionProvider
 import controllers.actions.AuthenticatedGetArrivalForWriteActionProvider
 import controllers.actions.AuthenticatedGetOptionalArrivalForWriteActionProvider
@@ -58,7 +59,7 @@ class MovementsController @Inject()(
 
   private val logger = Logger(getClass)
 
-  private val allMessageUnsent: Seq[MovementMessage] => Boolean =
+  private val allMessageUnsent: NonEmptyList[MovementMessage] => Boolean =
     _.map(_.optStatus).forall {
       case Some(messageStatus) if messageStatus != SubmissionSucceeded => true
       case _                                                           => false

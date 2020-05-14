@@ -21,6 +21,7 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 
 import base.SpecBase
+import cats.data.NonEmptyList
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalStatus
@@ -76,7 +77,7 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
         status = ArrivalStatus.Initialized,
         dateTime,
         dateTime,
-        messages = Seq(
+        messages = NonEmptyList.one(
           MovementMessageWithStatus(dateTime, MessageType.ArrivalNotification, movement, MessageStatus.SubmissionPending, 1)
         ),
         nextMessageCorrelationId = 2
