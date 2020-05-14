@@ -36,17 +36,6 @@ case class Arrival(
 
 object Arrival {
 
-  @deprecated("use NonEmptyList[MovementMessage] over Seq[MovementMessage]", "now")
-  def apply2(arrivalId: ArrivalId,
-             movementReferenceNumber: MovementReferenceNumber,
-             eoriNumber: String,
-             status: ArrivalStatus,
-             created: LocalDateTime,
-             updated: LocalDateTime,
-             messages: List[MovementMessage],
-             nextMessageCorrelationId: Int): Arrival =
-    new Arrival(arrivalId, movementReferenceNumber, eoriNumber, status, created, updated, NonEmptyList.fromListUnsafe(messages), nextMessageCorrelationId)
-
   implicit def formatsNonEmptyList[A](implicit listReads: Reads[List[A]], listWrites: Writes[List[A]]): Format[NonEmptyList[A]] =
     new Format[NonEmptyList[A]] {
       override def writes(o: NonEmptyList[A]): JsValue = Json.toJson(o.toList)
