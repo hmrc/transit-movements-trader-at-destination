@@ -19,6 +19,7 @@ package controllers.actions
 import javax.inject.Inject
 import models.request.AuthenticatedOptionalArrivalRequest
 import models.request.AuthenticatedRequest
+import play.api.Logger
 import play.api.mvc._
 import play.api.mvc.Results.BadRequest
 import play.api.mvc.Results.InternalServerError
@@ -52,12 +53,15 @@ class AuthenticateGetOptionalArrivalForWriteAction(
   implicit protected val executionContext: ExecutionContext
 ) extends ActionFunction[AuthenticatedRequest, AuthenticatedOptionalArrivalRequest] {
 
+  private val logger = Logger(getClass)
+
   override def invokeBlock[A](request: AuthenticatedRequest[A], block: AuthenticatedOptionalArrivalRequest[A] => Future[Result]): Future[Result] =
     request.body match {
       case body: NodeSeq =>
         XmlMessageParser.mrnR(body) match {
           case None =>
-            Future.successful(BadRequest)
+            logger.error("Invalid mrn specified in request")
+            Future.successful(BadRequest("Invalid mrn specified in request"))
 
           case Some(mrn) => {
             arrivalMovementRepository.get(request.eoriNumber, mrn).flatMap {
@@ -85,8 +89,8 @@ class AuthenticateGetOptionalArrivalForWriteAction(
             }
           }
         }
-      case _ =>
-        Future.successful(BadRequest)
+      case invalidBody =>
+        logger.error(s"Invalid request body: ${invalidBody.getClass}")
+        Future.successful(BadRequest(s"Invalid request body: ${invalidBody.getClass}"))
     }
-
 }
