@@ -33,8 +33,12 @@ case class Arrival(
   messages: NonEmptyList[MovementMessage],
   nextMessageCorrelationId: Int
 ) {
-  lazy val currentMessageId: MessageId = MessageId.fromMessageIdValue(messages.length)
-  lazy val nextMessageId: MessageId    = MessageId.fromIndex(messages.length)
+
+  lazy val nextMessageId: MessageId = MessageId.fromIndex(messages.length)
+
+  lazy val messagesWithId: NonEmptyList[(MovementMessage, MessageId)] =
+    messages.mapWithIndex(_ -> MessageId.fromIndex(_))
+
 }
 
 object Arrival {
