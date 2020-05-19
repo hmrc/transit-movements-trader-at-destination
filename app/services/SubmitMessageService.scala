@@ -84,7 +84,7 @@ class SubmitMessageService @Inject()(
       .flatMap {
         _ =>
           val message   = arrival.messages.head.asInstanceOf[MovementMessageWithStatus]
-          val messageId = new MessageId(arrival.messages.length - 1)
+          val messageId = arrival.currentMessageId // TODO: We shouldn't need to do this. We should be able to get this from the MovementMessage
 
           messageConnector
             .post(arrival.arrivalId, message, OffsetDateTime.now)

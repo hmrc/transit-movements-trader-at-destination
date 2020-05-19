@@ -130,7 +130,7 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
 
   implicit lazy val arbitraryMessageId: Arbitrary[MessageId] =
     Arbitrary {
-      intsAboveValue(0).map(new MessageId(_))
+      intsAboveValue(0).map(MessageId.fromIndex)
     }
 
   implicit lazy val arbitraryFailure: Arbitrary[SubmissionFailure] =

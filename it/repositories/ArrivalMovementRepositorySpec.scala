@@ -6,7 +6,7 @@ import cats.data.NonEmptyList
 import generators.ModelGenerators
 import models.ArrivalStatus.{ArrivalSubmitted, Initialized}
 import models.MessageStatus.{SubmissionPending, SubmissionSucceeded}
-import models.{Arrival, ArrivalId, ArrivalStatus, MessageType, MongoDateTimeFormats, MovementMessageWithStatus, MovementMessageWithoutStatus, MovementReferenceNumber}
+import models.{Arrival, ArrivalId, ArrivalStatus, MessageId, MessageType, MongoDateTimeFormats, MovementMessageWithStatus, MovementMessageWithoutStatus, MovementReferenceNumber}
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
 import org.scalactic.source
@@ -255,7 +255,7 @@ class ArrivalMovementRepositorySpec
         val app: Application = builder.build()
 
         val arrival = arrivalWithOneMessage.sample.value.copy(status = ArrivalStatus.Initialized)
-        val messageId = new models.MessageId(0)
+        val messageId = MessageId.fromIndex(0)
 
         running(app) {
           started(app).futureValue
@@ -282,7 +282,7 @@ class ArrivalMovementRepositorySpec
         val app: Application = builder.build()
 
         val arrival = arrivalWithOneMessage.sample.value.copy(arrivalId = ArrivalId(1), status = Initialized)
-        val messageId = new models.MessageId(0)
+        val messageId =  MessageId.fromIndex(0)
 
         running(app) {
           started(app).futureValue

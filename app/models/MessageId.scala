@@ -26,7 +26,7 @@ import play.api.mvc.PathBindable
 
 import scala.util.Try
 
-final class MessageId(val index: Int) {
+final class MessageId private (val index: Int) {
   override def equals(obj: Any): Boolean = obj match {
     case x: MessageId => x.index == this.index
     case _            => false
@@ -35,19 +35,27 @@ final class MessageId(val index: Int) {
 
 object MessageId {
 
+  def fromMessageIdValue(messageId: Int): MessageId = new MessageId(messageId - 1)
+
+  def unapply(arg: MessageId): Some[Int] = Some(arg.index + 1)
+
+  def fromIndex(index: Int): MessageId = new MessageId(index)
+
   implicit val pathBindableMessageId: PathBindable[MessageId] = new PathBindable[MessageId] {
     override def bind(key: String, value: String): Either[String, MessageId] =
       implicitly[PathBindable[Int]]
         .bind(key, value)
         .fold(
           Left(_), {
-            case x if x > 0 => Right(new MessageId(x - 1))
-            case x          => Left(s"Invalid MessageId. The MessageId must be > 0, instead got $x")
+            case messageId if (messageId > 0) => Right(fromMessageIdValue(messageId))
+            case x                            => Left(s"Invalid MessageId. The MessageId must be > 0, instead got $x")
           }
         )
 
-    override def unbind(key: String, value: MessageId): String =
-      (value.index + 1).toString
+    override def unbind(key: String, value: MessageId): String = {
+      val MessageId(messageId) = value
+      messageId.toString
+    }
   }
 
 }

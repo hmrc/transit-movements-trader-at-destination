@@ -55,7 +55,7 @@ class MessageIdSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyCh
     "must unbind and convert the index to the message id value" in {
       forAll(intsAboveValue(0)) {
         value =>
-          val messageId            = new MessageId(value)
+          val messageId            = MessageId.fromIndex(value)
           val expectedMessageIndex = (value + 1).toString
 
           pathBindable.unbind("key", messageId) mustEqual expectedMessageIndex

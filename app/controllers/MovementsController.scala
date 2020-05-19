@@ -72,7 +72,7 @@ class MovementsController @Inject()(
             .map {
               message =>
                 submitMessageService
-                  .submitMessage(arrival.arrivalId, new MessageId(arrival.messages.length), message, ArrivalStatus.ArrivalSubmitted)
+                  .submitMessage(arrival.arrivalId, arrival.nextMessageId, message, ArrivalStatus.ArrivalSubmitted)
                   .map {
                     case SubmissionProcessingResult.SubmissionSuccess =>
                       Accepted("Message accepted")
@@ -123,20 +123,19 @@ class MovementsController @Inject()(
       arrivalMovementService
         .makeMovementMessageWithStatus(request.arrival.nextMessageCorrelationId, MessageType.ArrivalNotification)(request.body)
         .map {
-          message =>
-            submitMessageService
-              .submitMessage(arrivalId, new MessageId(request.arrival.messages.length), message, ArrivalStatus.ArrivalSubmitted)
-              .map {
-                case SubmissionProcessingResult.SubmissionSuccess =>
-                  Accepted("Message accepted")
-                    .withHeaders("Location" -> routes.MovementsController.getArrival(request.arrival.arrivalId).url)
+          submitMessageService
+            .submitMessage(arrivalId, request.arrival.nextMessageId, _, ArrivalStatus.ArrivalSubmitted)
+            .map {
+              case SubmissionProcessingResult.SubmissionSuccess =>
+                Accepted("Message accepted")
+                  .withHeaders("Location" -> routes.MovementsController.getArrival(request.arrival.arrivalId).url)
 
-                case SubmissionProcessingResult.SubmissionFailureInternal =>
-                  InternalServerError
+              case SubmissionProcessingResult.SubmissionFailureInternal =>
+                InternalServerError
 
-                case SubmissionProcessingResult.SubmissionFailureExternal =>
-                  BadGateway
-              }
+              case SubmissionProcessingResult.SubmissionFailureExternal =>
+                BadGateway
+            }
         }
         .getOrElse {
           Logger.warn("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5")

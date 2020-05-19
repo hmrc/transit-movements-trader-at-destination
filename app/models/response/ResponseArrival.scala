@@ -53,7 +53,12 @@ object ResponseArrival {
           case (message, _) => message.optStatus == Some(SubmissionFailed)
         }
         .map {
-          case (message, count) => ResponseMovementMessage.build(arrival.arrivalId, new MessageId(count + 1), message)
+          case (message, count) =>
+            ResponseMovementMessage.build(
+              arrival.arrivalId,
+              MessageId.fromIndex(count + 1), // TODO: REVIEW THIS! OFF BY ONE?
+              message
+            )
         }
     )
 

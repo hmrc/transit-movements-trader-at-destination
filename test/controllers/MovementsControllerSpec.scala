@@ -293,7 +293,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
             status(result) mustEqual ACCEPTED
             header("Location", result).value must be(routes.MovementsController.getArrival(initializedArrival.arrivalId).url)
             verify(mockSubmitMessageService, times(1)).submitMessage(eqTo(initializedArrival.arrivalId),
-                                                                     eqTo(new MessageId(1)),
+                                                                     eqTo(MessageId.fromIndex(1)),
                                                                      eqTo(expectedMessage),
                                                                      eqTo(ArrivalStatus.ArrivalSubmitted))(any())
           }
@@ -462,7 +462,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           status(result) mustEqual ACCEPTED
           header("Location", result).value must be(routes.MovementsController.getArrival(initializedArrival.arrivalId).url)
           verify(mockSubmitMessageService, times(1)).submitMessage(eqTo(initializedArrival.arrivalId),
-                                                                   eqTo(new MessageId(1)),
+                                                                   eqTo(MessageId.fromIndex(1)),
                                                                    eqTo(expectedMessage),
                                                                    eqTo(ArrivalStatus.ArrivalSubmitted))(any())
         }
