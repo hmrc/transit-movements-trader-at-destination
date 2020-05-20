@@ -24,7 +24,7 @@ import models.MovementMessage
 import models.MovementMessageWithStatus
 import models.MovementMessageWithoutStatus
 
-class ValidMessageService {
+class ArrivalMessageSummaryService {
 
   def arrivalNotification(arrival: Arrival): (MovementMessage, MessageId) = arrival.messagesWithId match {
     case NonEmptyList(arrivalNotification, Nil)                                                     => arrivalNotification

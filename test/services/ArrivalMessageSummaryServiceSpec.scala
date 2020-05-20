@@ -34,8 +34,8 @@ import models.MessageType._
 import org.scalacheck.Gen
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
-class ValidMessageServiceSpec extends SpecBase with ModelGenerators with ScalaCheckDrivenPropertyChecks {
-  import ValidMessageServiceSpec.MovementMessagesHelpers._
+class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators with ScalaCheckDrivenPropertyChecks {
+  import ArrivalMessageSummaryServiceSpec.MovementMessagesHelpers._
 
   def messageGeneratorSent(messageType: MessageType): Gen[MovementMessageWithStatus] = {
     val message = xml.XML.loadString(s"<${messageType.rootNode}>test</${messageType.rootNode}>")
@@ -58,7 +58,7 @@ class ValidMessageServiceSpec extends SpecBase with ModelGenerators with ScalaCh
   "IE007" - {
 
     "must return the original IE007 when there have been no other messages" in {
-      val service = new ValidMessageService
+      val service = new ArrivalMessageSummaryService
 
       forAll(ie007Gen) {
         ie007 =>
@@ -74,7 +74,7 @@ class ValidMessageServiceSpec extends SpecBase with ModelGenerators with ScalaCh
     }
 
     "must return the original IEOO7 and first IE008 when there is only an IE007 and a IE008" in {
-      val service = new ValidMessageService
+      val service = new ArrivalMessageSummaryService
 
       forAll(ie007Gen, ie008Gen) {
         (ie007, ie008) =>
@@ -92,7 +92,7 @@ class ValidMessageServiceSpec extends SpecBase with ModelGenerators with ScalaCh
     }
 
     "must return the new IEOO7 when there has been a correction to a rejected arrival message" in {
-      val service = new ValidMessageService
+      val service = new ArrivalMessageSummaryService
 
       forAll(ie007Gen.submitted.msgCorrId(1), ie008Gen.msgCorrId(1), ie007Gen.msgCorrId(2)) {
         case (ie007Old, ie008Old, ie007) =>
@@ -110,7 +110,7 @@ class ValidMessageServiceSpec extends SpecBase with ModelGenerators with ScalaCh
     }
 
     "must return the latest IEOO7 when all IE007 have been rejected" in {
-      val service = new ValidMessageService
+      val service = new ArrivalMessageSummaryService
 
       forAll(ie007Gen.submitted.msgCorrId(1), ie008Gen.msgCorrId(1), ie007Gen.msgCorrId(2), ie008Gen.msgCorrId(2)) {
         case (ie007Old, ie008Old, ie007, ie008) =>
@@ -132,7 +132,7 @@ class ValidMessageServiceSpec extends SpecBase with ModelGenerators with ScalaCh
   "IE008" - {
 
     "must return None when there are none in the movement" in {
-      val service = new ValidMessageService
+      val service = new ArrivalMessageSummaryService
 
       forAll(ie007Gen) {
         ie007 =>
@@ -145,7 +145,7 @@ class ValidMessageServiceSpec extends SpecBase with ModelGenerators with ScalaCh
     }
 
     "must the latest IE008 when there is only an IE007 and a IE008" in {
-      val service = new ValidMessageService
+      val service = new ArrivalMessageSummaryService
 
       forAll(ie007Gen, ie008Gen) {
         (ie007, ie008) =>
@@ -163,7 +163,7 @@ class ValidMessageServiceSpec extends SpecBase with ModelGenerators with ScalaCh
     }
 
     "must return None when there has been an rejected arrival and correction arrival" in {
-      val service = new ValidMessageService
+      val service = new ArrivalMessageSummaryService
 
       forAll(ie007Gen.submitted.msgCorrId(1), ie008Gen.msgCorrId(1), ie007Gen.msgCorrId(2)) {
         case (ie007Old, ie008Old, ie007) =>
@@ -178,7 +178,7 @@ class ValidMessageServiceSpec extends SpecBase with ModelGenerators with ScalaCh
     }
 
     "must return IE008 when all IE007 have been rejected" in {
-      val service = new ValidMessageService
+      val service = new ArrivalMessageSummaryService
 
       forAll(ie007Gen.submitted.msgCorrId(1), ie008Gen.msgCorrId(1), ie007Gen.msgCorrId(2), ie008Gen.msgCorrId(2)) {
         case (ie007Old, ie008Old, ie007, ie008) =>
@@ -198,7 +198,7 @@ class ValidMessageServiceSpec extends SpecBase with ModelGenerators with ScalaCh
   }
 }
 
-object ValidMessageServiceSpec {
+object ArrivalMessageSummaryServiceSpec {
 
   object MovementMessagesHelpers {
 
