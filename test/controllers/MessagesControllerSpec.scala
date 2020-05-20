@@ -86,7 +86,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
     2
   )
 
-  val messageId = new MessageId(0)
+  val messageId = MessageId.fromIndex(0)
 
   val arrivalId = arbitrary[ArrivalId].sample.value
 
@@ -136,9 +136,9 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           val result  = route(application, request).value
 
           status(result) mustEqual ACCEPTED
-          header("Location", result).value must be(routes.MessagesController.getMessage(arrival.arrivalId, new MessageId(1)).url)
+          header("Location", result).value must be(routes.MessagesController.getMessage(arrival.arrivalId, MessageId.fromIndex(1)).url)
           verify(mockSubmitMessageService, times(1)).submitMessage(eqTo(arrival.arrivalId),
-                                                                   eqTo(new MessageId(1)),
+                                                                   eqTo(MessageId.fromIndex(1)),
                                                                    eqTo(movementMessge),
                                                                    eqTo(ArrivalStatus.UnloadingRemarksSubmitted))(any())
         }
@@ -298,11 +298,11 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
             .build()
 
         running(application) {
-          val request = FakeRequest(GET, routes.MessagesController.getMessage(arrival.arrivalId, new MessageId(0)).url)
+          val request = FakeRequest(GET, routes.MessagesController.getMessage(arrival.arrivalId, MessageId.fromIndex(0)).url)
           val result  = route(application, request).value
 
           status(result) mustEqual OK
-          contentAsJson(result) mustEqual Json.toJson(ResponseMovementMessage.build(arrival.arrivalId, new MessageId(0), message))
+          contentAsJson(result) mustEqual Json.toJson(ResponseMovementMessage.build(arrival.arrivalId, MessageId.fromIndex(0), message))
         }
       }
 
@@ -320,11 +320,11 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
             .build()
 
         running(application) {
-          val request = FakeRequest(GET, routes.MessagesController.getMessage(arrival.arrivalId, new MessageId(0)).url)
+          val request = FakeRequest(GET, routes.MessagesController.getMessage(arrival.arrivalId, MessageId.fromIndex(0)).url)
           val result  = route(application, request).value
 
           status(result) mustEqual OK
-          contentAsJson(result) mustEqual Json.toJson(ResponseMovementMessage.build(arrival.arrivalId, new MessageId(0), message))
+          contentAsJson(result) mustEqual Json.toJson(ResponseMovementMessage.build(arrival.arrivalId, MessageId.fromIndex(0), message))
         }
       }
 
@@ -340,7 +340,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
               .build()
 
           running(application) {
-            val request = FakeRequest(GET, routes.MessagesController.getMessage(ArrivalId(1), new MessageId(0)).url)
+            val request = FakeRequest(GET, routes.MessagesController.getMessage(ArrivalId(1), MessageId.fromIndex(0)).url)
             val result  = route(application, request).value
 
             status(result) mustEqual NOT_FOUND
@@ -361,7 +361,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
               .build()
 
           running(application) {
-            val request = FakeRequest(GET, routes.MessagesController.getMessage(arrival.arrivalId, new MessageId(5)).url)
+            val request = FakeRequest(GET, routes.MessagesController.getMessage(arrival.arrivalId, MessageId.fromIndex(5)).url)
             val result  = route(application, request).value
 
             status(result) mustEqual NOT_FOUND
@@ -382,7 +382,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
               .build()
 
           running(application) {
-            val request = FakeRequest(GET, routes.MessagesController.getMessage(arrival.arrivalId, new MessageId(0)).url)
+            val request = FakeRequest(GET, routes.MessagesController.getMessage(arrival.arrivalId, MessageId.fromIndex(0)).url)
             val result  = route(application, request).value
 
             status(result) mustEqual NOT_FOUND
@@ -403,7 +403,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
               .build()
 
           running(application) {
-            val request = FakeRequest(GET, routes.MessagesController.getMessage(arrival.arrivalId, new MessageId(0)).url)
+            val request = FakeRequest(GET, routes.MessagesController.getMessage(arrival.arrivalId, MessageId.fromIndex(0)).url)
             val result  = route(application, request).value
 
             status(result) mustEqual NOT_FOUND
@@ -421,7 +421,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           val message = Arbitrary.arbitrary[MovementMessageWithStatus].sample.value.copy(status = SubmissionSucceeded)
           val arrival = Arbitrary.arbitrary[Arrival].sample.value.copy(messages = NonEmptyList.one(message), eoriNumber = "eori")
 
-          val expectedMessages = ResponseMovementMessage.build(arrival.arrivalId, new MessageId(1), message)
+          val expectedMessages = ResponseMovementMessage.build(arrival.arrivalId, MessageId.fromMessageIdValue(1).value, message)
           val expectedArrival  = ResponseArrival.build(arrival).copy(messages = Seq(expectedMessages))
 
           val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
@@ -434,8 +434,8 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
               .build()
 
           running(application) {
-            val request = FakeRequest(GET, routes.MessagesController.getMessages(arrival.arrivalId).url)
-            val result  = route(application, request).value
+            lazy val request = FakeRequest(GET, routes.MessagesController.getMessages(arrival.arrivalId).url)
+            val result       = route(application, request).value
 
             status(result) mustEqual OK
             contentAsJson(result) mustEqual Json.toJson(expectedArrival)
@@ -447,7 +447,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           val message2 = Arbitrary.arbitrary[MovementMessageWithStatus].sample.value.copy(status = SubmissionFailed)
           val arrival  = Arbitrary.arbitrary[Arrival].sample.value.copy(messages = NonEmptyList.of(message1, message2), eoriNumber = "eori")
 
-          val expectedMessages = ResponseMovementMessage.build(arrival.arrivalId, new MessageId(1), message1)
+          val expectedMessages = ResponseMovementMessage.build(arrival.arrivalId, MessageId.fromMessageIdValue(1).value, message1)
           val expectedArrival  = ResponseArrival.build(arrival).copy(messages = Seq(expectedMessages))
 
           val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
@@ -476,8 +476,8 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
 
           val arrival = Arbitrary.arbitrary[Arrival].sample.value.copy(messages = NonEmptyList.of(message1, message2, message3), eoriNumber = "eori")
 
-          val expectedMessage1 = ResponseMovementMessage.build(arrival.arrivalId, new MessageId(1), message1)
-          val expectedMessage3 = ResponseMovementMessage.build(arrival.arrivalId, new MessageId(3), message3)
+          val expectedMessage1 = ResponseMovementMessage.build(arrival.arrivalId, MessageId.fromMessageIdValue(1).value, message1)
+          val expectedMessage3 = ResponseMovementMessage.build(arrival.arrivalId, MessageId.fromMessageIdValue(3).value, message3)
           val expectedArrival  = ResponseArrival.build(arrival).copy(messages = Seq(expectedMessage1, expectedMessage3))
 
           val mockArrivalMovementRepository = mock[ArrivalMovementRepository]

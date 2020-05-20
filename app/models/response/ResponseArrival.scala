@@ -39,7 +39,12 @@ case class ResponseArrival(arrivalId: ArrivalId,
 
 object ResponseArrival {
 
-  def build(arrival: Arrival): ResponseArrival =
+  def build(arrival: Arrival): ResponseArrival = {
+    val validMessages =
+      arrival.messagesWithId
+        .filterNot(_._1.optStatus.contains(SubmissionFailed))
+        .map(messageData => ResponseMovementMessage.build(arrival.arrivalId, messageData._2, messageData._1))
+
     ResponseArrival(
       arrival.arrivalId,
       routes.MovementsController.getArrival(arrival.arrivalId).url,
@@ -48,14 +53,9 @@ object ResponseArrival {
       arrival.status,
       arrival.created,
       arrival.updated,
-      arrival.messages.toList.zipWithIndex
-        .filterNot {
-          case (message, _) => message.optStatus == Some(SubmissionFailed)
-        }
-        .map {
-          case (message, count) => ResponseMovementMessage.build(arrival.arrivalId, new MessageId(count + 1), message)
-        }
+      validMessages
     )
+  }
 
   implicit val writes: OWrites[ResponseArrival] = Json.writes[ResponseArrival]
 

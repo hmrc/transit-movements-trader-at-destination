@@ -64,7 +64,7 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
       </HEAHEA>
     </CC007A>
 
-  val messageId = new MessageId(0)
+  val messageId = MessageId.fromIndex(0)
 
   val movementMessage = MovementMessageWithStatus(
     localDateTime,

@@ -18,9 +18,9 @@ package services
 
 import java.time.OffsetDateTime
 
+import cats.implicits._
 import connectors.MessageConnector
 import javax.inject.Inject
-import play.api.Logger
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalStatus
@@ -28,6 +28,7 @@ import models.MessageId
 import models.MessageStatus
 import models.MovementMessageWithStatus
 import models.SubmissionProcessingResult
+import play.api.Logger
 import repositories.ArrivalMovementRepository
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -83,8 +84,7 @@ class SubmitMessageService @Inject()(
       .insert(arrival)
       .flatMap {
         _ =>
-          val message   = arrival.messages.head.asInstanceOf[MovementMessageWithStatus]
-          val messageId = new MessageId(arrival.messages.length - 1)
+          val (message, messageId) = arrival.messagesWithId.head.leftMap(_.asInstanceOf[MovementMessageWithStatus])
 
           messageConnector
             .post(arrival.arrivalId, message, OffsetDateTime.now)
