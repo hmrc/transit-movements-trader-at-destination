@@ -27,7 +27,7 @@ import models.MovementMessage
 import models.SubmissionProcessingResult
 import models.MessageStatus.SubmissionFailed
 import models.request.ArrivalRequest
-import models.response.ResponseArrival
+import models.response.ResponseArrivalWithMessages
 import models.response.ResponseMovementMessage
 import play.api.Logger
 import play.api.libs.json.Json
@@ -93,6 +93,6 @@ class MessagesController @Inject()(
 
   def getMessages(arrivalId: ArrivalId): Action[AnyContent] = authenticateForRead(arrivalId) {
     implicit request =>
-      Ok(Json.toJsObject(ResponseArrival.build(request.arrival)))
+      Ok(Json.toJsObject(ResponseArrivalWithMessages.build(request.arrival)))
   }
 }

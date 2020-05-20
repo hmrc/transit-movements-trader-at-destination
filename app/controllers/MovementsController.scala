@@ -18,18 +18,20 @@ package controllers
 
 import cats.data.NonEmptyList
 import controllers.actions.AuthenticateActionProvider
+import controllers.actions.AuthenticatedGetArrivalForReadActionProvider
 import controllers.actions.AuthenticatedGetArrivalForWriteActionProvider
 import controllers.actions.AuthenticatedGetOptionalArrivalForWriteActionProvider
 import javax.inject.Inject
 import models.MessageStatus.SubmissionSucceeded
 import models.ArrivalId
 import models.ArrivalStatus
-import models.Arrivals
+import models.ResponseArrivals
 import models.MessageId
 import models.MessageType
 import models.MovementMessage
 import models.SubmissionProcessingResult
 import models.request.ArrivalRequest
+import models.response.ResponseArrival
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.Action
@@ -51,6 +53,7 @@ class MovementsController @Inject()(
   arrivalMovementService: ArrivalMovementMessageService,
   submitMessageService: SubmitMessageService,
   authenticate: AuthenticateActionProvider,
+  authenticatedArrivalForRead: AuthenticatedGetArrivalForReadActionProvider,
   authenticatedOptionalArrival: AuthenticatedGetOptionalArrivalForWriteActionProvider,
   authenticateForWrite: AuthenticatedGetArrivalForWriteActionProvider,
   defaultActionBuilder: DefaultActionBuilder
@@ -143,7 +146,10 @@ class MovementsController @Inject()(
         }
   }
 
-  def getArrival(arrivalId: ArrivalId): Action[AnyContent] = defaultActionBuilder(_ => NotImplemented)
+  def getArrival(arrivalId: ArrivalId): Action[AnyContent] = authenticatedArrivalForRead(arrivalId) {
+    implicit request =>
+      Ok(Json.toJsObject(ResponseArrival.build(request.arrival)))
+  }
 
   def getArrivals(): Action[AnyContent] = authenticate().async {
     implicit request =>
@@ -151,7 +157,10 @@ class MovementsController @Inject()(
         .fetchAllArrivals(request.eoriNumber)
         .map {
           allArrivals =>
-            Ok(Json.toJsObject(Arrivals(allArrivals)))
+            Ok(Json.toJsObject(ResponseArrivals(allArrivals.map {
+              arrival =>
+                ResponseArrival.build(arrival)
+            })))
         }
         .recover {
           case e =>

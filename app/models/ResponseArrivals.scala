@@ -16,11 +16,12 @@
 
 package models
 
+import models.response.ResponseArrival
 import play.api.libs.json.Json
-import play.api.libs.json.OFormat
+import play.api.libs.json.OWrites
 
-case class Arrivals(arrivals: Seq[Arrival])
-
-object Arrivals {
-  implicit val formats: OFormat[Arrivals] = Json.format[Arrivals]
+object ResponseArrivals {
+  implicit val writes: OWrites[ResponseArrivals] = Json.writes[ResponseArrivals]
 }
+
+case class ResponseArrivals(responseArrivals: Seq[ResponseArrival])

@@ -19,11 +19,10 @@ package models.response
 import java.time.LocalDateTime
 
 import controllers.routes
-import models.MessageStatus.SubmissionFailed
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalStatus
-import models.MessageId
+import models.MessageStatus.SubmissionFailed
 import models.MovementReferenceNumber
 import play.api.libs.json.Json
 import play.api.libs.json.OWrites
@@ -34,8 +33,7 @@ case class ResponseArrival(arrivalId: ArrivalId,
                            movementReferenceNumber: MovementReferenceNumber,
                            status: ArrivalStatus,
                            created: LocalDateTime,
-                           updated: LocalDateTime,
-                           messages: Seq[ResponseMovementMessage])
+                           updated: LocalDateTime) {}
 
 object ResponseArrival {
 
@@ -52,8 +50,7 @@ object ResponseArrival {
       arrival.movementReferenceNumber,
       arrival.status,
       arrival.created,
-      arrival.updated,
-      validMessages
+      arrival.updated
     )
   }
 
