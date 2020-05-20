@@ -22,6 +22,7 @@ import models.request.ArrivalRequest
 import models.request.AuthenticatedRequest
 import play.api.Logger
 import play.api.mvc.Results.NotFound
+import play.api.mvc.Results.InternalServerError
 import play.api.mvc.ActionRefiner
 import play.api.mvc.Request
 import play.api.mvc.Result
@@ -68,13 +69,20 @@ private[actions] class AuthenticatedGetArrivalAction(
     extends ActionRefiner[AuthenticatedRequest, ArrivalRequest] {
 
   override protected def refine[A](request: AuthenticatedRequest[A]): Future[Either[Result, ArrivalRequest[A]]] =
-    repository.get(arrivalId).map {
-      case Some(arrival) if arrival.eoriNumber == request.eoriNumber =>
-        Right(ArrivalRequest(request.request, arrival))
-      case Some(_) =>
-        Logger.warn("Attempt to retrieve an arrival for another EORI")
-        Left(NotFound)
-      case None =>
-        Left(NotFound)
-    }
+    repository
+      .get(arrivalId)
+      .map {
+        case Some(arrival) if arrival.eoriNumber == request.eoriNumber =>
+          Right(ArrivalRequest(request.request, arrival))
+        case Some(_) =>
+          Logger.warn("Attempt to retrieve an arrival for another EORI")
+          Left(NotFound)
+        case None =>
+          Left(NotFound)
+      }
+      .recover {
+        case e =>
+          Logger.error(s"Failed with the following error: $e")
+          Left(InternalServerError)
+      }
 }

@@ -27,7 +27,7 @@ import generators.ModelGenerators
 import models.MessageStatus.SubmissionFailed
 import models.MessageStatus.SubmissionPending
 import models.MessageStatus.SubmissionSucceeded
-import models.response.ResponseArrival
+import models.response.ResponseArrivalWithMessages
 import models.response.ResponseMovementMessage
 import models.Arrival
 import models.ArrivalId
@@ -60,7 +60,7 @@ import scala.concurrent.Future
 
 class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with ModelGenerators with BeforeAndAfterEach with IntegrationPatience {
 
-  implicit val responseArrivalWrite = ResponseArrival.writes
+  implicit val responseArrivalWrite = ResponseArrivalWithMessages.writes
   implicit val responseMessageWrite = ResponseMovementMessage.writes
 
   val localDate     = LocalDate.now()
@@ -421,8 +421,8 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           val message = Arbitrary.arbitrary[MovementMessageWithStatus].sample.value.copy(status = SubmissionSucceeded)
           val arrival = Arbitrary.arbitrary[Arrival].sample.value.copy(messages = NonEmptyList.one(message), eoriNumber = "eori")
 
-          val expectedMessages = ResponseMovementMessage.build(arrival.arrivalId, MessageId.fromMessageIdValue(1).value, message)
-          val expectedArrival  = ResponseArrival.build(arrival).copy(messages = Seq(expectedMessages))
+          val expectedMessages = ResponseMovementMessage.build(arrival.arrivalId, new MessageId(1), message)
+          val expectedArrival  = ResponseArrivalWithMessages.build(arrival).copy(messages = Seq(expectedMessages))
 
           val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
           when(mockArrivalMovementRepository.get(any()))
@@ -447,8 +447,8 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           val message2 = Arbitrary.arbitrary[MovementMessageWithStatus].sample.value.copy(status = SubmissionFailed)
           val arrival  = Arbitrary.arbitrary[Arrival].sample.value.copy(messages = NonEmptyList.of(message1, message2), eoriNumber = "eori")
 
-          val expectedMessages = ResponseMovementMessage.build(arrival.arrivalId, MessageId.fromMessageIdValue(1).value, message1)
-          val expectedArrival  = ResponseArrival.build(arrival).copy(messages = Seq(expectedMessages))
+          val expectedMessages = ResponseMovementMessage.build(arrival.arrivalId, new MessageId(1), message1)
+          val expectedArrival  = ResponseArrivalWithMessages.build(arrival).copy(messages = Seq(expectedMessages))
 
           val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
           when(mockArrivalMovementRepository.get(any()))
@@ -476,9 +476,9 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
 
           val arrival = Arbitrary.arbitrary[Arrival].sample.value.copy(messages = NonEmptyList.of(message1, message2, message3), eoriNumber = "eori")
 
-          val expectedMessage1 = ResponseMovementMessage.build(arrival.arrivalId, MessageId.fromMessageIdValue(1).value, message1)
-          val expectedMessage3 = ResponseMovementMessage.build(arrival.arrivalId, MessageId.fromMessageIdValue(3).value, message3)
-          val expectedArrival  = ResponseArrival.build(arrival).copy(messages = Seq(expectedMessage1, expectedMessage3))
+          val expectedMessage1 = ResponseMovementMessage.build(arrival.arrivalId, new MessageId(1), message1)
+          val expectedMessage3 = ResponseMovementMessage.build(arrival.arrivalId, new MessageId(3), message3)
+          val expectedArrival  = ResponseArrivalWithMessages.build(arrival).copy(messages = Seq(expectedMessage1, expectedMessage3))
 
           val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
           when(mockArrivalMovementRepository.get(any()))
@@ -504,7 +504,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
 
           val arrival = Arbitrary.arbitrary[Arrival].sample.value.copy(messages = NonEmptyList.of(message1, message2), eoriNumber = "eori")
 
-          val expectedArrival = ResponseArrival.build(arrival).copy(messages = Nil)
+          val expectedArrival = ResponseArrivalWithMessages.build(arrival).copy(messages = Nil)
 
           val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
           when(mockArrivalMovementRepository.get(any()))

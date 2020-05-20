@@ -167,6 +167,31 @@ class AuthenticatedGetArrivalForReadActionProviderSpec
 
         status(result) mustBe NOT_FOUND
       }
+
+      "must return InternalServerError when repository has issues" in {
+        val arrivalId = arbitrary[ArrivalId].sample.value
+
+        val mockAuthConnector: AuthConnector = mock[AuthConnector]
+        val mockArrivalMovementRepository    = mock[ArrivalMovementRepository]
+
+        when(mockAuthConnector.authorise[Enrolments](any(), any())(any(), any()))
+          .thenReturn(Future.successful(validEnrolments))
+        when(mockArrivalMovementRepository.get(any())) thenReturn Future.failed(new Exception)
+
+        val application = new GuiceApplicationBuilder()
+          .overrides(
+            bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
+            bind[AuthConnector].toInstance(mockAuthConnector)
+          )
+
+        val actionProvider = application.injector().instanceOf[AuthenticatedGetArrivalForReadActionProvider]
+
+        val controller = new Harness(actionProvider)
+        val result     = controller.get(arrivalId)(fakeRequest)
+
+        status(result) mustBe INTERNAL_SERVER_ERROR
+
+      }
     }
 
     "when given invalid enrolments" - {

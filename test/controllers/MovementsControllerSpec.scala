@@ -32,13 +32,14 @@ import models.MessageStatus.SubmissionSucceeded
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalStatus
-import models.Arrivals
+import models.ResponseArrivals
 import models.MessageId
 import models.MessageType
 import models.MovementMessageWithStatus
 import models.MovementMessageWithoutStatus
 import models.MovementReferenceNumber
 import models.SubmissionProcessingResult
+import models.response.ResponseArrival
 import models.response.ResponseMovementMessage
 import org.mockito.Matchers.any
 import org.mockito.Matchers.{eq => eqTo}
@@ -677,7 +678,10 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
               val result = route(application, request).value
 
               status(result) mustEqual OK
-              contentAsJson(result) mustEqual Json.toJson(Arrivals(arrivals))
+              contentAsJson(result) mustEqual Json.toJson(ResponseArrivals(arrivals.map {
+                a =>
+                  ResponseArrival.build(a)
+              }))
 
               reset(mockArrivalMovementRepository)
           }
@@ -699,6 +703,82 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           val request = FakeRequest(GET, routes.MovementsController.getArrivals().url)
 
           val result = route(application, request).value
+
+          status(result) mustEqual INTERNAL_SERVER_ERROR
+        }
+      }
+    }
+
+    "getArrival" - {
+
+      "must return Ok with the retrieved arrival" in {
+        val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+
+        val application = baseApplicationBuilder
+          .overrides(bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository))
+          .build()
+
+        val arrival = Arbitrary.arbitrary[Arrival].sample.value.copy(eoriNumber = "eori")
+        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
+
+        running(application) {
+          val request = FakeRequest(GET, routes.MovementsController.getArrival(ArrivalId(1)).url)
+
+          val result = route(application, request).value
+
+          status(result) mustEqual OK
+          contentAsJson(result) mustEqual Json.toJson(ResponseArrival.build(arrival))
+        }
+      }
+
+      "must return Not Found if arrival doesn't exist" in {
+        val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+
+        val application = baseApplicationBuilder
+          .overrides(bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository))
+          .build()
+
+        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(None))
+
+        running(application) {
+          val request = FakeRequest(GET, routes.MovementsController.getArrival(ArrivalId(1)).url)
+          val result  = route(application, request).value
+
+          status(result) mustEqual NOT_FOUND
+        }
+      }
+
+      "must return Not Found if arrival eori doesn't match" in {
+        val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+
+        val application = baseApplicationBuilder
+          .overrides(bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository))
+          .build()
+
+        val arrival = Arbitrary.arbitrary[Arrival].sample.value.copy(eoriNumber = "eori2")
+        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
+
+        running(application) {
+          val request = FakeRequest(GET, routes.MovementsController.getArrival(ArrivalId(1)).url)
+          val result  = route(application, request).value
+
+          status(result) mustEqual NOT_FOUND
+        }
+      }
+
+      "must return an INTERNAL_SERVER_ERROR when we cannot retrieve the arrival movement" in {
+        val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+
+        when(mockArrivalMovementRepository.get(any()))
+          .thenReturn(Future.failed(new Exception))
+
+        val application = baseApplicationBuilder
+          .overrides(bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository))
+          .build()
+
+        running(application) {
+          val request = FakeRequest(GET, routes.MovementsController.getArrival(ArrivalId(1)).url)
+          val result  = route(application, request).value
 
           status(result) mustEqual INTERNAL_SERVER_ERROR
         }
