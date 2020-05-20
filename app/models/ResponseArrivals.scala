@@ -18,11 +18,9 @@ package models
 
 import models.response.ResponseArrival
 import play.api.libs.json.Json
-import play.api.libs.json.OFormat
 import play.api.libs.json.OWrites
 
 object ResponseArrivals {
-  implicit val internalWrite                     = ResponseArrival.writes
   implicit val writes: OWrites[ResponseArrivals] = Json.writes[ResponseArrivals]
 }
 
