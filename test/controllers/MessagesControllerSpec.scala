@@ -421,7 +421,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           val message = Arbitrary.arbitrary[MovementMessageWithStatus].sample.value.copy(status = SubmissionSucceeded)
           val arrival = Arbitrary.arbitrary[Arrival].sample.value.copy(messages = NonEmptyList.one(message), eoriNumber = "eori")
 
-          val expectedMessages = ResponseMovementMessage.build(arrival.arrivalId, MessageId.fromIndex(1), message)
+          val expectedMessages = ResponseMovementMessage.build(arrival.arrivalId, MessageId.fromMessageIdValue(1).value, message)
           val expectedArrival  = ResponseArrivalWithMessages.build(arrival).copy(messages = Seq(expectedMessages))
 
           val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
@@ -447,7 +447,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           val message2 = Arbitrary.arbitrary[MovementMessageWithStatus].sample.value.copy(status = SubmissionFailed)
           val arrival  = Arbitrary.arbitrary[Arrival].sample.value.copy(messages = NonEmptyList.of(message1, message2), eoriNumber = "eori")
 
-          val expectedMessages = ResponseMovementMessage.build(arrival.arrivalId, MessageId.fromIndex(1), message1)
+          val expectedMessages = ResponseMovementMessage.build(arrival.arrivalId, MessageId.fromMessageIdValue(1).value, message1)
           val expectedArrival  = ResponseArrivalWithMessages.build(arrival).copy(messages = Seq(expectedMessages))
 
           val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
@@ -476,8 +476,8 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
 
           val arrival = Arbitrary.arbitrary[Arrival].sample.value.copy(messages = NonEmptyList.of(message1, message2, message3), eoriNumber = "eori")
 
-          val expectedMessage1 = ResponseMovementMessage.build(arrival.arrivalId, MessageId.fromIndex(1), message1)
-          val expectedMessage3 = ResponseMovementMessage.build(arrival.arrivalId, MessageId.fromIndex(3), message3)
+          val expectedMessage1 = ResponseMovementMessage.build(arrival.arrivalId, MessageId.fromMessageIdValue(1).value, message1)
+          val expectedMessage3 = ResponseMovementMessage.build(arrival.arrivalId, MessageId.fromMessageIdValue(3).value, message3)
           val expectedArrival  = ResponseArrivalWithMessages.build(arrival).copy(messages = Seq(expectedMessage1, expectedMessage3))
 
           val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
