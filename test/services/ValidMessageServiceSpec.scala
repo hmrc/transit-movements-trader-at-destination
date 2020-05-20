@@ -23,6 +23,7 @@ import cats.data._
 import generators.ModelGenerators
 import models.MessageStatus._
 import models.Arrival
+import models.MessageId
 import models.MessageStatus
 import models.MessageType
 import models.MovementMessage
@@ -63,7 +64,10 @@ class ValidMessageServiceSpec extends SpecBase with ModelGenerators with ScalaCh
         ie007 =>
           forAll(arrivalMovement(NonEmptyList.one(ie007))) {
             arrival =>
-              service.arrivalNotification(arrival) mustEqual ie007
+              val (message, messageId) = service.arrivalNotification(arrival)
+
+              message mustEqual ie007
+              messageId mustEqual MessageId.fromMessageIdValue(1).value
 
           }
       }
@@ -78,7 +82,10 @@ class ValidMessageServiceSpec extends SpecBase with ModelGenerators with ScalaCh
 
           forAll(arrivalMovement(messages)) {
             arrival =>
-              service.arrivalNotification(arrival) mustEqual ie007
+              val (message, messageId) = service.arrivalNotification(arrival)
+
+              message mustEqual ie007
+              messageId mustEqual MessageId.fromMessageIdValue(1).value
           }
       }
 
@@ -93,7 +100,10 @@ class ValidMessageServiceSpec extends SpecBase with ModelGenerators with ScalaCh
 
           forAll(arrivalMovement(messages)) {
             arrival =>
-              service.arrivalNotification(arrival) mustEqual ie007
+              val (message, messageId) = service.arrivalNotification(arrival)
+
+              message mustEqual ie007
+              messageId mustEqual MessageId.fromMessageIdValue(3).value
           }
       }
 
@@ -108,7 +118,10 @@ class ValidMessageServiceSpec extends SpecBase with ModelGenerators with ScalaCh
 
           forAll(arrivalMovement(messages)) {
             arrival =>
-              service.arrivalNotification(arrival) mustEqual ie007
+              val (message, messageId) = service.arrivalNotification(arrival)
+
+              message mustEqual ie007
+              messageId mustEqual MessageId.fromMessageIdValue(3).value
           }
       }
 
@@ -140,7 +153,10 @@ class ValidMessageServiceSpec extends SpecBase with ModelGenerators with ScalaCh
 
           forAll(arrivalMovement(messages)) {
             arrival =>
-              service.arrivalRejection(arrival).value mustEqual ie008
+              val (message, messageId) = service.arrivalRejection(arrival).value
+
+              message mustEqual ie008
+              messageId mustEqual MessageId.fromMessageIdValue(2).value
           }
       }
 
@@ -170,7 +186,10 @@ class ValidMessageServiceSpec extends SpecBase with ModelGenerators with ScalaCh
 
           forAll(arrivalMovement(messages)) {
             arrival =>
-              service.arrivalRejection(arrival).value mustEqual ie008
+              val (message, messageId) = service.arrivalRejection(arrival).value
+
+              message mustEqual ie008
+              messageId mustEqual MessageId.fromMessageIdValue(4).value
           }
       }
 

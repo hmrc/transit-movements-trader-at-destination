@@ -17,49 +17,52 @@
 package services
 
 import cats.data.NonEmptyList
+import models.MessageType._
 import models.Arrival
-import models.MessageType
+import models.MessageId
 import models.MovementMessage
 import models.MovementMessageWithStatus
 import models.MovementMessageWithoutStatus
-import models.MessageType._
 
 class ValidMessageService {
 
-  def arrivalNotification(arrival: Arrival): MovementMessage = arrival.messages match {
-    case NonEmptyList(arrivalNotification, Nil)      => arrivalNotification
-    case NonEmptyList(arrivalNotification, _ :: Nil) => arrivalNotification
-    case a =>
-      a.foldLeft(Seq.empty[MovementMessageWithStatus]) {
-          case (acc, m @ MovementMessageWithStatus(_, ArrivalNotification, _, _, _)) => acc :+ m
-          case (acc, _)                                                              => acc
-        }
-        .maxBy(_.messageCorrelationId)
+  def arrivalNotification(arrival: Arrival): (MovementMessage, MessageId) = arrival.messagesWithId match {
+    case NonEmptyList(arrivalNotification, Nil)                                                     => arrivalNotification
+    case NonEmptyList(arrivalNotification, _ :: Nil)                                                => arrivalNotification
+    case NonEmptyList((msg @ MovementMessageWithStatus(_, ArrivalNotification, _, _, _), id), tail) =>
+      // This is a workaround since we cannot infer the type of head
+      // to be (MovementMessageWithStatus, MessageId) using @ in the pattern match
+      val head: (MovementMessageWithStatus, MessageId) = (msg, id)
+
+      tail
+        .foldLeft(NonEmptyList.of(head))({
+          case (acc, (m @ MovementMessageWithStatus(_, ArrivalNotification, _, _, _), mid)) => acc :+ Tuple2(m, mid)
+          case (acc, _)                                                                     => acc
+        })
+        .toList
+        .maxBy(_._1.messageCorrelationId)
+
+    case _ => ??? // Unreachable but unprovable
   }
 
-  def arrivalRejection(arrival: Arrival): Option[MovementMessage] = {
+  def arrivalRejection(arrival: Arrival): Option[(MovementMessage, MessageId)] = {
 
-    def sameNumber(msgs: NonEmptyList[MovementMessage]): Boolean = {
-      val numIe008 = msgs.toList.count {
-        case MovementMessageWithoutStatus(_, ArrivalRejection, _, _) => true
-        case _                                                       => false
-      }
-      val numIe007 = msgs.toList.count {
-        case MovementMessageWithStatus(_, ArrivalNotification, _, _, _) => true
-        case _                                                          => false
-      }
-
-      numIe007 == numIe008
+    lazy val numIe007 = arrival.messages.toList.count {
+      case MovementMessageWithStatus(_, ArrivalNotification, _, _, _) => true
+      case _                                                          => false
     }
 
-    val ie008Messages = arrival.messages
-      .foldLeft(Seq.empty[MovementMessageWithoutStatus]) {
-        case (acc, m @ MovementMessageWithoutStatus(_, ArrivalRejection, _, _)) => acc :+ m
-        case (acc, _)                                                           => acc
+    val ie008Messages = arrival.messagesWithId
+      .foldLeft(Seq.empty[(MovementMessageWithoutStatus, MessageId)]) {
+        case (acc, (m @ MovementMessageWithoutStatus(_, ArrivalRejection, _, _), mid)) => acc :+ Tuple2(m, mid)
+        case (acc, _)                                                                  => acc
       }
 
-    if (ie008Messages.nonEmpty && sameNumber(arrival.messages)) Some(ie008Messages.maxBy(_.messageCorrelationId))
-    else None
+    if (ie008Messages.nonEmpty && numIe007 == ie008Messages.length)
+      Some(ie008Messages.maxBy(_._1.messageCorrelationId))
+    else
+      None
+
   }
 
 }
