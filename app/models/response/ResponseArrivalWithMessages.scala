@@ -48,12 +48,12 @@ object ResponseArrivalWithMessages {
       arrival.status,
       arrival.created,
       arrival.updated,
-      arrival.messages.toList.zipWithIndex
+      arrival.messagesWithId
         .filterNot {
           case (message, _) => message.optStatus == Some(SubmissionFailed)
         }
         .map {
-          case (message, count) => ResponseMovementMessage.build(arrival.arrivalId, MessageId.fromIndex(count + 1), message)
+          case (message, messageId) => ResponseMovementMessage.build(arrival.arrivalId, messageId, message)
         }
     )
 
