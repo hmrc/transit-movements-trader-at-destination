@@ -42,24 +42,32 @@ class ArrivalMessageSummaryService {
         .toList
         .maxBy(_._1.messageCorrelationId)
 
-    case _ => ??? // Unreachable but unprovable
+    case NonEmptyList((msg, _), _) =>
+      // Unreachable but unprovable
+      throw new RuntimeException(
+        "Reached an invalid state when summarizing Arrival Notification. " +
+          "Expected the first message of the movement to be MovementMessageWithStatus with an ArrivalNotification, " +
+          s"but got ${msg.getClass} that contained a ${msg.messageType.code}"
+      )
   }
 
   def arrivalRejection(arrival: Arrival): Option[(MovementMessage, MessageId)] = {
 
-    lazy val numIe007 = arrival.messages.toList.count {
+    lazy val arrivalNotificationCount = arrival.messages.toList.count {
       case MovementMessageWithStatus(_, ArrivalNotification, _, _, _) => true
       case _                                                          => false
     }
 
-    val ie008Messages = arrival.messagesWithId
+    val rejectionNotifications = arrival.messagesWithId
       .foldLeft(Seq.empty[(MovementMessageWithoutStatus, MessageId)]) {
         case (acc, (m @ MovementMessageWithoutStatus(_, ArrivalRejection, _, _), mid)) => acc :+ Tuple2(m, mid)
         case (acc, _)                                                                  => acc
       }
 
-    if (ie008Messages.nonEmpty && numIe007 == ie008Messages.length)
-      Some(ie008Messages.maxBy(_._1.messageCorrelationId))
+    val rejectionNotificationCount = rejectionNotifications.length
+
+    if (rejectionNotificationCount > 0 && arrivalNotificationCount == rejectionNotificationCount)
+      Some(rejectionNotifications.maxBy(_._1.messageCorrelationId))
     else
       None
 
