@@ -23,11 +23,15 @@ import play.api.mvc.ActionBuilder
 import play.api.mvc.AnyContent
 import play.api.mvc.DefaultActionBuilder
 
-class AuthenticatedGetArrivalForReadActionProvider @Inject()(
+trait AuthenticatedGetArrivalForReadActionProvider {
+  def apply(arrivalId: ArrivalId): ActionBuilder[ArrivalRequest, AnyContent]
+}
+
+class AuthenticatedGetArrivalForReadActionProviderImpl @Inject()(
   authenticate: AuthenticateActionProvider,
   getArrival: AuthenticatedGetArrivalActionProvider,
   buildDefault: DefaultActionBuilder
-) {
+) extends AuthenticatedGetArrivalForReadActionProvider {
 
   def apply(arrivalId: ArrivalId): ActionBuilder[ArrivalRequest, AnyContent] =
     buildDefault andThen authenticate() andThen getArrival(arrivalId)
