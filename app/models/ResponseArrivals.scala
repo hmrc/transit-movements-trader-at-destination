@@ -20,8 +20,8 @@ import models.response.ResponseArrival
 import play.api.libs.json.Json
 import play.api.libs.json.OWrites
 
+case class ResponseArrivals(arrivals: Seq[ResponseArrival])
+
 object ResponseArrivals {
   implicit val writes: OWrites[ResponseArrivals] = Json.writes[ResponseArrivals]
 }
-
-case class ResponseArrivals(responseArrivals: Seq[ResponseArrival])
