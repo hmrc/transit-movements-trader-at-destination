@@ -26,6 +26,7 @@ import models.Arrival
 import models.MessageId
 import models.MessageStatus
 import models.MessageType
+import models.MessagesSummary
 import models.MovementMessage
 import models.MovementMessageWithStatus
 import models.MovementMessageWithoutStatus
@@ -55,7 +56,7 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
       arrival <- arbitrary[Arrival]
     } yield arrival.copy(messages = msgs)
 
-  "IE007" - {
+  "arrivalNotificationR" - {
 
     "must return the original IE007 when there have been no other messages" in {
       val service = new ArrivalMessageSummaryService
@@ -64,7 +65,7 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
         ie007 =>
           forAll(arrivalMovement(NonEmptyList.one(ie007))) {
             arrival =>
-              val (message, messageId) = service.arrivalNotification(arrival)
+              val (message, messageId) = service.arrivalNotificationR(arrival)
 
               message mustEqual ie007
               messageId mustEqual MessageId.fromMessageIdValue(1).value
@@ -82,7 +83,7 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
 
           forAll(arrivalMovement(messages)) {
             arrival =>
-              val (message, messageId) = service.arrivalNotification(arrival)
+              val (message, messageId) = service.arrivalNotificationR(arrival)
 
               message mustEqual ie007
               messageId mustEqual MessageId.fromMessageIdValue(1).value
@@ -100,7 +101,7 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
 
           forAll(arrivalMovement(messages)) {
             arrival =>
-              val (message, messageId) = service.arrivalNotification(arrival)
+              val (message, messageId) = service.arrivalNotificationR(arrival)
 
               message mustEqual ie007
               messageId mustEqual MessageId.fromMessageIdValue(3).value
@@ -118,7 +119,7 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
 
           forAll(arrivalMovement(messages)) {
             arrival =>
-              val (message, messageId) = service.arrivalNotification(arrival)
+              val (message, messageId) = service.arrivalNotificationR(arrival)
 
               message mustEqual ie007
               messageId mustEqual MessageId.fromMessageIdValue(3).value
@@ -129,7 +130,7 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
 
   }
 
-  "IE008" - {
+  "arrivalRejectionR" - {
 
     "must return None when there are none in the movement" in {
       val service = new ArrivalMessageSummaryService
@@ -138,7 +139,7 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
         ie007 =>
           forAll(arrivalMovement(NonEmptyList.one(ie007))) {
             arrival =>
-              service.arrivalRejection(arrival) must not be (defined)
+              service.arrivalRejectionR(arrival) must not be (defined)
 
           }
       }
@@ -153,7 +154,7 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
 
           forAll(arrivalMovement(messages)) {
             arrival =>
-              val (message, messageId) = service.arrivalRejection(arrival).value
+              val (message, messageId) = service.arrivalRejectionR(arrival).value
 
               message mustEqual ie008
               messageId mustEqual MessageId.fromMessageIdValue(2).value
@@ -171,7 +172,7 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
 
           forAll(arrivalMovement(messages)) {
             arrival =>
-              service.arrivalRejection(arrival) must not be (defined)
+              service.arrivalRejectionR(arrival) must not be (defined)
           }
       }
 
@@ -186,10 +187,78 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
 
           forAll(arrivalMovement(messages)) {
             arrival =>
-              val (message, messageId) = service.arrivalRejection(arrival).value
+              val (message, messageId) = service.arrivalRejectionR(arrival).value
 
               message mustEqual ie008
               messageId mustEqual MessageId.fromMessageIdValue(4).value
+          }
+      }
+
+    }
+
+  }
+
+  "arrivalMessagesSummary" - {
+
+    "must return the initial IE007 and no IE008 when there only and arrival movement" in {
+      val service = new ArrivalMessageSummaryService
+
+      forAll(ie007Gen) {
+        ie007 =>
+          forAll(arrivalMovement(NonEmptyList.one(ie007))) {
+            arrival =>
+              service.arrivalMessagesSummary(arrival) mustEqual MessagesSummary(arrival, MessageId.fromMessageIdValue(1).value, None)
+
+          }
+      }
+    }
+
+    "must the latest IE008 when there is only an IE007 and a IE008" in {
+      val service = new ArrivalMessageSummaryService
+
+      forAll(ie007Gen, ie008Gen) {
+        (ie007, ie008) =>
+          val messages = NonEmptyList.of(ie007, ie008)
+
+          forAll(arrivalMovement(messages)) {
+            arrival =>
+              val expectedMessageSummary = MessagesSummary(arrival, MessageId.fromMessageIdValue(1).value, MessageId.fromMessageIdValue(2))
+
+              service.arrivalMessagesSummary(arrival) mustEqual expectedMessageSummary
+          }
+      }
+
+    }
+
+    "must return None when there has been an rejected arrival and correction arrival" in {
+      val service = new ArrivalMessageSummaryService
+
+      forAll(ie007Gen.submitted.msgCorrId(1), ie008Gen.msgCorrId(1), ie007Gen.msgCorrId(2)) {
+        case (ie007Old, ie008Old, ie007) =>
+          val messages = NonEmptyList.of(ie007Old, ie008Old, ie007)
+
+          forAll(arrivalMovement(messages)) {
+            arrival =>
+              val expectedMessageSummary = MessagesSummary(arrival, MessageId.fromMessageIdValue(3).value, None)
+
+              service.arrivalMessagesSummary(arrival) mustEqual expectedMessageSummary
+          }
+      }
+
+    }
+
+    "must return IE008 when all IE007 have been rejected" in {
+      val service = new ArrivalMessageSummaryService
+
+      forAll(ie007Gen.submitted.msgCorrId(1), ie008Gen.msgCorrId(1), ie007Gen.msgCorrId(2), ie008Gen.msgCorrId(2)) {
+        case (ie007Old, ie008Old, ie007, ie008) =>
+          val messages = NonEmptyList.of(ie007Old, ie008Old, ie007, ie008)
+
+          forAll(arrivalMovement(messages)) {
+            arrival =>
+              val expectedMessageSummary = MessagesSummary(arrival, MessageId.fromMessageIdValue(3).value, MessageId.fromMessageIdValue(4))
+
+              service.arrivalMessagesSummary(arrival) mustEqual expectedMessageSummary
           }
       }
 

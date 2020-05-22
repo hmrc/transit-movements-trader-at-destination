@@ -17,15 +17,12 @@
 package controllers
 
 import base.SpecBase
-import cats.implicits._
 import controllers.actions.AuthenticatedGetArrivalForReadActionProvider
 import controllers.actions.FakeAuthenticatedGetArrivalForReadActionProvider
 import generators.ModelGenerators
 import models.Arrival
 import models.MessageId
-import models.MessageType
-import models.MovementMessageWithStatus
-import models.MovementMessageWithoutStatus
+import models.MessagesSummary
 import org.mockito.Matchers.any
 import org.mockito.Mockito.when
 import org.scalacheck.Arbitrary.arbitrary
@@ -45,14 +42,11 @@ class MessagesSummaryControllerSpec extends SpecBase with ModelGenerators {
       val fake        = FakeAuthenticatedGetArrivalForReadActionProvider(arrival)
       val mockService = mock[ArrivalMessageSummaryService]
 
-      val arrivalNotification          = arbitrary[MovementMessageWithStatus].sample.value.copy(messageType = MessageType.ArrivalNotification)
       val arrivalNotificationMessageId = MessageId.fromMessageIdValue(1).value
+      val arrivalRejectionMessageId    = MessageId.fromMessageIdValue(2).value
+      val messagesSummary              = MessagesSummary(arrival, arrivalNotificationMessageId, Some(arrivalRejectionMessageId))
 
-      val arrivalRejection          = arbitrary[MovementMessageWithoutStatus].sample.value.copy(messageType = MessageType.ArrivalRejection)
-      val arrivalRejectionMessageId = MessageId.fromMessageIdValue(1).value
-
-      when(mockService.arrivalNotification(any())).thenReturn((arrivalNotification, arrivalNotificationMessageId))
-      when(mockService.arrivalRejection(any())).thenReturn((arrivalRejection, arrivalRejectionMessageId).some)
+      when(mockService.arrivalMessagesSummary(any())).thenReturn(messagesSummary)
 
       val app =
         baseApplicationBuilder
@@ -68,13 +62,7 @@ class MessagesSummaryControllerSpec extends SpecBase with ModelGenerators {
         val result = route(app, request).value
 
         status(result) mustEqual OK
-        contentAsJson(result) mustEqual Json.obj(
-          "arrivalId" -> arrival.arrivalId,
-          "messages" -> Json.obj(
-            "IE007" -> routes.MessagesController.getMessage(arrival.arrivalId, arrivalNotificationMessageId).url,
-            "IE008" -> routes.MessagesController.getMessage(arrival.arrivalId, arrivalRejectionMessageId).url
-          )
-        )
+        contentAsJson(result) mustEqual Json.toJsObject(messagesSummary)
       }
     }
   }

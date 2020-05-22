@@ -16,61 +16,80 @@
 
 package services
 
-import cats.data.NonEmptyList
+import cats._
+import cats.data._
+import cats.implicits._
 import models.MessageType._
 import models.Arrival
 import models.MessageId
+import models.MessagesSummary
 import models.MovementMessage
 import models.MovementMessageWithStatus
 import models.MovementMessageWithoutStatus
 
 class ArrivalMessageSummaryService {
 
-  def arrivalNotification(arrival: Arrival): (MovementMessage, MessageId) = arrival.messagesWithId match {
-    case NonEmptyList(arrivalNotification, Nil)                                                     => arrivalNotification
-    case NonEmptyList(arrivalNotification, _ :: Nil)                                                => arrivalNotification
-    case NonEmptyList((msg @ MovementMessageWithStatus(_, ArrivalNotification, _, _, _), id), tail) =>
-      // This is a workaround since we cannot infer the type of head
-      // to be (MovementMessageWithStatus, MessageId) using @ in the pattern match
-      val head: (MovementMessageWithStatus, MessageId) = (msg, id)
+  private[services] val arrivalNotificationR: Reader[Arrival, (MovementMessage, MessageId)] =
+    Reader[Arrival, (MovementMessage, MessageId)](
+      _.messagesWithId match {
+        case NonEmptyList(arrivalNotification, Nil) =>
+          arrivalNotification
 
-      tail
-        .foldLeft(NonEmptyList.of(head))({
-          case (acc, (m @ MovementMessageWithStatus(_, ArrivalNotification, _, _, _), mid)) => acc :+ Tuple2(m, mid)
-          case (acc, _)                                                                     => acc
-        })
-        .toList
-        .maxBy(_._1.messageCorrelationId)
+        case NonEmptyList(arrivalNotification, _ :: Nil) =>
+          arrivalNotification
 
-    case NonEmptyList((msg, _), _) =>
-      // Unreachable but unprovable
-      throw new RuntimeException(
-        "Reached an invalid state when summarizing Arrival Notification. " +
-          "Expected the first message of the movement to be MovementMessageWithStatus with an ArrivalNotification, " +
-          s"but got ${msg.getClass} that contained a ${msg.messageType.code}"
-      )
-  }
+        case NonEmptyList((msg @ MovementMessageWithStatus(_, ArrivalNotification, _, _, _), id), tail) =>
+          // This is a workaround since we cannot infer the type of head
+          // to be (MovementMessageWithStatus, MessageId) using @ in the pattern match
+          val head: (MovementMessageWithStatus, MessageId) = (msg, id)
 
-  def arrivalRejection(arrival: Arrival): Option[(MovementMessage, MessageId)] = {
+          tail
+            .foldLeft(NonEmptyList.of(head))({
+              case (acc, (m @ MovementMessageWithStatus(_, ArrivalNotification, _, _, _), mid)) => acc :+ Tuple2(m, mid)
+              case (acc, _)                                                                     => acc
+            })
+            .toList
+            .maxBy(_._1.messageCorrelationId)
 
-    lazy val arrivalNotificationCount = arrival.messages.toList.count {
-      case MovementMessageWithStatus(_, ArrivalNotification, _, _, _) => true
-      case _                                                          => false
+        case NonEmptyList((msg, _), _) =>
+          // Unreachable but unprovable
+          throw new RuntimeException(
+            "Reached an invalid state when summarizing Arrival Notification. " +
+              "Expected the first message of the movement to be MovementMessageWithStatus with an ArrivalNotification, " +
+              s"but got ${msg.getClass} that contained a ${msg.messageType.code}"
+          )
+      }
+    )
+
+  private[services] val arrivalRejectionR: Reader[Arrival, Option[(MovementMessage, MessageId)]] =
+    Reader[Arrival, Option[(MovementMessage, MessageId)]] {
+      arrival =>
+        lazy val arrivalNotificationCount = arrival.messages.toList.count {
+          case MovementMessageWithStatus(_, ArrivalNotification, _, _, _) => true
+          case _                                                          => false
+        }
+
+        val rejectionNotifications = arrival.messagesWithId
+          .foldLeft(Seq.empty[(MovementMessageWithoutStatus, MessageId)]) {
+            case (acc, (m @ MovementMessageWithoutStatus(_, ArrivalRejection, _, _), mid)) => acc :+ Tuple2(m, mid)
+            case (acc, _)                                                                  => acc
+          }
+
+        val rejectionNotificationCount = rejectionNotifications.length
+
+        if (rejectionNotificationCount > 0 && arrivalNotificationCount == rejectionNotificationCount)
+          Some(rejectionNotifications.maxBy(_._1.messageCorrelationId))
+        else
+          None
+
     }
 
-    val rejectionNotifications = arrival.messagesWithId
-      .foldLeft(Seq.empty[(MovementMessageWithoutStatus, MessageId)]) {
-        case (acc, (m @ MovementMessageWithoutStatus(_, ArrivalRejection, _, _), mid)) => acc :+ Tuple2(m, mid)
-        case (acc, _)                                                                  => acc
-      }
-
-    val rejectionNotificationCount = rejectionNotifications.length
-
-    if (rejectionNotificationCount > 0 && arrivalNotificationCount == rejectionNotificationCount)
-      Some(rejectionNotifications.maxBy(_._1.messageCorrelationId))
-    else
-      None
-
-  }
+  def arrivalMessagesSummary(arrival: Arrival): MessagesSummary =
+    (for {
+      arrivalNotification <- arrivalNotificationR
+      arrivalRejection    <- arrivalRejectionR
+    } yield {
+      MessagesSummary(arrival, arrivalNotification._2, arrivalRejection.map(_._2))
+    }).run(arrival)
 
 }

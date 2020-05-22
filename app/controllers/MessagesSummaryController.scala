@@ -19,7 +19,6 @@ package controllers
 import controllers.actions.AuthenticatedGetArrivalForReadActionProvider
 import javax.inject.Inject
 import models.ArrivalId
-import models.MessagesSummary
 import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
@@ -38,10 +37,7 @@ class MessagesSummaryController @Inject()(
 
   def messagesSummary(arrivalId: ArrivalId): Action[AnyContent] = authenticateForRead(arrivalId) {
     implicit request =>
-      val (_, arrivalNotificationId) = arrivalMessageSummaryService.arrivalNotification(request.arrival)
-      val arrivalRejectionId         = arrivalMessageSummaryService.arrivalRejection(request.arrival).map(_._2)
-
-      val messageSummary = MessagesSummary(request.arrival, arrivalNotificationId, arrivalRejectionId)
+      val messageSummary = arrivalMessageSummaryService.arrivalMessagesSummary(request.arrival)
 
       Ok(Json.toJsObject(messageSummary))
   }
