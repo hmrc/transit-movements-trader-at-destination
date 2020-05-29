@@ -141,7 +141,7 @@ class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi)(implicit ec: 
       "_id" -> id
     )
 
-    val modifier = ArrivalUpdate.updateModifier(status)
+    val modifier = ArrivalUpdate.toJson(status)
 
     collection.flatMap {
       _.update(false)

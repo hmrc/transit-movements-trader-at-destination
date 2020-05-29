@@ -16,22 +16,21 @@
 
 package models
 
+import base.SpecBase
+import generators.ModelGenerators
+import models.ArrivalStatus._
+import models.MessageStatus.SubmissionFailed
+import models.MessageStatus.SubmissionPending
+import models.MessageStatus.SubmissionSucceeded
+import org.scalacheck.Arbitrary.arbitrary
+import org.scalacheck.Arbitrary
+import org.scalacheck.Gen
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.libs.json.JsObject
-import play.api.libs.json.Json
-import play.api.libs.json.Writes
+import play.api.libs.json.JsString
 
-trait ArrivalUpdate[A] {
-  def toJson(a: A): JsObject
-}
-
-object ArrivalUpdate {
-
-  def apply[A: ArrivalUpdate]: ArrivalUpdate[A] = implicitly[ArrivalUpdate[A]]
-
-  def apply[A](fn: A => JsObject): ArrivalUpdate[A] = new ArrivalUpdate[A] {
-    override def toJson(a: A): JsObject = fn(a)
-  }
-
-  def toJson[A: ArrivalUpdate](a: A): JsObject = ArrivalUpdate[A].toJson(a)
+class MessageStatusSpec extends SpecBase with ScalaCheckDrivenPropertyChecks with ModelGenerators {
+  // TODO: Add tests
+  "transition" ignore {}
 
 }
