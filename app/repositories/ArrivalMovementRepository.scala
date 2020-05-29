@@ -161,12 +161,13 @@ class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi)(implicit ec: 
 
     val selector = Json.obj("_id" -> arrivalId)
 
-    val modifier = Json.obj(
+    val modifierMessage = Json.obj(
       "$set" -> Json.obj(
         s"messages.${messageId.index}.status" -> messageState.toString,
         "status"                              -> arrivalState.toString
       )
     )
+    val modifier = ArrivalUpdate.toJson(arrivalState) deepMerge modifierMessage
 
     collection.flatMap {
       _.update(false)
