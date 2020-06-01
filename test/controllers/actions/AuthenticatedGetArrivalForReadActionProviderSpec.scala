@@ -211,7 +211,7 @@ class AuthenticatedGetArrivalForReadActionProviderSpec
         )
       )
 
-      "must return Unauthorized" in {
+      "must return Forbidden" in {
 
         val arrivalId = arbitrary[ArrivalId].sample.value
 
@@ -230,7 +230,7 @@ class AuthenticatedGetArrivalForReadActionProviderSpec
         val controller = new Harness(actionProvider)
         val result     = controller.get(arrivalId)(fakeRequest)
 
-        status(result) mustBe UNAUTHORIZED
+        status(result) mustBe FORBIDDEN
       }
     }
   }

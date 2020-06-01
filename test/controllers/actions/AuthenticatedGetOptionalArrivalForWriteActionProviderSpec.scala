@@ -219,7 +219,7 @@ class AuthenticatedGetOptionalArrivalForWriteActionProviderSpec
         )
       )
 
-      "must return Unauthorized" in {
+      "must return Forbidden" in {
         val mockAuthConnector: AuthConnector = mock[AuthConnector]
 
         when(mockAuthConnector.authorise[Enrolments](any(), any())(any(), any()))
@@ -236,7 +236,7 @@ class AuthenticatedGetOptionalArrivalForWriteActionProviderSpec
         val controller = new Harness(actionProvider, cc)
         val result     = controller.get(fakeRequest)
 
-        status(result) mustBe UNAUTHORIZED
+        status(result) mustBe FORBIDDEN
       }
     }
 

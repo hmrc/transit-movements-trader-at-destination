@@ -240,7 +240,7 @@ class AuthenticatedGetArrivalForWriteActionProviderSpec
         )
       )
 
-      "must lock and unlock an arrival and return Unauthorized" in {
+      "must lock and unlock an arrival and return Forbidden" in {
 
         val arrivalId = arbitrary[ArrivalId].sample.value
 
@@ -263,7 +263,7 @@ class AuthenticatedGetArrivalForWriteActionProviderSpec
         val controller = new Harness(actionProvider)
         val result     = controller.get(arrivalId)(fakeRequest)
 
-        status(result) mustBe UNAUTHORIZED
+        status(result) mustBe FORBIDDEN
         verify(mockLockRepository, times(1)).lock(eqTo(arrivalId))
         verify(mockLockRepository, times(1)).unlock(eqTo(arrivalId))
       }

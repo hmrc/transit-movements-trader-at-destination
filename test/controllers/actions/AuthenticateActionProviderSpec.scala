@@ -119,7 +119,7 @@ class AuthenticateActionProviderSpec extends FreeSpec with MustMatchers with Moc
         )
       )
 
-      "must return Unauthorized" in {
+      "must return Forbidden" in {
 
         val mockAuthConnector: AuthConnector = mock[AuthConnector]
 
@@ -136,7 +136,7 @@ class AuthenticateActionProviderSpec extends FreeSpec with MustMatchers with Moc
         val controller = new Harness(actionProvider)
         val result     = controller.action()(fakeRequest)
 
-        status(result) mustBe UNAUTHORIZED
+        status(result) mustBe FORBIDDEN
       }
     }
   }
