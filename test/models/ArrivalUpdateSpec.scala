@@ -171,6 +171,31 @@ class ArrivalUpdateSpec extends SpecBase with Matchers with ScalaCheckDrivenProp
 
         }
       }
+      "the update must only be the message update and the value must be the name of the message" in {
+        forAll(noArrivalUpdate(messageStatusUpdate)) {
+          arrivalUpdate =>
+            val messageId = arrivalUpdate.messageUpdate.value.messageId
+            val expectedJson = Json.obj(
+              "$set" -> Json.obj(
+                s"messages.${messageId.index}.status" -> arrivalUpdate.messageUpdate.value.messageStatus
+              )
+            )
+            ArrivalModifier.toJson(arrivalUpdate) mustEqual expectedJson
+        }
+      }
+      "the update must be arrival update, message update and the value must be both" in {
+        forAll(generatorArrivalUpdate) {
+          arrivalUpdate =>
+            val messageId = arrivalUpdate.messageUpdate.value.messageId
+            val expectedJson = Json.obj(
+              "$set" -> Json.obj(
+                "status"                              -> arrivalUpdate.arrivalUpdate.value.toString,
+                s"messages.${messageId.index}.status" -> arrivalUpdate.messageUpdate.value.messageStatus
+              )
+            )
+            ArrivalModifier.toJson(arrivalUpdate) mustEqual expectedJson
+        }
+      }
     }
   }
 }

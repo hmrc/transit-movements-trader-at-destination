@@ -56,9 +56,15 @@ object ArrivalUpdate {
 
       val asdf2: Option[JsObject] = a.messageUpdate.map(ArrivalModifier.toJson[MessageStatusUpdate])
 
+//      Json.obj(
+//        "$set" -> Json.obj(
+//          "status" -> a.arrivalUpdate.get
+//        )
+//      )
+      val messageId = a.messageUpdate.get.messageId
       Json.obj(
         "$set" -> Json.obj(
-          "status" -> a.arrivalUpdate.get
+          s"messages.${messageId.index}.status" -> a.messageUpdate.get.messageStatus
         )
       )
     }
