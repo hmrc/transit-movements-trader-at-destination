@@ -52,21 +52,16 @@ object ArrivalUpdate {
 
   implicit object ArrivalUpdateArrivalModifier extends ArrivalModifier[ArrivalUpdate] {
     override def toJson(a: ArrivalUpdate): JsObject = {
-      val asdf: Option[JsObject] = a.arrivalUpdate.map(ArrivalModifier.toJson[ArrivalStatus] _)
+//      val asdf: Option[JsObject] = a.arrivalUpdate.map(ArrivalModifier.toJson[ArrivalStatus] _)
+//
+//      val asdf2: Option[JsObject] = a.messageUpdate.map(ArrivalModifier.toJson[MessageStatusUpdate])
 
-      val asdf2: Option[JsObject] = a.messageUpdate.map(ArrivalModifier.toJson[MessageStatusUpdate])
-
-//      Json.obj(
-//        "$set" -> Json.obj(
-//          "status" -> a.arrivalUpdate.get
-//        )
-//      )
-      val messageId = a.messageUpdate.get.messageId
-      Json.obj(
-        "$set" -> Json.obj(
-          s"messages.${messageId.index}.status" -> a.messageUpdate.get.messageStatus
-        )
-      )
+      (a.arrivalUpdate, a.messageUpdate) match {
+        case (Some(arrivalUpdate), Some(messageUpdate)) =>
+          Json.obj("$set" -> Json.obj("status" -> arrivalUpdate, s"messages.${messageUpdate.messageId.index}.status" -> messageUpdate.messageStatus))
+        case (Some(arrivalUpdate), None) => Json.obj("$set" -> Json.obj("status"                                            -> arrivalUpdate))
+        case (None, Some(messageUpdate)) => Json.obj("$set" -> Json.obj(s"messages.${messageUpdate.messageId.index}.status" -> messageUpdate.messageStatus))
+      }
     }
   }
 
