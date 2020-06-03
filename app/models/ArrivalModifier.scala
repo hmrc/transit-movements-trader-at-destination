@@ -30,6 +30,6 @@ object ArrivalModifier {
     override def toJson(a: A): JsObject = fn(a)
   }
 
-  def toJson[A: ArrivalModifier](a: A): JsObject = ArrivalModifier[A].toJson(a)
+  implicit def toJson[A: ArrivalModifier](a: A): JsObject = ArrivalModifier[A].toJson(a)
 
 }

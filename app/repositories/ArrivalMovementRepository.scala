@@ -19,10 +19,12 @@ package repositories
 import com.google.inject.Inject
 import models.Arrival
 import models.ArrivalId
-import models.ArrivalStatus
 import models.ArrivalModifier
+import models.ArrivalStatus
+import models.ArrivalUpdate
 import models.MessageId
 import models.MessageStatus
+import models.MessageStatusUpdate
 import models.MongoDateTimeFormats
 import models.MovementMessage
 import models.MovementReferenceNumber
@@ -109,15 +111,13 @@ class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi)(implicit ec: 
       )
     )
 
-    val modifier = Json.obj(
-      "$set" -> Json.obj(
-        s"messages.$messageId.status" -> status.toString
-      )
-    )
+    val modifier: ArrivalUpdate = ArrivalUpdate(None, Some(MessageStatusUpdate(MessageId.fromIndex(messageId), status)))
+
+    val x: JsObject = ArrivalModifier.toJson(modifier)
 
     collection.flatMap {
       _.update(false)
-        .one(selector, modifier)
+        .one(selector, x)
         .map {
           WriteResult
             .lastError(_)
