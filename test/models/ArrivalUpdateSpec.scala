@@ -159,7 +159,7 @@ class ArrivalUpdateSpec extends SpecBase with Matchers with ScalaCheckDrivenProp
 
     "ArrivalStatusUpdate" - {
       "the update must only be the arrival state and the value must be the name of the state" in {
-        forAll(noMessageUpdate(arrivalStatusUpdate)) {
+        forAll(arrivalStatusUpdate) {
           arrivalUpdate =>
             val expectedJson = Json.obj(
               "$set" -> Json.obj(
