@@ -114,17 +114,4 @@ class ArrivalStatusSpec extends SpecBase with ScalaCheckDrivenPropertyChecks wit
     }
   }
 
-  "ArrivalUpdate" - {
-    "update must only be the arrival state and the value must be the name of the state" in {
-      forAll(arbitrary[ArrivalStatus]) {
-        arrivalStatus =>
-          val result = ArrivalUpdate.toJson(arrivalStatus)
-
-          result.keys.size mustEqual 1
-          (result \ "$set").toOption.value.asInstanceOf[JsObject].keys.size mustEqual 1
-          (result \ "$set" \ "status").toOption.value mustEqual JsString(arrivalStatus.toString)
-      }
-    }
-
-  }
 }

@@ -24,6 +24,7 @@ import models.ArrivalId
 import models.ArrivalStatus
 import models.MessageId
 import models.MessageReceivedEvent
+import models.MessageStatus
 import models.MessageType
 import models.MovementMessageWithStatus
 import models.MovementMessageWithoutStatus
@@ -39,6 +40,11 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
 
   private val pastDate: LocalDate = LocalDate.of(1900, 1, 1)
   private val dateNow: LocalDate  = LocalDate.now
+
+  implicit lazy val arbitraryMessageStatus: Arbitrary[MessageStatus] =
+    Arbitrary {
+      Gen.oneOf(MessageStatus.values)
+    }
 
   implicit lazy val arbitraryMessageWithStateXml: Arbitrary[MovementMessageWithStatus] = {
     Arbitrary {

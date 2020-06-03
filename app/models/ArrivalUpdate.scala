@@ -16,22 +16,48 @@
 
 package models
 
+import cats._
+import cats.data._
+import cats.implicits._
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import play.api.libs.json.Writes
 
-trait ArrivalUpdate[A] {
-  def toJson(a: A): JsObject
+case class MessageStatusUpdate(messageId: MessageId, messageStatus: MessageStatus)
+
+object MessageStatusUpdate {
+  implicit def arrivalStateUpdate(implicit writes: Writes[MessageStatus]): ArrivalModifier[MessageStatusUpdate] =
+    ArrivalModifier(
+      value =>
+        Json.obj(
+          "$set" ->
+            Json.obj(
+              s"messages.${value.messageId.index}.status" -> value.messageStatus
+            )
+      )
+    )
 }
+
+case class ArrivalUpdate(arrivalUpdate: Option[ArrivalStatus], messageUpdate: Option[MessageStatusUpdate])
 
 object ArrivalUpdate {
 
-  def apply[A: ArrivalUpdate]: ArrivalUpdate[A] = implicitly[ArrivalUpdate[A]]
-
-  def apply[A](fn: A => JsObject): ArrivalUpdate[A] = new ArrivalUpdate[A] {
-    override def toJson(a: A): JsObject = fn(a)
+  implicit object ArrivalUpdateSemiGroupInst extends Semigroup[ArrivalUpdate] {
+    override def combine(x: ArrivalUpdate, y: ArrivalUpdate): ArrivalUpdate =
+      ArrivalUpdate(
+        y.arrivalUpdate orElse x.arrivalUpdate,
+        y.messageUpdate orElse x.messageUpdate
+      )
   }
 
-  def toJson[A: ArrivalUpdate](a: A): JsObject = ArrivalUpdate[A].toJson(a)
+  implicit object ArrivalUpdateArrivalModifier extends ArrivalModifier[ArrivalUpdate] {
+    override def toJson(a: ArrivalUpdate): JsObject = {
+      val asdf: Option[JsObject] = a.arrivalUpdate.map(ArrivalModifier.toJson[ArrivalStatus] _)
+
+      val asdf2: Option[JsObject] = a.messageUpdate.map(ArrivalModifier.toJson[MessageStatusUpdate])
+
+      Json.obj()
+    }
+  }
 
 }

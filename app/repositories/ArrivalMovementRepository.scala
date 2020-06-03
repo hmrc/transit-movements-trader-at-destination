@@ -20,7 +20,7 @@ import com.google.inject.Inject
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalStatus
-import models.ArrivalUpdate
+import models.ArrivalModifier
 import models.MessageId
 import models.MessageStatus
 import models.MongoDateTimeFormats
@@ -141,7 +141,11 @@ class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi)(implicit ec: 
       "_id" -> id
     )
 
-    val modifier = ArrivalUpdate.toJson(status)
+    val modifier = Json.obj(
+      "$set" -> Json.obj(
+        "status" -> status.toString
+      )
+    )
 
     collection.flatMap {
       _.update(false)
@@ -161,13 +165,12 @@ class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi)(implicit ec: 
 
     val selector = Json.obj("_id" -> arrivalId)
 
-    val modifierMessage = Json.obj(
+    val modifier = Json.obj(
       "$set" -> Json.obj(
         s"messages.${messageId.index}.status" -> messageState.toString,
         "status"                              -> arrivalState.toString
       )
     )
-    val modifier = ArrivalUpdate.toJson(arrivalState) deepMerge modifierMessage
 
     collection.flatMap {
       _.update(false)

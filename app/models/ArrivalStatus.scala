@@ -87,8 +87,8 @@ object ArrivalStatus extends Enumerable.Implicits {
   implicit val enumerable: Enumerable[ArrivalStatus] =
     Enumerable(values.map(v => v.toString -> v): _*)
 
-  implicit def arrivalStateUpdate(implicit writes: Writes[ArrivalStatus]): ArrivalUpdate[ArrivalStatus] =
-    ArrivalUpdate(
+  implicit def arrivalStateUpdate(implicit writes: Writes[ArrivalStatus]): ArrivalModifier[ArrivalStatus] =
+    ArrivalModifier(
       value =>
         Json.obj(
           "$set" -> Json.obj(
