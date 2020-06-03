@@ -16,10 +16,10 @@
 
 package controllers.actions
 
-import org.mockito.Matchers._
+import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
-import org.scalatest.FreeSpec
-import org.scalatest.MustMatchers
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -36,7 +36,7 @@ import uk.gov.hmrc.auth.core.Enrolments
 
 import scala.concurrent.Future
 
-class AuthenticateActionProviderSpec extends FreeSpec with MustMatchers with MockitoSugar {
+class AuthenticateActionProviderSpec extends AnyFreeSpec with Matchers with MockitoSugar {
 
   def fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest("", "")
 

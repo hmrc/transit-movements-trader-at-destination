@@ -23,7 +23,7 @@ import generators.ModelGenerators
 import models.Arrival
 import models.MessageId
 import models.MessagesSummary
-import org.mockito.Matchers.any
+import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalacheck.Arbitrary.arbitrary
 import play.api.inject.bind

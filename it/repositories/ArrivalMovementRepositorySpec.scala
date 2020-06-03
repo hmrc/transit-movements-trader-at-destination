@@ -10,10 +10,11 @@ import models.{Arrival, ArrivalId, ArrivalStatus, MessageId, MessageType, MongoD
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
 import org.scalactic.source
-import org.scalatest._
-import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
+import org.scalatest.concurrent.IntegrationPatience
 import org.scalatest.exceptions.{StackDepthException, TestFailedException}
-import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must.Matchers
+import org.scalatest.{EitherValues, OptionValues, TryValues}
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
@@ -27,8 +28,8 @@ import scala.reflect.ClassTag
 import scala.util.{Failure, Success}
 
 class ArrivalMovementRepositorySpec
-  extends FreeSpec
-    with MustMatchers
+  extends AnyFreeSpec
+    with Matchers
     with FailOnUnindexedQueries
     with IntegrationPatience
     with OptionValues

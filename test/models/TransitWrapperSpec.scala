@@ -16,11 +16,11 @@
 
 package models
 
-import org.scalatest.FreeSpec
-import org.scalatest.MustMatchers
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must.Matchers
 import scala.xml.Utility.trim
 
-class TransitWrapperSpec extends FreeSpec with MustMatchers {
+class TransitWrapperSpec extends AnyFreeSpec with Matchers {
 
   "TransitWrapper" - {
     "must add transit wrapper to an existing xml" in {

@@ -19,11 +19,11 @@ package controllers.actions
 import generators.ModelGenerators
 import models.Arrival
 import models.MovementReferenceNumber
-import org.mockito.Matchers.{eq => eqTo, _}
+import org.mockito.ArgumentMatchers.{eq => eqTo, _}
 import org.mockito.Mockito._
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalatest.FreeSpec
-import org.scalatest.MustMatchers
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must.Matchers
 import org.scalatest.OptionValues
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
@@ -49,8 +49,8 @@ import scala.concurrent.Future
 import scala.xml.NodeSeq
 
 class AuthenticatedGetOptionalArrivalForWriteActionProviderSpec
-    extends FreeSpec
-    with MustMatchers
+    extends AnyFreeSpec
+    with Matchers
     with MockitoSugar
     with ScalaCheckPropertyChecks
     with ModelGenerators

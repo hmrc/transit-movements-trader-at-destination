@@ -27,8 +27,8 @@ import models.MessageStatus
 import models.MessageType
 import models.MovementMessageWithStatus
 import org.scalacheck.Gen
-import org.scalatest.FreeSpec
-import org.scalatest.MustMatchers
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must.Matchers
 import org.scalatest.OptionValues
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatest.concurrent.ScalaFutures
@@ -37,10 +37,10 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import uk.gov.hmrc.http.HeaderCarrier
 
 class MessageConnectorSpec
-    extends FreeSpec
+    extends AnyFreeSpec
     with MockitoSugar
     with ScalaFutures
-    with MustMatchers
+    with Matchers
     with IntegrationPatience
     with WiremockSuite
     with ScalaCheckPropertyChecks

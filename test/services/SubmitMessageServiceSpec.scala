@@ -33,7 +33,7 @@ import models.MessageStatus
 import models.MessageType
 import models.MovementMessageWithStatus
 import models.SubmissionProcessingResult
-import org.mockito.Matchers.{eq => eqTo, _}
+import org.mockito.ArgumentMatchers.{eq => eqTo, _}
 import org.mockito.Mockito.when
 import org.mockito.Mockito._
 import org.scalacheck.Arbitrary.arbitrary
