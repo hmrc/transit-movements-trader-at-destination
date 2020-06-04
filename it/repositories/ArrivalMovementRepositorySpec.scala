@@ -104,7 +104,7 @@ class ArrivalMovementRepositorySpec
           }.futureValue
 
           result.value.status mustEqual ArrivalStatus.ArrivalSubmitted
-          setStateResult.isDefined mustBe true
+          setStateResult must be(defined)
         }
       }
 
@@ -219,8 +219,8 @@ class ArrivalMovementRepositorySpec
           started(app).futureValue
 
           val repository = app.injector.instanceOf[ArrivalMovementRepository]
-
           repository.insert(arrival).futureValue
+
           val result = repository.setMessageState(ArrivalId(1), 5, SubmissionSucceeded).futureValue
 
           result mustBe a[Failure[_]]
