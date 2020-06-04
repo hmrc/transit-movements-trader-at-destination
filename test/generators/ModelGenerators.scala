@@ -22,9 +22,11 @@ import models.MessageStatus.SubmissionPending
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalStatus
+import models.ArrivalUpdate
 import models.MessageId
 import models.MessageReceivedEvent
 import models.MessageStatus
+import models.MessageStatusUpdate
 import models.MessageType
 import models.MovementMessageWithStatus
 import models.MovementMessageWithoutStatus
@@ -40,6 +42,28 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
 
   private val pastDate: LocalDate = LocalDate.of(1900, 1, 1)
   private val dateNow: LocalDate  = LocalDate.now
+
+  implicit val arbitraryMessageStatusUpdate: Arbitrary[MessageStatusUpdate] =
+    Arbitrary {
+      for {
+        messageId     <- arbitrary[MessageId]
+        messageStatus <- arbitrary[MessageStatus]
+      } yield MessageStatusUpdate(messageId, messageStatus)
+    }
+
+  implicit val arbitraryArrivalUpdate: Arbitrary[ArrivalUpdate] =
+    Arbitrary {
+      for {
+        arrivalStatus       <- arbitrary[Option[ArrivalStatus]]
+        messageStatusUpdate <- arbitrary[Option[MessageStatusUpdate]]
+      } yield ArrivalUpdate(arrivalStatus, messageStatusUpdate)
+    }
+
+  implicit val generatorArrivalUpdate: Gen[ArrivalUpdate] =
+    for {
+      arrivalStatus <- arbitrary[ArrivalStatus]
+      messageStatus <- arbitrary[MessageStatusUpdate]
+    } yield ArrivalUpdate(Some(arrivalStatus), Some(messageStatus))
 
   implicit lazy val arbitraryMessageStatus: Arbitrary[MessageStatus] =
     Arbitrary {

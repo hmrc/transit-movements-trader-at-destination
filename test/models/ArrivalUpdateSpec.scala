@@ -33,28 +33,6 @@ import play.api.libs.json.Json
 
 class ArrivalUpdateSpec extends SpecBase with Matchers with ScalaCheckDrivenPropertyChecks with ModelGenerators with FreeSpecDiscipline {
 
-  implicit val arbitraryMessageStatusUpdate: Arbitrary[MessageStatusUpdate] =
-    Arbitrary {
-      for {
-        messageId     <- arbitrary[MessageId]
-        messageStatus <- arbitrary[MessageStatus]
-      } yield MessageStatusUpdate(messageId, messageStatus)
-    }
-
-  implicit val arbitraryArrivalUpdate: Arbitrary[ArrivalUpdate] =
-    Arbitrary {
-      for {
-        arrivalStatus       <- arbitrary[Option[ArrivalStatus]]
-        messageStatusUpdate <- arbitrary[Option[MessageStatusUpdate]]
-      } yield ArrivalUpdate(arrivalStatus, messageStatusUpdate)
-    }
-
-  implicit val generatorArrivalUpdate: Gen[ArrivalUpdate] =
-    for {
-      arrivalStatus <- arbitrary[ArrivalStatus]
-      messageStatus <- arbitrary[MessageStatusUpdate]
-    } yield ArrivalUpdate(Some(arrivalStatus), Some(messageStatus))
-
   val arrivalStatusUpdate: Gen[ArrivalUpdate] =
     for {
       arrivalUpdate <- arbitrary[ArrivalUpdate]
