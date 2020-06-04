@@ -111,13 +111,13 @@ class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi)(implicit ec: 
       )
     )
 
-    val modifier: ArrivalUpdate = ArrivalUpdate(None, Some(MessageStatusUpdate(MessageId.fromIndex(messageId), status)))
-
-    val x: JsObject = ArrivalModifier.toJson(modifier)
+    val modifier = ArrivalModifier.toJson {
+      ArrivalUpdate(None, Some(MessageStatusUpdate(MessageId.fromIndex(messageId), status)))
+    }
 
     collection.flatMap {
       _.update(false)
-        .one(selector, x)
+        .one(selector, modifier)
         .map {
           WriteResult
             .lastError(_)
@@ -141,11 +141,9 @@ class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi)(implicit ec: 
       "_id" -> id
     )
 
-    val modifier = Json.obj(
-      "$set" -> Json.obj(
-        "status" -> status.toString
-      )
-    )
+    val modifier = ArrivalModifier.toJson {
+      ArrivalUpdate(Some(status), None)
+    }
 
     collection.flatMap {
       _.update(false)
@@ -165,12 +163,9 @@ class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi)(implicit ec: 
 
     val selector = Json.obj("_id" -> arrivalId)
 
-    val modifier = Json.obj(
-      "$set" -> Json.obj(
-        s"messages.${messageId.index}.status" -> messageState.toString,
-        "status"                              -> arrivalState.toString
-      )
-    )
+    val modifier = ArrivalModifier.toJson {
+      ArrivalUpdate(Some(arrivalState), Some(MessageStatusUpdate(messageId, messageState)))
+    }
 
     collection.flatMap {
       _.update(false)
