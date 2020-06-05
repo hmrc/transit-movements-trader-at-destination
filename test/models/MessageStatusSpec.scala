@@ -18,16 +18,7 @@ package models
 
 import base.SpecBase
 import generators.ModelGenerators
-import models.ArrivalStatus._
-import models.MessageStatus.SubmissionFailed
-import models.MessageStatus.SubmissionPending
-import models.MessageStatus.SubmissionSucceeded
-import org.scalacheck.Arbitrary.arbitrary
-import org.scalacheck.Arbitrary
-import org.scalacheck.Gen
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import play.api.libs.json.JsObject
-import play.api.libs.json.JsString
 
 class MessageStatusSpec extends SpecBase with ScalaCheckDrivenPropertyChecks with ModelGenerators {
   // TODO: Add tests

@@ -17,8 +17,6 @@
 package models
 
 import cats._
-import cats.data._
-import cats.implicits._
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import play.api.libs.json.Writes

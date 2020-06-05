@@ -23,7 +23,6 @@ import models.MessageStatus.SubmissionFailed
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalStatus
-import models.MessageId
 import models.MovementReferenceNumber
 import play.api.libs.json.Json
 import play.api.libs.json.OWrites

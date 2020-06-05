@@ -16,17 +16,15 @@
 
 package config
 
-import javax.inject.Inject
 import play.api.Logger
 import play.api.http.HttpErrorHandler
 import play.api.mvc.RequestHeader
 import play.api.mvc.Result
 import play.api.mvc.Results._
 
-import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class ErrorHandler @Inject()()(implicit ec: ExecutionContext) extends HttpErrorHandler {
+class ErrorHandler extends HttpErrorHandler {
   override def onClientError(request: RequestHeader, statusCode: Int, message: String): Future[Result] = {
     Logger.warn(s"[ErrorHandler][onClientError], error for (${request.method}) [${request.uri}] with status: $statusCode and message: $message")
     Future.successful(Status(statusCode)(message))

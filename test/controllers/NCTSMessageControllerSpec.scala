@@ -28,7 +28,6 @@ import models.ArrivalId
 import models.ArrivalStatus
 import models.MessageSender
 import models.MessageType
-import models.MovementMessage
 import models.MovementMessageWithStatus
 import models.MovementReferenceNumber
 import models.SubmissionProcessingResult

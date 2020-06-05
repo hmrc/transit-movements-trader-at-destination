@@ -19,8 +19,6 @@ package controllers.actions
 import models.Arrival
 import models.ArrivalId
 import models.request.ArrivalRequest
-import models.request.AuthenticatedOptionalArrivalRequest
-import models.request.AuthenticatedRequest
 import org.scalatest.exceptions.TestFailedException
 import play.api.mvc._
 import play.api.test.Helpers._

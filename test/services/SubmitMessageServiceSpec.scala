@@ -24,7 +24,6 @@ import base.SpecBase
 import cats.data.NonEmptyList
 import connectors.MessageConnector
 import generators.ModelGenerators
-import models.ArrivalStatus.ArrivalSubmitted
 import models.MessageStatus.SubmissionFailed
 import models.MessageStatus.SubmissionPending
 import models.MessageStatus.SubmissionSucceeded
@@ -332,7 +331,6 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
         val arrivalId       = arbitrary[ArrivalId].sample.value
         val messageId       = arbitrary[MessageId].sample.value
         val movementMessage = arbitrary[MovementMessageWithStatus].sample.value
-        val arrivalStatus   = arbitrary[ArrivalStatus].sample.value
         val mrn             = arbitrary[MovementReferenceNumber].sample.value
 
         val result = service.submitIe007Message(arrivalId, messageId, movementMessage, mrn)

@@ -23,7 +23,6 @@ import models.ArrivalId
 import models.ArrivalStatus
 import models.MessageId
 import models.MessageType
-import models.MovementMessage
 import models.SubmissionProcessingResult
 import models.MessageStatus.SubmissionFailed
 import models.request.ArrivalRequest
