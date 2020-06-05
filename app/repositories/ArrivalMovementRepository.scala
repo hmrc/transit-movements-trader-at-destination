@@ -121,7 +121,7 @@ class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi)(implicit ec: 
     }
   }
 
-  // TODO: Refactor this to take a MessageId
+  @deprecated("Use updateArrival since this will be removed in the next version", "next")
   def setMessageState(arrivalId: ArrivalId, messageId: Int, status: MessageStatus): Future[Try[Unit]] = {
     val selector = Json.obj(
       "$and" -> Json.arr(
@@ -135,14 +135,7 @@ class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi)(implicit ec: 
     updateArrival(selector, modifier)
   }
 
-  def setState(id: ArrivalId, status: ArrivalStatus): Future[Option[Unit]] = {
-    val selector = Json.obj("_id" -> id)
-
-    val modifier = ArrivalUpdate(Some(status), None)
-
-    updateArrival(selector, modifier).map(_.toOption)
-  }
-
+  @deprecated("Use updateArrival since this will be removed in the next version", "next")
   def setArrivalStateAndMessageState(arrivalId: ArrivalId,
                                      messageId: MessageId,
                                      arrivalState: ArrivalStatus,
