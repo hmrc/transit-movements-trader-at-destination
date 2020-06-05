@@ -56,6 +56,13 @@ class ArrivalMovementMessageService @Inject()(arrivalIdRepository: ArrivalIdRepo
           ))
     }
 
+  def messageAndMrn(messageCorrectionId: Int) =
+    for {
+      _       <- correctRootNodeR(MessageType.ArrivalNotification)
+      message <- makeMovementMessageWithStatus(messageCorrectionId, MessageType.ArrivalNotification)
+      mrn     <- mrnR
+    } yield (message, mrn)
+
   def makeMessage(messageCorrelationId: Int, messageType: MessageType): ReaderT[Option, NodeSeq, MovementMessageWithoutStatus] =
     for {
       _          <- correctRootNodeR(messageType)

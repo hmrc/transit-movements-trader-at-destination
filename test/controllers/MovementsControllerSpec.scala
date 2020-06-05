@@ -442,7 +442,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
         when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(initializedArrival)))
 
-        when(mockSubmitMessageService.submitMessage(any(), any(), any(), eqTo(ArrivalStatus.ArrivalSubmitted))(any()))
+        when(mockSubmitMessageService.submitIe007Message(any(), any(), any(), any())(any()))
           .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionSuccess))
 
         val application = baseApplicationBuilder
@@ -462,10 +462,10 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
           status(result) mustEqual ACCEPTED
           header("Location", result).value must be(routes.MovementsController.getArrival(initializedArrival.arrivalId).url)
-          verify(mockSubmitMessageService, times(1)).submitMessage(eqTo(initializedArrival.arrivalId),
-                                                                   eqTo(MessageId.fromIndex(1)),
-                                                                   eqTo(expectedMessage),
-                                                                   eqTo(ArrivalStatus.ArrivalSubmitted))(any())
+          verify(mockSubmitMessageService, times(1)).submitIe007Message(eqTo(initializedArrival.arrivalId),
+                                                                        eqTo(MessageId.fromIndex(1)),
+                                                                        eqTo(expectedMessage),
+                                                                        eqTo(initializedArrival.movementReferenceNumber))(any())
         }
       }
 
@@ -519,7 +519,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
         when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(initializedArrival)))
 
-        when(mockSubmitMessageService.submitMessage(any(), any(), any(), any())(any()))
+        when(mockSubmitMessageService.submitIe007Message(any(), any(), any(), any())(any()))
           .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureInternal))
 
         val application = baseApplicationBuilder
@@ -565,7 +565,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
         when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(initializedArrival)))
 
-        when(mockSubmitMessageService.submitMessage(any(), any(), any(), any())(any()))
+        when(mockSubmitMessageService.submitIe007Message(any(), any(), any(), any())(any()))
           .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureExternal))
 
         val app = baseApplicationBuilder
