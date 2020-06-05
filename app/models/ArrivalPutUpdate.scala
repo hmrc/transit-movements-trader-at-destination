@@ -22,6 +22,10 @@ case class ArrivalPutUpdate(movementReferenceNumber: MovementReferenceNumber, ar
 
 object ArrivalPutUpdate {
 
+  def selector(arrivalId: ArrivalId): JsObject = Json.obj(
+    "_id" -> arrivalId
+  )
+
   implicit object ArrivalPutUpdateArrivalModifier extends ArrivalModifier[ArrivalPutUpdate] {
     override def toJson(a: ArrivalPutUpdate): JsObject =
       Json.obj(

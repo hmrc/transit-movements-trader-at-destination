@@ -32,10 +32,10 @@ import scala.xml.NodeSeq
 
 object XmlMessageParser {
 
-  def correctRootNodeR(messageType: MessageType): ReaderT[Option, NodeSeq, Unit] =
-    ReaderT[Option, NodeSeq, Unit] {
+  def correctRootNodeR(messageType: MessageType): ReaderT[Option, NodeSeq, NodeSeq] =
+    ReaderT[Option, NodeSeq, NodeSeq] {
       nodeSeq =>
-        if (nodeSeq.head.label == messageType.rootNode) Some(()) else None
+        if (nodeSeq.head.label == messageType.rootNode) Some(nodeSeq) else None
     }
 
   val dateOfPrepR: ReaderT[Option, NodeSeq, LocalDate] =

@@ -102,7 +102,7 @@ class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi)(implicit ec: 
         .collect[Seq](-1, Cursor.FailOnError())
     }
 
-  private def updateArrival[A](selector: JsObject, modifier: A)(implicit ev: ArrivalModifier[A]): Future[Try[Unit]] = {
+  def updateArrival[A](selector: JsObject, modifier: A)(implicit ev: ArrivalModifier[A]): Future[Try[Unit]] = {
 
     import models.ArrivalModifier.toJson
 
