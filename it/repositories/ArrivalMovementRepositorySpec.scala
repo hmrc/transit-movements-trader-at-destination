@@ -4,9 +4,9 @@ import java.time.{LocalDate, LocalDateTime, LocalTime}
 
 import cats.data.NonEmptyList
 import generators.ModelGenerators
-import models.ArrivalStatus.{ArrivalSubmitted, Initialized}
+import models.ArrivalStatus.{ArrivalSubmitted, Initialized, UnloadingRemarksSubmitted}
 import models.MessageStatus.{SubmissionPending, SubmissionSucceeded}
-import models.{Arrival, ArrivalId, ArrivalStatus, MessageId, MessageType, MongoDateTimeFormats, MovementMessageWithStatus, MovementMessageWithoutStatus, MovementReferenceNumber}
+import models.{Arrival, ArrivalId, ArrivalPutUpdate, ArrivalStatus, MessageId, MessageType, MongoDateTimeFormats, MovementMessageWithStatus, MovementMessageWithoutStatus, MovementReferenceNumber}
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
 import org.scalactic.source
@@ -76,6 +76,57 @@ class ArrivalMovementRepositorySpec
           }.futureValue
 
           result.value mustBe arrival
+        }
+      }
+    }
+
+    "updateArrival" - {
+      "must update the arrival and return a Success Unit when successful" in {
+        database.flatMap(_.drop()).futureValue
+
+        val app: Application = builder.build()
+
+        val arrivalStatus = arbitrary[ArrivalStatus].sample.value
+        val arrival = arrivalWithOneMessage.suchThat(_.status != arrivalStatus).sample.value
+
+        running(app) {
+          started(app).futureValue
+
+          val repository = app.injector.instanceOf[ArrivalMovementRepository]
+
+          repository.insert(arrival).futureValue
+
+          repository.updateArrival(ArrivalPutUpdate.selector(arrival.arrivalId), arrivalStatus).futureValue
+
+          val updatedArrival = repository.get(arrival.arrivalId).futureValue.value
+
+          updatedArrival.status mustEqual arrivalStatus
+
+        }
+      }
+
+      "must return a Failure if the selector does not match any documents" in {
+        database.flatMap(_.drop()).futureValue
+
+        val app: Application = builder.build()
+
+        val arrivalStatus: ArrivalStatus = Initialized
+        val arrival = arrivalWithOneMessage.sample.value copy(arrivalId = ArrivalId(1), status = UnloadingRemarksSubmitted)
+
+        running(app) {
+          started(app).futureValue
+
+
+          val repository = app.injector.instanceOf[ArrivalMovementRepository]
+
+          repository.insert(arrival).futureValue
+
+          val result = repository.updateArrival(ArrivalPutUpdate.selector(ArrivalId(2)), arrivalStatus).futureValue
+
+          val updatedArrival = repository.get(arrival.arrivalId).futureValue.value
+
+          result mustBe a[Failure[_]]
+          updatedArrival.status must not be(arrivalStatus)
         }
       }
     }
