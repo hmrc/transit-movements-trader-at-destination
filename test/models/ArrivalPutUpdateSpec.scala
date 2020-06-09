@@ -28,7 +28,7 @@ class ArrivalPutUpdateSpec extends SpecBase with ScalaCheckDrivenPropertyChecks 
   implicit val arbitraryArrivalPutUpdate = Arbitrary {
     for {
       mrn           <- arbitrary[MovementReferenceNumber]
-      arrivalUpdate <- generatorArrivalUpdate
+      arrivalUpdate <- arbitrary[CompoundStatusUpdate]
     } yield ArrivalPutUpdate(mrn, arrivalUpdate)
   }
 
@@ -36,12 +36,12 @@ class ArrivalPutUpdateSpec extends SpecBase with ScalaCheckDrivenPropertyChecks 
     "should return the modify object that would set the MRN, status and the message status" in {
       forAll(arbitrary[ArrivalPutUpdate]) {
         arrivalPutUpdate =>
-          val expectedMessageId = arrivalPutUpdate.arrivalUpdate.messageUpdate.value.messageId.index
+          val expectedMessageId = arrivalPutUpdate.arrivalUpdate.messageStatusUpdate.messageId.index
           val expectedJson = Json.obj(
             "$set" -> Json.obj(
               "movementReferenceNumber"             -> arrivalPutUpdate.movementReferenceNumber,
-              "status"                              -> arrivalPutUpdate.arrivalUpdate.arrivalUpdate.value,
-              s"messages.$expectedMessageId.status" -> arrivalPutUpdate.arrivalUpdate.messageUpdate.value.messageStatus
+              "status"                              -> arrivalPutUpdate.arrivalUpdate.arrivalStatusUpdate.arrivalStatus,
+              s"messages.$expectedMessageId.status" -> arrivalPutUpdate.arrivalUpdate.messageStatusUpdate.messageStatus
             )
           )
 

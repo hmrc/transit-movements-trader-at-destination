@@ -26,10 +26,6 @@ object ArrivalModifier {
 
   def apply[A: ArrivalModifier]: ArrivalModifier[A] = implicitly[ArrivalModifier[A]]
 
-  def instance[A](fn: A => JsObject): ArrivalModifier[A] = new ArrivalModifier[A] {
-    override def toJson(a: A): JsObject = fn(a)
-  }
-
   implicit def toJson[A: ArrivalModifier](a: A): JsObject = ArrivalModifier[A].toJson(a)
 
 }

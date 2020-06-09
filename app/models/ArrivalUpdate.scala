@@ -21,7 +21,9 @@ import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import play.api.libs.json.Writes
 
-case class MessageStatusUpdate(messageId: MessageId, messageStatus: MessageStatus)
+sealed trait ArrivalUpdate
+
+case class MessageStatusUpdate(messageId: MessageId, messageStatus: MessageStatus) extends ArrivalUpdate
 
 object MessageStatusUpdate {
   implicit def arrivalStateUpdate(implicit writes: Writes[MessageStatus]): ArrivalModifier[MessageStatusUpdate] =
@@ -36,26 +38,37 @@ object MessageStatusUpdate {
     )
 }
 
-case class ArrivalUpdate(arrivalUpdate: Option[ArrivalStatus], messageUpdate: Option[MessageStatusUpdate])
+case class ArrivalStatusUpdate(arrivalStatus: ArrivalStatus) extends ArrivalUpdate
 
-object ArrivalUpdate {
+object ArrivalStatusUpdate {
+  implicit def arrivalStatusUpdate(implicit writes: Writes[ArrivalStatus]): ArrivalModifier[ArrivalStatusUpdate] =
+    value =>
+      Json.obj(
+        "$set" -> Json.obj(
+          "status" -> value.arrivalStatus
+        ))
+}
 
-  implicit object ArrivalUpdateSemiGroupInst extends Semigroup[ArrivalUpdate] {
-    override def combine(x: ArrivalUpdate, y: ArrivalUpdate): ArrivalUpdate =
-      ArrivalUpdate(
-        y.arrivalUpdate orElse x.arrivalUpdate,
-        y.messageUpdate orElse x.messageUpdate
+case class CompoundStatusUpdate(arrivalStatusUpdate: ArrivalStatusUpdate, messageStatusUpdate: MessageStatusUpdate) extends ArrivalUpdate
+
+object CompoundStatusUpdate {
+  implicit val arrivalUpdate: ArrivalModifier[CompoundStatusUpdate] =
+    csu => ArrivalModifier.toJson(csu.arrivalStatusUpdate) deepMerge ArrivalModifier.toJson(csu.messageStatusUpdate)
+}
+
+case class ArrivalPutUpdate(movementReferenceNumber: MovementReferenceNumber, arrivalUpdate: CompoundStatusUpdate) extends ArrivalUpdate
+
+object ArrivalPutUpdate {
+
+  def selector(arrivalId: ArrivalId): JsObject = Json.obj(
+    "_id" -> arrivalId
+  )
+
+  implicit val arrivalPutUpdateArrivalModifier: ArrivalModifier[ArrivalPutUpdate] = a =>
+    Json.obj(
+      "$set" -> Json.obj(
+        "movementReferenceNumber" -> a.movementReferenceNumber
       )
-  }
-
-  implicit object ArrivalUpdateArrivalModifier extends ArrivalModifier[ArrivalUpdate] {
-    override def toJson(a: ArrivalUpdate): JsObject = {
-
-      val arrivalUpdateJson: JsObject = a.arrivalUpdate.map(ArrivalModifier.toJson[ArrivalStatus]).getOrElse(Json.obj())
-      val messageUpdateJson: JsObject = a.messageUpdate.map(ArrivalModifier.toJson[MessageStatusUpdate]).getOrElse(Json.obj())
-
-      arrivalUpdateJson deepMerge messageUpdateJson
-    }
-  }
+    ) deepMerge ArrivalModifier.toJson(a.arrivalUpdate)
 
 }

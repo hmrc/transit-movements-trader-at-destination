@@ -25,7 +25,8 @@ import models.Arrival
 import models.ArrivalId
 import models.ArrivalPutUpdate
 import models.ArrivalStatus
-import models.ArrivalUpdate
+import models.ArrivalStatusUpdate
+import models.CompoundStatusUpdate
 import models.MessageId
 import models.MessageStatus
 import models.MessageStatusUpdate
@@ -98,7 +99,8 @@ class SubmitMessageService @Inject()(
                 .updateArrival(
                   ArrivalPutUpdate.selector(arrivalId),
                   ArrivalPutUpdate(mrn,
-                                   ArrivalUpdate(Some(ArrivalStatus.ArrivalSubmitted), Some(MessageStatusUpdate(messageId, MessageStatus.SubmissionSucceeded))))
+                                   CompoundStatusUpdate(ArrivalStatusUpdate(ArrivalStatus.ArrivalSubmitted),
+                                                        MessageStatusUpdate(messageId, MessageStatus.SubmissionSucceeded)))
                 )
                 .map {
                   _ =>

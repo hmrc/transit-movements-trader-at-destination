@@ -21,7 +21,8 @@ import models.Arrival
 import models.ArrivalId
 import models.ArrivalModifier
 import models.ArrivalStatus
-import models.ArrivalUpdate
+import models.ArrivalStatusUpdate
+import models.CompoundStatusUpdate
 import models.MessageId
 import models.MessageStatus
 import models.MessageStatusUpdate
@@ -32,7 +33,6 @@ import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import play.modules.reactivemongo.ReactiveMongoApi
 import reactivemongo.api.Cursor
-import reactivemongo.api.commands.WriteResult
 import reactivemongo.api.indexes.Index
 import reactivemongo.api.indexes.IndexType
 import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
@@ -130,7 +130,7 @@ class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi)(implicit ec: 
       )
     )
 
-    val modifier = ArrivalUpdate(None, Some(MessageStatusUpdate(MessageId.fromIndex(messageId), status)))
+    val modifier = MessageStatusUpdate(MessageId.fromIndex(messageId), status)
 
     updateArrival(selector, modifier)
   }
@@ -143,7 +143,7 @@ class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi)(implicit ec: 
 
     val selector = Json.obj("_id" -> arrivalId)
 
-    val modifier = ArrivalUpdate(Some(arrivalState), Some(MessageStatusUpdate(messageId, messageState)))
+    val modifier = CompoundStatusUpdate(ArrivalStatusUpdate(arrivalState), MessageStatusUpdate(messageId, messageState))
 
     updateArrival(selector, modifier).map(_.toOption)
   }

@@ -16,6 +16,7 @@ import models.Arrival
 import models.ArrivalId
 import models.ArrivalPutUpdate
 import models.ArrivalStatus
+import models.ArrivalStatusUpdate
 import models.MessageId
 import models.MessageType
 import models.MongoDateTimeFormats
@@ -108,8 +109,8 @@ class ArrivalMovementRepositorySpec
 
         val app: Application = builder.build()
 
-        val arrivalStatus: ArrivalStatus = Initialized
-        val arrival                      = arrivalWithOneMessage.sample.value.copy(status = GoodsReleased)
+        val arrivalStatus = ArrivalStatusUpdate(Initialized)
+        val arrival       = arrivalWithOneMessage.sample.value.copy(status = GoodsReleased)
 
         running(app) {
           started(app).futureValue
@@ -122,7 +123,7 @@ class ArrivalMovementRepositorySpec
 
           val updatedArrival = repository.get(arrival.arrivalId).futureValue.value
 
-          updatedArrival.status mustEqual arrivalStatus
+          updatedArrival.status mustEqual arrivalStatus.arrivalStatus
 
         }
       }
@@ -132,8 +133,8 @@ class ArrivalMovementRepositorySpec
 
         val app: Application = builder.build()
 
-        val arrivalStatus: ArrivalStatus = Initialized
-        val arrival                      = arrivalWithOneMessage.sample.value copy (arrivalId = ArrivalId(1), status = UnloadingRemarksSubmitted)
+        val arrivalStatus = ArrivalStatusUpdate(Initialized)
+        val arrival       = arrivalWithOneMessage.sample.value copy (arrivalId = ArrivalId(1), status = UnloadingRemarksSubmitted)
 
         running(app) {
           started(app).futureValue
@@ -147,7 +148,7 @@ class ArrivalMovementRepositorySpec
           val updatedArrival = repository.get(arrival.arrivalId).futureValue.value
 
           result mustBe a[Failure[_]]
-          updatedArrival.status must not be (arrivalStatus)
+          updatedArrival.status must not be (arrivalStatus.arrivalStatus)
         }
       }
     }

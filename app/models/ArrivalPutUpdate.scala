@@ -17,21 +17,3 @@
 package models
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
-
-case class ArrivalPutUpdate(movementReferenceNumber: MovementReferenceNumber, arrivalUpdate: ArrivalUpdate)
-
-object ArrivalPutUpdate {
-
-  def selector(arrivalId: ArrivalId): JsObject = Json.obj(
-    "_id" -> arrivalId
-  )
-
-  implicit object ArrivalPutUpdateArrivalModifier extends ArrivalModifier[ArrivalPutUpdate] {
-    override def toJson(a: ArrivalPutUpdate): JsObject =
-      Json.obj(
-        "$set" -> Json.obj(
-          "movementReferenceNumber" -> a.movementReferenceNumber
-        )
-      ) deepMerge ArrivalModifier.toJson(a.arrivalUpdate)
-  }
-}

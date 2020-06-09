@@ -22,7 +22,9 @@ import models.MessageStatus.SubmissionPending
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalStatus
+import models.ArrivalStatusUpdate
 import models.ArrivalUpdate
+import models.CompoundStatusUpdate
 import models.MessageId
 import models.MessageReceivedEvent
 import models.MessageStatus
@@ -51,19 +53,17 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
       } yield MessageStatusUpdate(messageId, messageStatus)
     }
 
-  implicit val arbitraryArrivalUpdate: Arbitrary[ArrivalUpdate] =
-    Arbitrary {
-      for {
-        arrivalStatus       <- arbitrary[Option[ArrivalStatus]]
-        messageStatusUpdate <- arbitrary[Option[MessageStatusUpdate]]
-      } yield ArrivalUpdate(arrivalStatus, messageStatusUpdate)
-    }
+  implicit val arbitraryArrivalStatusUpdate: Arbitrary[ArrivalStatusUpdate] = Arbitrary(arbitrary[ArrivalStatus].map(ArrivalStatusUpdate(_)))
 
-  implicit val generatorArrivalUpdate: Gen[ArrivalUpdate] =
+  implicit val arbitraryCompoundStatusUpdate: Arbitrary[CompoundStatusUpdate] = Arbitrary {
     for {
-      arrivalStatus <- arbitrary[ArrivalStatus]
-      messageStatus <- arbitrary[MessageStatusUpdate]
-    } yield ArrivalUpdate(Some(arrivalStatus), Some(messageStatus))
+      arrivalStatusUpdate <- arbitrary[ArrivalStatusUpdate]
+      messageStatusUpdate <- arbitrary[MessageStatusUpdate]
+    } yield CompoundStatusUpdate(arrivalStatusUpdate, messageStatusUpdate)
+  }
+
+  implicit val arbitraryArrivalUpdate: Arbitrary[ArrivalUpdate] =
+    Arbitrary(Gen.oneOf(arbitrary[MessageStatusUpdate], arbitrary[ArrivalStatusUpdate], arbitrary[CompoundStatusUpdate]))
 
   implicit lazy val arbitraryMessageStatus: Arbitrary[MessageStatus] =
     Arbitrary {
