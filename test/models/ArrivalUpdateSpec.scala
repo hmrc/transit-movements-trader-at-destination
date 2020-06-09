@@ -104,14 +104,6 @@ class ArrivalUpdateSpec extends SpecBase with Matchers with ScalaCheckDrivenProp
         }
       }
 
-      "THIS MAKES IT A MONIOD" ignore {
-        val lhs = ArrivalUpdate(None, None)
-        val rhs = ArrivalUpdate(None, None)
-
-        lhs.combine(rhs).arrivalUpdate must be(empty)
-        lhs.combine(rhs).messageUpdate must be(empty)
-      }
-
       "uses the arrival status and the message status when they are defined in different ArrivalUpdates" - {
         "arrivalUpdate + messageUpdate" in {
           forAll(noMessageUpdate(arrivalStatusUpdate), noArrivalUpdate(messageStatusUpdate)) {
