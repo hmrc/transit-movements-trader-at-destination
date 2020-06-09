@@ -19,11 +19,11 @@ package controllers.actions
 import generators.ModelGenerators
 import models.Arrival
 import models.ArrivalId
-import org.mockito.Matchers.any
+import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalatest.FreeSpec
-import org.scalatest.MustMatchers
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must.Matchers
 import org.scalatest.OptionValues
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
@@ -44,8 +44,8 @@ import uk.gov.hmrc.auth.core.Enrolments
 import scala.concurrent.Future
 
 class AuthenticatedGetArrivalForReadActionProviderSpec
-    extends FreeSpec
-    with MustMatchers
+    extends AnyFreeSpec
+    with Matchers
     with MockitoSugar
     with ScalaCheckPropertyChecks
     with ModelGenerators

@@ -14,25 +14,23 @@
  * limitations under the License.
  */
 
-package models.messageState
+package models
 
+import base.SpecBase
 import generators.ModelGenerators
+import models.ArrivalStatus._
+import models.MessageStatus.SubmissionFailed
+import models.MessageStatus.SubmissionPending
 import models.MessageStatus.SubmissionSucceeded
-import models.SubmissionProcessingResult
+import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Arbitrary
-import org.scalatest.freespec.AnyFreeSpec
-import org.scalatest.matchers.must.Matchers
-import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
+import org.scalacheck.Gen
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
+import play.api.libs.json.JsObject
+import play.api.libs.json.JsString
 
-class SubmissionSucceededSpec extends AnyFreeSpec with Matchers with ScalaCheckPropertyChecks with ModelGenerators {
+class MessageStatusSpec extends SpecBase with ScalaCheckDrivenPropertyChecks with ModelGenerators {
+  // TODO: Add tests
+  "transition" ignore {}
 
-  "SubmissionSucceeded must transition" - {
-
-    "to SubmissionSuceeded when receiving any Submission event" in {
-      forAll(Arbitrary.arbitrary[SubmissionProcessingResult]) {
-        submissionResult =>
-          SubmissionSucceeded.transition(submissionResult) mustEqual SubmissionSucceeded
-      }
-    }
-  }
 }

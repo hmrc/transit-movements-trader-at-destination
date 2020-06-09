@@ -20,13 +20,13 @@ import generators.BaseGenerators
 import generators.ModelGenerators
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.EitherValues
-import org.scalatest.FreeSpec
-import org.scalatest.MustMatchers
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must.Matchers
 import org.scalatest.OptionValues
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.mvc.PathBindable
 
-class MessageIdSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with BaseGenerators with OptionValues with EitherValues {
+class MessageIdSpec extends AnyFreeSpec with Matchers with ScalaCheckPropertyChecks with BaseGenerators with OptionValues with EitherValues {
 
   "MessageId" - {
 

@@ -124,21 +124,22 @@ class MovementsController @Inject()(
   def putArrival(arrivalId: ArrivalId): Action[NodeSeq] = authenticateForWrite(arrivalId).async(parse.xml) {
     implicit request: ArrivalRequest[NodeSeq] =>
       arrivalMovementService
-        .makeMovementMessageWithStatus(request.arrival.nextMessageCorrelationId, MessageType.ArrivalNotification)(request.body)
+        .messageAndMrn(request.arrival.nextMessageCorrelationId)(request.body)
         .map {
-          submitMessageService
-            .submitMessage(arrivalId, request.arrival.nextMessageId, _, ArrivalStatus.ArrivalSubmitted)
-            .map {
-              case SubmissionProcessingResult.SubmissionSuccess =>
-                Accepted("Message accepted")
-                  .withHeaders("Location" -> routes.MovementsController.getArrival(request.arrival.arrivalId).url)
+          case (message, mrn) =>
+            submitMessageService
+              .submitIe007Message(arrivalId, request.arrival.nextMessageId, message, mrn)
+              .map {
+                case SubmissionProcessingResult.SubmissionSuccess =>
+                  Accepted("Message accepted")
+                    .withHeaders("Location" -> routes.MovementsController.getArrival(request.arrival.arrivalId).url)
 
-              case SubmissionProcessingResult.SubmissionFailureInternal =>
-                InternalServerError
+                case SubmissionProcessingResult.SubmissionFailureInternal =>
+                  InternalServerError
 
-              case SubmissionProcessingResult.SubmissionFailureExternal =>
-                BadGateway
-            }
+                case SubmissionProcessingResult.SubmissionFailureExternal =>
+                  BadGateway
+              }
         }
         .getOrElse {
           Logger.warn("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5")

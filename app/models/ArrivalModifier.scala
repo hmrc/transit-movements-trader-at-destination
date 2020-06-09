@@ -16,25 +16,20 @@
 
 package models
 
-import org.scalatest.freespec.AnyFreeSpec
-import org.scalatest.matchers.must.Matchers
-import scala.xml.Utility.trim
+import play.api.libs.json.JsObject
 
-class TransitWrapperSpec extends AnyFreeSpec with Matchers {
+trait ArrivalModifier[A] {
+  def toJson(a: A): JsObject
+}
 
-  "TransitWrapper" - {
-    "must add transit wrapper to an existing xml" in {
+object ArrivalModifier {
 
-      val testNode = <testNode></testNode>
-      val result   = TransitWrapper(testNode).toXml
+  def apply[A: ArrivalModifier]: ArrivalModifier[A] = implicitly[ArrivalModifier[A]]
 
-      val expectedResult =
-        <transitRequest
-          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-          xsi:noNamespaceSchemaLocation="../../schema/request/request.xsd">{testNode}</transitRequest>
-
-      trim(result) mustBe trim(expectedResult)
-    }
+  def apply[A](fn: A => JsObject): ArrivalModifier[A] = new ArrivalModifier[A] {
+    override def toJson(a: A): JsObject = fn(a)
   }
+
+  implicit def toJson[A: ArrivalModifier](a: A): JsObject = ArrivalModifier[A].toJson(a)
 
 }

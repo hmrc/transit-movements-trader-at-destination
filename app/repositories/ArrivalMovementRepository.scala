@@ -19,9 +19,12 @@ package repositories
 import com.google.inject.Inject
 import models.Arrival
 import models.ArrivalId
+import models.ArrivalModifier
 import models.ArrivalStatus
+import models.ArrivalUpdate
 import models.MessageId
 import models.MessageStatus
+import models.MessageStatusUpdate
 import models.MongoDateTimeFormats
 import models.MovementMessage
 import models.MovementReferenceNumber
@@ -99,7 +102,26 @@ class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi)(implicit ec: 
         .collect[Seq](-1, Cursor.FailOnError())
     }
 
-  // TODO: Refactor this to take a MessageId
+  def updateArrival[A](selector: JsObject, modifier: A)(implicit ev: ArrivalModifier[A]): Future[Try[Unit]] = {
+
+    import models.ArrivalModifier.toJson
+
+    collection.flatMap {
+      _.update(false)
+        .one[JsObject, JsObject](selector, modifier)
+        .map {
+          writeResult =>
+            if (writeResult.n > 0)
+              Success(())
+            else
+              writeResult.errmsg
+                .map(x => Failure(new Exception(x)))
+                .getOrElse(Failure(new Exception("Unable to update message status")))
+        }
+    }
+  }
+
+  @deprecated("Use updateArrival since this will be removed in the next version", "next")
   def setMessageState(arrivalId: ArrivalId, messageId: Int, status: MessageStatus): Future[Try[Unit]] = {
     val selector = Json.obj(
       "$and" -> Json.arr(
@@ -108,55 +130,12 @@ class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi)(implicit ec: 
       )
     )
 
-    val modifier = Json.obj(
-      "$set" -> Json.obj(
-        s"messages.$messageId.status" -> status.toString
-      )
-    )
+    val modifier = ArrivalUpdate(None, Some(MessageStatusUpdate(MessageId.fromIndex(messageId), status)))
 
-    collection.flatMap {
-      _.update(false)
-        .one(selector, modifier)
-        .map {
-          WriteResult
-            .lastError(_)
-            .map {
-              le =>
-                if (le.updatedExisting) Success(())
-                else
-                  Failure(new Exception(le.errmsg match {
-                    case Some(err) => err
-                    case None      => "Unable to update message status"
-                  }))
-            }
-            .getOrElse(Failure(new Exception("Unable to update message status")))
-        }
-    }
+    updateArrival(selector, modifier)
   }
 
-  def setState(id: ArrivalId, status: ArrivalStatus): Future[Option[Unit]] = {
-
-    val selector = Json.obj(
-      "_id" -> id
-    )
-
-    val modifier = Json.obj(
-      "$set" -> Json.obj(
-        "status" -> status.toString
-      )
-    )
-
-    collection.flatMap {
-      _.update(false)
-        .one(selector, modifier)
-        .map {
-          y =>
-            if (y.n == 1) Some(())
-            else None
-        }
-    }
-  }
-
+  @deprecated("Use updateArrival since this will be removed in the next version", "next")
   def setArrivalStateAndMessageState(arrivalId: ArrivalId,
                                      messageId: MessageId,
                                      arrivalState: ArrivalStatus,
@@ -164,22 +143,9 @@ class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi)(implicit ec: 
 
     val selector = Json.obj("_id" -> arrivalId)
 
-    val modifier = Json.obj(
-      "$set" -> Json.obj(
-        s"messages.${messageId.index}.status" -> messageState.toString,
-        "status"                              -> arrivalState.toString
-      )
-    )
+    val modifier = ArrivalUpdate(Some(arrivalState), Some(MessageStatusUpdate(messageId, messageState)))
 
-    collection.flatMap {
-      _.update(false)
-        .one(selector, modifier)
-        .map {
-          y =>
-            if (y.n == 1) Some(())
-            else None
-        }
-    }
+    updateArrival(selector, modifier).map(_.toOption)
   }
 
   def addNewMessage(arrivalId: ArrivalId, message: MovementMessage): Future[Try[Unit]] = {

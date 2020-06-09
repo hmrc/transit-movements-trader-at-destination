@@ -16,6 +16,9 @@
 
 package models
 
+import play.api.libs.json.Json
+import play.api.libs.json.Writes
+
 sealed trait ArrivalStatus {
   def transition(messageReceived: MessageReceivedEvent): ArrivalStatus
 }
@@ -83,4 +86,12 @@ object ArrivalStatus extends Enumerable.Implicits {
 
   implicit val enumerable: Enumerable[ArrivalStatus] =
     Enumerable(values.map(v => v.toString -> v): _*)
+
+  implicit def arrivalStateUpdate(implicit writes: Writes[ArrivalStatus]): ArrivalModifier[ArrivalStatus] =
+    ArrivalModifier(
+      value =>
+        Json.obj(
+          "$set" -> Json.obj(
+            "status" -> value
+          )))
 }

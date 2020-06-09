@@ -23,10 +23,14 @@ import connectors.MessageConnector
 import javax.inject.Inject
 import models.Arrival
 import models.ArrivalId
+import models.ArrivalPutUpdate
 import models.ArrivalStatus
+import models.ArrivalUpdate
 import models.MessageId
 import models.MessageStatus
+import models.MessageStatusUpdate
 import models.MovementMessageWithStatus
+import models.MovementReferenceNumber
 import models.SubmissionProcessingResult
 import play.api.Logger
 import repositories.ArrivalMovementRepository
@@ -74,6 +78,50 @@ class SubmitMessageService @Inject()(
                 _ =>
                   SubmissionProcessingResult.SubmissionFailureExternal
               }
+            }
+          }
+      }
+    }
+
+  def submitIe007Message(arrivalId: ArrivalId, messageId: MessageId, message: MovementMessageWithStatus, mrn: MovementReferenceNumber)(
+    implicit hc: HeaderCarrier): Future[SubmissionProcessingResult] =
+    arrivalMovementRepository.addNewMessage(arrivalId, message) flatMap {
+      case Failure(_) =>
+        Future.successful(SubmissionProcessingResult.SubmissionFailureInternal)
+
+      case Success(_) => {
+        messageConnector
+          .post(arrivalId, message, OffsetDateTime.now)
+          .flatMap {
+            _ =>
+              arrivalMovementRepository
+                .updateArrival(
+                  ArrivalPutUpdate.selector(arrivalId),
+                  ArrivalPutUpdate(mrn,
+                                   ArrivalUpdate(Some(ArrivalStatus.ArrivalSubmitted), Some(MessageStatusUpdate(messageId, MessageStatus.SubmissionSucceeded))))
+                )
+                .map {
+                  _ =>
+                    SubmissionProcessingResult.SubmissionSuccess
+                }
+                .recover({
+                  case _ =>
+                    SubmissionProcessingResult.SubmissionFailureInternal
+                })
+          }
+          .recoverWith {
+            case error => {
+              Logger.warn(s"Existing Movement - Call to EIS failed with the following Exception: ${error.getMessage}")
+
+              arrivalMovementRepository
+                .updateArrival(
+                  ArrivalPutUpdate.selector(arrivalId),
+                  MessageStatusUpdate(messageId, message.status.transition(SubmissionProcessingResult.SubmissionFailureInternal))
+                )
+                .map {
+                  _ =>
+                    SubmissionProcessingResult.SubmissionFailureExternal
+                }
             }
           }
       }

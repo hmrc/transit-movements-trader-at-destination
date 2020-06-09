@@ -19,13 +19,13 @@ package models
 import generators.ModelGenerators
 import models.behaviours.JsonBehaviours
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalatest.FreeSpec
-import org.scalatest.MustMatchers
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.Json
 
-class RejectionErrorSpec extends FreeSpec with MustMatchers with ScalaCheckPropertyChecks with ModelGenerators with JsonBehaviours {
+class RejectionErrorSpec extends AnyFreeSpec with Matchers with ScalaCheckPropertyChecks with ModelGenerators with JsonBehaviours {
 
   mustHaveDualReadsAndWrites(arbitrary[RejectionError])
 

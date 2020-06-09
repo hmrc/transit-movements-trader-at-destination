@@ -17,13 +17,14 @@
 package controllers.actions
 
 import generators.ModelGenerators
-import org.mockito.Matchers.{eq => eqTo, _}
+import org.mockito.ArgumentMatchers.{eq => eqTo}
+import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
 import models.Arrival
 import models.ArrivalId
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalatest.FreeSpec
-import org.scalatest.MustMatchers
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must.Matchers
 import org.scalatest.OptionValues
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
@@ -45,8 +46,8 @@ import uk.gov.hmrc.auth.core.Enrolments
 import scala.concurrent.Future
 
 class AuthenticatedGetArrivalForWriteActionProviderSpec
-    extends FreeSpec
-    with MustMatchers
+    extends AnyFreeSpec
+    with Matchers
     with MockitoSugar
     with ScalaCheckPropertyChecks
     with ModelGenerators

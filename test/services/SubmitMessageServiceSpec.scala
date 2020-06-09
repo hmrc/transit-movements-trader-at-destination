@@ -24,16 +24,23 @@ import base.SpecBase
 import cats.data.NonEmptyList
 import connectors.MessageConnector
 import generators.ModelGenerators
+import models.ArrivalStatus.ArrivalSubmitted
+import models.MessageStatus.SubmissionFailed
 import models.MessageStatus.SubmissionPending
+import models.MessageStatus.SubmissionSucceeded
 import models.Arrival
 import models.ArrivalId
+import models.ArrivalPutUpdate
 import models.ArrivalStatus
+import models.ArrivalUpdate
 import models.MessageId
 import models.MessageStatus
+import models.MessageStatusUpdate
 import models.MessageType
 import models.MovementMessageWithStatus
+import models.MovementReferenceNumber
 import models.SubmissionProcessingResult
-import org.mockito.Matchers.{eq => eqTo, _}
+import org.mockito.ArgumentMatchers.{eq => eqTo, _}
 import org.mockito.Mockito.when
 import org.mockito.Mockito._
 import org.scalacheck.Arbitrary.arbitrary
@@ -225,6 +232,153 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
 
     }
 
+  }
+
+  "submit a IE007 message" - {
+    "return SubmissionProcessingResult.SubmissionSuccess when the message is successfully saved, submitted and the state is updated" in {
+      lazy val mockArrivalMovementRepository: ArrivalMovementRepository = mock[ArrivalMovementRepository]
+      lazy val mockMessageConnector: MessageConnector                   = mock[MessageConnector]
+
+      when(mockArrivalMovementRepository.addNewMessage(any(), any())).thenReturn(Future.successful(Success(())))
+      when(mockArrivalMovementRepository.updateArrival(any(), any())(any())).thenReturn(Future.successful(Success(())))
+      when(mockMessageConnector.post(any(), any(), any())(any())).thenReturn(Future.successful(HttpResponse(ACCEPTED)))
+
+      val application = baseApplicationBuilder
+        .overrides(
+          bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
+          bind[MessageConnector].toInstance(mockMessageConnector)
+        )
+        .build()
+
+      running(application) {
+
+        val service = application.injector.instanceOf[SubmitMessageService]
+
+        val arrivalId       = arbitrary[ArrivalId].sample.value
+        val messageId       = arbitrary[MessageId].sample.value
+        val movementMessage = arbitrary[MovementMessageWithStatus].sample.value
+        val arrivalStatus   = ArrivalStatus.ArrivalSubmitted
+        val mrn             = arbitrary[MovementReferenceNumber].sample.value
+
+        val result = service.submitIe007Message(arrivalId, messageId, movementMessage, mrn)
+
+        result.futureValue mustEqual SubmissionProcessingResult.SubmissionSuccess
+
+        val expectedSelector = ArrivalPutUpdate.selector(arrivalId)
+        val expectedModifier = ArrivalPutUpdate(mrn, ArrivalUpdate(Some(arrivalStatus), Some(MessageStatusUpdate(messageId, SubmissionSucceeded))))
+
+        verify(mockArrivalMovementRepository, times(1)).addNewMessage(eqTo(arrivalId), eqTo(movementMessage))
+        verify(mockMessageConnector, times(1)).post(eqTo(arrivalId), eqTo(movementMessage), any())(any())
+        verify(mockArrivalMovementRepository, times(1)).updateArrival(eqTo(expectedSelector), eqTo(expectedModifier))(any())
+
+      }
+
+    }
+
+    "return SubmissionProcessingResult.SubmissionSuccess when the message is successfully saved and submitted, but the state of message is not updated" in {
+      val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+      val mockMessageConnector          = mock[MessageConnector]
+
+      when(mockArrivalMovementRepository.addNewMessage(any(), any())).thenReturn(Future.successful(Success(())))
+      when(mockMessageConnector.post(any(), any(), any())(any())).thenReturn(Future.successful(HttpResponse(ACCEPTED)))
+      when(mockArrivalMovementRepository.updateArrival(any(), any())(any())).thenReturn(Future.successful(Failure(new Exception)))
+
+      val application = baseApplicationBuilder
+        .overrides(
+          bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
+          bind[MessageConnector].toInstance(mockMessageConnector)
+        )
+        .build()
+
+      running(application) {
+
+        val service = application.injector.instanceOf[SubmitMessageService]
+
+        val arrivalId       = arbitrary[ArrivalId].sample.value
+        val messageId       = arbitrary[MessageId].sample.value
+        val movementMessage = arbitrary[MovementMessageWithStatus].sample.value
+        val arrivalStatus   = ArrivalStatus.ArrivalSubmitted
+        val mrn             = arbitrary[MovementReferenceNumber].sample.value
+
+        val result = service.submitIe007Message(arrivalId, messageId, movementMessage, mrn)
+
+        val expectedSelector = ArrivalPutUpdate.selector(arrivalId)
+        val expectedModifier = ArrivalPutUpdate(mrn, ArrivalUpdate(Some(arrivalStatus), Some(MessageStatusUpdate(messageId, SubmissionSucceeded))))
+
+        result.futureValue mustEqual SubmissionProcessingResult.SubmissionSuccess
+        verify(mockArrivalMovementRepository, times(1)).addNewMessage(eqTo(arrivalId), eqTo(movementMessage))
+        verify(mockMessageConnector, times(1)).post(eqTo(arrivalId), eqTo(movementMessage), any())(any())
+        verify(mockArrivalMovementRepository, times(1)).updateArrival(eqTo(expectedSelector), eqTo(expectedModifier))(any())
+      }
+
+    }
+
+    "return SubmissionProcessingResult.SubmissionFailureInternal when the message is not saved" in {
+      val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+      val mockMessageConnector          = mock[MessageConnector]
+
+      when(mockArrivalMovementRepository.addNewMessage(any(), any())).thenReturn(Future.successful(Failure(new Exception)))
+
+      val application = baseApplicationBuilder
+        .overrides(
+          bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository)
+        )
+        .build()
+
+      running(application) {
+
+        val service = application.injector.instanceOf[SubmitMessageService]
+
+        val arrivalId       = arbitrary[ArrivalId].sample.value
+        val messageId       = arbitrary[MessageId].sample.value
+        val movementMessage = arbitrary[MovementMessageWithStatus].sample.value
+        val arrivalStatus   = arbitrary[ArrivalStatus].sample.value
+        val mrn             = arbitrary[MovementReferenceNumber].sample.value
+
+        val result = service.submitIe007Message(arrivalId, messageId, movementMessage, mrn)
+
+        result.futureValue mustEqual SubmissionProcessingResult.SubmissionFailureInternal
+        verify(mockMessageConnector, never()).post(eqTo(arrivalId), eqTo(movementMessage), any())(any())
+      }
+
+    }
+
+    "return SubmissionProcessingResult.SubmissionFailureExternal when the message successfully saves, but is not submitted and set the message state to SubmissionFailed" in {
+      val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+      val mockMessageConnector          = mock[MessageConnector]
+
+      when(mockArrivalMovementRepository.addNewMessage(any(), any())).thenReturn(Future.successful(Success(())))
+      when(mockMessageConnector.post(any(), any(), any())(any())).thenReturn(Future.failed(new Exception))
+      when(mockArrivalMovementRepository.updateArrival(any(), any())(any())).thenReturn(Future.successful(Success(())))
+
+      val application = baseApplicationBuilder
+        .overrides(
+          bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
+          bind[MessageConnector].toInstance(mockMessageConnector)
+        )
+        .build()
+
+      running(application) {
+
+        val service = application.injector.instanceOf[SubmitMessageService]
+
+        val arrivalId       = arbitrary[ArrivalId].sample.value
+        val messageId       = arbitrary[MessageId].sample.value
+        val movementMessage = arbitrary[MovementMessageWithStatus].sample.value
+        val mrn             = arbitrary[MovementReferenceNumber].sample.value
+
+        val result = service.submitIe007Message(arrivalId, messageId, movementMessage, mrn)
+
+        val expectedSelector = ArrivalPutUpdate.selector(arrivalId)
+        val expectedModifier = MessageStatusUpdate(messageId, SubmissionFailed)
+
+        result.futureValue mustEqual SubmissionProcessingResult.SubmissionFailureExternal
+        verify(mockArrivalMovementRepository, times(1)).addNewMessage(eqTo(arrivalId), eqTo(movementMessage))
+        verify(mockMessageConnector, times(1)).post(eqTo(arrivalId), eqTo(movementMessage), any())(any())
+        verify(mockArrivalMovementRepository, times(1)).updateArrival(eqTo(expectedSelector), eqTo(expectedModifier))(any())
+      }
+
+    }
   }
 
   "submit a new arrival" - {
