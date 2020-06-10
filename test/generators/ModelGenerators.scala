@@ -21,6 +21,7 @@ import java.time._
 import models.MessageStatus.SubmissionPending
 import models.Arrival
 import models.ArrivalId
+import models.ArrivalPutUpdate
 import models.ArrivalStatus
 import models.ArrivalStatusUpdate
 import models.ArrivalUpdate
@@ -62,8 +63,30 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
     } yield CompoundStatusUpdate(arrivalStatusUpdate, messageStatusUpdate)
   }
 
+  implicit val arbitraryArrivalPutUpdate: Arbitrary[ArrivalPutUpdate] = Arbitrary {
+    for {
+      mrn    <- arbitrary[MovementReferenceNumber]
+      update <- arbitrary[CompoundStatusUpdate]
+    } yield ArrivalPutUpdate(mrn, update)
+  }
+
+  val arrivalUpdateTypeGenerator: Gen[Gen[ArrivalUpdate]] =
+    Gen.oneOf[Gen[ArrivalUpdate]](
+      arbitrary[MessageStatusUpdate],
+      arbitrary[ArrivalStatusUpdate],
+      arbitrary[CompoundStatusUpdate],
+      arbitrary[ArrivalPutUpdate]
+    )
+
   implicit val arbitraryArrivalUpdate: Arbitrary[ArrivalUpdate] =
-    Arbitrary(Gen.oneOf(arbitrary[MessageStatusUpdate], arbitrary[ArrivalStatusUpdate], arbitrary[CompoundStatusUpdate]))
+    Arbitrary(
+      Gen.oneOf[ArrivalUpdate](
+        arbitrary[MessageStatusUpdate],
+        arbitrary[ArrivalStatusUpdate],
+        arbitrary[CompoundStatusUpdate],
+        arbitrary[ArrivalPutUpdate]
+      )
+    )
 
   implicit lazy val arbitraryMessageStatus: Arbitrary[MessageStatus] =
     Arbitrary {

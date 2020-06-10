@@ -19,16 +19,12 @@ package models
 import base.FreeSpecDiscipline
 import base.SpecBase
 import cats._
-import cats.implicits._
 import cats.kernel.laws.discipline.SemigroupTests
 import generators.ModelGenerators
-import org.scalacheck.Arbitrary
-import org.scalacheck.Gen
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.libs.json.JsObject
-import play.api.libs.json.JsString
 import play.api.libs.json.Json
 
 class ArrivalUpdateSpec extends SpecBase with Matchers with ScalaCheckDrivenPropertyChecks with ModelGenerators with FreeSpecDiscipline {
@@ -37,115 +33,117 @@ class ArrivalUpdateSpec extends SpecBase with Matchers with ScalaCheckDrivenProp
 
   "ArrivalUpdate" - {
 
-//    "combine" - {
-//
-//      checkAll("Semigroup behaviour", SemigroupTests[ArrivalUpdate].semigroup)
-//
-//      "uses the arrival status on the right when both are defined" in {
-//        forAll(???, ???) {
-//          (lhs, rhs) =>
-//            lhs.combine(rhs).arrivalUpdate mustEqual rhs.arrivalUpdate
-//        }
-//      }
-//
-//      "uses the arrival status on the left when the right is not are defined" in {
-//        forAll(???, ???) {
-//          (lhs, rhs) =>
-//            lhs.combine(rhs).arrivalUpdate mustEqual lhs.arrivalUpdate
-//        }
-//      }
-//
-//      "is not defined when both arrival status are not defined" in {
-//        forAll(???, ???) {
-//          (lhs, rhs) =>
-//            lhs.combine(rhs).arrivalUpdate must not be (defined)
-//        }
-//
-//      }
-//
-//      "uses the message status on the right when both are defined" in {
-//        forAll(???, ???) {
-//          (lhs, rhs) =>
-//            lhs.combine(rhs).messageUpdate mustEqual rhs.messageUpdate
-//        }
-//      }
-//
-//      "uses the message status on the left when the right is not are defined" in {
-//        forAll(???, ???) {
-//          (lhs, rhs) =>
-//            lhs.combine(rhs).messageUpdate mustEqual lhs.messageUpdate
-//        }
-//      }
-//
-//      "is not defined when both message status are not defined" in {
-//        forAll(???, ???) {
-//          (lhs, rhs) =>
-//            lhs.combine(rhs).messageUpdate must not be (defined)
-//        }
-//      }
-//
-//      "uses the arrival status and the message status when they are defined in different ArrivalUpdates" - {
-//        "arrivalUpdate + messageUpdate" in {
-//          forAll(???, ???) {
-//            (arrivalUpdate, messageUpdate) =>
-//              val leftRightResult = arrivalUpdate.combine(messageUpdate)
-//
-//              leftRightResult.arrivalUpdate mustEqual arrivalUpdate.arrivalUpdate
-//              leftRightResult.messageUpdate mustEqual messageUpdate.messageUpdate
-//          }
-//        }
-//
-//        "messageUpdate + arrivalUpdate" in {
-//          forAll(???, ???) {
-//            (arrivalUpdate, messageUpdate) =>
-//              val rightLeftResult = messageUpdate.combine(arrivalUpdate)
-//
-//              rightLeftResult.arrivalUpdate mustEqual arrivalUpdate.arrivalUpdate
-//              rightLeftResult.messageUpdate mustEqual messageUpdate.messageUpdate
-//          }
-//        }
-//      }
-//    }
-//
-//    "ArrivalStatusUpdate" - {
-//      "the update must only be the arrival state and the value must be the name of the state" in {
-//        forAll(???) {
-//          arrivalUpdate =>
-//            val expectedJson = Json.obj(
-//              "$set" -> Json.obj(
-//                "status" -> arrivalUpdate.arrivalUpdate.value.toString
-//              )
-//            )
-//
-//            ArrivalModifier.toJson(arrivalUpdate) mustEqual expectedJson
-//
-//        }
-//      }
-//      "the update must only be the message update and the value must be the name of the message" in {
-//        forAll(???) {
-//          arrivalUpdate =>
-//            val messageId = arrivalUpdate.messageUpdate.value.messageId
-//            val expectedJson = Json.obj(
-//              "$set" -> Json.obj(
-//                s"messages.${messageId.index}.status" -> arrivalUpdate.messageUpdate.value.messageStatus
-//              )
-//            )
-//            ArrivalModifier.toJson(arrivalUpdate) mustEqual expectedJson
-//        }
-//      }
-//      "the update must be arrival update, message update and the value must be both" in {
-//        forAll(???) {
-//          arrivalUpdate =>
-//            val messageId = arrivalUpdate.messageUpdate.value.messageId
-//            val expectedJson = Json.obj(
-//              "$set" -> Json.obj(
-//                "status"                              -> arrivalUpdate.arrivalUpdate.value.toString,
-//                s"messages.${messageId.index}.status" -> arrivalUpdate.messageUpdate.value.messageStatus
-//              )
-//            )
-//            ArrivalModifier.toJson(arrivalUpdate) mustEqual expectedJson
-//        }
-//      }
-//    }
+    "combine" - {
+
+      checkAll("Semigroup behaviour", SemigroupTests[ArrivalUpdate].semigroup)
+
+      "returns the value when it is combined with itself" in {
+        forAll(arbitrary[ArrivalUpdate]) {
+          arrivalUpdate =>
+            Semigroup[ArrivalUpdate].combine(arrivalUpdate, arrivalUpdate) mustEqual arrivalUpdate
+        }
+      }
+
+      "returns the value on the right when it is the same type of update" in {
+        forAll(arrivalUpdateTypeGenerator) {
+          arrivalUpdateupdateGenerator =>
+            forAll(arrivalUpdateupdateGenerator, arrivalUpdateupdateGenerator) {
+              (lhs, rhs) =>
+                Semigroup[ArrivalUpdate].combine(lhs, rhs) mustEqual rhs
+            }
+        }
+      }
+    }
+
+    "ArrivalModifier for any combination of ArrivalUpdate is the same as the individual ArrivalModifier combined" in {
+
+      forAll(arbitrary[ArrivalUpdate], arbitrary[ArrivalUpdate]) {
+        (lhs, rhs) =>
+          val result = Semigroup[ArrivalUpdate].combine(lhs, rhs)
+
+          val expectedValue =
+            if (rhs.isInstanceOf[MessageStatusUpdate] || rhs.isInstanceOf[CompoundStatusUpdate] || rhs.isInstanceOf[ArrivalPutUpdate])
+              removeMessageUpdate(ArrivalModifier.toJson(lhs)) deepMerge ArrivalModifier.toJson(rhs)
+            else
+              ArrivalModifier.toJson(lhs) deepMerge ArrivalModifier.toJson(rhs)
+
+          ArrivalModifier.toJson(result) mustEqual expectedValue
+
+      }
+    }
+
+    def removeMessageUpdate(json: JsObject): JsObject = {
+      val updateDescription = (json \ "$set").toOption.value
+        .asInstanceOf[JsObject]
+        .fields
+        .filterNot(_._1.contains("messages."))
+
+      Json.obj("$set" -> JsObject(updateDescription))
+    }
   }
+
+  "MessageStatusUpdate" - {
+    "ArrivalModifier returns modify object that would set the message status" in {
+      forAll(arbitrary[MessageStatusUpdate]) {
+        messageStatusUpdate =>
+          val expectedUpdateJson = Json.obj(
+            "$set" -> Json.obj(
+              s"messages.${messageStatusUpdate.messageId.index}.status" -> messageStatusUpdate.messageStatus
+            )
+          )
+
+          ArrivalModifier.toJson(messageStatusUpdate) mustEqual expectedUpdateJson
+      }
+    }
+  }
+
+  "ArrivalStatusUpdate" - {
+    "ArrivalModifier returns modify object that would set the status" in {
+      forAll(arbitrary[ArrivalStatusUpdate]) {
+        arrivalStatusUpdate =>
+          val expectedUpdateJson = Json.obj(
+            "$set" -> Json.obj(
+              "status" -> arrivalStatusUpdate.arrivalStatus
+            )
+          )
+
+          ArrivalModifier.toJson(arrivalStatusUpdate) mustEqual expectedUpdateJson
+      }
+    }
+  }
+
+  "CompoundStatusUpdate" - {
+    "ArrivalModifier returns modify object that would set the status and the message status" in {
+      forAll(arbitrary[CompoundStatusUpdate]) {
+        compoundStatusUpdate =>
+          val expectedUpdateJson = Json.obj(
+            "$set" -> Json.obj(
+              "status"                                                                       -> compoundStatusUpdate.arrivalStatusUpdate.arrivalStatus,
+              s"messages.${compoundStatusUpdate.messageStatusUpdate.messageId.index}.status" -> compoundStatusUpdate.messageStatusUpdate.messageStatus
+            )
+          )
+
+          ArrivalModifier.toJson(compoundStatusUpdate) mustEqual expectedUpdateJson
+      }
+    }
+  }
+
+  "ArrivalPutUpdate" - {
+    " ArrivalModifier returns modify object that would set the MRN, status and the message status" in {
+      forAll(arbitrary[ArrivalPutUpdate]) {
+        arrivalPutUpdate =>
+          val expectedMessageId = arrivalPutUpdate.arrivalUpdate.messageStatusUpdate.messageId.index
+          val expectedJson = Json.obj(
+            "$set" -> Json.obj(
+              "movementReferenceNumber"             -> arrivalPutUpdate.movementReferenceNumber,
+              "status"                              -> arrivalPutUpdate.arrivalUpdate.arrivalStatusUpdate.arrivalStatus,
+              s"messages.$expectedMessageId.status" -> arrivalPutUpdate.arrivalUpdate.messageStatusUpdate.messageStatus
+            )
+          )
+
+          ArrivalModifier.toJson(arrivalPutUpdate) mustEqual expectedJson
+      }
+    }
+  }
+
 }
