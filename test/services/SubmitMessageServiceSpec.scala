@@ -204,7 +204,7 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
 
       when(mockArrivalMovementRepository.addNewMessage(any(), any())).thenReturn(Future.successful(Success(())))
       when(mockMessageConnector.post(any(), any(), any())(any())).thenReturn(Future.failed(new Exception))
-      when(mockArrivalMovementRepository.setMessageState(any(), any(), any())).thenReturn(Future.successful((Success(()))))
+      when(mockArrivalMovementRepository.updateArrival(any(), any())(any())).thenReturn(Future.successful((Success(()))))
 
       val application = baseApplicationBuilder
         .overrides(
@@ -227,7 +227,9 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
         result.futureValue mustEqual SubmissionProcessingResult.SubmissionFailureExternal
         verify(mockArrivalMovementRepository, times(1)).addNewMessage(eqTo(arrivalId), eqTo(movementMessage))
         verify(mockMessageConnector, times(1)).post(eqTo(arrivalId), eqTo(movementMessage), any())(any())
-        verify(mockArrivalMovementRepository, times(1)).setMessageState(eqTo(arrivalId), eqTo(messageId.index), eqTo(MessageStatus.SubmissionFailed))
+
+        val expectedModifier = MessageStatusUpdate(messageId, SubmissionFailed)
+        verify(mockArrivalMovementRepository, times(1)).updateArrival(any(), eqTo(expectedModifier))(any())
       }
 
     }
@@ -482,7 +484,7 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
 
       when(mockArrivalMovementRepository.insert(any())).thenReturn(Future.successful(()))
       when(mockMessageConnector.post(any(), any(), any())(any())).thenReturn(Future.failed(new Exception))
-      when(mockArrivalMovementRepository.setMessageState(any(), any(), any())).thenReturn(Future.successful((Success(()))))
+      when(mockArrivalMovementRepository.updateArrival(any(), any())(any())).thenReturn(Future.successful((Success(()))))
 
       val application = baseApplicationBuilder
         .overrides(
@@ -500,7 +502,9 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
         result.futureValue mustEqual SubmissionProcessingResult.SubmissionFailureExternal
         verify(mockArrivalMovementRepository, times(1)).insert(eqTo(arrival))
         verify(mockMessageConnector, times(1)).post(eqTo(arrival.arrivalId), eqTo(movementMessage), any())(any())
-        verify(mockArrivalMovementRepository, times(1)).setMessageState(eqTo(arrival.arrivalId), eqTo(messageId.index), eqTo(MessageStatus.SubmissionFailed))
+
+        val expectedModifier = MessageStatusUpdate(messageId, SubmissionFailed)
+        verify(mockArrivalMovementRepository, times(1)).updateArrival(any(), eqTo(expectedModifier))(any())
       }
 
     }

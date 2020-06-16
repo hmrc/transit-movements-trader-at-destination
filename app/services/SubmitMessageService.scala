@@ -34,6 +34,7 @@ import models.MovementMessageWithStatus
 import models.MovementReferenceNumber
 import models.SubmissionProcessingResult
 import play.api.Logger
+import play.api.libs.json.Json
 import repositories.ArrivalMovementRepository
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -73,12 +74,19 @@ class SubmitMessageService @Inject()(
             case error => {
               Logger.warn(s"Existing Movement - Call to EIS failed with the following Exception: ${error.getMessage}")
 
-              arrivalMovementRepository.setMessageState(arrivalId,
-                                                        messageId.index,
-                                                        message.status.transition(SubmissionProcessingResult.SubmissionFailureInternal)) map {
-                _ =>
-                  SubmissionProcessingResult.SubmissionFailureExternal
-              }
+              val selector = Json.obj(
+                "$and" -> Json.arr(
+                  Json.obj("_id"                                 -> arrivalId),
+                  Json.obj(s"messages.${messageId.index}.status" -> Json.obj("$exists" -> true))
+                )
+              )
+
+              val newStatus = message.status.transition(SubmissionProcessingResult.SubmissionFailureInternal)
+              val modifier  = MessageStatusUpdate(messageId, newStatus)
+
+              arrivalMovementRepository
+                .updateArrival(selector, modifier)
+                .map(_ => SubmissionProcessingResult.SubmissionFailureExternal)
             }
           }
       }
@@ -155,12 +163,19 @@ class SubmitMessageService @Inject()(
               case error =>
                 Logger.warn(s"New Movement - Call to EIS failed with the following Exception: ${error.getMessage}")
 
-                arrivalMovementRepository.setMessageState(arrival.arrivalId,
-                                                          messageId.index,
-                                                          message.status.transition(SubmissionProcessingResult.SubmissionFailureInternal)) map {
-                  _ =>
-                    SubmissionProcessingResult.SubmissionFailureExternal
-                }
+                val selector = Json.obj(
+                  "$and" -> Json.arr(
+                    Json.obj("_id"                                 -> arrival.arrivalId),
+                    Json.obj(s"messages.${messageId.index}.status" -> Json.obj("$exists" -> true))
+                  )
+                )
+
+                val newStatus = message.status.transition(SubmissionProcessingResult.SubmissionFailureInternal)
+                val modifier  = MessageStatusUpdate(messageId, newStatus)
+
+                arrivalMovementRepository
+                  .updateArrival(selector, modifier)
+                  .map(_ => SubmissionProcessingResult.SubmissionFailureExternal)
             }
 
       }
