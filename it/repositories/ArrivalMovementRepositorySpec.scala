@@ -17,6 +17,7 @@ import models.ArrivalId
 import models.ArrivalPutUpdate
 import models.ArrivalStatus
 import models.ArrivalStatusUpdate
+import models.ArrivalUpdate
 import models.MessageId
 import models.MessageType
 import models.MongoDateTimeFormats
@@ -119,7 +120,7 @@ class ArrivalMovementRepositorySpec
 
           repository.insert(arrival).futureValue
 
-          repository.updateArrival(ArrivalPutUpdate.selector(arrival.arrivalId), arrivalStatus).futureValue
+          repository.updateArrival(ArrivalUpdate.selectByArrivalId(arrival.arrivalId), arrivalStatus).futureValue
 
           val updatedArrival = repository.get(arrival.arrivalId).futureValue.value
 
@@ -143,7 +144,7 @@ class ArrivalMovementRepositorySpec
 
           repository.insert(arrival).futureValue
 
-          val result = repository.updateArrival(ArrivalPutUpdate.selector(ArrivalId(2)), arrivalStatus).futureValue
+          val result = repository.updateArrival(ArrivalUpdate.selectByArrivalId(ArrivalId(2)), arrivalStatus).futureValue
 
           val updatedArrival = repository.get(arrival.arrivalId).futureValue.value
 

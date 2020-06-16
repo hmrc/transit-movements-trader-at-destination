@@ -26,6 +26,7 @@ import models.ArrivalId
 import models.ArrivalPutUpdate
 import models.ArrivalStatus
 import models.ArrivalStatusUpdate
+import models.ArrivalUpdate
 import models.CompoundStatusUpdate
 import models.MessageId
 import models.MessageStatus
@@ -105,7 +106,7 @@ class SubmitMessageService @Inject()(
             _ =>
               arrivalMovementRepository
                 .updateArrival(
-                  ArrivalPutUpdate.selector(arrivalId),
+                  ArrivalUpdate.selectByArrivalId(arrivalId),
                   ArrivalPutUpdate(mrn,
                                    CompoundStatusUpdate(ArrivalStatusUpdate(ArrivalStatus.ArrivalSubmitted),
                                                         MessageStatusUpdate(messageId, MessageStatus.SubmissionSucceeded)))
@@ -125,7 +126,7 @@ class SubmitMessageService @Inject()(
 
               arrivalMovementRepository
                 .updateArrival(
-                  ArrivalPutUpdate.selector(arrivalId),
+                  ArrivalUpdate.selectByArrivalId(arrivalId),
                   MessageStatusUpdate(messageId, message.status.transition(SubmissionProcessingResult.SubmissionFailureInternal))
                 )
                 .map {

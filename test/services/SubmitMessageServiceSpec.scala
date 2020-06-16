@@ -32,6 +32,7 @@ import models.ArrivalId
 import models.ArrivalPutUpdate
 import models.ArrivalStatus
 import models.ArrivalStatusUpdate
+import models.ArrivalUpdate
 import models.CompoundStatusUpdate
 import models.MessageId
 import models.MessageStatus
@@ -266,7 +267,7 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
 
         result.futureValue mustEqual SubmissionProcessingResult.SubmissionSuccess
 
-        val expectedSelector = ArrivalPutUpdate.selector(arrivalId)
+        val expectedSelector = ArrivalUpdate.selectByArrivalId(arrivalId)
         val expectedModifier =
           ArrivalPutUpdate(mrn, CompoundStatusUpdate(ArrivalStatusUpdate(arrivalStatus), MessageStatusUpdate(messageId, SubmissionSucceeded)))
 
@@ -305,7 +306,7 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
 
         val result = service.submitIe007Message(arrivalId, messageId, movementMessage, mrn)
 
-        val expectedSelector = ArrivalPutUpdate.selector(arrivalId)
+        val expectedSelector = ArrivalUpdate.selectByArrivalId(arrivalId)
         val expectedModifier =
           ArrivalPutUpdate(mrn, CompoundStatusUpdate(ArrivalStatusUpdate(arrivalStatus), MessageStatusUpdate(messageId, SubmissionSucceeded)))
 
@@ -372,7 +373,7 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
 
         val result = service.submitIe007Message(arrivalId, messageId, movementMessage, mrn)
 
-        val expectedSelector = ArrivalPutUpdate.selector(arrivalId)
+        val expectedSelector = ArrivalUpdate.selectByArrivalId(arrivalId)
         val expectedModifier = MessageStatusUpdate(messageId, SubmissionFailed)
 
         result.futureValue mustEqual SubmissionProcessingResult.SubmissionFailureExternal

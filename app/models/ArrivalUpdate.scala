@@ -25,6 +25,10 @@ sealed trait ArrivalUpdate
 
 object ArrivalUpdate {
 
+  def selectByArrivalId(arrivalId: ArrivalId): JsObject = Json.obj(
+    "_id" -> arrivalId
+  )
+
   implicit val arrivalUpdateSemigroup: Semigroup[ArrivalUpdate] = {
     case (ArrivalStatusUpdate(_), x @ ArrivalStatusUpdate(_))        => x
     case (a @ ArrivalStatusUpdate(_), m @ MessageStatusUpdate(_, _)) => CompoundStatusUpdate(a, m)
@@ -91,10 +95,6 @@ object CompoundStatusUpdate {
 case class ArrivalPutUpdate(movementReferenceNumber: MovementReferenceNumber, arrivalUpdate: CompoundStatusUpdate) extends ArrivalUpdate
 
 object ArrivalPutUpdate {
-
-  def selector(arrivalId: ArrivalId): JsObject = Json.obj(
-    "_id" -> arrivalId
-  )
 
   implicit val arrivalPutUpdateArrivalModifier: ArrivalModifier[ArrivalPutUpdate] = a =>
     Json.obj(
