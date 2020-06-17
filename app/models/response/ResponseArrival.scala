@@ -22,7 +22,6 @@ import controllers.routes
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalStatus
-import models.MessageStatus.SubmissionFailed
 import models.MovementReferenceNumber
 import play.api.libs.json.Json
 import play.api.libs.json.OWrites
@@ -33,16 +32,11 @@ case class ResponseArrival(arrivalId: ArrivalId,
                            movementReferenceNumber: MovementReferenceNumber,
                            status: ArrivalStatus,
                            created: LocalDateTime,
-                           updated: LocalDateTime) {}
+                           updated: LocalDateTime)
 
 object ResponseArrival {
 
-  def build(arrival: Arrival): ResponseArrival = {
-    val validMessages =
-      arrival.messagesWithId
-        .filterNot(_._1.optStatus.contains(SubmissionFailed))
-        .map(messageData => ResponseMovementMessage.build(arrival.arrivalId, messageData._2, messageData._1))
-
+  def build(arrival: Arrival): ResponseArrival =
     ResponseArrival(
       arrival.arrivalId,
       routes.MovementsController.getArrival(arrival.arrivalId).url,
@@ -52,7 +46,6 @@ object ResponseArrival {
       arrival.created,
       arrival.updated
     )
-  }
 
   implicit val writes: OWrites[ResponseArrival] = Json.writes[ResponseArrival]
 

@@ -26,14 +26,11 @@ import play.api.mvc.ControllerComponents
 import services.ArrivalMessageSummaryService
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
-import scala.concurrent.ExecutionContext
-
 class MessagesSummaryController @Inject()(
   authenticateForRead: AuthenticatedGetArrivalForReadActionProvider,
   arrivalMessageSummaryService: ArrivalMessageSummaryService,
   cc: ControllerComponents
-)(implicit ec: ExecutionContext)
-    extends BackendController(cc) {
+) extends BackendController(cc) {
 
   def messagesSummary(arrivalId: ArrivalId): Action[AnyContent] = authenticateForRead(arrivalId) {
     implicit request =>

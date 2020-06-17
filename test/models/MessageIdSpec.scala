@@ -17,12 +17,10 @@
 package models
 
 import generators.BaseGenerators
-import generators.ModelGenerators
-import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.EitherValues
+import org.scalatest.OptionValues
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
-import org.scalatest.OptionValues
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.mvc.PathBindable
 
@@ -46,8 +44,6 @@ class MessageIdSpec extends AnyFreeSpec with Matchers with ScalaCheckPropertyChe
     "must not bind from a URL for all all message id values less than 1" in {
       forAll(intsBelowValue(1)) {
         value =>
-          val expectedMessageIndex = value - 1
-
           pathBindable.bind("key", value.toString).left.value
       }
     }

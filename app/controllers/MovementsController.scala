@@ -26,7 +26,6 @@ import models.MessageStatus.SubmissionSucceeded
 import models.ArrivalId
 import models.ArrivalStatus
 import models.ResponseArrivals
-import models.MessageId
 import models.MessageType
 import models.MovementMessage
 import models.SubmissionProcessingResult

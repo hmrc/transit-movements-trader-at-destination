@@ -32,21 +32,18 @@ import models.MessageStatus.SubmissionSucceeded
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalStatus
-import models.ResponseArrivals
 import models.MessageId
 import models.MessageType
 import models.MovementMessageWithStatus
-import models.MovementMessageWithoutStatus
 import models.MovementReferenceNumber
+import models.ResponseArrivals
 import models.SubmissionProcessingResult
 import models.response.ResponseArrival
-import models.response.ResponseMovementMessage
 import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.{eq => eqTo}
 import org.mockito.Mockito._
-import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Arbitrary
-import org.scalacheck.Gen
+import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks

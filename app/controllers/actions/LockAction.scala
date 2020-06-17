@@ -18,20 +18,13 @@ package controllers.actions
 
 import javax.inject.Inject
 import models.ArrivalId
-import play.api.mvc.ActionBuilder
-import play.api.mvc.ActionFunction
-import play.api.mvc.AnyContent
-import play.api.mvc.BodyParsers
-import play.api.mvc.Request
-import play.api.mvc.Result
+import play.api.mvc._
 import play.api.mvc.Results.InternalServerError
 import play.api.mvc.Results.Locked
 import repositories.LockRepository
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.util.Failure
-import scala.util.Success
 
 private[actions] class LockActionProvider @Inject()(
   lockRepository: LockRepository,

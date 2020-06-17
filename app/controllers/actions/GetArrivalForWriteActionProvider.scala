@@ -21,9 +21,6 @@ import models.ArrivalId
 import models.request.ArrivalRequest
 import play.api.mvc.ActionBuilder
 import play.api.mvc.AnyContent
-import play.api.mvc.BodyParsers
-
-import scala.concurrent.ExecutionContext
 
 class GetArrivalForWriteActionProvider @Inject()(
   lock: LockActionProvider,

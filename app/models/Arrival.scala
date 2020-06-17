@@ -19,7 +19,6 @@ package models
 import java.time.LocalDateTime
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
-import cats._
 import cats.data._
 import cats.implicits._
 

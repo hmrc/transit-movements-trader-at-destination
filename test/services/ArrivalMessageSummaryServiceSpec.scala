@@ -16,22 +16,19 @@
 
 package services
 
-import java.time.LocalDateTime
-
 import base.SpecBase
 import cats.data._
 import generators.ModelGenerators
 import models.MessageStatus._
+import models.MessageType._
 import models.Arrival
 import models.MessageId
-import models.MessageStatus
 import models.MessageType
 import models.MessagesSummary
 import models.MovementMessage
 import models.MovementMessageWithStatus
 import models.MovementMessageWithoutStatus
 import org.scalacheck.Arbitrary.arbitrary
-import models.MessageType._
 import org.scalacheck.Gen
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 

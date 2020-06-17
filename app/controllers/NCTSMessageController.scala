@@ -18,14 +18,13 @@ package controllers
 
 import controllers.actions.GetArrivalForWriteActionProvider
 import javax.inject.Inject
+import models.SubmissionProcessingResult._
 import models.ArrivalRejectedResponse
 import models.GoodsReleasedResponse
 import models.MessageResponse
 import models.MessageSender
 import models.MessageType
-import models.SubmissionProcessingResult
 import models.UnloadingPermissionResponse
-import models.SubmissionProcessingResult._
 import play.api.Logger
 import play.api.mvc.Action
 import play.api.mvc.ControllerComponents

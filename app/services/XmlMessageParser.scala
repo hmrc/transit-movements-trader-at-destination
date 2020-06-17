@@ -20,7 +20,6 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 
-import cats._
 import cats.data._
 import cats.implicits._
 import models.MessageType
