@@ -17,17 +17,12 @@
 package models
 
 import cats._
-import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import play.api.libs.json.Writes
 
 sealed trait ArrivalUpdate
 
 object ArrivalUpdate {
-
-  def selectByArrivalId(arrivalId: ArrivalId): JsObject = Json.obj(
-    "_id" -> arrivalId
-  )
 
   implicit val arrivalUpdateSemigroup: Semigroup[ArrivalUpdate] = {
     case (ArrivalStatusUpdate(_), x @ ArrivalStatusUpdate(_))        => x
@@ -59,7 +54,7 @@ object ArrivalUpdate {
   }
 }
 
-case class MessageStatusUpdate(messageId: MessageId, messageStatus: MessageStatus) extends ArrivalUpdate
+final case class MessageStatusUpdate(messageId: MessageId, messageStatus: MessageStatus) extends ArrivalUpdate
 
 object MessageStatusUpdate {
   implicit def arrivalStateUpdate(implicit writes: Writes[MessageStatus]): ArrivalModifier[MessageStatusUpdate] =
@@ -74,7 +69,7 @@ object MessageStatusUpdate {
     )
 }
 
-case class ArrivalStatusUpdate(arrivalStatus: ArrivalStatus) extends ArrivalUpdate
+final case class ArrivalStatusUpdate(arrivalStatus: ArrivalStatus) extends ArrivalUpdate
 
 object ArrivalStatusUpdate {
   implicit def arrivalStatusUpdate(implicit writes: Writes[ArrivalStatus]): ArrivalModifier[ArrivalStatusUpdate] =
@@ -85,14 +80,14 @@ object ArrivalStatusUpdate {
         ))
 }
 
-case class CompoundStatusUpdate(arrivalStatusUpdate: ArrivalStatusUpdate, messageStatusUpdate: MessageStatusUpdate) extends ArrivalUpdate
+final case class CompoundStatusUpdate(arrivalStatusUpdate: ArrivalStatusUpdate, messageStatusUpdate: MessageStatusUpdate) extends ArrivalUpdate
 
 object CompoundStatusUpdate {
   implicit val arrivalUpdate: ArrivalModifier[CompoundStatusUpdate] =
     csu => ArrivalModifier.toJson(csu.arrivalStatusUpdate) deepMerge ArrivalModifier.toJson(csu.messageStatusUpdate)
 }
 
-case class ArrivalPutUpdate(movementReferenceNumber: MovementReferenceNumber, arrivalUpdate: CompoundStatusUpdate) extends ArrivalUpdate
+final case class ArrivalPutUpdate(movementReferenceNumber: MovementReferenceNumber, arrivalUpdate: CompoundStatusUpdate) extends ArrivalUpdate
 
 object ArrivalPutUpdate {
 

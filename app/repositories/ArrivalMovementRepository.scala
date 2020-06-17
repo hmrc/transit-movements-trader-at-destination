@@ -19,7 +19,9 @@ package repositories
 import com.google.inject.Inject
 import models.Arrival
 import models.ArrivalId
+import models.ArrivalIdSelector
 import models.ArrivalModifier
+import models.ArrivalSelector
 import models.ArrivalStatus
 import models.ArrivalStatusUpdate
 import models.CompoundStatusUpdate
@@ -102,13 +104,13 @@ class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi)(implicit ec: 
         .collect[Seq](-1, Cursor.FailOnError())
     }
 
-  def updateArrival[A](selector: JsObject, modifier: A)(implicit ev: ArrivalModifier[A]): Future[Try[Unit]] = {
+  def updateArrival[A](selector: ArrivalSelector, modifier: A)(implicit ev: ArrivalModifier[A]): Future[Try[Unit]] = {
 
     import models.ArrivalModifier.toJson
 
     collection.flatMap {
       _.update(false)
-        .one[JsObject, JsObject](selector, modifier)
+        .one[JsObject, JsObject](Json.toJsObject(selector), modifier)
         .map {
           writeResult =>
             if (writeResult.n > 0)
@@ -127,7 +129,7 @@ class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi)(implicit ec: 
                                      arrivalState: ArrivalStatus,
                                      messageState: MessageStatus): Future[Option[Unit]] = {
 
-    val selector = Json.obj("_id" -> arrivalId)
+    val selector = ArrivalIdSelector(arrivalId)
 
     val modifier = CompoundStatusUpdate(ArrivalStatusUpdate(arrivalState), MessageStatusUpdate(messageId, messageState))
 

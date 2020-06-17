@@ -23,12 +23,14 @@ import connectors.MessageConnector
 import javax.inject.Inject
 import models.Arrival
 import models.ArrivalId
+import models.ArrivalIdSelector
 import models.ArrivalPutUpdate
 import models.ArrivalStatus
 import models.ArrivalStatusUpdate
 import models.ArrivalUpdate
 import models.CompoundStatusUpdate
 import models.MessageId
+import models.MessageSelector
 import models.MessageStatus
 import models.MessageStatusUpdate
 import models.MovementMessageWithStatus
@@ -75,13 +77,7 @@ class SubmitMessageService @Inject()(
             case error => {
               Logger.warn(s"Existing Movement - Call to EIS failed with the following Exception: ${error.getMessage}")
 
-              val selector = Json.obj(
-                "$and" -> Json.arr(
-                  Json.obj("_id"                                 -> arrivalId),
-                  Json.obj(s"messages.${messageId.index}.status" -> Json.obj("$exists" -> true))
-                )
-              )
-
+              val selector  = MessageSelector(arrivalId, messageId)
               val newStatus = message.status.transition(SubmissionProcessingResult.SubmissionFailureInternal)
               val modifier  = MessageStatusUpdate(messageId, newStatus)
 
@@ -104,9 +100,11 @@ class SubmitMessageService @Inject()(
           .post(arrivalId, message, OffsetDateTime.now)
           .flatMap {
             _ =>
+              val selector = ArrivalIdSelector(arrivalId)
+
               arrivalMovementRepository
                 .updateArrival(
-                  ArrivalUpdate.selectByArrivalId(arrivalId),
+                  selector,
                   ArrivalPutUpdate(mrn,
                                    CompoundStatusUpdate(ArrivalStatusUpdate(ArrivalStatus.ArrivalSubmitted),
                                                         MessageStatusUpdate(messageId, MessageStatus.SubmissionSucceeded)))
@@ -124,9 +122,11 @@ class SubmitMessageService @Inject()(
             case error => {
               Logger.warn(s"Existing Movement - Call to EIS failed with the following Exception: ${error.getMessage}")
 
+              val selector = ArrivalIdSelector(arrivalId)
+
               arrivalMovementRepository
                 .updateArrival(
-                  ArrivalUpdate.selectByArrivalId(arrivalId),
+                  selector,
                   MessageStatusUpdate(messageId, message.status.transition(SubmissionProcessingResult.SubmissionFailureInternal))
                 )
                 .map {
@@ -164,13 +164,7 @@ class SubmitMessageService @Inject()(
               case error =>
                 Logger.warn(s"New Movement - Call to EIS failed with the following Exception: ${error.getMessage}")
 
-                val selector = Json.obj(
-                  "$and" -> Json.arr(
-                    Json.obj("_id"                                 -> arrival.arrivalId),
-                    Json.obj(s"messages.${messageId.index}.status" -> Json.obj("$exists" -> true))
-                  )
-                )
-
+                val selector  = MessageSelector(arrival.arrivalId, messageId)
                 val newStatus = message.status.transition(SubmissionProcessingResult.SubmissionFailureInternal)
                 val modifier  = MessageStatusUpdate(messageId, newStatus)
 

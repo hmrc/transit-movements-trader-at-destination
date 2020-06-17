@@ -14,10 +14,9 @@ import models.MessageStatus.SubmissionPending
 import models.MessageStatus.SubmissionSucceeded
 import models.Arrival
 import models.ArrivalId
-import models.ArrivalPutUpdate
+import models.ArrivalIdSelector
 import models.ArrivalStatus
 import models.ArrivalStatusUpdate
-import models.ArrivalUpdate
 import models.MessageId
 import models.MessageType
 import models.MongoDateTimeFormats
@@ -112,6 +111,7 @@ class ArrivalMovementRepositorySpec
 
         val arrivalStatus = ArrivalStatusUpdate(Initialized)
         val arrival       = arrivalWithOneMessage.sample.value.copy(status = GoodsReleased)
+        val selector      = ArrivalIdSelector(arrival.arrivalId)
 
         running(app) {
           started(app).futureValue
@@ -120,7 +120,7 @@ class ArrivalMovementRepositorySpec
 
           repository.insert(arrival).futureValue
 
-          repository.updateArrival(ArrivalUpdate.selectByArrivalId(arrival.arrivalId), arrivalStatus).futureValue
+          repository.updateArrival(selector, arrivalStatus).futureValue
 
           val updatedArrival = repository.get(arrival.arrivalId).futureValue.value
 
@@ -136,6 +136,7 @@ class ArrivalMovementRepositorySpec
 
         val arrivalStatus = ArrivalStatusUpdate(Initialized)
         val arrival       = arrivalWithOneMessage.sample.value copy (arrivalId = ArrivalId(1), status = UnloadingRemarksSubmitted)
+        val selector      = ArrivalIdSelector(ArrivalId(2))
 
         running(app) {
           started(app).futureValue
@@ -144,7 +145,7 @@ class ArrivalMovementRepositorySpec
 
           repository.insert(arrival).futureValue
 
-          val result = repository.updateArrival(ArrivalUpdate.selectByArrivalId(ArrivalId(2)), arrivalStatus).futureValue
+          val result = repository.updateArrival(selector, arrivalStatus).futureValue
 
           val updatedArrival = repository.get(arrival.arrivalId).futureValue.value
 
