@@ -35,6 +35,7 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.logging.SessionId
 
 class MessageConnectorSpec
     extends AnyFreeSpec
@@ -58,6 +59,18 @@ class MessageConnectorSpec
   private val messageType: MessageType = Gen.oneOf(MessageType.values).sample.value
 
   "MessageConnector" - {
+
+    "removePrefix" - {
+
+      "return value with prefix removed" in {
+        forAll(stringsWithMaxLength(maxLength = 8), stringsWithMaxLength(maxLength = 36)) {
+          (prefix, returnValue) =>
+            val sessionValue = s"$prefix$returnValue"
+
+            connector.removePrefix(prefix, SessionId(sessionValue)) mustBe returnValue
+        }
+      }
+    }
 
     "post" - {
 
