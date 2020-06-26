@@ -30,12 +30,14 @@ import models.MessageStatusUpdate
 import models.MongoDateTimeFormats
 import models.MovementMessage
 import models.MovementReferenceNumber
+import play.api.Configuration
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import play.modules.reactivemongo.ReactiveMongoApi
 import reactivemongo.api.Cursor
 import reactivemongo.api.indexes.Index
 import reactivemongo.api.indexes.IndexType
+import reactivemongo.bson.BSONDocument
 import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 import reactivemongo.play.json.collection.JSONCollection
 
@@ -45,17 +47,29 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 
-class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi)(implicit ec: ExecutionContext) extends MongoDateTimeFormats {
+class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi, config: Configuration)(implicit ec: ExecutionContext) extends MongoDateTimeFormats {
 
   private val index = Index(
     key = Seq("eoriNumber" -> IndexType.Ascending),
     name = Some("eori-number-index")
   )
 
+  private val cacheTtl = config.get[Int]("mongodb.timeToLiveInSeconds")
+
+  private val lastUpdatedIndex = Index(
+    key = Seq("lastUpdated" -> IndexType.Ascending),
+    name = Some("last-updated-index"),
+    options = BSONDocument("expireAfterSeconds" -> cacheTtl)
+  )
+
   val started: Future[Unit] = {
     collection
       .flatMap {
-        _.indexesManager.ensure(index)
+        jsonCollection =>
+          for {
+            _   <- jsonCollection.indexesManager.ensure(index)
+            res <- jsonCollection.indexesManager.ensure(lastUpdatedIndex)
+          } yield res
       }
       .map(_ => ())
   }
@@ -193,8 +207,9 @@ class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi)(implicit ec: 
     val modifier =
       Json.obj(
         "$set" -> Json.obj(
-          "updated" -> message.dateTime,
-          "status"  -> status.toString
+          "updated"     -> message.dateTime,
+          "lastUpdated" -> LocalDateTime.now,
+          "status"      -> status.toString
         ),
         "$push" -> Json.obj(
           "messages" -> Json.toJson(message)

@@ -29,7 +29,7 @@ case class Arrival(
   status: ArrivalStatus,
   created: LocalDateTime,
   updated: LocalDateTime,
-  lastUpdated: LocalDateTime,
+  lastUpdated: LocalDateTime = LocalDateTime.now,
   messages: NonEmptyList[MovementMessage],
   nextMessageCorrelationId: Int
 ) {
