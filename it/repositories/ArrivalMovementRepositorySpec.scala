@@ -97,7 +97,7 @@ class ArrivalMovementRepositorySpec
               result.collection[JSONCollection](ArrivalMovementRepository.collectionName).find(selector, None).one[Arrival]
           }.futureValue
 
-          result.value mustBe arrival
+          result.value mustBe arrival.copy(lastUpdated = result.value.lastUpdated)
         }
       }
     }
@@ -476,7 +476,7 @@ class ArrivalMovementRepositorySpec
           repository.insert(arrival).futureValue
           val result = repository.get(arrival.arrivalId).futureValue
 
-          result.value mustEqual arrival
+          result.value mustEqual arrival.copy(lastUpdated = result.value.lastUpdated)
         }
       }
 
@@ -519,7 +519,7 @@ class ArrivalMovementRepositorySpec
 
           val result = repository.get(eori, movementReferenceNumber).futureValue
 
-          result.value mustEqual arrival
+          result.value mustEqual arrival.copy(lastUpdated = result.value.lastUpdated)
         }
       }
 

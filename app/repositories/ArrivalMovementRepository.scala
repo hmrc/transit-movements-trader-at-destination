@@ -16,6 +16,8 @@
 
 package repositories
 
+import java.time.LocalDateTime
+
 import com.google.inject.Inject
 import models.Arrival
 import models.ArrivalId
@@ -32,7 +34,6 @@ import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import play.modules.reactivemongo.ReactiveMongoApi
 import reactivemongo.api.Cursor
-import reactivemongo.api.commands.WriteResult
 import reactivemongo.api.indexes.Index
 import reactivemongo.api.indexes.IndexType
 import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
@@ -64,12 +65,15 @@ class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi)(implicit ec: 
   private def collection: Future[JSONCollection] =
     mongo.database.map(_.collection[JSONCollection](collectionName))
 
-  def insert(arrival: Arrival): Future[Unit] =
+  def insert(arrival: Arrival): Future[Unit] = {
+    val updatedArrival = arrival copy (lastUpdated = LocalDateTime.now)
+
     collection.flatMap {
       _.insert(false)
-        .one(Json.toJsObject(arrival))
+        .one(Json.toJsObject(updatedArrival))
         .map(_ => ())
     }
+  }
 
   def get(arrivalId: ArrivalId): Future[Option[Arrival]] = {
 
@@ -157,7 +161,8 @@ class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi)(implicit ec: 
     val modifier =
       Json.obj(
         "$set" -> Json.obj(
-          "updated" -> message.dateTime
+          "updated"    -> message.dateTime,
+          "lastUpdate" -> LocalDateTime.now
         ),
         "$inc" -> Json.obj(
           "nextMessageCorrelationId" -> 1

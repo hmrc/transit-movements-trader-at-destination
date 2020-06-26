@@ -29,6 +29,7 @@ case class Arrival(
   status: ArrivalStatus,
   created: LocalDateTime,
   updated: LocalDateTime,
+  lastUpdated: LocalDateTime,
   messages: NonEmptyList[MovementMessage],
   nextMessageCorrelationId: Int
 ) {
@@ -57,6 +58,7 @@ object Arrival {
         (__ \ "status").read[ArrivalStatus] and
         (__ \ "created").read(MongoDateTimeFormats.localDateTimeRead) and
         (__ \ "updated").read(MongoDateTimeFormats.localDateTimeRead) and
+        (__ \ "lastUpdated").read(MongoDateTimeFormats.localDateTimeRead) and
         (__ \ "messages").read[NonEmptyList[MovementMessage]] and
         (__ \ "nextMessageCorrelationId").read[Int]
     )(Arrival.apply _)
@@ -69,6 +71,7 @@ object Arrival {
         (__ \ "status").write[ArrivalStatus] and
         (__ \ "created").write(write) and
         (__ \ "updated").write(write) and
+        (__ \ "lastUpdated").write(write) and
         (__ \ "messages").write[NonEmptyList[MovementMessage]] and
         (__ \ "nextMessageCorrelationId").write[Int]
     )(unlift(Arrival.unapply))

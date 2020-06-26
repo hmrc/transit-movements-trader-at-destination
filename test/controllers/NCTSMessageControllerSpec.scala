@@ -67,6 +67,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
     ArrivalStatus.ArrivalSubmitted,
     LocalDateTime.of(dateOfPrep, timeOfPrep),
     LocalDateTime.of(dateOfPrep, timeOfPrep),
+    LocalDateTime.of(dateOfPrep, timeOfPrep),
     NonEmptyList.one(message),
     1
   )

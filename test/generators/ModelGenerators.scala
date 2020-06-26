@@ -114,6 +114,7 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
         status                  <- arbitrary[ArrivalStatus]
         created                 <- arbitrary[LocalDateTime]
         updated                 <- arbitrary[LocalDateTime]
+        lastUpdated             <- arbitrary[LocalDateTime]
         messages                <- nonEmptyListOfMaxLength[MovementMessageWithStatus](2)
       } yield
         Arrival(
@@ -123,6 +124,7 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
           status = status,
           created = created,
           updated = updated,
+          lastUpdated = lastUpdated,
           messages = messages,
           nextMessageCorrelationId = messages.length + 1
         )
