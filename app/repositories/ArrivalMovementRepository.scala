@@ -124,7 +124,7 @@ class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi, config: Confi
 
     import models.ArrivalModifier.toJson
 
-    val setLastUpdated         = Json.obj("$set" -> Json.obj("lastUpdated" -> LocalDateTime.now))
+    val setLastUpdated            = Json.obj("$set" -> Json.obj("lastUpdated" -> LocalDateTime.now))
     val updatedModifier: JsObject = modifier deepMerge setLastUpdated
 
     collection.flatMap {
