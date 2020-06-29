@@ -91,7 +91,7 @@ class ArrivalMovementRepositorySpec
 
         val arrivalStatus: ArrivalStatus = Initialized
         val arrival                      = arrivalWithOneMessage.sample.value.copy(status = GoodsReleased)
-
+        val latsUpdated                  = LocalDateTime.now.withSecond(0).withNano(0)
         running(app) {
           started(app).futureValue
 
@@ -104,6 +104,7 @@ class ArrivalMovementRepositorySpec
           val updatedArrival = repository.get(arrival.arrivalId).futureValue.value
 
           updatedArrival.status mustEqual arrivalStatus
+          updatedArrival.lastUpdated.withSecond(0).withNano(0) mustEqual latsUpdated
 
         }
       }
