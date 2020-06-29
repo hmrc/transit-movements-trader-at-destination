@@ -19,6 +19,7 @@ package repositories
 import java.time.LocalDateTime
 
 import com.google.inject.Inject
+import config.AppConfig
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalModifier
@@ -30,7 +31,6 @@ import models.MessageStatusUpdate
 import models.MongoDateTimeFormats
 import models.MovementMessage
 import models.MovementReferenceNumber
-import play.api.Configuration
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import play.modules.reactivemongo.ReactiveMongoApi
@@ -47,14 +47,14 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 
-class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi, config: Configuration)(implicit ec: ExecutionContext) extends MongoDateTimeFormats {
+class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi, appConfig: AppConfig)(implicit ec: ExecutionContext) extends MongoDateTimeFormats {
 
   private val index = Index(
     key = Seq("eoriNumber" -> IndexType.Ascending),
     name = Some("eori-number-index")
   )
 
-  private val cacheTtl = config.get[Int]("mongodb.timeToLiveInSeconds")
+  private val cacheTtl = appConfig.cacheTtl
 
   private val lastUpdatedIndex = Index(
     key = Seq("lastUpdated" -> IndexType.Ascending),
