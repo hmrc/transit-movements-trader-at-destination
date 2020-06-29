@@ -41,9 +41,6 @@ class SaveMessageService @Inject()(arrivalMovementRepository: ArrivalMovementRep
                                 arrivalStatus: ArrivalStatus): Future[SubmissionProcessingResult] =
     xmlValidationService.validate(messageXml.toString(), messageResponse.xsdFile) match {
       case Success(_) =>
-        println("*************")
-        println(s"SHOULD NOT CALL THIS")
-
         arrivalMovementService.makeMessage(messageSender.messageCorrelationId, messageResponse.messageType)(messageXml) match {
           case Some(message) =>
             arrivalMovementRepository
@@ -51,9 +48,6 @@ class SaveMessageService @Inject()(arrivalMovementRepository: ArrivalMovementRep
               .map {
                 case Success(_) => SubmissionSuccess
                 case Failure(e) => {
-
-                  println("*************")
-                  println(s"internal failure $e")
 
                   SubmissionFailureInternal
                 }
