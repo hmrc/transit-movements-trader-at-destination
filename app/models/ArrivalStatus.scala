@@ -38,11 +38,12 @@ object ArrivalStatus extends Enumerable.Implicits {
 
   case object ArrivalSubmitted extends ArrivalStatus {
     override def transition(messageReceived: MessageReceivedEvent): ArrivalStatus = messageReceived match {
-      case MessageReceivedEvent.ArrivalSubmitted    => ArrivalSubmitted
-      case MessageReceivedEvent.GoodsReleased       => GoodsReleased
-      case MessageReceivedEvent.UnloadingPermission => UnloadingPermission
-      case MessageReceivedEvent.ArrivalRejected     => ArrivalRejected
-      case _                                        => throw new Exception(s"Tried to transition from ArrivalSubmitted to $messageReceived.")
+      case MessageReceivedEvent.ArrivalSubmitted         => ArrivalSubmitted
+      case MessageReceivedEvent.GoodsReleased            => GoodsReleased
+      case MessageReceivedEvent.UnloadingPermission      => UnloadingPermission
+      case MessageReceivedEvent.ArrivalRejected          => ArrivalRejected
+      case MessageReceivedEvent.UnloadingRemarksRejected => UnloadingRemarksRejected
+      case _                                             => throw new Exception(s"Tried to transition from ArrivalSubmitted to $messageReceived.")
     }
   }
 
@@ -79,8 +80,8 @@ object ArrivalStatus extends Enumerable.Implicits {
   case object UnloadingRemarksRejected extends ArrivalStatus {
     override def transition(messageReceived: MessageReceivedEvent): ArrivalStatus = messageReceived match {
       case MessageReceivedEvent.UnloadingRemarksRejected => UnloadingRemarksRejected
-      //case MessageReceivedEvent.GoodsReleased            => GoodsReleased
-      case _ => throw new Exception(s"Tried to transition from UnloadingRemarksRejected to $messageReceived.")
+      case MessageReceivedEvent.GoodsReleased            => GoodsReleased
+      case _                                             => throw new Exception(s"Tried to transition from UnloadingRemarksRejected to $messageReceived.")
     }
   }
 

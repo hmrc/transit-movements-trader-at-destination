@@ -100,6 +100,22 @@ class ArrivalStatusSpec extends SpecBase with ScalaCheckDrivenPropertyChecks wit
       }
     }
 
+    "UnloadingRemarksRejected must " - {
+
+      "transform to UnloadingRemarksRejected state when receiving an UnloadingRemarksRejected event" in {
+        UnloadingRemarksRejected.transition(MessageReceivedEvent.UnloadingRemarksRejected) mustEqual UnloadingRemarksRejected
+      }
+
+      "transform to GoodsReleased state when receiving an GoodsReleased event" in {
+        UnloadingRemarksRejected.transition(MessageReceivedEvent.GoodsReleased) mustEqual GoodsReleased
+      }
+
+      "throw exception when received an invalid message event" in {
+        val exception = intercept[Exception](UnloadingRemarksRejected.transition(MessageReceivedEvent.UnloadingPermission))
+        exception.getMessage mustEqual s"Tried to transition from UnloadingRemarksRejected to ${MessageReceivedEvent.UnloadingPermission}."
+      }
+    }
+
     "UnloadingPermission must transition" - {
 
       "to UnloadingPermission state when receiving an UnloadingPermission event" in {
