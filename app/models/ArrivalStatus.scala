@@ -27,11 +27,12 @@ object ArrivalStatus extends Enumerable.Implicits {
 
   case object Initialized extends ArrivalStatus {
     override def transition(messageReceived: MessageReceivedEvent): ArrivalStatus = messageReceived match {
-      case MessageReceivedEvent.ArrivalSubmitted    => ArrivalSubmitted
-      case MessageReceivedEvent.GoodsReleased       => GoodsReleased
-      case MessageReceivedEvent.UnloadingPermission => UnloadingPermission
-      case MessageReceivedEvent.ArrivalRejected     => ArrivalRejected
-      case _                                        => throw new Exception(s"Tried to transition from Initialized to $messageReceived.")
+      case MessageReceivedEvent.ArrivalSubmitted         => ArrivalSubmitted
+      case MessageReceivedEvent.GoodsReleased            => GoodsReleased
+      case MessageReceivedEvent.UnloadingPermission      => UnloadingPermission
+      case MessageReceivedEvent.ArrivalRejected          => ArrivalRejected
+      case MessageReceivedEvent.UnloadingRemarksRejected => UnloadingRemarksRejected
+      case _                                             => throw new Exception(s"Tried to transition from Initialized to $messageReceived.")
     }
   }
 
@@ -71,7 +72,15 @@ object ArrivalStatus extends Enumerable.Implicits {
       case MessageReceivedEvent.ArrivalRejected => ArrivalRejected
       case MessageReceivedEvent.GoodsReleased   => GoodsReleased
       case _                                    => throw new Exception(s"Tried to transition from ArrivalRejected to $messageReceived.")
+    }
+  }
 
+  //TODO: Check this is right
+  case object UnloadingRemarksRejected extends ArrivalStatus {
+    override def transition(messageReceived: MessageReceivedEvent): ArrivalStatus = messageReceived match {
+      case MessageReceivedEvent.UnloadingRemarksRejected => UnloadingRemarksRejected
+      //case MessageReceivedEvent.GoodsReleased            => GoodsReleased
+      case _ => throw new Exception(s"Tried to transition from UnloadingRemarksRejected to $messageReceived.")
     }
   }
 
@@ -81,7 +90,8 @@ object ArrivalStatus extends Enumerable.Implicits {
     UnloadingPermission,
     UnloadingRemarksSubmitted,
     GoodsReleased,
-    ArrivalRejected
+    ArrivalRejected,
+    UnloadingRemarksRejected
   )
 
   implicit val enumerable: Enumerable[ArrivalStatus] =

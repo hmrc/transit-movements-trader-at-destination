@@ -25,6 +25,7 @@ import models.MessageResponse
 import models.MessageSender
 import models.MessageType
 import models.UnloadingPermissionResponse
+import models.UnloadingRemarksRejectionResponse
 import play.api.Logger
 import play.api.mvc.Action
 import play.api.mvc.ControllerComponents
@@ -44,9 +45,10 @@ class NCTSMessageController @Inject()(cc: ControllerComponents, getArrival: GetA
       val xml: NodeSeq = request.request.body
 
       val messageResponse: Option[MessageResponse] = request.headers.get("X-Message-Type") match {
-        case Some(MessageType.GoodsReleased.code)       => Some(GoodsReleasedResponse)
-        case Some(MessageType.ArrivalRejection.code)    => Some(ArrivalRejectedResponse)
-        case Some(MessageType.UnloadingPermission.code) => Some(UnloadingPermissionResponse)
+        case Some(MessageType.GoodsReleased.code)             => Some(GoodsReleasedResponse)
+        case Some(MessageType.ArrivalRejection.code)          => Some(ArrivalRejectedResponse)
+        case Some(MessageType.UnloadingPermission.code)       => Some(UnloadingPermissionResponse)
+        case Some(MessageType.UnloadingRemarksRejection.code) => Some(UnloadingRemarksRejectionResponse)
         case invalidResponse =>
           Logger.warn(s"Received the following invalid response for X-Message-Type: $invalidResponse")
           None

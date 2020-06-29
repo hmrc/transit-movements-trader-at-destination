@@ -19,7 +19,8 @@ package models
 abstract class XSDFile(val filePath: String)
 
 object XSDFile {
-  object GoodsReleasedXSD       extends XSDFile("/xsd/CC025A.xsd")
-  object ArrivalRejectedXSD     extends XSDFile("/xsd/CC008A.xsd")
-  object UnloadingPermissionXSD extends XSDFile("/xsd/CC043A.xsd")
+  object GoodsReleasedXSD            extends XSDFile("/xsd/CC025A.xsd")
+  object ArrivalRejectedXSD          extends XSDFile("/xsd/CC008A.xsd")
+  object UnloadingPermissionXSD      extends XSDFile("/xsd/CC043A.xsd")
+  object UnloadingRemarksRejectedXSD extends XSDFile("/xsd/CC058A.xsd")
 }

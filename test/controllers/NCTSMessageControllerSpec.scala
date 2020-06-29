@@ -89,11 +89,18 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
       <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
     </CC008A>
 
+  private val requestUnloadingRemarksRejectionXmlBody =
+    <CC058A>
+      <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+      <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+    </CC058A>
+
   val codeAndXmlBody = Gen.oneOf(
     Seq(
       (MessageType.GoodsReleased.code, requestGoodsReleasedXmlBody),
       (MessageType.UnloadingPermission.code, requestUnloadingPermissionXmlBody),
-      (MessageType.ArrivalRejection.code, requestArrivalRejectionXmlBody)
+      (MessageType.ArrivalRejection.code, requestArrivalRejectionXmlBody),
+      (MessageType.UnloadingRemarksRejection.code, requestUnloadingRemarksRejectionXmlBody)
     ))
 
   override def beforeEach: Unit = {
