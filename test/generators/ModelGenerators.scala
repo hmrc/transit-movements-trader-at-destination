@@ -123,6 +123,7 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
           status = status,
           created = created,
           updated = updated,
+          lastUpdated = LocalDateTime.now,
           messages = messages,
           nextMessageCorrelationId = messages.length + 1
         )

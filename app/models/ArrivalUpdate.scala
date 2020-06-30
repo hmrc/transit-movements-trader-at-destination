@@ -16,6 +16,8 @@
 
 package models
 
+import java.time.LocalDateTime
+
 import cats._
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
@@ -23,14 +25,15 @@ import play.api.libs.json.Writes
 
 case class MessageStatusUpdate(messageId: MessageId, messageStatus: MessageStatus)
 
-object MessageStatusUpdate {
+object MessageStatusUpdate extends MongoDateTimeFormats {
   implicit def arrivalStateUpdate(implicit writes: Writes[MessageStatus]): ArrivalModifier[MessageStatusUpdate] =
     ArrivalModifier(
       value =>
         Json.obj(
           "$set" ->
             Json.obj(
-              s"messages.${value.messageId.index}.status" -> value.messageStatus
+              s"messages.${value.messageId.index}.status" -> value.messageStatus,
+              "lastUpdated"                               -> LocalDateTime.now.withSecond(0).withNano(0)
             )
       )
     )

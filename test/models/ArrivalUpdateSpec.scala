@@ -16,22 +16,27 @@
 
 package models
 
+import java.time.LocalDateTime
+
 import base.FreeSpecDiscipline
 import base.SpecBase
 import cats._
 import cats.implicits._
 import cats.kernel.laws.discipline.SemigroupTests
 import generators.ModelGenerators
-import org.scalacheck.Arbitrary
-import org.scalacheck.Gen
 import org.scalacheck.Arbitrary.arbitrary
+import org.scalacheck.Gen
 import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import play.api.libs.json.JsObject
-import play.api.libs.json.JsString
 import play.api.libs.json.Json
 
-class ArrivalUpdateSpec extends SpecBase with Matchers with ScalaCheckDrivenPropertyChecks with ModelGenerators with FreeSpecDiscipline {
+class ArrivalUpdateSpec
+    extends SpecBase
+    with Matchers
+    with ScalaCheckDrivenPropertyChecks
+    with ModelGenerators
+    with FreeSpecDiscipline
+    with MongoDateTimeFormats {
 
   val arrivalStatusUpdate: Gen[ArrivalUpdate] =
     for {
@@ -133,7 +138,8 @@ class ArrivalUpdateSpec extends SpecBase with Matchers with ScalaCheckDrivenProp
           arrivalUpdate =>
             val expectedJson = Json.obj(
               "$set" -> Json.obj(
-                "status" -> arrivalUpdate.arrivalUpdate.value.toString
+                "status"      -> arrivalUpdate.arrivalUpdate.value.toString,
+                "lastUpdated" -> LocalDateTime.now.withSecond(0).withNano(0)
               )
             )
 
@@ -147,7 +153,8 @@ class ArrivalUpdateSpec extends SpecBase with Matchers with ScalaCheckDrivenProp
             val messageId = arrivalUpdate.messageUpdate.value.messageId
             val expectedJson = Json.obj(
               "$set" -> Json.obj(
-                s"messages.${messageId.index}.status" -> arrivalUpdate.messageUpdate.value.messageStatus
+                s"messages.${messageId.index}.status" -> arrivalUpdate.messageUpdate.value.messageStatus,
+                "lastUpdated"                         -> LocalDateTime.now.withSecond(0).withNano(0)
               )
             )
             ArrivalModifier.toJson(arrivalUpdate) mustEqual expectedJson
@@ -159,6 +166,7 @@ class ArrivalUpdateSpec extends SpecBase with Matchers with ScalaCheckDrivenProp
             val messageId = arrivalUpdate.messageUpdate.value.messageId
             val expectedJson = Json.obj(
               "$set" -> Json.obj(
+                "lastUpdated"                         -> LocalDateTime.now.withSecond(0).withNano(0),
                 "status"                              -> arrivalUpdate.arrivalUpdate.value.toString,
                 s"messages.${messageId.index}.status" -> arrivalUpdate.messageUpdate.value.messageStatus
               )

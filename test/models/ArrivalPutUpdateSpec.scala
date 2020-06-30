@@ -16,6 +16,8 @@
 
 package models
 
+import java.time.LocalDateTime
+
 import base.SpecBase
 import generators.ModelGenerators
 import org.scalacheck.Arbitrary
@@ -23,9 +25,9 @@ import org.scalacheck.Arbitrary._
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.libs.json.Json
 
-class ArrivalPutUpdateSpec extends SpecBase with ScalaCheckDrivenPropertyChecks with ModelGenerators {
+class ArrivalPutUpdateSpec extends SpecBase with ScalaCheckDrivenPropertyChecks with ModelGenerators with MongoDateTimeFormats {
 
-  implicit val arbitraryArrivalPutUpdate = Arbitrary {
+  implicit val arbitraryArrivalPutUpdate: Arbitrary[ArrivalPutUpdate] = Arbitrary {
     for {
       mrn           <- arbitrary[MovementReferenceNumber]
       arrivalUpdate <- generatorArrivalUpdate
@@ -41,7 +43,8 @@ class ArrivalPutUpdateSpec extends SpecBase with ScalaCheckDrivenPropertyChecks 
             "$set" -> Json.obj(
               "movementReferenceNumber"             -> arrivalPutUpdate.movementReferenceNumber,
               "status"                              -> arrivalPutUpdate.arrivalUpdate.arrivalUpdate.value,
-              s"messages.$expectedMessageId.status" -> arrivalPutUpdate.arrivalUpdate.messageUpdate.value.messageStatus
+              s"messages.$expectedMessageId.status" -> arrivalPutUpdate.arrivalUpdate.messageUpdate.value.messageStatus,
+              "lastUpdated"                         -> LocalDateTime.now.withSecond(0).withNano(0)
             )
           )
 
