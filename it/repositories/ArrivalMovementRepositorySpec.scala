@@ -1,20 +1,38 @@
 package repositories
 
-import java.time.{LocalDate, LocalDateTime, LocalTime}
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
 
 import cats.data.NonEmptyList
 import generators.ModelGenerators
-import models.ArrivalStatus.{ArrivalSubmitted, GoodsReleased, Initialized, UnloadingRemarksSubmitted}
-import models.MessageStatus.{SubmissionPending, SubmissionSucceeded}
-import models.{Arrival, ArrivalId, ArrivalPutUpdate, ArrivalStatus, MessageId, MessageType, MongoDateTimeFormats, MovementMessageWithStatus, MovementMessageWithoutStatus, MovementReferenceNumber}
+import models.ArrivalStatus.ArrivalSubmitted
+import models.ArrivalStatus.GoodsReleased
+import models.ArrivalStatus.Initialized
+import models.ArrivalStatus.UnloadingRemarksSubmitted
+import models.MessageStatus.SubmissionPending
+import models.MessageStatus.SubmissionSucceeded
+import models.Arrival
+import models.ArrivalId
+import models.ArrivalPutUpdate
+import models.ArrivalStatus
+import models.MessageId
+import models.MessageType
+import models.MongoDateTimeFormats
+import models.MovementMessageWithStatus
+import models.MovementMessageWithoutStatus
+import models.MovementReferenceNumber
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
 import org.scalactic.source
+import org.scalatest.EitherValues
+import org.scalatest.OptionValues
+import org.scalatest.TryValues
 import org.scalatest.concurrent.IntegrationPatience
-import org.scalatest.exceptions.{StackDepthException, TestFailedException}
+import org.scalatest.exceptions.StackDepthException
+import org.scalatest.exceptions.TestFailedException
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
-import org.scalatest.{EitherValues, OptionValues, TryValues}
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
@@ -25,7 +43,8 @@ import utils.Format
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.reflect.ClassTag
-import scala.util.{Failure, Success}
+import scala.util.Failure
+import scala.util.Success
 
 class ArrivalMovementRepositorySpec
     extends AnyFreeSpec

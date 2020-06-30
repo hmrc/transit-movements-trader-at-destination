@@ -79,15 +79,12 @@ class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi, appConfig: Ap
   private def collection: Future[JSONCollection] =
     mongo.database.map(_.collection[JSONCollection](collectionName))
 
-  def insert(arrival: Arrival): Future[Unit] = {
-    val updatedArrival = arrival copy (lastUpdated = LocalDateTime.now)
-
+  def insert(arrival: Arrival): Future[Unit] =
     collection.flatMap {
       _.insert(false)
-        .one(Json.toJsObject(updatedArrival))
+        .one(Json.toJsObject(arrival))
         .map(_ => ())
     }
-  }
 
   def get(arrivalId: ArrivalId): Future[Option[Arrival]] = {
 
@@ -124,12 +121,9 @@ class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi, appConfig: Ap
 
     import models.ArrivalModifier.toJson
 
-    val setLastUpdated            = Json.obj("$set" -> Json.obj("lastUpdated" -> LocalDateTime.now))
-    val updatedModifier: JsObject = modifier deepMerge setLastUpdated
-
     collection.flatMap {
       _.update(false)
-        .one[JsObject, JsObject](selector, updatedModifier)
+        .one[JsObject, JsObject](selector, modifier)
         .map {
           writeResult =>
             if (writeResult.n > 0)
@@ -178,8 +172,8 @@ class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi, appConfig: Ap
     val modifier =
       Json.obj(
         "$set" -> Json.obj(
-          "updated"    -> message.dateTime,
-          "lastUpdate" -> LocalDateTime.now
+          "updated"     -> message.dateTime,
+          "lastUpdated" -> LocalDateTime.now
         ),
         "$inc" -> Json.obj(
           "nextMessageCorrelationId" -> 1

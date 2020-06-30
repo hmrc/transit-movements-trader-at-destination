@@ -16,6 +16,8 @@
 
 package models
 
+import java.time.LocalDateTime
+
 import play.api.libs.json.Json
 import play.api.libs.json.Writes
 
@@ -23,7 +25,7 @@ sealed trait ArrivalStatus {
   def transition(messageReceived: MessageReceivedEvent): ArrivalStatus
 }
 
-object ArrivalStatus extends Enumerable.Implicits {
+object ArrivalStatus extends Enumerable.Implicits with MongoDateTimeFormats {
 
   case object Initialized extends ArrivalStatus {
     override def transition(messageReceived: MessageReceivedEvent): ArrivalStatus = messageReceived match {
@@ -92,6 +94,7 @@ object ArrivalStatus extends Enumerable.Implicits {
       value =>
         Json.obj(
           "$set" -> Json.obj(
-            "status" -> value
+            "status"      -> value,
+            "lastUpdated" -> LocalDateTime.now.withSecond(0).withNano(0)
           )))
 }
