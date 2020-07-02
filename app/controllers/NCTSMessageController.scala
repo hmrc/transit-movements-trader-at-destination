@@ -17,18 +17,14 @@
 package controllers
 
 import controllers.actions.GetArrivalForWriteActionProvider
+import controllers.actions.InboundMessageTransformerInterface
 import javax.inject.Inject
-import models.SubmissionProcessingResult._
-import models.ArrivalRejectedResponse
-import models.GoodsReleasedResponse
-import models.MessageResponse
 import models.MessageSender
-import models.MessageType
-import models.UnloadingPermissionResponse
-import models.UnloadingRemarksRejectionResponse
+import models.SubmissionProcessingResult._
 import play.api.Logger
 import play.api.mvc.Action
 import play.api.mvc.ControllerComponents
+import play.api.mvc.Result
 import services.SaveMessageService
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
@@ -36,46 +32,41 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.xml.NodeSeq
 
-class NCTSMessageController @Inject()(cc: ControllerComponents, getArrival: GetArrivalForWriteActionProvider, saveMessageService: SaveMessageService)(
-  implicit ec: ExecutionContext)
+class NCTSMessageController @Inject()(cc: ControllerComponents,
+                                      getArrival: GetArrivalForWriteActionProvider,
+                                      inboundMessage: InboundMessageTransformerInterface,
+                                      saveMessageService: SaveMessageService)(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
-  def post(messageSender: MessageSender): Action[NodeSeq] = getArrival(messageSender.arrivalId)(parse.xml).async {
+  def post(messageSender: MessageSender): Action[NodeSeq] = (getArrival(messageSender.arrivalId)(parse.xml) andThen inboundMessage).async {
     implicit request =>
-      val xml: NodeSeq = request.request.body
+      request.inboundMessage match {
+        case Some(messageInbound) => {
 
-      val messageResponse: Option[MessageResponse] = request.headers.get("X-Message-Type") match {
-        case Some(MessageType.GoodsReleased.code)             => Some(GoodsReleasedResponse)
-        case Some(MessageType.ArrivalRejection.code)          => Some(ArrivalRejectedResponse)
-        case Some(MessageType.UnloadingPermission.code)       => Some(UnloadingPermissionResponse)
-        case Some(MessageType.UnloadingRemarksRejection.code) => Some(UnloadingRemarksRejectionResponse)
-        case invalidResponse =>
-          Logger.warn(s"Received the following invalid response for X-Message-Type: $invalidResponse")
-          None
-      }
+          val xml: NodeSeq = request.request.request.body
 
-      messageResponse match {
-        case Some(response) =>
-          val newState = request.arrival.status.transition(response.messageReceived)
-
-          val processingResult = saveMessageService.validateXmlAndSaveMessage(xml, messageSender, response, newState)
+          val processingResult = saveMessageService.validateXmlAndSaveMessage(xml, messageSender, messageInbound.messageType, messageInbound.nextState)
 
           processingResult map {
-            case SubmissionSuccess => Ok
-            case SubmissionFailureInternal =>
-              val message = "Internal Submission Failure " + processingResult
-              Logger.warn(message)
-              InternalServerError(message)
-            case SubmissionFailureExternal =>
-              val message = "External Submission Failure " + processingResult
-              Logger.warn(message)
-              BadRequest(message)
+            case SubmissionSuccess         => Ok
+            case SubmissionFailureInternal => internalServerError("Internal Submission Failure " + processingResult)
+            case SubmissionFailureExternal => badRequestError("External Submission Failure " + processingResult)
           }
-        case None =>
-          val message = "No response from downstream NCTS"
-          Logger.warn(message)
-          Future.successful(BadRequest(message))
+        }
+        case _ =>
+          Future.successful(badRequestError(s"Could not determine inbound request for ${request.headers.get("X-Message-Type")}"))
       }
-
   }
+
+  //TODO: Should we log and return all 400/500s from a single place?
+  private def internalServerError(message: String): Result = {
+    Logger.error(message)
+    InternalServerError(message)
+  }
+
+  private def badRequestError(message: String): Result = {
+    Logger.warn(message)
+    BadRequest(message)
+  }
+
 }

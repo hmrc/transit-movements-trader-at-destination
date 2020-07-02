@@ -45,7 +45,7 @@ case object UnloadingPermissionResponse extends MessageResponse {
   override val xsdFile: XSDFile         = UnloadingPermissionXSD
 }
 
-case object UnloadingRemarksRejectionResponse extends MessageResponse {
+case object UnloadingRemarksRejectedResponse extends MessageResponse {
   override val messageReceived          = MessageReceivedEvent.UnloadingRemarksRejected
   override val messageType: MessageType = MessageType.UnloadingRemarksRejection
   override val xsdFile: XSDFile         = UnloadingRemarksRejectedXSD

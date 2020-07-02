@@ -16,25 +16,16 @@
 
 package controllers
 
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.LocalTime
-
 import base.SpecBase
-import cats.data.NonEmptyList
+import controllers.actions._
 import generators.ModelGenerators
 import models.Arrival
 import models.ArrivalId
-import models.ArrivalStatus
 import models.MessageSender
-import models.MessageType
-import models.MovementMessageWithStatus
-import models.MovementReferenceNumber
 import models.SubmissionProcessingResult
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
 import org.scalacheck.Arbitrary
-import org.scalacheck.Gen
 import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.inject.bind
@@ -43,7 +34,6 @@ import play.api.test.Helpers._
 import repositories.ArrivalMovementRepository
 import repositories.LockRepository
 import services.SaveMessageService
-import utils.Format
 
 import scala.concurrent.Future
 
@@ -53,55 +43,13 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
   private val mockLockRepository: LockRepository                       = mock[LockRepository]
   private val mockSaveMessageService: SaveMessageService               = mock[SaveMessageService]
 
-  private val dateOfPrep = LocalDate.now()
-  private val timeOfPrep = LocalTime.of(1, 1)
-
   private val arrivalId     = ArrivalId(1)
   private val version       = 1
   private val messageSender = MessageSender(arrivalId, version)
-  private val message       = Arbitrary.arbitrary[MovementMessageWithStatus].sample.value
-  private val arrival = Arrival(
-    arrivalId,
-    MovementReferenceNumber("mrn"),
-    "eori",
-    ArrivalStatus.ArrivalSubmitted,
-    LocalDateTime.of(dateOfPrep, timeOfPrep),
-    LocalDateTime.of(dateOfPrep, timeOfPrep),
-    NonEmptyList.one(message),
-    1
-  )
 
-  private val requestGoodsReleasedXmlBody =
-    <CC025A>
-      <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
-      <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
-    </CC025A>
+  private val arrival = Arbitrary.arbitrary[Arrival].sample.value
 
-  private val requestUnloadingPermissionXmlBody =
-    <CC043A>
-      <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
-      <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
-    </CC043A>
-
-  private val requestArrivalRejectionXmlBody =
-    <CC008A>
-      <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
-      <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
-    </CC008A>
-
-  private val requestUnloadingRemarksRejectionXmlBody =
-    <CC058A>
-      <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
-      <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
-    </CC058A>
-
-  val codeAndXmlBody = Gen.oneOf(
-    Seq(
-      (MessageType.GoodsReleased.code, requestGoodsReleasedXmlBody),
-      (MessageType.UnloadingPermission.code, requestUnloadingPermissionXmlBody),
-      (MessageType.ArrivalRejection.code, requestArrivalRejectionXmlBody),
-      (MessageType.UnloadingRemarksRejection.code, requestUnloadingRemarksRejectionXmlBody)
-    ))
+  private val xml = <test></test>
 
   override def beforeEach: Unit = {
     super.beforeEach()
@@ -125,21 +73,18 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
           .overrides(
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
             bind[LockRepository].toInstance(mockLockRepository),
-            bind[SaveMessageService].toInstance(mockSaveMessageService)
+            bind[SaveMessageService].toInstance(mockSaveMessageService),
+            bind[InboundMessageTransformerInterface].to[FakeInboundMessageTransformer]
           )
           .build()
 
         running(application) {
-          forAll(codeAndXmlBody) {
-            case (code, xmlBody) =>
-              val request = FakeRequest(POST, routes.NCTSMessageController.post(messageSender).url)
-                .withXmlBody(xmlBody)
-                .withHeaders("X-Message-Type" -> code)
+          val request = FakeRequest(POST, routes.NCTSMessageController.post(messageSender).url)
+            .withXmlBody(xml)
 
-              val result = route(application, request).value
+          val result = route(application, request).value
 
-              status(result) mustEqual OK
-          }
+          status(result) mustEqual OK
         }
       }
 
@@ -157,8 +102,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
 
         running(application) {
           val request = FakeRequest(POST, routes.NCTSMessageController.post(messageSender).url)
-            .withXmlBody(requestGoodsReleasedXmlBody)
-            .withHeaders("X-Message-Type" -> MessageType.GoodsReleased.code)
+            .withXmlBody(xml)
 
           val result = route(application, request).value
 
@@ -180,14 +124,14 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
           .overrides(
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
             bind[LockRepository].toInstance(mockLockRepository),
-            bind[SaveMessageService].toInstance(mockSaveMessageService)
+            bind[SaveMessageService].toInstance(mockSaveMessageService),
+            bind[InboundMessageTransformerInterface].to[FakeInboundMessageTransformer]
           )
           .build()
 
         running(application) {
           val request = FakeRequest(POST, routes.NCTSMessageController.post(messageSender).url)
-            .withXmlBody(requestGoodsReleasedXmlBody)
-            .withHeaders("X-Message-Type" -> MessageType.GoodsReleased.code)
+            .withXmlBody(xml)
 
           val result = route(application, request).value
 
@@ -198,6 +142,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
       }
 
       "must lock the arrival, return BadRequest error and unlock when an XMessageType is invalid" in {
+
         when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
@@ -205,13 +150,15 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
         val application = baseApplicationBuilder
           .overrides(
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
-            bind[LockRepository].toInstance(mockLockRepository)
+            bind[LockRepository].toInstance(mockLockRepository),
+            bind[SaveMessageService].toInstance(mockSaveMessageService),
+            bind[InboundMessageTransformerInterface].to[FakeInboundMessageNoneTransformer]
           )
           .build()
 
         running(application) {
           val request = FakeRequest(POST, routes.NCTSMessageController.post(messageSender).url)
-            .withXmlBody(requestGoodsReleasedXmlBody)
+            .withXmlBody(xml)
 
           val result = route(application, request).value
 
@@ -233,14 +180,14 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
           .overrides(
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
             bind[LockRepository].toInstance(mockLockRepository),
-            bind[SaveMessageService].toInstance(mockSaveMessageService)
+            bind[SaveMessageService].toInstance(mockSaveMessageService),
+            bind[InboundMessageTransformerInterface].to[FakeInboundMessageTransformer]
           )
           .build()
 
         running(application) {
           val request = FakeRequest(POST, routes.NCTSMessageController.post(messageSender).url)
-            .withXmlBody(requestGoodsReleasedXmlBody)
-            .withHeaders("X-Message-Type" -> MessageType.GoodsReleased.code)
+            .withXmlBody(xml)
 
           val result = route(application, request).value
 
@@ -268,8 +215,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
 
         running(application) {
           val request = FakeRequest(POST, routes.NCTSMessageController.post(messageSender).url)
-            .withXmlBody(requestGoodsReleasedXmlBody)
-            .withHeaders("X-Message-Type" -> MessageType.GoodsReleased.code)
+            .withXmlBody(xml)
 
           val result = route(application, request).value
 
