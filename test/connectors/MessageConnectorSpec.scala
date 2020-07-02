@@ -63,11 +63,12 @@ class MessageConnectorSpec
     "removePrefix" - {
 
       "return value with prefix removed" in {
-        forAll(stringsWithMaxLength(maxLength = 8), stringsWithMaxLength(maxLength = 36)) {
-          (prefix, returnValue) =>
-            val sessionValue = s"$prefix$returnValue"
+        val sessionPrefix = "session-"
+        forAll(stringsWithMaxLength(maxLength = 36)) {
+          returnValue =>
+            val sessionValue = s"$sessionPrefix$returnValue"
 
-            connector.removePrefix(prefix, SessionId(sessionValue)) mustBe returnValue
+            connector.removePrefix(sessionPrefix, SessionId(sessionValue)) mustBe returnValue
         }
       }
     }

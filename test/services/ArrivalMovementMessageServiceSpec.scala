@@ -77,6 +77,7 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
         status = ArrivalStatus.Initialized,
         dateTime,
         dateTime,
+        dateTime,
         messages = NonEmptyList.one(
           MovementMessageWithStatus(dateTime, MessageType.ArrivalNotification, movement, MessageStatus.SubmissionPending, 1)
         ),

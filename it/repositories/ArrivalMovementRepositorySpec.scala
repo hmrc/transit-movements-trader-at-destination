@@ -97,7 +97,7 @@ class ArrivalMovementRepositorySpec
               result.collection[JSONCollection](ArrivalMovementRepository.collectionName).find(selector, None).one[Arrival]
           }.futureValue
 
-          result.value mustBe arrival
+          result.value mustBe arrival.copy(lastUpdated = result.value.lastUpdated)
         }
       }
     }
@@ -110,7 +110,7 @@ class ArrivalMovementRepositorySpec
 
         val arrivalStatus: ArrivalStatus = Initialized
         val arrival                      = arrivalWithOneMessage.sample.value.copy(status = GoodsReleased)
-
+        val latsUpdated                  = LocalDateTime.now.withSecond(0).withNano(0)
         running(app) {
           started(app).futureValue
 
@@ -123,6 +123,7 @@ class ArrivalMovementRepositorySpec
           val updatedArrival = repository.get(arrival.arrivalId).futureValue.value
 
           updatedArrival.status mustEqual arrivalStatus
+          updatedArrival.lastUpdated.withSecond(0).withNano(0) mustEqual latsUpdated
 
         }
       }
@@ -304,6 +305,7 @@ class ArrivalMovementRepositorySpec
 
         val dateOfPrep = LocalDate.now()
         val timeOfPrep = LocalTime.of(1, 1)
+        val lastUpdated =  LocalDateTime.now().withSecond(0).withNano(0)
         val messageBody =
           <CC025A>
             <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
@@ -337,6 +339,7 @@ class ArrivalMovementRepositorySpec
           addMessageResult mustBe a[Success[_]]
           updatedArrival.nextMessageCorrelationId - arrival.nextMessageCorrelationId mustBe 0
           updatedArrival.updated mustEqual goodsReleasedMessage.dateTime
+          updatedArrival.lastUpdated.withSecond(0).withNano(0) mustEqual lastUpdated
           updatedArrival.status mustEqual newState
           updatedArrival.messages.size - arrival.messages.size mustEqual 1
           updatedArrival.messages.last mustEqual goodsReleasedMessage
@@ -388,6 +391,7 @@ class ArrivalMovementRepositorySpec
 
         val dateOfPrep = LocalDate.now()
         val timeOfPrep = LocalTime.of(1, 1)
+        val lastUpdated =  LocalDateTime.now().withSecond(0).withNano(0)
         val messageBody =
           <CC025A>
             <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
@@ -419,6 +423,7 @@ class ArrivalMovementRepositorySpec
 
           updatedArrival.nextMessageCorrelationId - arrival.nextMessageCorrelationId mustBe 1
           updatedArrival.updated mustEqual goodsReleasedMessage.dateTime
+          updatedArrival.lastUpdated.withSecond(0).withNano(0)  mustEqual lastUpdated
           updatedArrival.status mustEqual arrival.status
           updatedArrival.messages.size - arrival.messages.size mustEqual 1
           updatedArrival.messages.last mustEqual goodsReleasedMessage
@@ -476,7 +481,7 @@ class ArrivalMovementRepositorySpec
           repository.insert(arrival).futureValue
           val result = repository.get(arrival.arrivalId).futureValue
 
-          result.value mustEqual arrival
+          result.value mustEqual arrival.copy(lastUpdated = result.value.lastUpdated)
         }
       }
 
@@ -519,7 +524,7 @@ class ArrivalMovementRepositorySpec
 
           val result = repository.get(eori, movementReferenceNumber).futureValue
 
-          result.value mustEqual arrival
+          result.value mustEqual arrival.copy(lastUpdated = result.value.lastUpdated)
         }
       }
 
