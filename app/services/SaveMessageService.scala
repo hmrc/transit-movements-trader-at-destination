@@ -47,10 +47,7 @@ class SaveMessageService @Inject()(arrivalMovementRepository: ArrivalMovementRep
               .addResponseMessage(messageSender.arrivalId, message, arrivalStatus)
               .map {
                 case Success(_) => SubmissionSuccess
-                case Failure(e) => {
-
-                  SubmissionFailureInternal
-                }
+                case Failure(e) => SubmissionFailureInternal
               }
           case None => Future.successful(SubmissionFailureExternal)
         }

@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
-package controllers.actions
+package models.request.actions
+
 import com.google.inject.Inject
 import models.ArrivalStatus.GoodsReleased
+import models.request.ArrivalRequest
 import models.GoodsReleasedResponse
 import models.MessageInbound
-import models.request.ArrivalRequest
+import play.api.mvc.Result
+import play.api.mvc.Results.BadRequest
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -28,18 +31,18 @@ class FakeInboundMessageTransformer @Inject()(implicit ec: ExecutionContext) ext
 
   override def executionContext: ExecutionContext = ec
 
-  override protected def transform[A](request: ArrivalRequest[A]): Future[InboundRequest[A]] =
+  override protected def refine[A](request: ArrivalRequest[A]): Future[Either[Result, InboundRequest[A]]] =
     Future.successful(
-      new InboundRequest(Some(MessageInbound(GoodsReleasedResponse, GoodsReleased)), request)
+      Right(InboundRequest(MessageInbound(GoodsReleasedResponse, GoodsReleased), request))
     )
 }
 
-class FakeInboundMessageNoneTransformer @Inject()(implicit ec: ExecutionContext) extends InboundMessageTransformerInterface {
+class FakeInboundMessageBadRequestTransformer @Inject()(implicit ec: ExecutionContext) extends InboundMessageTransformerInterface {
 
   override def executionContext: ExecutionContext = ec
 
-  override protected def transform[A](request: ArrivalRequest[A]): Future[InboundRequest[A]] =
+  override protected def refine[A](request: ArrivalRequest[A]): Future[Either[Result, InboundRequest[A]]] =
     Future.successful(
-      new InboundRequest(None, request)
+      Left(BadRequest)
     )
 }

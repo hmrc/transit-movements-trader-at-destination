@@ -17,10 +17,11 @@
 package controllers
 
 import controllers.actions.GetArrivalForWriteActionProvider
-import controllers.actions.InboundMessageTransformerInterface
 import javax.inject.Inject
+import models.MessageInbound
 import models.MessageSender
 import models.SubmissionProcessingResult._
+import models.request.actions.InboundMessageTransformerInterface
 import play.api.Logger
 import play.api.mvc.Action
 import play.api.mvc.ControllerComponents
@@ -29,7 +30,6 @@ import services.SaveMessageService
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
 import scala.xml.NodeSeq
 
 class NCTSMessageController @Inject()(cc: ControllerComponents,
@@ -40,22 +40,18 @@ class NCTSMessageController @Inject()(cc: ControllerComponents,
 
   def post(messageSender: MessageSender): Action[NodeSeq] = (getArrival(messageSender.arrivalId)(parse.xml) andThen inboundMessage).async {
     implicit request =>
-      request.inboundMessage match {
-        case Some(messageInbound) => {
+      val messageInbound: MessageInbound = request.inboundMessage
 
-          val xml: NodeSeq = request.request.request.body
+      val xml: NodeSeq = request.request.request.body
 
-          val processingResult = saveMessageService.validateXmlAndSaveMessage(xml, messageSender, messageInbound.messageType, messageInbound.nextState)
+      val processingResult = saveMessageService.validateXmlAndSaveMessage(xml, messageSender, messageInbound.messageType, messageInbound.nextState)
 
-          processingResult map {
-            case SubmissionSuccess         => Ok
-            case SubmissionFailureInternal => internalServerError("Internal Submission Failure " + processingResult)
-            case SubmissionFailureExternal => badRequestError("External Submission Failure " + processingResult)
-          }
-        }
-        case _ =>
-          Future.successful(badRequestError(s"Could not determine inbound request for ${request.headers.get("X-Message-Type")}"))
+      processingResult map {
+        case SubmissionSuccess         => Ok
+        case SubmissionFailureInternal => internalServerError("Internal Submission Failure " + processingResult)
+        case SubmissionFailureExternal => badRequestError("External Submission Failure " + processingResult)
       }
+
   }
 
   //TODO: Should we log and return all 400/500s from a single place?

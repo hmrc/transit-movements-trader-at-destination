@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-package controllers.actions
+package models.request.actions
+
 import com.google.inject.ImplementedBy
 import com.google.inject.Inject
 import models.ArrivalRejectedResponse
@@ -26,8 +27,8 @@ import models.UnloadingPermissionResponse
 import models.UnloadingRemarksRejectedResponse
 import models.request.ArrivalRequest
 import play.api.Logger
-import play.api.mvc.ActionTransformer
-import play.api.mvc.WrappedRequest
+import play.api.mvc.Results.BadRequest
+import play.api.mvc._
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -36,36 +37,37 @@ class InboundMessageTransformer @Inject()(implicit ec: ExecutionContext) extends
 
   def executionContext: ExecutionContext = ec
 
-  override def transform[A](request: ArrivalRequest[A]): Future[InboundRequest[A]] = {
-
-    val inboundMessage: Option[MessageResponse] = request.headers.get("X-Message-Type") match {
-      case Some(MessageType.GoodsReleased.code)             => Some(GoodsReleasedResponse)
-      case Some(MessageType.ArrivalRejection.code)          => Some(ArrivalRejectedResponse)
-      case Some(MessageType.UnloadingPermission.code)       => Some(UnloadingPermissionResponse)
-      case Some(MessageType.UnloadingRemarksRejection.code) => Some(UnloadingRemarksRejectedResponse)
-      case invalidResponse =>
-        Logger.error(s"Unsupported X-Message-Type: $invalidResponse")
-        None
-    }
-
-    inboundMessage match {
+  override protected def refine[A](request: ArrivalRequest[A]): Future[Either[Result, InboundRequest[A]]] =
+    messageResponse(request.headers.get("X-Message-Type")) match {
       case Some(response) =>
         val nextState = request.arrival.status.transition(response.messageReceived)
 
         Future.successful(
-          new InboundRequest(Some(MessageInbound(response, nextState)), request)
+          Right(InboundRequest(MessageInbound(response, nextState), request))
         )
       case None =>
         Future.successful(
-          new InboundRequest(None, request)
+          Left(badRequestError(s"Unsupported X-Message-Type: ${request.headers.get("X-Message-Type")}"))
         )
     }
 
+  //TODO: Consider moving this into MessageResponse
+  private[models] def messageResponse(code: Option[String]): Option[MessageResponse] = code match {
+    case Some(MessageType.GoodsReleased.code)             => Some(GoodsReleasedResponse)
+    case Some(MessageType.ArrivalRejection.code)          => Some(ArrivalRejectedResponse)
+    case Some(MessageType.UnloadingPermission.code)       => Some(UnloadingPermissionResponse)
+    case Some(MessageType.UnloadingRemarksRejection.code) => Some(UnloadingRemarksRejectedResponse)
+    case _                                                => None
+  }
+
+  private def badRequestError(message: String): Result = {
+    Logger.error(message)
+    BadRequest(message)
   }
 
 }
 
 @ImplementedBy(classOf[InboundMessageTransformer])
-trait InboundMessageTransformerInterface extends ActionTransformer[ArrivalRequest, InboundRequest]
+trait InboundMessageTransformerInterface extends ActionRefiner[ArrivalRequest, InboundRequest]
 
-class InboundRequest[A](val inboundMessage: Option[MessageInbound], val request: ArrivalRequest[A]) extends WrappedRequest[A](request)
+case class InboundRequest[A](val inboundMessage: MessageInbound, val request: ArrivalRequest[A]) extends WrappedRequest[A](request)
