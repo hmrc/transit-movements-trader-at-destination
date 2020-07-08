@@ -76,5 +76,5 @@ class MessageConnector @Inject()(config: AppConfig, http: HttpClient)(implicit e
   private val sessionPrefix = "session-"
 
   private[connectors] def removePrefix(prefix: String, sessionId: SessionId): String =
-    sessionId.value.split(prefix).last
+    sessionId.value.replaceFirst(prefix, "")
 }

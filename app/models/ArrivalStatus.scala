@@ -29,21 +29,23 @@ object ArrivalStatus extends Enumerable.Implicits with MongoDateTimeFormats {
 
   case object Initialized extends ArrivalStatus {
     override def transition(messageReceived: MessageReceivedEvent): ArrivalStatus = messageReceived match {
-      case MessageReceivedEvent.ArrivalSubmitted    => ArrivalSubmitted
-      case MessageReceivedEvent.GoodsReleased       => GoodsReleased
-      case MessageReceivedEvent.UnloadingPermission => UnloadingPermission
-      case MessageReceivedEvent.ArrivalRejected     => ArrivalRejected
-      case _                                        => throw new Exception(s"Tried to transition from Initialized to $messageReceived.")
+      case MessageReceivedEvent.ArrivalSubmitted         => ArrivalSubmitted
+      case MessageReceivedEvent.GoodsReleased            => GoodsReleased
+      case MessageReceivedEvent.UnloadingPermission      => UnloadingPermission
+      case MessageReceivedEvent.ArrivalRejected          => ArrivalRejected
+      case MessageReceivedEvent.UnloadingRemarksRejected => UnloadingRemarksRejected
+      case _                                             => throw new Exception(s"Tried to transition from Initialized to $messageReceived.")
     }
   }
 
   case object ArrivalSubmitted extends ArrivalStatus {
     override def transition(messageReceived: MessageReceivedEvent): ArrivalStatus = messageReceived match {
-      case MessageReceivedEvent.ArrivalSubmitted    => ArrivalSubmitted
-      case MessageReceivedEvent.GoodsReleased       => GoodsReleased
-      case MessageReceivedEvent.UnloadingPermission => UnloadingPermission
-      case MessageReceivedEvent.ArrivalRejected     => ArrivalRejected
-      case _                                        => throw new Exception(s"Tried to transition from ArrivalSubmitted to $messageReceived.")
+      case MessageReceivedEvent.ArrivalSubmitted         => ArrivalSubmitted
+      case MessageReceivedEvent.GoodsReleased            => GoodsReleased
+      case MessageReceivedEvent.UnloadingPermission      => UnloadingPermission
+      case MessageReceivedEvent.ArrivalRejected          => ArrivalRejected
+      case MessageReceivedEvent.UnloadingRemarksRejected => UnloadingRemarksRejected
+      case _                                             => throw new Exception(s"Tried to transition from ArrivalSubmitted to $messageReceived.")
     }
   }
 
@@ -56,14 +58,6 @@ object ArrivalStatus extends Enumerable.Implicits with MongoDateTimeFormats {
     }
   }
 
-  case object UnloadingRemarksSubmitted extends ArrivalStatus {
-    override def transition(messageReceived: MessageReceivedEvent): ArrivalStatus = messageReceived match {
-      case MessageReceivedEvent.UnloadingRemarksSubmitted => UnloadingRemarksSubmitted
-      case MessageReceivedEvent.GoodsReleased             => GoodsReleased
-      case _                                              => throw new Exception(s"Tried to transition from UnloadingRemarksSubmitted to $messageReceived.")
-    }
-  }
-
   case object GoodsReleased extends ArrivalStatus {
     override def transition(messageReceived: MessageReceivedEvent): ArrivalStatus = this
   }
@@ -73,7 +67,24 @@ object ArrivalStatus extends Enumerable.Implicits with MongoDateTimeFormats {
       case MessageReceivedEvent.ArrivalRejected => ArrivalRejected
       case MessageReceivedEvent.GoodsReleased   => GoodsReleased
       case _                                    => throw new Exception(s"Tried to transition from ArrivalRejected to $messageReceived.")
+    }
+  }
 
+  case object UnloadingRemarksSubmitted extends ArrivalStatus {
+    override def transition(messageReceived: MessageReceivedEvent): ArrivalStatus = messageReceived match {
+      case MessageReceivedEvent.UnloadingRemarksSubmitted => UnloadingRemarksSubmitted
+      case MessageReceivedEvent.UnloadingRemarksRejected  => UnloadingRemarksRejected
+      case MessageReceivedEvent.GoodsReleased             => GoodsReleased
+      case _                                              => throw new Exception(s"Tried to transition from UnloadingRemarksSubmitted to $messageReceived.")
+    }
+  }
+
+  case object UnloadingRemarksRejected extends ArrivalStatus {
+    override def transition(messageReceived: MessageReceivedEvent): ArrivalStatus = messageReceived match {
+      case MessageReceivedEvent.UnloadingRemarksRejected  => UnloadingRemarksRejected
+      case MessageReceivedEvent.UnloadingRemarksSubmitted => UnloadingRemarksSubmitted
+      case MessageReceivedEvent.GoodsReleased             => GoodsReleased
+      case _                                              => throw new Exception(s"Tried to transition from UnloadingRemarksRejected to $messageReceived.")
     }
   }
 
@@ -83,7 +94,8 @@ object ArrivalStatus extends Enumerable.Implicits with MongoDateTimeFormats {
     UnloadingPermission,
     UnloadingRemarksSubmitted,
     GoodsReleased,
-    ArrivalRejected
+    ArrivalRejected,
+    UnloadingRemarksRejected
   )
 
   implicit val enumerable: Enumerable[ArrivalStatus] =
