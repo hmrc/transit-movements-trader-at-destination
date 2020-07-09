@@ -27,32 +27,32 @@ sealed trait ArrivalUpdate
 object ArrivalUpdate {
 
   implicit val arrivalUpdateSemigroup: Semigroup[ArrivalUpdate] = {
-    case (ArrivalStatusUpdate(_), x @ ArrivalStatusUpdate(_))        => x
-    case (a @ ArrivalStatusUpdate(_), m @ MessageStatusUpdate(_, _)) => CompoundStatusUpdate(a, m)
-    case (ArrivalStatusUpdate(_), c @ CompoundStatusUpdate(_, _))    => c
-    case (ArrivalStatusUpdate(_), p @ ArrivalPutUpdate(_, _))        => p
+    case (_: ArrivalStatusUpdate, x: ArrivalStatusUpdate)  => x
+    case (a: ArrivalStatusUpdate, m: MessageStatusUpdate)  => CompoundStatusUpdate(a, m)
+    case (_: ArrivalStatusUpdate, c: CompoundStatusUpdate) => c
+    case (_: ArrivalStatusUpdate, p: ArrivalPutUpdate)     => p
 
-    case (MessageStatusUpdate(_, _), x @ MessageStatusUpdate(_, _))  => x
-    case (m @ MessageStatusUpdate(_, _), a @ ArrivalStatusUpdate(_)) => CompoundStatusUpdate(a, m)
-    case (MessageStatusUpdate(_, _), c @ CompoundStatusUpdate(_, _)) => c
-    case (MessageStatusUpdate(_, _), p @ ArrivalPutUpdate(_, _))     => p
+    case (_: MessageStatusUpdate, x: MessageStatusUpdate)  => x
+    case (m: MessageStatusUpdate, a: ArrivalStatusUpdate)  => CompoundStatusUpdate(a, m)
+    case (_: MessageStatusUpdate, c: CompoundStatusUpdate) => c
+    case (_: MessageStatusUpdate, p: ArrivalPutUpdate)     => p
 
-    case (CompoundStatusUpdate(_, _), x @ CompoundStatusUpdate(_, _))    => x
-    case (c @ CompoundStatusUpdate(_, _), a @ ArrivalStatusUpdate(_))    => c.copy(arrivalStatusUpdate = a)
-    case (c @ CompoundStatusUpdate(_, _), m @ MessageStatusUpdate(_, _)) => c.copy(messageStatusUpdate = m)
-    case (CompoundStatusUpdate(_, _), p @ ArrivalPutUpdate(_, _))        => p
+    case (_: CompoundStatusUpdate, x: CompoundStatusUpdate) => x
+    case (c: CompoundStatusUpdate, a: ArrivalStatusUpdate)  => c.copy(arrivalStatusUpdate = a)
+    case (c: CompoundStatusUpdate, m: MessageStatusUpdate)  => c.copy(messageStatusUpdate = m)
+    case (_: CompoundStatusUpdate, p: ArrivalPutUpdate)     => p
 
-    case (ArrivalPutUpdate(_, _), x @ ArrivalPutUpdate(_, _))         => x
-    case (p @ ArrivalPutUpdate(_, _), a @ ArrivalStatusUpdate(_))     => p.copy(arrivalUpdate = p.arrivalUpdate.copy(arrivalStatusUpdate = a))
-    case (p @ ArrivalPutUpdate(_, _), m @ MessageStatusUpdate(_, _))  => p.copy(arrivalUpdate = p.arrivalUpdate.copy(messageStatusUpdate = m))
-    case (p @ ArrivalPutUpdate(_, _), c @ CompoundStatusUpdate(_, _)) => p.copy(arrivalUpdate = c)
+    case (_: ArrivalPutUpdate, x: ArrivalPutUpdate)     => x
+    case (p: ArrivalPutUpdate, a: ArrivalStatusUpdate)  => p.copy(arrivalUpdate = p.arrivalUpdate.copy(arrivalStatusUpdate = a))
+    case (p: ArrivalPutUpdate, m: MessageStatusUpdate)  => p.copy(arrivalUpdate = p.arrivalUpdate.copy(messageStatusUpdate = m))
+    case (p: ArrivalPutUpdate, c: CompoundStatusUpdate) => p.copy(arrivalUpdate = c)
   }
 
   implicit val arrivalUpdateArrivalModifier: ArrivalModifier[ArrivalUpdate] = {
-    case x @ MessageStatusUpdate(_, _)  => ArrivalModifier.toJson(x)
-    case x @ ArrivalStatusUpdate(_)     => ArrivalModifier.toJson(x)
-    case x @ CompoundStatusUpdate(_, _) => ArrivalModifier.toJson(x)
-    case x @ ArrivalPutUpdate(_, _)     => ArrivalModifier.toJson(x)
+    case x: MessageStatusUpdate  => ArrivalModifier.toJson(x)
+    case x: ArrivalStatusUpdate  => ArrivalModifier.toJson(x)
+    case x: CompoundStatusUpdate => ArrivalModifier.toJson(x)
+    case x: ArrivalPutUpdate     => ArrivalModifier.toJson(x)
   }
 }
 
