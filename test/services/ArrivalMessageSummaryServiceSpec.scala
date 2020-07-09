@@ -47,6 +47,9 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
 
   val ie007Gen = messageGeneratorSent(ArrivalNotification)
   val ie008Gen = messageGeneratorResponse(ArrivalRejection)
+  val ie043Gen = messageGeneratorResponse(UnloadingPermission)
+  val ie044Gen = messageGeneratorResponse(UnloadingRemarks)
+  val ie058Gen = messageGeneratorResponse(UnloadingRemarksRejection)
 
   def arrivalMovement(msgs: NonEmptyList[MovementMessage]): Gen[Arrival] =
     for {
@@ -195,6 +198,239 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
 
   }
 
+  "unloadingPermissionR" - {
+
+    "must return None when there are none in the movement" in {
+      val service = new ArrivalMessageSummaryService
+
+      forAll(ie007Gen) {
+        ie007 =>
+          forAll(arrivalMovement(NonEmptyList.one(ie007))) {
+            arrival =>
+              service.unloadingPermissionR(arrival) must not be (defined)
+
+          }
+      }
+    }
+
+    "must return the latest IE043 when there is only an IE007 and a IE043" in {
+      val service = new ArrivalMessageSummaryService
+
+      forAll(ie007Gen, ie043Gen) {
+        (ie007, ie043) =>
+          val messages = NonEmptyList.of(ie007, ie043)
+
+          forAll(arrivalMovement(messages)) {
+            arrival =>
+              val (message, messageId) = service.unloadingPermissionR(arrival).value
+
+              message mustEqual ie043
+              messageId mustEqual MessageId.fromMessageIdValue(2).value
+          }
+      }
+
+    }
+
+    "must return last IE043 when multiple unloading permission messages exist" in {
+      val service = new ArrivalMessageSummaryService
+
+      forAll(ie007Gen.submitted.msgCorrId(1), ie043Gen.msgCorrId(2), ie043Gen.msgCorrId(3)) {
+        case (ie007, ie043Old, ie043) =>
+          val messages = NonEmptyList.of(ie007, ie043Old, ie043)
+
+          forAll(arrivalMovement(messages)) {
+            arrival =>
+              val (message, messageId) = service.unloadingPermissionR(arrival).value
+
+              message mustEqual ie043
+              messageId mustEqual MessageId.fromMessageIdValue(3).value
+          }
+      }
+
+    }
+
+    "must return IE043 when IE044 exists" in {
+      val service = new ArrivalMessageSummaryService
+
+      forAll(ie007Gen.submitted.msgCorrId(1), ie043Gen.msgCorrId(2), ie044Gen.msgCorrId(3)) {
+        case (ie007, ie043, ie044) =>
+          val messages = NonEmptyList.of(ie007, ie043, ie044)
+
+          forAll(arrivalMovement(messages)) {
+            arrival =>
+              val (message, messageId) = service.unloadingPermissionR(arrival).value
+
+              message mustEqual ie043
+              messageId mustEqual MessageId.fromMessageIdValue(2).value
+          }
+      }
+
+    }
+
+    "must return IE043 when IE044 and IE058 exists" in {
+      val service = new ArrivalMessageSummaryService
+
+      forAll(ie007Gen.submitted.msgCorrId(1), ie043Gen.msgCorrId(2), ie044Gen.msgCorrId(3), ie058Gen.msgCorrId(3)) {
+        case (ie007, ie043, ie044, ie058) =>
+          val messages = NonEmptyList.of(ie007, ie043, ie044, ie058)
+
+          forAll(arrivalMovement(messages)) {
+            arrival =>
+              val (message, messageId) = service.unloadingPermissionR(arrival).value
+
+              message mustEqual ie043
+              messageId mustEqual MessageId.fromMessageIdValue(2).value
+          }
+      }
+
+    }
+
+  }
+
+  "unloadingRemarksR" - {
+
+    "must return None when there are none in the movement" in {
+      val service = new ArrivalMessageSummaryService
+
+      forAll(ie007Gen) {
+        ie007 =>
+          forAll(arrivalMovement(NonEmptyList.one(ie007))) {
+            arrival =>
+              service.unloadingRemarksR(arrival) must not be (defined)
+
+          }
+      }
+    }
+
+    "must return IE044 when there is only one" in {
+      val service = new ArrivalMessageSummaryService
+
+      forAll(ie007Gen, ie043Gen, ie044Gen) {
+        (ie007, ie043, ie044) =>
+          val messages = NonEmptyList.of(ie007, ie043, ie044)
+
+          forAll(arrivalMovement(messages)) {
+            arrival =>
+              val (message, messageId) = service.unloadingRemarksR(arrival).value
+
+              message mustEqual ie044
+              messageId mustEqual MessageId.fromMessageIdValue(3).value
+          }
+      }
+
+    }
+
+    "must return last IE044 when multiple unloading remarks messages exist" in {
+      val service = new ArrivalMessageSummaryService
+
+      forAll(ie007Gen.submitted.msgCorrId(1), ie043Gen.msgCorrId(2), ie044Gen.msgCorrId(3), ie044Gen.msgCorrId(4)) {
+        case (ie007, ie043, ie044Old, ie044) =>
+          val messages = NonEmptyList.of(ie007, ie043, ie044Old, ie044)
+
+          forAll(arrivalMovement(messages)) {
+            arrival =>
+              val (message, messageId) = service.unloadingRemarksR(arrival).value
+
+              message mustEqual ie044
+              messageId mustEqual MessageId.fromMessageIdValue(4).value
+          }
+      }
+
+    }
+
+    "must return IE044 when unloading rejection exists" in {
+      val service = new ArrivalMessageSummaryService
+
+      forAll(ie007Gen.submitted.msgCorrId(1), ie043Gen.msgCorrId(2), ie044Gen.msgCorrId(3), ie058Gen.msgCorrId(4)) {
+        case (ie007, ie043, ie044, ie058) =>
+          val messages = NonEmptyList.of(ie007, ie043, ie044, ie058)
+
+          forAll(arrivalMovement(messages)) {
+            arrival =>
+              val (message, messageId) = service.unloadingRemarksR(arrival).value
+
+              message mustEqual ie044
+              messageId mustEqual MessageId.fromMessageIdValue(3).value
+          }
+      }
+
+    }
+
+    "must return last IE044 when multiple unloading rejections exist" in {
+      val service = new ArrivalMessageSummaryService
+
+      forAll(ie007Gen.submitted.msgCorrId(1), ie043Gen.msgCorrId(2), ie044Gen.msgCorrId(3), ie058Gen.msgCorrId(4), ie044Gen.msgCorrId(5), ie058Gen.msgCorrId(6)) {
+        case (ie007, ie043, ie044Old, ie058Old, ie044, ie058) =>
+          val messages = NonEmptyList.of(ie007, ie043, ie044Old, ie058Old, ie044, ie058)
+
+          forAll(arrivalMovement(messages)) {
+            arrival =>
+              val (message, messageId) = service.unloadingRemarksR(arrival).value
+
+              message mustEqual ie044
+              messageId mustEqual MessageId.fromMessageIdValue(5).value
+          }
+      }
+
+    }
+
+  }
+
+  "unloadingRemarksRejectionsR" - {
+
+    "must return None when there are none in the movement" in {
+      val service = new ArrivalMessageSummaryService
+
+      forAll(ie007Gen) {
+        ie007 =>
+          forAll(arrivalMovement(NonEmptyList.one(ie007))) {
+            arrival =>
+              service.unloadingRemarksRejectionsR(arrival) must not be (defined)
+
+          }
+      }
+    }
+
+    "must return IE058 when there is only one" in {
+      val service = new ArrivalMessageSummaryService
+
+      forAll(ie007Gen, ie043Gen, ie044Gen, ie058Gen) {
+        (ie007, ie043, ie044, ie058) =>
+          val messages = NonEmptyList.of(ie007, ie043, ie044, ie058)
+
+          forAll(arrivalMovement(messages)) {
+            arrival =>
+              val (message, messageId) = service.unloadingRemarksRejectionsR(arrival).value
+
+              message mustEqual ie058
+              messageId mustEqual MessageId.fromMessageIdValue(4).value
+          }
+      }
+
+    }
+
+    "must return last IE058 when multiple unloading remarks rejections messages exist" in {
+      val service = new ArrivalMessageSummaryService
+
+      forAll(ie007Gen.submitted.msgCorrId(1), ie043Gen.msgCorrId(2), ie044Gen.msgCorrId(3), ie058Gen.msgCorrId(4), ie058Gen.msgCorrId(5)) {
+        case (ie007, ie043, ie044, ie058Old, ie058) =>
+          val messages = NonEmptyList.of(ie007, ie043, ie044, ie058Old, ie058)
+
+          forAll(arrivalMovement(messages)) {
+            arrival =>
+              val (message, messageId) = service.unloadingRemarksRejectionsR(arrival).value
+
+              message mustEqual ie058
+              messageId mustEqual MessageId.fromMessageIdValue(5).value
+          }
+      }
+
+    }
+
+  }
+
+
+  //TODO: We need to only return endpoints for a valid action users can complete
   "arrivalMessagesSummary" - {
 
     "must return the initial IE007 and no IE008 when there only and arrival movement" in {

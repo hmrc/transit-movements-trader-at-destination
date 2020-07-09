@@ -18,19 +18,28 @@ package models
 
 import play.api.libs.json._
 
-case class MessagesSummary(arrival: Arrival, arrivalNotification: MessageId, arrivalRejection: Option[MessageId])
+case class MessagesSummary(arrival: Arrival,
+                           arrivalNotification: MessageId,
+                           arrivalRejection: Option[MessageId],
+                           unloadingPermission: Option[MessageId] = None,
+                           unloadingRemarks: Option[MessageId] = None,
+                           unloadingRemarksRejection: Option[MessageId] = None)
 
 object MessagesSummary {
 
   implicit val writes: OWrites[MessagesSummary] =
     OWrites[MessagesSummary] {
-      case MessagesSummary(arrival, arrivalNotification, arrivalRejection) =>
+      case MessagesSummary(arrival, arrivalNotification, arrivalRejection, unloadingPermission, unloadingRemarks, unloadingRemarksRejection) =>
         Json
           .obj(
             "arrivalId" -> arrival.arrivalId,
             "messages" -> Json.obj(
               MessageType.ArrivalNotification.code -> controllers.routes.MessagesController.getMessage(arrival.arrivalId, arrivalNotification).url,
-              MessageType.ArrivalRejection.code    -> arrivalRejection.map(controllers.routes.MessagesController.getMessage(arrival.arrivalId, _).url)
+              MessageType.ArrivalRejection.code    -> arrivalRejection.map(controllers.routes.MessagesController.getMessage(arrival.arrivalId, _).url),
+              MessageType.UnloadingPermission.code -> unloadingPermission.map(controllers.routes.MessagesController.getMessage(arrival.arrivalId, _).url),
+              MessageType.UnloadingRemarks.code    -> unloadingRemarks.map(controllers.routes.MessagesController.getMessage(arrival.arrivalId, _).url),
+              MessageType.UnloadingRemarksRejection.code -> unloadingRemarksRejection.map(
+                controllers.routes.MessagesController.getMessage(arrival.arrivalId, _).url)
             )
           )
           .filterNulls

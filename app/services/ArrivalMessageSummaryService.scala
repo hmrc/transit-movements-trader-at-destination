@@ -84,12 +84,84 @@ class ArrivalMessageSummaryService {
 
     }
 
+  private[services] val unloadingPermissionR: Reader[Arrival, Option[(MovementMessage, MessageId)]] =
+    Reader[Arrival, Option[(MovementMessage, MessageId)]] {
+      arrival =>
+        lazy val arrivalNotificationCount = arrival.messages.toList.count {
+          case MovementMessageWithStatus(_, ArrivalNotification, _, _, _) => true
+          case _                                                          => false
+        }
+
+        val rejectionNotifications = arrival.messagesWithId
+          .foldLeft(Seq.empty[(MovementMessageWithoutStatus, MessageId)]) {
+            case (acc, (m @ MovementMessageWithoutStatus(_, UnloadingPermission, _, _), mid)) => acc :+ Tuple2(m, mid)
+            case (acc, _)                                                                     => acc
+          }
+
+        val rejectionNotificationCount = rejectionNotifications.length
+
+        if (rejectionNotificationCount > 0 /* && arrivalNotificationCount == rejectionNotificationCount*/ )
+          Some(rejectionNotifications.maxBy(_._1.messageCorrelationId))
+        else
+          None
+
+    }
+
+  private[services] val unloadingRemarksR: Reader[Arrival, Option[(MovementMessage, MessageId)]] =
+    Reader[Arrival, Option[(MovementMessage, MessageId)]] {
+      arrival =>
+        lazy val arrivalNotificationCount = arrival.messages.toList.count {
+          case MovementMessageWithStatus(_, ArrivalNotification, _, _, _) => true
+          case _                                                          => false
+        }
+
+        val rejectionNotifications = arrival.messagesWithId
+          .foldLeft(Seq.empty[(MovementMessageWithoutStatus, MessageId)]) {
+            case (acc, (m @ MovementMessageWithoutStatus(_, UnloadingRemarks, _, _), mid)) => acc :+ Tuple2(m, mid)
+            case (acc, _)                                                                  => acc
+          }
+
+        val rejectionNotificationCount = rejectionNotifications.length
+
+        if (rejectionNotificationCount > 0 /* && arrivalNotificationCount == rejectionNotificationCount*/ )
+          Some(rejectionNotifications.maxBy(_._1.messageCorrelationId))
+        else
+          None
+
+    }
+
+  private[services] val unloadingRemarksRejectionsR: Reader[Arrival, Option[(MovementMessage, MessageId)]] =
+    Reader[Arrival, Option[(MovementMessage, MessageId)]] {
+      arrival =>
+        lazy val arrivalNotificationCount = arrival.messages.toList.count {
+          case MovementMessageWithStatus(_, ArrivalNotification, _, _, _) => true
+          case _                                                          => false
+        }
+
+        val rejectionNotifications = arrival.messagesWithId
+          .foldLeft(Seq.empty[(MovementMessageWithoutStatus, MessageId)]) {
+            case (acc, (m @ MovementMessageWithoutStatus(_, UnloadingRemarksRejection, _, _), mid)) => acc :+ Tuple2(m, mid)
+            case (acc, _)                                                                           => acc
+          }
+
+        val rejectionNotificationCount = rejectionNotifications.length
+
+        if (rejectionNotificationCount > 0 /* && arrivalNotificationCount == rejectionNotificationCount*/ )
+          Some(rejectionNotifications.maxBy(_._1.messageCorrelationId))
+        else
+          None
+
+    }
+
   def arrivalMessagesSummary(arrival: Arrival): MessagesSummary =
     (for {
       arrivalNotification <- arrivalNotificationR
       arrivalRejection    <- arrivalRejectionR
+      unloadingPermission <- unloadingPermissionR
+      unloadingRemarks    <- unloadingRemarksR
+      unloadingRejections <- unloadingRemarksRejectionsR
     } yield {
-      MessagesSummary(arrival, arrivalNotification._2, arrivalRejection.map(_._2))
+      MessagesSummary(arrival, arrivalNotification._2, arrivalRejection.map(_._2), unloadingPermission.map(_._2), unloadingRemarks.map(_._2))
     }).run(arrival)
 
 }
