@@ -5,14 +5,14 @@ This is a microservice for an internal API which provides ability for traders to
 
 This is a support API for the public Common Transit Convention Traders API.
 
-This mircoservice is in (Beta)[https://www.gov.uk/help/beta]. The signature may change. 
+This mircoservice is in [Beta](https://www.gov.uk/help/beta). The signature may change. 
 
 
 
 ### Prerequisites    Speak to John/Rob
-- Scala 2.12.x
+- Scala 2.12.11
 - Java 8
-- sbt > 1.3.7
+- sbt > 1.3.13
 - [Service Manager](https://github.com/hmrc/service-manager)
 
 ### Development Setup
