@@ -92,6 +92,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
     status = ArrivalStatus.Initialized,
     created = localDateTime,
     updated = localDateTime,
+    lastUpdated = localDateTime,
     nextMessageCorrelationId = movementMessge.messageCorrelationId + 1,
     messages = NonEmptyList.one(movementMessge)
   )

@@ -19,6 +19,7 @@ package models
 import models.XSDFile.ArrivalRejectedXSD
 import models.XSDFile.GoodsReleasedXSD
 import models.XSDFile.UnloadingPermissionXSD
+import models.XSDFile.UnloadingRemarksRejectedXSD
 
 sealed trait MessageResponse {
   val messageReceived: MessageReceivedEvent
@@ -42,4 +43,10 @@ case object UnloadingPermissionResponse extends MessageResponse {
   override val messageReceived          = MessageReceivedEvent.UnloadingPermission
   override val messageType: MessageType = MessageType.UnloadingPermission
   override val xsdFile: XSDFile         = UnloadingPermissionXSD
+}
+
+case object UnloadingRemarksRejectedResponse extends MessageResponse {
+  override val messageReceived          = MessageReceivedEvent.UnloadingRemarksRejected
+  override val messageType: MessageType = MessageType.UnloadingRemarksRejection
+  override val xsdFile: XSDFile         = UnloadingRemarksRejectedXSD
 }

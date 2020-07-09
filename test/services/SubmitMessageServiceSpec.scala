@@ -46,6 +46,7 @@ import org.mockito.Mockito.when
 import org.mockito.Mockito._
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
+import org.scalatest.concurrent.IntegrationPatience
 import play.api.inject.bind
 import play.api.test.Helpers.ACCEPTED
 import play.api.test.Helpers.running
@@ -57,7 +58,7 @@ import scala.concurrent.Future
 import scala.util.Failure
 import scala.util.Success
 
-class SubmitMessageServiceSpec extends SpecBase with ModelGenerators {
+class SubmitMessageServiceSpec extends SpecBase with ModelGenerators with IntegrationPatience {
 
   val localDate     = LocalDate.now()
   val localTime     = LocalTime.of(1, 1)

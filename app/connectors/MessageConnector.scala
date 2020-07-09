@@ -30,6 +30,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HttpReads
 import uk.gov.hmrc.http.HttpResponse
 import uk.gov.hmrc.http.logging.Authorization
+import uk.gov.hmrc.http.logging.SessionId
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import utils.Format
 
@@ -62,7 +63,7 @@ class MessageConnector @Inject()(config: AppConfig, http: HttpClient)(implicit e
       "X-Forwarded-Host" -> "mdtp",
       "X-Correlation-ID" -> {
         headerCarrier.sessionId
-          .map(_.value)
+          .map(x => removePrefix(sessionPrefix, x))
           .getOrElse(UUID.randomUUID().toString)
       },
       "Date"             -> Format.dateFormattedForHeader(dateTime),
@@ -71,4 +72,9 @@ class MessageConnector @Inject()(config: AppConfig, http: HttpClient)(implicit e
       "X-Message-Type"   -> messageType.toString,
       "X-Message-Sender" -> messageSender.toString
     )
+
+  private val sessionPrefix = "session-"
+
+  private[connectors] def removePrefix(prefix: String, sessionId: SessionId): String =
+    sessionId.value.replaceFirst(prefix, "")
 }

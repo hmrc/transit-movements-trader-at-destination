@@ -16,18 +16,27 @@
 
 package models
 
+import java.time.LocalDateTime
+
 import base.FreeSpecDiscipline
 import base.SpecBase
 import cats._
 import cats.kernel.laws.discipline.SemigroupTests
 import generators.ModelGenerators
 import org.scalacheck.Arbitrary.arbitrary
+import org.scalacheck.Gen
 import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 
-class ArrivalUpdateSpec extends SpecBase with Matchers with ScalaCheckDrivenPropertyChecks with ModelGenerators with FreeSpecDiscipline {
+class ArrivalUpdateSpec
+    extends SpecBase
+    with Matchers
+    with ScalaCheckDrivenPropertyChecks
+    with ModelGenerators
+    with FreeSpecDiscipline
+    with MongoDateTimeFormats {
 
   implicit val eqArrivalStatusUpdate: Eq[ArrivalUpdate] = _ == _
 
@@ -88,7 +97,8 @@ class ArrivalUpdateSpec extends SpecBase with Matchers with ScalaCheckDrivenProp
         messageStatusUpdate =>
           val expectedUpdateJson = Json.obj(
             "$set" -> Json.obj(
-              s"messages.${messageStatusUpdate.messageId.index}.status" -> messageStatusUpdate.messageStatus
+              s"messages.${messageStatusUpdate.messageId.index}.status" -> messageStatusUpdate.messageStatus,
+              "lastUpdated"                                             -> LocalDateTime.now.withSecond(0).withNano(0)
             )
           )
 
@@ -103,7 +113,8 @@ class ArrivalUpdateSpec extends SpecBase with Matchers with ScalaCheckDrivenProp
         arrivalStatusUpdate =>
           val expectedUpdateJson = Json.obj(
             "$set" -> Json.obj(
-              "status" -> arrivalStatusUpdate.arrivalStatus
+              "status"      -> arrivalStatusUpdate.arrivalStatus,
+              "lastUpdated" -> LocalDateTime.now.withSecond(0).withNano(0)
             )
           )
 
@@ -119,7 +130,8 @@ class ArrivalUpdateSpec extends SpecBase with Matchers with ScalaCheckDrivenProp
           val expectedUpdateJson = Json.obj(
             "$set" -> Json.obj(
               "status"                                                                       -> compoundStatusUpdate.arrivalStatusUpdate.arrivalStatus,
-              s"messages.${compoundStatusUpdate.messageStatusUpdate.messageId.index}.status" -> compoundStatusUpdate.messageStatusUpdate.messageStatus
+              s"messages.${compoundStatusUpdate.messageStatusUpdate.messageId.index}.status" -> compoundStatusUpdate.messageStatusUpdate.messageStatus,
+              "lastUpdated"                                                                  -> LocalDateTime.now.withSecond(0).withNano(0)
             )
           )
 
@@ -137,7 +149,8 @@ class ArrivalUpdateSpec extends SpecBase with Matchers with ScalaCheckDrivenProp
             "$set" -> Json.obj(
               "movementReferenceNumber"             -> arrivalPutUpdate.movementReferenceNumber,
               "status"                              -> arrivalPutUpdate.arrivalUpdate.arrivalStatusUpdate.arrivalStatus,
-              s"messages.$expectedMessageId.status" -> arrivalPutUpdate.arrivalUpdate.messageStatusUpdate.messageStatus
+              s"messages.$expectedMessageId.status" -> arrivalPutUpdate.arrivalUpdate.messageStatusUpdate.messageStatus,
+              "lastUpdated"                         -> LocalDateTime.now.withSecond(0).withNano(0),
             )
           )
 

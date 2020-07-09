@@ -51,6 +51,7 @@ class ArrivalMovementMessageService @Inject()(arrivalIdRepository: ArrivalIdRepo
             Initialized,
             dateTime,
             dateTime,
+            dateTime,
             NonEmptyList.one(message),
             2
           ))
