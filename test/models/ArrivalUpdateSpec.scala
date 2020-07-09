@@ -64,31 +64,49 @@ class ArrivalUpdateSpec
       }
     }
 
-    "ArrivalModifier for any combination of ArrivalUpdate is the same as the individual ArrivalModifier combined" in {
+    "ArrivalModifier for any combination of ArrivalUpdate is the same as the individual ArrivalModifier combined" - {
+      "when combined with an ArrivalStatusUpdate" in {
+        forAll(arbitrary[ArrivalUpdate], arbitrary[ArrivalStatusUpdate]) {
+          (lhs, rhs) =>
+            val result = Semigroup[ArrivalUpdate].combine(lhs, rhs)
 
-      forAll(arbitrary[ArrivalUpdate], arbitrary[ArrivalUpdate]) {
-        (lhs, rhs) =>
-          val result = Semigroup[ArrivalUpdate].combine(lhs, rhs)
+            val expectedValue = ArrivalModifier.toJson(lhs) deepMerge ArrivalModifier.toJson(rhs)
 
-          val expectedValue =
-            if (rhs.isInstanceOf[MessageStatusUpdate] || rhs.isInstanceOf[CompoundStatusUpdate] || rhs.isInstanceOf[ArrivalPutUpdate])
+            ArrivalModifier.toJson(result) mustEqual expectedValue
+
+        }
+      }
+
+      "when combined with an update that updates a message" in {
+        def removeMessageUpdate(json: JsObject): JsObject = {
+          val updateDescription = (json \ "$set").toOption.value
+            .asInstanceOf[JsObject]
+            .fields
+            .filterNot(_._1.contains("messages."))
+
+          Json.obj("$set" -> JsObject(updateDescription))
+        }
+
+        val updatesWithMessage = Gen.oneOf(
+          arbitrary[MessageStatusUpdate],
+          arbitrary[CompoundStatusUpdate],
+          arbitrary[ArrivalPutUpdate]
+        )
+
+        forAll(arbitrary[ArrivalUpdate], updatesWithMessage) {
+          (lhs, rhs: ArrivalUpdate) =>
+            val result = Semigroup[ArrivalUpdate].combine(lhs, rhs)
+
+            val expectedValue =
               removeMessageUpdate(ArrivalModifier.toJson(lhs)) deepMerge ArrivalModifier.toJson(rhs)
-            else
-              ArrivalModifier.toJson(lhs) deepMerge ArrivalModifier.toJson(rhs)
 
-          ArrivalModifier.toJson(result) mustEqual expectedValue
+            ArrivalModifier.toJson(result) mustEqual expectedValue
+
+        }
 
       }
     }
 
-    def removeMessageUpdate(json: JsObject): JsObject = {
-      val updateDescription = (json \ "$set").toOption.value
-        .asInstanceOf[JsObject]
-        .fields
-        .filterNot(_._1.contains("messages."))
-
-      Json.obj("$set" -> JsObject(updateDescription))
-    }
   }
 
   "MessageStatusUpdate" - {
