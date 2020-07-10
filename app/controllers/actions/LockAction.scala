@@ -18,6 +18,7 @@ package controllers.actions
 
 import javax.inject.Inject
 import models.ArrivalId
+import play.api.Logger
 import play.api.mvc._
 import play.api.mvc.Results.InternalServerError
 import play.api.mvc.Results.Locked
@@ -59,11 +60,21 @@ private[actions] class LockAction(
             case e: Exception =>
               lockRepository.unlock(arrivalId).map {
                 _ =>
-                  InternalServerError
+                  {
+                    Logger.error(s"Failed to lock record - $e")
+
+                    InternalServerError
+
+                  }
+
               }
           }
       }
-      case false =>
+      case false => {
+
+        Logger.error(s"Successful lock")
         Future.successful(Locked)
+      }
+
     }
 }

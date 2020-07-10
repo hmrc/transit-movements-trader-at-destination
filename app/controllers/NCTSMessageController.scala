@@ -42,7 +42,11 @@ class NCTSMessageController @Inject()(cc: ControllerComponents,
     implicit request =>
       val messageInbound: MessageInbound = request.inboundMessage
 
+      Logger.info(s"MessageInbound - $messageInbound")
+
       val xml: NodeSeq = request.request.request.body
+
+      Logger.info(s"XML Body - $xml")
 
       val processingResult = saveMessageService.validateXmlAndSaveMessage(xml, messageSender, messageInbound.messageType, messageInbound.nextState)
 
