@@ -37,7 +37,7 @@ Guides for the related public Common Transit Convention Traders API are on the [
 
 ## Reporting Issues
 
-For issues relating to the Common Transit Convention Traders API, see guidance on [Common Transit Convention Traders API on reporting issues](https://github.com/hmrc/common-transit-convention-traders#reporting-issues)
+If you have any issues relating to the Common Transit Convention Traders API, please raise them through our public API. See [Common Transit Convention Traders API on reporting issues](https://github.com/hmrc/common-transit-convention-traders#reporting-issues)
 
 ## License
 
