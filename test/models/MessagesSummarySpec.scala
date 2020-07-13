@@ -39,7 +39,7 @@ class MessagesSummarySpec extends AnyFreeSpec with Matchers with ModelGenerators
         "arrivalId" -> arrival.arrivalId,
         "messages" ->
           Json.obj(
-            "IE007" -> s"/movements/arrivals/${arrival.arrivalId.index}/messages/$messageId"
+            "IE007" -> s"/transit-movements-trader-at-destination/movements/arrivals/${arrival.arrivalId.index}/messages/$messageId"
           )
       )
 
@@ -56,8 +56,8 @@ class MessagesSummarySpec extends AnyFreeSpec with Matchers with ModelGenerators
         "arrivalId" -> arrival.arrivalId,
         "messages" ->
           Json.obj(
-            "IE007" -> s"/movements/arrivals/${arrival.arrivalId.index}/messages/$messageId",
-            "IE008" -> s"/movements/arrivals/${arrival.arrivalId.index}/messages/$rejectionId"
+            "IE007" -> s"/transit-movements-trader-at-destination/movements/arrivals/${arrival.arrivalId.index}/messages/$messageId",
+            "IE008" -> s"/transit-movements-trader-at-destination/movements/arrivals/${arrival.arrivalId.index}/messages/$rejectionId"
           )
       )
 
@@ -75,9 +75,9 @@ class MessagesSummarySpec extends AnyFreeSpec with Matchers with ModelGenerators
         "arrivalId" -> arrival.arrivalId,
         "messages" ->
           Json.obj(
-            "IE007" -> s"/movements/arrivals/${arrival.arrivalId.index}/messages/$messageId",
-            "IE008" -> s"/movements/arrivals/${arrival.arrivalId.index}/messages/$rejectionId",
-            "IE043" -> s"/movements/arrivals/${arrival.arrivalId.index}/messages/$unloadingPermissionId"
+            "IE007" -> s"/transit-movements-trader-at-destination/movements/arrivals/${arrival.arrivalId.index}/messages/$messageId",
+            "IE008" -> s"/transit-movements-trader-at-destination/movements/arrivals/${arrival.arrivalId.index}/messages/$rejectionId",
+            "IE043" -> s"/transit-movements-trader-at-destination/movements/arrivals/${arrival.arrivalId.index}/messages/$unloadingPermissionId"
           )
       )
 
@@ -96,10 +96,10 @@ class MessagesSummarySpec extends AnyFreeSpec with Matchers with ModelGenerators
         "arrivalId" -> arrival.arrivalId,
         "messages" ->
           Json.obj(
-            "IE007" -> s"/movements/arrivals/${arrival.arrivalId.index}/messages/$messageId",
-            "IE008" -> s"/movements/arrivals/${arrival.arrivalId.index}/messages/$rejectionId",
-            "IE043" -> s"/movements/arrivals/${arrival.arrivalId.index}/messages/$unloadingPermissionId",
-            "IE044" -> s"/movements/arrivals/${arrival.arrivalId.index}/messages/$unloadingRemarksId"
+            "IE007" -> s"/transit-movements-trader-at-destination/movements/arrivals/${arrival.arrivalId.index}/messages/$messageId",
+            "IE008" -> s"/transit-movements-trader-at-destination/movements/arrivals/${arrival.arrivalId.index}/messages/$rejectionId",
+            "IE043" -> s"/transit-movements-trader-at-destination/movements/arrivals/${arrival.arrivalId.index}/messages/$unloadingPermissionId",
+            "IE044" -> s"/transit-movements-trader-at-destination/movements/arrivals/${arrival.arrivalId.index}/messages/$unloadingRemarksId"
           )
       )
 
@@ -124,11 +124,11 @@ class MessagesSummarySpec extends AnyFreeSpec with Matchers with ModelGenerators
         "arrivalId" -> arrival.arrivalId,
         "messages" ->
           Json.obj(
-            "IE007" -> s"/movements/arrivals/${arrival.arrivalId.index}/messages/$messageId",
-            "IE008" -> s"/movements/arrivals/${arrival.arrivalId.index}/messages/$rejectionId",
-            "IE043" -> s"/movements/arrivals/${arrival.arrivalId.index}/messages/$unloadingPermissionId",
-            "IE044" -> s"/movements/arrivals/${arrival.arrivalId.index}/messages/$unloadingRemarksId",
-            "IE058" -> s"/movements/arrivals/${arrival.arrivalId.index}/messages/$unloadingRemarksRejectionId"
+            "IE007" -> s"/transit-movements-trader-at-destination/movements/arrivals/${arrival.arrivalId.index}/messages/$messageId",
+            "IE008" -> s"/transit-movements-trader-at-destination/movements/arrivals/${arrival.arrivalId.index}/messages/$rejectionId",
+            "IE043" -> s"/transit-movements-trader-at-destination/movements/arrivals/${arrival.arrivalId.index}/messages/$unloadingPermissionId",
+            "IE044" -> s"/transit-movements-trader-at-destination/movements/arrivals/${arrival.arrivalId.index}/messages/$unloadingRemarksId",
+            "IE058" -> s"/transit-movements-trader-at-destination/movements/arrivals/${arrival.arrivalId.index}/messages/$unloadingRemarksRejectionId"
           )
       )
 
