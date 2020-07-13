@@ -35,11 +35,13 @@ import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import play.modules.reactivemongo.ReactiveMongoApi
 import reactivemongo.api.Cursor
-import reactivemongo.api.indexes.Index
-import reactivemongo.api.indexes.IndexType
 import reactivemongo.bson.BSONDocument
+import reactivemongo.api.bson.collection.BSONSerializationPack
+import reactivemongo.api.indexes.Index.Aux
+import reactivemongo.api.indexes.IndexType
 import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 import reactivemongo.play.json.collection.JSONCollection
+import utils.IndexUtils
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -49,14 +51,14 @@ import scala.util.Try
 
 class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi, appConfig: AppConfig)(implicit ec: ExecutionContext) extends MongoDateTimeFormats {
 
-  private val index = Index(
+  private val index: Aux[BSONSerializationPack.type] = IndexUtils.index(
     key = Seq("eoriNumber" -> IndexType.Ascending),
     name = Some("eori-number-index")
   )
 
   private val cacheTtl = appConfig.cacheTtl
 
-  private val lastUpdatedIndex = Index(
+  private val lastUpdatedIndex: Aux[BSONSerializationPack.type] = IndexUtils.index(
     key = Seq("lastUpdated" -> IndexType.Ascending),
     name = Some("last-updated-index"),
     options = BSONDocument("expireAfterSeconds" -> cacheTtl)

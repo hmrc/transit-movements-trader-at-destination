@@ -155,6 +155,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
 
         val application = baseApplicationBuilder
           .overrides(
+            bind[LockRepository].toInstance(mockLockRepository),
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
             bind[MessageConnector].toInstance(mockMessageConnector)
           )
@@ -209,6 +210,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
         val application =
           baseApplicationBuilder
             .overrides(
+              bind[LockRepository].toInstance(mockLockRepository),
               bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository)
             )
             .build()
@@ -236,6 +238,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
         val application =
           baseApplicationBuilder
             .overrides(
+              bind[LockRepository].toInstance(mockLockRepository),
               bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
               bind[MessageConnector].toInstance(mockMessageConnector)
             )
