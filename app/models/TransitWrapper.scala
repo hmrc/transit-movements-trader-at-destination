@@ -27,9 +27,7 @@ case class TransitWrapper(xml: NodeSeq) {
   def toXml: Node = {
 
     val transitWrapperNode: Node = {
-      <transitRequest
-        xsi:noNamespaceSchemaLocation="../../schema/request/request.xsd">
-        </transitRequest>
+      <transitRequest></transitRequest>
     }
 
     Elem(
