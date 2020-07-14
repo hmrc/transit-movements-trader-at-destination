@@ -24,7 +24,7 @@ import models.ArrivalId
 import play.api.libs.json.Json
 import play.modules.reactivemongo.ReactiveMongoApi
 import reactivemongo.api.commands.LastError
-import reactivemongo.api.indexes.Index
+import reactivemongo.api.indexes.Index.Aux
 import reactivemongo.api.indexes.IndexType
 import reactivemongo.bson.BSONDocument
 import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
@@ -33,6 +33,8 @@ import reactivemongo.play.json.collection.JSONCollection
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import models.MongoDateTimeFormats._
+import reactivemongo.api.bson.collection.BSONSerializationPack
+import utils.IndexUtils
 
 class LockRepository @Inject()(mongo: ReactiveMongoApi, appConfig: AppConfig)(implicit ec: ExecutionContext) {
 
@@ -43,7 +45,7 @@ class LockRepository @Inject()(mongo: ReactiveMongoApi, appConfig: AppConfig)(im
   private def collection: Future[JSONCollection] =
     mongo.database.map(_.collection[JSONCollection](LockRepository.collectionName))
 
-  private val createdIndex = Index(
+  private val createdIndex: Aux[BSONSerializationPack.type] = IndexUtils.index(
     key = Seq("created" -> IndexType.Ascending),
     name = Some("created-index"),
     options = BSONDocument("expireAfterSeconds" -> ttl)

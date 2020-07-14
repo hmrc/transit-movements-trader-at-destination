@@ -14,8 +14,9 @@ import models.MessageStatus.SubmissionPending
 import models.MessageStatus.SubmissionSucceeded
 import models.Arrival
 import models.ArrivalId
-import models.ArrivalPutUpdate
+import models.ArrivalIdSelector
 import models.ArrivalStatus
+import models.ArrivalStatusUpdate
 import models.MessageId
 import models.MessageType
 import models.MongoDateTimeFormats
@@ -108,9 +109,11 @@ class ArrivalMovementRepositorySpec
 
         val app: Application = builder.build()
 
-        val arrivalStatus: ArrivalStatus = Initialized
-        val arrival                      = arrivalWithOneMessage.sample.value.copy(status = GoodsReleased)
-        val latsUpdated                  = LocalDateTime.now.withSecond(0).withNano(0)
+        val arrivalStatus = ArrivalStatusUpdate(Initialized)
+        val arrival       = arrivalWithOneMessage.sample.value.copy(status = GoodsReleased)
+        val latsUpdated   = LocalDateTime.now.withSecond(0).withNano(0)
+        val selector      = ArrivalIdSelector(arrival.arrivalId)
+
         running(app) {
           started(app).futureValue
 
@@ -118,11 +121,11 @@ class ArrivalMovementRepositorySpec
 
           repository.insert(arrival).futureValue
 
-          repository.updateArrival(ArrivalPutUpdate.selector(arrival.arrivalId), arrivalStatus).futureValue
+          repository.updateArrival(selector, arrivalStatus).futureValue
 
           val updatedArrival = repository.get(arrival.arrivalId).futureValue.value
 
-          updatedArrival.status mustEqual arrivalStatus
+          updatedArrival.status mustEqual arrivalStatus.arrivalStatus
           updatedArrival.lastUpdated.withSecond(0).withNano(0) mustEqual latsUpdated
 
         }
@@ -133,8 +136,9 @@ class ArrivalMovementRepositorySpec
 
         val app: Application = builder.build()
 
-        val arrivalStatus: ArrivalStatus = Initialized
-        val arrival                      = arrivalWithOneMessage.sample.value copy (arrivalId = ArrivalId(1), status = UnloadingRemarksSubmitted)
+        val arrivalStatus = ArrivalStatusUpdate(Initialized)
+        val arrival       = arrivalWithOneMessage.sample.value copy (arrivalId = ArrivalId(1), status = UnloadingRemarksSubmitted)
+        val selector      = ArrivalIdSelector(ArrivalId(2))
 
         running(app) {
           started(app).futureValue
@@ -143,98 +147,12 @@ class ArrivalMovementRepositorySpec
 
           repository.insert(arrival).futureValue
 
-          val result = repository.updateArrival(ArrivalPutUpdate.selector(ArrivalId(2)), arrivalStatus).futureValue
+          val result = repository.updateArrival(selector, arrivalStatus).futureValue
 
           val updatedArrival = repository.get(arrival.arrivalId).futureValue.value
 
           result mustBe a[Failure[_]]
-          updatedArrival.status must not be (arrivalStatus)
-        }
-      }
-    }
-
-    "setMessageState" - {
-      "must update the status of a specific message in an existing arrival" in {
-        database.flatMap(_.drop()).futureValue
-
-        val app: Application = builder.build()
-
-        val arrival = arrivalWithOneMessage.sample.value
-
-        running(app) {
-          started(app).futureValue
-
-          val repository = app.injector.instanceOf[ArrivalMovementRepository]
-
-          repository.insert(arrival).futureValue
-
-          repository.setMessageState(arrival.arrivalId, 0, SubmissionSucceeded).futureValue
-
-          val updatedArrival = repository.get(arrival.arrivalId).futureValue.value
-
-          typeMatchOnTestValue(updatedArrival.messages.head) {
-            result: MovementMessageWithStatus =>
-              result.status mustEqual SubmissionSucceeded
-          }
-
-        }
-      }
-
-      "must fail if the arrival cannot be found" in {
-        database.flatMap(_.drop()).futureValue
-
-        val app: Application = builder.build()
-
-        val arrival = arrivalWithOneMessage.sample.value copy (arrivalId = ArrivalId(1))
-
-        running(app) {
-          started(app).futureValue
-
-          val repository = app.injector.instanceOf[ArrivalMovementRepository]
-
-          repository.insert(arrival).futureValue
-          val result = repository.setMessageState(ArrivalId(2), 0, SubmissionSucceeded).futureValue
-
-          result mustBe a[Failure[_]]
-        }
-      }
-
-      "must fail if the message doesn't exist" in {
-        database.flatMap(_.drop()).futureValue
-
-        val app: Application = builder.build()
-
-        val arrival = arrivalWithOneMessage.sample.value copy (arrivalId = ArrivalId(1))
-
-        running(app) {
-          started(app).futureValue
-
-          val repository = app.injector.instanceOf[ArrivalMovementRepository]
-          repository.insert(arrival).futureValue
-
-          val result = repository.setMessageState(ArrivalId(1), 5, SubmissionSucceeded).futureValue
-
-          result mustBe a[Failure[_]]
-        }
-      }
-
-      "must fail if the message does not have a status" in {
-        database.flatMap(_.drop()).futureValue
-
-        val app: Application = builder.build()
-
-        val pregenArrival = arrivalWithOneMessage.sample.value
-        val arrival       = pregenArrival.copy(arrivalId = ArrivalId(1), messages = NonEmptyList.one(arbitrary[MovementMessageWithoutStatus].sample.value))
-
-        running(app) {
-          started(app).futureValue
-
-          val repository = app.injector.instanceOf[ArrivalMovementRepository]
-
-          repository.insert(arrival).futureValue
-          val result = repository.setMessageState(ArrivalId(1), 0, SubmissionSucceeded).futureValue
-
-          result mustBe a[Failure[_]]
+          updatedArrival.status must not be (arrivalStatus.arrivalStatus)
         }
       }
     }
@@ -303,9 +221,9 @@ class ArrivalMovementRepositorySpec
 
         val arrival = arbitrary[Arrival].sample.value
 
-        val dateOfPrep = LocalDate.now()
-        val timeOfPrep = LocalTime.of(1, 1)
-        val lastUpdated =  LocalDateTime.now().withSecond(0).withNano(0)
+        val dateOfPrep  = LocalDate.now()
+        val timeOfPrep  = LocalTime.of(1, 1)
+        val lastUpdated = LocalDateTime.now().withSecond(0).withNano(0)
         val messageBody =
           <CC025A>
             <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
@@ -389,9 +307,9 @@ class ArrivalMovementRepositorySpec
 
         val arrival = arbitrary[Arrival].sample.value.copy(status = ArrivalStatus.ArrivalSubmitted)
 
-        val dateOfPrep = LocalDate.now()
-        val timeOfPrep = LocalTime.of(1, 1)
-        val lastUpdated =  LocalDateTime.now().withSecond(0).withNano(0)
+        val dateOfPrep  = LocalDate.now()
+        val timeOfPrep  = LocalTime.of(1, 1)
+        val lastUpdated = LocalDateTime.now().withSecond(0).withNano(0)
         val messageBody =
           <CC025A>
             <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
@@ -423,7 +341,7 @@ class ArrivalMovementRepositorySpec
 
           updatedArrival.nextMessageCorrelationId - arrival.nextMessageCorrelationId mustBe 1
           updatedArrival.updated mustEqual goodsReleasedMessage.dateTime
-          updatedArrival.lastUpdated.withSecond(0).withNano(0)  mustEqual lastUpdated
+          updatedArrival.lastUpdated.withSecond(0).withNano(0) mustEqual lastUpdated
           updatedArrival.status mustEqual arrival.status
           updatedArrival.messages.size - arrival.messages.size mustEqual 1
           updatedArrival.messages.last mustEqual goodsReleasedMessage

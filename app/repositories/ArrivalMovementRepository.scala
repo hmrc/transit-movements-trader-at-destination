@@ -22,9 +22,12 @@ import com.google.inject.Inject
 import config.AppConfig
 import models.Arrival
 import models.ArrivalId
+import models.ArrivalIdSelector
 import models.ArrivalModifier
+import models.ArrivalSelector
 import models.ArrivalStatus
-import models.ArrivalUpdate
+import models.ArrivalStatusUpdate
+import models.CompoundStatusUpdate
 import models.MessageId
 import models.MessageStatus
 import models.MessageStatusUpdate
@@ -35,11 +38,13 @@ import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import play.modules.reactivemongo.ReactiveMongoApi
 import reactivemongo.api.Cursor
-import reactivemongo.api.indexes.Index
-import reactivemongo.api.indexes.IndexType
 import reactivemongo.bson.BSONDocument
+import reactivemongo.api.bson.collection.BSONSerializationPack
+import reactivemongo.api.indexes.Index.Aux
+import reactivemongo.api.indexes.IndexType
 import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 import reactivemongo.play.json.collection.JSONCollection
+import utils.IndexUtils
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -49,14 +54,14 @@ import scala.util.Try
 
 class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi, appConfig: AppConfig)(implicit ec: ExecutionContext) extends MongoDateTimeFormats {
 
-  private val index = Index(
+  private val index: Aux[BSONSerializationPack.type] = IndexUtils.index(
     key = Seq("eoriNumber" -> IndexType.Ascending),
     name = Some("eori-number-index")
   )
 
   private val cacheTtl = appConfig.cacheTtl
 
-  private val lastUpdatedIndex = Index(
+  private val lastUpdatedIndex: Aux[BSONSerializationPack.type] = IndexUtils.index(
     key = Seq("lastUpdated" -> IndexType.Ascending),
     name = Some("last-updated-index"),
     options = BSONDocument("expireAfterSeconds" -> cacheTtl)
@@ -117,13 +122,13 @@ class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi, appConfig: Ap
         .collect[Seq](-1, Cursor.FailOnError())
     }
 
-  def updateArrival[A](selector: JsObject, modifier: A)(implicit ev: ArrivalModifier[A]): Future[Try[Unit]] = {
+  def updateArrival[A](selector: ArrivalSelector, modifier: A)(implicit ev: ArrivalModifier[A]): Future[Try[Unit]] = {
 
     import models.ArrivalModifier.toJson
 
     collection.flatMap {
       _.update(false)
-        .one[JsObject, JsObject](selector, modifier)
+        .one[JsObject, JsObject](Json.toJsObject(selector), modifier)
         .map {
           writeResult =>
             if (writeResult.n > 0)
@@ -137,28 +142,14 @@ class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi, appConfig: Ap
   }
 
   @deprecated("Use updateArrival since this will be removed in the next version", "next")
-  def setMessageState(arrivalId: ArrivalId, messageId: Int, status: MessageStatus): Future[Try[Unit]] = {
-    val selector = Json.obj(
-      "$and" -> Json.arr(
-        Json.obj("_id"                         -> arrivalId),
-        Json.obj(s"messages.$messageId.status" -> Json.obj("$exists" -> true))
-      )
-    )
-
-    val modifier = ArrivalUpdate(None, Some(MessageStatusUpdate(MessageId.fromIndex(messageId), status)))
-
-    updateArrival(selector, modifier)
-  }
-
-  @deprecated("Use updateArrival since this will be removed in the next version", "next")
   def setArrivalStateAndMessageState(arrivalId: ArrivalId,
                                      messageId: MessageId,
                                      arrivalState: ArrivalStatus,
                                      messageState: MessageStatus): Future[Option[Unit]] = {
 
-    val selector = Json.obj("_id" -> arrivalId)
+    val selector = ArrivalIdSelector(arrivalId)
 
-    val modifier = ArrivalUpdate(Some(arrivalState), Some(MessageStatusUpdate(messageId, messageState)))
+    val modifier = CompoundStatusUpdate(ArrivalStatusUpdate(arrivalState), MessageStatusUpdate(messageId, messageState))
 
     updateArrival(selector, modifier).map(_.toOption)
   }

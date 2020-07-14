@@ -29,9 +29,11 @@ import models.MessageStatus.SubmissionPending
 import models.MessageStatus.SubmissionSucceeded
 import models.Arrival
 import models.ArrivalId
+import models.ArrivalIdSelector
 import models.ArrivalPutUpdate
 import models.ArrivalStatus
-import models.ArrivalUpdate
+import models.ArrivalStatusUpdate
+import models.CompoundStatusUpdate
 import models.MessageId
 import models.MessageStatus
 import models.MessageStatusUpdate
@@ -204,7 +206,7 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators with Integr
 
       when(mockArrivalMovementRepository.addNewMessage(any(), any())).thenReturn(Future.successful(Success(())))
       when(mockMessageConnector.post(any(), any(), any())(any())).thenReturn(Future.failed(new Exception))
-      when(mockArrivalMovementRepository.setMessageState(any(), any(), any())).thenReturn(Future.successful((Success(()))))
+      when(mockArrivalMovementRepository.updateArrival(any(), any())(any())).thenReturn(Future.successful((Success(()))))
 
       val application = baseApplicationBuilder
         .overrides(
@@ -227,7 +229,9 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators with Integr
         result.futureValue mustEqual SubmissionProcessingResult.SubmissionFailureExternal
         verify(mockArrivalMovementRepository, times(1)).addNewMessage(eqTo(arrivalId), eqTo(movementMessage))
         verify(mockMessageConnector, times(1)).post(eqTo(arrivalId), eqTo(movementMessage), any())(any())
-        verify(mockArrivalMovementRepository, times(1)).setMessageState(eqTo(arrivalId), eqTo(messageId.index), eqTo(MessageStatus.SubmissionFailed))
+
+        val expectedModifier = MessageStatusUpdate(messageId, SubmissionFailed)
+        verify(mockArrivalMovementRepository, times(1)).updateArrival(any(), eqTo(expectedModifier))(any())
       }
 
     }
@@ -264,8 +268,9 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators with Integr
 
         result.futureValue mustEqual SubmissionProcessingResult.SubmissionSuccess
 
-        val expectedSelector = ArrivalPutUpdate.selector(arrivalId)
-        val expectedModifier = ArrivalPutUpdate(mrn, ArrivalUpdate(Some(arrivalStatus), Some(MessageStatusUpdate(messageId, SubmissionSucceeded))))
+        val expectedSelector = ArrivalIdSelector(arrivalId)
+        val expectedModifier =
+          ArrivalPutUpdate(mrn, CompoundStatusUpdate(ArrivalStatusUpdate(arrivalStatus), MessageStatusUpdate(messageId, SubmissionSucceeded)))
 
         verify(mockArrivalMovementRepository, times(1)).addNewMessage(eqTo(arrivalId), eqTo(movementMessage))
         verify(mockMessageConnector, times(1)).post(eqTo(arrivalId), eqTo(movementMessage), any())(any())
@@ -302,8 +307,9 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators with Integr
 
         val result = service.submitIe007Message(arrivalId, messageId, movementMessage, mrn)
 
-        val expectedSelector = ArrivalPutUpdate.selector(arrivalId)
-        val expectedModifier = ArrivalPutUpdate(mrn, ArrivalUpdate(Some(arrivalStatus), Some(MessageStatusUpdate(messageId, SubmissionSucceeded))))
+        val expectedSelector = ArrivalIdSelector(arrivalId)
+        val expectedModifier =
+          ArrivalPutUpdate(mrn, CompoundStatusUpdate(ArrivalStatusUpdate(arrivalStatus), MessageStatusUpdate(messageId, SubmissionSucceeded)))
 
         result.futureValue mustEqual SubmissionProcessingResult.SubmissionSuccess
         verify(mockArrivalMovementRepository, times(1)).addNewMessage(eqTo(arrivalId), eqTo(movementMessage))
@@ -368,7 +374,7 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators with Integr
 
         val result = service.submitIe007Message(arrivalId, messageId, movementMessage, mrn)
 
-        val expectedSelector = ArrivalPutUpdate.selector(arrivalId)
+        val expectedSelector = ArrivalIdSelector(arrivalId)
         val expectedModifier = MessageStatusUpdate(messageId, SubmissionFailed)
 
         result.futureValue mustEqual SubmissionProcessingResult.SubmissionFailureExternal
@@ -480,7 +486,7 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators with Integr
 
       when(mockArrivalMovementRepository.insert(any())).thenReturn(Future.successful(()))
       when(mockMessageConnector.post(any(), any(), any())(any())).thenReturn(Future.failed(new Exception))
-      when(mockArrivalMovementRepository.setMessageState(any(), any(), any())).thenReturn(Future.successful((Success(()))))
+      when(mockArrivalMovementRepository.updateArrival(any(), any())(any())).thenReturn(Future.successful((Success(()))))
 
       val application = baseApplicationBuilder
         .overrides(
@@ -498,7 +504,9 @@ class SubmitMessageServiceSpec extends SpecBase with ModelGenerators with Integr
         result.futureValue mustEqual SubmissionProcessingResult.SubmissionFailureExternal
         verify(mockArrivalMovementRepository, times(1)).insert(eqTo(arrival))
         verify(mockMessageConnector, times(1)).post(eqTo(arrival.arrivalId), eqTo(movementMessage), any())(any())
-        verify(mockArrivalMovementRepository, times(1)).setMessageState(eqTo(arrival.arrivalId), eqTo(messageId.index), eqTo(MessageStatus.SubmissionFailed))
+
+        val expectedModifier = MessageStatusUpdate(messageId, SubmissionFailed)
+        verify(mockArrivalMovementRepository, times(1)).updateArrival(any(), eqTo(expectedModifier))(any())
       }
 
     }

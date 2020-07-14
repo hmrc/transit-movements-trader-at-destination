@@ -19,11 +19,44 @@ package models
 import java.time.LocalDateTime
 
 import cats._
-import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import play.api.libs.json.Writes
 
-case class MessageStatusUpdate(messageId: MessageId, messageStatus: MessageStatus)
+sealed trait ArrivalUpdate
+
+object ArrivalUpdate {
+
+  implicit val arrivalUpdateSemigroup: Semigroup[ArrivalUpdate] = {
+    case (_: ArrivalStatusUpdate, x: ArrivalStatusUpdate)  => x
+    case (a: ArrivalStatusUpdate, m: MessageStatusUpdate)  => CompoundStatusUpdate(a, m)
+    case (_: ArrivalStatusUpdate, c: CompoundStatusUpdate) => c
+    case (_: ArrivalStatusUpdate, p: ArrivalPutUpdate)     => p
+
+    case (_: MessageStatusUpdate, x: MessageStatusUpdate)  => x
+    case (m: MessageStatusUpdate, a: ArrivalStatusUpdate)  => CompoundStatusUpdate(a, m)
+    case (_: MessageStatusUpdate, c: CompoundStatusUpdate) => c
+    case (_: MessageStatusUpdate, p: ArrivalPutUpdate)     => p
+
+    case (_: CompoundStatusUpdate, x: CompoundStatusUpdate) => x
+    case (c: CompoundStatusUpdate, a: ArrivalStatusUpdate)  => c.copy(arrivalStatusUpdate = a)
+    case (c: CompoundStatusUpdate, m: MessageStatusUpdate)  => c.copy(messageStatusUpdate = m)
+    case (_: CompoundStatusUpdate, p: ArrivalPutUpdate)     => p
+
+    case (_: ArrivalPutUpdate, x: ArrivalPutUpdate)     => x
+    case (p: ArrivalPutUpdate, a: ArrivalStatusUpdate)  => p.copy(arrivalUpdate = p.arrivalUpdate.copy(arrivalStatusUpdate = a))
+    case (p: ArrivalPutUpdate, m: MessageStatusUpdate)  => p.copy(arrivalUpdate = p.arrivalUpdate.copy(messageStatusUpdate = m))
+    case (p: ArrivalPutUpdate, c: CompoundStatusUpdate) => p.copy(arrivalUpdate = c)
+  }
+
+  implicit val arrivalUpdateArrivalModifier: ArrivalModifier[ArrivalUpdate] = {
+    case x: MessageStatusUpdate  => ArrivalModifier.toJson(x)
+    case x: ArrivalStatusUpdate  => ArrivalModifier.toJson(x)
+    case x: CompoundStatusUpdate => ArrivalModifier.toJson(x)
+    case x: ArrivalPutUpdate     => ArrivalModifier.toJson(x)
+  }
+}
+
+final case class MessageStatusUpdate(messageId: MessageId, messageStatus: MessageStatus) extends ArrivalUpdate
 
 object MessageStatusUpdate extends MongoDateTimeFormats {
   implicit def arrivalStateUpdate(implicit writes: Writes[MessageStatus]): ArrivalModifier[MessageStatusUpdate] =
@@ -39,26 +72,35 @@ object MessageStatusUpdate extends MongoDateTimeFormats {
     )
 }
 
-case class ArrivalUpdate(arrivalUpdate: Option[ArrivalStatus], messageUpdate: Option[MessageStatusUpdate])
+final case class ArrivalStatusUpdate(arrivalStatus: ArrivalStatus) extends ArrivalUpdate
 
-object ArrivalUpdate {
+object ArrivalStatusUpdate extends MongoDateTimeFormats {
+  implicit def arrivalStatusUpdate(implicit writes: Writes[ArrivalStatus]): ArrivalModifier[ArrivalStatusUpdate] =
+    value =>
+      Json.obj(
+        "$set" -> Json.obj(
+          "status"      -> value.arrivalStatus,
+          "lastUpdated" -> LocalDateTime.now.withSecond(0).withNano(0)
+        ))
+}
 
-  implicit object ArrivalUpdateSemiGroupInst extends Semigroup[ArrivalUpdate] {
-    override def combine(x: ArrivalUpdate, y: ArrivalUpdate): ArrivalUpdate =
-      ArrivalUpdate(
-        y.arrivalUpdate orElse x.arrivalUpdate,
-        y.messageUpdate orElse x.messageUpdate
+final case class CompoundStatusUpdate(arrivalStatusUpdate: ArrivalStatusUpdate, messageStatusUpdate: MessageStatusUpdate) extends ArrivalUpdate
+
+object CompoundStatusUpdate {
+  implicit val arrivalUpdate: ArrivalModifier[CompoundStatusUpdate] =
+    csu => ArrivalModifier.toJson(csu.arrivalStatusUpdate) deepMerge ArrivalModifier.toJson(csu.messageStatusUpdate)
+}
+
+final case class ArrivalPutUpdate(movementReferenceNumber: MovementReferenceNumber, arrivalUpdate: CompoundStatusUpdate) extends ArrivalUpdate
+
+object ArrivalPutUpdate extends MongoDateTimeFormats {
+
+  implicit val arrivalPutUpdateArrivalModifier: ArrivalModifier[ArrivalPutUpdate] = a =>
+    Json.obj(
+      "$set" -> Json.obj(
+        "movementReferenceNumber" -> a.movementReferenceNumber,
+        "lastUpdated"             -> LocalDateTime.now.withSecond(0).withNano(0)
       )
-  }
-
-  implicit object ArrivalUpdateArrivalModifier extends ArrivalModifier[ArrivalUpdate] {
-    override def toJson(a: ArrivalUpdate): JsObject = {
-
-      val arrivalUpdateJson: JsObject = a.arrivalUpdate.map(ArrivalModifier.toJson[ArrivalStatus]).getOrElse(Json.obj())
-      val messageUpdateJson: JsObject = a.messageUpdate.map(ArrivalModifier.toJson[MessageStatusUpdate]).getOrElse(Json.obj())
-
-      arrivalUpdateJson deepMerge messageUpdateJson
-    }
-  }
+    ) deepMerge ArrivalModifier.toJson(a.arrivalUpdate)
 
 }
