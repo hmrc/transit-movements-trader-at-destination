@@ -27,9 +27,9 @@ dependencyCheck | Runs dependency-check against the current project. It aggregat
 dependencyUpdates |  Shows a list of project dependencies that can be updated | ```$ sbt dependencyUpdates```
 dependencyUpdatesReport | Writes a list of project dependencies to a file | ```$ sbt dependencyUpdatesReport```
 
-## Related services
+## Related API documentation 
 
-- [Common Transit Convention Traders API](https://github.com/hmrc/common-transit-convention-traders)
+- [Common Transit Convention Traders API definitions](https://github.com/hmrc/common-transit-convention-traders)
 
 ## Helpful information
 
