@@ -41,10 +41,8 @@ class NCTSMessageController @Inject()(cc: ControllerComponents,
   def post(messageSender: MessageSender): Action[NodeSeq] = (getArrival(messageSender.arrivalId)(parse.xml) andThen inboundMessage).async {
     implicit request =>
       val messageInbound: MessageInbound = request.inboundMessage
-
-      val xml: NodeSeq = request.request.request.body
-
-      val processingResult = saveMessageService.validateXmlAndSaveMessage(xml, messageSender, messageInbound.messageType, messageInbound.nextState)
+      val xml: NodeSeq                   = request.request.request.body
+      val processingResult               = saveMessageService.validateXmlAndSaveMessage(xml, messageSender, messageInbound.messageType, messageInbound.nextState)
 
       processingResult map {
         case SubmissionSuccess         => Ok

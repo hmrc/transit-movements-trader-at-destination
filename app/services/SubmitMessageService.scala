@@ -23,16 +23,21 @@ import connectors.MessageConnector
 import javax.inject.Inject
 import models.Arrival
 import models.ArrivalId
+import models.ArrivalIdSelector
 import models.ArrivalPutUpdate
 import models.ArrivalStatus
+import models.ArrivalStatusUpdate
 import models.ArrivalUpdate
+import models.CompoundStatusUpdate
 import models.MessageId
+import models.MessageSelector
 import models.MessageStatus
 import models.MessageStatusUpdate
 import models.MovementMessageWithStatus
 import models.MovementReferenceNumber
 import models.SubmissionProcessingResult
 import play.api.Logger
+import play.api.libs.json.Json
 import repositories.ArrivalMovementRepository
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -72,12 +77,13 @@ class SubmitMessageService @Inject()(
             case error => {
               Logger.warn(s"Existing Movement - Call to EIS failed with the following Exception: ${error.getMessage}")
 
-              arrivalMovementRepository.setMessageState(arrivalId,
-                                                        messageId.index,
-                                                        message.status.transition(SubmissionProcessingResult.SubmissionFailureInternal)) map {
-                _ =>
-                  SubmissionProcessingResult.SubmissionFailureExternal
-              }
+              val selector  = MessageSelector(arrivalId, messageId)
+              val newStatus = message.status.transition(SubmissionProcessingResult.SubmissionFailureInternal)
+              val modifier  = MessageStatusUpdate(messageId, newStatus)
+
+              arrivalMovementRepository
+                .updateArrival(selector, modifier)
+                .map(_ => SubmissionProcessingResult.SubmissionFailureExternal)
             }
           }
       }
@@ -94,11 +100,14 @@ class SubmitMessageService @Inject()(
           .post(arrivalId, message, OffsetDateTime.now)
           .flatMap {
             _ =>
+              val selector = ArrivalIdSelector(arrivalId)
+
               arrivalMovementRepository
                 .updateArrival(
-                  ArrivalPutUpdate.selector(arrivalId),
+                  selector,
                   ArrivalPutUpdate(mrn,
-                                   ArrivalUpdate(Some(ArrivalStatus.ArrivalSubmitted), Some(MessageStatusUpdate(messageId, MessageStatus.SubmissionSucceeded))))
+                                   CompoundStatusUpdate(ArrivalStatusUpdate(ArrivalStatus.ArrivalSubmitted),
+                                                        MessageStatusUpdate(messageId, MessageStatus.SubmissionSucceeded)))
                 )
                 .map {
                   _ =>
@@ -113,9 +122,11 @@ class SubmitMessageService @Inject()(
             case error => {
               Logger.warn(s"Existing Movement - Call to EIS failed with the following Exception: ${error.getMessage}")
 
+              val selector = ArrivalIdSelector(arrivalId)
+
               arrivalMovementRepository
                 .updateArrival(
-                  ArrivalPutUpdate.selector(arrivalId),
+                  selector,
                   MessageStatusUpdate(messageId, message.status.transition(SubmissionProcessingResult.SubmissionFailureInternal))
                 )
                 .map {
@@ -153,12 +164,13 @@ class SubmitMessageService @Inject()(
               case error =>
                 Logger.warn(s"New Movement - Call to EIS failed with the following Exception: ${error.getMessage}")
 
-                arrivalMovementRepository.setMessageState(arrival.arrivalId,
-                                                          messageId.index,
-                                                          message.status.transition(SubmissionProcessingResult.SubmissionFailureInternal)) map {
-                  _ =>
-                    SubmissionProcessingResult.SubmissionFailureExternal
-                }
+                val selector  = MessageSelector(arrival.arrivalId, messageId)
+                val newStatus = message.status.transition(SubmissionProcessingResult.SubmissionFailureInternal)
+                val modifier  = MessageStatusUpdate(messageId, newStatus)
+
+                arrivalMovementRepository
+                  .updateArrival(selector, modifier)
+                  .map(_ => SubmissionProcessingResult.SubmissionFailureExternal)
             }
 
       }
