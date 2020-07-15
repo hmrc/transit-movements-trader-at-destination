@@ -46,10 +46,25 @@ class SaveMessageService @Inject()(arrivalMovementRepository: ArrivalMovementRep
             arrivalMovementRepository
               .addResponseMessage(messageSender.arrivalId, message, arrivalStatus)
               .map {
-                case Success(_) => SubmissionSuccess
-                case Failure(e) => SubmissionFailureInternal
+                case Success(_) => {
+
+                  Logger.info(s"Saved message successfully")
+
+                  SubmissionSuccess
+                }
+                case Failure(e) => {
+
+                  Logger.info(s"Failed to save message $e")
+
+                  SubmissionFailureInternal
+                }
               }
-          case None => Future.successful(SubmissionFailureExternal)
+          case None => {
+
+            Logger.info(s"Failed to save message")
+
+            Future.successful(SubmissionFailureExternal)
+          }
         }
       case Failure(e) => {
         Logger.warn(s"Failure to validate against XSD. Exception: ${e.getMessage}")

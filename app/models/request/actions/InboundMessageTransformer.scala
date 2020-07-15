@@ -37,19 +37,30 @@ class InboundMessageTransformer @Inject()(implicit ec: ExecutionContext) extends
 
   def executionContext: ExecutionContext = ec
 
-  override protected def refine[A](request: ArrivalRequest[A]): Future[Either[Result, InboundRequest[A]]] =
+  override protected def refine[A](request: ArrivalRequest[A]): Future[Either[Result, InboundRequest[A]]] = {
+
+    Logger.info(s"CTC Headers ${request.headers}")
+
     messageResponse(request.headers.get("X-Message-Type")) match {
       case Some(response) =>
+        Logger.info(s"X-Message-Type is ${request.headers.get("X-Message-Type")}")
+        Logger.info(s"Message type code ${response.messageType.code}")
+
         val nextState = request.arrival.status.transition(response.messageReceived)
+
+        Logger.info(s"Next state $nextState")
 
         Future.successful(
           Right(InboundRequest(MessageInbound(response, nextState), request))
         )
       case None =>
+        Logger.info(s"Unsupported X-Message-Type ${request.headers.get("X-Message-Type")}")
+
         Future.successful(
           Left(badRequestError(s"Unsupported X-Message-Type: ${request.headers.get("X-Message-Type")}"))
         )
     }
+  }
 
   //TODO: Consider moving this into MessageResponse
   private[models] def messageResponse(code: Option[String]): Option[MessageResponse] = code match {
