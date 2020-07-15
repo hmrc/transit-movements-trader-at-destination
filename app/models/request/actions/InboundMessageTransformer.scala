@@ -28,7 +28,6 @@ import models.UnloadingRemarksRejectedResponse
 import models.request.ArrivalRequest
 import play.api.Logger
 import play.api.mvc.Results.BadRequest
-import play.api.mvc.request
 import play.api.mvc._
 
 import scala.concurrent.ExecutionContext

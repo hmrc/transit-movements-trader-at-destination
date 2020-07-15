@@ -62,19 +62,11 @@ private[actions] class LockAction(
                 _ =>
                   {
                     Logger.error(s"Failed to lock record - $e")
-
                     InternalServerError
-
                   }
-
               }
           }
       }
-      case false => {
-
-        Logger.error(s"Successful lock")
-        Future.successful(Locked)
-      }
-
+      case false => Future.successful(Locked)
     }
 }
