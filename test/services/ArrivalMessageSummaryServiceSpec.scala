@@ -535,6 +535,24 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
 
       }
 
+      "IE007 and IE043" in {
+        val service = new ArrivalMessageSummaryService
+
+        forAll(ie007Gen.submitted.msgCorrId(1), ie043Gen.msgCorrId(2)) {
+          case (ie007, ie0043) =>
+            val messages = NonEmptyList.of(ie007, ie0043)
+
+            forAll(arrivalMovement(messages)) {
+              arrival =>
+                val expectedMessageSummary =
+                  MessagesSummary(arrival, MessageId.fromMessageIdValue(1).value, None, MessageId.fromMessageIdValue(2), None, None)
+
+                service.arrivalMessagesSummary(arrival) mustEqual expectedMessageSummary
+            }
+        }
+
+      }
+
       "IE007, IE043 and IE044" in {
         val service = new ArrivalMessageSummaryService
 
