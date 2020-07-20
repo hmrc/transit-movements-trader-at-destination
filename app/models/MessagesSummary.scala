@@ -20,7 +20,7 @@ import play.api.libs.json._
 
 case class MessagesSummary(arrival: Arrival,
                            arrivalNotification: MessageId,
-                           arrivalRejection: Option[MessageId],
+                           arrivalRejection: Option[MessageId] = None,
                            unloadingPermission: Option[MessageId] = None,
                            unloadingRemarks: Option[MessageId] = None,
                            unloadingRemarksRejection: Option[MessageId] = None)
