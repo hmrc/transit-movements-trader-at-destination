@@ -16,13 +16,10 @@
 
 package services
 
-import java.time.LocalDateTime
-
 import base.SpecBase
 import cats.data.NonEmptyList
 import generators.ModelGenerators
 import models.MessageStatus.SubmissionFailed
-import models.MessageStatus.SubmissionSucceeded
 import models.MessageType.UnloadingPermission
 import models.Arrival
 import models.MessageId
@@ -40,75 +37,81 @@ class MessageRetrievalServiceSpec extends SpecBase with ModelGenerators with Sca
   private val mockArrivalMessageSummaryService = mock[ArrivalMessageSummaryService]
 
   "MessageRetrievalService" - {
-
     "getUnloadingPermission" - {
-
       "must return UnloadingPermission" in {
+        forAll(arbitrary[Arrival], arbitrary[MovementMessageWithStatus]) {
+          (arrival, movementMessageWithStatus) =>
+            val unloadingPermissionMessage     = movementMessageWithStatus.copy(messageType = UnloadingPermission)
+            val arrivalWithUnloadingPermission = arrival.copy(messages = NonEmptyList(movementMessageWithStatus, List(unloadingPermissionMessage)))
 
-        val unloadingPermission = MovementMessageWithStatus(LocalDateTime.now(), UnloadingPermission, <blankXml>message</blankXml>, SubmissionSucceeded, 1)
-        val genArrival = arbitrary[Arrival].sample.value
-        val arrivalWithUnloadingPermission = genArrival.copy(messages = NonEmptyList(unloadingPermission, List.empty))
+            val arrivalSummary = MessagesSummary(arrivalNotification = MessageId.fromIndex(0),
+                                                 unloadingPermission = Some(MessageId.fromIndex(1)),
+                                                 arrival = arrivalWithUnloadingPermission)
 
-        val arrivalSummary = MessagesSummary(arrivalNotification = MessageId.fromIndex(1), unloadingPermission = Some(MessageId.fromIndex(0)), arrival = arrivalWithUnloadingPermission)
+            when(mockArrivalMessageSummaryService.arrivalMessagesSummary(any())).thenReturn(arrivalSummary)
 
-        when(mockArrivalMessageSummaryService.arrivalMessagesSummary(any())).thenReturn(arrivalSummary)
+            val application = baseApplicationBuilder.overrides(bind[ArrivalMessageSummaryService].toInstance(mockArrivalMessageSummaryService)).build()
 
-        val application = baseApplicationBuilder.overrides(bind[ArrivalMessageSummaryService].toInstance(mockArrivalMessageSummaryService)).build()
+            val service = application.injector.instanceOf[MessageRetrievalService]
 
-        val service = application.injector.instanceOf[MessageRetrievalService]
+            val expectedResult = ResponseMovementMessage.build(arrivalWithUnloadingPermission.arrivalId, MessageId.fromIndex(1), unloadingPermissionMessage)
 
-        val expectedResult = ResponseMovementMessage.build(arrivalWithUnloadingPermission.arrivalId, MessageId.fromIndex(0), unloadingPermission)
-
-        service.getUnloadingPermission(arrivalWithUnloadingPermission).value mustBe expectedResult
+            service.getUnloadingPermission(arrivalWithUnloadingPermission).value mustBe expectedResult
+        }
       }
 
       "must return None when UnloadingPermission MessageId cannot be found" in {
-        val unloadingPermission = MovementMessageWithStatus(LocalDateTime.now(), UnloadingPermission, <blankXml>message</blankXml>, SubmissionSucceeded, 1)
-        val genArrival = arbitrary[Arrival].sample.value
-        val arrivalWithUnloadingPermission = genArrival.copy(messages = NonEmptyList(unloadingPermission, List.empty))
+        forAll(arbitrary[Arrival]) {
+          arrival =>
+            val arrivalSummary = MessagesSummary(arrivalNotification = MessageId.fromIndex(0), unloadingPermission = None, arrival = arrival)
 
-        val arrivalSummary = MessagesSummary(arrivalNotification = MessageId.fromIndex(1), arrival = arrivalWithUnloadingPermission)
+            when(mockArrivalMessageSummaryService.arrivalMessagesSummary(any())).thenReturn(arrivalSummary)
 
-        when(mockArrivalMessageSummaryService.arrivalMessagesSummary(any())).thenReturn(arrivalSummary)
+            val application = baseApplicationBuilder.overrides(bind[ArrivalMessageSummaryService].toInstance(mockArrivalMessageSummaryService)).build()
 
-        val application = baseApplicationBuilder.overrides(bind[ArrivalMessageSummaryService].toInstance(mockArrivalMessageSummaryService)).build()
+            val service = application.injector.instanceOf[MessageRetrievalService]
 
-        val service = application.injector.instanceOf[MessageRetrievalService]
-
-        service.getUnloadingPermission(arrivalWithUnloadingPermission) mustBe None
-
+            service.getUnloadingPermission(arrival) mustBe None
+        }
       }
 
-      "must return None when UnloadingPermission cannot be found" in {
-        val genArrival = arbitrary[Arrival].sample.value
-        val genMovementMessage = arbitrary[MovementMessageWithStatus].suchThat(_.messageType != UnloadingPermission).sample.value
-        val arrivalWithoutUnloadingPermission = genArrival.copy(messages = NonEmptyList(genMovementMessage, List.empty))
+      "must return None when MessageId is found and UnloadingPermission is not defined" in {
+        forAll(arbitrary[Arrival], arbitrary[MovementMessageWithStatus]) {
+          (arrival, movementMessageWithStatus) =>
+            val arrivalWithoutUnloadingPermission = arrival.copy(messages = NonEmptyList(movementMessageWithStatus, List.empty))
 
-        val arrivalSummary = MessagesSummary(arrivalNotification = MessageId.fromIndex(0), unloadingPermission = Some(MessageId.fromIndex(1)), arrival = arrivalWithoutUnloadingPermission)
+            val arrivalSummary = MessagesSummary(arrivalNotification = MessageId.fromIndex(0),
+                                                 unloadingPermission = Some(MessageId.fromIndex(1)),
+                                                 arrival = arrivalWithoutUnloadingPermission)
 
-        when(mockArrivalMessageSummaryService.arrivalMessagesSummary(any())).thenReturn(arrivalSummary)
+            when(mockArrivalMessageSummaryService.arrivalMessagesSummary(any())).thenReturn(arrivalSummary)
 
-        val application = baseApplicationBuilder.overrides(bind[ArrivalMessageSummaryService].toInstance(mockArrivalMessageSummaryService)).build()
+            val application = baseApplicationBuilder.overrides(bind[ArrivalMessageSummaryService].toInstance(mockArrivalMessageSummaryService)).build()
 
-        val service = application.injector.instanceOf[MessageRetrievalService]
+            val service = application.injector.instanceOf[MessageRetrievalService]
 
-        service.getUnloadingPermission(arrivalWithoutUnloadingPermission) mustBe None
+            service.getUnloadingPermission(arrivalWithoutUnloadingPermission) mustBe None
+        }
       }
 
       "must return None when UnloadingPermission is in a Failed state" in {
-        val unloadingPermission = MovementMessageWithStatus(LocalDateTime.now(), UnloadingPermission, <blankXml>message</blankXml>, SubmissionFailed, 1)
-        val genArrival = arbitrary[Arrival].sample.value
-        val arrivalWithUnloadingPermission = genArrival.copy(messages = NonEmptyList(unloadingPermission, List.empty))
+        forAll(arbitrary[Arrival], arbitrary[MovementMessageWithStatus]) {
+          (arrival, movementMessageWithStatus) =>
+            val unloadingPermissionMessage     = movementMessageWithStatus.copy(messageType = UnloadingPermission, status = SubmissionFailed)
+            val arrivalWithUnloadingPermission = arrival.copy(messages = NonEmptyList(movementMessageWithStatus, List(unloadingPermissionMessage)))
 
-        val arrivalSummary = MessagesSummary(arrivalNotification = MessageId.fromIndex(1), unloadingPermission = Some(MessageId.fromIndex(0)), arrival = arrivalWithUnloadingPermission)
+            val arrivalSummary = MessagesSummary(arrivalNotification = MessageId.fromIndex(0),
+                                                 unloadingPermission = Some(MessageId.fromIndex(1)),
+                                                 arrival = arrivalWithUnloadingPermission)
 
-        when(mockArrivalMessageSummaryService.arrivalMessagesSummary(any())).thenReturn(arrivalSummary)
+            when(mockArrivalMessageSummaryService.arrivalMessagesSummary(any())).thenReturn(arrivalSummary)
 
-        val application = baseApplicationBuilder.overrides(bind[ArrivalMessageSummaryService].toInstance(mockArrivalMessageSummaryService)).build()
+            val application = baseApplicationBuilder.overrides(bind[ArrivalMessageSummaryService].toInstance(mockArrivalMessageSummaryService)).build()
 
-        val service = application.injector.instanceOf[MessageRetrievalService]
+            val service = application.injector.instanceOf[MessageRetrievalService]
 
-        service.getUnloadingPermission(arrivalWithUnloadingPermission) mustBe None
+            service.getUnloadingPermission(arrivalWithUnloadingPermission) mustBe None
+        }
       }
     }
   }
