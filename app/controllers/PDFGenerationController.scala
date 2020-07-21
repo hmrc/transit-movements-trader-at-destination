@@ -16,6 +16,7 @@
 
 package controllers
 
+import connectors.ManageDocumentsConnector
 import controllers.actions.AuthenticatedGetArrivalForReadActionProvider
 import javax.inject.Inject
 import models.ArrivalId
@@ -25,19 +26,32 @@ import play.api.mvc.ControllerComponents
 import services.MessageRetrievalService
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 class PDFGenerationController @Inject()(cc: ControllerComponents,
                                         messageRetrievalService: MessageRetrievalService,
-                                        authenticateForRead: AuthenticatedGetArrivalForReadActionProvider)
+                                        authenticateForRead: AuthenticatedGetArrivalForReadActionProvider,
+                                        manageDocumentsConnector: ManageDocumentsConnector)(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
-  def post(arrivalId: ArrivalId): Action[AnyContent] = authenticateForRead(arrivalId) {
+  def post(arrivalId: ArrivalId): Action[AnyContent] = authenticateForRead(arrivalId).async {
     implicit request =>
-      messageRetrievalService
-        .getUnloadingPermission(request.arrival)
+      val getUnloadingPermissionMessage = messageRetrievalService.getUnloadingPermission(request.arrival)
+
+      getUnloadingPermissionMessage
         .map {
-          result =>
-            Ok
+          unloadingPermission =>
+            manageDocumentsConnector.getUnloadingPermissionPdf(unloadingPermission).map {
+              result =>
+                result.status match {
+                  case 200 => Ok(result.body)
+                  case _   => BadRequest
+                }
+            }
         }
-        .getOrElse(NotFound)
+        .getOrElse {
+          Future.successful(NotFound)
+        }
   }
 }
