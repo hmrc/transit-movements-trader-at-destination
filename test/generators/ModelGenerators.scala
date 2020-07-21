@@ -37,9 +37,12 @@ import models.MovementReferenceNumber
 import models.RejectionError
 import models.SubmissionProcessingResult
 import models.SubmissionProcessingResult._
+import models.response.ResponseMovementMessage
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
+
+import scala.xml.NodeSeq
 
 trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
 
@@ -189,4 +192,15 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
 
   implicit lazy val arbitraryFailure: Arbitrary[SubmissionFailure] =
     Arbitrary(Gen.oneOf(SubmissionFailureInternal, SubmissionFailureExternal))
+
+  implicit lazy val arbitraryResponseMovementMessage: Arbitrary[ResponseMovementMessage] = {
+    Arbitrary {
+      for {
+        location    <- arbitrary[String]
+        dateTime    <- arbitrary[LocalDateTime]
+        messageType <- arbitrary[String]
+        message     <- Gen.const(<blankXml>message</blankXml>)
+      } yield ResponseMovementMessage(location, dateTime, messageType, message)
+    }
+  }
 }
