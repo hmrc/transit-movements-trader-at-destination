@@ -24,13 +24,14 @@ import models.response.ResponseMovementMessage
 class MessageRetrievalService @Inject()(arrivalMessageSummaryService: ArrivalMessageSummaryService) {
 
   def getUnloadingPermission(arrival: Arrival): Option[ResponseMovementMessage] =
-    arrivalMessageSummaryService.arrivalMessagesSummary(arrival).unloadingPermission.flatMap { messageId =>
-    val messages = arrival.messages.toList
-    if (messages.isDefinedAt(messageId.index) && messages(messageId.index).optStatus != Some(SubmissionFailed)) {
-      Some(ResponseMovementMessage.build(arrival.arrivalId, messageId, messages(messageId.index)))
-    } else {
-      None
+    arrivalMessageSummaryService.arrivalMessagesSummary(arrival).unloadingPermission.flatMap {
+      messageId =>
+        val messages = arrival.messages.toList
+        if (messages.isDefinedAt(messageId.index) && messages(messageId.index).optStatus != Some(SubmissionFailed)) {
+          Some(ResponseMovementMessage.build(arrival.arrivalId, messageId, messages(messageId.index)))
+        } else {
+          None
+        }
     }
-  }
 
 }
