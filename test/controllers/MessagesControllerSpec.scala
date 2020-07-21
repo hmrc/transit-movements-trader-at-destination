@@ -292,6 +292,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
         val arrival = Arbitrary.arbitrary[Arrival].sample.value.copy(messages = NonEmptyList.one(message), eoriNumber = "eori")
 
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+
         when(mockArrivalMovementRepository.get(any()))
           .thenReturn(Future.successful(Some(arrival)))
 

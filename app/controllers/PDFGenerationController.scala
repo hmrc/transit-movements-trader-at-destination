@@ -19,15 +19,25 @@ package controllers
 import controllers.actions.AuthenticatedGetArrivalForReadActionProvider
 import javax.inject.Inject
 import models.ArrivalId
+import play.api.mvc.Action
+import play.api.mvc.AnyContent
+import play.api.mvc.ControllerComponents
 import services.MessageRetrievalService
+import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
-class PDFGenerationController @Inject()(
-  messageRetrievalService: MessageRetrievalService,
-  authenticateForRead: AuthenticatedGetArrivalForReadActionProvider
-) {
+class PDFGenerationController @Inject()(cc: ControllerComponents,
+                                        messageRetrievalService: MessageRetrievalService,
+                                        authenticateForRead: AuthenticatedGetArrivalForReadActionProvider)
+    extends BackendController(cc) {
 
-  def post(arrivalId: ArrivalId) = authenticateForRead(arrivalId) {
+  def post(arrivalId: ArrivalId): Action[AnyContent] = authenticateForRead(arrivalId) {
     implicit request =>
-      ???
+      messageRetrievalService
+        .getUnloadingPermission(request.arrival)
+        .map {
+          result =>
+            Ok
+        }
+        .getOrElse(NotFound)
   }
 }
