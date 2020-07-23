@@ -81,8 +81,29 @@ class PDFGenerationControllerSpec extends SpecBase with ScalaCheckPropertyChecks
         }
       }
 
-      "must return BadRequest when there is any other errors" in {
-        val genErrorCode = Gen.oneOf(300, 599)
+      "must return BadGateway when there is a error in the other microservice" in {
+
+        forAll(genArrivalWithSuccessfulArrival) {
+          arrival =>
+            when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
+            when(mockUnloadingPermissionPDFService.getPDF(any())(any(), any())).thenReturn(Future.successful(Some(HttpResponse(500, ""))))
+
+            val application = baseApplicationBuilder
+              .overrides(bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository))
+              .overrides(bind[UnloadingPermissionPDFService].toInstance(mockUnloadingPermissionPDFService))
+              .build()
+
+            running(application) {
+              val request = FakeRequest(GET, routes.PDFGenerationController.getPDF(arrival.arrivalId).url)
+              val result  = route(application, request).value
+
+              status(result) mustEqual BAD_GATEWAY
+            }
+        }
+      }
+
+      "must return InternalServerError when there is any other errors" in {
+        val genErrorCode = Gen.oneOf(300, 499)
 
         forAll(genArrivalWithSuccessfulArrival, genErrorCode) {
           (arrival, errorCode) =>
@@ -98,7 +119,7 @@ class PDFGenerationControllerSpec extends SpecBase with ScalaCheckPropertyChecks
               val request = FakeRequest(GET, routes.PDFGenerationController.getPDF(arrival.arrivalId).url)
               val result  = route(application, request).value
 
-              status(result) mustEqual BAD_REQUEST
+              status(result) mustEqual INTERNAL_SERVER_ERROR
             }
         }
       }

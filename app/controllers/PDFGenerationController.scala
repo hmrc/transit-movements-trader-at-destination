@@ -19,6 +19,7 @@ package controllers
 import controllers.actions.AuthenticatedGetArrivalForReadActionProvider
 import javax.inject.Inject
 import models.ArrivalId
+import play.api.Logger
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
@@ -32,6 +33,8 @@ class PDFGenerationController @Inject()(cc: ControllerComponents,
                                         unloadingPermissionPDFService: UnloadingPermissionPDFService)(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
+  private val logger: Logger = Logger("UnloadingRemarksPDF")
+
   def getPDF(arrivalId: ArrivalId): Action[AnyContent] = authenticateForRead(arrivalId).async {
     implicit request =>
       unloadingPermissionPDFService.getPDF(request.arrival).map {
@@ -41,7 +44,14 @@ class PDFGenerationController @Inject()(cc: ControllerComponents,
               result =>
                 result.status match {
                   case 200 => Ok(result.body)
-                  case _   => BadRequest
+                  case 500 => {
+                    logger.error(s"Error when generating a PDF with following message: ${request.body}")
+                    BadGateway
+                  }
+                  case status => {
+                    logger.error(s"Error when call the PDF Service with the following message: $status - ${request.body}")
+                    InternalServerError
+                  }
                 }
             }
             .getOrElse(NotFound)
