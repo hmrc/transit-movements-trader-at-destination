@@ -58,6 +58,40 @@ class ManageDocumentsConnectorSpec extends SpecBase with WiremockSuite with Scal
             result.futureValue.status mustBe OK
         }
       }
+
+      "must return status BadRequest" in {
+
+        server.stubFor(
+          post(urlEqualTo("/transit-movements-trader-manage-documents/unloading-permission"))
+            .willReturn(
+              aResponse()
+                .withStatus(400)
+            )
+        )
+
+        forAll(arbitrary[ResponseMovementMessage]) {
+          responseMovementMessage =>
+            val result: Future[HttpResponse] = connector.getUnloadingPermissionPdf(responseMovementMessage)
+            result.futureValue.status mustBe BAD_REQUEST
+        }
+      }
+
+      "must return status InternalServerError" in {
+
+        server.stubFor(
+          post(urlEqualTo("/transit-movements-trader-manage-documents/unloading-permission"))
+            .willReturn(
+              aResponse()
+                .withStatus(500)
+            )
+        )
+
+        forAll(arbitrary[ResponseMovementMessage]) {
+          responseMovementMessage =>
+            val result: Future[HttpResponse] = connector.getUnloadingPermissionPdf(responseMovementMessage)
+            result.futureValue.status mustBe INTERNAL_SERVER_ERROR
+        }
+      }
     }
   }
 
