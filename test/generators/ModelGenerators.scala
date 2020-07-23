@@ -18,7 +18,9 @@ package generators
 
 import java.time._
 
+import cats.data.NonEmptyList
 import models.MessageStatus.SubmissionPending
+import models.MessageStatus.SubmissionSucceeded
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalPutUpdate
@@ -154,6 +156,18 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
           nextMessageCorrelationId = messages.length + 1
         )
     }
+  }
+
+  val genArrivalWithSuccessfulArrival: Gen[Arrival] = {
+    Arbitrary {
+      for {
+        message <- Arbitrary.arbitrary[MovementMessageWithStatus]
+        arrival <- Arbitrary.arbitrary[Arrival]
+      } yield {
+        val successfulMessage = message.copy(status = SubmissionSucceeded)
+        arrival.copy(messages = NonEmptyList.one(successfulMessage), eoriNumber = "eori")
+      }
+    }.arbitrary
   }
 
   implicit lazy val arbitraryMovementReferenceNumber: Arbitrary[MovementReferenceNumber] =

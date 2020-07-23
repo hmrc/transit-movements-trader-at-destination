@@ -14,4 +14,4 @@ GET     /movements/arrivals/:arrivalId/messages/:messageId      controllers.Mess
 
 POST    /movements/arrivals/:messageSender/messages/eis         controllers.NCTSMessageController.post(messageSender: MessageSender)
 
-POST    /movements/arrivals/:arrivalId/unloading-permission     controllers.PDFGenerationController.post(arrivalId: ArrivalId)
+GET    /movements/arrivals/:arrivalId/unloading-permission     controllers.PDFGenerationController.getPDF(arrivalId: ArrivalId)

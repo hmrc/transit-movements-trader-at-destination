@@ -18,7 +18,6 @@ package services
 
 import com.google.inject.Inject
 import models.Arrival
-import models.MessageStatus.SubmissionFailed
 import models.response.ResponseMovementMessage
 
 class MessageRetrievalService @Inject()(arrivalMessageSummaryService: ArrivalMessageSummaryService) {
@@ -26,11 +25,14 @@ class MessageRetrievalService @Inject()(arrivalMessageSummaryService: ArrivalMes
   def getUnloadingPermission(arrival: Arrival): Option[ResponseMovementMessage] =
     arrivalMessageSummaryService.arrivalMessagesSummary(arrival).unloadingPermission.flatMap {
       messageId =>
-        val messages = arrival.messages.toList
-        if (messages.isDefinedAt(messageId.index) && messages(messageId.index).optStatus != Some(SubmissionFailed)) {
-          Some(ResponseMovementMessage.build(arrival.arrivalId, messageId, messages(messageId.index)))
-        } else {
-          None
+        {
+          val messages = arrival.messages.toList
+
+          if (messages.isDefinedAt(messageId.index)) {
+            Some(ResponseMovementMessage.build(arrival.arrivalId, messageId, messages(messageId.index)))
+          } else {
+            None
+          }
         }
     }
 

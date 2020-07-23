@@ -19,12 +19,11 @@ package services
 import base.SpecBase
 import cats.data.NonEmptyList
 import generators.ModelGenerators
-import models.MessageStatus.SubmissionFailed
 import models.MessageType.UnloadingPermission
 import models.Arrival
 import models.MessageId
 import models.MessagesSummary
-import models.MovementMessageWithStatus
+import models.MovementMessageWithoutStatus
 import models.response.ResponseMovementMessage
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
@@ -39,7 +38,7 @@ class MessageRetrievalServiceSpec extends SpecBase with ModelGenerators with Sca
   "MessageRetrievalService" - {
     "getUnloadingPermission" - {
       "must return UnloadingPermission" in {
-        forAll(arbitrary[Arrival], arbitrary[MovementMessageWithStatus]) {
+        forAll(arbitrary[Arrival], arbitrary[MovementMessageWithoutStatus]) {
           (arrival, movementMessageWithStatus) =>
             val unloadingPermissionMessage     = movementMessageWithStatus.copy(messageType = UnloadingPermission)
             val arrivalWithUnloadingPermission = arrival.copy(messages = NonEmptyList(movementMessageWithStatus, List(unloadingPermissionMessage)))
@@ -76,7 +75,7 @@ class MessageRetrievalServiceSpec extends SpecBase with ModelGenerators with Sca
       }
 
       "must return None when MessageId is found and UnloadingPermission is not defined" in {
-        forAll(arbitrary[Arrival], arbitrary[MovementMessageWithStatus]) {
+        forAll(arbitrary[Arrival], arbitrary[MovementMessageWithoutStatus]) {
           (arrival, movementMessageWithStatus) =>
             val arrivalWithoutUnloadingPermission = arrival.copy(messages = NonEmptyList(movementMessageWithStatus, List.empty))
 
@@ -91,26 +90,6 @@ class MessageRetrievalServiceSpec extends SpecBase with ModelGenerators with Sca
             val service = application.injector.instanceOf[MessageRetrievalService]
 
             service.getUnloadingPermission(arrivalWithoutUnloadingPermission) mustBe None
-        }
-      }
-
-      "must return None when UnloadingPermission is in a Failed state" in {
-        forAll(arbitrary[Arrival], arbitrary[MovementMessageWithStatus]) {
-          (arrival, movementMessageWithStatus) =>
-            val unloadingPermissionMessage     = movementMessageWithStatus.copy(messageType = UnloadingPermission, status = SubmissionFailed)
-            val arrivalWithUnloadingPermission = arrival.copy(messages = NonEmptyList(movementMessageWithStatus, List(unloadingPermissionMessage)))
-
-            val arrivalSummary = MessagesSummary(arrivalNotification = MessageId.fromIndex(0),
-                                                 unloadingPermission = Some(MessageId.fromIndex(1)),
-                                                 arrival = arrivalWithUnloadingPermission)
-
-            when(mockArrivalMessageSummaryService.arrivalMessagesSummary(any())).thenReturn(arrivalSummary)
-
-            val application = baseApplicationBuilder.overrides(bind[ArrivalMessageSummaryService].toInstance(mockArrivalMessageSummaryService)).build()
-
-            val service = application.injector.instanceOf[MessageRetrievalService]
-
-            service.getUnloadingPermission(arrivalWithUnloadingPermission) mustBe None
         }
       }
     }
