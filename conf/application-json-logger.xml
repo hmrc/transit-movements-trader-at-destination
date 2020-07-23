@@ -9,6 +9,7 @@
     <logger name="helpers.XmlBuilderHelper" level="${logger.XmlBuilderService:-INFO}"/>
     <logger name="controllers.NCTSMessageController" level="${logger.GoodsReleasedController:-ERROR}"/>
     <logger name="controllers.MovementsController" level="${logger.MovementsController:-ERROR}"/>
+    <logger name="controllers.PDFGenerationController" level="${logger.UnloadingRemarksPDF:-ERROR}"/>
 
     <root level="${logger.application:-WARN}">
         <appender-ref ref="STDOUT"/>

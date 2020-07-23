@@ -18,7 +18,9 @@ package generators
 
 import java.time._
 
+import cats.data.NonEmptyList
 import models.MessageStatus.SubmissionPending
+import models.MessageStatus.SubmissionSucceeded
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalPutUpdate
@@ -37,9 +39,12 @@ import models.MovementReferenceNumber
 import models.RejectionError
 import models.SubmissionProcessingResult
 import models.SubmissionProcessingResult._
+import models.response.ResponseMovementMessage
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
+
+import scala.xml.NodeSeq
 
 trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
 
@@ -153,6 +158,18 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
     }
   }
 
+  val genArrivalWithSuccessfulArrival: Gen[Arrival] = {
+    Arbitrary {
+      for {
+        message <- Arbitrary.arbitrary[MovementMessageWithStatus]
+        arrival <- Arbitrary.arbitrary[Arrival]
+      } yield {
+        val successfulMessage = message.copy(status = SubmissionSucceeded)
+        arrival.copy(messages = NonEmptyList.one(successfulMessage), eoriNumber = "eori")
+      }
+    }.arbitrary
+  }
+
   implicit lazy val arbitraryMovementReferenceNumber: Arbitrary[MovementReferenceNumber] =
     Arbitrary {
       for {
@@ -189,4 +206,15 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
 
   implicit lazy val arbitraryFailure: Arbitrary[SubmissionFailure] =
     Arbitrary(Gen.oneOf(SubmissionFailureInternal, SubmissionFailureExternal))
+
+  implicit lazy val arbitraryResponseMovementMessage: Arbitrary[ResponseMovementMessage] = {
+    Arbitrary {
+      for {
+        location    <- arbitrary[String]
+        dateTime    <- arbitrary[LocalDateTime]
+        messageType <- arbitrary[String]
+        message     <- Gen.const(<blankXml>message</blankXml>)
+      } yield ResponseMovementMessage(location, dateTime, messageType, message)
+    }
+  }
 }
