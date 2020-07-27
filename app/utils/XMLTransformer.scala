@@ -25,9 +25,12 @@ object XMLTransformer {
   private def createRuleTransformer(existingNode: String, key: String, value: String): RuleTransformer =
     new RuleTransformer(new RewriteRule {
       override def transform(n: Node): Seq[Node] = n match {
+        case elem: Elem if elem.label.equalsIgnoreCase(key) =>
+          NodeSeq.Empty
         case elem: Elem if elem.label.equalsIgnoreCase(existingNode) =>
           val newNode = Elem(null, key, Null, TopScope, false, Text(value))
           elem ++ newNode
+
         case other => other
       }
     })
