@@ -29,13 +29,13 @@ class XMLTransformerSpec extends AnyFreeSpec with Matchers with StreamlinedXmlEq
       updatedXml.toString() mustEqual <main><test>data</test><test1>newData</test1></main>.toString()
     }
 
-    "must remove same xml if node is missing" in {
-      val xml        = <main><test>data</test><test1>newData</test1></main>
+    "must replace existing node with new one" in {
+      val xml        = <main><test>data</test><test1>testData</test1></main>
       val updatedXml = XMLTransformer.addXmlNode("test", "test1", "newData", xml)
-      updatedXml.toString() mustEqual xml.toString()
+      updatedXml.toString() mustEqual <main><test>data</test><test1>newData</test1></main>.toString()
     }
 
-    "must remove same xml if node 1 is missing" in {
+    "must return the same Xml if the node does not exist" in {
       val xml        = <main><test2>newData</test2></main>
       val updatedXml = XMLTransformer.addXmlNode("test", "test1", "newData", xml)
       updatedXml.toString() mustEqual xml.toString()
