@@ -23,11 +23,13 @@ import controllers.actions.AuthenticatedGetArrivalForWriteActionProvider
 import controllers.actions.AuthenticatedGetOptionalArrivalForWriteActionProvider
 import javax.inject.Inject
 import models.MessageStatus.SubmissionSucceeded
+import models.Arrival
 import models.ArrivalId
 import models.ArrivalStatus
-import models.ResponseArrivals
+import models.MessageSender
 import models.MessageType
 import models.MovementMessage
+import models.ResponseArrivals
 import models.SubmissionProcessingResult
 import models.request.ArrivalRequest
 import models.response.ResponseArrival
@@ -41,6 +43,7 @@ import repositories.ArrivalMovementRepository
 import services.ArrivalMovementMessageService
 import services.SubmitMessageService
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
+import utils.XMLTransformer
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -70,7 +73,7 @@ class MovementsController @Inject()(
       request.arrival match {
         case Some(arrival) if allMessageUnsent(arrival.messages) =>
           arrivalMovementService
-            .makeMovementMessageWithStatus(arrival.nextMessageCorrelationId, MessageType.ArrivalNotification)(request.body)
+            .makeMovementMessageWithStatus(arrival.nextMessageCorrelationId, MessageType.ArrivalNotification)(getUpdatedRequestBody(arrival, request.body))
             .map {
               message =>
                 submitMessageService
@@ -123,7 +126,7 @@ class MovementsController @Inject()(
   def putArrival(arrivalId: ArrivalId): Action[NodeSeq] = authenticateForWrite(arrivalId).async(parse.xml) {
     implicit request: ArrivalRequest[NodeSeq] =>
       arrivalMovementService
-        .messageAndMrn(request.arrival.nextMessageCorrelationId)(request.body)
+        .messageAndMrn(request.arrival.nextMessageCorrelationId)(getUpdatedRequestBody(request.arrival, request.body))
         .map {
           case (message, mrn) =>
             submitMessageService
@@ -166,6 +169,13 @@ class MovementsController @Inject()(
           case e =>
             InternalServerError(s"Failed with the following error: $e")
         }
+  }
+  private def getUpdatedRequestBody(arrival: Arrival, body: NodeSeq): NodeSeq = {
+    // println(s"---------------${request.body}")
+    val messageSender: MessageSender = MessageSender(arrival.arrivalId, arrival.nextMessageCorrelationId)
+    val foo                          = XMLTransformer.addXmlNode("SynVerNumMES2", "MesSenMES3", messageSender.toString, body)
+    println(s"*****$foo")
+    foo
   }
 
 }
