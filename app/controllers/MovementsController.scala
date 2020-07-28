@@ -99,30 +99,36 @@ class MovementsController @Inject()(
 
         case _ =>
           arrivalIdRepository
-            .nextId() flatMap {
-            arrivalId =>
-              arrivalMovementService.makeArrivalMovement(arrivalId, request.eoriNumber)(getUpdatedRequestBody(arrivalId, 1, request.body)) match {
-                case None =>
-                  Logger.warn("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5")
-                  Future.successful(BadRequest("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5"))
-                case Some(arrival) =>
-                  submitMessageService
-                    .submitArrival(arrival)
-                    .map {
-                      case SubmissionProcessingResult.SubmissionSuccess =>
-                        Accepted("Message accepted")
-                          .withHeaders("Location" -> routes.MovementsController.getArrival(arrivalId).url)
-                      case SubmissionProcessingResult.SubmissionFailureExternal =>
-                        BadGateway
-                      case SubmissionProcessingResult.SubmissionFailureInternal =>
-                        InternalServerError
-                    }
-                    .recover {
-                      case _ =>
-                        InternalServerError
-                    }
+            .nextId()
+            .flatMap {
+              arrivalId =>
+                arrivalMovementService.makeArrivalMovement(arrivalId, request.eoriNumber)(getUpdatedRequestBody(arrivalId, 1, request.body)) match {
+                  case None =>
+                    Logger.warn("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5")
+                    Future.successful(BadRequest("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5"))
+                  case Some(arrival) =>
+                    submitMessageService
+                      .submitArrival(arrival)
+                      .map {
+                        case SubmissionProcessingResult.SubmissionSuccess =>
+                          Accepted("Message accepted")
+                            .withHeaders("Location" -> routes.MovementsController.getArrival(arrivalId).url)
+                        case SubmissionProcessingResult.SubmissionFailureExternal =>
+                          BadGateway
+                        case SubmissionProcessingResult.SubmissionFailureInternal =>
+                          InternalServerError
+                      }
+                      .recover {
+                        case _ =>
+                          InternalServerError
+                      }
+                }
+            }
+            .recover {
+              case _ => {
+                InternalServerError
               }
-          }
+            }
 
       }
   }

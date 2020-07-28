@@ -108,8 +108,9 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           val mockArrivalIdRepository  = mock[ArrivalIdRepository]
           val mockSubmitMessageService = mock[SubmitMessageService]
 
-          val expectedMessage = movementMessage.copy(messageCorrelationId = 1)
-          val newArrival      = initializedArrival.copy(messages = NonEmptyList.one(expectedMessage))
+          val expectedMessage: MovementMessageWithStatus = movementMessage.copy(messageCorrelationId = 1)
+          val newArrival                                 = initializedArrival.copy(messages = NonEmptyList.of[MovementMessageWithStatus](expectedMessage))
+          val captor: ArgumentCaptor[Arrival]            = ArgumentCaptor.forClass(classOf[Arrival])
 
           when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(newArrival.arrivalId))
           when(mockSubmitMessageService.submitArrival(any())(any())).thenReturn(Future.successful(SubmissionProcessingResult.SubmissionSuccess))
@@ -130,7 +131,11 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
             status(result) mustEqual ACCEPTED
             header("Location", result).value must be(routes.MovementsController.getArrival(newArrival.arrivalId).url)
-            verify(mockSubmitMessageService, times(1)).submitArrival(eqTo(newArrival))(any())
+            verify(mockSubmitMessageService, times(1)).submitArrival(captor.capture())(any())
+
+            val arrivalMessage: MovementMessageWithStatus = captor.getValue.messages.head.asInstanceOf[MovementMessageWithStatus]
+            arrivalMessage.message.map(trim) mustEqual expectedMessage.message.map(trim)
+
           }
         }
 
@@ -216,6 +221,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           val mockArrivalIdRepository  = mock[ArrivalIdRepository]
           val mockSubmitMessageService = mock[SubmitMessageService]
 
+          when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
           val application =
             baseApplicationBuilder
               .overrides(
@@ -235,12 +241,13 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
             status(result) mustEqual BAD_REQUEST
             header("Location", result) must not be (defined)
-            verify(mockArrivalIdRepository, never()).nextId()
           }
         }
 
         "must return BadRequest if the message is not an arrival notification" in {
           val mockArrivalIdRepository = mock[ArrivalIdRepository]
+
+          when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
 
           val application =
             baseApplicationBuilder
@@ -259,7 +266,6 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
             status(result) mustEqual BAD_REQUEST
             header("Location", result) must not be (defined)
-            verify(mockArrivalIdRepository, never()).nextId()
           }
         }
       }
@@ -310,6 +316,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         }
 
         "must return Accepted when and saved as a new arrival movement when there has been a successful message" in {
+          val captor: ArgumentCaptor[Arrival] = ArgumentCaptor.forClass(classOf[Arrival])
           val messages = NonEmptyList.of(
             movementMessage.copy(status = SubmissionPending, messageCorrelationId = 1),
             movementMessage.copy(status = SubmissionFailed, messageCorrelationId = 2),
@@ -343,7 +350,10 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
             status(result) mustEqual ACCEPTED
             header("Location", result).value must be(routes.MovementsController.getArrival(expectedArrival.arrivalId).url)
-            verify(mockSubmitMessageService, times(1)).submitArrival(eqTo(expectedArrival))(any())
+            verify(mockSubmitMessageService, times(1)).submitArrival(captor.capture())(any())
+
+            val arrivalMessage: MovementMessageWithStatus = captor.getValue.messages.head.asInstanceOf[MovementMessageWithStatus]
+            arrivalMessage.message.map(trim) mustEqual movementMessage.message.map(trim)
           }
         }
 
