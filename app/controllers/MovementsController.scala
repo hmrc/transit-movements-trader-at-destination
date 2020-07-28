@@ -171,11 +171,8 @@ class MovementsController @Inject()(
         }
   }
   private def getUpdatedRequestBody(arrival: Arrival, body: NodeSeq): NodeSeq = {
-    // println(s"---------------${request.body}")
     val messageSender: MessageSender = MessageSender(arrival.arrivalId, arrival.nextMessageCorrelationId)
-    val foo                          = XMLTransformer.addXmlNode("SynVerNumMES2", "MesSenMES3", messageSender.toString, body)
-    println(s"*****$foo")
-    foo
+    XMLTransformer.addXmlNode("SynVerNumMES2", "MesSenMES3", messageSender.toString, body)
   }
 
 }

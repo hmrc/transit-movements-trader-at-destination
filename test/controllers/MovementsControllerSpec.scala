@@ -39,13 +39,14 @@ import models.MovementReferenceNumber
 import models.ResponseArrivals
 import models.SubmissionProcessingResult
 import models.response.ResponseArrival
+import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.{eq => eqTo}
 import org.mockito.Mockito._
 import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.IntegrationPatience
+import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.inject.bind
 import play.api.libs.json.Json
@@ -58,6 +59,8 @@ import services.SubmitMessageService
 import utils.Format
 
 import scala.concurrent.Future
+import scala.xml.Utility.trim
+import scala.xml.NodeSeq
 
 class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks with ModelGenerators with BeforeAndAfterEach with IntegrationPatience {
 
@@ -68,7 +71,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
   val arrivalId = arbitrary[ArrivalId].sample.value
   val mrn       = arbitrary[MovementReferenceNumber].sample.value
 
-  val requestXmlBody =
+  val requestXmlBody: NodeSeq =
     <CC007A>
       <DatOfPreMES9>{Format.dateFormatted(localDate)}</DatOfPreMES9>
       <TimOfPreMES10>{Format.timeFormatted(localTime)}</TimOfPreMES10>
@@ -77,7 +80,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
       </HEAHEA>
     </CC007A>
 
-  val movementMessage = MovementMessageWithStatus(
+  val movementMessage: MovementMessageWithStatus = MovementMessageWithStatus(
     localDateTime,
     MessageType.ArrivalNotification,
     requestXmlBody,
@@ -269,6 +272,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         "must return Accepted when submitted to upstream  against the existing arrival" in {
 
           val mockSubmitMessageService = mock[SubmitMessageService]
+          val captor                   = ArgumentCaptor.forClass(classOf[MovementMessageWithStatus])
 
           when(mockSubmitMessageService.submitMessage(any(), any(), any(), any())(any()))
             .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionSuccess))
@@ -285,17 +289,23 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
             val request = FakeRequest(POST, routes.MovementsController.post().url).withXmlBody(requestXmlBody)
 
-            val result = route(application, request).value
-
-            val expectedMessage = movementMessage.copy(messageCorrelationId = 2)
+            val result                                     = route(application, request).value
+            val expectedMessage: MovementMessageWithStatus = movementMessage.copy(messageCorrelationId = 2)
 
             status(result) mustEqual ACCEPTED
             header("Location", result).value must be(routes.MovementsController.getArrival(initializedArrival.arrivalId).url)
             verify(mockSubmitMessageService, times(1)).submitMessage(eqTo(initializedArrival.arrivalId),
                                                                      eqTo(MessageId.fromIndex(1)),
-                                                                     any(), //eqTo(expectedMessage),
-                                                                     eqTo(ArrivalStatus.ArrivalSubmitted))
-            (any())
+                                                                     captor.capture(),
+                                                                     eqTo(ArrivalStatus.ArrivalSubmitted))(any())
+
+            val movement: MovementMessageWithStatus = captor.getValue
+            movement.messageCorrelationId mustEqual expectedMessage.messageCorrelationId
+            movement.status mustEqual expectedMessage.status
+            movement.messageType mustEqual expectedMessage.messageType
+            movement.dateTime mustEqual expectedMessage.dateTime
+            movement.message.map(trim) mustEqual expectedMessage.message.map(trim)
+
           }
         }
 
@@ -443,6 +453,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
         when(mockSubmitMessageService.submitIe007Message(any(), any(), any(), any())(any()))
           .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionSuccess))
+        val captor = ArgumentCaptor.forClass(classOf[MovementMessageWithStatus])
 
         val application = baseApplicationBuilder
           .overrides(
@@ -452,9 +463,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           )
           .build()
 
-        val expectedMessage = movementMessage.copy(messageCorrelationId = 2)
-        println(s"********$movementMessage")
-        println(s"********$expectedMessage")
+        val expectedMessage: MovementMessageWithStatus = movementMessage.copy(messageCorrelationId = 2)
 
         running(application) {
 
@@ -465,9 +474,17 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           header("Location", result).value must be(routes.MovementsController.getArrival(initializedArrival.arrivalId).url)
           verify(mockSubmitMessageService, times(1)).submitIe007Message(eqTo(initializedArrival.arrivalId),
                                                                         eqTo(MessageId.fromIndex(1)),
-                                                                        eqTo(expectedMessage),
+                                                                        captor.capture(),
                                                                         eqTo(initializedArrival.movementReferenceNumber))(any())
+
+          val movement: MovementMessageWithStatus = captor.getValue
+          movement.messageCorrelationId mustEqual expectedMessage.messageCorrelationId
+          movement.status mustEqual expectedMessage.status
+          movement.messageType mustEqual expectedMessage.messageType
+          movement.dateTime mustEqual expectedMessage.dateTime
+          movement.message.map(trim) mustEqual expectedMessage.message.map(trim)
         }
+
       }
 
       "must return NotFound if there is no Arrival Movement for that ArrivalId" in {
