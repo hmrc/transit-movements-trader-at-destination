@@ -84,7 +84,7 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
         nextMessageCorrelationId = 2
       )
 
-      service.makeArrivalMovement(eori)(movement).value.futureValue mustEqual expectedArrival
+      service.makeArrivalMovement(id, eori)(movement).value mustEqual expectedArrival
     }
 
     "returns None when the root node is not <CC007A>" in {
@@ -107,7 +107,7 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
           </HEAHEA>
         </Foo>
 
-      service.makeArrivalMovement(eori)(invalidPayload) must not be defined
+      service.makeArrivalMovement(ArrivalId(1), eori)(invalidPayload) must not be defined
     }
   }
 

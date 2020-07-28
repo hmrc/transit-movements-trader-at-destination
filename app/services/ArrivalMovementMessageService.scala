@@ -22,39 +22,36 @@ import com.google.inject.Inject
 import models.ArrivalStatus.Initialized
 import models.MessageStatus.SubmissionPending
 import models.Arrival
+import models.ArrivalId
 import models.MessageType
 import models.MovementMessageWithStatus
 import models.MovementMessageWithoutStatus
 import repositories.ArrivalIdRepository
 
 import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
 import scala.xml.NodeSeq
 
 class ArrivalMovementMessageService @Inject()(arrivalIdRepository: ArrivalIdRepository)(implicit ec: ExecutionContext) {
   import XmlMessageParser._
 
-  def makeArrivalMovement(eori: String): ReaderT[Option, NodeSeq, Future[Arrival]] =
+  def makeArrivalMovement(arrivalId: ArrivalId, eori: String): ReaderT[Option, NodeSeq, Arrival] =
     for {
       _        <- correctRootNodeR(MessageType.ArrivalNotification)
       dateTime <- dateTimeOfPrepR
       message  <- makeMovementMessageWithStatus(1, MessageType.ArrivalNotification)
       mrn      <- mrnR
     } yield {
-      arrivalIdRepository
-        .nextId()
-        .map(
-          Arrival(
-            _,
-            mrn,
-            eori,
-            Initialized,
-            dateTime,
-            dateTime,
-            dateTime,
-            NonEmptyList.one(message),
-            2
-          ))
+      Arrival(
+        arrivalId,
+        mrn,
+        eori,
+        Initialized,
+        dateTime,
+        dateTime,
+        dateTime,
+        NonEmptyList.one(message),
+        2
+      )
     }
 
   def messageAndMrn(messageCorrectionId: Int) =
