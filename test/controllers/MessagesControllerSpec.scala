@@ -38,6 +38,7 @@ import models.MovementMessageWithStatus
 import models.MovementMessageWithoutStatus
 import models.MovementReferenceNumber
 import models.SubmissionProcessingResult
+import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{eq => eqTo}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
@@ -55,6 +56,7 @@ import repositories.ArrivalMovementRepository
 import repositories.LockRepository
 import services.SubmitMessageService
 import utils.Format
+import scala.xml.Utility.trim
 
 import scala.concurrent.Future
 
@@ -78,7 +80,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
       </HEAHEA>
     </CC044A>
 
-  val movementMessge = MovementMessageWithStatus(
+  val movementMessage = MovementMessageWithStatus(
     localDateTime,
     MessageType.UnloadingRemarks,
     requestXmlBody,
@@ -98,8 +100,8 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
       movementReferenceNumber = mrn,
       eoriNumber = "eori",
       status = ArrivalStatus.Initialized,
-      messages = NonEmptyList.one(movementMessge),
-      nextMessageCorrelationId = movementMessge.messageCorrelationId,
+      messages = NonEmptyList.one(movementMessage),
+      nextMessageCorrelationId = movementMessage.messageCorrelationId,
       created = localDateTime,
       updated = localDateTime
     )
@@ -112,9 +114,10 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
     "post" - {
 
       "must return Accepted, add the message to the movement, send the message upstream and set the message state to SubmissionSucceeded" in {
-        val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
-        val mockLockRepository            = mock[LockRepository]
-        val mockSubmitMessageService      = mock[SubmitMessageService]
+        val mockArrivalMovementRepository                     = mock[ArrivalMovementRepository]
+        val mockLockRepository                                = mock[LockRepository]
+        val mockSubmitMessageService                          = mock[SubmitMessageService]
+        val captor: ArgumentCaptor[MovementMessageWithStatus] = ArgumentCaptor.forClass(classOf[MovementMessageWithStatus])
 
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
@@ -139,8 +142,14 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           header("Location", result).value must be(routes.MessagesController.getMessage(arrival.arrivalId, MessageId.fromIndex(1)).url)
           verify(mockSubmitMessageService, times(1)).submitMessage(eqTo(arrival.arrivalId),
                                                                    eqTo(MessageId.fromIndex(1)),
-                                                                   eqTo(movementMessge),
+                                                                   captor.capture(),
                                                                    eqTo(ArrivalStatus.UnloadingRemarksSubmitted))(any())
+          val movement: MovementMessageWithStatus = captor.getValue
+          movement.messageCorrelationId mustEqual movementMessage.messageCorrelationId
+          movement.status mustEqual movementMessage.status
+          movement.messageType mustEqual movementMessage.messageType
+          movement.dateTime mustEqual movementMessage.dateTime
+          movement.message.map(trim) mustEqual movementMessage.message.map(trim)
         }
       }
 

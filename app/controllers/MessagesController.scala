@@ -36,6 +36,7 @@ import play.api.mvc.ControllerComponents
 import services.ArrivalMovementMessageService
 import services.SubmitMessageService
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
+import utils.XMLTransformer
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -54,8 +55,9 @@ class MessagesController @Inject()(
     implicit request: ArrivalRequest[NodeSeq] =>
       MessageType.getMessageType(request.body) match {
         case Some(MessageType.UnloadingRemarks) =>
+          val updatedXml = XMLTransformer.getUpdatedRequestBody(request.arrival.arrivalId, request.arrival.nextMessageCorrelationId, request.body)
           arrivalMovementService
-            .makeMovementMessageWithStatus(request.arrival.nextMessageCorrelationId, MessageType.UnloadingRemarks)(request.body)
+            .makeMovementMessageWithStatus(request.arrival.nextMessageCorrelationId, MessageType.UnloadingRemarks)(updatedXml)
             .map {
               message =>
                 submitMessageService
