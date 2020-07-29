@@ -16,6 +16,9 @@
 
 package utils
 
+import models.ArrivalId
+import models.MessageSender
+
 import scala.xml.transform.RewriteRule
 import scala.xml.transform.RuleTransformer
 import scala.xml._
@@ -37,5 +40,10 @@ object XMLTransformer {
 
   def addXmlNode(existingNode: String, key: String, value: String, inputXml: NodeSeq): NodeSeq =
     createRuleTransformer(existingNode, key, value).transform(inputXml.head)
+
+  def getUpdatedRequestBody(arrivalId: ArrivalId, correlationId: Int, body: NodeSeq): NodeSeq = {
+    val messageSender: MessageSender = MessageSender(arrivalId, correlationId)
+    XMLTransformer.addXmlNode("SynVerNumMES2", "MesSenMES3", messageSender.toString, body)
+  }
 
 }

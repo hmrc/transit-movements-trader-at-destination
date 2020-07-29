@@ -23,22 +23,19 @@ import controllers.actions.AuthenticatedGetArrivalForWriteActionProvider
 import controllers.actions.AuthenticatedGetOptionalArrivalForWriteActionProvider
 import javax.inject.Inject
 import models.MessageStatus.SubmissionSucceeded
-import models.Arrival
+import models.request.ArrivalRequest
+import models.response.ResponseArrival
 import models.ArrivalId
 import models.ArrivalStatus
-import models.MessageSender
 import models.MessageType
 import models.MovementMessage
 import models.ResponseArrivals
 import models.SubmissionProcessingResult
-import models.request.ArrivalRequest
-import models.response.ResponseArrival
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
-import play.api.mvc.DefaultActionBuilder
 import repositories.ArrivalIdRepository
 import repositories.ArrivalMovementRepository
 import services.ArrivalMovementMessageService
@@ -59,8 +56,7 @@ class MovementsController @Inject()(
   authenticatedArrivalForRead: AuthenticatedGetArrivalForReadActionProvider,
   authenticatedOptionalArrival: AuthenticatedGetOptionalArrivalForWriteActionProvider,
   authenticateForWrite: AuthenticatedGetArrivalForWriteActionProvider,
-  arrivalIdRepository: ArrivalIdRepository,
-  defaultActionBuilder: DefaultActionBuilder
+  arrivalIdRepository: ArrivalIdRepository
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
@@ -74,8 +70,9 @@ class MovementsController @Inject()(
     implicit request =>
       request.arrival match {
         case Some(arrival) if allMessageUnsent(arrival.messages) =>
+          val updatedXml = XMLTransformer.getUpdatedRequestBody(arrival.arrivalId, arrival.nextMessageCorrelationId, request.body)
           arrivalMovementService
-            .makeMovementMessageWithStatus(arrival.nextMessageCorrelationId, MessageType.ArrivalNotification)(getUpdatedRequestBody(arrival, request.body))
+            .makeMovementMessageWithStatus(arrival.nextMessageCorrelationId, MessageType.ArrivalNotification)(updatedXml)
             .map {
               message =>
                 submitMessageService
@@ -102,7 +99,8 @@ class MovementsController @Inject()(
             .nextId()
             .flatMap {
               arrivalId =>
-                arrivalMovementService.makeArrivalMovement(arrivalId, request.eoriNumber)(getUpdatedRequestBody(arrivalId, 1, request.body)) match {
+                val updatedXml = XMLTransformer.getUpdatedRequestBody(arrivalId, 1, request.body)
+                arrivalMovementService.makeArrivalMovement(arrivalId, request.eoriNumber)(updatedXml) match {
                   case None =>
                     Logger.warn("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5")
                     Future.successful(BadRequest("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5"))
@@ -135,8 +133,9 @@ class MovementsController @Inject()(
 
   def putArrival(arrivalId: ArrivalId): Action[NodeSeq] = authenticateForWrite(arrivalId).async(parse.xml) {
     implicit request: ArrivalRequest[NodeSeq] =>
+      val updatedXml = XMLTransformer.getUpdatedRequestBody(request.arrival.arrivalId, request.arrival.nextMessageCorrelationId, request.body)
       arrivalMovementService
-        .messageAndMrn(request.arrival.nextMessageCorrelationId)(getUpdatedRequestBody(request.arrival, request.body))
+        .messageAndMrn(request.arrival.nextMessageCorrelationId)(updatedXml)
         .map {
           case (message, mrn) =>
             submitMessageService
@@ -179,14 +178,5 @@ class MovementsController @Inject()(
           case e =>
             InternalServerError(s"Failed with the following error: $e")
         }
-  }
-  private def getUpdatedRequestBody(arrival: Arrival, body: NodeSeq): NodeSeq = {
-    val messageSender: MessageSender = MessageSender(arrival.arrivalId, arrival.nextMessageCorrelationId)
-    XMLTransformer.addXmlNode("SynVerNumMES2", "MesSenMES3", messageSender.toString, body)
-  }
-
-  private def getUpdatedRequestBody(arrivalId: ArrivalId, correlationId: Int, body: NodeSeq): NodeSeq = {
-    val messageSender: MessageSender = MessageSender(arrivalId, correlationId)
-    XMLTransformer.addXmlNode("SynVerNumMES2", "MesSenMES3", messageSender.toString, body)
   }
 }
