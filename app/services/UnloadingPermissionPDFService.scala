@@ -16,12 +16,11 @@
 
 package services
 
+import cats.implicits._
 import connectors.ManageDocumentsConnector
 import javax.inject.Inject
 import models.Arrival
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.http.HttpResponse
-import cats.implicits._
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -31,7 +30,7 @@ class UnloadingPermissionPDFService @Inject()(
   manageDocumentsConnector: ManageDocumentsConnector
 ) {
 
-  def getPDF(arrival: Arrival)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[HttpResponse]] =
+  def getPDF(arrival: Arrival)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Array[Byte]]] =
     messageRetrievalService.getUnloadingPermission(arrival).traverse {
       unloadingPermission =>
         manageDocumentsConnector.getUnloadingPermissionPdf(unloadingPermission)

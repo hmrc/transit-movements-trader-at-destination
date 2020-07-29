@@ -25,9 +25,8 @@ import org.mockito.Mockito._
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.inject.bind
-import uk.gov.hmrc.http.HttpResponse
-import scala.concurrent.ExecutionContext.Implicits.global
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class UnloadingPermissionPDFServiceSpec extends SpecBase with ModelGenerators with ScalaCheckDrivenPropertyChecks {
@@ -40,13 +39,13 @@ class UnloadingPermissionPDFServiceSpec extends SpecBase with ModelGenerators wi
     "getPDF" - {
 
       "must return a successful HttpResponse" in {
-        forAll(genArrivalWithSuccessfulArrival, arbitrary[ResponseMovementMessage]) {
-          (arrival, responseMovementMessage) =>
+        forAll(genArrivalWithSuccessfulArrival, arbitrary[ResponseMovementMessage], arbitrary[Array[Byte]]) {
+          (arrival, responseMovementMessage, pdf) =>
             when(mockMessageRetrievalService.getUnloadingPermission(any()))
               .thenReturn(Some(responseMovementMessage))
 
             when(mockManageDocumentConnector.getUnloadingPermissionPdf(any())(any()))
-              .thenReturn(Future.successful(HttpResponse(200, "")))
+              .thenReturn(Future.successful(pdf))
 
             val application = baseApplicationBuilder
               .overrides(bind[MessageRetrievalService].toInstance(mockMessageRetrievalService))
@@ -56,7 +55,7 @@ class UnloadingPermissionPDFServiceSpec extends SpecBase with ModelGenerators wi
             val service = application.injector.instanceOf[UnloadingPermissionPDFService]
             val result  = service.getPDF(arrival).futureValue.value
 
-            result.status mustBe 200
+            result mustBe pdf
         }
       }
 

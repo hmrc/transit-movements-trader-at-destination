@@ -38,23 +38,10 @@ class PDFGenerationController @Inject()(cc: ControllerComponents,
   def getPDF(arrivalId: ArrivalId): Action[AnyContent] = authenticateForRead(arrivalId).async {
     implicit request =>
       unloadingPermissionPDFService.getPDF(request.arrival).map {
-        response =>
-          response
-            .map {
-              result =>
-                result.status match {
-                  case 200 => Ok(result.body)
-                  case 500 => {
-                    logger.error(s"Error when generating a PDF with following message: ${request.body}")
-                    BadGateway
-                  }
-                  case status => {
-                    logger.error(s"Error when call the PDF Service with the following message: $status - ${request.body}")
-                    InternalServerError
-                  }
-                }
-            }
-            .getOrElse(NotFound)
+        case Some(arrayByte) => Ok(arrayByte)
+        case None =>
+          logger.error(s"Failed to retrieve UnloadingPermission of index: ${request.arrival.arrivalId} ")
+          NotFound
       }
   }
 }
