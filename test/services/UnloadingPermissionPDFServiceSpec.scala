@@ -57,6 +57,7 @@ class UnloadingPermissionPDFServiceSpec extends SpecBase with ModelGenerators wi
             val result  = service.getPDF(arrival).futureValue.value
 
             result.status mustBe 200
+            application.stop()
         }
       }
 
@@ -73,6 +74,7 @@ class UnloadingPermissionPDFServiceSpec extends SpecBase with ModelGenerators wi
             val result  = service.getPDF(arrival).futureValue
 
             result mustBe None
+            application.stop()
         }
       }
     }
