@@ -25,6 +25,7 @@ import models.response.ResponseMovementMessage
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
+import play.api.libs.ws.WSResponse
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.Future
@@ -53,12 +54,12 @@ class ManageDocumentsConnectorSpec extends SpecBase with WiremockSuite with Scal
 
         forAll(arbitrary[ResponseMovementMessage]) {
           responseMovementMessage =>
-            val result: Future[Array[Byte]] = connector.getUnloadingPermissionPdf(responseMovementMessage)
-            result.futureValue mustBe an[Array[Byte]]
+            val result: Future[WSResponse] = connector.getUnloadingPermissionPdf(responseMovementMessage)
+            result.futureValue.status mustBe 200
         }
       }
 
-      "must return status error response" in {
+      "must return other response without exceptions" in {
 
         val genErrorResponse = Gen.oneOf(300, 500).sample.value
 
@@ -72,12 +73,8 @@ class ManageDocumentsConnectorSpec extends SpecBase with WiremockSuite with Scal
 
         forAll(arbitrary[ResponseMovementMessage]) {
           responseMovementMessage =>
-            val result: Future[Array[Byte]] = connector.getUnloadingPermissionPdf(responseMovementMessage)
-
-            whenReady(result.failed) {
-              response =>
-                response mustBe an[NoSuchElementException]
-            }
+            val result: Future[WSResponse] = connector.getUnloadingPermissionPdf(responseMovementMessage)
+            result.futureValue.status mustBe genErrorResponse
         }
       }
     }

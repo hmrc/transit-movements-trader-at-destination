@@ -19,6 +19,7 @@ package controllers
 import controllers.actions.AuthenticatedGetArrivalForReadActionProvider
 import javax.inject.Inject
 import models.ArrivalId
+import models.WSError._
 import play.api.Logger
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
@@ -38,10 +39,15 @@ class PDFGenerationController @Inject()(cc: ControllerComponents,
   def getPDF(arrivalId: ArrivalId): Action[AnyContent] = authenticateForRead(arrivalId).async {
     implicit request =>
       unloadingPermissionPDFService.getPDF(request.arrival).map {
-        case Some(arrayByte) => Ok(arrayByte)
-        case None =>
-          logger.error(s"Failed to retrieve UnloadingPermission of index: ${request.arrival.arrivalId} ")
+        case Right(pdf) =>
+          Ok(pdf)
+        case Left(_: NotFoundError.type) =>
+          logger.error(s"Failed to find UnloadingPermission of index: ${request.arrival.arrivalId} ")
           NotFound
+        case Left(otherError: OtherError) =>
+          logger.error(s"Failed create PDF for the following reasone: ${otherError.code} - ${otherError.reason}")
+          BadGateway
       }
   }
+
 }

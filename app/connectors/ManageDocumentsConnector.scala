@@ -20,6 +20,7 @@ import com.google.inject.Inject
 import config.AppConfig
 import models.response.ResponseMovementMessage
 import play.api.libs.ws.WSClient
+import play.api.libs.ws.WSResponse
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.ExecutionContext
@@ -27,7 +28,7 @@ import scala.concurrent.Future
 
 class ManageDocumentsConnector @Inject()(config: AppConfig, ws: WSClient)(implicit ec: ExecutionContext) {
 
-  def getUnloadingPermissionPdf(movementMessage: ResponseMovementMessage)(implicit hc: HeaderCarrier): Future[Array[Byte]] = {
+  def getUnloadingPermissionPdf(movementMessage: ResponseMovementMessage)(implicit hc: HeaderCarrier): Future[WSResponse] = {
 
     val serviceUrl = s"${config.manageDocumentsUrl}/unloading-permission"
     val headers    = ("Content-Type", "application/xml")
@@ -35,8 +36,6 @@ class ManageDocumentsConnector @Inject()(config: AppConfig, ws: WSClient)(implic
     ws.url(serviceUrl)
       .withHttpHeaders(headers)
       .post(movementMessage.message.toString)
-      .filter(_.status == 200)
-      .map(_.bodyAsBytes.toArray)
   }
 
 }
