@@ -44,8 +44,6 @@ import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
 
-import scala.xml.NodeSeq
-
 trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
 
   private val pastDate: LocalDate = LocalDate.of(1900, 1, 1)

@@ -85,6 +85,7 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
       )
 
       service.makeArrivalMovement(eori)(movement).value.futureValue mustEqual expectedArrival
+      application.stop()
     }
 
     "returns None when the root node is not <CC007A>" in {
@@ -108,6 +109,7 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
         </Foo>
 
       service.makeArrivalMovement(eori)(invalidPayload) must not be defined
+      application.stop()
     }
   }
 
@@ -134,6 +136,7 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
         val expectedMessage      = MovementMessageWithoutStatus(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.GoodsReleased, movement, messageCorrelationId)
 
         service.makeMessage(messageCorrelationId, MessageType.GoodsReleased)(movement).value mustEqual expectedMessage
+        application.stop()
       }
 
       "returns None when the root node is not <CC025A>" in {
@@ -154,6 +157,7 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
         val messageCorrelationId = 1
 
         service.makeMessage(messageCorrelationId, MessageType.GoodsReleased)(movement) must not be defined
+        application.stop()
       }
     }
 
@@ -179,6 +183,7 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
           MovementMessageWithoutStatus(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.UnloadingPermission, movement, messageCorrelationId)
 
         service.makeMessage(messageCorrelationId, MessageType.UnloadingPermission)(movement).value mustEqual expectedMessage
+        application.stop()
       }
 
       "returns None when the root node is not <CC043A>" in {
@@ -199,6 +204,7 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
         val messageCorrelationId = 1
 
         service.makeMessage(messageCorrelationId, MessageType.UnloadingPermission)(movement) must not be defined
+        application.stop()
       }
     }
 
@@ -226,6 +232,7 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
         MovementMessageWithStatus(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.UnloadingRemarks, movement, SubmissionPending, messageCorrelationId)
 
       service.makeMovementMessageWithStatus(messageCorrelationId, MessageType.UnloadingRemarks)(movement).value mustEqual expectedMessage
+      application.stop()
     }
 
     "does not return a message when the root node does not match the message type" in {
@@ -244,6 +251,7 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
         </Foo>
 
       service.makeMovementMessageWithStatus(1, MessageType.UnloadingRemarks)(movement) must not be defined
+      application.stop()
     }
   }
 
