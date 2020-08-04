@@ -1,21 +1,20 @@
 import play.core.PlayVersion.current
-import play.sbt.PlayImport._
-import sbt.Keys.libraryDependencies
 import sbt._
 
 object AppDependencies {
 
   private val catsVersion = "2.1.1"
 
-  val compile = Seq(
-    "org.reactivemongo" %% "play2-reactivemongo" % "0.20.11-play26",
-    "uk.gov.hmrc"       %% "bootstrap-play-26"   % "1.13.0",
-    "com.typesafe.play" %% "play-iteratees"      % "2.6.1",
-    "com.typesafe.play" %% "play-iteratees-reactive-streams"  % "2.6.1",
-    "org.typelevel"     %% "cats-core"           % catsVersion
+  val compile: Seq[ModuleID] = Seq(
+    "uk.gov.hmrc"       %% "auth-client"                     % "3.0.0-play-26", // To be removed when bootstrap upgrades dependencies
+    "uk.gov.hmrc"       %% "bootstrap-play-26"               % "1.14.0",
+    "org.reactivemongo" %% "play2-reactivemongo"             % "0.20.11-play26",
+    "com.typesafe.play" %% "play-iteratees"                  % "2.6.1",
+    "com.typesafe.play" %% "play-iteratees-reactive-streams" % "2.6.1",
+    "org.typelevel"     %% "cats-core"                       % catsVersion
   )
 
-  val test = Seq(
+  val test: Seq[ModuleID] = Seq(
     "org.mockito"            % "mockito-core"          % "3.3.3",
     "org.scalatest"          %% "scalatest"            % "3.2.0",
     "com.typesafe.play"      %% "play-test"            % current,
