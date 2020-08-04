@@ -56,6 +56,7 @@ class MessageRetrievalServiceSpec extends SpecBase with ModelGenerators with Sca
             val expectedResult = ResponseMovementMessage.build(arrivalWithUnloadingPermission.arrivalId, MessageId.fromIndex(1), unloadingPermissionMessage)
 
             service.getUnloadingPermission(arrivalWithUnloadingPermission).value mustBe expectedResult
+            application.stop()
         }
       }
 
@@ -71,6 +72,7 @@ class MessageRetrievalServiceSpec extends SpecBase with ModelGenerators with Sca
             val service = application.injector.instanceOf[MessageRetrievalService]
 
             service.getUnloadingPermission(arrival) mustBe None
+            application.stop()
         }
       }
 
@@ -90,6 +92,7 @@ class MessageRetrievalServiceSpec extends SpecBase with ModelGenerators with Sca
             val service = application.injector.instanceOf[MessageRetrievalService]
 
             service.getUnloadingPermission(arrivalWithoutUnloadingPermission) mustBe None
+            application.stop()
         }
       }
     }
