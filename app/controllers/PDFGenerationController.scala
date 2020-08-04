@@ -29,9 +29,11 @@ import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.ExecutionContext
 
-class PDFGenerationController @Inject()(cc: ControllerComponents,
-                                        authenticateForRead: AuthenticatedGetArrivalForReadActionProvider,
-                                        unloadingPermissionPDFService: UnloadingPermissionPDFService)(implicit ec: ExecutionContext)
+class PDFGenerationController @Inject()(
+  cc: ControllerComponents,
+  authenticateForRead: AuthenticatedGetArrivalForReadActionProvider,
+  unloadingPermissionPDFService: UnloadingPermissionPDFService
+)(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
   private val logger: Logger = Logger("UnloadingRemarksPDF")
@@ -45,7 +47,7 @@ class PDFGenerationController @Inject()(cc: ControllerComponents,
           logger.error(s"Failed to find UnloadingPermission of index: ${request.arrival.arrivalId} ")
           NotFound
         case Left(otherError: OtherError) =>
-          logger.error(s"Failed create PDF for the following reasone: ${otherError.code} - ${otherError.reason}")
+          logger.error(s"Failed create PDF for the following reason: ${otherError.code} - ${otherError.reason}")
           BadGateway
       }
   }

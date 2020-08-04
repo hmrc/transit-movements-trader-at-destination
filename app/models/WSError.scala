@@ -21,5 +21,5 @@ trait WSError
 object WSError {
 
   case class OtherError(code: Int, reason: String) extends WSError
-  object     NotFoundError                         extends WSError
+  object NotFoundError                             extends WSError
 }
