@@ -19,6 +19,7 @@ package controllers
 import controllers.actions.AuthenticatedGetArrivalForReadActionProvider
 import javax.inject.Inject
 import models.ArrivalId
+import models.WSError._
 import play.api.Logger
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
@@ -28,9 +29,11 @@ import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.ExecutionContext
 
-class PDFGenerationController @Inject()(cc: ControllerComponents,
-                                        authenticateForRead: AuthenticatedGetArrivalForReadActionProvider,
-                                        unloadingPermissionPDFService: UnloadingPermissionPDFService)(implicit ec: ExecutionContext)
+class PDFGenerationController @Inject()(
+  cc: ControllerComponents,
+  authenticateForRead: AuthenticatedGetArrivalForReadActionProvider,
+  unloadingPermissionPDFService: UnloadingPermissionPDFService
+)(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
   private val logger: Logger = Logger("UnloadingRemarksPDF")
@@ -38,23 +41,15 @@ class PDFGenerationController @Inject()(cc: ControllerComponents,
   def getPDF(arrivalId: ArrivalId): Action[AnyContent] = authenticateForRead(arrivalId).async {
     implicit request =>
       unloadingPermissionPDFService.getPDF(request.arrival).map {
-        response =>
-          response
-            .map {
-              result =>
-                result.status match {
-                  case 200 => Ok(result.body)
-                  case 500 => {
-                    logger.error(s"Error when generating a PDF with following message: ${request.body}")
-                    BadGateway
-                  }
-                  case status => {
-                    logger.error(s"Error when call the PDF Service with the following message: $status - ${request.body}")
-                    InternalServerError
-                  }
-                }
-            }
-            .getOrElse(NotFound)
+        case Right(pdf) =>
+          Ok(pdf)
+        case Left(_: NotFoundError.type) =>
+          logger.error(s"Failed to find UnloadingPermission of index: ${request.arrival.arrivalId} ")
+          NotFound
+        case Left(otherError: OtherError) =>
+          logger.error(s"Failed create PDF for the following reason: ${otherError.code} - ${otherError.reason}")
+          BadGateway
       }
   }
+
 }

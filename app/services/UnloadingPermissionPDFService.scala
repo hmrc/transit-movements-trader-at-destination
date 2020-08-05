@@ -18,23 +18,29 @@ package services
 
 import connectors.ManageDocumentsConnector
 import javax.inject.Inject
+import models.WSError._
 import models.Arrival
+import models.WSError
+import play.api.mvc.Results
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.http.HttpResponse
-import cats.implicits._
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class UnloadingPermissionPDFService @Inject()(
-  messageRetrievalService: MessageRetrievalService,
-  manageDocumentsConnector: ManageDocumentsConnector
-) {
+class UnloadingPermissionPDFService @Inject()(messageRetrievalService: MessageRetrievalService, manageDocumentsConnector: ManageDocumentsConnector)
+    extends Results {
 
-  def getPDF(arrival: Arrival)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[HttpResponse]] =
-    messageRetrievalService.getUnloadingPermission(arrival).traverse {
-      unloadingPermission =>
-        manageDocumentsConnector.getUnloadingPermissionPdf(unloadingPermission)
+  def getPDF(arrival: Arrival)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Either[WSError, Array[Byte]]] =
+    messageRetrievalService.getUnloadingPermission(arrival) match {
+      case Some(unloadingPermission) =>
+        manageDocumentsConnector.getUnloadingPermissionPdf(unloadingPermission).map {
+          result =>
+            result.status match {
+              case 200            => Right(result.bodyAsBytes.toArray)
+              case otherErrorCode => Left(OtherError(otherErrorCode, result.body))
+            }
+        }
+      case None => Future.successful(Left(NotFoundError))
     }
 
 }
