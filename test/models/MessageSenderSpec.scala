@@ -36,9 +36,23 @@ class MessageSenderSpec extends AnyFreeSpec with Matchers with ScalaCheckPropert
       MessageSender(validString).value mustEqual MessageSender(ArrivalId(123), 1)
     }
 
+    "must build when mdtp is lowercase" in {
+
+      val validString = "mdtp-123-1"
+
+      MessageSender(validString).value mustEqual MessageSender(ArrivalId(123), 1)
+    }
+
+    "must build when mdtp is mixed case" in {
+
+      val validString = "mDtP-456-2"
+
+      MessageSender(validString).value mustEqual MessageSender(ArrivalId(456), 2)
+    }
+
     "must not build from an invalid string" in {
 
-      val pattern = "MDTP-(\\d+)-(\\d+)".r.anchored
+      val pattern = "(?i)MDTP-(\\d+)-(\\d+)".r.anchored
 
       forAll(arbitrary[String]) {
         value =>

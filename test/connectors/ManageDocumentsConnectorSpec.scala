@@ -23,10 +23,10 @@ import com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo
 import generators.ModelGenerators
 import models.response.ResponseMovementMessage
 import org.scalacheck.Arbitrary.arbitrary
+import org.scalacheck.Gen
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import play.api.http.Status._
+import play.api.libs.ws.WSResponse
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.http.HttpResponse
 
 import scala.concurrent.Future
 
@@ -54,42 +54,27 @@ class ManageDocumentsConnectorSpec extends SpecBase with WiremockSuite with Scal
 
         forAll(arbitrary[ResponseMovementMessage]) {
           responseMovementMessage =>
-            val result: Future[HttpResponse] = connector.getUnloadingPermissionPdf(responseMovementMessage)
-            result.futureValue.status mustBe OK
+            val result: Future[WSResponse] = connector.getUnloadingPermissionPdf(responseMovementMessage)
+            result.futureValue.status mustBe 200
         }
       }
 
-      "must return status BadRequest" in {
+      "must return other response without exceptions" in {
+
+        val genErrorResponse = Gen.oneOf(300, 500).sample.value
 
         server.stubFor(
           post(urlEqualTo("/transit-movements-trader-manage-documents/unloading-permission"))
             .willReturn(
               aResponse()
-                .withStatus(400)
+                .withStatus(genErrorResponse)
             )
         )
 
         forAll(arbitrary[ResponseMovementMessage]) {
           responseMovementMessage =>
-            val result: Future[HttpResponse] = connector.getUnloadingPermissionPdf(responseMovementMessage)
-            result.futureValue.status mustBe BAD_REQUEST
-        }
-      }
-
-      "must return status InternalServerError" in {
-
-        server.stubFor(
-          post(urlEqualTo("/transit-movements-trader-manage-documents/unloading-permission"))
-            .willReturn(
-              aResponse()
-                .withStatus(500)
-            )
-        )
-
-        forAll(arbitrary[ResponseMovementMessage]) {
-          responseMovementMessage =>
-            val result: Future[HttpResponse] = connector.getUnloadingPermissionPdf(responseMovementMessage)
-            result.futureValue.status mustBe INTERNAL_SERVER_ERROR
+            val result: Future[WSResponse] = connector.getUnloadingPermissionPdf(responseMovementMessage)
+            result.futureValue.status mustBe genErrorResponse
         }
       }
     }

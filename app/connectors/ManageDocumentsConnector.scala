@@ -19,22 +19,23 @@ package connectors
 import com.google.inject.Inject
 import config.AppConfig
 import models.response.ResponseMovementMessage
+import play.api.libs.ws.WSClient
+import play.api.libs.ws.WSResponse
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.http.HttpResponse
-import uk.gov.hmrc.play.bootstrap.http.HttpClient
-import uk.gov.hmrc.http.HttpReads.Implicits._
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class ManageDocumentsConnector @Inject()(config: AppConfig, http: HttpClient)(implicit ec: ExecutionContext) {
+class ManageDocumentsConnector @Inject()(config: AppConfig, ws: WSClient)(implicit ec: ExecutionContext) {
 
-  def getUnloadingPermissionPdf(movementMessage: ResponseMovementMessage)(implicit hc: HeaderCarrier): Future[HttpResponse] = {
+  def getUnloadingPermissionPdf(movementMessage: ResponseMovementMessage)(implicit hc: HeaderCarrier): Future[WSResponse] = {
 
     val serviceUrl = s"${config.manageDocumentsUrl}/unloading-permission"
-    val headers    = Seq(("Content-Type", "application/xml"))
+    val headers    = ("Content-Type", "application/xml")
 
-    http.POSTString[HttpResponse](serviceUrl, movementMessage.message.toString, headers)
+    ws.url(serviceUrl)
+      .withHttpHeaders(headers)
+      .post(movementMessage.message.toString)
   }
 
 }

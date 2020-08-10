@@ -19,15 +19,24 @@ package services
 import base.SpecBase
 import connectors.ManageDocumentsConnector
 import generators.ModelGenerators
+import models.WSError.NotFoundError
+import models.WSError.OtherError
 import models.response.ResponseMovementMessage
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
 import org.scalacheck.Arbitrary.arbitrary
+import org.scalacheck.Gen
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.inject.bind
-import uk.gov.hmrc.http.HttpResponse
-import scala.concurrent.ExecutionContext.Implicits.global
+import play.api.libs.ws.WSResponse
+import play.api.libs.ws.ahc.AhcWSResponse
+import play.api.libs.ws.ahc.cache.CacheableHttpResponseBodyPart
+import play.api.libs.ws.ahc.cache.CacheableHttpResponseStatus
+import play.libs.ws.WSResponse
+import play.shaded.ahc.org.asynchttpclient.Response
+import play.shaded.ahc.org.asynchttpclient.uri.Uri
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class UnloadingPermissionPDFServiceSpec extends SpecBase with ModelGenerators with ScalaCheckDrivenPropertyChecks {
@@ -39,14 +48,22 @@ class UnloadingPermissionPDFServiceSpec extends SpecBase with ModelGenerators wi
 
     "getPDF" - {
 
-      "must return a successful HttpResponse" in {
-        forAll(genArrivalWithSuccessfulArrival, arbitrary[ResponseMovementMessage]) {
-          (arrival, responseMovementMessage) =>
+      "must return Right with a PDF" in {
+
+        val genErrorResponse = Gen.oneOf(300, 500)
+
+        forAll(genArrivalWithSuccessfulArrival, arbitrary[ResponseMovementMessage], arbitrary[Array[Byte]], genErrorResponse) {
+          (arrival, responseMovementMessage, pdf, errorCode) =>
             when(mockMessageRetrievalService.getUnloadingPermission(any()))
               .thenReturn(Some(responseMovementMessage))
 
+            val wsResponse: AhcWSResponse = new AhcWSResponse(
+              new Response.ResponseBuilder()
+                .accumulate(new CacheableHttpResponseStatus(Uri.create("http://uri"), errorCode, "status text", "protocols!"))
+                .build())
+
             when(mockManageDocumentConnector.getUnloadingPermissionPdf(any())(any()))
-              .thenReturn(Future.successful(HttpResponse(200, "")))
+              .thenReturn(Future.successful(wsResponse))
 
             val application = baseApplicationBuilder
               .overrides(bind[MessageRetrievalService].toInstance(mockMessageRetrievalService))
@@ -54,14 +71,44 @@ class UnloadingPermissionPDFServiceSpec extends SpecBase with ModelGenerators wi
               .build()
 
             val service = application.injector.instanceOf[UnloadingPermissionPDFService]
-            val result  = service.getPDF(arrival).futureValue.value
+            val result  = service.getPDF(arrival).futureValue
 
-            result.status mustBe 200
+            result.left.get mustBe OtherError(errorCode, "")
+
             application.stop()
         }
       }
 
-      "must return None when UnloadingPermission cannot be found" in {
+      "must return Left with OtherError when connector returns another result" in {
+        forAll(genArrivalWithSuccessfulArrival, arbitrary[ResponseMovementMessage], arbitrary[Array[Byte]]) {
+          (arrival, responseMovementMessage, pdf) =>
+            when(mockMessageRetrievalService.getUnloadingPermission(any()))
+              .thenReturn(Some(responseMovementMessage))
+
+            val wsResponse: AhcWSResponse = new AhcWSResponse(
+              new Response.ResponseBuilder()
+                .accumulate(new CacheableHttpResponseStatus(Uri.create("http://uri"), 200, "status text", "protocols!"))
+                .accumulate(new CacheableHttpResponseBodyPart(pdf, true))
+                .build())
+
+            when(mockManageDocumentConnector.getUnloadingPermissionPdf(any())(any()))
+              .thenReturn(Future.successful(wsResponse))
+
+            val application = baseApplicationBuilder
+              .overrides(bind[MessageRetrievalService].toInstance(mockMessageRetrievalService))
+              .overrides(bind[ManageDocumentsConnector].toInstance(mockManageDocumentConnector))
+              .build()
+
+            val service = application.injector.instanceOf[UnloadingPermissionPDFService]
+            val result  = service.getPDF(arrival).futureValue
+
+            result.right.get mustBe pdf
+
+            application.stop()
+        }
+      }
+
+      "must return Left with a NotFoundError when UnloadingPermission is unavailable" in {
         forAll(genArrivalWithSuccessfulArrival) {
           arrival =>
             when(mockMessageRetrievalService.getUnloadingPermission(any())).thenReturn(None)
@@ -73,7 +120,8 @@ class UnloadingPermissionPDFServiceSpec extends SpecBase with ModelGenerators wi
             val service = application.injector.instanceOf[UnloadingPermissionPDFService]
             val result  = service.getPDF(arrival).futureValue
 
-            result mustBe None
+            result.left.get mustBe NotFoundError
+
             application.stop()
         }
       }
