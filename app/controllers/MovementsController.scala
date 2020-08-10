@@ -70,7 +70,7 @@ class MovementsController @Inject()(
     implicit request =>
       request.arrival match {
         case Some(arrival) if allMessageUnsent(arrival.messages) =>
-          val updatedXml = XMLTransformer.getUpdatedRequestBody(arrival.arrivalId, arrival.nextMessageCorrelationId, request.body)
+          val updatedXml = XMLTransformer.updateMesSenMES3(arrival.arrivalId, arrival.nextMessageCorrelationId, request.body)
           arrivalMovementService
             .makeMovementMessageWithStatus(arrival.nextMessageCorrelationId, MessageType.ArrivalNotification)(updatedXml)
             .map {
@@ -99,7 +99,7 @@ class MovementsController @Inject()(
             .nextId()
             .flatMap {
               arrivalId =>
-                val updatedXml = XMLTransformer.getUpdatedRequestBody(arrivalId, 1, request.body)
+                val updatedXml = XMLTransformer.updateMesSenMES3(arrivalId, 1, request.body)
                 arrivalMovementService.makeArrivalMovement(arrivalId, request.eoriNumber)(updatedXml) match {
                   case None =>
                     Logger.warn("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5")
@@ -133,7 +133,7 @@ class MovementsController @Inject()(
 
   def putArrival(arrivalId: ArrivalId): Action[NodeSeq] = authenticateForWrite(arrivalId).async(parse.xml) {
     implicit request: ArrivalRequest[NodeSeq] =>
-      val updatedXml = XMLTransformer.getUpdatedRequestBody(request.arrival.arrivalId, request.arrival.nextMessageCorrelationId, request.body)
+      val updatedXml = XMLTransformer.updateMesSenMES3(request.arrival.arrivalId, request.arrival.nextMessageCorrelationId, request.body)
       arrivalMovementService
         .messageAndMrn(request.arrival.nextMessageCorrelationId)(updatedXml)
         .map {

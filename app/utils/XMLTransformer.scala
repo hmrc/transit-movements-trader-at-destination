@@ -18,12 +18,25 @@ package utils
 
 import models.ArrivalId
 import models.MessageSender
+import play.api.Logger
 
 import scala.xml.transform.RewriteRule
 import scala.xml.transform.RuleTransformer
 import scala.xml._
 
 object XMLTransformer {
+
+  def addXmlNode(existingNode: String, key: String, value: String, inputXml: NodeSeq): NodeSeq =
+    createRuleTransformer(existingNode, key, value).transform(inputXml.head)
+
+  def updateMesSenMES3(arrivalId: ArrivalId, correlationId: Int, body: NodeSeq): NodeSeq =
+    if ((body \\ "SynVerNumMES2").nonEmpty) {
+      val messageSender: MessageSender = MessageSender(arrivalId, correlationId)
+      XMLTransformer.addXmlNode("SynVerNumMES2", "MesSenMES3", messageSender.toString, body)
+    } else {
+      Logger.warn("Couldn't find SynVerNumMES2 node")
+      body
+    }
 
   private def createRuleTransformer(existingNode: String, key: String, value: String): RuleTransformer =
     new RuleTransformer(new RewriteRule {
@@ -37,13 +50,5 @@ object XMLTransformer {
         case other => other
       }
     })
-
-  def addXmlNode(existingNode: String, key: String, value: String, inputXml: NodeSeq): NodeSeq =
-    createRuleTransformer(existingNode, key, value).transform(inputXml.head)
-
-  def getUpdatedRequestBody(arrivalId: ArrivalId, correlationId: Int, body: NodeSeq): NodeSeq = {
-    val messageSender: MessageSender = MessageSender(arrivalId, correlationId)
-    XMLTransformer.addXmlNode("SynVerNumMES2", "MesSenMES3", messageSender.toString, body)
-  }
 
 }

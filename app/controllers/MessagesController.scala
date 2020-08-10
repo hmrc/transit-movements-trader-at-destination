@@ -55,7 +55,8 @@ class MessagesController @Inject()(
     implicit request: ArrivalRequest[NodeSeq] =>
       MessageType.getMessageType(request.body) match {
         case Some(MessageType.UnloadingRemarks) =>
-          val updatedXml = XMLTransformer.getUpdatedRequestBody(request.arrival.arrivalId, request.arrival.nextMessageCorrelationId, request.body)
+          val updatedXml = XMLTransformer.updateMesSenMES3(request.arrival.arrivalId, request.arrival.nextMessageCorrelationId, request.body)
+
           arrivalMovementService
             .makeMovementMessageWithStatus(request.arrival.nextMessageCorrelationId, MessageType.UnloadingRemarks)(updatedXml)
             .map {
