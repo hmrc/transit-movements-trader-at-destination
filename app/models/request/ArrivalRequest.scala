@@ -20,4 +20,6 @@ import models.Arrival
 import play.api.mvc.Request
 import play.api.mvc.WrappedRequest
 
+import scala.xml.NodeSeq
+
 case class ArrivalRequest[A](request: Request[A], arrival: Arrival) extends WrappedRequest[A](request)

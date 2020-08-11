@@ -17,10 +17,7 @@
 package controllers
 
 import cats.data.NonEmptyList
-import controllers.actions.AuthenticateActionProvider
-import controllers.actions.AuthenticatedGetArrivalForReadActionProvider
-import controllers.actions.AuthenticatedGetArrivalForWriteActionProvider
-import controllers.actions.AuthenticatedGetOptionalArrivalForWriteActionProvider
+import controllers.actions._
 import javax.inject.Inject
 import models.MessageStatus.SubmissionSucceeded
 import models.request.ArrivalRequest
@@ -56,7 +53,8 @@ class MovementsController @Inject()(
   authenticatedArrivalForRead: AuthenticatedGetArrivalForReadActionProvider,
   authenticatedOptionalArrival: AuthenticatedGetOptionalArrivalForWriteActionProvider,
   authenticateForWrite: AuthenticatedGetArrivalForWriteActionProvider,
-  arrivalIdRepository: ArrivalIdRepository
+  arrivalIdRepository: ArrivalIdRepository,
+  validateMessageSenderNode: ValidateMessageSenderNodeFilter
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
@@ -66,7 +64,7 @@ class MovementsController @Inject()(
       case _                                                           => false
     }
 
-  def post: Action[NodeSeq] = authenticatedOptionalArrival().async(parse.xml) {
+  def post: Action[NodeSeq] = (authenticatedOptionalArrival()(parse.xml) andThen validateMessageSenderNode.filter).async {
     implicit request =>
       request.arrival match {
         case Some(arrival) if allMessageUnsent(arrival.messages) =>

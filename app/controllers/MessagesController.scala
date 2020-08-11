@@ -16,15 +16,14 @@
 
 package controllers
 
-import controllers.actions.AuthenticatedGetArrivalForReadActionProvider
-import controllers.actions.AuthenticatedGetArrivalForWriteActionProvider
+import controllers.actions._
 import javax.inject.Inject
+import models.MessageStatus.SubmissionFailed
 import models.ArrivalId
 import models.ArrivalStatus
 import models.MessageId
 import models.MessageType
 import models.SubmissionProcessingResult
-import models.MessageStatus.SubmissionFailed
 import models.request.ArrivalRequest
 import models.response.ResponseArrivalWithMessages
 import models.response.ResponseMovementMessage
@@ -47,18 +46,19 @@ class MessagesController @Inject()(
   arrivalMovementService: ArrivalMovementMessageService,
   submitMessageService: SubmitMessageService,
   authenticateForRead: AuthenticatedGetArrivalForReadActionProvider,
-  authenticateForWrite: AuthenticatedGetArrivalForWriteActionProvider
+  authenticateForWrite: AuthenticatedGetArrivalForWriteActionProvider,
+  validateMessageSenderNode: ValidateMessageSenderNodeFilter
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
-  def post(arrivalId: ArrivalId): Action[NodeSeq] = authenticateForWrite(arrivalId).async(parse.xml) {
+  def post(arrivalId: ArrivalId): Action[NodeSeq] = (authenticateForWrite(arrivalId)(parse.xml) andThen validateMessageSenderNode.filter).async {
     implicit request: ArrivalRequest[NodeSeq] =>
       MessageType.getMessageType(request.body) match {
         case Some(MessageType.UnloadingRemarks) =>
-          val updatedXml = XMLTransformer.updateMesSenMES3(request.arrival.arrivalId, request.arrival.nextMessageCorrelationId, request.body)
+          val updatedBody = XMLTransformer.updateMesSenMES3(request.arrival.arrivalId, request.arrival.nextMessageCorrelationId, request.body)
 
           arrivalMovementService
-            .makeMovementMessageWithStatus(request.arrival.nextMessageCorrelationId, MessageType.UnloadingRemarks)(updatedXml)
+            .makeMovementMessageWithStatus(request.arrival.nextMessageCorrelationId, MessageType.UnloadingRemarks)(updatedBody)
             .map {
               message =>
                 submitMessageService
