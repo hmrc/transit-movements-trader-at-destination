@@ -1,13 +1,7 @@
 package repositories
 
-import generators.ModelGenerators
+import base.ItSpecBase
 import models.ArrivalId
-import org.scalatest.concurrent.IntegrationPatience
-import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.EitherValues
-import org.scalatest.freespec.AnyFreeSpec
-import org.scalatest.matchers.must.Matchers
-import org.scalatest.OptionValues
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.JsObject
@@ -19,16 +13,7 @@ import reactivemongo.play.json.collection.JSONCollection
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class LockRepositorySpec
-    extends AnyFreeSpec
-    with Matchers
-    with FailOnUnindexedQueries
-    with ScalaFutures
-    with IntegrationPatience
-    with OptionValues
-    with EitherValues
-    with ScalaCheckPropertyChecks
-    with ModelGenerators {
+class LockRepositorySpec extends ItSpecBase with FailOnUnindexedQueries with ScalaCheckPropertyChecks {
 
   "lock" - {
     "must lock an arrivalId when it is not already locked" in {

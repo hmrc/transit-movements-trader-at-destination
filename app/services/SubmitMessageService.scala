@@ -20,6 +20,7 @@ import java.time.OffsetDateTime
 
 import cats.implicits._
 import connectors.MessageConnector
+import connectors.MessageConnector.EisSubmissionResult._
 import javax.inject.Inject
 import models.Arrival
 import models.ArrivalId
@@ -27,7 +28,6 @@ import models.ArrivalIdSelector
 import models.ArrivalPutUpdate
 import models.ArrivalStatus
 import models.ArrivalStatusUpdate
-import models.ArrivalUpdate
 import models.CompoundStatusUpdate
 import models.MessageId
 import models.MessageSelector
@@ -37,7 +37,6 @@ import models.MovementMessageWithStatus
 import models.MovementReferenceNumber
 import models.SubmissionProcessingResult
 import play.api.Logger
-import play.api.libs.json.Json
 import repositories.ArrivalMovementRepository
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -48,8 +47,10 @@ import scala.util.Success
 
 class SubmitMessageService @Inject()(
   arrivalMovementRepository: ArrivalMovementRepository,
-  messageConnector: MessageConnector
+  messageConnector: MessageConnector,
 )(implicit ec: ExecutionContext) {
+
+  val logger = Logger(this.getClass)
 
   def submitMessage(arrivalId: ArrivalId, messageId: MessageId, message: MovementMessageWithStatus, arrivalStatus: ArrivalStatus)(
     implicit hc: HeaderCarrier): Future[SubmissionProcessingResult] =
@@ -61,30 +62,37 @@ class SubmitMessageService @Inject()(
         messageConnector
           .post(arrivalId, message, OffsetDateTime.now)
           .flatMap {
-            _ =>
-              arrivalMovementRepository
-                .setArrivalStateAndMessageState(arrivalId, messageId, arrivalStatus, MessageStatus.SubmissionSucceeded)
-                .map {
-                  _ =>
-                    SubmissionProcessingResult.SubmissionSuccess
-                }
-                .recover({
-                  case _ =>
-                    SubmissionProcessingResult.SubmissionFailureInternal
-                })
-          }
-          .recoverWith {
-            case error => {
-              Logger.warn(s"Existing Movement - Call to EIS failed with the following Exception: ${error.getMessage}")
-
-              val selector  = MessageSelector(arrivalId, messageId)
-              val newStatus = message.status.transition(SubmissionProcessingResult.SubmissionFailureInternal)
-              val modifier  = MessageStatusUpdate(messageId, newStatus)
+            case submissionResult @ EisSubmissionSuccessful =>
+              val newStatus = message.status.transition(submissionResult)
 
               arrivalMovementRepository
-                .updateArrival(selector, modifier)
+                .setArrivalStateAndMessageState(arrivalId, messageId, arrivalStatus, newStatus)
+                .map(_ => SubmissionProcessingResult.SubmissionSuccess)
+                .recover({ case _ => SubmissionProcessingResult.SubmissionFailureInternal }) // TODO: Should be success?
+
+            case submissionResult: EisSubmissionRejected =>
+              logger.warn(s"Failure for submitMessage of type: ${message.messageType.code}, and details: " + submissionResult.toString)
+
+              val messageSelector     = MessageSelector(arrivalId, messageId)
+              val newStatus           = message.status.transition(submissionResult)
+              val messageStatusUpdate = MessageStatusUpdate(messageId, newStatus)
+
+              arrivalMovementRepository
+                .updateArrival(messageSelector, messageStatusUpdate)
+                .map(_ => SubmissionProcessingResult.SubmissionFailureInternal) // TODO: User input failure? IE Bad message?
+                .recover({ case _ => SubmissionProcessingResult.SubmissionFailureInternal }) // TODO: Can this be moved to the repository layer, ie recover the exception in the failed Future that Reactive Mongo returns?
+
+            case submissionResult: EisSubmissionFailureDownstream =>
+              logger.warn(s"Failure for submitMessage of type: ${message.messageType.code}, and details: " + submissionResult.toString)
+
+              val messageSelector     = MessageSelector(arrivalId, messageId)
+              val newStatus           = message.status.transition(submissionResult)
+              val messageStatusUpdate = MessageStatusUpdate(messageId, newStatus)
+
+              arrivalMovementRepository
+                .updateArrival(messageSelector, messageStatusUpdate)
                 .map(_ => SubmissionProcessingResult.SubmissionFailureExternal)
-            }
+                .recover({ case _ => SubmissionProcessingResult.SubmissionFailureExternal })
           }
       }
     }
@@ -99,41 +107,42 @@ class SubmitMessageService @Inject()(
         messageConnector
           .post(arrivalId, message, OffsetDateTime.now)
           .flatMap {
-            _ =>
-              val selector = ArrivalIdSelector(arrivalId)
+            case submissionResult @ EisSubmissionSuccessful =>
+              val selector  = ArrivalIdSelector(arrivalId)
+              val newStatus = message.status.transition(submissionResult)
+              val update = ArrivalPutUpdate(
+                mrn,
+                CompoundStatusUpdate(ArrivalStatusUpdate(ArrivalStatus.ArrivalSubmitted), MessageStatusUpdate(messageId, newStatus)) // TODO: We should use arrival.status.transition here also
+              )
 
               arrivalMovementRepository
-                .updateArrival(
-                  selector,
-                  ArrivalPutUpdate(mrn,
-                                   CompoundStatusUpdate(ArrivalStatusUpdate(ArrivalStatus.ArrivalSubmitted),
-                                                        MessageStatusUpdate(messageId, MessageStatus.SubmissionSucceeded)))
-                )
-                .map {
-                  _ =>
-                    SubmissionProcessingResult.SubmissionSuccess
-                }
-                .recover({
-                  case _ =>
-                    SubmissionProcessingResult.SubmissionFailureInternal
-                })
-          }
-          .recoverWith {
-            case error => {
-              Logger.warn(s"Existing Movement - Call to EIS failed with the following Exception: ${error.getMessage}")
+                .updateArrival(selector, update)
+                .map(_ => SubmissionProcessingResult.SubmissionSuccess)
+                .recover({ case _ => SubmissionProcessingResult.SubmissionFailureInternal })
 
-              val selector = ArrivalIdSelector(arrivalId)
+            case submissionResult: EisSubmissionRejected =>
+              logger.warn(s"Failure for submitIe007Message of type: ${message.messageType.code}, and details: " + submissionResult.toString)
+
+              val messageSelector     = MessageSelector(arrivalId, messageId)
+              val newStatus           = message.status.transition(submissionResult)
+              val messageStatusUpdate = MessageStatusUpdate(messageId, newStatus)
 
               arrivalMovementRepository
-                .updateArrival(
-                  selector,
-                  MessageStatusUpdate(messageId, message.status.transition(SubmissionProcessingResult.SubmissionFailureInternal))
-                )
-                .map {
-                  _ =>
-                    SubmissionProcessingResult.SubmissionFailureExternal
-                }
-            }
+                .updateArrival(messageSelector, messageStatusUpdate)
+                .map(_ => SubmissionProcessingResult.SubmissionFailureInternal)
+                .recover({ case _ => SubmissionProcessingResult.SubmissionFailureInternal })
+
+            case submissionResult: EisSubmissionFailureDownstream =>
+              logger.warn(s"Failure for submitIe007Message of type: ${message.messageType.code}, and details: " + submissionResult.toString)
+
+              val messageSelector     = MessageSelector(arrivalId, messageId)
+              val newStatus           = message.status.transition(submissionResult)
+              val messageStatusUpdate = MessageStatusUpdate(messageId, newStatus)
+
+              arrivalMovementRepository
+                .updateArrival(messageSelector, messageStatusUpdate)
+                .map(_ => SubmissionProcessingResult.SubmissionFailureExternal)
+                .recover({ case _ => SubmissionProcessingResult.SubmissionFailureExternal })
           }
       }
     }
@@ -148,29 +157,35 @@ class SubmitMessageService @Inject()(
           messageConnector
             .post(arrival.arrivalId, message, OffsetDateTime.now)
             .flatMap {
-              _ =>
+              case submissionResult @ EisSubmissionSuccessful =>
                 arrivalMovementRepository
                   .setArrivalStateAndMessageState(arrival.arrivalId, messageId, ArrivalStatus.ArrivalSubmitted, MessageStatus.SubmissionSucceeded)
-                  .map {
-                    _ =>
-                      SubmissionProcessingResult.SubmissionSuccess
-                  }
-                  .recover({
-                    case _ =>
-                      SubmissionProcessingResult.SubmissionFailureInternal
-                  })
-            }
-            .recoverWith {
-              case error =>
-                Logger.warn(s"New Movement - Call to EIS failed with the following Exception: ${error.getMessage}")
+                  .map(_ => SubmissionProcessingResult.SubmissionSuccess)
+                  .recover({ case _ => SubmissionProcessingResult.SubmissionFailureInternal })
 
-                val selector  = MessageSelector(arrival.arrivalId, messageId)
-                val newStatus = message.status.transition(SubmissionProcessingResult.SubmissionFailureInternal)
-                val modifier  = MessageStatusUpdate(messageId, newStatus)
+              case submissionResult: EisSubmissionRejected =>
+                logger.warn(s"Failure for submitArrival of type: ${message.messageType.code}, and details: " + submissionResult.toString)
+
+                val messageSelector     = MessageSelector(arrival.arrivalId, messageId)
+                val newStatus           = message.status.transition(submissionResult)
+                val messageStatusUpdate = MessageStatusUpdate(messageId, newStatus)
 
                 arrivalMovementRepository
-                  .updateArrival(selector, modifier)
+                  .updateArrival(messageSelector, messageStatusUpdate)
+                  .map(_ => SubmissionProcessingResult.SubmissionFailureInternal)
+                  .recover({ case _ => SubmissionProcessingResult.SubmissionFailureInternal })
+
+              case submissionResult: EisSubmissionFailureDownstream =>
+                logger.warn(s"Failure for submitArrival of type: ${message.messageType.code}, and details: " + submissionResult.toString)
+
+                val messageSelector     = MessageSelector(arrival.arrivalId, messageId)
+                val newStatus           = message.status.transition(submissionResult)
+                val messageStatusUpdate = MessageStatusUpdate(messageId, newStatus)
+
+                arrivalMovementRepository
+                  .updateArrival(messageSelector, messageStatusUpdate)
                   .map(_ => SubmissionProcessingResult.SubmissionFailureExternal)
+                  .recover({ case _ => SubmissionProcessingResult.SubmissionFailureExternal })
             }
 
       }
