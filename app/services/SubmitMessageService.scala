@@ -68,7 +68,13 @@ class SubmitMessageService @Inject()(
               arrivalMovementRepository
                 .setArrivalStateAndMessageState(arrivalId, messageId, arrivalStatus, newStatus)
                 .map(_ => SubmissionProcessingResult.SubmissionSuccess)
-                .recover({ case _ => SubmissionProcessingResult.SubmissionFailureInternal }) // TODO: Should be success?
+                .recover({
+                  case _ =>
+                    // TODO: Can this recove be moved to the repository layer.
+                    //  Encode the exception in the failed Future that Reactive Mongo returns as an ADT
+                    logger.warn("Mongo failure when updating message status")
+                    SubmissionProcessingResult.SubmissionFailureInternal
+                }) // TODO: Should be success?
 
             case submissionResult: EisSubmissionRejected =>
               logger.warn(s"Failure for submitMessage of type: ${message.messageType.code}, and details: " + submissionResult.toString)
@@ -79,8 +85,12 @@ class SubmitMessageService @Inject()(
 
               arrivalMovementRepository
                 .updateArrival(messageSelector, messageStatusUpdate)
-                .map(_ => SubmissionProcessingResult.SubmissionFailureInternal) // TODO: User input failure? IE Bad message?
-                .recover({ case _ => SubmissionProcessingResult.SubmissionFailureInternal }) // TODO: Can this be moved to the repository layer, ie recover the exception in the failed Future that Reactive Mongo returns?
+                .map(_ => SubmissionProcessingResult.SubmissionFailureRejected)
+                .recover({
+                  case _ =>
+                    logger.warn("Mongo failure when updating message status")
+                    SubmissionProcessingResult.SubmissionFailureRejected
+                })
 
             case submissionResult: EisSubmissionFailureDownstream =>
               logger.warn(s"Failure for submitMessage of type: ${message.messageType.code}, and details: " + submissionResult.toString)
@@ -92,7 +102,11 @@ class SubmitMessageService @Inject()(
               arrivalMovementRepository
                 .updateArrival(messageSelector, messageStatusUpdate)
                 .map(_ => SubmissionProcessingResult.SubmissionFailureExternal)
-                .recover({ case _ => SubmissionProcessingResult.SubmissionFailureExternal })
+                .recover({
+                  case _ =>
+                    logger.warn("Mongo failure when updating message status")
+                    SubmissionProcessingResult.SubmissionFailureExternal
+                })
           }
       }
     }
@@ -118,7 +132,11 @@ class SubmitMessageService @Inject()(
               arrivalMovementRepository
                 .updateArrival(selector, update)
                 .map(_ => SubmissionProcessingResult.SubmissionSuccess)
-                .recover({ case _ => SubmissionProcessingResult.SubmissionFailureInternal })
+                .recover({
+                  case _ =>
+                    logger.warn("Mongo failure when updating message status")
+                    SubmissionProcessingResult.SubmissionFailureInternal
+                })
 
             case submissionResult: EisSubmissionRejected =>
               logger.warn(s"Failure for submitIe007Message of type: ${message.messageType.code}, and details: " + submissionResult.toString)
@@ -129,8 +147,12 @@ class SubmitMessageService @Inject()(
 
               arrivalMovementRepository
                 .updateArrival(messageSelector, messageStatusUpdate)
-                .map(_ => SubmissionProcessingResult.SubmissionFailureInternal)
-                .recover({ case _ => SubmissionProcessingResult.SubmissionFailureInternal })
+                .map(_ => SubmissionProcessingResult.SubmissionFailureRejected)
+                .recover({
+                  case _ =>
+                    logger.warn("Mongo failure when updating message status")
+                    SubmissionProcessingResult.SubmissionFailureRejected
+                })
 
             case submissionResult: EisSubmissionFailureDownstream =>
               logger.warn(s"Failure for submitIe007Message of type: ${message.messageType.code}, and details: " + submissionResult.toString)
@@ -142,7 +164,11 @@ class SubmitMessageService @Inject()(
               arrivalMovementRepository
                 .updateArrival(messageSelector, messageStatusUpdate)
                 .map(_ => SubmissionProcessingResult.SubmissionFailureExternal)
-                .recover({ case _ => SubmissionProcessingResult.SubmissionFailureExternal })
+                .recover({
+                  case _ =>
+                    logger.warn("Mongo failure when updating message status")
+                    SubmissionProcessingResult.SubmissionFailureExternal
+                })
           }
       }
     }
@@ -161,7 +187,11 @@ class SubmitMessageService @Inject()(
                 arrivalMovementRepository
                   .setArrivalStateAndMessageState(arrival.arrivalId, messageId, ArrivalStatus.ArrivalSubmitted, MessageStatus.SubmissionSucceeded)
                   .map(_ => SubmissionProcessingResult.SubmissionSuccess)
-                  .recover({ case _ => SubmissionProcessingResult.SubmissionFailureInternal })
+                  .recover({
+                    case _ =>
+                      logger.warn("Mongo failure when updating message status")
+                      SubmissionProcessingResult.SubmissionFailureInternal
+                  })
 
               case submissionResult: EisSubmissionRejected =>
                 logger.warn(s"Failure for submitArrival of type: ${message.messageType.code}, and details: " + submissionResult.toString)
@@ -172,8 +202,12 @@ class SubmitMessageService @Inject()(
 
                 arrivalMovementRepository
                   .updateArrival(messageSelector, messageStatusUpdate)
-                  .map(_ => SubmissionProcessingResult.SubmissionFailureInternal)
-                  .recover({ case _ => SubmissionProcessingResult.SubmissionFailureInternal })
+                  .map(_ => SubmissionProcessingResult.SubmissionFailureRejected)
+                  .recover({
+                    case _ =>
+                      logger.warn("Mongo failure when updating message status")
+                      SubmissionProcessingResult.SubmissionFailureRejected
+                  })
 
               case submissionResult: EisSubmissionFailureDownstream =>
                 logger.warn(s"Failure for submitArrival of type: ${message.messageType.code}, and details: " + submissionResult.toString)
@@ -185,12 +219,17 @@ class SubmitMessageService @Inject()(
                 arrivalMovementRepository
                   .updateArrival(messageSelector, messageStatusUpdate)
                   .map(_ => SubmissionProcessingResult.SubmissionFailureExternal)
-                  .recover({ case _ => SubmissionProcessingResult.SubmissionFailureExternal })
+                  .recover({
+                    case _ =>
+                      logger.warn("Mongo failure when updating message status")
+                      SubmissionProcessingResult.SubmissionFailureExternal
+                  })
             }
 
       }
       .recover {
         case _ =>
+          logger.warn("Mongo failure when inserting a new arrival")
           SubmissionProcessingResult.SubmissionFailureInternal
       }
 

@@ -243,7 +243,7 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
       }
     }
 
-    "return SubmissionFailureInternal and set the message status to SubmissionFailed when the message successfully saves, but the external service rejects the message" in {
+    "return SubmissionFailureRejected and set the message status to SubmissionFailed when the message successfully saves, but the external service rejects the message" in {
       val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
       val mockMessageConnector          = mock[MessageConnector]
 
@@ -267,7 +267,7 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
 
             val result = service.submitMessage(arrivalId, messageId, movementMessage, arrivalStatus)
 
-            result.futureValue mustEqual SubmissionProcessingResult.SubmissionFailureInternal
+            result.futureValue mustEqual SubmissionProcessingResult.SubmissionFailureRejected
 
             verify(mockArrivalMovementRepository, times(1)).addNewMessage(eqTo(arrivalId), eqTo(movementMessage))
             verify(mockMessageConnector, times(1)).post(eqTo(arrivalId), eqTo(movementMessage), any())(any())
@@ -428,7 +428,7 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
 
     }
 
-    "return SubmissionFailureInternal and set the message status to SubmissionFailed when the message successfully saves, but the external service rejects the message" in {
+    "return SubmissionFailureRejected and set the message status to SubmissionFailed when the message successfully saves, but the external service rejects the message" in {
       val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
       val mockMessageConnector          = mock[MessageConnector]
 
@@ -460,7 +460,7 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
             val expectedSelector = MessageSelector(arrivalId, messageId)
             val expectedModifier = MessageStatusUpdate(messageId, SubmissionFailed)
 
-            result.futureValue mustEqual SubmissionProcessingResult.SubmissionFailureInternal
+            result.futureValue mustEqual SubmissionProcessingResult.SubmissionFailureRejected
             verify(mockArrivalMovementRepository, times(1)).addNewMessage(eqTo(arrivalId), eqTo(movementMessage))
             verify(mockMessageConnector, times(1)).post(eqTo(arrivalId), eqTo(movementMessage), any())(any())
             verify(mockArrivalMovementRepository, times(1)).updateArrival(eqTo(expectedSelector), eqTo(expectedModifier))(any())
@@ -600,7 +600,7 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
       }
     }
 
-    "return SubmissionFailureInternal and set the message status to SubmissionFailed when the message successfully saves, but the external service rejects the message" in {
+    "return SubmissionFailureRejected and set the message status to SubmissionFailed when the message successfully saves, but the external service rejects the message" in {
       val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
       val mockMessageConnector          = mock[MessageConnector]
 
@@ -627,7 +627,7 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
 
             val result = service.submitArrival(arrival)
 
-            result.futureValue mustEqual SubmissionProcessingResult.SubmissionFailureInternal
+            result.futureValue mustEqual SubmissionProcessingResult.SubmissionFailureRejected
             verify(mockArrivalMovementRepository, times(1)).insert(eqTo(arrival))
             verify(mockMessageConnector, times(1)).post(eqTo(arrival.arrivalId), eqTo(movementMessage), any())(any())
             verify(mockArrivalMovementRepository, times(1)).updateArrival(any(), eqTo(expectedModifier))(any())

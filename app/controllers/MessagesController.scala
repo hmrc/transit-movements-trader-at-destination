@@ -23,7 +23,7 @@ import models.ArrivalId
 import models.ArrivalStatus
 import models.MessageId
 import models.MessageType
-import models.SubmissionProcessingResult
+import models.SubmissionProcessingResult._
 import models.MessageStatus.SubmissionFailed
 import models.request.ArrivalRequest
 import models.response.ResponseArrivalWithMessages
@@ -61,15 +61,12 @@ class MessagesController @Inject()(
                 submitMessageService
                   .submitMessage(arrivalId, request.arrival.nextMessageId, message, ArrivalStatus.UnloadingRemarksSubmitted)
                   .map {
-                    case SubmissionProcessingResult.SubmissionSuccess =>
+                    case SubmissionFailureInternal => InternalServerError
+                    case SubmissionFailureExternal => BadGateway
+                    case SubmissionFailureRejected => BadRequest("Failed schema validation")
+                    case SubmissionSuccess =>
                       Accepted("Message accepted")
                         .withHeaders("Location" -> routes.MessagesController.getMessage(request.arrival.arrivalId, request.arrival.nextMessageId).url)
-
-                    case SubmissionProcessingResult.SubmissionFailureInternal =>
-                      InternalServerError
-
-                    case SubmissionProcessingResult.SubmissionFailureExternal =>
-                      BadGateway
                   }
             }
             .getOrElse {

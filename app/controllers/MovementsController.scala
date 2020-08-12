@@ -28,7 +28,7 @@ import models.ArrivalStatus
 import models.ResponseArrivals
 import models.MessageType
 import models.MovementMessage
-import models.SubmissionProcessingResult
+import models.SubmissionProcessingResult._
 import models.request.ArrivalRequest
 import models.response.ResponseArrival
 import play.api.Logger
@@ -54,8 +54,7 @@ class MovementsController @Inject()(
   authenticate: AuthenticateActionProvider,
   authenticatedArrivalForRead: AuthenticatedGetArrivalForReadActionProvider,
   authenticatedOptionalArrival: AuthenticatedGetOptionalArrivalForWriteActionProvider,
-  authenticateForWrite: AuthenticatedGetArrivalForWriteActionProvider,
-  defaultActionBuilder: DefaultActionBuilder
+  authenticateForWrite: AuthenticatedGetArrivalForWriteActionProvider
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
@@ -76,15 +75,12 @@ class MovementsController @Inject()(
                 submitMessageService
                   .submitMessage(arrival.arrivalId, arrival.nextMessageId, message, ArrivalStatus.ArrivalSubmitted)
                   .map {
-                    case SubmissionProcessingResult.SubmissionSuccess =>
+                    case SubmissionFailureInternal => InternalServerError
+                    case SubmissionFailureExternal => BadGateway
+                    case SubmissionFailureRejected => BadRequest("Failed schema validation")
+                    case SubmissionSuccess =>
                       Accepted("Message accepted")
                         .withHeaders("Location" -> routes.MovementsController.getArrival(arrival.arrivalId).url)
-
-                    case SubmissionProcessingResult.SubmissionFailureInternal =>
-                      InternalServerError
-
-                    case SubmissionProcessingResult.SubmissionFailureExternal =>
-                      BadGateway
                   }
             }
             .getOrElse {
@@ -102,13 +98,12 @@ class MovementsController @Inject()(
                 .flatMap {
                   arrival =>
                     submitMessageService.submitArrival(arrival).map {
-                      case SubmissionProcessingResult.SubmissionSuccess =>
+                      case SubmissionFailureExternal => BadGateway
+                      case SubmissionFailureInternal => InternalServerError
+                      case SubmissionFailureRejected => BadRequest("Failed schema validation")
+                      case SubmissionSuccess =>
                         Accepted("Message accepted")
                           .withHeaders("Location" -> routes.MovementsController.getArrival(arrival.arrivalId).url)
-                      case SubmissionProcessingResult.SubmissionFailureExternal =>
-                        BadGateway
-                      case SubmissionProcessingResult.SubmissionFailureInternal =>
-                        InternalServerError
                     }
                 }
                 .recover {
@@ -129,15 +124,12 @@ class MovementsController @Inject()(
             submitMessageService
               .submitIe007Message(arrivalId, request.arrival.nextMessageId, message, mrn)
               .map {
-                case SubmissionProcessingResult.SubmissionSuccess =>
+                case SubmissionFailureInternal => InternalServerError
+                case SubmissionFailureExternal => BadGateway
+                case SubmissionFailureRejected => BadRequest("Failed schema validation")
+                case SubmissionSuccess =>
                   Accepted("Message accepted")
                     .withHeaders("Location" -> routes.MovementsController.getArrival(request.arrival.arrivalId).url)
-
-                case SubmissionProcessingResult.SubmissionFailureInternal =>
-                  InternalServerError
-
-                case SubmissionProcessingResult.SubmissionFailureExternal =>
-                  BadGateway
               }
         }
         .getOrElse {
