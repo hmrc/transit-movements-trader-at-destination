@@ -16,12 +16,12 @@
 
 package models.messageState
 
+import connectors.MessageConnector.EisSubmissionResult.EisSubmissionRejected
+import connectors.MessageConnector.EisSubmissionResult.EisSubmissionSuccessful
 import generators.ModelGenerators
 import models.MessageStatus.SubmissionFailed
 import models.MessageStatus.SubmissionPending
 import models.MessageStatus.SubmissionSucceeded
-import models.SubmissionProcessingResult
-import models.SubmissionProcessingResult.SubmissionFailure
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 import org.scalacheck.Arbitrary.arbitrary
@@ -32,11 +32,11 @@ class SubmissionPendingSpec extends AnyFreeSpec with Matchers with ScalaCheckDri
   "SubmissionPending must transition" - {
 
     "to SubmittedSucceeded when receiving a SubmittedSucceeded event" in {
-      SubmissionPending.transition(SubmissionProcessingResult.SubmissionSuccess) mustEqual SubmissionSucceeded
+      SubmissionPending.transition(EisSubmissionSuccessful) mustEqual SubmissionSucceeded
     }
 
     "to SubmissionFailed when receiving a SubmissionFailed event" in {
-      forAll(arbitrary[SubmissionFailure]) {
+      forAll(arbitrary[EisSubmissionRejected]) {
         failure =>
           SubmissionPending.transition(failure) mustEqual SubmissionFailed
       }

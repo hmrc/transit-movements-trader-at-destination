@@ -268,6 +268,34 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
             header("Location", result) must not be (defined)
           }
         }
+
+        "must return BadRequest if the message has been rejected on attempting to submit" in {
+          val mockArrivalIdRepository  = mock[ArrivalIdRepository]
+          val mockSubmitMessageService = mock[SubmitMessageService]
+
+          val arrivalId = ArrivalId(1)
+
+          when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
+          when(mockSubmitMessageService.submitArrival(any())(any())).thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureRejected))
+
+          val application = baseApplicationBuilder
+            .overrides(
+              bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
+              bind[SubmitMessageService].toInstance(mockSubmitMessageService),
+              bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider())
+            )
+            .build()
+
+          running(application) {
+
+            val request = FakeRequest(POST, routes.MovementsController.post().url).withXmlBody(requestXmlBody)
+
+            val result = route(application, request).value
+
+            status(result) mustEqual BAD_REQUEST
+          }
+        }
+
       }
 
       "when there has been a previous failed attempt to submit" - {
@@ -446,6 +474,30 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
             val result = route(application, request).value
 
             status(result) mustEqual BAD_REQUEST
+          }
+        }
+
+        "must return BadRequest if the message has been rejected on attempting to submit" in {
+          val mockSubmitMessageService = mock[SubmitMessageService]
+
+          when(mockSubmitMessageService.submitMessage(any(), any(), any(), any())(any()))
+            .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureExternal))
+
+          val app = baseApplicationBuilder
+            .overrides(
+              bind[SubmitMessageService].toInstance(mockSubmitMessageService),
+              bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(
+                FakeAuthenticatedGetOptionalArrivalForWriteActionProvider(initializedArrival))
+            )
+            .build()
+
+          running(app) {
+
+            val request = FakeRequest(POST, routes.MovementsController.post().url).withXmlBody(requestXmlBody)
+
+            val result = route(app, request).value
+
+            status(result) mustEqual BAD_GATEWAY
           }
         }
       }
@@ -684,6 +736,50 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         }
       }
 
+      "must return BadRequest if the message has been rejected on attempting to submit" in {
+
+        val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+        val mockMessageConnector          = mock[MessageConnector]
+        val mockLockRepository            = mock[LockRepository]
+        val mockSubmitMessageService      = mock[SubmitMessageService]
+
+        when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
+        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
+        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(initializedArrival)))
+
+        when(mockSubmitMessageService.submitIe007Message(any(), any(), any(), any())(any()))
+          .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureRejected))
+
+        val app = baseApplicationBuilder
+          .overrides(
+            bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
+            bind[MessageConnector].toInstance(mockMessageConnector),
+            bind[LockRepository].toInstance(mockLockRepository),
+            bind[SubmitMessageService].toInstance(mockSubmitMessageService)
+          )
+          .build()
+
+        running(app) {
+
+          val dateOfPrep = LocalDate.now()
+          val timeOfPrep = LocalTime.of(1, 1)
+
+          val requestXmlBody =
+            <CC007A>
+              <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+              <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+              <HEAHEA>
+                <DocNumHEA5>MRN</DocNumHEA5>
+              </HEAHEA>
+            </CC007A>
+
+          val request = FakeRequest(PUT, routes.MovementsController.putArrival(initializedArrival.arrivalId).url).withXmlBody(requestXmlBody)
+
+          val result = route(app, request).value
+
+          status(result) mustEqual BAD_REQUEST
+        }
+      }
     }
 
     "getArrivals" - {

@@ -19,6 +19,7 @@ package models
 import play.api.libs.json.Json
 import play.api.libs.json.OWrites
 
+// TODO: Add integration test suite for selectors
 sealed trait ArrivalSelector
 
 object ArrivalSelector {

@@ -292,6 +292,35 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           status(result) mustEqual BAD_GATEWAY
         }
       }
+
+      "must return BadGateway if there has been a rejection from EIS dues to schema validation failing" in {
+        val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+        val mockLockRepository            = mock[LockRepository]
+        val mockSubmitMessageService      = mock[SubmitMessageService]
+
+        when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
+        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
+        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
+
+        when(mockSubmitMessageService.submitMessage(any(), any(), any(), any())(any()))
+          .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureRejected))
+
+        val application = baseApplicationBuilder
+          .overrides(
+            bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
+            bind[LockRepository].toInstance(mockLockRepository),
+            bind[SubmitMessageService].toInstance(mockSubmitMessageService)
+          )
+          .build()
+
+        running(application) {
+          val request = FakeRequest(POST, routes.MessagesController.post(arrival.arrivalId).url).withXmlBody(requestXmlBody)
+
+          val result = route(application, request).value
+
+          status(result) mustEqual BAD_REQUEST
+        }
+      }
     }
 
     "getMessage" - {
