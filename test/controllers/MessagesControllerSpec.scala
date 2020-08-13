@@ -138,8 +138,6 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           val request = FakeRequest(POST, routes.MessagesController.post(arrival.arrivalId).url).withXmlBody(requestXmlBody)
           val result  = route(application, request).value
 
-          println(s"\n\n\n ${contentAsString(result)} \n\n\n")
-
           status(result) mustEqual ACCEPTED
           header("Location", result).value must be(routes.MessagesController.getMessage(arrival.arrivalId, MessageId.fromIndex(1)).url)
           verify(mockSubmitMessageService, times(1)).submitMessage(eqTo(arrival.arrivalId),

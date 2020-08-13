@@ -19,12 +19,12 @@ package controllers
 import controllers.actions.AuthenticatedGetArrivalForReadActionProvider
 import controllers.actions.AuthenticatedGetArrivalForWriteActionProvider
 import javax.inject.Inject
+import models.MessageStatus.SubmissionFailed
 import models.ArrivalId
 import models.ArrivalStatus
 import models.MessageId
 import models.MessageType
 import models.SubmissionProcessingResult._
-import models.MessageStatus.SubmissionFailed
 import models.request.ArrivalRequest
 import models.response.ResponseArrivalWithMessages
 import models.response.ResponseMovementMessage
@@ -58,31 +58,12 @@ class MessagesController @Inject()(
           submitMessageService
             .submitMessage(arrivalId, request.arrival.nextMessageId, message, ArrivalStatus.UnloadingRemarksSubmitted)
             .map {
-              case SubmissionProcessingResult.SubmissionSuccess =>
+              case SubmissionFailureInternal => InternalServerError
+              case SubmissionFailureExternal => BadGateway
+              case SubmissionFailureRejected => BadRequest("Failed schema validation")
+              case SubmissionSuccess =>
                 Accepted("Message accepted")
                   .withHeaders("Location" -> routes.MessagesController.getMessage(request.arrival.arrivalId, request.arrival.nextMessageId).url)
-
-              case SubmissionProcessingResult.SubmissionFailureInternal =>
-                InternalServerError
-
-              case SubmissionProcessingResult.SubmissionFailureExternal =>
-                BadGateway
-      MessageType.getMessageType(request.body) match {
-        case Some(MessageType.UnloadingRemarks) =>
-          arrivalMovementService
-            .makeMovementMessageWithStatus(request.arrival.nextMessageCorrelationId, MessageType.UnloadingRemarks)(request.body)
-            .map {
-              message =>
-                submitMessageService
-                  .submitMessage(arrivalId, request.arrival.nextMessageId, message, ArrivalStatus.UnloadingRemarksSubmitted)
-                  .map {
-                    case SubmissionFailureInternal => InternalServerError
-                    case SubmissionFailureExternal => BadGateway
-                    case SubmissionFailureRejected => BadRequest("Failed schema validation")
-                    case SubmissionSuccess =>
-                      Accepted("Message accepted")
-                        .withHeaders("Location" -> routes.MessagesController.getMessage(request.arrival.arrivalId, request.arrival.nextMessageId).url)
-                  }
             }
         case Left(error) =>
           Logger.warn(s"Failed to create MovementMessageWithStatus with error: $error")
