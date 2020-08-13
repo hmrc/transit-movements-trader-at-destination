@@ -89,7 +89,7 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
       application.stop()
     }
 
-    "returns None when the root node is not <CC007A>" in {
+    "returns InvalidRootNode when the root node is not <CC007A>" in {
 
       val mrn        = MovementReferenceNumber("MRN")
       val eori       = "eoriNumber"
@@ -109,7 +109,7 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
           </HEAHEA>
         </Foo>
 
-      service.makeArrivalMovement(eori)(invalidPayload).left.get mustBe ""
+      service.makeArrivalMovement(eori)(invalidPayload).left.get mustBe an[InvalidRootNode]
       application.stop()
     }
   }
@@ -140,7 +140,7 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
         application.stop()
       }
 
-      "returns None when the root node is not <CC025A>" in {
+      "returns InvalidRootNode when the root node is not <CC025A>" in {
 
         val dateOfPrep = LocalDate.now()
         val timeOfPrep = LocalTime.of(1, 1)
@@ -157,7 +157,7 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
 
         val messageCorrelationId = 1
 
-        service.makeMessage(messageCorrelationId, MessageType.GoodsReleased)(movement).left.get mustBe ""
+        service.makeMessage(messageCorrelationId, MessageType.GoodsReleased)(movement).left.get mustBe an[InvalidRootNode]
         application.stop()
       }
     }
@@ -187,7 +187,7 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
         application.stop()
       }
 
-      "returns None when the root node is not <CC043A>" in {
+      "returns InvalidRootNode when the root node is not <CC043A>" in {
 
         val dateOfPrep = LocalDate.now()
         val timeOfPrep = LocalTime.of(1, 1)
@@ -204,7 +204,7 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
 
         val messageCorrelationId = 1
 
-        service.makeMessage(messageCorrelationId, MessageType.UnloadingPermission)(movement).left.get mustBe ""
+        service.makeMessage(messageCorrelationId, MessageType.UnloadingPermission)(movement).left.get mustBe an[InvalidRootNode]
         application.stop()
       }
     }
@@ -236,7 +236,7 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
       application.stop()
     }
 
-    "does not return a message when the root node does not match the message type" in {
+    "returns InvalidRootNode when the root node does not match the message type" in {
 
       val dateOfPrep = LocalDate.now()
       val timeOfPrep = LocalTime.of(1, 1)

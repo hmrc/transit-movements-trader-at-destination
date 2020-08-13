@@ -22,6 +22,7 @@ import java.time.LocalTime
 
 import base.SpecBase
 import cats.data.NonEmptyList
+import cats.data.ReaderT
 import connectors.MessageConnector
 import generators.ModelGenerators
 import models.MessageStatus.SubmissionFailed
@@ -53,6 +54,7 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import repositories.ArrivalMovementRepository
 import repositories.LockRepository
+import services.ArrivalMovementMessageService
 import services.SubmitMessageService
 import utils.Format
 
@@ -115,6 +117,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
         val mockLockRepository            = mock[LockRepository]
         val mockSubmitMessageService      = mock[SubmitMessageService]
+        val mockArrivalMovementService    = mock[ArrivalMovementMessageService]
 
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
@@ -134,6 +137,8 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
         running(application) {
           val request = FakeRequest(POST, routes.MessagesController.post(arrival.arrivalId).url).withXmlBody(requestXmlBody)
           val result  = route(application, request).value
+
+          println(s"\n\n\n ${contentAsString(result)} \n\n\n")
 
           status(result) mustEqual ACCEPTED
           header("Location", result).value must be(routes.MessagesController.getMessage(arrival.arrivalId, MessageId.fromIndex(1)).url)

@@ -37,7 +37,7 @@ class ArrivalMovementMessageService @Inject()(arrivalIdRepository: ArrivalIdRepo
   import XmlMessageParser._
 
   private def nodeSeqToEither(xml: NodeSeq): ParseHandler[NodeSeq] =
-    if (xml == null) {
+    if (xml != null) {
       Right(xml)
     } else {
       Left(EmptyNodeSeq("Request body is empty"))
