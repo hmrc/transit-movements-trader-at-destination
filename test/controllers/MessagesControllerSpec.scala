@@ -226,7 +226,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
         }
       }
 
-      "must return NotImplemented if the message is not supported" in {
+      "must return BadRequest if the message is not supported" in {
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
         val mockMessageConnector          = mock[MessageConnector]
         val mockLockRepository            = mock[LockRepository]
@@ -251,7 +251,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
 
           val result = route(application, request).value
 
-          status(result) mustEqual NOT_IMPLEMENTED
+          status(result) mustEqual BAD_REQUEST
         }
       }
 

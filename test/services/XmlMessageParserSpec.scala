@@ -23,6 +23,7 @@ import java.time.LocalTime
 import base.SpecBase
 import models.MessageType
 import models.MovementReferenceNumber
+import models.ParseError._
 import utils.Format
 
 class XmlMessageParserSpec extends SpecBase {
@@ -36,11 +37,11 @@ class XmlMessageParserSpec extends SpecBase {
           <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
         </CC007A>
 
-      XmlMessageParser.dateOfPrepR(movement).value mustEqual dateOfPrep
+      XmlMessageParser.dateOfPrepR(movement).right.get mustEqual dateOfPrep
 
     }
 
-    "will return a None when the date in the DatOfPreMES9 node is malformed" in {
+    "will return a LocalDateParseFailure when the date in the DatOfPreMES9 node is malformed" in {
       val dateOfPrep: LocalDate = LocalDate.now()
 
       val movement =
@@ -48,16 +49,16 @@ class XmlMessageParserSpec extends SpecBase {
           <DatOfPreMES9>{Format.dateFormatted(dateOfPrep) ++ "1"}</DatOfPreMES9>
         </CC007A>
 
-      XmlMessageParser.dateOfPrepR(movement) must not be (defined)
+      XmlMessageParser.dateOfPrepR(movement).left.get mustBe an[LocalDateParseFailure]
 
     }
 
-    "will return a None when the date in the DatOfPreMES9 node is missing" in {
+    "will return a LocalDateParseFailure when the date in the DatOfPreMES9 node is missing" in {
       val movement =
         <CC007A>
         </CC007A>
 
-      XmlMessageParser.dateOfPrepR(movement) must not be (defined)
+      XmlMessageParser.dateOfPrepR(movement).left.get mustBe an[LocalDateParseFailure]
     }
 
   }
@@ -71,11 +72,11 @@ class XmlMessageParserSpec extends SpecBase {
           <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
         </CC007A>
 
-      XmlMessageParser.timeOfPrepR(movement).value mustEqual timeOfPrep
+      XmlMessageParser.timeOfPrepR(movement).right.get mustEqual timeOfPrep
 
     }
 
-    "returns a None if TimOfPreMES10 is malformed" in {
+    "returns a LocalTimeParseFailure if TimOfPreMES10 is malformed" in {
       val timeOfPrep: LocalTime = LocalTime.of(1, 1)
 
       val movement =
@@ -83,16 +84,16 @@ class XmlMessageParserSpec extends SpecBase {
           <TimOfPreMES10>{Format.timeFormatted(timeOfPrep) ++ "a"}</TimOfPreMES10>
         </CC007A>
 
-      XmlMessageParser.timeOfPrepR(movement) must not be (defined)
+      XmlMessageParser.timeOfPrepR(movement).left.get mustBe an[LocalTimeParseFailure]
 
     }
 
-    "returns a None if TimOfPreMES10 is missing" in {
+    "returns a LocalTimeParseFailure if TimOfPreMES10 is missing" in {
       val movement =
         <CC007A>
         </CC007A>
 
-      XmlMessageParser.timeOfPrepR(movement) must not be (defined)
+      XmlMessageParser.timeOfPrepR(movement).left.get mustBe an[LocalTimeParseFailure]
 
     }
 
@@ -109,19 +110,18 @@ class XmlMessageParserSpec extends SpecBase {
           </HEAHEA>
         </CC007A>
 
-      XmlMessageParser.mrnR(movement).value mustEqual mrn
+      XmlMessageParser.mrnR(movement).right.get mustEqual mrn
 
     }
 
-    "returns None if DocNumHEA5 node is missing" in {
+    "returns EmptyMovementReferenceNumber if DocNumHEA5 node is missing" in {
       val movement =
         <CC007A>
           <HEAHEA>
           </HEAHEA>
         </CC007A>
 
-      XmlMessageParser.mrnR(movement) must not be (defined)
-
+      XmlMessageParser.mrnR(movement).left.get mustBe an[EmptyMovementReferenceNumber]
     }
 
   }
@@ -132,15 +132,15 @@ class XmlMessageParserSpec extends SpecBase {
       val movement =
         <CC007A></CC007A>
 
-      XmlMessageParser.correctRootNodeR(MessageType.ArrivalNotification)(movement) mustBe (defined)
+      XmlMessageParser.correctRootNodeR(MessageType.ArrivalNotification)(movement).right.get mustBe movement
     }
 
-    "returns false if the root node is not as expected" in {
+    "returns InvalidRootNode if the root node is not as expected" in {
 
       val movement =
         <Foo></Foo>
 
-      XmlMessageParser.correctRootNodeR(MessageType.ArrivalNotification)(movement) must not be defined
+      XmlMessageParser.correctRootNodeR(MessageType.ArrivalNotification)(movement).left.get mustBe an[InvalidRootNode]
     }
   }
 
@@ -155,7 +155,7 @@ class XmlMessageParserSpec extends SpecBase {
           <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
         </CC007A>
 
-      XmlMessageParser.dateTimeOfPrepR(movement).value mustEqual LocalDateTime.of(dateOfPrep, timeOfPrep)
+      XmlMessageParser.dateTimeOfPrepR(movement).right.get mustEqual LocalDateTime.of(dateOfPrep, timeOfPrep)
 
     }
 
@@ -169,10 +169,10 @@ class XmlMessageParserSpec extends SpecBase {
           <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
         </CC007A>
 
-      XmlMessageParser.dateTimeOfPrepR(movement) must not be (defined)
+      XmlMessageParser.dateTimeOfPrepR(movement).left.get mustBe an[LocalDateParseFailure]
     }
 
-    "will return a None when the date in the DatOfPreMES10 node is malformed" in {
+    "will return a LocalTimeParseFailure when the date in the TimOfPreMES10 node is malformed" in {
       val dateOfPrep: LocalDate = LocalDate.now()
       val timeOfPrep: LocalTime = LocalTime.of(1, 1)
 
@@ -182,10 +182,10 @@ class XmlMessageParserSpec extends SpecBase {
           <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)  ++ "1" }</TimOfPreMES10>
         </CC007A>
 
-      XmlMessageParser.dateTimeOfPrepR(movement) must not be (defined)
+      XmlMessageParser.dateTimeOfPrepR(movement).left.get mustBe an[LocalTimeParseFailure]
     }
 
-    "will return a None when the date in the DatOfPreMES9 node is missing" in {
+    "will return a LocalDateParseFailure when the DatOfPreMES9 node is missing" in {
 
       val timeOfPrep: LocalTime = LocalTime.of(1, 1)
 
@@ -194,11 +194,11 @@ class XmlMessageParserSpec extends SpecBase {
           <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
         </CC007A>
 
-      XmlMessageParser.dateTimeOfPrepR(movement) must not be (defined)
+      XmlMessageParser.dateTimeOfPrepR(movement).left.get mustBe an[LocalDateParseFailure]
 
     }
 
-    "will return a None when the date in the DatOfPreMES10 node is missing" in {
+    "will return a LocalTimeParseFailure when the TimOfPreMES10 node is missing" in {
 
       val dateOfPrep: LocalDate = LocalDate.now()
 
@@ -207,7 +207,7 @@ class XmlMessageParserSpec extends SpecBase {
           <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
         </CC007A>
 
-      XmlMessageParser.dateTimeOfPrepR(movement) must not be (defined)
+      XmlMessageParser.dateTimeOfPrepR(movement).left.get mustBe an[LocalTimeParseFailure]
 
     }
 

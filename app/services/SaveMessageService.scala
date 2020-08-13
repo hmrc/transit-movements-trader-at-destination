@@ -42,27 +42,21 @@ class SaveMessageService @Inject()(arrivalMovementRepository: ArrivalMovementRep
     xmlValidationService.validate(messageXml.toString(), messageResponse.xsdFile) match {
       case Success(_) =>
         arrivalMovementService.makeMessage(messageSender.messageCorrelationId, messageResponse.messageType)(messageXml) match {
-          case Some(message) =>
+          case Right(message) =>
             arrivalMovementRepository
               .addResponseMessage(messageSender.arrivalId, message, arrivalStatus)
               .map {
                 case Success(_) => {
-
                   Logger.info(s"Saved message successfully")
-
                   SubmissionSuccess
                 }
-                case Failure(e) => {
-
-                  Logger.info(s"Failed to save message $e")
-
+                case Failure(error) => {
+                  Logger.info(s"Failed to save message with error: $error")
                   SubmissionFailureInternal
                 }
               }
-          case None => {
-
-            Logger.info(s"Failed to save message")
-
+          case Left(error) => {
+            Logger.info(s"Failed to create message with error: $error")
             Future.successful(SubmissionFailureExternal)
           }
         }

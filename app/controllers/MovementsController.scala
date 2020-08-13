@@ -54,8 +54,7 @@ class MovementsController @Inject()(
   authenticate: AuthenticateActionProvider,
   authenticatedArrivalForRead: AuthenticatedGetArrivalForReadActionProvider,
   authenticatedOptionalArrival: AuthenticatedGetOptionalArrivalForWriteActionProvider,
-  authenticateForWrite: AuthenticatedGetArrivalForWriteActionProvider,
-  defaultActionBuilder: DefaultActionBuilder
+  authenticateForWrite: AuthenticatedGetArrivalForWriteActionProvider
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
@@ -70,34 +69,29 @@ class MovementsController @Inject()(
       request.arrival match {
         case Some(arrival) if allMessageUnsent(arrival.messages) =>
           arrivalMovementService
-            .makeMovementMessageWithStatus(arrival.nextMessageCorrelationId, MessageType.ArrivalNotification)(request.body)
-            .map {
-              message =>
-                submitMessageService
-                  .submitMessage(arrival.arrivalId, arrival.nextMessageId, message, ArrivalStatus.ArrivalSubmitted)
-                  .map {
-                    case SubmissionProcessingResult.SubmissionSuccess =>
-                      Accepted("Message accepted")
-                        .withHeaders("Location" -> routes.MovementsController.getArrival(arrival.arrivalId).url)
+            .makeMovementMessageWithStatus(arrival.nextMessageCorrelationId, MessageType.ArrivalNotification)(request.body) match {
+            case Right(message) =>
+              submitMessageService
+                .submitMessage(arrival.arrivalId, arrival.nextMessageId, message, ArrivalStatus.ArrivalSubmitted)
+                .map {
+                  case SubmissionProcessingResult.SubmissionSuccess =>
+                    Accepted("Message accepted")
+                      .withHeaders("Location" -> routes.MovementsController.getArrival(arrival.arrivalId).url)
 
-                    case SubmissionProcessingResult.SubmissionFailureInternal =>
-                      InternalServerError
+                  case SubmissionProcessingResult.SubmissionFailureInternal =>
+                    InternalServerError
 
-                    case SubmissionProcessingResult.SubmissionFailureExternal =>
-                      BadGateway
-                  }
-            }
-            .getOrElse {
-              Logger.warn("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5")
-              Future.successful(BadRequest("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5"))
-            }
+                  case SubmissionProcessingResult.SubmissionFailureExternal =>
+                    BadGateway
+                }
 
+            case Left(error) =>
+              Logger.warn(s"Failed to create ArrivalMovementWithStatus with the following error: $error")
+              Future.successful(BadRequest(s"Failed to create ArrivalMovementWithStatus with the following error: $error"))
+          }
         case _ =>
           arrivalMovementService.makeArrivalMovement(request.eoriNumber)(request.body) match {
-            case None =>
-              Logger.warn("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5")
-              Future.successful(BadRequest("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5"))
-            case Some(arrivalFuture) =>
+            case Right(arrivalFuture) =>
               arrivalFuture
                 .flatMap {
                   arrival =>
@@ -116,6 +110,9 @@ class MovementsController @Inject()(
                     InternalServerError
                   }
                 }
+            case Left(error) =>
+              Logger.warn(s"Failed to create ArrivalMovement with the following error: $error")
+              Future.successful(BadRequest(s"Failed to create ArrivalMovement with the following error: $error"))
           }
       }
   }
@@ -123,27 +120,26 @@ class MovementsController @Inject()(
   def putArrival(arrivalId: ArrivalId): Action[NodeSeq] = authenticateForWrite(arrivalId).async(parse.xml) {
     implicit request: ArrivalRequest[NodeSeq] =>
       arrivalMovementService
-        .messageAndMrn(request.arrival.nextMessageCorrelationId)(request.body)
-        .map {
-          case (message, mrn) =>
-            submitMessageService
-              .submitIe007Message(arrivalId, request.arrival.nextMessageId, message, mrn)
-              .map {
-                case SubmissionProcessingResult.SubmissionSuccess =>
-                  Accepted("Message accepted")
-                    .withHeaders("Location" -> routes.MovementsController.getArrival(request.arrival.arrivalId).url)
+        .messageAndMrn(request.arrival.nextMessageCorrelationId)(request.body) match {
+        case Right((message, mrn)) =>
+          submitMessageService
+            .submitIe007Message(arrivalId, request.arrival.nextMessageId, message, mrn)
+            .map {
+              case SubmissionProcessingResult.SubmissionSuccess =>
+                Accepted("Message accepted")
+                  .withHeaders("Location" -> routes.MovementsController.getArrival(request.arrival.arrivalId).url)
 
-                case SubmissionProcessingResult.SubmissionFailureInternal =>
-                  InternalServerError
+              case SubmissionProcessingResult.SubmissionFailureInternal =>
+                InternalServerError
 
-                case SubmissionProcessingResult.SubmissionFailureExternal =>
-                  BadGateway
-              }
-        }
-        .getOrElse {
-          Logger.warn("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5")
-          Future.successful(BadRequest("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5"))
-        }
+              case SubmissionProcessingResult.SubmissionFailureExternal =>
+                BadGateway
+            }
+
+        case Left(error) =>
+          Logger.warn(s"Failed to create message and MovementReferenceNumber with error: $error")
+          Future.successful(BadRequest(s"Failed to create message and MovementReferenceNumber with error: $error"))
+      }
   }
 
   def getArrival(arrivalId: ArrivalId): Action[AnyContent] = authenticatedArrivalForRead(arrivalId) {

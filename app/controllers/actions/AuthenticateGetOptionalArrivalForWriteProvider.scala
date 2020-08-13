@@ -57,11 +57,11 @@ class AuthenticateGetOptionalArrivalForWriteAction(
     request.body match {
       case body: NodeSeq =>
         XmlMessageParser.mrnR(body) match {
-          case None =>
-            Logger.warn("Invalid mrn specified in request")
-            Future.successful(BadRequest("Invalid mrn specified in request"))
+          case Left(error) =>
+            Logger.warn(s"Failed to retrieve MovementReferenceNumber with error: $error")
+            Future.successful(BadRequest(s"Failed to retrieve MovementReferenceNumber with error: $error"))
 
-          case Some(mrn) => {
+          case Right(mrn) => {
             arrivalMovementRepository.get(request.eoriNumber, mrn).flatMap {
               case None => block(AuthenticatedOptionalArrivalRequest(request, None, request.eoriNumber))
               case Some(arrival) =>
@@ -77,7 +77,7 @@ class AuthenticateGetOptionalArrivalForWriteAction(
                           }
                       }
                       .recoverWith {
-                        case e: Exception =>
+                        case _: Exception =>
                           lockRepository.unlock(arrival.arrivalId).map {
                             _ =>
                               InternalServerError
