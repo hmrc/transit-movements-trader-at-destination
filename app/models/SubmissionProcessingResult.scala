@@ -25,6 +25,7 @@ object SubmissionProcessingResult {
   sealed trait SubmissionFailure        extends SubmissionProcessingResult
   case object SubmissionFailureInternal extends SubmissionFailure
   case object SubmissionFailureExternal extends SubmissionFailure
+  case object SubmissionFailureRejected extends SubmissionFailure
 
   val values = Seq(
     SubmissionSuccess,

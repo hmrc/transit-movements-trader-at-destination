@@ -4,8 +4,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 
-import cats.data.NonEmptyList
-import generators.ModelGenerators
+import base._
 import models.ArrivalStatus.ArrivalSubmitted
 import models.ArrivalStatus.GoodsReleased
 import models.ArrivalStatus.Initialized
@@ -24,16 +23,9 @@ import models.MovementMessageWithStatus
 import models.MovementMessageWithoutStatus
 import models.MovementReferenceNumber
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalacheck.Gen
 import org.scalactic.source
-import org.scalatest.EitherValues
-import org.scalatest.OptionValues
-import org.scalatest.TryValues
-import org.scalatest.concurrent.IntegrationPatience
 import org.scalatest.exceptions.StackDepthException
 import org.scalatest.exceptions.TestFailedException
-import org.scalatest.freespec.AnyFreeSpec
-import org.scalatest.matchers.must.Matchers
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
@@ -47,16 +39,7 @@ import scala.reflect.ClassTag
 import scala.util.Failure
 import scala.util.Success
 
-class ArrivalMovementRepositorySpec
-    extends AnyFreeSpec
-    with Matchers
-    with FailOnUnindexedQueries
-    with IntegrationPatience
-    with OptionValues
-    with EitherValues
-    with TryValues
-    with ModelGenerators
-    with MongoDateTimeFormats {
+class ArrivalMovementRepositorySpec extends ItSpecBase with FailOnUnindexedQueries with MongoDateTimeFormats {
 
   def typeMatchOnTestValue[A, B](testValue: A)(test: B => Unit)(implicit bClassTag: ClassTag[B]) = testValue match {
     case result: B => test(result)
@@ -69,11 +52,6 @@ class ArrivalMovementRepositorySpec
   private val eoriNumber: String = arbitrary[String].sample.value
 
   private def builder = new GuiceApplicationBuilder()
-
-  val arrivalWithOneMessage: Gen[Arrival] = for {
-    arrival         <- arbitrary[Arrival]
-    movementMessage <- arbitrary[MovementMessageWithStatus]
-  } yield arrival.copy(messages = NonEmptyList.one(movementMessage.copy(status = SubmissionPending)))
 
   "ArrivalMovementRepository" - {
     "insert" - {

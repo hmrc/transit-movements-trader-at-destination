@@ -19,8 +19,9 @@ package generators
 import java.time._
 
 import cats.data.NonEmptyList
-import models.MessageStatus.SubmissionPending
-import models.MessageStatus.SubmissionSucceeded
+import connectors.MessageConnector.EisSubmissionResult
+import connectors.MessageConnector.EisSubmissionResult._
+import models.MessageStatus
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalPutUpdate
@@ -38,11 +39,11 @@ import models.MovementMessageWithoutStatus
 import models.MovementReferenceNumber
 import models.RejectionError
 import models.SubmissionProcessingResult
-import models.SubmissionProcessingResult._
 import models.response.ResponseMovementMessage
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
+import uk.gov.hmrc.http.HttpResponse
 
 trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
 
@@ -102,7 +103,7 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
         dateTime    <- arbitrary[LocalDateTime]
         xml         <- Gen.const(<blankXml>message</blankXml>)
         messageType <- Gen.oneOf(MessageType.values)
-        status = SubmissionPending
+        status = MessageStatus.SubmissionPending
       } yield MovementMessageWithStatus(dateTime, messageType, xml, status, 1)
     }
   }
@@ -162,7 +163,7 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
         message <- Arbitrary.arbitrary[MovementMessageWithStatus]
         arrival <- Arbitrary.arbitrary[Arrival]
       } yield {
-        val successfulMessage = message.copy(status = SubmissionSucceeded)
+        val successfulMessage = message.copy(status = MessageStatus.SubmissionSucceeded)
         arrival.copy(messages = NonEmptyList.one(successfulMessage), eoriNumber = "eori")
       }
     }.arbitrary
@@ -202,8 +203,13 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
       intsAboveValue(0).map(MessageId.fromIndex)
     }
 
-  implicit lazy val arbitraryFailure: Arbitrary[SubmissionFailure] =
-    Arbitrary(Gen.oneOf(SubmissionFailureInternal, SubmissionFailureExternal))
+  implicit lazy val arbitraryFailure: Arbitrary[SubmissionProcessingResult.SubmissionFailure] =
+    Arbitrary(
+      Gen.oneOf(
+        SubmissionProcessingResult.SubmissionFailureInternal,
+        SubmissionProcessingResult.SubmissionFailureExternal
+      )
+    )
 
   implicit lazy val arbitraryResponseMovementMessage: Arbitrary[ResponseMovementMessage] = {
     Arbitrary {
@@ -215,4 +221,32 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
       } yield ResponseMovementMessage(location, dateTime, messageType, message)
     }
   }
+
+  implicit lazy val arbitrarySubmissionFailure: Arbitrary[EisSubmissionFailure] =
+    Arbitrary(Gen.oneOf(arbitrary[EisSubmissionRejected], arbitrary[EisSubmissionFailureDownstream]))
+
+  implicit lazy val arbitrarySubmissionFailureInternal: Arbitrary[EisSubmissionRejected] =
+    Arbitrary {
+      Gen.oneOf(
+        ErrorInPayload,
+        VirusFoundOrInvalidToken
+      )
+    }
+
+  implicit lazy val arbitrarySubmissionFailureDownstream: Arbitrary[EisSubmissionFailureDownstream] =
+    Arbitrary {
+      Gen.oneOf(
+        DownstreamInternalServerError,
+        UnexpectedHttpResponse(HttpResponse(418, ""))
+      )
+    }
+
+  implicit def arbitraryEisSubmissionResult: Arbitrary[EisSubmissionResult] =
+    Arbitrary(
+      Gen.oneOf(
+        arbitrary[EisSubmissionRejected],
+        arbitrary[EisSubmissionFailureDownstream],
+        Gen.const(EisSubmissionSuccessful)
+      )
+    )
 }

@@ -41,8 +41,6 @@ trait WiremockSuite extends BeforeAndAfterAll with BeforeAndAfterEach {
       .overrides(bindings: _*)
       .build()
 
-  protected lazy val injector: Injector = app.injector
-
   protected def bindings: Seq[GuiceableModule] = Seq.empty
 
   override def beforeAll(): Unit = {

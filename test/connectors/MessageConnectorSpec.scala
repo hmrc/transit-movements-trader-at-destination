@@ -21,17 +21,18 @@ import java.time.OffsetDateTime
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.matching.StringValuePattern
+import connectors.MessageConnector.EisSubmissionResult._
 import generators.ModelGenerators
 import models.ArrivalId
 import models.MessageStatus
 import models.MessageType
 import models.MovementMessageWithStatus
 import org.scalacheck.Gen
-import org.scalatest.freespec.AnyFreeSpec
-import org.scalatest.matchers.must.Matchers
 import org.scalatest.OptionValues
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import uk.gov.hmrc.http.HeaderCarrier
@@ -58,6 +59,8 @@ class MessageConnectorSpec
 
   private val messageType: MessageType = Gen.oneOf(MessageType.values).sample.value
 
+  private val messageSender = "MDTP-000000000000000000000000123-01"
+
   "MessageConnector" - {
 
     "removePrefix" - {
@@ -75,7 +78,7 @@ class MessageConnectorSpec
 
     "post" - {
 
-      "return HttpResponse with status Accepted when when post is successful with Accepted" in {
+      "return SubmissionSuccess when when post is successful with Accepted" in {
 
         val messageSender = "MDTP-000000000000000000000000123-01"
 
@@ -100,15 +103,10 @@ class MessageConnectorSpec
 
         val result = connector.post(arrivalId, postValue, OffsetDateTime.now())
 
-        whenReady(result) {
-          response =>
-            response.status mustBe 202
-        }
+        result.futureValue mustEqual EisSubmissionSuccessful
       }
 
-      "return an exception when post is unsuccessful" in {
-
-        val messageSender = "MDTP-000000000000000000000000123-01"
+      "return a ErrorInPayload for a return code of 400" in {
 
         server.stubFor(
           post(urlEqualTo(postUrl))
@@ -121,7 +119,7 @@ class MessageConnectorSpec
             .withHeader("X-Message-Sender", equalTo(messageSender))
             .willReturn(
               aResponse()
-                .withStatus(genFailedStatusCodes.sample.value)
+                .withStatus(400)
             )
         )
 
@@ -130,11 +128,82 @@ class MessageConnectorSpec
 
         val result = connector.post(arrivalId, postValue, OffsetDateTime.now())
 
-        whenReady(result.failed) {
-          response =>
-            response mustBe an[Exception]
-        }
+        result.futureValue mustEqual ErrorInPayload
+      }
 
+      "return a VirusFoundOrInvalidToken for a return code of 403" in {
+
+        server.stubFor(
+          post(urlEqualTo(postUrl))
+            .withHeader("Authorization", equalTo("Bearer bearertokenhere"))
+            .withHeader("X-Forwarded-Host", equalTo("mdtp"))
+            .withHeader("X-Correlation-ID", headerCarrierPattern)
+            .withHeader("Content-Type", equalTo("application/xml"))
+            .withHeader("Accept", equalTo("application/xml"))
+            .withHeader("X-Message-Type", equalTo(messageType.toString))
+            .withHeader("X-Message-Sender", equalTo(messageSender))
+            .willReturn(
+              aResponse()
+                .withStatus(403)
+            )
+        )
+
+        val postValue = MovementMessageWithStatus(LocalDateTime.now(), messageType, <CC007A>test</CC007A>, MessageStatus.SubmissionPending, 1)
+        val arrivalId = ArrivalId(123)
+
+        val result = connector.post(arrivalId, postValue, OffsetDateTime.now())
+
+        result.futureValue mustEqual VirusFoundOrInvalidToken
+      }
+
+      "return a DownstreamFailure for a return code of 500" in {
+
+        server.stubFor(
+          post(urlEqualTo(postUrl))
+            .withHeader("Authorization", equalTo("Bearer bearertokenhere"))
+            .withHeader("X-Forwarded-Host", equalTo("mdtp"))
+            .withHeader("X-Correlation-ID", headerCarrierPattern)
+            .withHeader("Content-Type", equalTo("application/xml"))
+            .withHeader("Accept", equalTo("application/xml"))
+            .withHeader("X-Message-Type", equalTo(messageType.toString))
+            .withHeader("X-Message-Sender", equalTo(messageSender))
+            .willReturn(
+              aResponse()
+                .withStatus(500)
+            )
+        )
+
+        val postValue = MovementMessageWithStatus(LocalDateTime.now(), messageType, <CC007A>test</CC007A>, MessageStatus.SubmissionPending, 1)
+        val arrivalId = ArrivalId(123)
+
+        val result = connector.post(arrivalId, postValue, OffsetDateTime.now())
+
+        result.futureValue mustEqual DownstreamInternalServerError
+      }
+
+      "return an UnexpectedHttpResonse for an error code other than 202, 400, 403, 500" in {
+
+        server.stubFor(
+          post(urlEqualTo(postUrl))
+            .withHeader("Authorization", equalTo("Bearer bearertokenhere"))
+            .withHeader("X-Forwarded-Host", equalTo("mdtp"))
+            .withHeader("X-Correlation-ID", headerCarrierPattern)
+            .withHeader("Content-Type", equalTo("application/xml"))
+            .withHeader("Accept", equalTo("application/xml"))
+            .withHeader("X-Message-Type", equalTo(messageType.toString))
+            .withHeader("X-Message-Sender", equalTo(messageSender))
+            .willReturn(
+              aResponse()
+                .withStatus(418)
+            )
+        )
+
+        val postValue = MovementMessageWithStatus(LocalDateTime.now(), messageType, <CC007A>test</CC007A>, MessageStatus.SubmissionPending, 1)
+        val arrivalId = ArrivalId(123)
+
+        val result = connector.post(arrivalId, postValue, OffsetDateTime.now())
+
+        result.futureValue.httpStatus mustEqual 418
       }
     }
   }
@@ -148,6 +217,5 @@ object MessageConnectorSpec {
       case _       => matching("""\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b""")
     }
 
-  private val postUrl                        = "/common-transit-convention-trader-at-destination/message-notification"
-  private val genFailedStatusCodes: Gen[Int] = Gen.choose(400, 599)
+  private val postUrl = "/common-transit-convention-trader-at-destination/message-notification"
 }

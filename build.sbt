@@ -59,7 +59,7 @@ lazy val itSettings = Defaults.itSettings ++ Seq(
 )
 
 lazy val testSettings = Seq(
-  fork := true,
+  fork := false,
   javaOptions ++= Seq(
     "-Dconfig.resource=test.application.conf"
   ),

@@ -21,18 +21,20 @@ import java.util.UUID
 
 import com.google.inject.Inject
 import config.AppConfig
+import connectors.MessageConnector.EisSubmissionResult
+import connectors.MessageConnector.EisSubmissionResult._
 import models.ArrivalId
 import models.MessageSender
 import models.MessageType
 import models.MovementMessageWithStatus
 import models.TransitWrapper
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.http.HttpReads
 import uk.gov.hmrc.http.HttpResponse
 import uk.gov.hmrc.http.logging.Authorization
 import uk.gov.hmrc.http.logging.SessionId
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import utils.Format
+import uk.gov.hmrc.http.HttpReads.Implicits.readRaw
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -41,7 +43,7 @@ class MessageConnector @Inject()(config: AppConfig, http: HttpClient)(implicit e
 
   def post(arrivalId: ArrivalId, message: MovementMessageWithStatus, dateTime: OffsetDateTime)(
     implicit headerCarrier: HeaderCarrier
-  ): Future[HttpResponse] = {
+  ): Future[EisSubmissionResult] = {
 
     val xmlMessage = TransitWrapper(message.message).toString
 
@@ -53,8 +55,15 @@ class MessageConnector @Inject()(config: AppConfig, http: HttpClient)(implicit e
       .copy(authorization = Some(Authorization(s"Bearer ${config.eisBearerToken}")))
       .withExtraHeaders(addHeaders(message.messageType, dateTime, messageSender): _*)
 
-    // TODO: Don't throw exceptions here
-    http.POSTString(url, xmlMessage)(rds = HttpReads.readRaw, hc = newHeaders, ec = ec)
+    http
+      .POSTString[HttpResponse](url, xmlMessage)(readRaw, hc = newHeaders, implicitly)
+      .map {
+        case x if x.status == EisSubmissionSuccessful.httpStatus       => EisSubmissionSuccessful
+        case x if x.status == ErrorInPayload.httpStatus                => ErrorInPayload
+        case x if x.status == VirusFoundOrInvalidToken.httpStatus      => VirusFoundOrInvalidToken
+        case x if x.status == DownstreamInternalServerError.httpStatus => DownstreamInternalServerError
+        case x                                                         => UnexpectedHttpResponse(x)
+      }
   }
 
   private def addHeaders(messageType: MessageType, dateTime: OffsetDateTime, messageSender: MessageSender)(
@@ -77,4 +86,26 @@ class MessageConnector @Inject()(config: AppConfig, http: HttpClient)(implicit e
 
   private[connectors] def removePrefix(prefix: String, sessionId: SessionId): String =
     sessionId.value.replaceFirst(prefix, "")
+}
+
+object MessageConnector {
+
+  sealed abstract class EisSubmissionResult(val httpStatus: Int, asString: String) {
+    override def toString: String = s"EisSubmissionResult(code = $httpStatus, and details = " + asString + ")"
+  }
+
+  object EisSubmissionResult {
+    object EisSubmissionSuccessful extends EisSubmissionResult(202, "EIS Successful Submission")
+
+    sealed abstract class EisSubmissionFailure(httpStatus: Int, asString: String) extends EisSubmissionResult(httpStatus, asString)
+
+    sealed abstract class EisSubmissionRejected(httpStatus: Int, asString: String) extends EisSubmissionFailure(httpStatus, asString)
+    object ErrorInPayload                                                          extends EisSubmissionRejected(400, "Message failed schema validation")
+    object VirusFoundOrInvalidToken                                                extends EisSubmissionRejected(403, "Virus found, token invalid etc")
+
+    sealed abstract class EisSubmissionFailureDownstream(httpStatus: Int, asString: String) extends EisSubmissionFailure(httpStatus, asString)
+    object DownstreamInternalServerError                                                    extends EisSubmissionFailureDownstream(500, "Downstream internal server error")
+    case class UnexpectedHttpResponse(httpResponse: HttpResponse)
+        extends EisSubmissionFailureDownstream(httpResponse.status, "Unexpected HTTP Response received")
+  }
 }

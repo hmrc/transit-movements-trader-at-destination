@@ -23,7 +23,7 @@ import models.ArrivalId
 import models.ArrivalStatus
 import models.MessageId
 import models.MessageType
-import models.SubmissionProcessingResult
+import models.SubmissionProcessingResult._
 import models.MessageStatus.SubmissionFailed
 import models.request.ArrivalRequest
 import models.response.ResponseArrivalWithMessages
@@ -67,6 +67,22 @@ class MessagesController @Inject()(
 
               case SubmissionProcessingResult.SubmissionFailureExternal =>
                 BadGateway
+      MessageType.getMessageType(request.body) match {
+        case Some(MessageType.UnloadingRemarks) =>
+          arrivalMovementService
+            .makeMovementMessageWithStatus(request.arrival.nextMessageCorrelationId, MessageType.UnloadingRemarks)(request.body)
+            .map {
+              message =>
+                submitMessageService
+                  .submitMessage(arrivalId, request.arrival.nextMessageId, message, ArrivalStatus.UnloadingRemarksSubmitted)
+                  .map {
+                    case SubmissionFailureInternal => InternalServerError
+                    case SubmissionFailureExternal => BadGateway
+                    case SubmissionFailureRejected => BadRequest("Failed schema validation")
+                    case SubmissionSuccess =>
+                      Accepted("Message accepted")
+                        .withHeaders("Location" -> routes.MessagesController.getMessage(request.arrival.arrivalId, request.arrival.nextMessageId).url)
+                  }
             }
         case Left(error) =>
           Logger.warn(s"Failed to create MovementMessageWithStatus with error: $error")

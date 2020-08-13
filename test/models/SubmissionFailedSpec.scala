@@ -16,11 +16,11 @@
 
 package models.messageState
 
+import connectors.MessageConnector.EisSubmissionResult.EisSubmissionRejected
+import connectors.MessageConnector.EisSubmissionResult.EisSubmissionSuccessful
 import generators.ModelGenerators
 import models.MessageStatus.SubmissionFailed
 import models.MessageStatus.SubmissionSucceeded
-import models.SubmissionProcessingResult
-import models.SubmissionProcessingResult.SubmissionFailure
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 import org.scalacheck.Arbitrary.arbitrary
@@ -31,11 +31,11 @@ class SubmissionFailedSpec extends AnyFreeSpec with Matchers with ScalaCheckDriv
   "SubmissionFailed must transition" - {
 
     "to Submitted when receiving a Submission Success event" in {
-      SubmissionFailed.transition(SubmissionProcessingResult.SubmissionSuccess) mustEqual SubmissionSucceeded
+      SubmissionFailed.transition(EisSubmissionSuccessful) mustEqual SubmissionSucceeded
     }
 
     "to Submission Failed when receiving a Submission Failure event" in {
-      forAll(arbitrary[SubmissionFailure]) {
+      forAll(arbitrary[EisSubmissionRejected]) {
         failure =>
           SubmissionFailed.transition(failure) mustEqual SubmissionFailed
       }
