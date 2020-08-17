@@ -22,6 +22,7 @@ import java.time.LocalTime
 
 import base.SpecBase
 import cats.data.NonEmptyList
+import cats.data.ReaderT
 import connectors.MessageConnector
 import generators.ModelGenerators
 import models.MessageStatus.SubmissionFailed
@@ -53,6 +54,7 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import repositories.ArrivalMovementRepository
 import repositories.LockRepository
+import services.ArrivalMovementMessageService
 import services.SubmitMessageService
 import utils.Format
 
@@ -115,6 +117,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
         val mockLockRepository            = mock[LockRepository]
         val mockSubmitMessageService      = mock[SubmitMessageService]
+        val mockArrivalMovementService    = mock[ArrivalMovementMessageService]
 
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
@@ -226,7 +229,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
         }
       }
 
-      "must return NotImplemented if the message is not supported" in {
+      "must return BadRequest if the message is not supported" in {
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
         val mockMessageConnector          = mock[MessageConnector]
         val mockLockRepository            = mock[LockRepository]
@@ -251,7 +254,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
 
           val result = route(application, request).value
 
-          status(result) mustEqual NOT_IMPLEMENTED
+          status(result) mustEqual BAD_REQUEST
         }
       }
 

@@ -31,6 +31,7 @@ import models.MessageType
 import models.MovementMessageWithStatus
 import models.MovementMessageWithoutStatus
 import models.MovementReferenceNumber
+import models.ParseError.InvalidRootNode
 import org.mockito.Mockito.when
 import org.scalatest.concurrent.IntegrationPatience
 import play.api.inject.bind
@@ -84,11 +85,11 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
         nextMessageCorrelationId = 2
       )
 
-      service.makeArrivalMovement(eori)(movement).value.futureValue mustEqual expectedArrival
+      service.makeArrivalMovement(eori)(movement).right.get.futureValue mustEqual expectedArrival
       application.stop()
     }
 
-    "returns None when the root node is not <CC007A>" in {
+    "returns InvalidRootNode when the root node is not <CC007A>" in {
 
       val mrn        = MovementReferenceNumber("MRN")
       val eori       = "eoriNumber"
@@ -108,7 +109,7 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
           </HEAHEA>
         </Foo>
 
-      service.makeArrivalMovement(eori)(invalidPayload) must not be defined
+      service.makeArrivalMovement(eori)(invalidPayload).left.get mustBe an[InvalidRootNode]
       application.stop()
     }
   }
@@ -135,11 +136,11 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
         val messageCorrelationId = 1
         val expectedMessage      = MovementMessageWithoutStatus(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.GoodsReleased, movement, messageCorrelationId)
 
-        service.makeMessage(messageCorrelationId, MessageType.GoodsReleased)(movement).value mustEqual expectedMessage
+        service.makeMessage(messageCorrelationId, MessageType.GoodsReleased)(movement).right.get mustEqual expectedMessage
         application.stop()
       }
 
-      "returns None when the root node is not <CC025A>" in {
+      "returns InvalidRootNode when the root node is not <CC025A>" in {
 
         val dateOfPrep = LocalDate.now()
         val timeOfPrep = LocalTime.of(1, 1)
@@ -156,7 +157,7 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
 
         val messageCorrelationId = 1
 
-        service.makeMessage(messageCorrelationId, MessageType.GoodsReleased)(movement) must not be defined
+        service.makeMessage(messageCorrelationId, MessageType.GoodsReleased)(movement).left.get mustBe an[InvalidRootNode]
         application.stop()
       }
     }
@@ -182,11 +183,11 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
         val expectedMessage =
           MovementMessageWithoutStatus(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.UnloadingPermission, movement, messageCorrelationId)
 
-        service.makeMessage(messageCorrelationId, MessageType.UnloadingPermission)(movement).value mustEqual expectedMessage
+        service.makeMessage(messageCorrelationId, MessageType.UnloadingPermission)(movement).right.get mustEqual expectedMessage
         application.stop()
       }
 
-      "returns None when the root node is not <CC043A>" in {
+      "returns InvalidRootNode when the root node is not <CC043A>" in {
 
         val dateOfPrep = LocalDate.now()
         val timeOfPrep = LocalTime.of(1, 1)
@@ -203,7 +204,7 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
 
         val messageCorrelationId = 1
 
-        service.makeMessage(messageCorrelationId, MessageType.UnloadingPermission)(movement) must not be defined
+        service.makeMessage(messageCorrelationId, MessageType.UnloadingPermission)(movement).left.get mustBe an[InvalidRootNode]
         application.stop()
       }
     }
@@ -231,11 +232,11 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
       val expectedMessage =
         MovementMessageWithStatus(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.UnloadingRemarks, movement, SubmissionPending, messageCorrelationId)
 
-      service.makeMovementMessageWithStatus(messageCorrelationId, MessageType.UnloadingRemarks)(movement).value mustEqual expectedMessage
+      service.makeMovementMessageWithStatus(messageCorrelationId, MessageType.UnloadingRemarks)(movement).right.get mustEqual expectedMessage
       application.stop()
     }
 
-    "does not return a message when the root node does not match the message type" in {
+    "returns InvalidRootNode when the root node does not match the message type" in {
 
       val dateOfPrep = LocalDate.now()
       val timeOfPrep = LocalTime.of(1, 1)
@@ -250,7 +251,7 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
           <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
         </Foo>
 
-      service.makeMovementMessageWithStatus(1, MessageType.UnloadingRemarks)(movement) must not be defined
+      service.makeMovementMessageWithStatus(1, MessageType.UnloadingRemarks)(movement).left.get mustBe an[InvalidRootNode]
       application.stop()
     }
   }
