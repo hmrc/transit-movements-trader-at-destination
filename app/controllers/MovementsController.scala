@@ -81,7 +81,7 @@ class MovementsController @Inject()(
                       .withHeaders("Location" -> routes.MovementsController.getArrival(arrival.arrivalId).url)
                 }
             case Left(error) =>
-              Logger.warn(s"Failed to create ArrivalMovementWithStatus with the following error: $error")
+              Logger.error(s"Failed to create ArrivalMovementWithStatus with the following error: $error")
               Future.successful(BadRequest(s"Failed to create ArrivalMovementWithStatus with the following error: $error"))
           }
         case _ =>
@@ -105,7 +105,7 @@ class MovementsController @Inject()(
                   }
                 }
             case Left(error) =>
-              Logger.warn(s"Failed to create ArrivalMovement with the following error: $error")
+              Logger.error(s"Failed to create ArrivalMovement with the following error: $error")
               Future.successful(BadRequest(s"Failed to create ArrivalMovement with the following error: $error"))
           }
       }
@@ -127,7 +127,7 @@ class MovementsController @Inject()(
                   .withHeaders("Location" -> routes.MovementsController.getArrival(request.arrival.arrivalId).url)
             }
         case Left(error) =>
-          Logger.warn(s"Failed to create message and MovementReferenceNumber with error: $error")
+          Logger.error(s"Failed to create message and MovementReferenceNumber with error: $error")
           Future.successful(BadRequest(s"Failed to create message and MovementReferenceNumber with error: $error"))
       }
   }

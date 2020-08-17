@@ -36,7 +36,7 @@ import scala.xml.NodeSeq
 class ArrivalMovementMessageService @Inject()(arrivalIdRepository: ArrivalIdRepository)(implicit ec: ExecutionContext) {
   import XmlMessageParser._
 
-  private def nodeSeqToEither(xml: NodeSeq): ParseHandler[NodeSeq] =
+  private[this] def nodeSeqToEither(xml: NodeSeq): ParseHandler[NodeSeq] =
     if (xml != null) {
       Right(xml)
     } else {

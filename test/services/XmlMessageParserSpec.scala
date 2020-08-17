@@ -26,6 +26,8 @@ import models.MovementReferenceNumber
 import models.ParseError._
 import utils.Format
 
+import scala.xml.NodeSeq
+
 class XmlMessageParserSpec extends SpecBase {
 
   "dateOfPrepR" - {
@@ -122,6 +124,10 @@ class XmlMessageParserSpec extends SpecBase {
         </CC007A>
 
       XmlMessageParser.mrnR(movement).left.get mustBe an[EmptyMovementReferenceNumber]
+    }
+
+    "returns EmptyMovementReferenceNumber if given a NodeSeq.Empty" in {
+      XmlMessageParser.mrnR(NodeSeq.Empty).left.get mustBe an[EmptyMovementReferenceNumber]
     }
 
   }

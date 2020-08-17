@@ -66,7 +66,7 @@ class MessagesController @Inject()(
                   .withHeaders("Location" -> routes.MessagesController.getMessage(request.arrival.arrivalId, request.arrival.nextMessageId).url)
             }
         case Left(error) =>
-          Logger.warn(s"Failed to create MovementMessageWithStatus with error: $error")
+          Logger.error(s"Failed to create MovementMessageWithStatus with error: $error")
           Future.successful(BadRequest(s"Failed to create MovementMessageWithStatus with error: $error"))
       }
   }

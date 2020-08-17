@@ -58,7 +58,7 @@ class AuthenticateGetOptionalArrivalForWriteAction(
       case body: NodeSeq =>
         XmlMessageParser.mrnR(body) match {
           case Left(error) =>
-            Logger.warn(s"Failed to retrieve MovementReferenceNumber with error: $error")
+            Logger.error(s"Failed to retrieve MovementReferenceNumber with error: $error")
             Future.successful(BadRequest(s"Failed to retrieve MovementReferenceNumber with error: $error"))
 
           case Right(mrn) => {
