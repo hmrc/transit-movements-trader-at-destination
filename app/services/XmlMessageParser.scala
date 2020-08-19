@@ -22,55 +22,62 @@ import java.time.LocalTime
 
 import cats.data._
 import cats.implicits._
+import models.ParseError._
 import models.MessageType
 import models.MovementReferenceNumber
+import models.ParseError
 import utils.Format
 
+import scala.util.Failure
+import scala.util.Success
 import scala.util.Try
 import scala.xml.NodeSeq
 
 object XmlMessageParser {
 
-  def correctRootNodeR(messageType: MessageType): ReaderT[Option, NodeSeq, NodeSeq] =
-    ReaderT[Option, NodeSeq, NodeSeq] {
+  type ParseHandler[A] = Either[ParseError, A]
+
+  def correctRootNodeR(messageType: MessageType): ReaderT[ParseHandler, NodeSeq, NodeSeq] =
+    ReaderT[ParseHandler, NodeSeq, NodeSeq] {
       nodeSeq =>
-        if (nodeSeq.head.label == messageType.rootNode) Some(nodeSeq) else None
+        if (nodeSeq.head.label == messageType.rootNode)
+          Right(nodeSeq)
+        else
+          Left(InvalidRootNode(s"Node ${nodeSeq.head.label} didnt match ${messageType.rootNode}"))
     }
 
-  val dateOfPrepR: ReaderT[Option, NodeSeq, LocalDate] =
-    ReaderT[Option, NodeSeq, LocalDate](xml => {
-      (xml \ "DatOfPreMES9").text match {
-        case x if x.isEmpty => None
-        case x => {
-          Try {
-            LocalDate.parse(x, Format.dateFormatter)
-          }.toOption // TODO: We are not propagating this failure back, do we need to do this?
-        }
+  val dateOfPrepR: ReaderT[ParseHandler, NodeSeq, LocalDate] =
+    ReaderT[ParseHandler, NodeSeq, LocalDate](xml => {
+
+      val dateOfPrepString = (xml \ "DatOfPreMES9").text
+
+      Try(LocalDate.parse(dateOfPrepString, Format.dateFormatter)) match {
+        case Success(value) => Right(value)
+        case Failure(e)     => Left(LocalDateParseFailure(s"Failed to parse DatOfPreMES9 to LocalDate with error: ${e.getMessage}"))
       }
     })
 
-  val timeOfPrepR: ReaderT[Option, NodeSeq, LocalTime] =
-    ReaderT[Option, NodeSeq, LocalTime](xml => {
-      (xml \ "TimOfPreMES10").text match {
-        case x if x.isEmpty => None
-        case x => {
-          Try {
-            LocalTime.parse(x, Format.timeFormatter)
-          }.toOption // TODO: We are not propagating this failure back, do we need to do this?
-        }
+  val timeOfPrepR: ReaderT[ParseHandler, NodeSeq, LocalTime] =
+    ReaderT[ParseHandler, NodeSeq, LocalTime](xml => {
+
+      val timeOfPrepString = (xml \ "TimOfPreMES10").text
+
+      Try(LocalTime.parse(timeOfPrepString, Format.timeFormatter)) match {
+        case Success(value) => Right(value)
+        case Failure(e)     => Left(LocalTimeParseFailure(s"Failed to parse TimOfPreMES10 to LocalTime with error: ${e.getMessage}"))
       }
     })
 
-  val dateTimeOfPrepR: ReaderT[Option, NodeSeq, LocalDateTime] =
+  val dateTimeOfPrepR: ReaderT[ParseHandler, NodeSeq, LocalDateTime] =
     for {
       date <- dateOfPrepR
       time <- timeOfPrepR
     } yield LocalDateTime.of(date, time)
 
-  val mrnR: ReaderT[Option, NodeSeq, MovementReferenceNumber] =
-    ReaderT[Option, NodeSeq, MovementReferenceNumber](xml =>
-      (xml \ "HEAHEA" \ "DocNumHEA5").text match {
-        case mrnString if !mrnString.isEmpty => Some(MovementReferenceNumber(mrnString))
-        case _                               => None
+  val mrnR: ReaderT[ParseHandler, NodeSeq, MovementReferenceNumber] =
+    ReaderT[ParseHandler, NodeSeq, MovementReferenceNumber](xml =>
+      (xml \ "HEAHEA" \ "DocNumHEA5").text.trim match {
+        case mrnString if mrnString.nonEmpty => Right(MovementReferenceNumber(mrnString))
+        case _                               => Left(EmptyMovementReferenceNumber("DocNumHEA5 was empty"))
     })
 }

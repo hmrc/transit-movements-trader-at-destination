@@ -22,56 +22,68 @@ import com.google.inject.Inject
 import models.ArrivalStatus.Initialized
 import models.MessageStatus.SubmissionPending
 import models.Arrival
-import models.ArrivalId
 import models.MessageType
 import models.MovementMessageWithStatus
 import models.MovementMessageWithoutStatus
+import models.MovementReferenceNumber
+import models.ParseError.EmptyNodeSeq
 import repositories.ArrivalIdRepository
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.xml.NodeSeq
 
 class ArrivalMovementMessageService @Inject()(arrivalIdRepository: ArrivalIdRepository)(implicit ec: ExecutionContext) {
   import XmlMessageParser._
 
-  def makeArrivalMovement(arrivalId: ArrivalId, eori: String): ReaderT[Option, NodeSeq, Arrival] =
+  private[this] def nodeSeqToEither(xml: NodeSeq): ParseHandler[NodeSeq] =
+    if (xml != null) {
+      Right(xml)
+    } else {
+      Left(EmptyNodeSeq("Request body is empty"))
+    }
+
+  def makeArrivalMovement(eori: String): ReaderT[ParseHandler, NodeSeq, Future[Arrival]] =
     for {
       _        <- correctRootNodeR(MessageType.ArrivalNotification)
       dateTime <- dateTimeOfPrepR
       message  <- makeMovementMessageWithStatus(1, MessageType.ArrivalNotification)
       mrn      <- mrnR
     } yield {
-      Arrival(
-        arrivalId,
-        mrn,
-        eori,
-        Initialized,
-        dateTime,
-        dateTime,
-        dateTime,
-        NonEmptyList.one(message),
-        2
-      )
+      arrivalIdRepository
+        .nextId()
+        .map(
+          Arrival(
+            _,
+            mrn,
+            eori,
+            Initialized,
+            dateTime,
+            dateTime,
+            dateTime,
+            NonEmptyList.one(message),
+            2
+          ))
     }
 
-  def messageAndMrn(messageCorrectionId: Int) =
+  def messageAndMrn(messageCorrectionId: Int): ReaderT[ParseHandler, NodeSeq, (MovementMessageWithStatus, MovementReferenceNumber)] =
     for {
       _       <- correctRootNodeR(MessageType.ArrivalNotification)
       message <- makeMovementMessageWithStatus(messageCorrectionId, MessageType.ArrivalNotification)
       mrn     <- mrnR
     } yield (message, mrn)
 
-  def makeMessage(messageCorrelationId: Int, messageType: MessageType): ReaderT[Option, NodeSeq, MovementMessageWithoutStatus] =
+  def makeMessage(messageCorrelationId: Int, messageType: MessageType): ReaderT[ParseHandler, NodeSeq, MovementMessageWithoutStatus] =
     for {
       _          <- correctRootNodeR(messageType)
       dateTime   <- dateTimeOfPrepR
-      xmlMessage <- ReaderT[Option, NodeSeq, NodeSeq](Option.apply)
+      xmlMessage <- ReaderT[ParseHandler, NodeSeq, NodeSeq](nodeSeqToEither)
     } yield MovementMessageWithoutStatus(dateTime, messageType, xmlMessage, messageCorrelationId)
 
-  def makeMovementMessageWithStatus(messageCorrelationId: Int, messageType: MessageType): ReaderT[Option, NodeSeq, MovementMessageWithStatus] =
+  def makeMovementMessageWithStatus(messageCorrelationId: Int, messageType: MessageType): ReaderT[ParseHandler, NodeSeq, MovementMessageWithStatus] =
     for {
       _          <- correctRootNodeR(messageType)
       dateTime   <- dateTimeOfPrepR
-      xmlMessage <- ReaderT[Option, NodeSeq, NodeSeq](Option.apply)
+      xmlMessage <- ReaderT[ParseHandler, NodeSeq, NodeSeq](nodeSeqToEither)
     } yield MovementMessageWithStatus(dateTime, messageType, xmlMessage, SubmissionPending, messageCorrelationId)
 }

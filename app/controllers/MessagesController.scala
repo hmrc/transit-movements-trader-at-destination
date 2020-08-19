@@ -27,6 +27,7 @@ import models.SubmissionProcessingResult.SubmissionFailureExternal
 import models.SubmissionProcessingResult.SubmissionFailureInternal
 import models.SubmissionProcessingResult.SubmissionFailureRejected
 import models.SubmissionProcessingResult.SubmissionSuccess
+
 import models.request.ArrivalRequest
 import models.response.ResponseArrivalWithMessages
 import models.response.ResponseMovementMessage
@@ -56,31 +57,24 @@ class MessagesController @Inject()(
 
   def post(arrivalId: ArrivalId): Action[NodeSeq] = (authenticateForWrite(arrivalId)(parse.xml) andThen validateMessageSenderNode.filter).async {
     implicit request: ArrivalRequest[NodeSeq] =>
-      MessageType.getMessageType(request.body) match {
-        case Some(MessageType.UnloadingRemarks) =>
-          val updatedBody = XMLTransformer.updateMesSenMES3(request.arrival.arrivalId, request.arrival.nextMessageCorrelationId, request.body)
+      val updatedBody = XMLTransformer.updateMesSenMES3(request.arrival.arrivalId, request.arrival.nextMessageCorrelationId, request.body)
 
-          arrivalMovementService
-            .makeMovementMessageWithStatus(request.arrival.nextMessageCorrelationId, MessageType.UnloadingRemarks)(updatedBody)
+      arrivalMovementService
+        .makeMovementMessageWithStatus(request.arrival.nextMessageCorrelationId, MessageType.UnloadingRemarks)(updatedBody) match {
+        case Right(message) =>
+          submitMessageService
+            .submitMessage(arrivalId, request.arrival.nextMessageId, message, ArrivalStatus.UnloadingRemarksSubmitted)
             .map {
-              message =>
-                submitMessageService
-                  .submitMessage(arrivalId, request.arrival.nextMessageId, message, ArrivalStatus.UnloadingRemarksSubmitted)
-                  .map {
-                    case SubmissionFailureInternal => InternalServerError
-                    case SubmissionFailureExternal => BadGateway
-                    case SubmissionFailureRejected => BadRequest("Failed schema validation")
-                    case SubmissionSuccess =>
-                      Accepted("Message accepted")
-                        .withHeaders("Location" -> routes.MessagesController.getMessage(request.arrival.arrivalId, request.arrival.nextMessageId).url)
-                  }
+              case SubmissionFailureInternal => InternalServerError
+              case SubmissionFailureExternal => BadGateway
+              case SubmissionFailureRejected => BadRequest("Failed schema validation")
+              case SubmissionSuccess =>
+                Accepted("Message accepted")
+                  .withHeaders("Location" -> routes.MessagesController.getMessage(request.arrival.arrivalId, request.arrival.nextMessageId).url)
             }
-            .getOrElse {
-              Logger.warn("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5")
-              Future.successful(BadRequest("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5"))
-            }
-        case _ =>
-          Future.successful(NotImplemented)
+        case Left(error) =>
+          Logger.error(s"Failed to create MovementMessageWithStatus with error: $error")
+          Future.successful(BadRequest(s"Failed to create MovementMessageWithStatus with error: $error"))
       }
   }
 

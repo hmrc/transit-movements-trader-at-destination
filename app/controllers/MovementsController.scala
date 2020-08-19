@@ -20,18 +20,17 @@ import cats.data.NonEmptyList
 import controllers.actions._
 import javax.inject.Inject
 import models.MessageStatus.SubmissionSucceeded
-import models.request.ArrivalRequest
-import models.response.ResponseArrival
 import models.ArrivalId
 import models.ArrivalStatus
 import models.MessageType
 import models.MovementMessage
 import models.ResponseArrivals
-import models.SubmissionProcessingResult
 import models.SubmissionProcessingResult.SubmissionFailureExternal
 import models.SubmissionProcessingResult.SubmissionFailureInternal
 import models.SubmissionProcessingResult.SubmissionFailureRejected
 import models.SubmissionProcessingResult.SubmissionSuccess
+import models.request.ArrivalRequest
+import models.response.ResponseArrival
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.Action
@@ -74,58 +73,46 @@ class MovementsController @Inject()(
         case Some(arrival) if allMessageUnsent(arrival.messages) =>
           val updatedXml = XMLTransformer.updateMesSenMES3(arrival.arrivalId, arrival.nextMessageCorrelationId, request.body)
           arrivalMovementService
-            .makeMovementMessageWithStatus(arrival.nextMessageCorrelationId, MessageType.ArrivalNotification)(updatedXml)
-            .map {
-              message =>
-                submitMessageService
-                  .submitMessage(arrival.arrivalId, arrival.nextMessageId, message, ArrivalStatus.ArrivalSubmitted)
-                  .map {
-                    case SubmissionFailureInternal => InternalServerError
-                    case SubmissionFailureExternal => BadGateway
-                    case SubmissionFailureRejected => BadRequest("Failed schema validation")
-                    case SubmissionSuccess =>
-                      Accepted("Message accepted")
-                        .withHeaders("Location" -> routes.MovementsController.getArrival(arrival.arrivalId).url)
-                  }
-            }
-            .getOrElse {
-              Logger.warn("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5")
-              Future.successful(BadRequest("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5"))
-            }
-
-        case _ =>
-          arrivalIdRepository
-            .nextId()
-            .flatMap {
-              arrivalId =>
-                val updatedXml = XMLTransformer.updateMesSenMES3(arrivalId, 1, request.body)
-                arrivalMovementService.makeArrivalMovement(arrivalId, request.eoriNumber)(updatedXml) match {
-                  case None =>
-                    Logger.warn("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5")
-                    Future.successful(BadRequest("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5"))
-                  case Some(arrival) =>
-                    submitMessageService
-                      .submitArrival(arrival)
-                      .map {
-                        case SubmissionFailureExternal => BadGateway
-                        case SubmissionFailureInternal => InternalServerError
-                        case SubmissionFailureRejected => BadRequest("Failed schema validation")
-                        case SubmissionSuccess =>
-                          Accepted("Message accepted")
-                            .withHeaders("Location" -> routes.MovementsController.getArrival(arrivalId).url)
-                      }
-                      .recover {
-                        case _ =>
-                          InternalServerError
-                      }
+            .makeMovementMessageWithStatus(arrival.nextMessageCorrelationId, MessageType.ArrivalNotification)(updatedXml) match {
+            case Right(message) =>
+              submitMessageService
+                .submitMessage(arrival.arrivalId, arrival.nextMessageId, message, ArrivalStatus.ArrivalSubmitted)
+                .map {
+                  case SubmissionFailureInternal => InternalServerError
+                  case SubmissionFailureExternal => BadGateway
+                  case SubmissionFailureRejected => BadRequest("Failed schema validation")
+                  case SubmissionSuccess =>
+                    Accepted("Message accepted")
+                      .withHeaders("Location" -> routes.MovementsController.getArrival(arrival.arrivalId).url)
                 }
-            }
-            .recover {
-              case _ => {
-                InternalServerError
-              }
-            }
-
+            case Left(error) =>
+              Logger.error(s"Failed to create ArrivalMovementWithStatus with the following error: $error")
+              Future.successful(BadRequest(s"Failed to create ArrivalMovementWithStatus with the following error: $error"))
+          }
+        case _ =>
+          arrivalMovementService.makeArrivalMovement(request.eoriNumber)(request.body) match {
+            case Right(arrivalFuture) =>
+              arrivalFuture
+                .flatMap {
+                  arrival =>
+                    submitMessageService.submitArrival(arrival).map {
+                      case SubmissionFailureExternal => BadGateway
+                      case SubmissionFailureInternal => InternalServerError
+                      case SubmissionFailureRejected => BadRequest("Failed schema validation")
+                      case SubmissionSuccess =>
+                        Accepted("Message accepted")
+                          .withHeaders("Location" -> routes.MovementsController.getArrival(arrival.arrivalId).url)
+                    }
+                }
+                .recover {
+                  case _ => {
+                    InternalServerError
+                  }
+                }
+            case Left(error) =>
+              Logger.error(s"Failed to create ArrivalMovement with the following error: $error")
+              Future.successful(BadRequest(s"Failed to create ArrivalMovement with the following error: $error"))
+          }
       }
   }
 
@@ -133,24 +120,22 @@ class MovementsController @Inject()(
     implicit request: ArrivalRequest[NodeSeq] =>
       val updatedXml = XMLTransformer.updateMesSenMES3(request.arrival.arrivalId, request.arrival.nextMessageCorrelationId, request.body)
       arrivalMovementService
-        .messageAndMrn(request.arrival.nextMessageCorrelationId)(updatedXml)
-        .map {
-          case (message, mrn) =>
-            submitMessageService
-              .submitIe007Message(arrivalId, request.arrival.nextMessageId, message, mrn)
-              .map {
-                case SubmissionFailureInternal => InternalServerError
-                case SubmissionFailureExternal => BadGateway
-                case SubmissionFailureRejected => BadRequest("Failed schema validation")
-                case SubmissionSuccess =>
-                  Accepted("Message accepted")
-                    .withHeaders("Location" -> routes.MovementsController.getArrival(request.arrival.arrivalId).url)
-              }
-        }
-        .getOrElse {
-          Logger.warn("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5")
-          Future.successful(BadRequest("Invalid data: missing either DatOfPreMES9, TimOfPreMES10 or DocNumHEA5"))
-        }
+        .messageAndMrn(request.arrival.nextMessageCorrelationId)(updatedXml) match {
+        case Right((message, mrn)) =>
+          submitMessageService
+            .submitIe007Message(arrivalId, request.arrival.nextMessageId, message, mrn)
+            .map {
+              case SubmissionFailureInternal => InternalServerError
+              case SubmissionFailureExternal => BadGateway
+              case SubmissionFailureRejected => BadRequest("Failed schema validation")
+              case SubmissionSuccess =>
+                Accepted("Message accepted")
+                  .withHeaders("Location" -> routes.MovementsController.getArrival(request.arrival.arrivalId).url)
+            }
+        case Left(error) =>
+          Logger.error(s"Failed to create message and MovementReferenceNumber with error: $error")
+          Future.successful(BadRequest(s"Failed to create message and MovementReferenceNumber with error: $error"))
+      }
   }
 
   def getArrival(arrivalId: ArrivalId): Action[AnyContent] = authenticatedArrivalForRead(arrivalId) {
