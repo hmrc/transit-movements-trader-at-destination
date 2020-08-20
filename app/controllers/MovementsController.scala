@@ -71,7 +71,7 @@ class MovementsController @Inject()(
       request.arrival match {
         case Some(arrival) if allMessageUnsent(arrival.messages) =>
           arrivalMovementService
-            .makeMovementMessageWithStatus(arrival.arrivalId, arrival.nextMessageCorrelationId, MessageType.ArrivalNotification)(request.body) match {
+            .makeOutboundMessage(arrival.arrivalId, arrival.nextMessageCorrelationId, MessageType.ArrivalNotification)(request.body) match {
             case Right(message) =>
               submitMessageService
                 .submitMessage(arrival.arrivalId, arrival.nextMessageId, message, ArrivalStatus.ArrivalSubmitted)

@@ -56,7 +56,7 @@ class MessagesController @Inject()(
   def post(arrivalId: ArrivalId): Action[NodeSeq] = (authenticateForWrite(arrivalId)(parse.xml) andThen validateMessageSenderNode.filter).async {
     implicit request: ArrivalRequest[NodeSeq] =>
       arrivalMovementService
-        .makeMovementMessageWithStatus(arrivalId, request.arrival.nextMessageCorrelationId, MessageType.UnloadingRemarks)(request.body) match {
+        .makeOutboundMessage(arrivalId, request.arrival.nextMessageCorrelationId, MessageType.UnloadingRemarks)(request.body) match {
         case Right(message) =>
           submitMessageService
             .submitMessage(arrivalId, request.arrival.nextMessageId, message, ArrivalStatus.UnloadingRemarksSubmitted)

@@ -26,6 +26,7 @@ import models.MessageStatus.SubmissionPending
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalStatus
+import models.MessageSender
 import models.MessageStatus
 import models.MessageType
 import models.MovementMessage
@@ -132,7 +133,7 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
     }
   }
 
-  "makeMessage" - {
+  "makeInboundMessage" - {
 
     "when given a goodsReleasedMessage" - {
 
@@ -154,7 +155,7 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
         val messageCorrelationId = 1
         val expectedMessage      = MovementMessageWithoutStatus(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.GoodsReleased, movement, messageCorrelationId)
 
-        service.makeMessage(messageCorrelationId, MessageType.GoodsReleased)(movement).right.get mustEqual expectedMessage
+        service.makeInboundMessage(messageCorrelationId, MessageType.GoodsReleased)(movement).right.get mustEqual expectedMessage
         application.stop()
       }
 
@@ -175,7 +176,7 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
 
         val messageCorrelationId = 1
 
-        service.makeMessage(messageCorrelationId, MessageType.GoodsReleased)(movement).left.get mustBe an[InvalidRootNode]
+        service.makeInboundMessage(messageCorrelationId, MessageType.GoodsReleased)(movement).left.get mustBe an[InvalidRootNode]
         application.stop()
       }
     }
@@ -201,7 +202,7 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
         val expectedMessage =
           MovementMessageWithoutStatus(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.UnloadingPermission, movement, messageCorrelationId)
 
-        service.makeMessage(messageCorrelationId, MessageType.UnloadingPermission)(movement).right.get mustEqual expectedMessage
+        service.makeInboundMessage(messageCorrelationId, MessageType.UnloadingPermission)(movement).right.get mustEqual expectedMessage
         application.stop()
       }
 
@@ -222,14 +223,14 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
 
         val messageCorrelationId = 1
 
-        service.makeMessage(messageCorrelationId, MessageType.UnloadingPermission)(movement).left.get mustBe an[InvalidRootNode]
+        service.makeInboundMessage(messageCorrelationId, MessageType.UnloadingPermission)(movement).left.get mustBe an[InvalidRootNode]
         application.stop()
       }
     }
 
   }
 
-  "makeMovementMessageWithStatus" - {
+  "makeOutboundMessage" - {
 
     "returns a message with the correct MesSenMES3 in xml payload" in {
 
@@ -256,7 +257,7 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
                                   messageCorrelationId)
 
       val result: MovementMessage =
-        service.makeMovementMessageWithStatus(id, messageCorrelationId, MessageType.UnloadingRemarks)(movement.map(trim)).right.get
+        service.makeOutboundMessage(id, messageCorrelationId, MessageType.UnloadingRemarks)(movement.map(trim)).right.get
 
       result mustEqual expectedMessage
       application.stop()
@@ -266,6 +267,7 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
 
       val dateOfPrep = LocalDate.now()
       val timeOfPrep = LocalTime.of(1, 1)
+      val id         = ArrivalId(1)
 
       val application = baseApplicationBuilder.build()
 
@@ -275,13 +277,26 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
         <CC044A>
           <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
           <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
-        </CC044A>
+          <SynVerNumMES2>1</SynVerNumMES2>
+        </CC044A>.map(trim)
+
+      val expectedMovement =
+        <CC044A>
+          <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+          <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+          <SynVerNumMES2>1</SynVerNumMES2>
+          <MesSenMES3>{MessageSender(id, 1).toString}</MesSenMES3>
+        </CC044A>.map(trim)
 
       val messageCorrelationId = 1
       val expectedMessage =
-        MovementMessageWithStatus(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.UnloadingRemarks, movement, SubmissionPending, messageCorrelationId)
+        MovementMessageWithStatus(LocalDateTime.of(dateOfPrep, timeOfPrep),
+                                  MessageType.UnloadingRemarks,
+                                  expectedMovement,
+                                  SubmissionPending,
+                                  messageCorrelationId)
 
-      service.makeMovementMessageWithStatus(messageCorrelationId, MessageType.UnloadingRemarks)(movement).right.get mustEqual expectedMessage
+      service.makeOutboundMessage(id, messageCorrelationId, MessageType.UnloadingRemarks)(movement).right.get mustEqual expectedMessage
       application.stop()
     }
 
@@ -289,6 +304,7 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
 
       val dateOfPrep = LocalDate.now()
       val timeOfPrep = LocalTime.of(1, 1)
+      val id         = ArrivalId(1)
 
       val application = baseApplicationBuilder.build()
 
@@ -300,7 +316,7 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
           <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
         </Foo>
 
-      service.makeMovementMessageWithStatus(1, MessageType.UnloadingRemarks)(movement).left.get mustBe an[InvalidRootNode]
+      service.makeOutboundMessage(id, 1, MessageType.UnloadingRemarks)(movement).left.get mustBe an[InvalidRootNode]
       application.stop()
     }
   }
