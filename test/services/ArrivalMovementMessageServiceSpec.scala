@@ -22,25 +22,29 @@ import java.time.LocalTime
 
 import base.SpecBase
 import cats.data.NonEmptyList
+import models.MessageStatus.SubmissionPending
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalStatus
 import models.MessageStatus
-import models.MessageStatus.SubmissionPending
 import models.MessageType
+import models.MovementMessage
 import models.MovementMessageWithStatus
 import models.MovementMessageWithoutStatus
 import models.MovementReferenceNumber
 import models.ParseError.InvalidRootNode
 import org.mockito.Mockito.when
+import org.scalatest.StreamlinedXmlEquality
 import org.scalatest.concurrent.IntegrationPatience
 import play.api.inject.bind
 import repositories.ArrivalIdRepository
 import utils.Format
 
 import scala.concurrent.Future
+import scala.xml.NodeSeq
+import scala.xml.Utility.trim
 
-class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatience {
+class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatience with StreamlinedXmlEquality {
 
   "makeArrivalMovement" - {
     "creates an arrival movement with an internal ref number and a mrn, date and time of creation from the message submitted with a message id of 1 and next correlation id of 2" in {
@@ -66,10 +70,22 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
         <CC007A>
           <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
           <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+          <SynVerNumMES2>1</SynVerNumMES2>
           <HEAHEA>
             <DocNumHEA5>{mrn.value}</DocNumHEA5>
           </HEAHEA>
-        </CC007A>
+        </CC007A>.map(trim)
+
+      val savedMovement =
+        <CC007A>
+          <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+          <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+          <SynVerNumMES2>1</SynVerNumMES2>
+          <MesSenMES3>MDTP-000000000000000000000000001-01</MesSenMES3>
+          <HEAHEA>
+            <DocNumHEA5>{mrn.value}</DocNumHEA5>
+          </HEAHEA>
+        </CC007A>.map(trim)
 
       val expectedArrival = Arrival(
         arrivalId = id,
@@ -80,12 +96,12 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
         dateTime,
         dateTime,
         messages = NonEmptyList.one(
-          MovementMessageWithStatus(dateTime, MessageType.ArrivalNotification, movement, MessageStatus.SubmissionPending, 1)
+          MovementMessageWithStatus(dateTime, MessageType.ArrivalNotification, savedMovement, MessageStatus.SubmissionPending, 1)
         ),
         nextMessageCorrelationId = 2
       )
 
-      service.makeArrivalMovement(eori)(movement).right.get.futureValue mustEqual expectedArrival
+      service.makeArrivalMovement(eori, movement).futureValue.right.get mustEqual expectedArrival
 
       application.stop()
     }
@@ -110,7 +126,7 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
           </HEAHEA>
         </Foo>
 
-      service.makeArrivalMovement(eori)(invalidPayload).left.get mustBe an[InvalidRootNode]
+      service.makeArrivalMovement(eori, invalidPayload).futureValue.left.get mustBe an[InvalidRootNode]
 
       application.stop()
     }
@@ -213,7 +229,38 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
 
   }
 
-  "makeMovementMessageWithState" - {
+  "makeMovementMessageWithStatus" - {
+
+    "returns a message with the correct MesSenMES3 in xml payload" in {
+
+      val dateOfPrep = LocalDate.now()
+      val timeOfPrep = LocalTime.of(1, 1)
+      val id         = ArrivalId(1)
+
+      val application = baseApplicationBuilder.build()
+
+      val service = application.injector.instanceOf[ArrivalMovementMessageService]
+
+      val movement =
+        <CC044A><DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9><TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10><SynVerNumMES2>test</SynVerNumMES2></CC044A>
+
+      val expectedMovement: NodeSeq =
+        <CC044A><DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9><TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10><SynVerNumMES2>test</SynVerNumMES2><MesSenMES3>MDTP-000000000000000000000000001-01</MesSenMES3></CC044A>
+
+      val messageCorrelationId = 1
+      val expectedMessage =
+        MovementMessageWithStatus(LocalDateTime.of(dateOfPrep, timeOfPrep),
+                                  MessageType.UnloadingRemarks,
+                                  expectedMovement.map(trim),
+                                  SubmissionPending,
+                                  messageCorrelationId)
+
+      val result: MovementMessage =
+        service.makeMovementMessageWithStatus(id, messageCorrelationId, MessageType.UnloadingRemarks)(movement.map(trim)).right.get
+
+      result mustEqual expectedMessage
+      application.stop()
+    }
 
     "returns a message with the Unloading Remarks xml payload" in {
 

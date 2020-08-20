@@ -22,39 +22,35 @@ import com.google.inject.Inject
 import models.ArrivalStatus.Initialized
 import models.MessageStatus.SubmissionPending
 import models.Arrival
+import models.ArrivalId
 import models.MessageType
 import models.MovementMessageWithStatus
 import models.MovementMessageWithoutStatus
 import models.MovementReferenceNumber
 import models.ParseError.EmptyNodeSeq
 import repositories.ArrivalIdRepository
+import utils.XMLTransformer
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.xml.NodeSeq
 
 class ArrivalMovementMessageService @Inject()(arrivalIdRepository: ArrivalIdRepository)(implicit ec: ExecutionContext) {
+  import XMLTransformer._
   import XmlMessageParser._
 
-  private[this] def nodeSeqToEither(xml: NodeSeq): ParseHandler[NodeSeq] =
-    if (xml != null) {
-      Right(xml)
-    } else {
-      Left(EmptyNodeSeq("Request body is empty"))
-    }
+  def makeArrivalMovement(eori: String, nodeSeq: NodeSeq): Future[ParseHandler[Arrival]] =
+    arrivalIdRepository.nextId().map {
+      arrivalId =>
+        (for {
+          _        <- correctRootNodeR(MessageType.ArrivalNotification)
+          dateTime <- dateTimeOfPrepR
+          message  <- makeMovementMessageWithStatus(arrivalId, messageCorrelationId = 1, messageType = MessageType.ArrivalNotification)
+          mrn      <- mrnR
+        } yield {
 
-  def makeArrivalMovement(eori: String): ReaderT[ParseHandler, NodeSeq, Future[Arrival]] =
-    for {
-      _        <- correctRootNodeR(MessageType.ArrivalNotification)
-      dateTime <- dateTimeOfPrepR
-      message  <- makeMovementMessageWithStatus(1, MessageType.ArrivalNotification)
-      mrn      <- mrnR
-    } yield {
-      arrivalIdRepository
-        .nextId()
-        .map(
           Arrival(
-            _,
+            arrivalId,
             mrn,
             eori,
             Initialized,
@@ -63,13 +59,14 @@ class ArrivalMovementMessageService @Inject()(arrivalIdRepository: ArrivalIdRepo
             dateTime,
             NonEmptyList.one(message),
             2
-          ))
+          )
+        }).apply(nodeSeq)
     }
 
-  def messageAndMrn(messageCorrectionId: Int): ReaderT[ParseHandler, NodeSeq, (MovementMessageWithStatus, MovementReferenceNumber)] =
+  def messageAndMrn(arrivalId: ArrivalId, messageCorrectionId: Int): ReaderT[ParseHandler, NodeSeq, (MovementMessageWithStatus, MovementReferenceNumber)] =
     for {
       _       <- correctRootNodeR(MessageType.ArrivalNotification)
-      message <- makeMovementMessageWithStatus(messageCorrectionId, MessageType.ArrivalNotification)
+      message <- makeMovementMessageWithStatus(arrivalId, messageCorrectionId, MessageType.ArrivalNotification)
       mrn     <- mrnR
     } yield (message, mrn)
 
@@ -80,10 +77,27 @@ class ArrivalMovementMessageService @Inject()(arrivalIdRepository: ArrivalIdRepo
       xmlMessage <- ReaderT[ParseHandler, NodeSeq, NodeSeq](nodeSeqToEither)
     } yield MovementMessageWithoutStatus(dateTime, messageType, xmlMessage, messageCorrelationId)
 
+  //TODO: Not sure if this is used anymore
   def makeMovementMessageWithStatus(messageCorrelationId: Int, messageType: MessageType): ReaderT[ParseHandler, NodeSeq, MovementMessageWithStatus] =
     for {
       _          <- correctRootNodeR(messageType)
       dateTime   <- dateTimeOfPrepR
       xmlMessage <- ReaderT[ParseHandler, NodeSeq, NodeSeq](nodeSeqToEither)
     } yield MovementMessageWithStatus(dateTime, messageType, xmlMessage, SubmissionPending, messageCorrelationId)
+
+  def makeMovementMessageWithStatus(arrivalId: ArrivalId,
+                                    messageCorrelationId: Int,
+                                    messageType: MessageType): ReaderT[ParseHandler, NodeSeq, MovementMessageWithStatus] =
+    for {
+      _          <- correctRootNodeR(messageType)
+      dateTime   <- dateTimeOfPrepR
+      xmlMessage <- updateMesSenMES3(arrivalId, messageCorrelationId)
+    } yield MovementMessageWithStatus(dateTime, messageType, xmlMessage, SubmissionPending, messageCorrelationId)
+
+  private[this] def nodeSeqToEither(xml: NodeSeq): ParseHandler[NodeSeq] =
+    if (xml != null) {
+      Right(xml)
+    } else {
+      Left(EmptyNodeSeq("Request body is empty"))
+    }
 }

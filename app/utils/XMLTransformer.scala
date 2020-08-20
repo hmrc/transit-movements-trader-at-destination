@@ -16,26 +16,34 @@
 
 package utils
 
+import cats.data.ReaderT
 import models.ArrivalId
 import models.MessageSender
+import models.ParseError
 import play.api.Logger
+import services.XmlMessageParser.ParseHandler
 
+import scala.xml._
 import scala.xml.transform.RewriteRule
 import scala.xml.transform.RuleTransformer
-import scala.xml._
 
 object XMLTransformer {
+
+  case class MesSenMES3Failure(message: String) extends ParseError
 
   def addXmlNode(existingNode: String, key: String, value: String, inputXml: NodeSeq): NodeSeq =
     createRuleTransformer(existingNode, key, value).transform(inputXml.head)
 
-  def updateMesSenMES3(arrivalId: ArrivalId, correlationId: Int, body: NodeSeq): NodeSeq =
-    if ((body \\ "SynVerNumMES2").nonEmpty) {
-      val messageSender: MessageSender = MessageSender(arrivalId, correlationId)
-      XMLTransformer.addXmlNode("SynVerNumMES2", "MesSenMES3", messageSender.toString, body)
-    } else {
-      Logger.warn("Couldn't find SynVerNumMES2 node")
-      body
+  def updateMesSenMES3(arrivalId: ArrivalId, correlationId: Int): ReaderT[ParseHandler, NodeSeq, NodeSeq] =
+    ReaderT[ParseHandler, NodeSeq, NodeSeq] {
+      body =>
+        if ((body \\ "SynVerNumMES2").nonEmpty) {
+          val messageSender: MessageSender = MessageSender(arrivalId, correlationId)
+          Right(XMLTransformer.addXmlNode("SynVerNumMES2", "MesSenMES3", messageSender.toString, body))
+        } else {
+          Logger.error(s"Failed to add MesSenMES3 node with warning: ${MesSenMES3Failure(s"Couldn't find SynVerNumMES2 node")}")
+          Left(MesSenMES3Failure(s"Failed to set MesSenMES3 because SynVerNumMES2 is missing"))
+        }
     }
 
   private def createRuleTransformer(existingNode: String, key: String, value: String): RuleTransformer =

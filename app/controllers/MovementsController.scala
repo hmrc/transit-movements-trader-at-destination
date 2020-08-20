@@ -41,7 +41,6 @@ import repositories.ArrivalMovementRepository
 import services.ArrivalMovementMessageService
 import services.SubmitMessageService
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
-import utils.XMLTransformer
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -71,9 +70,8 @@ class MovementsController @Inject()(
     implicit request =>
       request.arrival match {
         case Some(arrival) if allMessageUnsent(arrival.messages) =>
-          val updatedXml = XMLTransformer.updateMesSenMES3(arrival.arrivalId, arrival.nextMessageCorrelationId, request.body)
           arrivalMovementService
-            .makeMovementMessageWithStatus(arrival.nextMessageCorrelationId, MessageType.ArrivalNotification)(updatedXml) match {
+            .makeMovementMessageWithStatus(arrival.arrivalId, arrival.nextMessageCorrelationId, MessageType.ArrivalNotification)(request.body) match {
             case Right(message) =>
               submitMessageService
                 .submitMessage(arrival.arrivalId, arrival.nextMessageId, message, ArrivalStatus.ArrivalSubmitted)
@@ -90,37 +88,41 @@ class MovementsController @Inject()(
               Future.successful(BadRequest(s"Failed to create ArrivalMovementWithStatus with the following error: $error"))
           }
         case _ =>
-          arrivalMovementService.makeArrivalMovement(request.eoriNumber)(request.body) match {
-            case Right(arrivalFuture) =>
-              arrivalFuture
-                .flatMap {
-                  arrival =>
-                    submitMessageService.submitArrival(arrival).map {
-                      case SubmissionFailureExternal => BadGateway
-                      case SubmissionFailureInternal => InternalServerError
-                      case SubmissionFailureRejected => BadRequest("Failed schema validation")
-                      case SubmissionSuccess =>
-                        Accepted("Message accepted")
-                          .withHeaders("Location" -> routes.MovementsController.getArrival(arrival.arrivalId).url)
-                    }
-                }
-                .recover {
-                  case _ => {
-                    InternalServerError
+          arrivalMovementService
+            .makeArrivalMovement(request.eoriNumber, request.body)
+            .flatMap {
+              case Right(arrival) =>
+                submitMessageService
+                  .submitArrival(arrival)
+                  .map {
+                    case SubmissionFailureExternal => BadGateway
+                    case SubmissionFailureInternal => InternalServerError
+                    case SubmissionFailureRejected => BadRequest("Failed schema validation")
+                    case SubmissionSuccess =>
+                      Accepted("Message accepted")
+                        .withHeaders("Location" -> routes.MovementsController.getArrival(arrival.arrivalId).url)
                   }
-                }
-            case Left(error) =>
-              Logger.error(s"Failed to create ArrivalMovement with the following error: $error")
-              Future.successful(BadRequest(s"Failed to create ArrivalMovement with the following error: $error"))
-          }
+                  .recover {
+                    case _ => {
+                      InternalServerError
+                    }
+                  }
+              case Left(error) =>
+                Logger.error(s"Failed to create ArrivalMovement with the following error: $error")
+                Future.successful(BadRequest(s"Failed to create ArrivalMovement with the following error: $error"))
+            }
+            .recover {
+              case error =>
+                Logger.error(s"Failed to create ArrivalMovement with the following error: $error")
+                InternalServerError
+            }
       }
   }
 
   def putArrival(arrivalId: ArrivalId): Action[NodeSeq] = authenticateForWrite(arrivalId).async(parse.xml) {
     implicit request: ArrivalRequest[NodeSeq] =>
-      val updatedXml = XMLTransformer.updateMesSenMES3(request.arrival.arrivalId, request.arrival.nextMessageCorrelationId, request.body)
       arrivalMovementService
-        .messageAndMrn(request.arrival.nextMessageCorrelationId)(updatedXml) match {
+        .messageAndMrn(arrivalId, request.arrival.nextMessageCorrelationId)(request.body) match {
         case Right((message, mrn)) =>
           submitMessageService
             .submitIe007Message(arrivalId, request.arrival.nextMessageId, message, mrn)

@@ -20,6 +20,7 @@ import models.ArrivalId
 import org.scalatest.StreamlinedXmlEquality
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
+import utils.XMLTransformer.MesSenMES3Failure
 
 import scala.xml.NodeSeq
 
@@ -55,29 +56,30 @@ class XMLTransformerSpec extends AnyFreeSpec with Matchers with StreamlinedXmlEq
 
     "updateMesSenMES3" - {
 
-      "must" - {
+      "return failure if SynVerNumMES2 node doesn't exist" in {
 
-        "add MesSenMES3 node when it doesn't exist" in {
-          val input: NodeSeq          = <main><SynVerNumMES2>newData</SynVerNumMES2></main>
-          val expectedResult: NodeSeq = <main><SynVerNumMES2>newData</SynVerNumMES2><MesSenMES3>MDTP-000000000000000000000000001-01</MesSenMES3></main>
-          val result: NodeSeq         = XMLTransformer.updateMesSenMES3(ArrivalId(1), 1, input)
-          result.toString() mustBe expectedResult.toString()
-        }
+        val movement = <node></node>
 
-        "update MesSenMES3 node value when it does exist" in {
-          val input: NodeSeq          = <main><SynVerNumMES2>newData</SynVerNumMES2><MesSenMES3>original value</MesSenMES3></main>
-          val expectedResult: NodeSeq = <main><SynVerNumMES2>newData</SynVerNumMES2><MesSenMES3>MDTP-000000000000000000000000001-01</MesSenMES3></main>
-          val result: NodeSeq         = XMLTransformer.updateMesSenMES3(ArrivalId(1), 1, input)
-          result.toString() mustBe expectedResult.toString()
-        }
+        XMLTransformer.updateMesSenMES3(ArrivalId(1), 1)(movement).left.get mustBe MesSenMES3Failure(
+          s"Failed to set MesSenMES3 because SynVerNumMES2 is missing")
+      }
 
-        "return original value if node couldn't be added" in {
-          val input: NodeSeq          = <main></main>
-          val expectedResult: NodeSeq = <main></main>
-          val result: NodeSeq         = XMLTransformer.updateMesSenMES3(ArrivalId(1), 1, input)
-          result.toString() mustBe expectedResult.toString()
-        }
+      "add MesSenMES3 node if SynVerNumMES2 exists" in {
 
+        val movement: NodeSeq = <SynVerNumMES2>test</SynVerNumMES2>
+
+        val updatedMovement: NodeSeq = <SynVerNumMES2>test</SynVerNumMES2><MesSenMES3>MDTP-000000000000000000000000001-01</MesSenMES3>
+
+        XMLTransformer.updateMesSenMES3(ArrivalId(1), 1)(movement).right.get mustEqual updatedMovement
+      }
+
+      "replace MesSenMES3 node if SynVerNumMES2 and MesSenMES3 exists" in {
+
+        val movement: NodeSeq = <SynVerNumMES2>test</SynVerNumMES2><MesSenMES3>replaced</MesSenMES3>
+
+        val updatedMovement: NodeSeq = <SynVerNumMES2>test</SynVerNumMES2><MesSenMES3>MDTP-000000000000000000000000001-01</MesSenMES3>
+
+        XMLTransformer.updateMesSenMES3(ArrivalId(1), 1)(movement).right.get mustEqual updatedMovement
       }
 
     }

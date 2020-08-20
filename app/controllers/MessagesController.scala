@@ -27,7 +27,6 @@ import models.SubmissionProcessingResult.SubmissionFailureExternal
 import models.SubmissionProcessingResult.SubmissionFailureInternal
 import models.SubmissionProcessingResult.SubmissionFailureRejected
 import models.SubmissionProcessingResult.SubmissionSuccess
-
 import models.request.ArrivalRequest
 import models.response.ResponseArrivalWithMessages
 import models.response.ResponseMovementMessage
@@ -39,7 +38,6 @@ import play.api.mvc.ControllerComponents
 import services.ArrivalMovementMessageService
 import services.SubmitMessageService
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
-import utils.XMLTransformer
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -57,10 +55,8 @@ class MessagesController @Inject()(
 
   def post(arrivalId: ArrivalId): Action[NodeSeq] = (authenticateForWrite(arrivalId)(parse.xml) andThen validateMessageSenderNode.filter).async {
     implicit request: ArrivalRequest[NodeSeq] =>
-      val updatedBody = XMLTransformer.updateMesSenMES3(request.arrival.arrivalId, request.arrival.nextMessageCorrelationId, request.body)
-
       arrivalMovementService
-        .makeMovementMessageWithStatus(request.arrival.nextMessageCorrelationId, MessageType.UnloadingRemarks)(updatedBody) match {
+        .makeMovementMessageWithStatus(arrivalId, request.arrival.nextMessageCorrelationId, MessageType.UnloadingRemarks)(request.body) match {
         case Right(message) =>
           submitMessageService
             .submitMessage(arrivalId, request.arrival.nextMessageId, message, ArrivalStatus.UnloadingRemarksSubmitted)

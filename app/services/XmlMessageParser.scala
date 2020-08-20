@@ -22,10 +22,10 @@ import java.time.LocalTime
 
 import cats.data._
 import cats.implicits._
-import models.ParseError._
 import models.MessageType
 import models.MovementReferenceNumber
 import models.ParseError
+import models.ParseError._
 import utils.Format
 
 import scala.util.Failure
@@ -43,7 +43,7 @@ object XmlMessageParser {
         if (nodeSeq.head.label == messageType.rootNode)
           Right(nodeSeq)
         else
-          Left(InvalidRootNode(s"Node ${nodeSeq.head.label} didnt match ${messageType.rootNode}"))
+          Left(InvalidRootNode(s"Node ${nodeSeq.head.label} didn't match ${messageType.rootNode}"))
     }
 
   val dateOfPrepR: ReaderT[ParseHandler, NodeSeq, LocalDate] =
