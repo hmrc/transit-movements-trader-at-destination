@@ -111,6 +111,12 @@ class InboundMessageTransformerSpec extends AnyFreeSpec with Matchers with Scala
       }
     }
 
+    "handle out-of-sequence-message" in {
+      val testAction = action.invokeBlock(fakeRequest("IE044", ArrivalStatus.UnloadingRemarksSubmitted), successfulResponse)
+
+      testAction.futureValue.header.status mustBe BAD_REQUEST
+    }
+
   }
 
 }
