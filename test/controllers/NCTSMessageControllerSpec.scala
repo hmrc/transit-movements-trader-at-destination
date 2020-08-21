@@ -16,10 +16,13 @@
 
 package controllers
 
+import audit.AuditService
+import audit.AuditType
 import base.SpecBase
 import generators.ModelGenerators
 import models.Arrival
 import models.ArrivalId
+import models.GoodsReleasedResponse
 import models.MessageSender
 import models.SubmissionProcessingResult
 import models.request.actions.FakeInboundMessageBadRequestTransformer
@@ -33,6 +36,7 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
+import org.mockito.ArgumentMatchers.{eq => eqTo}
 import repositories.ArrivalMovementRepository
 import repositories.LockRepository
 import services.SaveMessageService
@@ -44,6 +48,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
   private val mockArrivalMovementRepository: ArrivalMovementRepository = mock[ArrivalMovementRepository]
   private val mockLockRepository: LockRepository                       = mock[LockRepository]
   private val mockSaveMessageService: SaveMessageService               = mock[SaveMessageService]
+  private val mockAuditService: AuditService                           = mock[AuditService]
 
   private val arrivalId     = ArrivalId(1)
   private val version       = 1
@@ -58,6 +63,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
     reset(mockArrivalMovementRepository)
     reset(mockLockRepository)
     reset(mockSaveMessageService)
+    reset(mockAuditService)
   }
 
   "post" - {
@@ -76,7 +82,8 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
             bind[LockRepository].toInstance(mockLockRepository),
             bind[SaveMessageService].toInstance(mockSaveMessageService),
-            bind[InboundMessageTransformerInterface].to[FakeInboundMessageTransformer]
+            bind[InboundMessageTransformerInterface].to[FakeInboundMessageTransformer],
+            bind[AuditService].toInstance(mockAuditService)
           )
           .build()
 
@@ -87,6 +94,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
           val result = route(application, request).value
 
           status(result) mustEqual OK
+          verify(mockAuditService, times(1)).auditNCTSMessages(eqTo(GoodsReleasedResponse), any())(any())
         }
       }
 

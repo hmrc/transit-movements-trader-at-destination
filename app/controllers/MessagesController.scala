@@ -16,6 +16,8 @@
 
 package controllers
 
+import audit.AuditService
+import audit.AuditType
 import controllers.actions.AuthenticatedGetArrivalForReadActionProvider
 import controllers.actions.AuthenticatedGetArrivalForWriteActionProvider
 import javax.inject.Inject
@@ -46,7 +48,8 @@ class MessagesController @Inject()(
   arrivalMovementService: ArrivalMovementMessageService,
   submitMessageService: SubmitMessageService,
   authenticateForRead: AuthenticatedGetArrivalForReadActionProvider,
-  authenticateForWrite: AuthenticatedGetArrivalForWriteActionProvider
+  authenticateForWrite: AuthenticatedGetArrivalForWriteActionProvider,
+  auditService: AuditService
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
@@ -62,6 +65,7 @@ class MessagesController @Inject()(
               case SubmissionFailureExternal => BadGateway
               case SubmissionFailureRejected => BadRequest("Failed schema validation")
               case SubmissionSuccess =>
+                auditService.auditEvent(AuditType.UnloadingRemarksSubmitted, request.body)
                 Accepted("Message accepted")
                   .withHeaders("Location" -> routes.MessagesController.getMessage(request.arrival.arrivalId, request.arrival.nextMessageId).url)
             }

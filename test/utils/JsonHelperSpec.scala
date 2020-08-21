@@ -16,30 +16,29 @@
 
 package utils
 
-import org.json.JSONException
-import org.json.JSONObject
-import org.scalatest.OptionValues
+import org.scalatest.EitherValues
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 
-class JsonServiceSpec extends AnyFreeSpec with Matchers with OptionValues {
+class JsonHelperSpec extends AnyFreeSpec with Matchers with EitherValues {
+
   "XmlToJsonService" - {
 
     "must convert xml to json" in {
       val xml = "<xml><test1>one</test1><test1>two</test1></xml>"
 
       val expectedResult: JsObject = Json.obj("xml" -> Json.obj("test1" -> Json.arr("one", "two")))
-      val result: Option[JSONObject] = JsonService.fromXml(xml)
-      result.value.toString mustBe expectedResult.toString()
+      val result                   = JsonHelper.convertXmlToJson(xml)
+      result.toString mustBe expectedResult.toString()
     }
 
     "must return 'None' on failing to convert xml to json" in {
       val invalidXml = "<xml><test1>one</test1><test1></xml>"
 
-      val result: Option[JSONObject] = JsonService.fromXml(invalidXml)
-      result mustBe None
+      val result = JsonHelper.convertXmlToJson(invalidXml)
+      result mustBe Json.obj()
     }
   }
 }

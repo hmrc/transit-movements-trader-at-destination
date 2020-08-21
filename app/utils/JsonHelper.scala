@@ -16,20 +16,19 @@
 
 package utils
 
-import org.json.JSONException
-import org.json.JSONObject
 import org.json.XML
 import play.api.Logger
+import play.api.libs.json.{JsObject, Json}
 
-object JsonService {
+object JsonHelper {
 
-  def fromXml(xml: String): Option[JSONObject] =
+  def convertXmlToJson(xml: String): JsObject =
     try {
-      Some(XML.toJSONObject(xml))
+      Json.parse(XML.toJSONObject(xml).toString).as[JsObject]
     } catch {
-      case error: JSONException =>
-        Logger.error(s"Failed to convert xml to json with error: $error")
-        None
+      case error: Exception =>
+        Logger.error(s"Failed to convert xml to json with error: ${error.getMessage}")
+        Json.obj() //TODO need to think about it
     }
 
 }
