@@ -25,12 +25,25 @@ import utils.JsonHelper
 import scala.concurrent.ExecutionContext
 import scala.xml.NodeSeq
 import AuditType._
+import play.api.Logger
+import play.api.libs.json.JsObject
+import play.api.libs.json.Json
+
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
 
 class AuditService @Inject()(auditConnector: AuditConnector)(implicit ec: ExecutionContext) {
 
   def auditEvent(auditType: String, xmlRequestBody: NodeSeq)(implicit hc: HeaderCarrier): Unit = {
-    val json = JsonHelper.convertXmlToJson(xmlRequestBody.toString())
-    auditConnector.sendExplicitAudit(auditType, json)
+    val eventualJson: Try[JsObject] = JsonHelper.convertXmlToJson(xmlRequestBody.toString())
+    val details = eventualJson match {
+      case Success(data) => data
+      case Failure(error) =>
+        Logger.error(s"Failed to convert xml to json with error: ${error.getMessage}")
+        Json.obj()
+    }
+    auditConnector.sendExplicitAudit(auditType, details)
   }
 
   def auditNCTSMessages(messageResponse: MessageResponse, xmlRequestBody: NodeSeq)(implicit hc: HeaderCarrier): Unit = {

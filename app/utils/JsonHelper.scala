@@ -17,19 +17,14 @@
 package utils
 
 import org.json.XML
-import play.api.Logger
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 
+import scala.util.Try
+
 object JsonHelper {
 
-  def convertXmlToJson(xml: String): JsObject =
-    try {
-      Json.parse(XML.toJSONObject(xml).toString).as[JsObject]
-    } catch {
-      case error: Exception =>
-        Logger.error(s"Failed to convert xml to json with error: ${error.getMessage}")
-        Json.obj() //TODO need to think about it
-    }
+  def convertXmlToJson(xml: String): Try[JsObject] =
+    Try(Json.parse(XML.toJSONObject(xml).toString).as[JsObject])
 
 }
