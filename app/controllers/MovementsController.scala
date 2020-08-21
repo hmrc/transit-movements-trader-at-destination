@@ -16,23 +16,35 @@
 
 package controllers
 
-import audit.{AuditService, AuditType}
+import audit.AuditService
+import audit.AuditType
 import cats.data.NonEmptyList
-import controllers.actions.{AuthenticateActionProvider, AuthenticatedGetArrivalForReadActionProvider, AuthenticatedGetArrivalForWriteActionProvider, AuthenticatedGetOptionalArrivalForWriteActionProvider}
+import controllers.actions.AuthenticateActionProvider
+import controllers.actions.AuthenticatedGetArrivalForReadActionProvider
+import controllers.actions.AuthenticatedGetArrivalForWriteActionProvider
+import controllers.actions.AuthenticatedGetOptionalArrivalForWriteActionProvider
 import javax.inject.Inject
 import models.MessageStatus.SubmissionSucceeded
-import models.{ArrivalId, ArrivalStatus, MessageType, MovementMessage, ResponseArrivals}
+import models.ArrivalId
+import models.ArrivalStatus
+import models.MessageType
+import models.MovementMessage
+import models.ResponseArrivals
 import models.SubmissionProcessingResult._
 import models.request.ArrivalRequest
 import models.response.ResponseArrival
 import play.api.Logger
 import play.api.libs.json.Json
-import play.api.mvc.{Action, AnyContent, ControllerComponents}
+import play.api.mvc.Action
+import play.api.mvc.AnyContent
+import play.api.mvc.ControllerComponents
 import repositories.ArrivalMovementRepository
-import services.{ArrivalMovementMessageService, SubmitMessageService}
+import services.ArrivalMovementMessageService
+import services.SubmitMessageService
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.xml.NodeSeq
 
 class MovementsController @Inject()(
