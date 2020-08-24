@@ -37,7 +37,7 @@ class JsonHelperSpec extends AnyFreeSpec with Matchers with TryValues {
       result.success.value.toString mustBe expectedResult.toString()
     }
 
-    "must return 'None' on failing to convert xml to json" in {
+    "must return Failure on failing to convert xml to json" in {
       val invalidXml           = "<xml><test1>one</test1><test1></xml>"
       val expectedErrorMessage = "Mismatched test1 and xml at 35 [character 36 line 1]"
 

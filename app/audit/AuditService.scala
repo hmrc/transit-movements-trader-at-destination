@@ -37,13 +37,15 @@ class AuditService @Inject()(auditConnector: AuditConnector)(implicit ec: Execut
 
   def auditEvent(auditType: String, xmlRequestBody: NodeSeq)(implicit hc: HeaderCarrier): Unit = {
     val eventualJson: Try[JsObject] = JsonHelper.convertXmlToJson(xmlRequestBody.toString())
-    val details = eventualJson match {
+    val convertedJson = eventualJson match {
       case Success(data) => data
       case Failure(error) =>
         Logger.error(s"Failed to convert xml to json with error: ${error.getMessage}")
         Json.obj()
     }
-    auditConnector.sendExplicitAudit(auditType, details)
+
+    val details = AuditDetails(convertedJson, xmlRequestBody.toString())
+    auditConnector.sendExplicitAudit(auditType, Json.toJson(details))
   }
 
   def auditNCTSMessages(messageResponse: MessageResponse, xmlRequestBody: NodeSeq)(implicit hc: HeaderCarrier): Unit = {
