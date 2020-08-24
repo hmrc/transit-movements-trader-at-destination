@@ -20,16 +20,15 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 
+import audit.AuditService
+import audit.AuditType
 import base.SpecBase
 import cats.data.NonEmptyList
-import cats.data.ReaderT
 import connectors.MessageConnector
 import generators.ModelGenerators
 import models.MessageStatus.SubmissionFailed
 import models.MessageStatus.SubmissionPending
 import models.MessageStatus.SubmissionSucceeded
-import models.response.ResponseArrivalWithMessages
-import models.response.ResponseMovementMessage
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalStatus
@@ -39,8 +38,10 @@ import models.MovementMessageWithStatus
 import models.MovementMessageWithoutStatus
 import models.MovementReferenceNumber
 import models.SubmissionProcessingResult
-import org.mockito.ArgumentMatchers.{eq => eqTo}
+import models.response.ResponseArrivalWithMessages
+import models.response.ResponseMovementMessage
 import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.{eq => eqTo}
 import org.mockito.Mockito._
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Arbitrary
@@ -54,7 +55,6 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import repositories.ArrivalMovementRepository
 import repositories.LockRepository
-import services.ArrivalMovementMessageService
 import services.SubmitMessageService
 import utils.Format
 
@@ -117,7 +117,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
         val mockLockRepository            = mock[LockRepository]
         val mockSubmitMessageService      = mock[SubmitMessageService]
-        val mockArrivalMovementService    = mock[ArrivalMovementMessageService]
+        val mockAuditService              = mock[AuditService]
 
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
@@ -130,7 +130,8 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           .overrides(
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
             bind[LockRepository].toInstance(mockLockRepository),
-            bind[SubmitMessageService].toInstance(mockSubmitMessageService)
+            bind[SubmitMessageService].toInstance(mockSubmitMessageService),
+            bind[AuditService].toInstance(mockAuditService)
           )
           .build()
 
@@ -144,6 +145,8 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
                                                                    eqTo(MessageId.fromIndex(1)),
                                                                    eqTo(movementMessge),
                                                                    eqTo(ArrivalStatus.UnloadingRemarksSubmitted))(any())
+
+          verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.UnloadingRemarksSubmitted), any())(any())
         }
       }
 

@@ -16,6 +16,8 @@
 
 package controllers
 
+import audit.AuditService
+import audit.AuditType
 import cats.data.NonEmptyList
 import controllers.actions.AuthenticateActionProvider
 import controllers.actions.AuthenticatedGetArrivalForReadActionProvider
@@ -53,7 +55,8 @@ class MovementsController @Inject()(
   authenticate: AuthenticateActionProvider,
   authenticatedArrivalForRead: AuthenticatedGetArrivalForReadActionProvider,
   authenticatedOptionalArrival: AuthenticatedGetOptionalArrivalForWriteActionProvider,
-  authenticateForWrite: AuthenticatedGetArrivalForWriteActionProvider
+  authenticateForWrite: AuthenticatedGetArrivalForWriteActionProvider,
+  auditService: AuditService
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
@@ -77,6 +80,7 @@ class MovementsController @Inject()(
                   case SubmissionFailureExternal => BadGateway
                   case SubmissionFailureRejected => BadRequest("Failed schema validation")
                   case SubmissionSuccess =>
+                    auditService.auditEvent(AuditType.ArrivalNotificationSubmitted, request.body)
                     Accepted("Message accepted")
                       .withHeaders("Location" -> routes.MovementsController.getArrival(arrival.arrivalId).url)
                 }
@@ -95,6 +99,7 @@ class MovementsController @Inject()(
                       case SubmissionFailureInternal => InternalServerError
                       case SubmissionFailureRejected => BadRequest("Failed schema validation")
                       case SubmissionSuccess =>
+                        auditService.auditEvent(AuditType.ArrivalNotificationSubmitted, request.body)
                         Accepted("Message accepted")
                           .withHeaders("Location" -> routes.MovementsController.getArrival(arrival.arrivalId).url)
                     }
@@ -123,6 +128,7 @@ class MovementsController @Inject()(
               case SubmissionFailureExternal => BadGateway
               case SubmissionFailureRejected => BadRequest("Failed schema validation")
               case SubmissionSuccess =>
+                auditService.auditEvent(AuditType.ArrivalNotificationReSubmitted, request.body)
                 Accepted("Message accepted")
                   .withHeaders("Location" -> routes.MovementsController.getArrival(request.arrival.arrivalId).url)
             }

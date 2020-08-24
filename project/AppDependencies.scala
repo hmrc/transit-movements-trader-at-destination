@@ -11,7 +11,8 @@ object AppDependencies {
     "org.reactivemongo" %% "play2-reactivemongo"             % "0.20.11-play26",
     "com.typesafe.play" %% "play-iteratees"                  % "2.6.1",
     "com.typesafe.play" %% "play-iteratees-reactive-streams" % "2.6.1",
-    "org.typelevel"     %% "cats-core"                       % catsVersion
+    "org.typelevel"     %% "cats-core"                       % catsVersion,
+    "org.json"          % "json"                             % "20200518"
   )
 
   val test: Seq[ModuleID] = Seq(
