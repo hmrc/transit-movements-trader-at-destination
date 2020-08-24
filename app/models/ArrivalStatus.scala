@@ -16,75 +16,72 @@
 
 package models
 
-import java.time.LocalDateTime
-
-import play.api.libs.json.Json
-import play.api.libs.json.Writes
+sealed case class TransitionError(reason: String)
 
 sealed trait ArrivalStatus {
-  def transition(messageReceived: MessageReceivedEvent): ArrivalStatus
+  def transition(messageReceived: MessageReceivedEvent): Either[TransitionError, ArrivalStatus]
 }
 
 object ArrivalStatus extends Enumerable.Implicits with MongoDateTimeFormats {
 
   case object Initialized extends ArrivalStatus {
-    override def transition(messageReceived: MessageReceivedEvent): ArrivalStatus = messageReceived match {
-      case MessageReceivedEvent.ArrivalSubmitted         => ArrivalSubmitted
-      case MessageReceivedEvent.GoodsReleased            => GoodsReleased
-      case MessageReceivedEvent.UnloadingPermission      => UnloadingPermission
-      case MessageReceivedEvent.ArrivalRejected          => ArrivalRejected
-      case MessageReceivedEvent.UnloadingRemarksRejected => UnloadingRemarksRejected
-      case _                                             => throw new Exception(s"Tried to transition from Initialized to $messageReceived.")
+    override def transition(messageReceived: MessageReceivedEvent): Either[TransitionError, ArrivalStatus] = messageReceived match {
+      case MessageReceivedEvent.ArrivalSubmitted         => Right(ArrivalSubmitted)
+      case MessageReceivedEvent.GoodsReleased            => Right(GoodsReleased)
+      case MessageReceivedEvent.UnloadingPermission      => Right(UnloadingPermission)
+      case MessageReceivedEvent.ArrivalRejected          => Right(ArrivalRejected)
+      case MessageReceivedEvent.UnloadingRemarksRejected => Right(UnloadingRemarksRejected)
+      case _                                             => Left(TransitionError(s"Tried to transition from Initialized to $messageReceived."))
     }
   }
 
   case object ArrivalSubmitted extends ArrivalStatus {
-    override def transition(messageReceived: MessageReceivedEvent): ArrivalStatus = messageReceived match {
-      case MessageReceivedEvent.ArrivalSubmitted         => ArrivalSubmitted
-      case MessageReceivedEvent.GoodsReleased            => GoodsReleased
-      case MessageReceivedEvent.UnloadingPermission      => UnloadingPermission
-      case MessageReceivedEvent.ArrivalRejected          => ArrivalRejected
-      case MessageReceivedEvent.UnloadingRemarksRejected => UnloadingRemarksRejected
-      case _                                             => throw new Exception(s"Tried to transition from ArrivalSubmitted to $messageReceived.")
+    override def transition(messageReceived: MessageReceivedEvent): Either[TransitionError, ArrivalStatus] = messageReceived match {
+      case MessageReceivedEvent.ArrivalSubmitted         => Right(ArrivalSubmitted)
+      case MessageReceivedEvent.GoodsReleased            => Right(GoodsReleased)
+      case MessageReceivedEvent.UnloadingPermission      => Right(UnloadingPermission)
+      case MessageReceivedEvent.ArrivalRejected          => Right(ArrivalRejected)
+      case MessageReceivedEvent.UnloadingRemarksRejected => Right(UnloadingRemarksRejected)
+      case _                                             => Left(TransitionError(s"Tried to transition from ArrivalSubmitted to $messageReceived."))
     }
   }
 
   case object UnloadingPermission extends ArrivalStatus {
-    override def transition(messageReceived: MessageReceivedEvent): ArrivalStatus = messageReceived match {
-      case MessageReceivedEvent.UnloadingPermission       => UnloadingPermission
-      case MessageReceivedEvent.UnloadingRemarksSubmitted => UnloadingRemarksSubmitted
-      case MessageReceivedEvent.GoodsReleased             => GoodsReleased
-      case _                                              => throw new Exception(s"Tried to transition from ArrivalSubmitted to $messageReceived.")
+    override def transition(messageReceived: MessageReceivedEvent): Either[TransitionError, ArrivalStatus] = messageReceived match {
+      case MessageReceivedEvent.UnloadingPermission       => Right(UnloadingPermission)
+      case MessageReceivedEvent.UnloadingRemarksSubmitted => Right(UnloadingRemarksSubmitted)
+      case MessageReceivedEvent.GoodsReleased             => Right(GoodsReleased)
+      case _                                              => Left(TransitionError(s"Tried to transition from ArrivalSubmitted to $messageReceived."))
     }
   }
 
   case object GoodsReleased extends ArrivalStatus {
-    override def transition(messageReceived: MessageReceivedEvent): ArrivalStatus = this
+    override def transition(messageReceived: MessageReceivedEvent): Either[TransitionError, ArrivalStatus] = Right(this)
   }
 
   case object ArrivalRejected extends ArrivalStatus {
-    override def transition(messageReceived: MessageReceivedEvent): ArrivalStatus = messageReceived match {
-      case MessageReceivedEvent.ArrivalRejected => ArrivalRejected
-      case MessageReceivedEvent.GoodsReleased   => GoodsReleased
-      case _                                    => throw new Exception(s"Tried to transition from ArrivalRejected to $messageReceived.")
+    override def transition(messageReceived: MessageReceivedEvent): Either[TransitionError, ArrivalStatus] = messageReceived match {
+      case MessageReceivedEvent.ArrivalRejected => Right(ArrivalRejected)
+      case MessageReceivedEvent.GoodsReleased   => Right(GoodsReleased)
+      case _                                    => Left(TransitionError(s"Tried to transition from ArrivalRejected to $messageReceived."))
     }
   }
 
   case object UnloadingRemarksSubmitted extends ArrivalStatus {
-    override def transition(messageReceived: MessageReceivedEvent): ArrivalStatus = messageReceived match {
-      case MessageReceivedEvent.UnloadingRemarksSubmitted => UnloadingRemarksSubmitted
-      case MessageReceivedEvent.UnloadingRemarksRejected  => UnloadingRemarksRejected
-      case MessageReceivedEvent.GoodsReleased             => GoodsReleased
-      case _                                              => throw new Exception(s"Tried to transition from UnloadingRemarksSubmitted to $messageReceived.")
+    override def transition(messageReceived: MessageReceivedEvent): Either[TransitionError, ArrivalStatus] = messageReceived match {
+      case MessageReceivedEvent.UnloadingRemarksSubmitted => Right(UnloadingRemarksSubmitted)
+      case MessageReceivedEvent.UnloadingRemarksRejected  => Right(UnloadingRemarksRejected)
+      case MessageReceivedEvent.GoodsReleased             => Right(GoodsReleased)
+      case _                                              => Left(TransitionError(s"Tried to transition from UnloadingRemarksSubmitted to $messageReceived."))
     }
   }
 
   case object UnloadingRemarksRejected extends ArrivalStatus {
-    override def transition(messageReceived: MessageReceivedEvent): ArrivalStatus = messageReceived match {
-      case MessageReceivedEvent.UnloadingRemarksRejected  => UnloadingRemarksRejected
-      case MessageReceivedEvent.UnloadingRemarksSubmitted => UnloadingRemarksSubmitted
-      case MessageReceivedEvent.GoodsReleased             => GoodsReleased
-      case _                                              => throw new Exception(s"Tried to transition from UnloadingRemarksRejected to $messageReceived.")
+    override def transition(messageReceived: MessageReceivedEvent): Either[TransitionError, ArrivalStatus] = messageReceived match {
+      case MessageReceivedEvent.UnloadingRemarksRejected  => Right(UnloadingRemarksRejected)
+      case MessageReceivedEvent.UnloadingRemarksSubmitted => Right(UnloadingRemarksSubmitted)
+      case MessageReceivedEvent.GoodsReleased             => Right(GoodsReleased)
+      case _                                              => Left(TransitionError(s"Tried to transition from UnloadingRemarksRejected to $messageReceived."))
     }
   }
 
