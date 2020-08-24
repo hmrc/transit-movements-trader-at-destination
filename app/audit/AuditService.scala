@@ -16,35 +16,24 @@
 
 package audit
 
+import audit.AuditType._
 import javax.inject.Inject
 import models._
+import play.api.libs.json.JsObject
+import play.api.libs.json.Json
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import utils.JsonHelper
 
 import scala.concurrent.ExecutionContext
 import scala.xml.NodeSeq
-import AuditType._
-import play.api.Logger
-import play.api.libs.json.JsObject
-import play.api.libs.json.Json
-
-import scala.util.Failure
-import scala.util.Success
-import scala.util.Try
 
 class AuditService @Inject()(auditConnector: AuditConnector)(implicit ec: ExecutionContext) {
 
   def auditEvent(auditType: String, xmlRequestBody: NodeSeq)(implicit hc: HeaderCarrier): Unit = {
-    val eventualJson: Try[JsObject] = JsonHelper.convertXmlToJson(xmlRequestBody.toString())
-    val convertedJson = eventualJson match {
-      case Success(data) => data
-      case Failure(error) =>
-        Logger.error(s"Failed to convert xml to json with error: ${error.getMessage}")
-        Json.obj()
-    }
+    val json: JsObject = JsonHelper.convertXmlToJson(xmlRequestBody.toString())
 
-    val details = AuditDetails(convertedJson, xmlRequestBody.toString())
+    val details = AuditDetails(json, xmlRequestBody.toString())
     auditConnector.sendExplicitAudit(auditType, Json.toJson(details))
   }
 
