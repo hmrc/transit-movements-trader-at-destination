@@ -11,7 +11,7 @@
     <logger name="controllers.MovementsController" level="${logger.MovementsController:-ERROR}"/>
     <logger name="controllers.PDFGenerationController" level="${logger.UnloadingRemarksPDF:-ERROR}"/>
     <logger name="services.UnloadingPermissionPDFService" level="${logger.UnloadingPermissionPDFService:-ERROR}"/>
-
+    <logger name="models.request.actions.InboundMessageTransformer" level="${logger.InboundMessageTransformer:-ERROR}"/>
     <root level="${logger.application:-WARN}">
         <appender-ref ref="STDOUT"/>
     </root>

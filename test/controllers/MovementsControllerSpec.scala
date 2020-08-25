@@ -20,6 +20,8 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 
+import audit.AuditService
+import audit.AuditType
 import base.SpecBase
 import cats.data.NonEmptyList
 import connectors.MessageConnector
@@ -120,6 +122,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         "must return Accepted, create movement, send the message upstream and set the state to Submitted" in {
           val mockArrivalIdRepository  = mock[ArrivalIdRepository]
           val mockSubmitMessageService = mock[SubmitMessageService]
+          val mockAuditService         = mock[AuditService]
 
           val expectedMessage: MovementMessageWithStatus = movementMessage(1).copy(messageCorrelationId = 1)
           val newArrival                                 = initializedArrival.copy(messages = NonEmptyList.of[MovementMessageWithStatus](expectedMessage))
@@ -132,7 +135,8 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
             .overrides(
               bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
               bind[SubmitMessageService].toInstance(mockSubmitMessageService),
-              bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider())
+              bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider()),
+              bind[AuditService].toInstance(mockAuditService)
             )
             .build()
 
@@ -144,11 +148,14 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
             status(result) mustEqual ACCEPTED
             header("Location", result).value must be(routes.MovementsController.getArrival(newArrival.arrivalId).url)
+
             verify(mockSubmitMessageService, times(1)).submitArrival(captor.capture())(any())
 
             val arrivalMessage: MovementMessageWithStatus = captor.getValue.messages.head.asInstanceOf[MovementMessageWithStatus]
             arrivalMessage.message.map(trim) mustEqual expectedMessage.message.map(trim)
 
+            verify(mockSubmitMessageService, times(1)).submitArrival(eqTo(newArrival))(any())
+            verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.ArrivalNotificationSubmitted), any())(any())
           }
         }
 
@@ -353,6 +360,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
           val mockSubmitMessageService = mock[SubmitMessageService]
           val captor                   = ArgumentCaptor.forClass(classOf[MovementMessageWithStatus])
+          val mockAuditService         = mock[AuditService]
 
           when(mockSubmitMessageService.submitMessage(any(), any(), any(), any())(any()))
             .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionSuccess))
@@ -361,7 +369,8 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
             .overrides(
               bind[SubmitMessageService].toInstance(mockSubmitMessageService),
               bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(
-                FakeAuthenticatedGetOptionalArrivalForWriteActionProvider(failedToSubmitArrival))
+                FakeAuthenticatedGetOptionalArrivalForWriteActionProvider(failedToSubmitArrival)),
+              bind[AuditService].toInstance(mockAuditService)
             )
             .build()
 
@@ -386,6 +395,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
             movement.dateTime mustEqual expectedMessage.dateTime
             movement.message.map(trim) mustEqual expectedMessage.message.map(trim)
 
+            verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.ArrivalNotificationSubmitted), any())(any())
           }
         }
 
@@ -554,6 +564,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
         val mockLockRepository            = mock[LockRepository]
         val mockSubmitMessageService      = mock[SubmitMessageService]
+        val mockAuditService              = mock[AuditService]
 
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
@@ -567,7 +578,8 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           .overrides(
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
             bind[LockRepository].toInstance(mockLockRepository),
-            bind[SubmitMessageService].toInstance(mockSubmitMessageService)
+            bind[SubmitMessageService].toInstance(mockSubmitMessageService),
+            bind[AuditService].toInstance(mockAuditService)
           )
           .build()
 
@@ -591,6 +603,8 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           movement.messageType mustEqual expectedMessage.messageType
           movement.dateTime mustEqual expectedMessage.dateTime
           movement.message.map(trim) mustEqual expectedMessage.message.map(trim)
+
+          verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.ArrivalNotificationReSubmitted), any())(any())
         }
 
       }

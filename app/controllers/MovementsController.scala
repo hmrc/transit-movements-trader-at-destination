@@ -16,6 +16,8 @@
 
 package controllers
 
+import audit.AuditService
+import audit.AuditType
 import cats.data.NonEmptyList
 import controllers.actions._
 import javax.inject.Inject
@@ -25,10 +27,7 @@ import models.ArrivalStatus
 import models.MessageType
 import models.MovementMessage
 import models.ResponseArrivals
-import models.SubmissionProcessingResult.SubmissionFailureExternal
-import models.SubmissionProcessingResult.SubmissionFailureInternal
-import models.SubmissionProcessingResult.SubmissionFailureRejected
-import models.SubmissionProcessingResult.SubmissionSuccess
+import models.SubmissionProcessingResult._
 import models.request.ArrivalRequest
 import models.response.ResponseArrival
 import play.api.Logger
@@ -55,6 +54,7 @@ class MovementsController @Inject()(
   authenticatedArrivalForRead: AuthenticatedGetArrivalForReadActionProvider,
   authenticatedOptionalArrival: AuthenticatedGetOptionalArrivalForWriteActionProvider,
   authenticateForWrite: AuthenticatedGetArrivalForWriteActionProvider,
+  auditService: AuditService,
   arrivalIdRepository: ArrivalIdRepository,
   validateMessageSenderNode: ValidateMessageSenderNodeFilter
 )(implicit ec: ExecutionContext)
@@ -80,6 +80,7 @@ class MovementsController @Inject()(
                   case SubmissionFailureExternal => BadGateway
                   case SubmissionFailureRejected => BadRequest("Failed schema validation")
                   case SubmissionSuccess =>
+                    auditService.auditEvent(AuditType.ArrivalNotificationSubmitted, request.body)
                     Accepted("Message accepted")
                       .withHeaders("Location" -> routes.MovementsController.getArrival(arrival.arrivalId).url)
                 }
@@ -99,6 +100,7 @@ class MovementsController @Inject()(
                     case SubmissionFailureInternal => InternalServerError
                     case SubmissionFailureRejected => BadRequest("Failed schema validation")
                     case SubmissionSuccess =>
+                      auditService.auditEvent(AuditType.ArrivalNotificationSubmitted, request.body)
                       Accepted("Message accepted")
                         .withHeaders("Location" -> routes.MovementsController.getArrival(arrival.arrivalId).url)
                   }
@@ -131,6 +133,7 @@ class MovementsController @Inject()(
               case SubmissionFailureExternal => BadGateway
               case SubmissionFailureRejected => BadRequest("Failed schema validation")
               case SubmissionSuccess =>
+                auditService.auditEvent(AuditType.ArrivalNotificationReSubmitted, request.body)
                 Accepted("Message accepted")
                   .withHeaders("Location" -> routes.MovementsController.getArrival(request.arrival.arrivalId).url)
             }
@@ -161,4 +164,5 @@ class MovementsController @Inject()(
             InternalServerError(s"Failed with the following error: $e")
         }
   }
+
 }

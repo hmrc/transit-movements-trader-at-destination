@@ -46,13 +46,16 @@ class InboundMessageTransformer @Inject()(implicit ec: ExecutionContext) extends
         Logger.info(s"X-Message-Type is ${request.headers.get("X-Message-Type")}")
         Logger.info(s"Message type code ${response.messageType.code}")
 
-        val nextState = request.arrival.status.transition(response.messageReceived)
+        request.arrival.status.transition(response.messageReceived) match {
+          case Right(nextState) =>
+            Logger.info(s"Next state $nextState")
 
-        Logger.info(s"Next state $nextState")
-
-        Future.successful(
-          Right(InboundRequest(MessageInbound(response, nextState), request))
-        )
+            Future.successful(
+              Right(InboundRequest(MessageInbound(response, nextState), request))
+            )
+          case Left(error) =>
+            Future.successful(Left(badRequestError(error.reason)))
+        }
       case None =>
         Logger.info(s"Unsupported X-Message-Type ${request.headers.get("X-Message-Type")}")
 

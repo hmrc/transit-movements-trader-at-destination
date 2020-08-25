@@ -20,6 +20,8 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 
+import audit.AuditService
+import audit.AuditType
 import base.SpecBase
 import cats.data.NonEmptyList
 import connectors.MessageConnector
@@ -132,6 +134,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
         val mockLockRepository                                = mock[LockRepository]
         val mockSubmitMessageService                          = mock[SubmitMessageService]
         val captor: ArgumentCaptor[MovementMessageWithStatus] = ArgumentCaptor.forClass(classOf[MovementMessageWithStatus])
+        val mockAuditService                                  = mock[AuditService]
 
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
@@ -144,7 +147,8 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           .overrides(
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
             bind[LockRepository].toInstance(mockLockRepository),
-            bind[SubmitMessageService].toInstance(mockSubmitMessageService)
+            bind[SubmitMessageService].toInstance(mockSubmitMessageService),
+            bind[AuditService].toInstance(mockAuditService)
           )
           .build()
 
@@ -161,6 +165,8 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
 
           val arrivalMessage: MovementMessageWithStatus = captor.getValue
           arrivalMessage mustEqual movementMessage
+
+          verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.UnloadingRemarksSubmitted), any())(any())
         }
       }
 
