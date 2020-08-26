@@ -41,7 +41,7 @@ class SaveMessageService @Inject()(arrivalMovementRepository: ArrivalMovementRep
                                 arrivalStatus: ArrivalStatus): Future[SubmissionProcessingResult] =
     xmlValidationService.validate(messageXml.toString(), messageResponse.xsdFile) match {
       case Success(_) =>
-        arrivalMovementService.makeMessage(messageSender.messageCorrelationId, messageResponse.messageType)(messageXml) match {
+        arrivalMovementService.makeInboundMessage(messageSender.messageCorrelationId, messageResponse.messageType)(messageXml) match {
           case Right(message) =>
             arrivalMovementRepository
               .addResponseMessage(messageSender.arrivalId, message, arrivalStatus)

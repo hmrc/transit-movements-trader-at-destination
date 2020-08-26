@@ -19,10 +19,7 @@ package controllers
 import audit.AuditService
 import audit.AuditType
 import cats.data.NonEmptyList
-import controllers.actions.AuthenticateActionProvider
-import controllers.actions.AuthenticatedGetArrivalForReadActionProvider
-import controllers.actions.AuthenticatedGetArrivalForWriteActionProvider
-import controllers.actions.AuthenticatedGetOptionalArrivalForWriteActionProvider
+import controllers.actions._
 import javax.inject.Inject
 import models.MessageStatus.SubmissionSucceeded
 import models.ArrivalId
@@ -38,6 +35,7 @@ import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
+import repositories.ArrivalIdRepository
 import repositories.ArrivalMovementRepository
 import services.ArrivalMovementMessageService
 import services.SubmitMessageService
@@ -56,7 +54,9 @@ class MovementsController @Inject()(
   authenticatedArrivalForRead: AuthenticatedGetArrivalForReadActionProvider,
   authenticatedOptionalArrival: AuthenticatedGetOptionalArrivalForWriteActionProvider,
   authenticateForWrite: AuthenticatedGetArrivalForWriteActionProvider,
-  auditService: AuditService
+  auditService: AuditService,
+  arrivalIdRepository: ArrivalIdRepository,
+  validateMessageSenderNode: ValidateMessageSenderNodeFilter
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
@@ -66,12 +66,12 @@ class MovementsController @Inject()(
       case _                                                           => false
     }
 
-  def post: Action[NodeSeq] = authenticatedOptionalArrival().async(parse.xml) {
+  def post: Action[NodeSeq] = (authenticatedOptionalArrival()(parse.xml) andThen validateMessageSenderNode.filter).async {
     implicit request =>
       request.arrival match {
         case Some(arrival) if allMessageUnsent(arrival.messages) =>
           arrivalMovementService
-            .makeMovementMessageWithStatus(arrival.nextMessageCorrelationId, MessageType.ArrivalNotification)(request.body) match {
+            .makeOutboundMessage(arrival.arrivalId, arrival.nextMessageCorrelationId, MessageType.ArrivalNotification)(request.body) match {
             case Right(message) =>
               submitMessageService
                 .submitMessage(arrival.arrivalId, arrival.nextMessageId, message, ArrivalStatus.ArrivalSubmitted)
@@ -89,37 +89,42 @@ class MovementsController @Inject()(
               Future.successful(BadRequest(s"Failed to create ArrivalMovementWithStatus with the following error: $error"))
           }
         case _ =>
-          arrivalMovementService.makeArrivalMovement(request.eoriNumber)(request.body) match {
-            case Right(arrivalFuture) =>
-              arrivalFuture
-                .flatMap {
-                  arrival =>
-                    submitMessageService.submitArrival(arrival).map {
-                      case SubmissionFailureExternal => BadGateway
-                      case SubmissionFailureInternal => InternalServerError
-                      case SubmissionFailureRejected => BadRequest("Failed schema validation")
-                      case SubmissionSuccess =>
-                        auditService.auditEvent(AuditType.ArrivalNotificationSubmitted, request.body)
-                        Accepted("Message accepted")
-                          .withHeaders("Location" -> routes.MovementsController.getArrival(arrival.arrivalId).url)
-                    }
-                }
-                .recover {
-                  case _ => {
-                    InternalServerError
+          arrivalMovementService
+            .makeArrivalMovement(request.eoriNumber, request.body)
+            .flatMap {
+              case Right(arrival) =>
+                submitMessageService
+                  .submitArrival(arrival)
+                  .map {
+                    case SubmissionFailureExternal => BadGateway
+                    case SubmissionFailureInternal => InternalServerError
+                    case SubmissionFailureRejected => BadRequest("Failed schema validation")
+                    case SubmissionSuccess =>
+                      auditService.auditEvent(AuditType.ArrivalNotificationSubmitted, request.body)
+                      Accepted("Message accepted")
+                        .withHeaders("Location" -> routes.MovementsController.getArrival(arrival.arrivalId).url)
                   }
-                }
-            case Left(error) =>
-              Logger.error(s"Failed to create ArrivalMovement with the following error: $error")
-              Future.successful(BadRequest(s"Failed to create ArrivalMovement with the following error: $error"))
-          }
+                  .recover {
+                    case _ => {
+                      InternalServerError
+                    }
+                  }
+              case Left(error) =>
+                Logger.error(s"Failed to create ArrivalMovement with the following error: $error")
+                Future.successful(BadRequest(s"Failed to create ArrivalMovement with the following error: $error"))
+            }
+            .recover {
+              case error =>
+                Logger.error(s"Failed to create ArrivalMovement with the following error: $error")
+                InternalServerError
+            }
       }
   }
 
   def putArrival(arrivalId: ArrivalId): Action[NodeSeq] = authenticateForWrite(arrivalId).async(parse.xml) {
     implicit request: ArrivalRequest[NodeSeq] =>
       arrivalMovementService
-        .messageAndMrn(request.arrival.nextMessageCorrelationId)(request.body) match {
+        .messageAndMrn(arrivalId, request.arrival.nextMessageCorrelationId)(request.body) match {
         case Right((message, mrn)) =>
           submitMessageService
             .submitIe007Message(arrivalId, request.arrival.nextMessageId, message, mrn)

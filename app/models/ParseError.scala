@@ -24,4 +24,5 @@ object ParseError {
   case class InvalidRootNode(message: String)              extends ParseError
   case class EmptyMovementReferenceNumber(message: String) extends ParseError
   case class EmptyNodeSeq(message: String)                 extends ParseError
+
 }

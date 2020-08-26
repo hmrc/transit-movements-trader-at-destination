@@ -33,6 +33,7 @@ import models.Arrival
 import models.ArrivalId
 import models.ArrivalStatus
 import models.MessageId
+import models.MessageSender
 import models.MessageType
 import models.MovementMessageWithStatus
 import models.MovementMessageWithoutStatus
@@ -40,6 +41,7 @@ import models.MovementReferenceNumber
 import models.SubmissionProcessingResult
 import models.response.ResponseArrivalWithMessages
 import models.response.ResponseMovementMessage
+import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.{eq => eqTo}
 import org.mockito.Mockito._
@@ -57,6 +59,7 @@ import repositories.ArrivalMovementRepository
 import repositories.LockRepository
 import services.SubmitMessageService
 import utils.Format
+import scala.xml.Utility.trim
 
 import scala.concurrent.Future
 
@@ -71,26 +74,38 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
 
   val mrn = arbitrary[MovementReferenceNumber].sample.value
 
+  val messageId = MessageId.fromIndex(0)
+
+  val arrivalId = arbitrary[ArrivalId].sample.value
+
   val requestXmlBody =
     <CC044A>
       <DatOfPreMES9>{Format.dateFormatted(localDate)}</DatOfPreMES9>
       <TimOfPreMES10>{Format.timeFormatted(localTime)}</TimOfPreMES10>
+      <SynVerNumMES2>1</SynVerNumMES2>
+      <HEAHEA>
+        <DocNumHEA5>{mrn.value}</DocNumHEA5>
+      </HEAHEA>
+    </CC044A>.map(trim)
+
+  val savedXmlMessage =
+    <CC044A>
+      <DatOfPreMES9>{Format.dateFormatted(localDate)}</DatOfPreMES9>
+      <TimOfPreMES10>{Format.timeFormatted(localTime)}</TimOfPreMES10>
+      <SynVerNumMES2>1</SynVerNumMES2>
+      <MesSenMES3>{MessageSender(arrivalId, 2).toString}</MesSenMES3>
       <HEAHEA>
         <DocNumHEA5>{mrn.value}</DocNumHEA5>
       </HEAHEA>
     </CC044A>
 
-  val movementMessge = MovementMessageWithStatus(
+  val movementMessage = MovementMessageWithStatus(
     localDateTime,
     MessageType.UnloadingRemarks,
-    requestXmlBody,
+    savedXmlMessage.map(trim),
     SubmissionPending,
     2
   )
-
-  val messageId = MessageId.fromIndex(0)
-
-  val arrivalId = arbitrary[ArrivalId].sample.value
 
   val arrivalWithOneMessage: Gen[Arrival] = for {
     arrival <- arbitrary[Arrival]
@@ -100,8 +115,8 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
       movementReferenceNumber = mrn,
       eoriNumber = "eori",
       status = ArrivalStatus.Initialized,
-      messages = NonEmptyList.one(movementMessge),
-      nextMessageCorrelationId = movementMessge.messageCorrelationId,
+      messages = NonEmptyList.one(movementMessage),
+      nextMessageCorrelationId = movementMessage.messageCorrelationId,
       created = localDateTime,
       updated = localDateTime
     )
@@ -114,10 +129,12 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
     "post" - {
 
       "must return Accepted, add the message to the movement, send the message upstream and set the message state to SubmissionSucceeded" in {
-        val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
-        val mockLockRepository            = mock[LockRepository]
-        val mockSubmitMessageService      = mock[SubmitMessageService]
-        val mockAuditService              = mock[AuditService]
+
+        val mockArrivalMovementRepository                     = mock[ArrivalMovementRepository]
+        val mockLockRepository                                = mock[LockRepository]
+        val mockSubmitMessageService                          = mock[SubmitMessageService]
+        val captor: ArgumentCaptor[MovementMessageWithStatus] = ArgumentCaptor.forClass(classOf[MovementMessageWithStatus])
+        val mockAuditService                                  = mock[AuditService]
 
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
@@ -143,8 +160,11 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           header("Location", result).value must be(routes.MessagesController.getMessage(arrival.arrivalId, MessageId.fromIndex(1)).url)
           verify(mockSubmitMessageService, times(1)).submitMessage(eqTo(arrival.arrivalId),
                                                                    eqTo(MessageId.fromIndex(1)),
-                                                                   eqTo(movementMessge),
+                                                                   captor.capture(),
                                                                    eqTo(ArrivalStatus.UnloadingRemarksSubmitted))(any())
+
+          val arrivalMessage: MovementMessageWithStatus = captor.getValue
+          arrivalMessage mustEqual movementMessage
 
           verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.UnloadingRemarksSubmitted), any())(any())
         }
@@ -205,6 +225,39 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
         }
       }
 
+      "must return BadRequest if the payload is missing SynVerNumMES2 node" in {
+        val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+        val mockLockRepository            = mock[LockRepository]
+
+        when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
+        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
+        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
+
+        val application =
+          baseApplicationBuilder
+            .overrides(
+              bind[LockRepository].toInstance(mockLockRepository),
+              bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository)
+            )
+            .build()
+
+        running(application) {
+          val requestXmlBody = <CC044A>
+            <DatOfPreMES9>{Format.dateFormatted(localDate)}</DatOfPreMES9>
+            <TimOfPreMES10>{Format.timeFormatted(localTime)}</TimOfPreMES10>
+            <HEAHEA>
+              <DocNumHEA5>{mrn.value}</DocNumHEA5>
+            </HEAHEA>
+          </CC044A>
+
+          val request = FakeRequest(POST, routes.MessagesController.post(arrival.arrivalId).url).withXmlBody(requestXmlBody)
+
+          val result = route(application, request).value
+
+          status(result) mustEqual BAD_REQUEST
+        }
+      }
+
       "must return BadRequest if the payload is malformed" in {
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
         val mockLockRepository            = mock[LockRepository]
@@ -222,7 +275,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
             .build()
 
         running(application) {
-          val requestXmlBody = <CC044A><HEAHEA></HEAHEA></CC044A>
+          val requestXmlBody = <CC044A><SynVerNumMES2>1</SynVerNumMES2><HEAHEA></HEAHEA></CC044A>
 
           val request = FakeRequest(POST, routes.MessagesController.post(arrival.arrivalId).url).withXmlBody(requestXmlBody)
 
@@ -251,7 +304,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
             .build()
 
         running(application) {
-          val requestXmlBody = <CC045A><HEAHEA></HEAHEA></CC045A>
+          val requestXmlBody = <CC045A><SynVerNumMES2>1</SynVerNumMES2><HEAHEA></HEAHEA></CC045A>
 
           val request = FakeRequest(POST, routes.MessagesController.post(arrival.arrivalId).url).withXmlBody(requestXmlBody)
 

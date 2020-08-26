@@ -16,6 +16,7 @@
 
 package controllers
 
+import controllers.actions._
 import audit.AuditService
 import audit.AuditType
 import controllers.actions.AuthenticatedGetArrivalForReadActionProvider
@@ -26,7 +27,10 @@ import models.ArrivalId
 import models.ArrivalStatus
 import models.MessageId
 import models.MessageType
-import models.SubmissionProcessingResult._
+import models.SubmissionProcessingResult.SubmissionFailureExternal
+import models.SubmissionProcessingResult.SubmissionFailureInternal
+import models.SubmissionProcessingResult.SubmissionFailureRejected
+import models.SubmissionProcessingResult.SubmissionSuccess
 import models.request.ArrivalRequest
 import models.response.ResponseArrivalWithMessages
 import models.response.ResponseMovementMessage
@@ -49,14 +53,15 @@ class MessagesController @Inject()(
   submitMessageService: SubmitMessageService,
   authenticateForRead: AuthenticatedGetArrivalForReadActionProvider,
   authenticateForWrite: AuthenticatedGetArrivalForWriteActionProvider,
+  validateMessageSenderNode: ValidateMessageSenderNodeFilter,
   auditService: AuditService
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
-  def post(arrivalId: ArrivalId): Action[NodeSeq] = authenticateForWrite(arrivalId).async(parse.xml) {
+  def post(arrivalId: ArrivalId): Action[NodeSeq] = (authenticateForWrite(arrivalId)(parse.xml) andThen validateMessageSenderNode.filter).async {
     implicit request: ArrivalRequest[NodeSeq] =>
       arrivalMovementService
-        .makeMovementMessageWithStatus(request.arrival.nextMessageCorrelationId, MessageType.UnloadingRemarks)(request.body) match {
+        .makeOutboundMessage(arrivalId, request.arrival.nextMessageCorrelationId, MessageType.UnloadingRemarks)(request.body) match {
         case Right(message) =>
           submitMessageService
             .submitMessage(arrivalId, request.arrival.nextMessageId, message, ArrivalStatus.UnloadingRemarksSubmitted)
