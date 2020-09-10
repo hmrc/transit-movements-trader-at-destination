@@ -55,15 +55,13 @@ class MessageConnector @Inject()(config: AppConfig, http: HttpClient)(implicit e
       .copy(authorization = Some(Authorization(s"Bearer ${config.eisBearerToken}")))
       .withExtraHeaders(addHeaders(message.messageType, dateTime, messageSender): _*)
 
+    val possibleResponses           = List(EisSubmissionSuccessful, ErrorInPayload, VirusFoundOrInvalidToken, DownstreamInternalServerError)
+    val statusesOfPossibleResponses = possibleResponses.map(_.httpStatus)
+    val statusToResponseMapping     = statusesOfPossibleResponses.zip(possibleResponses).toMap
+
     http
       .POSTString[HttpResponse](url, xmlMessage)(readRaw, hc = newHeaders, implicitly)
-      .map {
-        case x if x.status == EisSubmissionSuccessful.httpStatus       => EisSubmissionSuccessful
-        case x if x.status == ErrorInPayload.httpStatus                => ErrorInPayload
-        case x if x.status == VirusFoundOrInvalidToken.httpStatus      => VirusFoundOrInvalidToken
-        case x if x.status == DownstreamInternalServerError.httpStatus => DownstreamInternalServerError
-        case x                                                         => UnexpectedHttpResponse(x)
-      }
+      .map(response => statusToResponseMapping.getOrElse(response.status, UnexpectedHttpResponse(response)))
   }
 
   private def addHeaders(messageType: MessageType, dateTime: OffsetDateTime, messageSender: MessageSender)(
