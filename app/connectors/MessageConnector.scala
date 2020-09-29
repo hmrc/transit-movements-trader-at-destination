@@ -55,13 +55,9 @@ class MessageConnector @Inject()(config: AppConfig, http: HttpClient)(implicit e
       .copy(authorization = Some(Authorization(s"Bearer ${config.eisBearerToken}")))
       .withExtraHeaders(addHeaders(message.messageType, dateTime, messageSender): _*)
 
-    val possibleResponses           = List(EisSubmissionSuccessful, ErrorInPayload, VirusFoundOrInvalidToken, DownstreamInternalServerError)
-    val statusesOfPossibleResponses = possibleResponses.map(_.httpStatus)
-    val statusToResponseMapping     = statusesOfPossibleResponses.zip(possibleResponses).toMap
-
     http
       .POSTString[HttpResponse](url, xmlMessage)(readRaw, hc = newHeaders, implicitly)
-      .map(response => statusToResponseMapping.getOrElse(response.status, UnexpectedHttpResponse(response)))
+      .map(response => responseToStatus(response))
   }
 
   private def addHeaders(messageType: MessageType, dateTime: OffsetDateTime, messageSender: MessageSender)(
@@ -93,6 +89,12 @@ object MessageConnector {
   }
 
   object EisSubmissionResult {
+    private val possibleResponses           = List(EisSubmissionSuccessful, ErrorInPayload, VirusFoundOrInvalidToken, DownstreamInternalServerError)
+    private val statusesOfPossibleResponses = possibleResponses.map(_.httpStatus)
+    private val statusToResponseMapping     = statusesOfPossibleResponses.zip(possibleResponses).toMap
+
+    def responseToStatus(httpResponse: HttpResponse): EisSubmissionResult =
+      statusToResponseMapping.getOrElse(httpResponse.status, UnexpectedHttpResponse(httpResponse))
     object EisSubmissionSuccessful extends EisSubmissionResult(202, "EIS Successful Submission")
 
     sealed abstract class EisSubmissionFailure(httpStatus: Int, asString: String) extends EisSubmissionResult(httpStatus, asString)
