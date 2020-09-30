@@ -109,12 +109,20 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
 
     "returns InvalidRootNode when the root node is not <CC007A>" in {
 
+      val id         = ArrivalId(1)
       val mrn        = MovementReferenceNumber("MRN")
       val eori       = "eoriNumber"
       val dateOfPrep = LocalDate.now()
       val timeOfPrep = LocalTime.of(1, 1)
 
-      val application = baseApplicationBuilder.build()
+      val mockArrivalIdRepository = mock[ArrivalIdRepository]
+      when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(id))
+
+      val application = baseApplicationBuilder
+        .overrides(
+          bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository)
+        )
+        .build()
 
       val service = application.injector.instanceOf[ArrivalMovementMessageService]
 

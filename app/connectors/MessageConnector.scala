@@ -57,13 +57,7 @@ class MessageConnector @Inject()(config: AppConfig, http: HttpClient)(implicit e
 
     http
       .POSTString[HttpResponse](url, xmlMessage)(readRaw, hc = newHeaders, implicitly)
-      .map {
-        case x if x.status == EisSubmissionSuccessful.httpStatus       => EisSubmissionSuccessful
-        case x if x.status == ErrorInPayload.httpStatus                => ErrorInPayload
-        case x if x.status == VirusFoundOrInvalidToken.httpStatus      => VirusFoundOrInvalidToken
-        case x if x.status == DownstreamInternalServerError.httpStatus => DownstreamInternalServerError
-        case x                                                         => UnexpectedHttpResponse(x)
-      }
+      .map(response => responseToStatus(response))
   }
 
   private def addHeaders(messageType: MessageType, dateTime: OffsetDateTime, messageSender: MessageSender)(
@@ -95,6 +89,12 @@ object MessageConnector {
   }
 
   object EisSubmissionResult {
+    private val possibleResponses           = List(EisSubmissionSuccessful, ErrorInPayload, VirusFoundOrInvalidToken, DownstreamInternalServerError)
+    private val statusesOfPossibleResponses = possibleResponses.map(_.httpStatus)
+    private val statusToResponseMapping     = statusesOfPossibleResponses.zip(possibleResponses).toMap
+
+    def responseToStatus(httpResponse: HttpResponse): EisSubmissionResult =
+      statusToResponseMapping.getOrElse(httpResponse.status, UnexpectedHttpResponse(httpResponse))
     object EisSubmissionSuccessful extends EisSubmissionResult(202, "EIS Successful Submission")
 
     sealed abstract class EisSubmissionFailure(httpStatus: Int, asString: String) extends EisSubmissionResult(httpStatus, asString)
