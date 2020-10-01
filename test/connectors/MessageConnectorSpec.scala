@@ -217,5 +217,5 @@ object MessageConnectorSpec {
       case _       => matching("""\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b""")
     }
 
-  private val postUrl = "/transit-movements-trader-eis-router/movements/messages"
+  private val postUrl = "/movements/messages"
 }
