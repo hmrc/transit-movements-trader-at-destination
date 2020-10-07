@@ -24,6 +24,9 @@ import javax.inject.Inject
 import models.MessageStatus.SubmissionSucceeded
 import models.ArrivalId
 import models.ArrivalStatus
+import models.EisSubmissionResult.EisSubmissionRejected
+import models.EisSubmissionResult.ErrorInPayload
+import models.EisSubmissionResult.VirusFoundOrInvalidToken
 import models.MessageType
 import models.MovementMessage
 import models.ResponseArrivals
@@ -35,7 +38,6 @@ import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
-import repositories.ArrivalIdRepository
 import repositories.ArrivalMovementRepository
 import services.ArrivalMovementMessageService
 import services.SubmitMessageService
@@ -55,7 +57,6 @@ class MovementsController @Inject()(
   authenticatedOptionalArrival: AuthenticatedGetOptionalArrivalForWriteActionProvider,
   authenticateForWrite: AuthenticatedGetArrivalForWriteActionProvider,
   auditService: AuditService,
-  arrivalIdRepository: ArrivalIdRepository,
   validateMessageSenderNode: ValidateMessageSenderNodeFilter
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
@@ -78,7 +79,13 @@ class MovementsController @Inject()(
                 .map {
                   case SubmissionFailureInternal => InternalServerError
                   case SubmissionFailureExternal => BadGateway
-                  case SubmissionFailureRejected => BadRequest("Failed schema validation")
+                  case SubmissionFailureRejected(submissionResult: EisSubmissionRejected) =>
+                    submissionResult match {
+                      case ErrorInPayload =>
+                        Status(submissionResult.httpStatus)(submissionResult.asString)
+                      case VirusFoundOrInvalidToken =>
+                        InternalServerError
+                    }
                   case SubmissionSuccess =>
                     auditService.auditEvent(AuditType.ArrivalNotificationSubmitted, request.body)
                     Accepted("Message accepted")
@@ -98,7 +105,13 @@ class MovementsController @Inject()(
                   .map {
                     case SubmissionFailureExternal => BadGateway
                     case SubmissionFailureInternal => InternalServerError
-                    case SubmissionFailureRejected => BadRequest("Failed schema validation")
+                    case SubmissionFailureRejected(submissionResult: EisSubmissionRejected) =>
+                      submissionResult match {
+                        case ErrorInPayload =>
+                          Status(submissionResult.httpStatus)(submissionResult.asString)
+                        case VirusFoundOrInvalidToken =>
+                          InternalServerError
+                      }
                     case SubmissionSuccess =>
                       auditService.auditEvent(AuditType.ArrivalNotificationSubmitted, request.body)
                       Accepted("Message accepted")
@@ -131,7 +144,13 @@ class MovementsController @Inject()(
             .map {
               case SubmissionFailureInternal => InternalServerError
               case SubmissionFailureExternal => BadGateway
-              case SubmissionFailureRejected => BadRequest("Failed schema validation")
+              case SubmissionFailureRejected(submissionResult: EisSubmissionRejected) =>
+                submissionResult match {
+                  case ErrorInPayload =>
+                    Status(submissionResult.httpStatus)(submissionResult.asString)
+                  case VirusFoundOrInvalidToken =>
+                    InternalServerError
+                }
               case SubmissionSuccess =>
                 auditService.auditEvent(AuditType.ArrivalNotificationReSubmitted, request.body)
                 Accepted("Message accepted")

@@ -19,9 +19,6 @@ package generators
 import java.time._
 
 import cats.data.NonEmptyList
-import connectors.MessageConnector.EisSubmissionResult
-import connectors.MessageConnector.EisSubmissionResult._
-import models.MessageStatus
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalPutUpdate
@@ -29,6 +26,7 @@ import models.ArrivalStatus
 import models.ArrivalStatusUpdate
 import models.ArrivalUpdate
 import models.CompoundStatusUpdate
+import models.EisSubmissionResult
 import models.MessageId
 import models.MessageReceivedEvent
 import models.MessageStatus
@@ -39,6 +37,14 @@ import models.MovementMessageWithoutStatus
 import models.MovementReferenceNumber
 import models.RejectionError
 import models.SubmissionProcessingResult
+import models.EisSubmissionResult.DownstreamInternalServerError
+import models.EisSubmissionResult.EisSubmissionFailure
+import models.EisSubmissionResult.EisSubmissionFailureDownstream
+import models.EisSubmissionResult.EisSubmissionRejected
+import models.EisSubmissionResult.EisSubmissionSuccessful
+import models.EisSubmissionResult.ErrorInPayload
+import models.EisSubmissionResult.UnexpectedHttpResponse
+import models.EisSubmissionResult.VirusFoundOrInvalidToken
 import models.response.ResponseMovementMessage
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Arbitrary

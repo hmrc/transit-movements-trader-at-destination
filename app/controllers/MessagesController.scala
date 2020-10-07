@@ -22,15 +22,15 @@ import audit.AuditType
 import controllers.actions.AuthenticatedGetArrivalForReadActionProvider
 import controllers.actions.AuthenticatedGetArrivalForWriteActionProvider
 import javax.inject.Inject
+import models.EisSubmissionResult.EisSubmissionRejected
+import models.EisSubmissionResult.ErrorInPayload
+import models.EisSubmissionResult.VirusFoundOrInvalidToken
 import models.MessageStatus.SubmissionFailed
 import models.ArrivalId
 import models.ArrivalStatus
 import models.MessageId
 import models.MessageType
-import models.SubmissionProcessingResult.SubmissionFailureExternal
-import models.SubmissionProcessingResult.SubmissionFailureInternal
-import models.SubmissionProcessingResult.SubmissionFailureRejected
-import models.SubmissionProcessingResult.SubmissionSuccess
+import models.SubmissionProcessingResult._
 import models.request.ArrivalRequest
 import models.response.ResponseArrivalWithMessages
 import models.response.ResponseMovementMessage
@@ -68,7 +68,13 @@ class MessagesController @Inject()(
             .map {
               case SubmissionFailureInternal => InternalServerError
               case SubmissionFailureExternal => BadGateway
-              case SubmissionFailureRejected => BadRequest("Failed schema validation")
+              case SubmissionFailureRejected(submissionResult: EisSubmissionRejected) =>
+                submissionResult match {
+                  case ErrorInPayload =>
+                    Status(submissionResult.httpStatus)(submissionResult.asString)
+                  case VirusFoundOrInvalidToken =>
+                    InternalServerError
+                }
               case SubmissionSuccess =>
                 auditService.auditEvent(AuditType.UnloadingRemarksSubmitted, request.body)
                 Accepted("Message accepted")

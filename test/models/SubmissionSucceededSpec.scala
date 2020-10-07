@@ -16,8 +16,8 @@
 
 package models.messageState
 
-import connectors.MessageConnector.EisSubmissionResult
 import generators.ModelGenerators
+import models.EisSubmissionResult
 import models.MessageStatus.SubmissionSucceeded
 import org.scalacheck.Arbitrary
 import org.scalatest.freespec.AnyFreeSpec

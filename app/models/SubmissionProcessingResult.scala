@@ -16,16 +16,21 @@
 
 package models
 
+import models.EisSubmissionResult.EisSubmissionRejected
+
 sealed trait SubmissionProcessingResult
 
 object SubmissionProcessingResult {
 
   case object SubmissionSuccess extends SubmissionProcessingResult
 
-  sealed trait SubmissionFailure        extends SubmissionProcessingResult
+  sealed trait SubmissionFailure extends SubmissionProcessingResult
+
   case object SubmissionFailureInternal extends SubmissionFailure
+
   case object SubmissionFailureExternal extends SubmissionFailure
-  case object SubmissionFailureRejected extends SubmissionFailure
+
+  case class SubmissionFailureRejected(submissionResult: EisSubmissionRejected) extends SubmissionFailure
 
   val values = Seq(
     SubmissionSuccess,

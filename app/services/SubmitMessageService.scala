@@ -20,7 +20,6 @@ import java.time.OffsetDateTime
 
 import cats.implicits._
 import connectors.MessageConnector
-import connectors.MessageConnector.EisSubmissionResult._
 import javax.inject.Inject
 import models.Arrival
 import models.ArrivalId
@@ -29,6 +28,9 @@ import models.ArrivalPutUpdate
 import models.ArrivalStatus
 import models.ArrivalStatusUpdate
 import models.CompoundStatusUpdate
+import models.EisSubmissionResult.EisSubmissionFailureDownstream
+import models.EisSubmissionResult.EisSubmissionRejected
+import models.EisSubmissionResult.EisSubmissionSuccessful
 import models.MessageId
 import models.MessageSelector
 import models.MessageStatus
@@ -85,11 +87,11 @@ class SubmitMessageService @Inject()(
 
               arrivalMovementRepository
                 .updateArrival(messageSelector, messageStatusUpdate)
-                .map(_ => SubmissionProcessingResult.SubmissionFailureRejected)
+                .map(_ => SubmissionProcessingResult.SubmissionFailureRejected(submissionResult))
                 .recover({
                   case _ =>
                     logger.warn("Mongo failure when updating message status")
-                    SubmissionProcessingResult.SubmissionFailureRejected
+                    SubmissionProcessingResult.SubmissionFailureInternal
                 })
 
             case submissionResult: EisSubmissionFailureDownstream =>
@@ -147,11 +149,11 @@ class SubmitMessageService @Inject()(
 
               arrivalMovementRepository
                 .updateArrival(messageSelector, messageStatusUpdate)
-                .map(_ => SubmissionProcessingResult.SubmissionFailureRejected)
+                .map(_ => SubmissionProcessingResult.SubmissionFailureRejected(submissionResult))
                 .recover({
                   case _ =>
                     logger.warn("Mongo failure when updating message status")
-                    SubmissionProcessingResult.SubmissionFailureRejected
+                    SubmissionProcessingResult.SubmissionFailureInternal
                 })
 
             case submissionResult: EisSubmissionFailureDownstream =>
@@ -202,11 +204,11 @@ class SubmitMessageService @Inject()(
 
                 arrivalMovementRepository
                   .updateArrival(messageSelector, messageStatusUpdate)
-                  .map(_ => SubmissionProcessingResult.SubmissionFailureRejected)
+                  .map(_ => SubmissionProcessingResult.SubmissionFailureRejected(submissionResult))
                   .recover({
                     case _ =>
                       logger.warn("Mongo failure when updating message status")
-                      SubmissionProcessingResult.SubmissionFailureRejected
+                      SubmissionProcessingResult.SubmissionFailureInternal
                   })
 
               case submissionResult: EisSubmissionFailureDownstream =>

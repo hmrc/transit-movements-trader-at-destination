@@ -16,8 +16,7 @@
 
 package models
 
-import connectors.MessageConnector.EisSubmissionResult
-import connectors.MessageConnector.EisSubmissionResult._
+import models.EisSubmissionResult.EisSubmissionSuccessful
 
 sealed trait MessageStatus {
   def transition(event: EisSubmissionResult): MessageStatus

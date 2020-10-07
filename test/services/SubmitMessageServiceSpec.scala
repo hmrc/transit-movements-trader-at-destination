@@ -23,9 +23,6 @@ import java.time.LocalTime
 import base.SpecBase
 import cats.data.NonEmptyList
 import connectors.MessageConnector
-import connectors.MessageConnector.EisSubmissionResult.EisSubmissionFailureDownstream
-import connectors.MessageConnector.EisSubmissionResult.EisSubmissionRejected
-import connectors.MessageConnector.EisSubmissionResult.EisSubmissionSuccessful
 import generators.ModelGenerators
 import models.MessageStatus.SubmissionFailed
 import models.MessageStatus.SubmissionPending
@@ -45,6 +42,10 @@ import models.MessageType
 import models.MovementMessageWithStatus
 import models.MovementReferenceNumber
 import models.SubmissionProcessingResult
+import models.EisSubmissionResult.EisSubmissionFailureDownstream
+import models.EisSubmissionResult.EisSubmissionRejected
+import models.EisSubmissionResult.EisSubmissionSuccessful
+import models.SubmissionProcessingResult.SubmissionFailureRejected
 import org.mockito.ArgumentMatchers.{eq => eqTo, _}
 import org.mockito.Mockito
 import org.mockito.Mockito.when
@@ -267,7 +268,7 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
 
             val result = service.submitMessage(arrivalId, messageId, movementMessage, arrivalStatus)
 
-            result.futureValue mustEqual SubmissionProcessingResult.SubmissionFailureRejected
+            result.futureValue mustBe a[SubmissionFailureRejected]
 
             verify(mockArrivalMovementRepository, times(1)).addNewMessage(eqTo(arrivalId), eqTo(movementMessage))
             verify(mockMessageConnector, times(1)).post(eqTo(arrivalId), eqTo(movementMessage), any())(any())
@@ -460,7 +461,7 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
             val expectedSelector = MessageSelector(arrivalId, messageId)
             val expectedModifier = MessageStatusUpdate(messageId, SubmissionFailed)
 
-            result.futureValue mustEqual SubmissionProcessingResult.SubmissionFailureRejected
+            result.futureValue mustBe a[SubmissionFailureRejected]
             verify(mockArrivalMovementRepository, times(1)).addNewMessage(eqTo(arrivalId), eqTo(movementMessage))
             verify(mockMessageConnector, times(1)).post(eqTo(arrivalId), eqTo(movementMessage), any())(any())
             verify(mockArrivalMovementRepository, times(1)).updateArrival(eqTo(expectedSelector), eqTo(expectedModifier))(any())
@@ -627,7 +628,7 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
 
             val result = service.submitArrival(arrival)
 
-            result.futureValue mustEqual SubmissionProcessingResult.SubmissionFailureRejected
+            result.futureValue mustBe a[SubmissionFailureRejected]
             verify(mockArrivalMovementRepository, times(1)).insert(eqTo(arrival))
             verify(mockMessageConnector, times(1)).post(eqTo(arrival.arrivalId), eqTo(movementMessage), any())(any())
             verify(mockArrivalMovementRepository, times(1)).updateArrival(any(), eqTo(expectedModifier))(any())

@@ -21,9 +21,12 @@ import java.time.OffsetDateTime
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.matching.StringValuePattern
-import connectors.MessageConnector.EisSubmissionResult._
 import generators.ModelGenerators
 import models.ArrivalId
+import models.EisSubmissionResult.DownstreamInternalServerError
+import models.EisSubmissionResult.EisSubmissionSuccessful
+import models.EisSubmissionResult.ErrorInPayload
+import models.EisSubmissionResult.VirusFoundOrInvalidToken
 import models.MessageStatus
 import models.MessageType
 import models.MovementMessageWithStatus
