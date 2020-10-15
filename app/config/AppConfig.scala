@@ -33,7 +33,6 @@ class AppConfig @Inject()(config: Configuration, servicesConfig: ServicesConfig)
 
   private val eisBaseUrl: String = servicesConfig.baseUrl("eis")
   val eisUrl: String             = eisBaseUrl ++ config.get[String]("microservice.services.eis.uri")
-  val eisBearerToken: String     = config.get[String]("microservice.services.eis.headers.bearerToken")
 
   private val manageDocumentsBaseUrl: String = servicesConfig.baseUrl("manage-documents")
   val manageDocumentsUrl: String             = manageDocumentsBaseUrl ++ config.get[String]("microservice.services.manage-documents.uri")

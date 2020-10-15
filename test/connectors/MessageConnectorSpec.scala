@@ -84,7 +84,6 @@ class MessageConnectorSpec
 
         server.stubFor(
           post(urlEqualTo(postUrl))
-            .withHeader("Authorization", equalTo("Bearer bearertokenhere"))
             .withHeader("X-Forwarded-Host", equalTo("mdtp"))
             .withHeader("X-Correlation-ID", headerCarrierPattern)
             .withHeader("Content-Type", equalTo("application/xml"))
@@ -110,7 +109,6 @@ class MessageConnectorSpec
 
         server.stubFor(
           post(urlEqualTo(postUrl))
-            .withHeader("Authorization", equalTo("Bearer bearertokenhere"))
             .withHeader("X-Forwarded-Host", equalTo("mdtp"))
             .withHeader("X-Correlation-ID", headerCarrierPattern)
             .withHeader("Content-Type", equalTo("application/xml"))
@@ -135,7 +133,6 @@ class MessageConnectorSpec
 
         server.stubFor(
           post(urlEqualTo(postUrl))
-            .withHeader("Authorization", equalTo("Bearer bearertokenhere"))
             .withHeader("X-Forwarded-Host", equalTo("mdtp"))
             .withHeader("X-Correlation-ID", headerCarrierPattern)
             .withHeader("Content-Type", equalTo("application/xml"))
@@ -160,7 +157,6 @@ class MessageConnectorSpec
 
         server.stubFor(
           post(urlEqualTo(postUrl))
-            .withHeader("Authorization", equalTo("Bearer bearertokenhere"))
             .withHeader("X-Forwarded-Host", equalTo("mdtp"))
             .withHeader("X-Correlation-ID", headerCarrierPattern)
             .withHeader("Content-Type", equalTo("application/xml"))
@@ -185,7 +181,6 @@ class MessageConnectorSpec
 
         server.stubFor(
           post(urlEqualTo(postUrl))
-            .withHeader("Authorization", equalTo("Bearer bearertokenhere"))
             .withHeader("X-Forwarded-Host", equalTo("mdtp"))
             .withHeader("X-Correlation-ID", headerCarrierPattern)
             .withHeader("Content-Type", equalTo("application/xml"))
