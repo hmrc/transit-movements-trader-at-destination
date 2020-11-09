@@ -35,6 +35,7 @@ object SubmissionProcessingResult {
   case object SubmissionFailureExternal extends SubmissionFailure
 
   case class SubmissionFailureRejected(httpStatus: Int, asString: String) extends SubmissionFailure {
+
     def recodeForUpstream(): Result =
       httpStatus match {
         case BAD_REQUEST =>
