@@ -24,8 +24,9 @@ import base.SpecBase
 import cats.data.NonEmptyList
 import connectors.MessageConnector
 import connectors.MessageConnector.EisSubmissionResult.EisSubmissionFailureDownstream
-import connectors.MessageConnector.EisSubmissionResult.EisSubmissionRejected
 import connectors.MessageConnector.EisSubmissionResult.EisSubmissionSuccessful
+import connectors.MessageConnector.EisSubmissionResult.ErrorInPayload
+import connectors.MessageConnector.EisSubmissionResult.VirusFoundOrInvalidToken
 import generators.ModelGenerators
 import models.MessageStatus.SubmissionFailed
 import models.MessageStatus.SubmissionPending
@@ -45,6 +46,7 @@ import models.MessageType
 import models.MovementMessageWithStatus
 import models.MovementReferenceNumber
 import models.SubmissionProcessingResult
+import models.SubmissionProcessingResult.SubmissionFailureInternal
 import models.SubmissionProcessingResult.SubmissionFailureRejected
 import org.mockito.ArgumentMatchers.{eq => eqTo, _}
 import org.mockito.Mockito
@@ -258,22 +260,82 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
       running(application) {
         val service = application.injector.instanceOf[SubmitMessageService]
 
-        forAll(arbitrary[ArrivalId], arbitrary[MessageId], arbitrary[MovementMessageWithStatus], arbitrary[ArrivalStatus], arbitrary[EisSubmissionRejected]) {
-          (arrivalId, messageId, movementMessage, arrivalStatus, submissionFailure) =>
-            when(mockArrivalMovementRepository.addNewMessage(any(), any())).thenReturn(Future.successful(Success(())))
-            when(mockMessageConnector.post(any(), any(), any())(any())).thenReturn(Future.successful(submissionFailure))
-            when(mockArrivalMovementRepository.updateArrival(any(), any())(any())).thenReturn(Future.successful((Success(()))))
+        val arrivalId       = arbitrary[ArrivalId].sample.value
+        val messageId       = arbitrary[MessageId].sample.value
+        val movementMessage = arbitrary[MovementMessageWithStatus].sample.value
+        val arrivalStatus   = ArrivalStatus.ArrivalSubmitted
 
-            val expectedModifier = MessageStatusUpdate(messageId, SubmissionFailed)
+        when(mockArrivalMovementRepository.addNewMessage(any(), any())).thenReturn(Future.successful(Success(())))
+        when(mockMessageConnector.post(any(), any(), any())(any())).thenReturn(Future.successful(ErrorInPayload))
+        when(mockArrivalMovementRepository.updateArrival(any(), any())(any())).thenReturn(Future.successful((Success(()))))
 
-            val result = service.submitMessage(arrivalId, messageId, movementMessage, arrivalStatus)
+        val expectedModifier = MessageStatusUpdate(messageId, SubmissionFailed)
 
-            result.futureValue mustEqual SubmissionFailureRejected(submissionFailure.httpStatus, submissionFailure.asString)
+        val result = service.submitMessage(arrivalId, messageId, movementMessage, arrivalStatus)
 
-            verify(mockArrivalMovementRepository, times(1)).addNewMessage(eqTo(arrivalId), eqTo(movementMessage))
-            verify(mockMessageConnector, times(1)).post(eqTo(arrivalId), eqTo(movementMessage), any())(any())
-            verify(mockArrivalMovementRepository, times(1)).updateArrival(any(), eqTo(expectedModifier))(any())
-        }
+        result.futureValue mustEqual SubmissionFailureRejected(ErrorInPayload.responseBody)
+
+        verify(mockArrivalMovementRepository, times(1)).addNewMessage(eqTo(arrivalId), eqTo(movementMessage))
+        verify(mockMessageConnector, times(1)).post(eqTo(arrivalId), eqTo(movementMessage), any())(any())
+        verify(mockArrivalMovementRepository, times(1)).updateArrival(any(), eqTo(expectedModifier))(any())
+      }
+    }
+
+    "return SubmissionFailureInternal if there has been a rejection from EIS due to virus found or invalid token" in {
+      val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+      val mockMessageConnector          = mock[MessageConnector]
+
+      val application = baseApplicationBuilder
+        .overrides(
+          bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
+          bind[MessageConnector].toInstance(mockMessageConnector)
+        )
+        .build()
+
+      running(application) {
+        val service = application.injector.instanceOf[SubmitMessageService]
+
+        when(mockArrivalMovementRepository.addNewMessage(any(), any())).thenReturn(Future.successful(Success(())))
+        when(mockMessageConnector.post(any(), any(), any())(any())).thenReturn(Future.successful(VirusFoundOrInvalidToken))
+        when(mockArrivalMovementRepository.updateArrival(any(), any())(any())).thenReturn(Future.successful((Success(()))))
+
+        val arrivalId       = arbitrary[ArrivalId].sample.value
+        val messageId       = arbitrary[MessageId].sample.value
+        val movementMessage = arbitrary[MovementMessageWithStatus].sample.value
+        val arrivalStatus   = ArrivalStatus.ArrivalSubmitted
+
+        val result = service.submitMessage(arrivalId, messageId, movementMessage, arrivalStatus)
+
+        result.futureValue mustEqual SubmissionFailureInternal
+      }
+    }
+
+    "return SubmissionFailureRejected if there has been a rejection from EIS due to error in payload" in {
+      val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+      val mockMessageConnector          = mock[MessageConnector]
+
+      val application = baseApplicationBuilder
+        .overrides(
+          bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
+          bind[MessageConnector].toInstance(mockMessageConnector)
+        )
+        .build()
+
+      running(application) {
+        val service = application.injector.instanceOf[SubmitMessageService]
+
+        when(mockArrivalMovementRepository.addNewMessage(any(), any())).thenReturn(Future.successful(Success(())))
+        when(mockMessageConnector.post(any(), any(), any())(any())).thenReturn(Future.successful(ErrorInPayload))
+        when(mockArrivalMovementRepository.updateArrival(any(), any())(any())).thenReturn(Future.successful((Success(()))))
+
+        val arrivalId       = arbitrary[ArrivalId].sample.value
+        val messageId       = arbitrary[MessageId].sample.value
+        val movementMessage = arbitrary[MovementMessageWithStatus].sample.value
+        val arrivalStatus   = ArrivalStatus.ArrivalSubmitted
+
+        val result = service.submitMessage(arrivalId, messageId, movementMessage, arrivalStatus)
+
+        result.futureValue mustEqual SubmissionFailureRejected(ErrorInPayload.responseBody)
       }
     }
   }
@@ -444,31 +506,84 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
 
         val service = application.injector.instanceOf[SubmitMessageService]
 
-        forAll(
-          arbitrary[ArrivalId],
-          arbitrary[MessageId],
-          arbitrary[MovementMessageWithStatus],
-          arbitrary[MovementReferenceNumber],
-          arbitrary[EisSubmissionRejected]
-        ) {
-          (arrivalId, messageId, movementMessage, mrn, submissionFailure) =>
-            when(mockArrivalMovementRepository.addNewMessage(any(), any())).thenReturn(Future.successful(Success(())))
-            when(mockMessageConnector.post(any(), any(), any())(any())).thenReturn(Future.successful(submissionFailure))
-            when(mockArrivalMovementRepository.updateArrival(any(), any())(any())).thenReturn(Future.successful(Success(())))
+        val arrivalId       = arbitrary[ArrivalId].sample.value
+        val messageId       = arbitrary[MessageId].sample.value
+        val movementMessage = arbitrary[MovementMessageWithStatus].sample.value
+        val mrn             = arbitrary[MovementReferenceNumber].sample.value
 
-            val result = service.submitIe007Message(arrivalId, messageId, movementMessage, mrn)
+        when(mockArrivalMovementRepository.addNewMessage(any(), any())).thenReturn(Future.successful(Success(())))
+        when(mockMessageConnector.post(any(), any(), any())(any())).thenReturn(Future.successful(ErrorInPayload))
+        when(mockArrivalMovementRepository.updateArrival(any(), any())(any())).thenReturn(Future.successful(Success(())))
 
-            val expectedSelector = MessageSelector(arrivalId, messageId)
-            val expectedModifier = MessageStatusUpdate(messageId, SubmissionFailed)
+        val result = service.submitIe007Message(arrivalId, messageId, movementMessage, mrn)
 
-            result.futureValue mustEqual SubmissionFailureRejected(submissionFailure.httpStatus, submissionFailure.asString)
+        val expectedSelector = MessageSelector(arrivalId, messageId)
+        val expectedModifier = MessageStatusUpdate(messageId, SubmissionFailed)
 
-            verify(mockArrivalMovementRepository, times(1)).addNewMessage(eqTo(arrivalId), eqTo(movementMessage))
-            verify(mockMessageConnector, times(1)).post(eqTo(arrivalId), eqTo(movementMessage), any())(any())
-            verify(mockArrivalMovementRepository, times(1)).updateArrival(eqTo(expectedSelector), eqTo(expectedModifier))(any())
-        }
+        result.futureValue mustEqual SubmissionFailureRejected(ErrorInPayload.responseBody)
+
+        verify(mockArrivalMovementRepository, times(1)).addNewMessage(eqTo(arrivalId), eqTo(movementMessage))
+        verify(mockMessageConnector, times(1)).post(eqTo(arrivalId), eqTo(movementMessage), any())(any())
+        verify(mockArrivalMovementRepository, times(1)).updateArrival(eqTo(expectedSelector), eqTo(expectedModifier))(any())
       }
+    }
 
+    "return SubmissionFailureInternal if there has been a rejection from EIS due to virus found or invalid token" in {
+      val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+      val mockMessageConnector          = mock[MessageConnector]
+
+      val application = baseApplicationBuilder
+        .overrides(
+          bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
+          bind[MessageConnector].toInstance(mockMessageConnector)
+        )
+        .build()
+
+      running(application) {
+        val service = application.injector.instanceOf[SubmitMessageService]
+
+        when(mockArrivalMovementRepository.addNewMessage(any(), any())).thenReturn(Future.successful(Success(())))
+        when(mockMessageConnector.post(any(), any(), any())(any())).thenReturn(Future.successful(VirusFoundOrInvalidToken))
+        when(mockArrivalMovementRepository.updateArrival(any(), any())(any())).thenReturn(Future.successful((Success(()))))
+
+        val arrivalId       = arbitrary[ArrivalId].sample.value
+        val messageId       = arbitrary[MessageId].sample.value
+        val movementMessage = arbitrary[MovementMessageWithStatus].sample.value
+        val mrn             = arbitrary[MovementReferenceNumber].sample.value
+
+        val result = service.submitIe007Message(arrivalId, messageId, movementMessage, mrn)
+
+        result.futureValue mustEqual SubmissionFailureInternal
+      }
+    }
+
+    "return SubmissionFailureRejected if there has been a rejection from EIS due to error in payload" in {
+      val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+      val mockMessageConnector          = mock[MessageConnector]
+
+      val application = baseApplicationBuilder
+        .overrides(
+          bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
+          bind[MessageConnector].toInstance(mockMessageConnector)
+        )
+        .build()
+
+      running(application) {
+        val service = application.injector.instanceOf[SubmitMessageService]
+
+        when(mockArrivalMovementRepository.addNewMessage(any(), any())).thenReturn(Future.successful(Success(())))
+        when(mockMessageConnector.post(any(), any(), any())(any())).thenReturn(Future.successful(ErrorInPayload))
+        when(mockArrivalMovementRepository.updateArrival(any(), any())(any())).thenReturn(Future.successful((Success(()))))
+
+        val arrivalId       = arbitrary[ArrivalId].sample.value
+        val messageId       = arbitrary[MessageId].sample.value
+        val movementMessage = arbitrary[MovementMessageWithStatus].sample.value
+        val mrn             = arbitrary[MovementReferenceNumber].sample.value
+
+        val result = service.submitIe007Message(arrivalId, messageId, movementMessage, mrn)
+
+        result.futureValue mustEqual SubmissionFailureRejected(ErrorInPayload.responseBody)
+      }
     }
   }
 
@@ -614,27 +729,69 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
         .build()
 
       running(application) {
-
         val service = application.injector.instanceOf[SubmitMessageService]
 
-        forAll(arrivalWithOneMovementGenerator, arbitrary[EisSubmissionRejected]) {
-          (arrival, submissionResult) =>
-            Mockito.reset(mockArrivalMovementRepository, mockMessageConnector)
+        when(mockArrivalMovementRepository.insert(any())).thenReturn(Future.successful(()))
+        when(mockMessageConnector.post(any(), any(), any())(any())).thenReturn(Future.successful(ErrorInPayload))
+        when(mockArrivalMovementRepository.updateArrival(any(), any())(any())).thenReturn(Future.successful((Success(()))))
 
-            when(mockArrivalMovementRepository.insert(any())).thenReturn(Future.successful(()))
-            when(mockMessageConnector.post(any(), any(), any())(any())).thenReturn(Future.successful(submissionResult))
-            when(mockArrivalMovementRepository.updateArrival(any(), any())(any())).thenReturn(Future.successful((Success(()))))
+        val expectedModifier = MessageStatusUpdate(messageId, SubmissionFailed)
 
-            val expectedModifier = MessageStatusUpdate(messageId, SubmissionFailed)
+        val result = service.submitArrival(arrival)
 
-            val result = service.submitArrival(arrival)
+        result.futureValue mustEqual SubmissionFailureRejected(ErrorInPayload.responseBody)
 
-            result.futureValue mustEqual SubmissionFailureRejected(submissionResult.httpStatus, submissionResult.asString)
+        verify(mockArrivalMovementRepository, times(1)).insert(eqTo(arrival))
+        verify(mockMessageConnector, times(1)).post(eqTo(arrival.arrivalId), eqTo(movementMessage), any())(any())
+        verify(mockArrivalMovementRepository, times(1)).updateArrival(any(), eqTo(expectedModifier))(any())
+      }
+    }
 
-            verify(mockArrivalMovementRepository, times(1)).insert(eqTo(arrival))
-            verify(mockMessageConnector, times(1)).post(eqTo(arrival.arrivalId), eqTo(movementMessage), any())(any())
-            verify(mockArrivalMovementRepository, times(1)).updateArrival(any(), eqTo(expectedModifier))(any())
-        }
+    "return SubmissionFailureInternal if there has been a rejection from EIS due to virus found or invalid token" in {
+      val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+      val mockMessageConnector          = mock[MessageConnector]
+
+      val application = baseApplicationBuilder
+        .overrides(
+          bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
+          bind[MessageConnector].toInstance(mockMessageConnector)
+        )
+        .build()
+
+      running(application) {
+        val service = application.injector.instanceOf[SubmitMessageService]
+
+        when(mockArrivalMovementRepository.insert(any())).thenReturn(Future.successful(()))
+        when(mockMessageConnector.post(any(), any(), any())(any())).thenReturn(Future.successful(VirusFoundOrInvalidToken))
+        when(mockArrivalMovementRepository.updateArrival(any(), any())(any())).thenReturn(Future.successful((Success(()))))
+
+        val result = service.submitArrival(arrival)
+
+        result.futureValue mustEqual SubmissionFailureInternal
+      }
+    }
+
+    "return SubmissionFailureRejected if there has been a rejection from EIS due to error in payload" in {
+      val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+      val mockMessageConnector          = mock[MessageConnector]
+
+      val application = baseApplicationBuilder
+        .overrides(
+          bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
+          bind[MessageConnector].toInstance(mockMessageConnector)
+        )
+        .build()
+
+      running(application) {
+        val service = application.injector.instanceOf[SubmitMessageService]
+
+        when(mockArrivalMovementRepository.insert(any())).thenReturn(Future.successful(()))
+        when(mockMessageConnector.post(any(), any(), any())(any())).thenReturn(Future.successful(ErrorInPayload))
+        when(mockArrivalMovementRepository.updateArrival(any(), any())(any())).thenReturn(Future.successful((Success(()))))
+
+        val result = service.submitArrival(arrival)
+
+        result.futureValue mustEqual SubmissionFailureRejected(ErrorInPayload.responseBody)
       }
     }
 

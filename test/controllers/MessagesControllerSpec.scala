@@ -26,7 +26,6 @@ import base.SpecBase
 import cats.data.NonEmptyList
 import connectors.MessageConnector
 import connectors.MessageConnector.EisSubmissionResult.ErrorInPayload
-import connectors.MessageConnector.EisSubmissionResult.VirusFoundOrInvalidToken
 import generators.ModelGenerators
 import models.MessageStatus.SubmissionFailed
 import models.MessageStatus.SubmissionPending
@@ -64,7 +63,6 @@ import utils.Format
 
 import scala.xml.Utility.trim
 import scala.concurrent.Future
-import scala.util.Failure
 
 class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with ModelGenerators with BeforeAndAfterEach with IntegrationPatience {
 
@@ -356,7 +354,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
         when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
 
         when(mockSubmitMessageService.submitMessage(any(), any(), any(), any())(any()))
-          .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureRejected(ErrorInPayload.httpStatus, ErrorInPayload.asString)))
+          .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureRejected(ErrorInPayload.responseBody)))
 
         val application = baseApplicationBuilder
           .overrides(
@@ -385,39 +383,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
         when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
 
         when(mockSubmitMessageService.submitMessage(any(), any(), any(), any())(any()))
-          .thenReturn(
-            Future.successful(SubmissionProcessingResult.SubmissionFailureRejected(VirusFoundOrInvalidToken.httpStatus, VirusFoundOrInvalidToken.asString)))
-
-        val application = baseApplicationBuilder
-          .overrides(
-            bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
-            bind[LockRepository].toInstance(mockLockRepository),
-            bind[SubmitMessageService].toInstance(mockSubmitMessageService)
-          )
-          .build()
-
-        running(application) {
-          val request = FakeRequest(POST, routes.MessagesController.post(arrival.arrivalId).url).withXmlBody(requestXmlBody)
-
-          val result = route(application, request).value
-
-          status(result) mustEqual INTERNAL_SERVER_ERROR
-        }
-      }
-
-      "must return InternalServerError if there has been a rejection from EIS and then failure occurs when updating the message state" in {
-        val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
-        val mockLockRepository            = mock[LockRepository]
-        val mockSubmitMessageService      = mock[SubmitMessageService]
-
-        when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
-        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
-        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
-        when(mockArrivalMovementRepository.updateArrival(any(), any())(any())).thenReturn(Future.successful(Failure(new Exception)))
-
-        when(mockSubmitMessageService.submitMessage(any(), any(), any(), any())(any()))
-          .thenReturn(
-            Future.successful(SubmissionProcessingResult.SubmissionFailureRejected(VirusFoundOrInvalidToken.httpStatus, VirusFoundOrInvalidToken.asString)))
+          .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureInternal))
 
         val application = baseApplicationBuilder
           .overrides(

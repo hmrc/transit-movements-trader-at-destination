@@ -26,7 +26,6 @@ import base.SpecBase
 import cats.data.NonEmptyList
 import connectors.MessageConnector
 import connectors.MessageConnector.EisSubmissionResult.ErrorInPayload
-import connectors.MessageConnector.EisSubmissionResult.VirusFoundOrInvalidToken
 import controllers.actions.AuthenticatedGetOptionalArrivalForWriteActionProvider
 import controllers.actions.FakeAuthenticatedGetOptionalArrivalForWriteActionProvider
 import generators.ModelGenerators
@@ -64,7 +63,6 @@ import services.SubmitMessageService
 import utils.Format
 
 import scala.concurrent.Future
-import scala.util.Failure
 import scala.xml.Utility.trim
 import scala.xml.NodeSeq
 
@@ -333,7 +331,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
           when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
           when(mockSubmitMessageService.submitArrival(any())(any()))
-            .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureRejected(ErrorInPayload.httpStatus, ErrorInPayload.asString)))
+            .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureRejected(ErrorInPayload.responseBody)))
 
           val application = baseApplicationBuilder
             .overrides(
@@ -361,44 +359,11 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
           when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
           when(mockSubmitMessageService.submitArrival(any())(any()))
-            .thenReturn(
-              Future.successful(SubmissionProcessingResult.SubmissionFailureRejected(VirusFoundOrInvalidToken.httpStatus, VirusFoundOrInvalidToken.asString)))
+            .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureInternal))
 
           val application = baseApplicationBuilder
             .overrides(
               bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
-              bind[SubmitMessageService].toInstance(mockSubmitMessageService),
-              bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider())
-            )
-            .build()
-
-          running(application) {
-
-            val request = FakeRequest(POST, routes.MovementsController.post().url).withXmlBody(requestXmlBody.map(trim))
-
-            val result = route(application, request).value
-
-            status(result) mustEqual INTERNAL_SERVER_ERROR
-          }
-        }
-
-        "must return InternalServerError if there has been a rejection from EIS and then failure occurs when updating the message state" in {
-          val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
-          val mockArrivalIdRepository       = mock[ArrivalIdRepository]
-          val mockSubmitMessageService      = mock[SubmitMessageService]
-
-          val arrivalId = ArrivalId(1)
-
-          when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
-          when(mockSubmitMessageService.submitArrival(any())(any()))
-            .thenReturn(
-              Future.successful(SubmissionProcessingResult.SubmissionFailureRejected(VirusFoundOrInvalidToken.httpStatus, VirusFoundOrInvalidToken.asString)))
-          when(mockArrivalMovementRepository.updateArrival(any(), any())(any())).thenReturn(Future.successful(Failure(new Exception)))
-
-          val application = baseApplicationBuilder
-            .overrides(
-              bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
-              bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
               bind[SubmitMessageService].toInstance(mockSubmitMessageService),
               bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider())
             )
@@ -601,7 +566,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           val mockSubmitMessageService = mock[SubmitMessageService]
 
           when(mockSubmitMessageService.submitMessage(any(), any(), any(), any())(any()))
-            .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureRejected(ErrorInPayload.httpStatus, ErrorInPayload.asString)))
+            .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureRejected(ErrorInPayload.responseBody)))
 
           val app = baseApplicationBuilder
             .overrides(
@@ -625,8 +590,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           val mockSubmitMessageService = mock[SubmitMessageService]
 
           when(mockSubmitMessageService.submitMessage(any(), any(), any(), any())(any()))
-            .thenReturn(
-              Future.successful(SubmissionProcessingResult.SubmissionFailureRejected(VirusFoundOrInvalidToken.httpStatus, VirusFoundOrInvalidToken.asString)))
+            .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureInternal))
 
           val app = baseApplicationBuilder
             .overrides(
@@ -899,7 +863,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(initializedArrival)))
 
         when(mockSubmitMessageService.submitIe007Message(any(), any(), any(), any())(any()))
-          .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureRejected(ErrorInPayload.httpStatus, ErrorInPayload.asString)))
+          .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureRejected(ErrorInPayload.responseBody)))
 
         val application = baseApplicationBuilder
           .overrides(
@@ -945,8 +909,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(initializedArrival)))
 
         when(mockSubmitMessageService.submitIe007Message(any(), any(), any(), any())(any()))
-          .thenReturn(
-            Future.successful(SubmissionProcessingResult.SubmissionFailureRejected(VirusFoundOrInvalidToken.httpStatus, VirusFoundOrInvalidToken.asString)))
+          .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureInternal))
 
         val application = baseApplicationBuilder
           .overrides(
@@ -978,53 +941,6 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
           status(result) mustEqual INTERNAL_SERVER_ERROR
 
-        }
-      }
-
-      "must return InternalServerError if there has been a rejection from EIS and then failure occurs when updating the message state" in {
-        val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
-        val mockMessageConnector          = mock[MessageConnector]
-        val mockLockRepository            = mock[LockRepository]
-        val mockSubmitMessageService      = mock[SubmitMessageService]
-
-        when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
-        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
-        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(initializedArrival)))
-        when(mockArrivalMovementRepository.updateArrival(any(), any())(any())).thenReturn(Future.successful(Failure(new Exception)))
-
-        when(mockSubmitMessageService.submitIe007Message(any(), any(), any(), any())(any()))
-          .thenReturn(
-            Future.successful(SubmissionProcessingResult.SubmissionFailureRejected(VirusFoundOrInvalidToken.httpStatus, VirusFoundOrInvalidToken.asString)))
-
-        val app = baseApplicationBuilder
-          .overrides(
-            bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
-            bind[MessageConnector].toInstance(mockMessageConnector),
-            bind[LockRepository].toInstance(mockLockRepository),
-            bind[SubmitMessageService].toInstance(mockSubmitMessageService)
-          )
-          .build()
-
-        running(app) {
-
-          val dateOfPrep = LocalDate.now()
-          val timeOfPrep = LocalTime.of(1, 1)
-
-          val requestXmlBody =
-            <CC007A>
-              <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
-              <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
-              <SynVerNumMES2>1</SynVerNumMES2>
-              <HEAHEA>
-                <DocNumHEA5>MRN</DocNumHEA5>
-              </HEAHEA>
-            </CC007A>
-
-          val request = FakeRequest(PUT, routes.MovementsController.putArrival(initializedArrival.arrivalId).url).withXmlBody(requestXmlBody.map(trim))
-
-          val result = route(app, request).value
-
-          status(result) mustEqual INTERNAL_SERVER_ERROR
         }
       }
     }

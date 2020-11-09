@@ -206,7 +206,7 @@ class MessageConnectorSpec
 
         val result = connector.post(arrivalId, postValue, OffsetDateTime.now())
 
-        result.futureValue.httpStatus mustEqual 418
+        result.futureValue.statusCode mustEqual 418
       }
     }
   }

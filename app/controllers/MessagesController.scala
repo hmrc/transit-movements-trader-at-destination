@@ -66,7 +66,7 @@ class MessagesController @Inject()(
               case SubmissionFailureInternal => InternalServerError
               case SubmissionFailureExternal => BadGateway
               case submissionFailureRejected: SubmissionFailureRejected =>
-                submissionFailureRejected.recodeForUpstream
+                BadRequest(submissionFailureRejected.responseBody)
               case SubmissionSuccess =>
                 auditService.auditEvent(AuditType.UnloadingRemarksSubmitted, request.body)
                 Accepted("Message accepted")

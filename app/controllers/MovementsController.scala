@@ -77,7 +77,7 @@ class MovementsController @Inject()(
                   case SubmissionFailureInternal => InternalServerError
                   case SubmissionFailureExternal => BadGateway
                   case submissionFailureRejected: SubmissionFailureRejected =>
-                    submissionFailureRejected.recodeForUpstream
+                    BadRequest(submissionFailureRejected.responseBody)
                   case SubmissionSuccess =>
                     auditService.auditEvent(AuditType.ArrivalNotificationSubmitted, request.body)
                     Accepted("Message accepted")
@@ -98,7 +98,7 @@ class MovementsController @Inject()(
                     case SubmissionFailureExternal => BadGateway
                     case SubmissionFailureInternal => InternalServerError
                     case submissionFailureRejected: SubmissionFailureRejected =>
-                      submissionFailureRejected.recodeForUpstream
+                      BadRequest(submissionFailureRejected.responseBody)
                     case SubmissionSuccess =>
                       auditService.auditEvent(AuditType.ArrivalNotificationSubmitted, request.body)
                       Accepted("Message accepted")
@@ -132,7 +132,7 @@ class MovementsController @Inject()(
               case SubmissionFailureInternal => InternalServerError
               case SubmissionFailureExternal => BadGateway
               case submissionFailureRejected: SubmissionFailureRejected =>
-                submissionFailureRejected.recodeForUpstream
+                BadRequest(submissionFailureRejected.responseBody)
               case SubmissionSuccess =>
                 auditService.auditEvent(AuditType.ArrivalNotificationReSubmitted, request.body)
                 Accepted("Message accepted")

@@ -23,6 +23,8 @@ import connectors.MessageConnector
 import connectors.MessageConnector.EisSubmissionResult.EisSubmissionFailureDownstream
 import connectors.MessageConnector.EisSubmissionResult.EisSubmissionRejected
 import connectors.MessageConnector.EisSubmissionResult.EisSubmissionSuccessful
+import connectors.MessageConnector.EisSubmissionResult.ErrorInPayload
+import connectors.MessageConnector.EisSubmissionResult.VirusFoundOrInvalidToken
 import javax.inject.Inject
 import models.Arrival
 import models.ArrivalId
@@ -87,7 +89,13 @@ class SubmitMessageService @Inject()(
 
               arrivalMovementRepository
                 .updateArrival(messageSelector, messageStatusUpdate)
-                .map(_ => SubmissionProcessingResult.SubmissionFailureRejected(submissionResult.httpStatus, submissionResult.asString))
+                .map(_ =>
+                  submissionResult match {
+                    case ErrorInPayload =>
+                      SubmissionProcessingResult.SubmissionFailureRejected(submissionResult.responseBody)
+                    case VirusFoundOrInvalidToken =>
+                      SubmissionProcessingResult.SubmissionFailureInternal
+                })
                 .recover({
                   case _ =>
                     logger.warn("Mongo failure when updating message status")
@@ -149,7 +157,13 @@ class SubmitMessageService @Inject()(
 
               arrivalMovementRepository
                 .updateArrival(messageSelector, messageStatusUpdate)
-                .map(_ => SubmissionProcessingResult.SubmissionFailureRejected(submissionResult.httpStatus, submissionResult.asString))
+                .map(_ =>
+                  submissionResult match {
+                    case ErrorInPayload =>
+                      SubmissionProcessingResult.SubmissionFailureRejected(submissionResult.responseBody)
+                    case VirusFoundOrInvalidToken =>
+                      SubmissionProcessingResult.SubmissionFailureInternal
+                })
                 .recover({
                   case _ =>
                     logger.warn("Mongo failure when updating message status")
@@ -204,7 +218,13 @@ class SubmitMessageService @Inject()(
 
                 arrivalMovementRepository
                   .updateArrival(messageSelector, messageStatusUpdate)
-                  .map(_ => SubmissionProcessingResult.SubmissionFailureRejected(submissionResult.httpStatus, submissionResult.asString))
+                  .map(_ =>
+                    submissionResult match {
+                      case ErrorInPayload =>
+                        SubmissionProcessingResult.SubmissionFailureRejected(submissionResult.responseBody)
+                      case VirusFoundOrInvalidToken =>
+                        SubmissionProcessingResult.SubmissionFailureInternal
+                  })
                   .recover({
                     case _ =>
                       logger.warn("Mongo failure when updating message status")
