@@ -23,6 +23,9 @@ import java.time.LocalTime
 import base.SpecBase
 import cats.data.NonEmptyList
 import connectors.MessageConnector
+import connectors.MessageConnector.EisSubmissionResult.EisSubmissionFailureDownstream
+import connectors.MessageConnector.EisSubmissionResult.EisSubmissionRejected
+import connectors.MessageConnector.EisSubmissionResult.EisSubmissionSuccessful
 import generators.ModelGenerators
 import models.MessageStatus.SubmissionFailed
 import models.MessageStatus.SubmissionPending
@@ -42,9 +45,6 @@ import models.MessageType
 import models.MovementMessageWithStatus
 import models.MovementReferenceNumber
 import models.SubmissionProcessingResult
-import models.EisSubmissionResult.EisSubmissionFailureDownstream
-import models.EisSubmissionResult.EisSubmissionRejected
-import models.EisSubmissionResult.EisSubmissionSuccessful
 import models.SubmissionProcessingResult.SubmissionFailureRejected
 import org.mockito.ArgumentMatchers.{eq => eqTo, _}
 import org.mockito.Mockito

@@ -20,6 +20,9 @@ import java.time.OffsetDateTime
 
 import cats.implicits._
 import connectors.MessageConnector
+import connectors.MessageConnector.EisSubmissionResult.EisSubmissionFailureDownstream
+import connectors.MessageConnector.EisSubmissionResult.EisSubmissionRejected
+import connectors.MessageConnector.EisSubmissionResult.EisSubmissionSuccessful
 import javax.inject.Inject
 import models.Arrival
 import models.ArrivalId
@@ -28,9 +31,6 @@ import models.ArrivalPutUpdate
 import models.ArrivalStatus
 import models.ArrivalStatusUpdate
 import models.CompoundStatusUpdate
-import models.EisSubmissionResult.EisSubmissionFailureDownstream
-import models.EisSubmissionResult.EisSubmissionRejected
-import models.EisSubmissionResult.EisSubmissionSuccessful
 import models.MessageId
 import models.MessageSelector
 import models.MessageStatus
@@ -87,7 +87,7 @@ class SubmitMessageService @Inject()(
 
               arrivalMovementRepository
                 .updateArrival(messageSelector, messageStatusUpdate)
-                .map(_ => SubmissionProcessingResult.SubmissionFailureRejected(submissionResult))
+                .map(_ => SubmissionProcessingResult.SubmissionFailureRejected(submissionResult.httpStatus, submissionResult.asString))
                 .recover({
                   case _ =>
                     logger.warn("Mongo failure when updating message status")
@@ -149,7 +149,7 @@ class SubmitMessageService @Inject()(
 
               arrivalMovementRepository
                 .updateArrival(messageSelector, messageStatusUpdate)
-                .map(_ => SubmissionProcessingResult.SubmissionFailureRejected(submissionResult))
+                .map(_ => SubmissionProcessingResult.SubmissionFailureRejected(submissionResult.httpStatus, submissionResult.asString))
                 .recover({
                   case _ =>
                     logger.warn("Mongo failure when updating message status")
@@ -204,7 +204,7 @@ class SubmitMessageService @Inject()(
 
                 arrivalMovementRepository
                   .updateArrival(messageSelector, messageStatusUpdate)
-                  .map(_ => SubmissionProcessingResult.SubmissionFailureRejected(submissionResult))
+                  .map(_ => SubmissionProcessingResult.SubmissionFailureRejected(submissionResult.httpStatus, submissionResult.asString))
                   .recover({
                     case _ =>
                       logger.warn("Mongo failure when updating message status")

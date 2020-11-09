@@ -21,13 +21,13 @@ import java.util.UUID
 
 import com.google.inject.Inject
 import config.AppConfig
+import connectors.MessageConnector.EisSubmissionResult
+import connectors.MessageConnector.EisSubmissionResult._
 import models.ArrivalId
-import models.EisSubmissionResult
 import models.MessageSender
 import models.MessageType
 import models.MovementMessageWithStatus
 import models.TransitWrapper
-import models.EisSubmissionResult.responseToStatus
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HttpResponse
 import uk.gov.hmrc.http.logging.Authorization
@@ -80,4 +80,32 @@ class MessageConnector @Inject()(config: AppConfig, http: HttpClient)(implicit e
 
   private[connectors] def removePrefix(prefix: String, sessionId: SessionId): String =
     sessionId.value.replaceFirst(prefix, "")
+}
+
+object MessageConnector {
+
+  sealed abstract class EisSubmissionResult(val httpStatus: Int, val asString: String) {
+    override def toString: String = s"EisSubmissionResult(code = $httpStatus, and details = " + asString + ")"
+  }
+
+  object EisSubmissionResult {
+    private val possibleResponses           = List(EisSubmissionSuccessful, ErrorInPayload, VirusFoundOrInvalidToken, DownstreamInternalServerError)
+    private val statusesOfPossibleResponses = possibleResponses.map(_.httpStatus)
+    private val statusToResponseMapping     = statusesOfPossibleResponses.zip(possibleResponses).toMap
+
+    def responseToStatus(httpResponse: HttpResponse): EisSubmissionResult =
+      statusToResponseMapping.getOrElse(httpResponse.status, UnexpectedHttpResponse(httpResponse))
+    object EisSubmissionSuccessful extends EisSubmissionResult(202, "EIS Successful Submission")
+
+    sealed abstract class EisSubmissionFailure(httpStatus: Int, asString: String) extends EisSubmissionResult(httpStatus, asString)
+
+    sealed abstract class EisSubmissionRejected(httpStatus: Int, asString: String) extends EisSubmissionFailure(httpStatus, asString)
+    object ErrorInPayload                                                          extends EisSubmissionRejected(400, "Message failed schema validation")
+    object VirusFoundOrInvalidToken                                                extends EisSubmissionRejected(403, "Virus found, token invalid etc")
+
+    sealed abstract class EisSubmissionFailureDownstream(httpStatus: Int, asString: String) extends EisSubmissionFailure(httpStatus, asString)
+    object DownstreamInternalServerError                                                    extends EisSubmissionFailureDownstream(500, "Downstream internal server error")
+    case class UnexpectedHttpResponse(httpResponse: HttpResponse)
+        extends EisSubmissionFailureDownstream(httpResponse.status, "Unexpected HTTP Response received")
+  }
 }

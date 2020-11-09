@@ -22,9 +22,6 @@ import audit.AuditType
 import controllers.actions.AuthenticatedGetArrivalForReadActionProvider
 import controllers.actions.AuthenticatedGetArrivalForWriteActionProvider
 import javax.inject.Inject
-import models.EisSubmissionResult.EisSubmissionRejected
-import models.EisSubmissionResult.ErrorInPayload
-import models.EisSubmissionResult.VirusFoundOrInvalidToken
 import models.MessageStatus.SubmissionFailed
 import models.ArrivalId
 import models.ArrivalStatus
@@ -68,13 +65,8 @@ class MessagesController @Inject()(
             .map {
               case SubmissionFailureInternal => InternalServerError
               case SubmissionFailureExternal => BadGateway
-              case SubmissionFailureRejected(submissionResult: EisSubmissionRejected) =>
-                submissionResult match {
-                  case ErrorInPayload =>
-                    Status(submissionResult.httpStatus)(submissionResult.asString)
-                  case VirusFoundOrInvalidToken =>
-                    InternalServerError
-                }
+              case submissionFailureRejected: SubmissionFailureRejected =>
+                submissionFailureRejected.recodeForUpstream
               case SubmissionSuccess =>
                 auditService.auditEvent(AuditType.UnloadingRemarksSubmitted, request.body)
                 Accepted("Message accepted")

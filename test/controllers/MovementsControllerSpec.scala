@@ -25,6 +25,8 @@ import audit.AuditType
 import base.SpecBase
 import cats.data.NonEmptyList
 import connectors.MessageConnector
+import connectors.MessageConnector.EisSubmissionResult.ErrorInPayload
+import connectors.MessageConnector.EisSubmissionResult.VirusFoundOrInvalidToken
 import controllers.actions.AuthenticatedGetOptionalArrivalForWriteActionProvider
 import controllers.actions.FakeAuthenticatedGetOptionalArrivalForWriteActionProvider
 import generators.ModelGenerators
@@ -34,8 +36,6 @@ import models.MessageStatus.SubmissionSucceeded
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalStatus
-import models.EisSubmissionResult.ErrorInPayload
-import models.EisSubmissionResult.VirusFoundOrInvalidToken
 import models.MessageId
 import models.MessageSender
 import models.MessageType
@@ -333,7 +333,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
           when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
           when(mockSubmitMessageService.submitArrival(any())(any()))
-            .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureRejected(ErrorInPayload)))
+            .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureRejected(ErrorInPayload.httpStatus, ErrorInPayload.asString)))
 
           val application = baseApplicationBuilder
             .overrides(
@@ -361,7 +361,8 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
           when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
           when(mockSubmitMessageService.submitArrival(any())(any()))
-            .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureRejected(VirusFoundOrInvalidToken)))
+            .thenReturn(
+              Future.successful(SubmissionProcessingResult.SubmissionFailureRejected(VirusFoundOrInvalidToken.httpStatus, VirusFoundOrInvalidToken.asString)))
 
           val application = baseApplicationBuilder
             .overrides(
@@ -390,7 +391,8 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
           when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
           when(mockSubmitMessageService.submitArrival(any())(any()))
-            .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureRejected(VirusFoundOrInvalidToken)))
+            .thenReturn(
+              Future.successful(SubmissionProcessingResult.SubmissionFailureRejected(VirusFoundOrInvalidToken.httpStatus, VirusFoundOrInvalidToken.asString)))
           when(mockArrivalMovementRepository.updateArrival(any(), any())(any())).thenReturn(Future.successful(Failure(new Exception)))
 
           val application = baseApplicationBuilder
@@ -599,7 +601,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           val mockSubmitMessageService = mock[SubmitMessageService]
 
           when(mockSubmitMessageService.submitMessage(any(), any(), any(), any())(any()))
-            .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureRejected(ErrorInPayload)))
+            .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureRejected(ErrorInPayload.httpStatus, ErrorInPayload.asString)))
 
           val app = baseApplicationBuilder
             .overrides(
@@ -623,7 +625,8 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           val mockSubmitMessageService = mock[SubmitMessageService]
 
           when(mockSubmitMessageService.submitMessage(any(), any(), any(), any())(any()))
-            .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureRejected(VirusFoundOrInvalidToken)))
+            .thenReturn(
+              Future.successful(SubmissionProcessingResult.SubmissionFailureRejected(VirusFoundOrInvalidToken.httpStatus, VirusFoundOrInvalidToken.asString)))
 
           val app = baseApplicationBuilder
             .overrides(
@@ -896,7 +899,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(initializedArrival)))
 
         when(mockSubmitMessageService.submitIe007Message(any(), any(), any(), any())(any()))
-          .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureRejected(ErrorInPayload)))
+          .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureRejected(ErrorInPayload.httpStatus, ErrorInPayload.asString)))
 
         val application = baseApplicationBuilder
           .overrides(
@@ -942,7 +945,8 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(initializedArrival)))
 
         when(mockSubmitMessageService.submitIe007Message(any(), any(), any(), any())(any()))
-          .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureRejected(VirusFoundOrInvalidToken)))
+          .thenReturn(
+            Future.successful(SubmissionProcessingResult.SubmissionFailureRejected(VirusFoundOrInvalidToken.httpStatus, VirusFoundOrInvalidToken.asString)))
 
         val application = baseApplicationBuilder
           .overrides(
@@ -989,7 +993,8 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         when(mockArrivalMovementRepository.updateArrival(any(), any())(any())).thenReturn(Future.successful(Failure(new Exception)))
 
         when(mockSubmitMessageService.submitIe007Message(any(), any(), any(), any())(any()))
-          .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureRejected(VirusFoundOrInvalidToken)))
+          .thenReturn(
+            Future.successful(SubmissionProcessingResult.SubmissionFailureRejected(VirusFoundOrInvalidToken.httpStatus, VirusFoundOrInvalidToken.asString)))
 
         val app = baseApplicationBuilder
           .overrides(

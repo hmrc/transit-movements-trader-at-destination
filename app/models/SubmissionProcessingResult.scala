@@ -16,7 +16,11 @@
 
 package models
 
-import models.EisSubmissionResult.EisSubmissionRejected
+import play.api.mvc.Result
+import play.api.mvc.Results.BadRequest
+import play.api.mvc.Results.InternalServerError
+import play.api.http.Status.BAD_REQUEST
+import play.api.http.Status.FORBIDDEN
 
 sealed trait SubmissionProcessingResult
 
@@ -30,7 +34,15 @@ object SubmissionProcessingResult {
 
   case object SubmissionFailureExternal extends SubmissionFailure
 
-  case class SubmissionFailureRejected(submissionResult: EisSubmissionRejected) extends SubmissionFailure
+  case class SubmissionFailureRejected(httpStatus: Int, asString: String) extends SubmissionFailure {
+    def recodeForUpstream(): Result =
+      httpStatus match {
+        case BAD_REQUEST =>
+          BadRequest(asString)
+        case FORBIDDEN =>
+          InternalServerError
+      }
+  }
 
   val values = Seq(
     SubmissionSuccess,

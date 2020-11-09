@@ -24,9 +24,6 @@ import javax.inject.Inject
 import models.MessageStatus.SubmissionSucceeded
 import models.ArrivalId
 import models.ArrivalStatus
-import models.EisSubmissionResult.EisSubmissionRejected
-import models.EisSubmissionResult.ErrorInPayload
-import models.EisSubmissionResult.VirusFoundOrInvalidToken
 import models.MessageType
 import models.MovementMessage
 import models.ResponseArrivals
@@ -79,13 +76,8 @@ class MovementsController @Inject()(
                 .map {
                   case SubmissionFailureInternal => InternalServerError
                   case SubmissionFailureExternal => BadGateway
-                  case SubmissionFailureRejected(submissionResult: EisSubmissionRejected) =>
-                    submissionResult match {
-                      case ErrorInPayload =>
-                        Status(submissionResult.httpStatus)(submissionResult.asString)
-                      case VirusFoundOrInvalidToken =>
-                        InternalServerError
-                    }
+                  case submissionFailureRejected: SubmissionFailureRejected =>
+                    submissionFailureRejected.recodeForUpstream
                   case SubmissionSuccess =>
                     auditService.auditEvent(AuditType.ArrivalNotificationSubmitted, request.body)
                     Accepted("Message accepted")
@@ -105,13 +97,8 @@ class MovementsController @Inject()(
                   .map {
                     case SubmissionFailureExternal => BadGateway
                     case SubmissionFailureInternal => InternalServerError
-                    case SubmissionFailureRejected(submissionResult: EisSubmissionRejected) =>
-                      submissionResult match {
-                        case ErrorInPayload =>
-                          Status(submissionResult.httpStatus)(submissionResult.asString)
-                        case VirusFoundOrInvalidToken =>
-                          InternalServerError
-                      }
+                    case submissionFailureRejected: SubmissionFailureRejected =>
+                      submissionFailureRejected.recodeForUpstream
                     case SubmissionSuccess =>
                       auditService.auditEvent(AuditType.ArrivalNotificationSubmitted, request.body)
                       Accepted("Message accepted")
@@ -144,13 +131,8 @@ class MovementsController @Inject()(
             .map {
               case SubmissionFailureInternal => InternalServerError
               case SubmissionFailureExternal => BadGateway
-              case SubmissionFailureRejected(submissionResult: EisSubmissionRejected) =>
-                submissionResult match {
-                  case ErrorInPayload =>
-                    Status(submissionResult.httpStatus)(submissionResult.asString)
-                  case VirusFoundOrInvalidToken =>
-                    InternalServerError
-                }
+              case submissionFailureRejected: SubmissionFailureRejected =>
+                submissionFailureRejected.recodeForUpstream
               case SubmissionSuccess =>
                 auditService.auditEvent(AuditType.ArrivalNotificationReSubmitted, request.body)
                 Accepted("Message accepted")
