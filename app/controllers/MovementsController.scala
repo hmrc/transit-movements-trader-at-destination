@@ -81,6 +81,7 @@ class MovementsController @Inject()(
                   case SubmissionFailureRejected => BadRequest("Failed schema validation")
                   case SubmissionSuccess =>
                     auditService.auditEvent(AuditType.ArrivalNotificationSubmitted, request.body)
+                    auditService.auditEvent(AuditType.MesSenMES3Added, message.message)
                     Accepted("Message accepted")
                       .withHeaders("Location" -> routes.MovementsController.getArrival(arrival.arrivalId).url)
                 }
@@ -101,6 +102,7 @@ class MovementsController @Inject()(
                     case SubmissionFailureRejected => BadRequest("Failed schema validation")
                     case SubmissionSuccess =>
                       auditService.auditEvent(AuditType.ArrivalNotificationSubmitted, request.body)
+                      auditService.auditEvent(AuditType.MesSenMES3Added, request.body)
                       Accepted("Message accepted")
                         .withHeaders("Location" -> routes.MovementsController.getArrival(arrival.arrivalId).url)
                   }
@@ -134,6 +136,7 @@ class MovementsController @Inject()(
               case SubmissionFailureRejected => BadRequest("Failed schema validation")
               case SubmissionSuccess =>
                 auditService.auditEvent(AuditType.ArrivalNotificationReSubmitted, request.body)
+                auditService.auditEvent(AuditType.MesSenMES3Added, message.message)
                 Accepted("Message accepted")
                   .withHeaders("Location" -> routes.MovementsController.getArrival(request.arrival.arrivalId).url)
             }
