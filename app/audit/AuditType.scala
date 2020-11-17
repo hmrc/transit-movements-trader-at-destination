@@ -25,5 +25,5 @@ object AuditType {
   val UnloadingRemarksSubmitted      = "UnloadingRemarksSubmitted"
   val UnloadingPermissionReceived    = "UnloadingPermissionReceived"
   val UnloadingPermissionRejected    = "UnloadingPermissionRejected"
-
+  val MesSenMES3Added                = "MesSenMES3Added"
 }

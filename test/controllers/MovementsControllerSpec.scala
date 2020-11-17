@@ -157,6 +157,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
             verify(mockSubmitMessageService, times(1)).submitArrival(eqTo(newArrival))(any())
             verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.ArrivalNotificationSubmitted), any())(any())
+            verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.MesSenMES3Added), any())(any())
           }
         }
 
@@ -425,6 +426,8 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
             movement.message.map(trim) mustEqual expectedMessage.message.map(trim)
 
             verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.ArrivalNotificationSubmitted), any())(any())
+            verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.MesSenMES3Added), any())(any())
+
           }
         }
 
