@@ -20,8 +20,14 @@ import java.time._
 
 import cats.data.NonEmptyList
 import connectors.MessageConnector.EisSubmissionResult
-import connectors.MessageConnector.EisSubmissionResult._
-import models.MessageStatus
+import connectors.MessageConnector.EisSubmissionResult.DownstreamInternalServerError
+import connectors.MessageConnector.EisSubmissionResult.EisSubmissionFailure
+import connectors.MessageConnector.EisSubmissionResult.EisSubmissionFailureDownstream
+import connectors.MessageConnector.EisSubmissionResult.EisSubmissionRejected
+import connectors.MessageConnector.EisSubmissionResult.EisSubmissionSuccessful
+import connectors.MessageConnector.EisSubmissionResult.ErrorInPayload
+import connectors.MessageConnector.EisSubmissionResult.UnexpectedHttpResponse
+import connectors.MessageConnector.EisSubmissionResult.VirusFoundOrInvalidToken
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalPutUpdate

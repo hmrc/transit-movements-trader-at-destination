@@ -27,10 +27,7 @@ import models.ArrivalId
 import models.ArrivalStatus
 import models.MessageId
 import models.MessageType
-import models.SubmissionProcessingResult.SubmissionFailureExternal
-import models.SubmissionProcessingResult.SubmissionFailureInternal
-import models.SubmissionProcessingResult.SubmissionFailureRejected
-import models.SubmissionProcessingResult.SubmissionSuccess
+import models.SubmissionProcessingResult._
 import models.request.ArrivalRequest
 import models.response.ResponseArrivalWithMessages
 import models.response.ResponseMovementMessage
@@ -68,7 +65,8 @@ class MessagesController @Inject()(
             .map {
               case SubmissionFailureInternal => InternalServerError
               case SubmissionFailureExternal => BadGateway
-              case SubmissionFailureRejected => BadRequest("Failed schema validation")
+              case submissionFailureRejected: SubmissionFailureRejected =>
+                BadRequest(submissionFailureRejected.responseBody)
               case SubmissionSuccess =>
                 auditService.auditEvent(AuditType.UnloadingRemarksSubmitted, request.body)
                 Accepted("Message accepted")
