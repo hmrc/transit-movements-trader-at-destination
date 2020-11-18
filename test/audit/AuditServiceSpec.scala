@@ -48,7 +48,7 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
       val requestXml = <xml>test</xml>
 
       val auditType    = "Some AuditEvent"
-      val auditDetails = Json.toJson(AuditDetails(Json.obj("xml" -> "test"), requestXml.toString()))
+      val auditDetails = Json.toJson(AuditDetails(Json.obj("xml" -> "test")))
 
       val application = baseApplicationBuilder
         .overrides(bind[AuditConnector].toInstance(mockAuditConnector))

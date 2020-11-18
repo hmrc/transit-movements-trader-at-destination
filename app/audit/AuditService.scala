@@ -33,7 +33,7 @@ class AuditService @Inject()(auditConnector: AuditConnector)(implicit ec: Execut
   def auditEvent(auditType: String, xmlRequestBody: NodeSeq)(implicit hc: HeaderCarrier): Unit = {
     val json: JsObject = JsonHelper.convertXmlToJson(xmlRequestBody.toString())
 
-    val details = AuditDetails(json, xmlRequestBody.toString())
+    val details = AuditDetails(json)
     auditConnector.sendExplicitAudit(auditType, Json.toJson(details))
   }
 
