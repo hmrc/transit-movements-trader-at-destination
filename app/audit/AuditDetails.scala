@@ -16,12 +16,14 @@
 
 package audit
 
-import play.api.libs.json.JsObject
-import play.api.libs.json.Json
-import play.api.libs.json.OWrites
+import play.api.libs.json._
 
 case class AuditDetails(json: JsObject)
 
 object AuditDetails {
-  implicit val writes: OWrites[AuditDetails] = Json.writes[AuditDetails]
+  implicit val writes: OWrites[AuditDetails] = new OWrites[AuditDetails] {
+
+    def writes(details: AuditDetails): JsObject =
+      JsObject(details.json.fields.toMap)
+  }
 }

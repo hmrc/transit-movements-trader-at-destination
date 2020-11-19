@@ -16,6 +16,9 @@
 
 package audit
 
+import java.time.LocalDate
+import java.time.LocalTime
+
 import base.SpecBase
 import models.ArrivalRejectedResponse
 import models.GoodsReleasedResponse
@@ -32,6 +35,9 @@ import play.api.inject.bind
 import play.api.libs.json.Json
 import play.api.test.Helpers.running
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
+import utils.Format
+
+import scala.xml.NodeSeq
 
 class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with BeforeAndAfterEach {
 
@@ -44,7 +50,6 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
 
   "AuditService" - {
     "must audit notification message event" in {
-
       val requestXml = <xml>test</xml>
 
       val auditType    = "Some AuditEvent"
