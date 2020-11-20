@@ -21,9 +21,5 @@ import play.api.libs.json._
 case class AuditDetails(json: JsObject)
 
 object AuditDetails {
-  implicit val writes: OWrites[AuditDetails] = new OWrites[AuditDetails] {
-
-    def writes(details: AuditDetails): JsObject =
-      JsObject(details.json.fields.toMap)
-  }
+  implicit val writes: OWrites[AuditDetails] = (details: AuditDetails) => details.json
 }
