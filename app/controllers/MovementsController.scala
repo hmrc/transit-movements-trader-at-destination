@@ -79,8 +79,8 @@ class MovementsController @Inject()(
                   case submissionFailureRejected: SubmissionFailureRejected =>
                     BadRequest(submissionFailureRejected.responseBody)
                   case SubmissionSuccess =>
-                    auditService.auditEvent(AuditType.ArrivalNotificationSubmitted, request.body)
-                    auditService.auditEvent(AuditType.MesSenMES3Added, message.message)
+                    auditService.auditEvent(AuditType.ArrivalNotificationSubmitted, request.body, request.getChannel)
+                    auditService.auditEvent(AuditType.MesSenMES3Added, message.message, request.getChannel)
                     Accepted("Message accepted")
                       .withHeaders("Location" -> routes.MovementsController.getArrival(arrival.arrivalId).url)
                 }
@@ -101,8 +101,8 @@ class MovementsController @Inject()(
                     case submissionFailureRejected: SubmissionFailureRejected =>
                       BadRequest(submissionFailureRejected.responseBody)
                     case SubmissionSuccess =>
-                      auditService.auditEvent(AuditType.ArrivalNotificationSubmitted, request.body)
-                      auditService.auditEvent(AuditType.MesSenMES3Added, request.body)
+                      auditService.auditEvent(AuditType.ArrivalNotificationSubmitted, request.body, request.getChannel)
+                      auditService.auditEvent(AuditType.MesSenMES3Added, request.body, request.getChannel)
                       Accepted("Message accepted")
                         .withHeaders("Location" -> routes.MovementsController.getArrival(arrival.arrivalId).url)
                   }
@@ -136,8 +136,8 @@ class MovementsController @Inject()(
               case submissionFailureRejected: SubmissionFailureRejected =>
                 BadRequest(submissionFailureRejected.responseBody)
               case SubmissionSuccess =>
-                auditService.auditEvent(AuditType.ArrivalNotificationReSubmitted, request.body)
-                auditService.auditEvent(AuditType.MesSenMES3Added, message.message)
+                auditService.auditEvent(AuditType.ArrivalNotificationReSubmitted, request.body, request.getChannel)
+                auditService.auditEvent(AuditType.MesSenMES3Added, message.message, request.getChannel)
                 Accepted("Message accepted")
                   .withHeaders("Location" -> routes.MovementsController.getArrival(request.arrival.arrivalId).url)
             }

@@ -31,10 +31,10 @@ import scala.xml.NodeSeq
 
 class AuditService @Inject()(auditConnector: AuditConnector)(implicit ec: ExecutionContext) {
 
-  def auditEvent(auditType: String, xmlRequestBody: NodeSeq)(implicit hc: HeaderCarrier): Unit = {
+  def auditEvent(auditType: String, xmlRequestBody: NodeSeq, channel: String)(implicit hc: HeaderCarrier): Unit = {
     val json: JsObject = JsonHelper.convertXmlToJson(xmlRequestBody.toString())
 
-    val details = AuditDetails(json)
+    val details = AuditDetails(channel, json)
     auditConnector.sendExplicitAudit(auditType, Json.toJson(details))
   }
 
@@ -45,7 +45,7 @@ class AuditService @Inject()(auditConnector: AuditConnector)(implicit ec: Execut
       case UnloadingPermissionResponse      => UnloadingPermissionReceived
       case UnloadingRemarksRejectedResponse => UnloadingPermissionRejected
     }
-    auditEvent(auditType, xmlRequestBody)
+    auditEvent(auditType, xmlRequestBody, "ncts")
   }
 
 }

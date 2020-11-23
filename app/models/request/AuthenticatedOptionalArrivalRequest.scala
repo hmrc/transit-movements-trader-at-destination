@@ -21,3 +21,4 @@ import play.api.mvc.WrappedRequest
 
 case class AuthenticatedOptionalArrivalRequest[A](request: AuthenticatedRequest[A], arrival: Option[Arrival], eoriNumber: String)
     extends WrappedRequest[A](request)
+    with ChannelOptionalRequest[A]
