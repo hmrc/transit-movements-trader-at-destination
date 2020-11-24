@@ -18,6 +18,7 @@ package audit
 
 import audit.AuditType._
 import javax.inject.Inject
+import models.ChannelType.ncts
 import models._
 import play.api.libs.json.Format.GenericFormat
 import play.api.libs.json.JsObject
@@ -31,7 +32,7 @@ import scala.xml.NodeSeq
 
 class AuditService @Inject()(auditConnector: AuditConnector)(implicit ec: ExecutionContext) {
 
-  def auditEvent(auditType: String, xmlRequestBody: NodeSeq, channel: String)(implicit hc: HeaderCarrier): Unit = {
+  def auditEvent(auditType: String, xmlRequestBody: NodeSeq, channel: ChannelType)(implicit hc: HeaderCarrier): Unit = {
     val json: JsObject = JsonHelper.convertXmlToJson(xmlRequestBody.toString())
 
     val details = AuditDetails(channel, json)
@@ -45,7 +46,7 @@ class AuditService @Inject()(auditConnector: AuditConnector)(implicit ec: Execut
       case UnloadingPermissionResponse      => UnloadingPermissionReceived
       case UnloadingRemarksRejectedResponse => UnloadingPermissionRejected
     }
-    auditEvent(auditType, xmlRequestBody, "ncts")
+    auditEvent(auditType, xmlRequestBody, ncts)
   }
 
 }

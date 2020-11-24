@@ -16,10 +16,13 @@
 
 package audit
 
-import play.api.libs.json._
+import models.ChannelType
+import play.api.libs.json.{JsObject, JsString, OWrites}
 
-case class AuditDetails(channel: String, json: JsObject)
+case class AuditDetails(channel: ChannelType, json: JsObject)
 
 object AuditDetails {
-  implicit val writes: OWrites[AuditDetails] = (details: AuditDetails) => details.json
+  implicit val writes: OWrites[AuditDetails] = (details: AuditDetails) => {
+    JsObject(Map("channel" -> JsString(details.channel.toString)) ++ details.json.value)
+  }
 }
