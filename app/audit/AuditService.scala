@@ -19,6 +19,7 @@ package audit
 import audit.AuditType._
 import javax.inject.Inject
 import models._
+import play.api.libs.json.Format.GenericFormat
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import uk.gov.hmrc.http.HeaderCarrier
@@ -33,7 +34,7 @@ class AuditService @Inject()(auditConnector: AuditConnector)(implicit ec: Execut
   def auditEvent(auditType: String, xmlRequestBody: NodeSeq)(implicit hc: HeaderCarrier): Unit = {
     val json: JsObject = JsonHelper.convertXmlToJson(xmlRequestBody.toString())
 
-    val details = AuditDetails(json, xmlRequestBody.toString())
+    val details = AuditDetails(json)
     auditConnector.sendExplicitAudit(auditType, Json.toJson(details))
   }
 
