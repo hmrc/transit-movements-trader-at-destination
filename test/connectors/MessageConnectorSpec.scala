@@ -87,7 +87,7 @@ class MessageConnectorSpec
 
         server.stubFor(
           post(urlEqualTo(postUrl))
-            .withHeader("X-Forwarded-Host", equalTo("mdtp"))
+            .withHeader("X-Forwarded-Host", equalTo("MDTP"))
             .withHeader("X-Correlation-ID", headerCarrierPattern)
             .withHeader("Content-Type", equalTo("application/xml"))
             .withHeader("Accept", equalTo("application/xml"))
@@ -112,7 +112,7 @@ class MessageConnectorSpec
 
         server.stubFor(
           post(urlEqualTo(postUrl))
-            .withHeader("X-Forwarded-Host", equalTo("mdtp"))
+            .withHeader("X-Forwarded-Host", equalTo("MDTP"))
             .withHeader("X-Correlation-ID", headerCarrierPattern)
             .withHeader("Content-Type", equalTo("application/xml"))
             .withHeader("Accept", equalTo("application/xml"))
@@ -136,7 +136,7 @@ class MessageConnectorSpec
 
         server.stubFor(
           post(urlEqualTo(postUrl))
-            .withHeader("X-Forwarded-Host", equalTo("mdtp"))
+            .withHeader("X-Forwarded-Host", equalTo("MDTP"))
             .withHeader("X-Correlation-ID", headerCarrierPattern)
             .withHeader("Content-Type", equalTo("application/xml"))
             .withHeader("Accept", equalTo("application/xml"))
@@ -160,7 +160,7 @@ class MessageConnectorSpec
 
         server.stubFor(
           post(urlEqualTo(postUrl))
-            .withHeader("X-Forwarded-Host", equalTo("mdtp"))
+            .withHeader("X-Forwarded-Host", equalTo("MDTP"))
             .withHeader("X-Correlation-ID", headerCarrierPattern)
             .withHeader("Content-Type", equalTo("application/xml"))
             .withHeader("Accept", equalTo("application/xml"))
@@ -184,7 +184,7 @@ class MessageConnectorSpec
 
         server.stubFor(
           post(urlEqualTo(postUrl))
-            .withHeader("X-Forwarded-Host", equalTo("mdtp"))
+            .withHeader("X-Forwarded-Host", equalTo("MDTP"))
             .withHeader("X-Correlation-ID", headerCarrierPattern)
             .withHeader("Content-Type", equalTo("application/xml"))
             .withHeader("Accept", equalTo("application/xml"))
