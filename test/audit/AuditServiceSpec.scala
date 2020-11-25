@@ -18,6 +18,7 @@ package audit
 
 import base.SpecBase
 import models.ArrivalRejectedResponse
+import models.ChannelType.api
 import models.GoodsReleasedResponse
 import models.UnloadingPermissionResponse
 import models.UnloadingRemarksRejectedResponse
@@ -54,7 +55,7 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
         .build()
       running(application) {
         val auditService = application.injector.instanceOf[AuditService]
-        auditService.auditEvent(auditType, requestXml)
+        auditService.auditEvent(auditType, requestXml, api)
 
         verify(mockAuditConnector, times(1)).sendExplicitAudit(eqTo(auditType), eqTo(requestedXmlToJson))(any(), any(), any())
       }

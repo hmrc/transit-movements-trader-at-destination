@@ -17,7 +17,9 @@
 package audit
 
 import models.ChannelType
-import play.api.libs.json.{JsObject, JsString, OWrites}
+import play.api.libs.json.JsObject
+import play.api.libs.json.JsString
+import play.api.libs.json.OWrites
 
 case class AuditDetails(channel: ChannelType, json: JsObject)
 
