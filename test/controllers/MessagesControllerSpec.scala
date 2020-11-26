@@ -168,7 +168,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           val arrivalMessage: MovementMessageWithStatus = captor.getValue
           arrivalMessage mustEqual movementMessage
 
-          verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.UnloadingRemarksSubmitted), any(), eqTo(api))(any())
+          verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.UnloadingRemarksSubmitted), any(), any())(any())
         }
       }
 
