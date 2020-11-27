@@ -33,6 +33,7 @@ import models.MessageStatus.SubmissionSucceeded
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalStatus
+import models.ChannelType.api
 import models.MessageId
 import models.MessageSender
 import models.MessageType
@@ -167,7 +168,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           val arrivalMessage: MovementMessageWithStatus = captor.getValue
           arrivalMessage mustEqual movementMessage
 
-          verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.UnloadingRemarksSubmitted), any())(any())
+          verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.UnloadingRemarksSubmitted), any(), any())(any())
         }
       }
 

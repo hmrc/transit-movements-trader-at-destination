@@ -18,6 +18,7 @@ package audit
 
 import base.SpecBase
 import models.ArrivalRejectedResponse
+import models.ChannelType.api
 import models.GoodsReleasedResponse
 import models.UnloadingPermissionResponse
 import models.UnloadingRemarksRejectedResponse
@@ -45,7 +46,7 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
   "AuditService" - {
     "must audit notification message event" in {
       val requestXml         = <xml>test</xml>
-      val requestedXmlToJson = Json.parse("{\"xml\":\"test\"}")
+      val requestedXmlToJson = Json.parse("{\"channel\":\"api\",\"xml\":\"test\"}")
 
       val auditType = "Some AuditEvent"
 
@@ -54,7 +55,7 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
         .build()
       running(application) {
         val auditService = application.injector.instanceOf[AuditService]
-        auditService.auditEvent(auditType, requestXml)
+        auditService.auditEvent(auditType, requestXml, api)
 
         verify(mockAuditConnector, times(1)).sendExplicitAudit(eqTo(auditType), eqTo(requestedXmlToJson))(any(), any(), any())
       }
@@ -62,7 +63,7 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
 
     "must audit NCTS message GoodsReleasedResponse event" in {
       val requestXml         = <xml>test</xml>
-      val requestedXmlToJson = Json.parse("{\"xml\":\"test\"}")
+      val requestedXmlToJson = Json.parse("{\"channel\":\"ncts\",\"xml\":\"test\"}")
 
       val application = baseApplicationBuilder
         .overrides(bind[AuditConnector].toInstance(mockAuditConnector))
@@ -79,7 +80,7 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
 
     "must audit NCTS message ArrivalRejectedResponse event" in {
       val requestXml         = <xml>test</xml>
-      val requestedXmlToJson = Json.parse("{\"xml\":\"test\"}")
+      val requestedXmlToJson = Json.parse("{\"channel\":\"ncts\",\"xml\":\"test\"}")
 
       val application = baseApplicationBuilder
         .overrides(bind[AuditConnector].toInstance(mockAuditConnector))
@@ -96,7 +97,7 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
 
     "must audit NCTS message UnloadingPermissionResponse event" in {
       val requestXml         = <xml>test</xml>
-      val requestedXmlToJson = Json.parse("{\"xml\":\"test\"}")
+      val requestedXmlToJson = Json.parse("{\"channel\":\"ncts\",\"xml\":\"test\"}")
 
       val application = baseApplicationBuilder
         .overrides(bind[AuditConnector].toInstance(mockAuditConnector))
@@ -114,7 +115,7 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
 
     "must audit NCTS message UnloadingRemarksRejectedResponse event" in {
       val requestXml         = <xml>test</xml>
-      val requestedXmlToJson = Json.parse("{\"xml\":\"test\"}")
+      val requestedXmlToJson = Json.parse("{\"channel\":\"ncts\",\"xml\":\"test\"}")
 
       val application = baseApplicationBuilder
         .overrides(bind[AuditConnector].toInstance(mockAuditConnector))

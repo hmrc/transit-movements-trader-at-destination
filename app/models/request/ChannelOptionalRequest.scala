@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-package audit
+package models.request
 
 import models.ChannelType
-import play.api.libs.json.JsObject
-import play.api.libs.json.JsString
-import play.api.libs.json.OWrites
+import models.ChannelType.api
+import models.ChannelType.web
+import play.api.mvc.WrappedRequest
 
-case class AuditDetails(channel: ChannelType, json: JsObject)
+trait ChannelOptionalRequest[A] extends WrappedRequest[A] {
 
-object AuditDetails {
-  implicit val writes: OWrites[AuditDetails] = (details: AuditDetails) => {
-    JsObject(Map("channel" -> JsString(details.channel.toString)) ++ details.json.value)
+  def getChannel: ChannelType = headers.get("channel") match {
+    case Some(channel) if (channel.equals("api")) => api
+    case _                                        => web
   }
 }
