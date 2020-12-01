@@ -17,7 +17,6 @@
 package connectors
 
 import java.time.OffsetDateTime
-import java.util.UUID
 
 import com.google.inject.Inject
 import config.AppConfig
@@ -28,13 +27,11 @@ import models.MessageSender
 import models.MessageType
 import models.MovementMessageWithStatus
 import models.TransitWrapper
+import uk.gov.hmrc.http.HttpReads.Implicits.readRaw
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HttpResponse
-import uk.gov.hmrc.http.logging.Authorization
-import uk.gov.hmrc.http.logging.SessionId
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import utils.Format
-import uk.gov.hmrc.http.HttpReads.Implicits.readRaw
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -63,23 +60,12 @@ class MessageConnector @Inject()(config: AppConfig, http: HttpClient)(implicit e
   private def addHeaders(messageType: MessageType, dateTime: OffsetDateTime, messageSender: MessageSender)(
     implicit headerCarrier: HeaderCarrier): Seq[(String, String)] =
     Seq(
-      "X-Forwarded-Host" -> "mdtp",
-      "X-Correlation-ID" -> {
-        headerCarrier.sessionId
-          .map(x => removePrefix(sessionPrefix, x))
-          .getOrElse(UUID.randomUUID().toString)
-      },
       "Date"             -> Format.dateFormattedForHeader(dateTime),
       "Content-Type"     -> "application/xml",
       "Accept"           -> "application/xml",
       "X-Message-Type"   -> messageType.toString,
       "X-Message-Sender" -> messageSender.toString
     )
-
-  private val sessionPrefix = "session-"
-
-  private[connectors] def removePrefix(prefix: String, sessionId: SessionId): String =
-    sessionId.value.replaceFirst(prefix, "")
 }
 
 object MessageConnector {
