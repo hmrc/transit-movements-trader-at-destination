@@ -28,11 +28,10 @@ import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.inject.bind
-import play.api.libs.ws.WSResponse
 import play.api.libs.ws.ahc.AhcWSResponse
 import play.api.libs.ws.ahc.cache.CacheableHttpResponseBodyPart
 import play.api.libs.ws.ahc.cache.CacheableHttpResponseStatus
-import play.libs.ws.WSResponse
+import play.api.test.Helpers.running
 import play.shaded.ahc.org.asynchttpclient.Response
 import play.shaded.ahc.org.asynchttpclient.uri.Uri
 
@@ -70,12 +69,12 @@ class UnloadingPermissionPDFServiceSpec extends SpecBase with ModelGenerators wi
               .overrides(bind[ManageDocumentsConnector].toInstance(mockManageDocumentConnector))
               .build()
 
-            val service = application.injector.instanceOf[UnloadingPermissionPDFService]
-            val result  = service.getPDF(arrival).futureValue
+            running(application) {
+              val service = application.injector.instanceOf[UnloadingPermissionPDFService]
+              val result  = service.getPDF(arrival).futureValue
 
-            result.left.get mustBe OtherError(errorCode, "")
-
-            application.stop()
+              result.left.get mustBe OtherError(errorCode, "")
+            }
         }
       }
 
@@ -99,12 +98,12 @@ class UnloadingPermissionPDFServiceSpec extends SpecBase with ModelGenerators wi
               .overrides(bind[ManageDocumentsConnector].toInstance(mockManageDocumentConnector))
               .build()
 
-            val service = application.injector.instanceOf[UnloadingPermissionPDFService]
-            val result  = service.getPDF(arrival).futureValue
+            running(application) {
+              val service = application.injector.instanceOf[UnloadingPermissionPDFService]
+              val result  = service.getPDF(arrival).futureValue
 
-            result.right.get mustBe pdf
-
-            application.stop()
+              result.right.get mustBe pdf
+            }
         }
       }
 
@@ -117,16 +116,14 @@ class UnloadingPermissionPDFServiceSpec extends SpecBase with ModelGenerators wi
               .overrides(bind[MessageRetrievalService].toInstance(mockMessageRetrievalService))
               .build()
 
-            val service = application.injector.instanceOf[UnloadingPermissionPDFService]
-            val result  = service.getPDF(arrival).futureValue
+            running(application) {
+              val service = application.injector.instanceOf[UnloadingPermissionPDFService]
+              val result  = service.getPDF(arrival).futureValue
 
-            result.left.get mustBe NotFoundError
-
-            application.stop()
+              result.left.get mustBe NotFoundError
+            }
         }
       }
     }
-
   }
-
 }

@@ -21,8 +21,6 @@ import com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.Suite
-import play.api.Application
-import play.api.inject.Injector
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.inject.guice.GuiceableModule
 
@@ -33,25 +31,22 @@ trait WiremockSuite extends BeforeAndAfterAll with BeforeAndAfterEach {
 
   protected def portConfigKey: String
 
-  protected lazy val app: Application =
+  protected lazy val appBuilder: GuiceApplicationBuilder =
     new GuiceApplicationBuilder()
       .configure(
         portConfigKey -> server.port().toString
       )
       .overrides(bindings: _*)
-      .build()
 
   protected def bindings: Seq[GuiceableModule] = Seq.empty
 
   override def beforeAll(): Unit = {
     server.start()
-    app
     super.beforeAll()
   }
 
   override def beforeEach(): Unit = {
     server.resetAll()
-    app
     super.beforeEach()
   }
 
@@ -59,5 +54,4 @@ trait WiremockSuite extends BeforeAndAfterAll with BeforeAndAfterEach {
     super.afterAll()
     server.stop()
   }
-
 }

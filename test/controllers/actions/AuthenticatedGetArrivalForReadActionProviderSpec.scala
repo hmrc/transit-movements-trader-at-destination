@@ -108,14 +108,17 @@ class AuthenticatedGetArrivalForReadActionProviderSpec
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
             bind[AuthConnector].toInstance(mockAuthConnector)
           )
+          .build()
 
-        val actionProvider = application.injector().instanceOf[AuthenticatedGetArrivalForReadActionProvider]
+        running(application) {
+          val actionProvider = application.injector.instanceOf[AuthenticatedGetArrivalForReadActionProvider]
 
-        val controller = new Harness(actionProvider)
-        val result     = controller.get(arrival.arrivalId)(fakeRequest)
+          val controller = new Harness(actionProvider)
+          val result     = controller.get(arrival.arrivalId)(fakeRequest)
 
-        status(result) mustBe OK
-        contentAsString(result) mustBe arrival.arrivalId.toString
+          status(result) mustBe OK
+          contentAsString(result) mustBe arrival.arrivalId.toString
+        }
       }
 
       "must return Not Found when the arrival exists and its EORI does not match the user's" in {
@@ -134,13 +137,16 @@ class AuthenticatedGetArrivalForReadActionProviderSpec
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
             bind[AuthConnector].toInstance(mockAuthConnector)
           )
+          .build()
 
-        val actionProvider = application.injector().instanceOf[AuthenticatedGetArrivalForReadActionProvider]
+        running(application) {
+          val actionProvider = application.injector.instanceOf[AuthenticatedGetArrivalForReadActionProvider]
 
-        val controller = new Harness(actionProvider)
-        val result     = controller.get(arrival.arrivalId)(fakeRequest)
+          val controller = new Harness(actionProvider)
+          val result     = controller.get(arrival.arrivalId)(fakeRequest)
 
-        status(result) mustBe NOT_FOUND
+          status(result) mustBe NOT_FOUND
+        }
       }
 
       "must return Not Found when the arrival does not exist" in {
@@ -159,13 +165,16 @@ class AuthenticatedGetArrivalForReadActionProviderSpec
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
             bind[AuthConnector].toInstance(mockAuthConnector)
           )
+          .build()
 
-        val actionProvider = application.injector().instanceOf[AuthenticatedGetArrivalForReadActionProvider]
+        running(application) {
+          val actionProvider = application.injector.instanceOf[AuthenticatedGetArrivalForReadActionProvider]
 
-        val controller = new Harness(actionProvider)
-        val result     = controller.get(arrivalId)(fakeRequest)
+          val controller = new Harness(actionProvider)
+          val result     = controller.get(arrivalId)(fakeRequest)
 
-        status(result) mustBe NOT_FOUND
+          status(result) mustBe NOT_FOUND
+        }
       }
 
       "must return InternalServerError when repository has issues" in {
@@ -183,14 +192,16 @@ class AuthenticatedGetArrivalForReadActionProviderSpec
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
             bind[AuthConnector].toInstance(mockAuthConnector)
           )
+          .build()
 
-        val actionProvider = application.injector().instanceOf[AuthenticatedGetArrivalForReadActionProvider]
+        running(application) {
+          val actionProvider = application.injector.instanceOf[AuthenticatedGetArrivalForReadActionProvider]
 
-        val controller = new Harness(actionProvider)
-        val result     = controller.get(arrivalId)(fakeRequest)
+          val controller = new Harness(actionProvider)
+          val result     = controller.get(arrivalId)(fakeRequest)
 
-        status(result) mustBe INTERNAL_SERVER_ERROR
-
+          status(result) mustBe INTERNAL_SERVER_ERROR
+        }
       }
     }
 
@@ -224,13 +235,16 @@ class AuthenticatedGetArrivalForReadActionProviderSpec
           .overrides(
             bind[AuthConnector].toInstance(mockAuthConnector)
           )
+          .build()
 
-        val actionProvider = application.injector().instanceOf[AuthenticatedGetArrivalForReadActionProvider]
+        running(application) {
+          val actionProvider = application.injector.instanceOf[AuthenticatedGetArrivalForReadActionProvider]
 
-        val controller = new Harness(actionProvider)
-        val result     = controller.get(arrivalId)(fakeRequest)
+          val controller = new Harness(actionProvider)
+          val result     = controller.get(arrivalId)(fakeRequest)
 
-        status(result) mustBe FORBIDDEN
+          status(result) mustBe FORBIDDEN
+        }
       }
     }
   }

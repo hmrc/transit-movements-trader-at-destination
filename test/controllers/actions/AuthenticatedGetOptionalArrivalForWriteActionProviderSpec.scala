@@ -125,15 +125,18 @@ class AuthenticatedGetOptionalArrivalForWriteActionProviderSpec
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
             bind[AuthConnector].toInstance(mockAuthConnector)
           )
+          .build()
 
-        val actionProvider = application.injector().instanceOf[AuthenticatedGetOptionalArrivalForWriteActionProvider]
-        val cc             = application.injector().instanceOf[ControllerComponents]
+        running(application) {
+          val actionProvider = application.injector.instanceOf[AuthenticatedGetOptionalArrivalForWriteActionProvider]
+          val cc             = application.injector.instanceOf[ControllerComponents]
 
-        val controller = new Harness(actionProvider, cc)
+          val controller = new Harness(actionProvider, cc)
 
-        val result = controller.get()(fakeRequest)
-        status(result) mustBe OK
-        contentAsJson(result) mustBe JsBoolean(false)
+          val result = controller.get()(fakeRequest)
+          status(result) mustBe OK
+          contentAsJson(result) mustBe JsBoolean(false)
+        }
       }
 
       "must lock, get and unlock an arrival when it exists and its EORI matches the user's" in {
@@ -158,16 +161,18 @@ class AuthenticatedGetOptionalArrivalForWriteActionProviderSpec
           )
           .build()
 
-        val actionProvider = application.injector.instanceOf[AuthenticatedGetOptionalArrivalForWriteActionProvider]
-        val cc             = application.injector.instanceOf[ControllerComponents]
+        running(application) {
+          val actionProvider = application.injector.instanceOf[AuthenticatedGetOptionalArrivalForWriteActionProvider]
+          val cc             = application.injector.instanceOf[ControllerComponents]
 
-        val controller = new Harness(actionProvider, cc)
-        val result     = controller.get()(fakeRequest)
+          val controller = new Harness(actionProvider, cc)
+          val result     = controller.get()(fakeRequest)
 
-        status(result) mustBe OK
-        contentAsJson(result) mustBe JsBoolean(true)
-        verify(mockLockRepository, times(1)).lock(eqTo(arrival.arrivalId))
-        verify(mockLockRepository, times(1)).unlock(eqTo(arrival.arrivalId))
+          status(result) mustBe OK
+          contentAsJson(result) mustBe JsBoolean(true)
+          verify(mockLockRepository, times(1)).lock(eqTo(arrival.arrivalId))
+          verify(mockLockRepository, times(1)).unlock(eqTo(arrival.arrivalId))
+        }
       }
 
       "must unlock the arrival if we find and lock one and return Internal Server Error if the main action fails" in {
@@ -190,15 +195,18 @@ class AuthenticatedGetOptionalArrivalForWriteActionProviderSpec
             bind[AuthConnector].toInstance(mockAuthConnector),
             bind[LockRepository].toInstance(mockLockRepository)
           )
+          .build()
 
-        val actionProvider = application.injector().instanceOf[AuthenticatedGetOptionalArrivalForWriteActionProvider]
-        val cc             = application.injector().instanceOf[ControllerComponents]
+        running(application) {
+          val actionProvider = application.injector.instanceOf[AuthenticatedGetOptionalArrivalForWriteActionProvider]
+          val cc             = application.injector.instanceOf[ControllerComponents]
 
-        val controller = new Harness(actionProvider, cc)
-        val result     = controller.failingAction()(fakeRequest)
+          val controller = new Harness(actionProvider, cc)
+          val result     = controller.failingAction()(fakeRequest)
 
-        status(result) mustBe INTERNAL_SERVER_ERROR
-        verify(mockLockRepository, times(1)).unlock(eqTo(arrival.arrivalId))
+          status(result) mustBe INTERNAL_SERVER_ERROR
+          verify(mockLockRepository, times(1)).unlock(eqTo(arrival.arrivalId))
+        }
       }
     }
 
@@ -229,14 +237,17 @@ class AuthenticatedGetOptionalArrivalForWriteActionProviderSpec
           .overrides(
             bind[AuthConnector].toInstance(mockAuthConnector)
           )
+          .build()
 
-        val actionProvider = application.injector().instanceOf[AuthenticatedGetOptionalArrivalForWriteActionProvider]
-        val cc             = application.injector().instanceOf[ControllerComponents]
+        running(application) {
+          val actionProvider = application.injector.instanceOf[AuthenticatedGetOptionalArrivalForWriteActionProvider]
+          val cc             = application.injector.instanceOf[ControllerComponents]
 
-        val controller = new Harness(actionProvider, cc)
-        val result     = controller.get(fakeRequest)
+          val controller = new Harness(actionProvider, cc)
+          val result     = controller.get(fakeRequest)
 
-        status(result) mustBe FORBIDDEN
+          status(result) mustBe FORBIDDEN
+        }
       }
     }
 
@@ -260,14 +271,17 @@ class AuthenticatedGetOptionalArrivalForWriteActionProviderSpec
             bind[AuthConnector].toInstance(mockAuthConnector),
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository)
           )
+          .build()
 
-        val actionProvider = application.injector().instanceOf[AuthenticatedGetOptionalArrivalForWriteActionProvider]
-        val cc             = application.injector().instanceOf[ControllerComponents]
+        running(application) {
+          val actionProvider = application.injector.instanceOf[AuthenticatedGetOptionalArrivalForWriteActionProvider]
+          val cc             = application.injector.instanceOf[ControllerComponents]
 
-        val controller = new Harness(actionProvider, cc)
-        val result     = controller.get()(fakeRequest)
+          val controller = new Harness(actionProvider, cc)
+          val result     = controller.get()(fakeRequest)
 
-        status(result) mustBe LOCKED
+          status(result) mustBe LOCKED
+        }
       }
     }
 
@@ -282,18 +296,21 @@ class AuthenticatedGetOptionalArrivalForWriteActionProviderSpec
           .overrides(
             bind[AuthConnector].toInstance(mockAuthConnector)
           )
+          .build()
 
-        val actionProvider = application.injector().instanceOf[AuthenticatedGetOptionalArrivalForWriteActionProvider]
-        val cc             = application.injector().instanceOf[ControllerComponents]
+        running(application) {
+          val actionProvider = application.injector.instanceOf[AuthenticatedGetOptionalArrivalForWriteActionProvider]
+          val cc             = application.injector.instanceOf[ControllerComponents]
 
-        val controller = new Harness(actionProvider, cc)
+          val controller = new Harness(actionProvider, cc)
 
-        val result = controller.get()(FakeRequest().withBody(<CC007A>
-          <HEAHEA>
-          </HEAHEA>
-        </CC007A>))
+          val result = controller.get()(FakeRequest().withBody(<CC007A>
+            <HEAHEA>
+            </HEAHEA>
+          </CC007A>))
 
-        status(result) mustBe BAD_REQUEST
+          status(result) mustBe BAD_REQUEST
+        }
       }
     }
 
@@ -308,17 +325,20 @@ class AuthenticatedGetOptionalArrivalForWriteActionProviderSpec
           .overrides(
             bind[AuthConnector].toInstance(mockAuthConnector)
           )
+          .build()
 
-        val actionProvider = application.injector().instanceOf[AuthenticatedGetOptionalArrivalForWriteActionProvider]
-        val cc             = application.injector().instanceOf[ControllerComponents]
+        running(application) {
+          val actionProvider = application.injector.instanceOf[AuthenticatedGetOptionalArrivalForWriteActionProvider]
+          val cc             = application.injector.instanceOf[ControllerComponents]
 
-        val controller = new Harness(actionProvider, cc)
+          val controller = new Harness(actionProvider, cc)
 
-        val request: FakeRequest[AnyContent] = FakeRequest().withBody(AnyContent(JsString("Happy Apples")))
+          val request: FakeRequest[AnyContent] = FakeRequest().withBody(AnyContent(JsString("Happy Apples")))
 
-        val result = controller.getJson()(request)
+          val result = controller.getJson()(request)
 
-        status(result) mustBe BAD_REQUEST
+          status(result) mustBe BAD_REQUEST
+        }
       }
     }
   }

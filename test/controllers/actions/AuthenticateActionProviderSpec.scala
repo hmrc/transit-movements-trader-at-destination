@@ -92,13 +92,15 @@ class AuthenticateActionProviderSpec extends AnyFreeSpec with Matchers with Mock
           )
           .build()
 
-        val actionProvider = application.injector.instanceOf[AuthenticateActionProvider]
+        running(application) {
+          val actionProvider = application.injector.instanceOf[AuthenticateActionProvider]
 
-        val controller = new Harness(actionProvider)
-        val result     = controller.action()(fakeRequest)
+          val controller = new Harness(actionProvider)
+          val result     = controller.action()(fakeRequest)
 
-        status(result) mustEqual OK
-        contentAsString(result) mustEqual eoriNumber
+          status(result) mustEqual OK
+          contentAsString(result) mustEqual eoriNumber
+        }
       }
     }
 
@@ -130,13 +132,16 @@ class AuthenticateActionProviderSpec extends AnyFreeSpec with Matchers with Mock
           .overrides(
             bind[AuthConnector].toInstance(mockAuthConnector)
           )
+          .build()
 
-        val actionProvider = application.injector.instanceOf[AuthenticateActionProvider]
+        running(application) {
+          val actionProvider = application.injector.instanceOf[AuthenticateActionProvider]
 
-        val controller = new Harness(actionProvider)
-        val result     = controller.action()(fakeRequest)
+          val controller = new Harness(actionProvider)
+          val result     = controller.action()(fakeRequest)
 
-        status(result) mustBe FORBIDDEN
+          status(result) mustBe FORBIDDEN
+        }
       }
     }
   }

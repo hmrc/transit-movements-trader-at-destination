@@ -38,6 +38,7 @@ import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
+import play.api.test.Helpers.running
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.logging.SessionId
 
@@ -55,8 +56,6 @@ class MessageConnectorSpec
   import MessageConnectorSpec._
 
   override protected def portConfigKey: String = "microservice.services.eis.port"
-
-  private def connector: MessageConnector = app.injector.instanceOf[MessageConnector]
 
   implicit val headerCarrier: HeaderCarrier = HeaderCarrier()
 
@@ -88,9 +87,15 @@ class MessageConnectorSpec
         val postValue = MovementMessageWithStatus(LocalDateTime.now(), messageType, <CC007A>test</CC007A>, MessageStatus.SubmissionPending, 1)
         val arrivalId = ArrivalId(123)
 
-        val result = connector.post(arrivalId, postValue, OffsetDateTime.now())
+        val app = appBuilder.build()
 
-        result.futureValue mustEqual EisSubmissionSuccessful
+        running(app) {
+          val connector = app.injector.instanceOf[MessageConnector]
+
+          val result = connector.post(arrivalId, postValue, OffsetDateTime.now())
+
+          result.futureValue mustEqual EisSubmissionSuccessful
+        }
       }
 
       "return a ErrorInPayload for a return code of 400" in {
@@ -110,9 +115,15 @@ class MessageConnectorSpec
         val postValue = MovementMessageWithStatus(LocalDateTime.now(), messageType, <CC007A>test</CC007A>, MessageStatus.SubmissionPending, 1)
         val arrivalId = ArrivalId(123)
 
-        val result = connector.post(arrivalId, postValue, OffsetDateTime.now())
+        val app = appBuilder.build()
 
-        result.futureValue mustEqual ErrorInPayload
+        running(app) {
+          val connector = app.injector.instanceOf[MessageConnector]
+
+          val result = connector.post(arrivalId, postValue, OffsetDateTime.now())
+
+          result.futureValue mustEqual ErrorInPayload
+        }
       }
 
       "return a VirusFoundOrInvalidToken for a return code of 403" in {
@@ -132,9 +143,15 @@ class MessageConnectorSpec
         val postValue = MovementMessageWithStatus(LocalDateTime.now(), messageType, <CC007A>test</CC007A>, MessageStatus.SubmissionPending, 1)
         val arrivalId = ArrivalId(123)
 
-        val result = connector.post(arrivalId, postValue, OffsetDateTime.now())
+        val app = appBuilder.build()
 
-        result.futureValue mustEqual VirusFoundOrInvalidToken
+        running(app) {
+          val connector = app.injector.instanceOf[MessageConnector]
+
+          val result = connector.post(arrivalId, postValue, OffsetDateTime.now())
+
+          result.futureValue mustEqual VirusFoundOrInvalidToken
+        }
       }
 
       "return a DownstreamFailure for a return code of 500" in {
@@ -154,9 +171,15 @@ class MessageConnectorSpec
         val postValue = MovementMessageWithStatus(LocalDateTime.now(), messageType, <CC007A>test</CC007A>, MessageStatus.SubmissionPending, 1)
         val arrivalId = ArrivalId(123)
 
-        val result = connector.post(arrivalId, postValue, OffsetDateTime.now())
+        val app = appBuilder.build()
 
-        result.futureValue mustEqual DownstreamInternalServerError
+        running(app) {
+          val connector = app.injector.instanceOf[MessageConnector]
+
+          val result = connector.post(arrivalId, postValue, OffsetDateTime.now())
+
+          result.futureValue mustEqual DownstreamInternalServerError
+        }
       }
 
       "return an UnexpectedHttpResonse for an error code other than 202, 400, 403, 500" in {
@@ -176,9 +199,15 @@ class MessageConnectorSpec
         val postValue = MovementMessageWithStatus(LocalDateTime.now(), messageType, <CC007A>test</CC007A>, MessageStatus.SubmissionPending, 1)
         val arrivalId = ArrivalId(123)
 
-        val result = connector.post(arrivalId, postValue, OffsetDateTime.now())
+        val app = appBuilder.build()
 
-        result.futureValue.statusCode mustEqual 418
+        running(app) {
+          val connector = app.injector.instanceOf[MessageConnector]
+
+          val result = connector.post(arrivalId, postValue, OffsetDateTime.now())
+
+          result.futureValue.statusCode mustEqual 418
+        }
       }
     }
   }
