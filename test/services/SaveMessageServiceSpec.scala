@@ -29,6 +29,7 @@ import org.mockito.ArgumentMatchers.{eq => eqTo, _}
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
 import play.api.inject.bind
+import play.api.test.Helpers.running
 import repositories.ArrivalMovementRepository
 import utils.Format
 
@@ -60,27 +61,28 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach {
         )
         .build()
 
-      val saveMessageService = application.injector.instanceOf[SaveMessageService]
+      running(application) {
+        val saveMessageService = application.injector.instanceOf[SaveMessageService]
 
-      val dateOfPrep = LocalDate.now()
-      val timeOfPrep = LocalTime.of(1, 1)
+        val dateOfPrep = LocalDate.now()
+        val timeOfPrep = LocalTime.of(1, 1)
 
-      val arrivalId            = ArrivalId(1)
-      val messageCorrelationId = 1
-      val messageSender        = MessageSender(arrivalId, messageCorrelationId)
+        val arrivalId            = ArrivalId(1)
+        val messageCorrelationId = 1
+        val messageSender        = MessageSender(arrivalId, messageCorrelationId)
 
-      val requestGoodsReleasedXmlBody =
-        <CC025A>
-        <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
-        <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
-      </CC025A>
+        val requestGoodsReleasedXmlBody =
+          <CC025A>
+            <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+            <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+          </CC025A>
 
-      val result = saveMessageService.validateXmlAndSaveMessage(requestGoodsReleasedXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased).futureValue
+        val result = saveMessageService.validateXmlAndSaveMessage(requestGoodsReleasedXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased).futureValue
 
-      result mustBe SubmissionProcessingResult.SubmissionSuccess
-      verify(mockArrivalMovementRepository, times(1)).addResponseMessage(eqTo(arrivalId), any(), eqTo(GoodsReleased))
-      verify(mockXmlValidationService, times(1)).validate(any(), any())
-      application.stop()
+        result mustBe SubmissionProcessingResult.SubmissionSuccess
+        verify(mockArrivalMovementRepository, times(1)).addResponseMessage(eqTo(arrivalId), any(), eqTo(GoodsReleased))
+        verify(mockXmlValidationService, times(1)).validate(any(), any())
+      }
     }
 
     "return Failure when we cannot save the message" in {
@@ -94,27 +96,28 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach {
         )
         .build()
 
-      val saveMessageService = application.injector.instanceOf[SaveMessageService]
+      running(application) {
+        val saveMessageService = application.injector.instanceOf[SaveMessageService]
 
-      val dateOfPrep = LocalDate.now()
-      val timeOfPrep = LocalTime.of(1, 1)
+        val dateOfPrep = LocalDate.now()
+        val timeOfPrep = LocalTime.of(1, 1)
 
-      val arrivalId            = ArrivalId(1)
-      val messageCorrelationId = 1
-      val messageSender        = MessageSender(arrivalId, messageCorrelationId)
+        val arrivalId            = ArrivalId(1)
+        val messageCorrelationId = 1
+        val messageSender        = MessageSender(arrivalId, messageCorrelationId)
 
-      val requestGoodsReleasedXmlBody =
-        <CC025A>
-          <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
-          <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
-        </CC025A>
+        val requestGoodsReleasedXmlBody =
+          <CC025A>
+            <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+            <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+          </CC025A>
 
-      val result = saveMessageService.validateXmlAndSaveMessage(requestGoodsReleasedXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased).futureValue
+        val result = saveMessageService.validateXmlAndSaveMessage(requestGoodsReleasedXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased).futureValue
 
-      result mustBe SubmissionProcessingResult.SubmissionFailureInternal
-      verify(mockArrivalMovementRepository, times(1)).addResponseMessage(any(), any(), any())
-      verify(mockXmlValidationService, times(1)).validate(any(), any())
-      application.stop()
+        result mustBe SubmissionProcessingResult.SubmissionFailureInternal
+        verify(mockArrivalMovementRepository, times(1)).addResponseMessage(any(), any(), any())
+        verify(mockXmlValidationService, times(1)).validate(any(), any())
+      }
     }
 
     "return Failure when we cannot parse the message" in {
@@ -127,20 +130,21 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach {
         )
         .build()
 
-      val saveMessageService = application.injector.instanceOf[SaveMessageService]
+      running(application) {
+        val saveMessageService = application.injector.instanceOf[SaveMessageService]
 
-      val arrivalId            = ArrivalId(1)
-      val messageCorrelationId = 1
-      val messageSender        = MessageSender(arrivalId, messageCorrelationId)
+        val arrivalId            = ArrivalId(1)
+        val messageCorrelationId = 1
+        val messageSender        = MessageSender(arrivalId, messageCorrelationId)
 
-      val requestInvalidXmlBody = <Invalid> invalid </Invalid>
+        val requestInvalidXmlBody = <Invalid>invalid</Invalid>
 
-      val result = saveMessageService.validateXmlAndSaveMessage(requestInvalidXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased).futureValue
+        val result = saveMessageService.validateXmlAndSaveMessage(requestInvalidXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased).futureValue
 
-      result mustBe SubmissionProcessingResult.SubmissionFailureExternal
-      verify(mockArrivalMovementRepository, never()).addResponseMessage(any(), any(), any())
-      verify(mockXmlValidationService, times(1)).validate(any(), any())
-      application.stop()
+        result mustBe SubmissionProcessingResult.SubmissionFailureExternal
+        verify(mockArrivalMovementRepository, never()).addResponseMessage(any(), any(), any())
+        verify(mockXmlValidationService, times(1)).validate(any(), any())
+      }
     }
 
     "return Failure when we cannot parse the message due malformed time" in {
@@ -153,26 +157,27 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach {
         )
         .build()
 
-      val saveMessageService = application.injector.instanceOf[SaveMessageService]
+      running(application) {
+        val saveMessageService = application.injector.instanceOf[SaveMessageService]
 
-      val arrivalId            = ArrivalId(1)
-      val messageCorrelationId = 1
-      val messageSender        = MessageSender(arrivalId, messageCorrelationId)
-      val dateOfPrep           = LocalDate.now()
-      val timeOfPrep           = LocalTime.of(1, 1)
+        val arrivalId            = ArrivalId(1)
+        val messageCorrelationId = 1
+        val messageSender        = MessageSender(arrivalId, messageCorrelationId)
+        val dateOfPrep           = LocalDate.now()
+        val timeOfPrep           = LocalTime.of(1, 1)
 
-      val requestInvalidXmlBody =
-        <CC025A>
-        <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
-        <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)+ "/"}</TimOfPreMES10>
-      </CC025A>
+        val requestInvalidXmlBody =
+          <CC025A>
+            <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+            <TimOfPreMES10>{Format.timeFormatted(timeOfPrep) + "/"}</TimOfPreMES10>
+          </CC025A>
 
-      val result = saveMessageService.validateXmlAndSaveMessage(requestInvalidXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased).futureValue
+        val result = saveMessageService.validateXmlAndSaveMessage(requestInvalidXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased).futureValue
 
-      result mustBe SubmissionProcessingResult.SubmissionFailureExternal
-      verify(mockArrivalMovementRepository, never()).addResponseMessage(any(), any(), any())
-      verify(mockXmlValidationService, times(1)).validate(any(), any())
-      application.stop()
+        result mustBe SubmissionProcessingResult.SubmissionFailureExternal
+        verify(mockArrivalMovementRepository, never()).addResponseMessage(any(), any(), any())
+        verify(mockXmlValidationService, times(1)).validate(any(), any())
+      }
     }
   }
 }

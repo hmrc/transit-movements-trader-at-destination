@@ -138,7 +138,6 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
                                                                                        eqTo(MessageStatus.SubmissionSucceeded))
 
       }
-
     }
 
     "return SubmissionSuccess when the message is successfully saved and submitted, but the state of message is not updated" in {

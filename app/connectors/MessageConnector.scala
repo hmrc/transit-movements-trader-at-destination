@@ -22,6 +22,8 @@ import com.google.inject.Inject
 import config.AppConfig
 import connectors.MessageConnector.EisSubmissionResult
 import connectors.MessageConnector.EisSubmissionResult._
+import metrics.MetricsService
+import metrics.Monitors
 import models.ArrivalId
 import models.MessageSender
 import models.MessageType
@@ -36,7 +38,7 @@ import utils.Format
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class MessageConnector @Inject()(config: AppConfig, http: HttpClient)(implicit ec: ExecutionContext) {
+class MessageConnector @Inject()(config: AppConfig, http: HttpClient, metricsService: MetricsService)(implicit ec: ExecutionContext) {
 
   def post(arrivalId: ArrivalId, message: MovementMessageWithStatus, dateTime: OffsetDateTime)(
     implicit headerCarrier: HeaderCarrier
@@ -52,9 +54,11 @@ class MessageConnector @Inject()(config: AppConfig, http: HttpClient)(implicit e
       .copy(authorization = None)
       .withExtraHeaders(addHeaders(message.messageType, dateTime, messageSender): _*)
 
-    http
-      .POSTString[HttpResponse](url, xmlMessage)(readRaw, hc = newHeaders, implicitly)
-      .map(response => responseToStatus(response))
+    metricsService.timeAsyncCall(Monitors.PostToEisMonitor) {
+      http
+        .POSTString[HttpResponse](url, xmlMessage)(readRaw, hc = newHeaders, implicitly)
+        .map(response => responseToStatus(response))
+    }
   }
 
   private def addHeaders(messageType: MessageType, dateTime: OffsetDateTime, messageSender: MessageSender)(

@@ -119,16 +119,19 @@ class AuthenticatedGetArrivalForWriteActionProviderSpec
             bind[AuthConnector].toInstance(mockAuthConnector),
             bind[LockRepository].toInstance(mockLockRepository)
           )
+          .build()
 
-        val actionProvider = application.injector().instanceOf[AuthenticatedGetArrivalForWriteActionProvider]
+        running(application) {
+          val actionProvider = application.injector.instanceOf[AuthenticatedGetArrivalForWriteActionProvider]
 
-        val controller = new Harness(actionProvider)
-        val result     = controller.get(arrival.arrivalId)(fakeRequest)
+          val controller = new Harness(actionProvider)
+          val result     = controller.get(arrival.arrivalId)(fakeRequest)
 
-        status(result) mustBe OK
-        contentAsString(result) mustBe arrival.arrivalId.toString
-        verify(mockLockRepository, times(1)).lock(eqTo(arrival.arrivalId))
-        verify(mockLockRepository, times(1)).unlock(eqTo(arrival.arrivalId))
+          status(result) mustBe OK
+          contentAsString(result) mustBe arrival.arrivalId.toString
+          verify(mockLockRepository, times(1)).lock(eqTo(arrival.arrivalId))
+          verify(mockLockRepository, times(1)).unlock(eqTo(arrival.arrivalId))
+        }
       }
 
       "must lock and unlock an arrival and return Not Found when its EORI does not match the user's" in {
@@ -151,15 +154,18 @@ class AuthenticatedGetArrivalForWriteActionProviderSpec
             bind[AuthConnector].toInstance(mockAuthConnector),
             bind[LockRepository].toInstance(mockLockRepository)
           )
+          .build()
 
-        val actionProvider = application.injector().instanceOf[AuthenticatedGetArrivalForWriteActionProvider]
+        running(application) {
+          val actionProvider = application.injector.instanceOf[AuthenticatedGetArrivalForWriteActionProvider]
 
-        val controller = new Harness(actionProvider)
-        val result     = controller.get(arrival.arrivalId)(fakeRequest)
+          val controller = new Harness(actionProvider)
+          val result     = controller.get(arrival.arrivalId)(fakeRequest)
 
-        status(result) mustBe NOT_FOUND
-        verify(mockLockRepository, times(1)).lock(eqTo(arrival.arrivalId))
-        verify(mockLockRepository, times(1)).unlock(eqTo(arrival.arrivalId))
+          status(result) mustBe NOT_FOUND
+          verify(mockLockRepository, times(1)).lock(eqTo(arrival.arrivalId))
+          verify(mockLockRepository, times(1)).unlock(eqTo(arrival.arrivalId))
+        }
       }
 
       "must lock, unlock and return Not Found when the arrival does not exist" in {
@@ -182,15 +188,18 @@ class AuthenticatedGetArrivalForWriteActionProviderSpec
             bind[AuthConnector].toInstance(mockAuthConnector),
             bind[LockRepository].toInstance(mockLockRepository)
           )
+          .build()
 
-        val actionProvider = application.injector().instanceOf[AuthenticatedGetArrivalForWriteActionProvider]
+        running(application) {
+          val actionProvider = application.injector.instanceOf[AuthenticatedGetArrivalForWriteActionProvider]
 
-        val controller = new Harness(actionProvider)
-        val result     = controller.get(arrivalId)(fakeRequest)
+          val controller = new Harness(actionProvider)
+          val result     = controller.get(arrivalId)(fakeRequest)
 
-        status(result) mustBe NOT_FOUND
-        verify(mockLockRepository, times(1)).lock(eqTo(arrivalId))
-        verify(mockLockRepository, times(1)).unlock(eqTo(arrivalId))
+          status(result) mustBe NOT_FOUND
+          verify(mockLockRepository, times(1)).lock(eqTo(arrivalId))
+          verify(mockLockRepository, times(1)).unlock(eqTo(arrivalId))
+        }
       }
 
       "must unlock the arrival and return Internal Server Error if the main action fails" in {
@@ -213,14 +222,17 @@ class AuthenticatedGetArrivalForWriteActionProviderSpec
             bind[AuthConnector].toInstance(mockAuthConnector),
             bind[LockRepository].toInstance(mockLockRepository)
           )
+          .build()
 
-        val actionProvider = application.injector().instanceOf[AuthenticatedGetArrivalForWriteActionProvider]
+        running(application) {
+          val actionProvider = application.injector.instanceOf[AuthenticatedGetArrivalForWriteActionProvider]
 
-        val controller = new Harness(actionProvider)
-        val result     = controller.failingAction(arrival.arrivalId)(fakeRequest)
+          val controller = new Harness(actionProvider)
+          val result     = controller.failingAction(arrival.arrivalId)(fakeRequest)
 
-        status(result) mustBe INTERNAL_SERVER_ERROR
-        verify(mockLockRepository, times(1)).unlock(eqTo(arrival.arrivalId))
+          status(result) mustBe INTERNAL_SERVER_ERROR
+          verify(mockLockRepository, times(1)).unlock(eqTo(arrival.arrivalId))
+        }
       }
     }
 
@@ -258,15 +270,18 @@ class AuthenticatedGetArrivalForWriteActionProviderSpec
             bind[AuthConnector].toInstance(mockAuthConnector),
             bind[LockRepository].toInstance(mockLockRepository)
           )
+          .build()
 
-        val actionProvider = application.injector().instanceOf[AuthenticatedGetArrivalForWriteActionProvider]
+        running(application) {
+          val actionProvider = application.injector.instanceOf[AuthenticatedGetArrivalForWriteActionProvider]
 
-        val controller = new Harness(actionProvider)
-        val result     = controller.get(arrivalId)(fakeRequest)
+          val controller = new Harness(actionProvider)
+          val result     = controller.get(arrivalId)(fakeRequest)
 
-        status(result) mustBe FORBIDDEN
-        verify(mockLockRepository, times(1)).lock(eqTo(arrivalId))
-        verify(mockLockRepository, times(1)).unlock(eqTo(arrivalId))
+          status(result) mustBe FORBIDDEN
+          verify(mockLockRepository, times(1)).lock(eqTo(arrivalId))
+          verify(mockLockRepository, times(1)).unlock(eqTo(arrivalId))
+        }
       }
     }
 
@@ -284,13 +299,16 @@ class AuthenticatedGetArrivalForWriteActionProviderSpec
           .overrides(
             bind[LockRepository].toInstance(mockLockRepository)
           )
+          .build()
 
-        val actionProvider = application.injector().instanceOf[AuthenticatedGetArrivalForWriteActionProvider]
+        running(application) {
+          val actionProvider = application.injector.instanceOf[AuthenticatedGetArrivalForWriteActionProvider]
 
-        val controller = new Harness(actionProvider)
-        val result     = controller.get(arrivalId)(fakeRequest)
+          val controller = new Harness(actionProvider)
+          val result     = controller.get(arrivalId)(fakeRequest)
 
-        status(result) mustBe LOCKED
+          status(result) mustBe LOCKED
+        }
       }
     }
   }

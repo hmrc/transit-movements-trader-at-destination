@@ -20,6 +20,8 @@ import java.time.LocalDateTime
 
 import com.google.inject.Inject
 import config.AppConfig
+import metrics.MetricsService
+import metrics.Monitors
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalIdSelector
@@ -52,7 +54,8 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 
-class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi, appConfig: AppConfig)(implicit ec: ExecutionContext) extends MongoDateTimeFormats {
+class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi, appConfig: AppConfig, metricsService: MetricsService)(implicit ec: ExecutionContext)
+    extends MongoDateTimeFormats {
 
   private val index: Aux[BSONSerializationPack.type] = IndexUtils.index(
     key = Seq("eoriNumber" -> IndexType.Ascending),
@@ -97,9 +100,11 @@ class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi, appConfig: Ap
       "_id" -> arrivalId
     )
 
-    collection.flatMap {
-      _.find(selector, None)
-        .one[Arrival]
+    metricsService.timeAsyncCall(Monitors.GetArrivalByIdMonitor) {
+      collection.flatMap {
+        _.find(selector, None)
+          .one[Arrival]
+      }
     }
   }
 
@@ -109,17 +114,26 @@ class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi, appConfig: Ap
       "eoriNumber"              -> eoriNumber
     )
 
-    collection.flatMap {
-      _.find(selector, None)
-        .one[Arrival]
+    metricsService.timeAsyncCall(Monitors.GetArrivalByMrnMonitor) {
+      collection.flatMap {
+        _.find(selector, None)
+          .one[Arrival]
+      }
     }
   }
 
   def fetchAllArrivals(eoriNumber: String): Future[Seq[Arrival]] =
-    collection.flatMap {
-      _.find(Json.obj("eoriNumber" -> eoriNumber), Option.empty[JsObject])
-        .cursor[Arrival]()
-        .collect[Seq](-1, Cursor.FailOnError())
+    metricsService.timeAsyncCall(Monitors.GetArrivalsForEoriMonitor) {
+      collection.flatMap {
+        _.find(Json.obj("eoriNumber" -> eoriNumber), Option.empty[JsObject])
+          .cursor[Arrival]()
+          .collect[Seq](-1, Cursor.FailOnError())
+          .map {
+            arrivals =>
+              metricsService.inc(Monitors.arrivalsPerEori(arrivals))
+              arrivals
+          }
+      }
     }
 
   def updateArrival[A](selector: ArrivalSelector, modifier: A)(implicit ev: ArrivalModifier[A]): Future[Try[Unit]] = {

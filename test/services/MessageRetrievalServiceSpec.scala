@@ -30,6 +30,7 @@ import org.mockito.Mockito._
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.inject.bind
+import play.api.test.Helpers.running
 
 class MessageRetrievalServiceSpec extends SpecBase with ModelGenerators with ScalaCheckDrivenPropertyChecks {
 
@@ -51,12 +52,13 @@ class MessageRetrievalServiceSpec extends SpecBase with ModelGenerators with Sca
 
             val application = baseApplicationBuilder.overrides(bind[ArrivalMessageSummaryService].toInstance(mockArrivalMessageSummaryService)).build()
 
-            val service = application.injector.instanceOf[MessageRetrievalService]
+            running(application) {
+              val service = application.injector.instanceOf[MessageRetrievalService]
 
-            val expectedResult = ResponseMovementMessage.build(arrivalWithUnloadingPermission.arrivalId, MessageId.fromIndex(1), unloadingPermissionMessage)
+              val expectedResult = ResponseMovementMessage.build(arrivalWithUnloadingPermission.arrivalId, MessageId.fromIndex(1), unloadingPermissionMessage)
 
-            service.getUnloadingPermission(arrivalWithUnloadingPermission).value mustBe expectedResult
-            application.stop()
+              service.getUnloadingPermission(arrivalWithUnloadingPermission).value mustBe expectedResult
+            }
         }
       }
 
@@ -69,10 +71,11 @@ class MessageRetrievalServiceSpec extends SpecBase with ModelGenerators with Sca
 
             val application = baseApplicationBuilder.overrides(bind[ArrivalMessageSummaryService].toInstance(mockArrivalMessageSummaryService)).build()
 
-            val service = application.injector.instanceOf[MessageRetrievalService]
+            running(application) {
+              val service = application.injector.instanceOf[MessageRetrievalService]
 
-            service.getUnloadingPermission(arrival) mustBe None
-            application.stop()
+              service.getUnloadingPermission(arrival) mustBe None
+            }
         }
       }
 
@@ -89,13 +92,13 @@ class MessageRetrievalServiceSpec extends SpecBase with ModelGenerators with Sca
 
             val application = baseApplicationBuilder.overrides(bind[ArrivalMessageSummaryService].toInstance(mockArrivalMessageSummaryService)).build()
 
-            val service = application.injector.instanceOf[MessageRetrievalService]
+            running(application) {
+              val service = application.injector.instanceOf[MessageRetrievalService]
 
-            service.getUnloadingPermission(arrivalWithoutUnloadingPermission) mustBe None
-            application.stop()
+              service.getUnloadingPermission(arrivalWithoutUnloadingPermission) mustBe None
+            }
         }
       }
     }
   }
-
 }

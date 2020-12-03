@@ -26,6 +26,7 @@ import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.libs.ws.WSResponse
+import play.api.test.Helpers.running
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.Future
@@ -33,8 +34,6 @@ import scala.concurrent.Future
 class ManageDocumentsConnectorSpec extends SpecBase with WiremockSuite with ScalaCheckPropertyChecks with ModelGenerators {
 
   override protected def portConfigKey: String = "microservice.services.manage-documents.port"
-
-  lazy val connector: ManageDocumentsConnector = app.injector.instanceOf[ManageDocumentsConnector]
 
   implicit val headerCarrier: HeaderCarrier = HeaderCarrier()
 
@@ -52,10 +51,16 @@ class ManageDocumentsConnectorSpec extends SpecBase with WiremockSuite with Scal
             )
         )
 
-        forAll(arbitrary[ResponseMovementMessage]) {
-          responseMovementMessage =>
-            val result: Future[WSResponse] = connector.getUnloadingPermissionPdf(responseMovementMessage)
-            result.futureValue.status mustBe 200
+        val app = appBuilder.build()
+
+        running(app) {
+          val connector = app.injector.instanceOf[ManageDocumentsConnector]
+
+          forAll(arbitrary[ResponseMovementMessage]) {
+            responseMovementMessage =>
+              val result: Future[WSResponse] = connector.getUnloadingPermissionPdf(responseMovementMessage)
+              result.futureValue.status mustBe 200
+          }
         }
       }
 
@@ -71,13 +76,18 @@ class ManageDocumentsConnectorSpec extends SpecBase with WiremockSuite with Scal
             )
         )
 
-        forAll(arbitrary[ResponseMovementMessage]) {
-          responseMovementMessage =>
-            val result: Future[WSResponse] = connector.getUnloadingPermissionPdf(responseMovementMessage)
-            result.futureValue.status mustBe genErrorResponse
+        val app = appBuilder.build()
+
+        running(app) {
+          val connector = app.injector.instanceOf[ManageDocumentsConnector]
+
+          forAll(arbitrary[ResponseMovementMessage]) {
+            responseMovementMessage =>
+              val result: Future[WSResponse] = connector.getUnloadingPermissionPdf(responseMovementMessage)
+              result.futureValue.status mustBe genErrorResponse
+          }
         }
       }
     }
   }
-
 }
