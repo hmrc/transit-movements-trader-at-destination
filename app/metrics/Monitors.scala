@@ -18,6 +18,9 @@ package metrics
 
 import connectors.MessageConnector.EisSubmissionResult
 import models.Arrival
+import models.ChannelType
+import models.MessageType
+import models.SubmissionProcessingResult
 import play.api.libs.ws.WSResponse
 
 trait RequestMonitor[A] {
@@ -61,4 +64,7 @@ object Monitors {
       case s if s <= 500 => Counter("arrivals-per-eori-251-500")
       case _             => Counter("arrivals-per-eori-501-or-more")
     }
+
+  def countMessagesFromNcts(messageType: MessageType, channel: ChannelType, outcome: SubmissionProcessingResult): Counter =
+    Counter(s"message-from-ncts.${channel.toString}.${messageType.code}-${outcome.toString}")
 }
