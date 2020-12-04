@@ -65,6 +65,6 @@ object Monitors {
       case _             => Counter("arrivals-per-eori-501-or-more")
     }
 
-  def countMessagesFromNcts(messageType: MessageType, channel: ChannelType, outcome: SubmissionProcessingResult): Counter =
-    Counter(s"message-from-ncts.${channel.toString}.${messageType.code}-${outcome.toString}")
+  def countMessages(messageType: MessageType, channel: ChannelType, outcome: SubmissionProcessingResult): Counter =
+    Counter(s"message-received.${channel.toString}.${messageType.code}-${outcome.toString}")
 }

@@ -51,7 +51,7 @@ class NCTSMessageController @Inject()(cc: ControllerComponents,
 
       processingResult map {
         result =>
-          val counter = Monitors.countMessagesFromNcts(messageInbound.messageType.messageType, request.request.getChannel, result)
+          val counter = Monitors.countMessages(messageInbound.messageType.messageType, request.request.getChannel, result)
           metricsService.inc(counter)
 
           result match {
