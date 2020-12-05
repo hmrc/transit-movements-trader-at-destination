@@ -17,12 +17,12 @@
 package services
 
 import com.google.inject.Inject
+import logging.Logging
 import models.ArrivalStatus
 import models.MessageResponse
 import models.MessageSender
 import models.SubmissionProcessingResult
 import models.SubmissionProcessingResult._
-import play.api.Logger
 import repositories.ArrivalMovementRepository
 
 import scala.concurrent.ExecutionContext
@@ -33,7 +33,8 @@ import scala.xml.NodeSeq
 
 class SaveMessageService @Inject()(arrivalMovementRepository: ArrivalMovementRepository,
                                    arrivalMovementService: ArrivalMovementMessageService,
-                                   xmlValidationService: XmlValidationService)(implicit ec: ExecutionContext) {
+                                   xmlValidationService: XmlValidationService)(implicit ec: ExecutionContext)
+    extends Logging {
 
   def validateXmlAndSaveMessage(messageXml: NodeSeq,
                                 messageSender: MessageSender,
@@ -47,21 +48,21 @@ class SaveMessageService @Inject()(arrivalMovementRepository: ArrivalMovementRep
               .addResponseMessage(messageSender.arrivalId, message, arrivalStatus)
               .map {
                 case Success(_) => {
-                  Logger.info(s"Saved message successfully")
+                  logger.debug(s"Saved message successfully")
                   SubmissionSuccess
                 }
                 case Failure(error) => {
-                  Logger.info(s"Failed to save message with error: $error")
+                  logger.warn(s"Failed to save message with error: $error")
                   SubmissionFailureInternal
                 }
               }
           case Left(error) => {
-            Logger.info(s"Failed to create message with error: $error")
+            logger.warn(s"Failed to create message with error: $error")
             Future.successful(SubmissionFailureExternal)
           }
         }
       case Failure(e) => {
-        Logger.warn(s"Failure to validate against XSD. Exception: ${e.getMessage}")
+        logger.warn(s"Failure to validate against XSD. Exception: ${e.getMessage}")
         Future.successful(SubmissionFailureExternal)
       }
     }

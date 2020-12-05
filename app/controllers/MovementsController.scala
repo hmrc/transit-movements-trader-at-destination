@@ -21,6 +21,7 @@ import audit.AuditType
 import cats.data.NonEmptyList
 import controllers.actions._
 import javax.inject.Inject
+import logging.Logging
 import models.MessageStatus.SubmissionSucceeded
 import models.ArrivalId
 import models.ArrivalStatus
@@ -30,7 +31,6 @@ import models.ResponseArrivals
 import models.SubmissionProcessingResult._
 import models.request.ArrivalRequest
 import models.response.ResponseArrival
-import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
@@ -56,7 +56,8 @@ class MovementsController @Inject()(
   auditService: AuditService,
   validateMessageSenderNode: ValidateMessageSenderNodeFilter
 )(implicit ec: ExecutionContext)
-    extends BackendController(cc) {
+    extends BackendController(cc)
+    with Logging {
 
   private val allMessageUnsent: NonEmptyList[MovementMessage] => Boolean =
     _.map(_.optStatus).forall {
@@ -85,7 +86,7 @@ class MovementsController @Inject()(
                       .withHeaders("Location" -> routes.MovementsController.getArrival(arrival.arrivalId).url)
                 }
             case Left(error) =>
-              Logger.error(s"Failed to create ArrivalMovementWithStatus with the following error: $error")
+              logger.error(s"Failed to create ArrivalMovementWithStatus with the following error: $error")
               Future.successful(BadRequest(s"Failed to create ArrivalMovementWithStatus with the following error: $error"))
           }
         case _ =>
@@ -112,12 +113,12 @@ class MovementsController @Inject()(
                     }
                   }
               case Left(error) =>
-                Logger.error(s"Failed to create ArrivalMovement with the following error: $error")
+                logger.error(s"Failed to create ArrivalMovement with the following error: $error")
                 Future.successful(BadRequest(s"Failed to create ArrivalMovement with the following error: $error"))
             }
             .recover {
               case error =>
-                Logger.error(s"Failed to create ArrivalMovement with the following error: $error")
+                logger.error(s"Failed to create ArrivalMovement with the following error: $error")
                 InternalServerError
             }
       }
@@ -142,7 +143,7 @@ class MovementsController @Inject()(
                   .withHeaders("Location" -> routes.MovementsController.getArrival(request.arrival.arrivalId).url)
             }
         case Left(error) =>
-          Logger.error(s"Failed to create message and MovementReferenceNumber with error: $error")
+          logger.error(s"Failed to create message and MovementReferenceNumber with error: $error")
           Future.successful(BadRequest(s"Failed to create message and MovementReferenceNumber with error: $error"))
       }
   }
