@@ -41,10 +41,9 @@ class ValidateMessageSenderNodeFilter extends Logging {
                 logger.warn("MesSenMES3 should not exist in body")
                 Future.successful(Some(BadRequest(HtmlFormat.empty)))
               }
-            case _ => {
-              logger.warn("Invalid body")
+            case invalidBody =>
+              logger.warn(s"Invalid request body. Expected XML (NodeSeq) got: ${invalidBody.getClass}")
               Future.successful(Some(BadRequest(HtmlFormat.empty)))
-            }
           }
         }
         case _ => Future.successful(Some(BadRequest(HtmlFormat.empty)))

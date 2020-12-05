@@ -31,7 +31,7 @@ class ErrorHandler extends HttpErrorHandler with Logging {
   }
 
   override def onServerError(request: RequestHeader, ex: Throwable): Future[Result] = {
-    logger.warn(s"[onServerError], error for (${request.method}) [${request.uri}] with error: ${ex.getStackTrace}")
+    logger.warn(s"[onServerError], error for (${request.method}) [${request.uri}] with error: ${ex.getMessage}")
     Future.successful(InternalServerError("A server error occurred: " + ex.getMessage))
   }
 }
