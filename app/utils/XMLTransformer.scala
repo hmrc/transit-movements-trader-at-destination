@@ -17,17 +17,17 @@
 package utils
 
 import cats.data.ReaderT
+import logging.Logging
 import models.ArrivalId
 import models.MessageSender
 import models.ParseError
-import play.api.Logger
 import services.XmlMessageParser.ParseHandler
 
 import scala.xml._
 import scala.xml.transform.RewriteRule
 import scala.xml.transform.RuleTransformer
 
-object XMLTransformer {
+object XMLTransformer extends Logging {
 
   case class MesSenMES3Failure(message: String) extends ParseError
 
@@ -41,7 +41,7 @@ object XMLTransformer {
           val messageSender: MessageSender = MessageSender(arrivalId, correlationId)
           Right(XMLTransformer.addXmlNode("SynVerNumMES2", "MesSenMES3", messageSender.toString, body))
         } else {
-          Logger.error(s"Failed to add MesSenMES3 node with warning: ${MesSenMES3Failure(s"Couldn't find SynVerNumMES2 node")}")
+          logger.error(s"Failed to add MesSenMES3 node with warning: ${MesSenMES3Failure(s"Couldn't find SynVerNumMES2 node")}")
           Left(MesSenMES3Failure(s"Failed to set MesSenMES3 because SynVerNumMES2 is missing"))
         }
     }

@@ -26,6 +26,7 @@ import connectors.MessageConnector.EisSubmissionResult.EisSubmissionSuccessful
 import connectors.MessageConnector.EisSubmissionResult.ErrorInPayload
 import connectors.MessageConnector.EisSubmissionResult.VirusFoundOrInvalidToken
 import javax.inject.Inject
+import logging.Logging
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalIdSelector
@@ -40,7 +41,6 @@ import models.MessageStatusUpdate
 import models.MovementMessageWithStatus
 import models.MovementReferenceNumber
 import models.SubmissionProcessingResult
-import play.api.Logger
 import repositories.ArrivalMovementRepository
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -52,9 +52,8 @@ import scala.util.Success
 class SubmitMessageService @Inject()(
   arrivalMovementRepository: ArrivalMovementRepository,
   messageConnector: MessageConnector,
-)(implicit ec: ExecutionContext) {
-
-  val logger = Logger(this.getClass)
+)(implicit ec: ExecutionContext)
+    extends Logging {
 
   def submitMessage(arrivalId: ArrivalId, messageId: MessageId, message: MovementMessageWithStatus, arrivalStatus: ArrivalStatus)(
     implicit hc: HeaderCarrier): Future[SubmissionProcessingResult] =

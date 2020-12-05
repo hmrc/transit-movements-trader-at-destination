@@ -14,25 +14,11 @@
  * limitations under the License.
  */
 
-package utils
+package logging
 
-import logging.Logging
-import org.json.XML
-import play.api.libs.json.JsObject
-import play.api.libs.json.Json
+import play.api.Logger
 
-import scala.util.Failure
-import scala.util.Success
-import scala.util.Try
+trait Logging {
 
-object JsonHelper extends Logging {
-
-  def convertXmlToJson(xml: String): JsObject =
-    Try(Json.parse(XML.toJSONObject(xml).toString).as[JsObject]) match {
-      case Success(data) => data
-      case Failure(error) =>
-        logger.error(s"Failed to convert xml to json with error: ${error.getMessage}")
-        Json.obj()
-    }
-
+  protected val logger: Logger = Logger(s"application.${this.getClass.getCanonicalName}")
 }

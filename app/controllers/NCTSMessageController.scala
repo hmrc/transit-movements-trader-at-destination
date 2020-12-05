@@ -19,11 +19,11 @@ package controllers
 import audit.AuditService
 import controllers.actions.GetArrivalForWriteActionProvider
 import javax.inject.Inject
+import logging.Logging
 import models.MessageInbound
 import models.MessageSender
 import models.SubmissionProcessingResult._
 import models.request.actions.InboundMessageTransformerInterface
-import play.api.Logger
 import play.api.mvc.Action
 import play.api.mvc.ControllerComponents
 import play.api.mvc.Result
@@ -38,7 +38,8 @@ class NCTSMessageController @Inject()(cc: ControllerComponents,
                                       inboundMessage: InboundMessageTransformerInterface,
                                       auditService: AuditService,
                                       saveMessageService: SaveMessageService)(implicit ec: ExecutionContext)
-    extends BackendController(cc) {
+    extends BackendController(cc)
+    with Logging {
 
   def post(messageSender: MessageSender): Action[NodeSeq] = (getArrival(messageSender.arrivalId)(parse.xml) andThen inboundMessage).async {
     implicit request =>
@@ -56,14 +57,13 @@ class NCTSMessageController @Inject()(cc: ControllerComponents,
 
   }
 
-  //TODO: Should we log and return all 400/500s from a single place?
   private def internalServerError(message: String): Result = {
-    Logger.error(message)
+    logger.error(message)
     InternalServerError(message)
   }
 
   private def badRequestError(message: String): Result = {
-    Logger.warn(message)
+    logger.warn(message)
     BadRequest(message)
   }
 

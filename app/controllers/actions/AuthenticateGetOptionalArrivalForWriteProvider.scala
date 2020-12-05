@@ -17,9 +17,9 @@
 package controllers.actions
 
 import javax.inject.Inject
+import logging.Logging
 import models.request.AuthenticatedOptionalArrivalRequest
 import models.request.AuthenticatedRequest
-import play.api.Logger
 import play.api.mvc._
 import play.api.mvc.Results.BadRequest
 import play.api.mvc.Results.InternalServerError
@@ -51,14 +51,15 @@ class AuthenticateGetOptionalArrivalForWriteAction(
   arrivalMovementRepository: ArrivalMovementRepository,
   lockRepository: LockRepository,
   implicit protected val executionContext: ExecutionContext
-) extends ActionFunction[AuthenticatedRequest, AuthenticatedOptionalArrivalRequest] {
+) extends ActionFunction[AuthenticatedRequest, AuthenticatedOptionalArrivalRequest]
+    with Logging {
 
   override def invokeBlock[A](request: AuthenticatedRequest[A], block: AuthenticatedOptionalArrivalRequest[A] => Future[Result]): Future[Result] =
     request.body match {
       case body: NodeSeq =>
         XmlMessageParser.mrnR(body) match {
           case Left(error) =>
-            Logger.error(s"Failed to retrieve MovementReferenceNumber with error: $error")
+            logger.error(s"Failed to retrieve MovementReferenceNumber with error: $error")
             Future.successful(BadRequest(s"Failed to retrieve MovementReferenceNumber with error: $error"))
 
           case Right(mrn) => {
@@ -88,7 +89,7 @@ class AuthenticateGetOptionalArrivalForWriteAction(
           }
         }
       case invalidBody =>
-        Logger.warn(s"Invalid request body: ${invalidBody.getClass}")
+        logger.warn(s"Invalid request body. Expected XML (NodeSeq) got: ${invalidBody.getClass}")
         Future.successful(BadRequest(s"Invalid request body: ${invalidBody.getClass}"))
     }
 }

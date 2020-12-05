@@ -16,7 +16,7 @@
 
 package config
 
-import play.api.Logger
+import logging.Logging
 import play.api.http.HttpErrorHandler
 import play.api.mvc.RequestHeader
 import play.api.mvc.Result
@@ -24,14 +24,14 @@ import play.api.mvc.Results._
 
 import scala.concurrent.Future
 
-class ErrorHandler extends HttpErrorHandler {
+class ErrorHandler extends HttpErrorHandler with Logging {
   override def onClientError(request: RequestHeader, statusCode: Int, message: String): Future[Result] = {
-    Logger.warn(s"[ErrorHandler][onClientError], error for (${request.method}) [${request.uri}] with status: $statusCode and message: $message")
+    logger.warn(s"[onClientError], error for (${request.method}) [${request.uri}] with status: $statusCode and message: $message")
     Future.successful(Status(statusCode)(message))
   }
 
   override def onServerError(request: RequestHeader, ex: Throwable): Future[Result] = {
-    Logger.warn(s"[ErrorHandler][onServerError], error for (${request.method}) [${request.uri}] with error: ${ex.getStackTrace}")
+    logger.warn(s"[onServerError], error for (${request.method}) [${request.uri}] with error: ${ex.getMessage}")
     Future.successful(InternalServerError("A server error occurred: " + ex.getMessage))
   }
 }

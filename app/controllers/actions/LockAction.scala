@@ -17,8 +17,8 @@
 package controllers.actions
 
 import javax.inject.Inject
+import logging.Logging
 import models.ArrivalId
-import play.api.Logger
 import play.api.mvc._
 import play.api.mvc.Results.InternalServerError
 import play.api.mvc.Results.Locked
@@ -43,7 +43,8 @@ private[actions] class LockAction(
   lockRepository: LockRepository,
   val parser: BodyParsers.Default
 ) extends ActionBuilder[Request, AnyContent]
-    with ActionFunction[Request, Request] {
+    with ActionFunction[Request, Request]
+    with Logging {
 
   override def invokeBlock[A](request: Request[A], block: Request[A] => Future[Result]): Future[Result] =
     lockRepository.lock(arrivalId).flatMap {
@@ -61,7 +62,7 @@ private[actions] class LockAction(
               lockRepository.unlock(arrivalId).map {
                 _ =>
                   {
-                    Logger.error(s"Failed to lock record - $e")
+                    logger.error(s"Failed to lock record", e)
                     InternalServerError
                   }
               }
