@@ -89,7 +89,7 @@ class AuthenticateGetOptionalArrivalForWriteAction(
           }
         }
       case invalidBody =>
-        logger.warn(s"Invalid request body: ${invalidBody.getClass}")
+        logger.warn(s"Invalid request body. Expected XML (NodeSeq) got: ${invalidBody.getClass}")
         Future.successful(BadRequest(s"Invalid request body: ${invalidBody.getClass}"))
     }
 }
