@@ -44,7 +44,7 @@ object ResponseArrival {
       arrival.movementReferenceNumber,
       arrival.status,
       arrival.created,
-      arrival.updated
+      updated = arrival.lastUpdated
     )
 
   implicit val writes: OWrites[ResponseArrival] = Json.writes[ResponseArrival]
