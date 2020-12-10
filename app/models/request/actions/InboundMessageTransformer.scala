@@ -39,10 +39,17 @@ class InboundMessageTransformer @Inject()(implicit ec: ExecutionContext) extends
 
   override protected def refine[A](request: ArrivalRequest[A]): Future[Either[Result, InboundRequest[A]]] = {
 
+    logger.debug(s"CTC Headers ${request.headers}")
+
     messageResponse(request.headers.get("X-Message-Type")) match {
       case Some(response) =>
+        logger.debug(s"X-Message-Type is ${request.headers.get("X-Message-Type")}")
+        logger.debug(s"Message type code ${response.messageType.code}")
+
         request.arrival.status.transition(response.messageReceived) match {
           case Right(nextState) =>
+            logger.debug(s"Next state $nextState")
+
             Future.successful(
               Right(InboundRequest(MessageInbound(response, nextState), request))
             )
@@ -50,6 +57,8 @@ class InboundMessageTransformer @Inject()(implicit ec: ExecutionContext) extends
             Future.successful(Left(badRequestError(error.reason)))
         }
       case None =>
+        logger.warn(s"Unsupported X-Message-Type ${request.headers.get("X-Message-Type")}")
+
         Future.successful(
           Left(badRequestError(s"Unsupported X-Message-Type: ${request.headers.get("X-Message-Type")}"))
         )
