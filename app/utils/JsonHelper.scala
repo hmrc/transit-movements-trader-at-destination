@@ -29,13 +29,13 @@ import scala.util.Try
 class JsonHelper @Inject()(messageTranslation: MessageTranslation) extends Logging {
 
   def convertXmlToJson(xml: String): JsObject =
-    Try(Json.parse(translateMessage(xml)).as[JsObject]) match {
+    Try(translateMessage(xml)) match {
       case Success(data) => data
       case Failure(error) =>
         logger.error(s"Failed to convert xml to json with error: ${error.getMessage}")
         Json.obj()
     }
 
-  private def translateMessage(xml: String): String =
-    messageTranslation.translate(XML.toJSONObject(xml).toString)
+  private def translateMessage(xml: String): JsObject =
+    messageTranslation.translate(Json.parse(XML.toJSONObject(xml).toString).as[JsObject])
 }

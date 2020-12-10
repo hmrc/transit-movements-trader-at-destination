@@ -19,10 +19,12 @@ package utils
 import config.AppConfig
 import javax.inject.Inject
 import play.api.Environment
+import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
 
 import scala.io.Source
+import scala.util.matching.Regex
 
 class MessageTranslation @Inject()(env: Environment, config: AppConfig) {
 
@@ -36,11 +38,18 @@ class MessageTranslation @Inject()(env: Environment, config: AppConfig) {
     Json.parse(json).as[List[NodeMap]]
   }
 
-  def translate(input: String): String =
-    nodes.foldLeft(input) {
+  def translate(input: JsObject): JsObject = {
+
+    def regex(key: String): Regex = s""""$key" ?:""".r
+    val inputString               = input.toString
+
+    val translated = nodes.foldLeft(inputString) {
       (current, node) =>
-        current.replace(node.field, node.description)
+        regex(node.field).replaceAllIn(current, s""""${node.description}" :""")
     }
+
+    Json.parse(translated).as[JsObject]
+  }
 }
 
 case class NodeMap(field: String, description: String)

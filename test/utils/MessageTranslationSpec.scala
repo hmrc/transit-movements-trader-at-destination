@@ -19,6 +19,7 @@ package utils
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.libs.json.Json
 import play.api.test.Helpers.running
 
 class MessageTranslationSpec extends AnyFreeSpec with Matchers {
@@ -28,16 +29,71 @@ class MessageTranslationSpec extends AnyFreeSpec with Matchers {
 
   ".translate" - {
 
-    "must replace all occurrences of strings in the message translation file" in {
+    "must replace any JSON keys that exist the message translation file with their translation" in {
 
       val app = appBuilder.build()
 
       running(app) {
         val service = app.injector.instanceOf[MessageTranslation]
-        val input   = "field1, field1, field2, field3"
-        val result  = service.translate(input)
+        val inputJson = Json.obj(
+          "field1" -> 1,
+          "foo" -> Json.arr(
+            Json.obj("field2" -> 2),
+            Json.obj("field2" -> 3)
+          )
+        )
 
-        result mustEqual "Description 1, Description 1, Description 2, field3"
+        val expectedResultJson = Json.obj(
+          "Description 1" -> 1,
+          "foo" -> Json.arr(
+            Json.obj("Description 2" -> 2),
+            Json.obj("Description 2" -> 3)
+          )
+        )
+
+        val result = service.translate(inputJson)
+
+        result mustEqual expectedResultJson
+      }
+    }
+
+    "must not change any keys that aren't in the message translation file" in {
+
+      val app = appBuilder.build()
+
+      running(app) {
+        val service = app.injector.instanceOf[MessageTranslation]
+        val inputJson = Json.obj(
+          "foo" -> 1,
+          "bar" -> Json.arr(
+            Json.obj("baz" -> 2),
+            Json.obj("baz" -> 3)
+          )
+        )
+
+        val result = service.translate(inputJson)
+
+        result mustEqual inputJson
+      }
+    }
+
+    "must not change any JSON values" in {
+
+      val app = appBuilder.build()
+
+      running(app) {
+        val service = app.injector.instanceOf[MessageTranslation]
+        val inputJson = Json.obj(
+          "foo" -> "field1",
+          "bar" -> Json.arr(
+            Json.obj("baz" -> "field2"),
+            Json.obj("baz" -> "field2")
+          )
+        )
+
+        val result = service.translate(inputJson)
+
+        result mustEqual inputJson
       }
     }
   }
