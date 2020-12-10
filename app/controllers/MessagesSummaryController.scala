@@ -24,7 +24,7 @@ import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import services.ArrivalMessageSummaryService
-import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 class MessagesSummaryController @Inject()(
   authenticateForRead: AuthenticatedGetArrivalForReadActionProvider,

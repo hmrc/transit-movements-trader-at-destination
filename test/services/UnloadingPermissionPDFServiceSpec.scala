@@ -16,56 +16,53 @@
 
 package services
 
-import akka.util.ByteString
 import base.SpecBase
 import connectors.ManageDocumentsConnector
 import generators.ModelGenerators
-import models.WSError.{NotFoundError, OtherError}
+import models.WSError.NotFoundError
+import models.WSError.OtherError
 import models.response.ResponseMovementMessage
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
-import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.inject.bind
 import play.api.libs.ws.ahc.AhcWSResponse
+import play.api.libs.ws.ahc.cache.CacheableHttpResponseBodyPart
+import play.api.libs.ws.ahc.cache.CacheableHttpResponseStatus
 import play.api.test.Helpers.running
+import play.shaded.ahc.org.asynchttpclient.Response
+import play.shaded.ahc.org.asynchttpclient.uri.Uri
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class UnloadingPermissionPDFServiceSpec extends SpecBase with BeforeAndAfterEach with ModelGenerators with ScalaCheckDrivenPropertyChecks {
-
-  private val mockMessageRetrievalService = mock[MessageRetrievalService]
-  private val mockManageDocumentConnector = mock[ManageDocumentsConnector]
-  private val mockWsrResponse             = mock[AhcWSResponse]
-
-  override def beforeEach(): Unit = {
-    super.beforeEach()
-    reset(mockMessageRetrievalService)
-    reset(mockManageDocumentConnector)
-    reset(mockWsrResponse)
-  }
+class UnloadingPermissionPDFServiceSpec extends SpecBase with ModelGenerators with ScalaCheckDrivenPropertyChecks {
 
   "UnloadingPermissionPDFService" - {
 
+    val mockMessageRetrievalService = mock[MessageRetrievalService]
+    val mockManageDocumentConnector = mock[ManageDocumentsConnector]
+
     "getPDF" - {
 
-      "must return Left with OtherError when connector returns a result other than OK" in {
+      "must return Right with a PDF" in {
 
         val genErrorResponse = Gen.oneOf(300, 500)
 
-        forAll(genArrivalWithSuccessfulArrival, arbitrary[ResponseMovementMessage], genErrorResponse) {
-          (arrival, responseMovementMessage, errorCode) =>
+        forAll(genArrivalWithSuccessfulArrival, arbitrary[ResponseMovementMessage], arbitrary[Array[Byte]], genErrorResponse) {
+          (arrival, responseMovementMessage, pdf, errorCode) =>
             when(mockMessageRetrievalService.getUnloadingPermission(any()))
               .thenReturn(Some(responseMovementMessage))
 
-            when(mockWsrResponse.status) thenReturn errorCode
-            when(mockWsrResponse.body) thenReturn "foo"
+            val wsResponse: AhcWSResponse = new AhcWSResponse(
+              new Response.ResponseBuilder()
+                .accumulate(new CacheableHttpResponseStatus(Uri.create("http://uri"), errorCode, "status text", "protocols!"))
+                .build())
 
             when(mockManageDocumentConnector.getUnloadingPermissionPdf(any())(any()))
-              .thenReturn(Future.successful(mockWsrResponse))
+              .thenReturn(Future.successful(wsResponse))
 
             val application = baseApplicationBuilder
               .overrides(bind[MessageRetrievalService].toInstance(mockMessageRetrievalService))
@@ -76,22 +73,25 @@ class UnloadingPermissionPDFServiceSpec extends SpecBase with BeforeAndAfterEach
               val service = application.injector.instanceOf[UnloadingPermissionPDFService]
               val result  = service.getPDF(arrival).futureValue
 
-              result.left.get mustBe OtherError(errorCode, "foo")
+              result.left.get mustBe OtherError(errorCode, "")
             }
         }
       }
 
-      "must return Right with a PDF when the connector returns OK with a PDF" in {
+      "must return Left with OtherError when connector returns another result" in {
         forAll(genArrivalWithSuccessfulArrival, arbitrary[ResponseMovementMessage], arbitrary[Array[Byte]]) {
           (arrival, responseMovementMessage, pdf) =>
             when(mockMessageRetrievalService.getUnloadingPermission(any()))
               .thenReturn(Some(responseMovementMessage))
 
-            when(mockWsrResponse.status) thenReturn 200
-            when(mockWsrResponse.bodyAsBytes) thenReturn ByteString(pdf)
+            val wsResponse: AhcWSResponse = new AhcWSResponse(
+              new Response.ResponseBuilder()
+                .accumulate(new CacheableHttpResponseStatus(Uri.create("http://uri"), 200, "status text", "protocols!"))
+                .accumulate(new CacheableHttpResponseBodyPart(pdf, true))
+                .build())
 
             when(mockManageDocumentConnector.getUnloadingPermissionPdf(any())(any()))
-              .thenReturn(Future.successful(mockWsrResponse))
+              .thenReturn(Future.successful(wsResponse))
 
             val application = baseApplicationBuilder
               .overrides(bind[MessageRetrievalService].toInstance(mockMessageRetrievalService))
