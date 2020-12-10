@@ -48,7 +48,6 @@ class SaveMessageService @Inject()(arrivalMovementRepository: ArrivalMovementRep
               .addResponseMessage(messageSender.arrivalId, message, arrivalStatus)
               .map {
                 case Success(_) => {
-                  logger.debug(s"Saved message successfully")
                   SubmissionSuccess
                 }
                 case Failure(error) => {
