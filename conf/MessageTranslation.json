@@ -1,0 +1,5 @@
+[
+  { "HEAHEA": "foo", "description": "HEADER" },
+  { "DocNumHEA5": "foo", "description": "Document/reference number (MRN)" },
+  { "CusSubPlaHEA66": "foo", "description": "Customs sub place" }
+]
