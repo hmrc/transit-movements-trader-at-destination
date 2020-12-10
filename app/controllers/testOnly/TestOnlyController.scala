@@ -24,7 +24,7 @@ import play.api.mvc.ControllerComponents
 import play.modules.reactivemongo.ReactiveMongoApi
 import reactivemongo.play.json.collection.JSONCollection
 import repositories.ArrivalMovementRepository
-import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.ExecutionContext
 

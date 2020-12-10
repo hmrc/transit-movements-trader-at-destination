@@ -38,7 +38,7 @@ import play.api.mvc.ControllerComponents
 import repositories.ArrivalMovementRepository
 import services.ArrivalMovementMessageService
 import services.SubmitMessageService
-import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
