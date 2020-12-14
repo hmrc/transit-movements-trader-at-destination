@@ -22,6 +22,7 @@ import audit.AuditType
 import controllers.actions.AuthenticatedGetArrivalForReadActionProvider
 import controllers.actions.AuthenticatedGetArrivalForWriteActionProvider
 import javax.inject.Inject
+import logging.Logging
 import metrics.MetricsService
 import metrics.Monitors
 import models.MessageStatus.SubmissionFailed
@@ -33,7 +34,6 @@ import models.SubmissionProcessingResult._
 import models.request.ArrivalRequest
 import models.response.ResponseArrivalWithMessages
 import models.response.ResponseMovementMessage
-import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
@@ -56,7 +56,8 @@ class MessagesController @Inject()(
   auditService: AuditService,
   metricsService: MetricsService
 )(implicit ec: ExecutionContext)
-    extends BackendController(cc) {
+    extends BackendController(cc)
+    with Logging {
 
   def post(arrivalId: ArrivalId): Action[NodeSeq] = (authenticateForWrite(arrivalId)(parse.xml) andThen validateMessageSenderNode.filter).async {
     implicit request: ArrivalRequest[NodeSeq] =>
@@ -82,7 +83,7 @@ class MessagesController @Inject()(
                 }
             }
         case Left(error) =>
-          Logger.error(s"Failed to create MovementMessageWithStatus with error: $error")
+          logger.error(s"Failed to create MovementMessageWithStatus with error: $error")
           Future.successful(BadRequest(s"Failed to create MovementMessageWithStatus with error: $error"))
       }
   }

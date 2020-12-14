@@ -18,6 +18,7 @@ package models.request.actions
 
 import com.google.inject.ImplementedBy
 import com.google.inject.Inject
+import logging.Logging
 import models.ArrivalRejectedResponse
 import models.GoodsReleasedResponse
 import models.MessageInbound
@@ -26,29 +27,28 @@ import models.MessageType
 import models.UnloadingPermissionResponse
 import models.UnloadingRemarksRejectedResponse
 import models.request.ArrivalRequest
-import play.api.Logger
 import play.api.mvc.Results.BadRequest
 import play.api.mvc._
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class InboundMessageTransformer @Inject()(implicit ec: ExecutionContext) extends InboundMessageTransformerInterface {
+class InboundMessageTransformer @Inject()(implicit ec: ExecutionContext) extends InboundMessageTransformerInterface with Logging {
 
   def executionContext: ExecutionContext = ec
 
   override protected def refine[A](request: ArrivalRequest[A]): Future[Either[Result, InboundRequest[A]]] = {
 
-    Logger.info(s"CTC Headers ${request.headers}")
+    logger.debug(s"CTC Headers ${request.headers}")
 
     messageResponse(request.headers.get("X-Message-Type")) match {
       case Some(response) =>
-        Logger.info(s"X-Message-Type is ${request.headers.get("X-Message-Type")}")
-        Logger.info(s"Message type code ${response.messageType.code}")
+        logger.debug(s"X-Message-Type is ${request.headers.get("X-Message-Type")}")
+        logger.debug(s"Message type code ${response.messageType.code}")
 
         request.arrival.status.transition(response.messageReceived) match {
           case Right(nextState) =>
-            Logger.info(s"Next state $nextState")
+            logger.debug(s"Next state $nextState")
 
             Future.successful(
               Right(InboundRequest(MessageInbound(response, nextState), request))
@@ -57,7 +57,7 @@ class InboundMessageTransformer @Inject()(implicit ec: ExecutionContext) extends
             Future.successful(Left(badRequestError(error.reason)))
         }
       case None =>
-        Logger.info(s"Unsupported X-Message-Type ${request.headers.get("X-Message-Type")}")
+        logger.warn(s"Unsupported X-Message-Type ${request.headers.get("X-Message-Type")}")
 
         Future.successful(
           Left(badRequestError(s"Unsupported X-Message-Type: ${request.headers.get("X-Message-Type")}"))
@@ -75,7 +75,7 @@ class InboundMessageTransformer @Inject()(implicit ec: ExecutionContext) extends
   }
 
   private def badRequestError(message: String): Result = {
-    Logger.error(message)
+    logger.error(message)
     BadRequest(message)
   }
 

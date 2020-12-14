@@ -46,7 +46,7 @@ object ResponseArrivalWithMessages {
       arrival.movementReferenceNumber,
       arrival.status,
       arrival.created,
-      arrival.updated,
+      updated = arrival.lastUpdated,
       arrival.messagesWithId
         .filterNot {
           case (message, _) => message.optStatus == Some(SubmissionFailed)

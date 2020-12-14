@@ -18,9 +18,9 @@ package controllers
 
 import controllers.actions.AuthenticatedGetArrivalForReadActionProvider
 import javax.inject.Inject
+import logging.Logging
 import models.ArrivalId
 import models.WSError._
-import play.api.Logger
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
@@ -34,9 +34,8 @@ class PDFGenerationController @Inject()(
   authenticateForRead: AuthenticatedGetArrivalForReadActionProvider,
   unloadingPermissionPDFService: UnloadingPermissionPDFService
 )(implicit ec: ExecutionContext)
-    extends BackendController(cc) {
-
-  private val logger: Logger = Logger("UnloadingRemarksPDF")
+    extends BackendController(cc)
+    with Logging {
 
   def getPDF(arrivalId: ArrivalId): Action[AnyContent] = authenticateForRead(arrivalId).async {
     implicit request =>

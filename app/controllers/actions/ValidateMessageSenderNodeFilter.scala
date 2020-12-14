@@ -15,7 +15,7 @@
  */
 
 package controllers.actions
-import play.api.Logger
+import logging.Logging
 import play.api.mvc.Results.BadRequest
 import play.api.mvc._
 import play.twirl.api.HtmlFormat
@@ -24,7 +24,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.xml.NodeSeq
 
-class ValidateMessageSenderNodeFilter {
+class ValidateMessageSenderNodeFilter extends Logging {
 
   def filter[R[_]](implicit ec: ExecutionContext): ActionFilter[R] = new ActionFilter[R] {
 
@@ -38,13 +38,12 @@ class ValidateMessageSenderNodeFilter {
               if ((nodeSeq \\ "MesSenMES3").isEmpty) {
                 Future.successful(None)
               } else {
-                Logger.warn("MesSenMES3 should not exist in body")
+                logger.warn("MesSenMES3 should not exist in body")
                 Future.successful(Some(BadRequest(HtmlFormat.empty)))
               }
-            case _ => {
-              Logger.warn("Invalid body")
+            case invalidBody =>
+              logger.warn(s"Invalid request body. Expected XML (NodeSeq) got: ${invalidBody.getClass}")
               Future.successful(Some(BadRequest(HtmlFormat.empty)))
-            }
           }
         }
         case _ => Future.successful(Some(BadRequest(HtmlFormat.empty)))
