@@ -20,6 +20,8 @@ import audit.AuditService
 import controllers.actions.GetArrivalForWriteActionProvider
 import javax.inject.Inject
 import logging.Logging
+import metrics.MetricsService
+import metrics.Monitors
 import models.MessageInbound
 import models.MessageSender
 import models.SubmissionProcessingResult._
@@ -37,7 +39,8 @@ class NCTSMessageController @Inject()(cc: ControllerComponents,
                                       getArrival: GetArrivalForWriteActionProvider,
                                       inboundMessage: InboundMessageTransformerInterface,
                                       auditService: AuditService,
-                                      saveMessageService: SaveMessageService)(implicit ec: ExecutionContext)
+                                      saveMessageService: SaveMessageService,
+                                      metricsService: MetricsService)(implicit ec: ExecutionContext)
     extends BackendController(cc)
     with Logging {
 
@@ -48,11 +51,17 @@ class NCTSMessageController @Inject()(cc: ControllerComponents,
       val processingResult               = saveMessageService.validateXmlAndSaveMessage(xml, messageSender, messageInbound.messageType, messageInbound.nextState)
 
       processingResult map {
-        case SubmissionSuccess =>
-          auditService.auditNCTSMessages(messageInbound.messageType, xml)
-          Ok
-        case SubmissionFailureInternal => internalServerError("Internal Submission Failure " + processingResult)
-        case SubmissionFailureExternal => badRequestError("External Submission Failure " + processingResult)
+        result =>
+          val counter = Monitors.countMessages(messageInbound.messageType.messageType, request.request.getChannel, result)
+          metricsService.inc(counter)
+
+          result match {
+            case SubmissionSuccess =>
+              auditService.auditNCTSMessages(messageInbound.messageType, xml)
+              Ok
+            case SubmissionFailureInternal => internalServerError("Internal Submission Failure " + processingResult)
+            case SubmissionFailureExternal => badRequestError("External Submission Failure " + processingResult)
+          }
       }
 
   }

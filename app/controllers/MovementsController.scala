@@ -22,6 +22,8 @@ import cats.data.NonEmptyList
 import controllers.actions._
 import javax.inject.Inject
 import logging.Logging
+import metrics.MetricsService
+import metrics.Monitors
 import models.MessageStatus.SubmissionSucceeded
 import models.ArrivalId
 import models.ArrivalStatus
@@ -54,7 +56,8 @@ class MovementsController @Inject()(
   authenticatedOptionalArrival: AuthenticatedGetOptionalArrivalForWriteActionProvider,
   authenticateForWrite: AuthenticatedGetArrivalForWriteActionProvider,
   auditService: AuditService,
-  validateMessageSenderNode: ValidateMessageSenderNodeFilter
+  validateMessageSenderNode: ValidateMessageSenderNodeFilter,
+  metricsService: MetricsService
 )(implicit ec: ExecutionContext)
     extends BackendController(cc)
     with Logging {
@@ -75,15 +78,21 @@ class MovementsController @Inject()(
               submitMessageService
                 .submitMessage(arrival.arrivalId, arrival.nextMessageId, message, ArrivalStatus.ArrivalSubmitted)
                 .map {
-                  case SubmissionFailureInternal => InternalServerError
-                  case SubmissionFailureExternal => BadGateway
-                  case submissionFailureRejected: SubmissionFailureRejected =>
-                    BadRequest(submissionFailureRejected.responseBody)
-                  case SubmissionSuccess =>
-                    auditService.auditEvent(AuditType.ArrivalNotificationSubmitted, request.body, request.getChannel)
-                    auditService.auditEvent(AuditType.MesSenMES3Added, message.message, request.getChannel)
-                    Accepted("Message accepted")
-                      .withHeaders("Location" -> routes.MovementsController.getArrival(arrival.arrivalId).url)
+                  result =>
+                    val counter = Monitors.countMessages(MessageType.ArrivalNotification, request.getChannel, result)
+                    metricsService.inc(counter)
+
+                    result match {
+                      case SubmissionFailureInternal => InternalServerError
+                      case SubmissionFailureExternal => BadGateway
+                      case submissionFailureRejected: SubmissionFailureRejected =>
+                        BadRequest(submissionFailureRejected.responseBody)
+                      case SubmissionSuccess =>
+                        auditService.auditEvent(AuditType.ArrivalNotificationSubmitted, request.body, request.getChannel)
+                        auditService.auditEvent(AuditType.MesSenMES3Added, message.message, request.getChannel)
+                        Accepted("Message accepted")
+                          .withHeaders("Location" -> routes.MovementsController.getArrival(arrival.arrivalId).url)
+                    }
                 }
             case Left(error) =>
               logger.error(s"Failed to create ArrivalMovementWithStatus with the following error: $error")

@@ -23,6 +23,8 @@ import controllers.actions.AuthenticatedGetArrivalForReadActionProvider
 import controllers.actions.AuthenticatedGetArrivalForWriteActionProvider
 import javax.inject.Inject
 import logging.Logging
+import metrics.MetricsService
+import metrics.Monitors
 import models.MessageStatus.SubmissionFailed
 import models.ArrivalId
 import models.ArrivalStatus
@@ -51,7 +53,8 @@ class MessagesController @Inject()(
   authenticateForRead: AuthenticatedGetArrivalForReadActionProvider,
   authenticateForWrite: AuthenticatedGetArrivalForWriteActionProvider,
   validateMessageSenderNode: ValidateMessageSenderNodeFilter,
-  auditService: AuditService
+  auditService: AuditService,
+  metricsService: MetricsService
 )(implicit ec: ExecutionContext)
     extends BackendController(cc)
     with Logging {
@@ -64,14 +67,20 @@ class MessagesController @Inject()(
           submitMessageService
             .submitMessage(arrivalId, request.arrival.nextMessageId, message, ArrivalStatus.UnloadingRemarksSubmitted)
             .map {
-              case SubmissionFailureInternal => InternalServerError
-              case SubmissionFailureExternal => BadGateway
-              case submissionFailureRejected: SubmissionFailureRejected =>
-                BadRequest(submissionFailureRejected.responseBody)
-              case SubmissionSuccess =>
-                auditService.auditEvent(AuditType.UnloadingRemarksSubmitted, request.body, request.getChannel)
-                Accepted("Message accepted")
-                  .withHeaders("Location" -> routes.MessagesController.getMessage(request.arrival.arrivalId, request.arrival.nextMessageId).url)
+              result =>
+                val counter = Monitors.countMessages(MessageType.UnloadingRemarks, request.getChannel, result)
+                metricsService.inc(counter)
+
+                result match {
+                  case SubmissionFailureInternal => InternalServerError
+                  case SubmissionFailureExternal => BadGateway
+                  case submissionFailureRejected: SubmissionFailureRejected =>
+                    BadRequest(submissionFailureRejected.responseBody)
+                  case SubmissionSuccess =>
+                    auditService.auditEvent(AuditType.UnloadingRemarksSubmitted, request.body, request.getChannel)
+                    Accepted("Message accepted")
+                      .withHeaders("Location" -> routes.MessagesController.getMessage(request.arrival.arrivalId, request.arrival.nextMessageId).url)
+                }
             }
         case Left(error) =>
           logger.error(s"Failed to create MovementMessageWithStatus with error: $error")
