@@ -140,7 +140,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
 
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
-        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
+        when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(arrival)))
 
         when(mockSubmitMessageService.submitMessage(any(), any(), any(), eqTo(ArrivalStatus.UnloadingRemarksSubmitted))(any()))
           .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionSuccess))
@@ -179,7 +179,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
 
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
-        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(None))
+        when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(None))
 
         val application = baseApplicationBuilder
           .overrides(
@@ -205,7 +205,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
 
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
-        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
+        when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(arrival)))
 
         when(mockSubmitMessageService.submitMessage(any(), any(), any(), any())(any()))
           .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureInternal))
@@ -233,7 +233,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
 
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
-        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
+        when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(arrival)))
 
         val application =
           baseApplicationBuilder
@@ -266,7 +266,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
 
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
-        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
+        when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(arrival)))
 
         val application =
           baseApplicationBuilder
@@ -294,7 +294,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
 
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
-        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
+        when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(arrival)))
 
         val application =
           baseApplicationBuilder
@@ -323,7 +323,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
 
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
-        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
+        when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(arrival)))
 
         when(mockSubmitMessageService.submitMessage(any(), any(), any(), any())(any()))
           .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureExternal))
@@ -352,7 +352,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
 
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
-        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
+        when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(arrival)))
 
         when(mockSubmitMessageService.submitMessage(any(), any(), any(), any())(any()))
           .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureRejected(ErrorInPayload.responseBody)))
@@ -381,7 +381,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
 
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
-        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
+        when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(arrival)))
 
         when(mockSubmitMessageService.submitMessage(any(), any(), any(), any())(any()))
           .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureInternal))
@@ -412,7 +412,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
 
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
 
-        when(mockArrivalMovementRepository.get(any()))
+        when(mockArrivalMovementRepository.get(any(), any()))
           .thenReturn(Future.successful(Some(arrival)))
 
         val application =
@@ -434,7 +434,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
         val arrival = Arbitrary.arbitrary[Arrival].sample.value.copy(messages = NonEmptyList.one(message), eoriNumber = "eori")
 
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
-        when(mockArrivalMovementRepository.get(any()))
+        when(mockArrivalMovementRepository.get(any(), any()))
           .thenReturn(Future.successful(Some(arrival)))
 
         val application =
@@ -454,7 +454,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
       "must return NOT FOUND" - {
         "when arrival is not found" in {
           val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
-          when(mockArrivalMovementRepository.get(any()))
+          when(mockArrivalMovementRepository.get(any(), any()))
             .thenReturn(Future.successful(None))
 
           val application =
@@ -475,7 +475,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           val arrival = Arbitrary.arbitrary[Arrival].sample.value.copy(messages = NonEmptyList.one(message), eoriNumber = "eori")
 
           val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
-          when(mockArrivalMovementRepository.get(any()))
+          when(mockArrivalMovementRepository.get(any(), any()))
             .thenReturn(Future.successful(Some(arrival)))
 
           val application =
@@ -496,7 +496,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           val arrival = Arbitrary.arbitrary[Arrival].sample.value.copy(messages = NonEmptyList.one(message), eoriNumber = "eori")
 
           val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
-          when(mockArrivalMovementRepository.get(any()))
+          when(mockArrivalMovementRepository.get(any(), any()))
             .thenReturn(Future.successful(Some(arrival)))
 
           val application =
@@ -517,7 +517,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           val arrival = Arbitrary.arbitrary[Arrival].sample.value.copy(messages = NonEmptyList.one(message), eoriNumber = "eori2")
 
           val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
-          when(mockArrivalMovementRepository.get(any()))
+          when(mockArrivalMovementRepository.get(any(), any()))
             .thenReturn(Future.successful(Some(arrival)))
 
           val application =
@@ -548,7 +548,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           val expectedArrival  = ResponseArrivalWithMessages.build(arrival).copy(messages = Seq(expectedMessages))
 
           val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
-          when(mockArrivalMovementRepository.get(any()))
+          when(mockArrivalMovementRepository.get(any(), any()))
             .thenReturn(Future.successful(Some(arrival)))
 
           val application =
@@ -574,7 +574,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           val expectedArrival  = ResponseArrivalWithMessages.build(arrival).copy(messages = Seq(expectedMessages))
 
           val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
-          when(mockArrivalMovementRepository.get(any()))
+          when(mockArrivalMovementRepository.get(any(), any()))
             .thenReturn(Future.successful(Some(arrival)))
 
           val application =
@@ -604,7 +604,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           val expectedArrival  = ResponseArrivalWithMessages.build(arrival).copy(messages = Seq(expectedMessage1, expectedMessage3))
 
           val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
-          when(mockArrivalMovementRepository.get(any()))
+          when(mockArrivalMovementRepository.get(any(), any()))
             .thenReturn(Future.successful(Some(arrival)))
 
           val application =
@@ -630,7 +630,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           val expectedArrival = ResponseArrivalWithMessages.build(arrival).copy(messages = Nil)
 
           val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
-          when(mockArrivalMovementRepository.get(any()))
+          when(mockArrivalMovementRepository.get(any(), any()))
             .thenReturn(Future.successful(Some(arrival)))
 
           val application =
@@ -651,7 +651,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
       "must return NOT FOUND" - {
         "when arrival is not found" in {
           val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
-          when(mockArrivalMovementRepository.get(any()))
+          when(mockArrivalMovementRepository.get(any(), any()))
             .thenReturn(Future.successful(None))
 
           val application =
@@ -672,7 +672,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           val arrival = Arbitrary.arbitrary[Arrival].sample.value.copy(messages = NonEmptyList.of(message), eoriNumber = "eori2")
 
           val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
-          when(mockArrivalMovementRepository.get(any()))
+          when(mockArrivalMovementRepository.get(any(), any()))
             .thenReturn(Future.successful(Some(arrival)))
 
           val application =

@@ -21,6 +21,7 @@ import logging.Logging
 import models.ArrivalId
 import models.request.ArrivalRequest
 import models.request.AuthenticatedRequest
+import models.request.ChannelUtil
 import play.api.mvc.ActionRefiner
 import play.api.mvc.Request
 import play.api.mvc.Result
@@ -46,7 +47,7 @@ private[actions] class GetArrivalAction(
     extends ActionRefiner[Request, ArrivalRequest] {
 
   override protected def refine[A](request: Request[A]): Future[Either[Result, ArrivalRequest[A]]] =
-    repository.get(arrivalId).map {
+    repository.get(arrivalId, ChannelUtil.getChannel(request)).map {
       case Some(arrival) =>
         Right(ArrivalRequest(request, arrival))
       case None =>
@@ -71,7 +72,7 @@ private[actions] class AuthenticatedGetArrivalAction(
 
   override protected def refine[A](request: AuthenticatedRequest[A]): Future[Either[Result, ArrivalRequest[A]]] =
     repository
-      .get(arrivalId)
+      .get(arrivalId, request.getChannel)
       .map {
         case Some(arrival) if arrival.eoriNumber == request.eoriNumber =>
           Right(ArrivalRequest(request.request, arrival))

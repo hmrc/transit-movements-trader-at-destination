@@ -63,7 +63,7 @@ class AuthenticateGetOptionalArrivalForWriteAction(
             Future.successful(BadRequest(s"Failed to retrieve MovementReferenceNumber with error: $error"))
 
           case Right(mrn) => {
-            arrivalMovementRepository.get(request.eoriNumber, mrn).flatMap {
+            arrivalMovementRepository.get(request.eoriNumber, mrn, request.getChannel).flatMap {
               case None => block(AuthenticatedOptionalArrivalRequest(request, None, request.eoriNumber))
               case Some(arrival) =>
                 lockRepository.lock(arrival.arrivalId).flatMap {

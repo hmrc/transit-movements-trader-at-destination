@@ -72,7 +72,7 @@ class GetArrivalForWriteActionProviderSpec
       val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
       val mockLockRepository            = mock[LockRepository]
 
-      when(mockArrivalMovementRepository.get(any())) thenReturn Future.successful(Some(arrival))
+      when(mockArrivalMovementRepository.get(any(), any())) thenReturn Future.successful(Some(arrival))
       when(mockLockRepository.lock(any())) thenReturn Future.successful(true)
       when(mockLockRepository.unlock(any())) thenReturn Future.successful(())
 
@@ -103,7 +103,7 @@ class GetArrivalForWriteActionProviderSpec
       val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
       val mockLockRepository            = mock[LockRepository]
 
-      when(mockArrivalMovementRepository.get(any())) thenReturn Future.successful(None)
+      when(mockArrivalMovementRepository.get(any(), any())) thenReturn Future.successful(None)
       when(mockLockRepository.lock(any())) thenReturn Future.successful(true)
       when(mockLockRepository.unlock(any())) thenReturn Future.successful(())
 
@@ -150,7 +150,7 @@ class GetArrivalForWriteActionProviderSpec
 
         status(result) mustEqual LOCKED
         verify(mockLockRepository, never).unlock(any())
-        verify(mockArrivalMovementRepository, never).get(any())
+        verify(mockArrivalMovementRepository, never).get(any(), any())
       }
     }
 
@@ -161,7 +161,7 @@ class GetArrivalForWriteActionProviderSpec
       val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
       val mockLockRepository            = mock[LockRepository]
 
-      when(mockArrivalMovementRepository.get(any())) thenReturn Future.successful(Some(arrival))
+      when(mockArrivalMovementRepository.get(any(), any())) thenReturn Future.successful(Some(arrival))
       when(mockLockRepository.lock(any())) thenReturn Future.successful(true)
       when(mockLockRepository.unlock(any())) thenReturn Future.successful(())
 

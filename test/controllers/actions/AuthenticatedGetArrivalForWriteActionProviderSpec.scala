@@ -109,7 +109,7 @@ class AuthenticatedGetArrivalForWriteActionProviderSpec
 
         when(mockAuthConnector.authorise[Enrolments](any(), any())(any(), any()))
           .thenReturn(Future.successful(validEnrolments))
-        when(mockArrivalMovementRepository.get(any())) thenReturn Future.successful(Some(arrival))
+        when(mockArrivalMovementRepository.get(any(), any())) thenReturn Future.successful(Some(arrival))
         when(mockLockRepository.lock(any())) thenReturn Future.successful(true)
         when(mockLockRepository.unlock(any())) thenReturn Future.successful(())
 
@@ -144,7 +144,7 @@ class AuthenticatedGetArrivalForWriteActionProviderSpec
 
         when(mockAuthConnector.authorise[Enrolments](any(), any())(any(), any()))
           .thenReturn(Future.successful(validEnrolments))
-        when(mockArrivalMovementRepository.get(any())) thenReturn Future.successful(Some(arrival))
+        when(mockArrivalMovementRepository.get(any(), any())) thenReturn Future.successful(Some(arrival))
         when(mockLockRepository.lock(any())) thenReturn Future.successful(true)
         when(mockLockRepository.unlock(any())) thenReturn Future.successful(())
 
@@ -178,7 +178,7 @@ class AuthenticatedGetArrivalForWriteActionProviderSpec
 
         when(mockAuthConnector.authorise[Enrolments](any(), any())(any(), any()))
           .thenReturn(Future.successful(validEnrolments))
-        when(mockArrivalMovementRepository.get(any())) thenReturn Future.successful(None)
+        when(mockArrivalMovementRepository.get(any(), any())) thenReturn Future.successful(None)
         when(mockLockRepository.lock(any())) thenReturn Future.successful(true)
         when(mockLockRepository.unlock(any())) thenReturn Future.successful(())
 
@@ -212,7 +212,7 @@ class AuthenticatedGetArrivalForWriteActionProviderSpec
 
         when(mockAuthConnector.authorise[Enrolments](any(), any())(any(), any()))
           .thenReturn(Future.successful(validEnrolments))
-        when(mockArrivalMovementRepository.get(any())) thenReturn Future.successful(Some(arrival))
+        when(mockArrivalMovementRepository.get(any(), any())) thenReturn Future.successful(Some(arrival))
         when(mockLockRepository.lock(any())) thenReturn Future.successful(true)
         when(mockLockRepository.unlock(any())) thenReturn Future.successful(())
 

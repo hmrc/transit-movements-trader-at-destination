@@ -100,7 +100,7 @@ class MovementsController @Inject()(
           }
         case _ =>
           arrivalMovementService
-            .makeArrivalMovement(request.eoriNumber, request.body)
+            .makeArrivalMovement(request.eoriNumber, request.body, request.getChannel)
             .flatMap {
               case Right(arrival) =>
                 submitMessageService
@@ -165,7 +165,7 @@ class MovementsController @Inject()(
   def getArrivals(): Action[AnyContent] = authenticate().async {
     implicit request =>
       arrivalMovementRepository
-        .fetchAllArrivals(request.eoriNumber)
+        .fetchAllArrivals(request.eoriNumber, request.getChannel)
         .map {
           allArrivals =>
             Ok(Json.toJsObject(ResponseArrivals(allArrivals.map {

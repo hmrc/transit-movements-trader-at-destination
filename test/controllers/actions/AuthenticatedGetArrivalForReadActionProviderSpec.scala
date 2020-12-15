@@ -101,7 +101,7 @@ class AuthenticatedGetArrivalForReadActionProviderSpec
 
         when(mockAuthConnector.authorise[Enrolments](any(), any())(any(), any()))
           .thenReturn(Future.successful(validEnrolments))
-        when(mockArrivalMovementRepository.get(any())) thenReturn Future.successful(Some(arrival))
+        when(mockArrivalMovementRepository.get(any(), any())) thenReturn Future.successful(Some(arrival))
 
         val application = new GuiceApplicationBuilder()
           .overrides(
@@ -130,7 +130,7 @@ class AuthenticatedGetArrivalForReadActionProviderSpec
 
         when(mockAuthConnector.authorise[Enrolments](any(), any())(any(), any()))
           .thenReturn(Future.successful(validEnrolments))
-        when(mockArrivalMovementRepository.get(any())) thenReturn Future.successful(Some(arrival))
+        when(mockArrivalMovementRepository.get(any(), any())) thenReturn Future.successful(Some(arrival))
 
         val application = new GuiceApplicationBuilder()
           .overrides(
@@ -158,7 +158,7 @@ class AuthenticatedGetArrivalForReadActionProviderSpec
 
         when(mockAuthConnector.authorise[Enrolments](any(), any())(any(), any()))
           .thenReturn(Future.successful(validEnrolments))
-        when(mockArrivalMovementRepository.get(any())) thenReturn Future.successful(None)
+        when(mockArrivalMovementRepository.get(any(), any())) thenReturn Future.successful(None)
 
         val application = new GuiceApplicationBuilder()
           .overrides(
@@ -185,7 +185,7 @@ class AuthenticatedGetArrivalForReadActionProviderSpec
 
         when(mockAuthConnector.authorise[Enrolments](any(), any())(any(), any()))
           .thenReturn(Future.successful(validEnrolments))
-        when(mockArrivalMovementRepository.get(any())) thenReturn Future.failed(new Exception)
+        when(mockArrivalMovementRepository.get(any(), any())) thenReturn Future.failed(new Exception)
 
         val application = new GuiceApplicationBuilder()
           .overrides(

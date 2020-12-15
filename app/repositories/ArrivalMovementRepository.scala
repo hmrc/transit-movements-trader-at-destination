@@ -29,6 +29,7 @@ import models.ArrivalModifier
 import models.ArrivalSelector
 import models.ArrivalStatus
 import models.ArrivalStatusUpdate
+import models.ChannelType
 import models.CompoundStatusUpdate
 import models.MessageId
 import models.MessageStatus
@@ -62,6 +63,11 @@ class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi, appConfig: Ap
     name = Some("eori-number-index")
   )
 
+  private val channelIndex: Aux[BSONSerializationPack.type] = IndexUtils.index(
+    key = Seq("channelType" -> IndexType.Ascending),
+    name = Some("channel-type-index")
+  )
+
   private val cacheTtl = appConfig.cacheTtl
 
   private val lastUpdatedIndex: Aux[BSONSerializationPack.type] = IndexUtils.index(
@@ -76,6 +82,7 @@ class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi, appConfig: Ap
         jsonCollection =>
           for {
             _   <- jsonCollection.indexesManager.ensure(index)
+            _   <- jsonCollection.indexesManager.ensure(channelIndex)
             res <- jsonCollection.indexesManager.ensure(lastUpdatedIndex)
           } yield res
       }
@@ -94,10 +101,11 @@ class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi, appConfig: Ap
         .map(_ => ())
     }
 
-  def get(arrivalId: ArrivalId): Future[Option[Arrival]] = {
+  def get(arrivalId: ArrivalId, channelFilter: ChannelType): Future[Option[Arrival]] = {
 
     val selector = Json.obj(
-      "_id" -> arrivalId
+      "_id"     -> arrivalId,
+      "channel" -> channelFilter
     )
 
     metricsService.timeAsyncCall(Monitors.GetArrivalByIdMonitor) {
@@ -108,10 +116,11 @@ class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi, appConfig: Ap
     }
   }
 
-  def get(eoriNumber: String, mrn: MovementReferenceNumber): Future[Option[Arrival]] = {
+  def get(eoriNumber: String, mrn: MovementReferenceNumber, channelFilter: ChannelType): Future[Option[Arrival]] = {
     val selector = Json.obj(
       "movementReferenceNumber" -> mrn.value,
-      "eoriNumber"              -> eoriNumber
+      "eoriNumber"              -> eoriNumber,
+      "channel"                 -> channelFilter
     )
 
     metricsService.timeAsyncCall(Monitors.GetArrivalByMrnMonitor) {
@@ -122,10 +131,10 @@ class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi, appConfig: Ap
     }
   }
 
-  def fetchAllArrivals(eoriNumber: String): Future[Seq[Arrival]] =
+  def fetchAllArrivals(eoriNumber: String, channelFilter: ChannelType): Future[Seq[Arrival]] =
     metricsService.timeAsyncCall(Monitors.GetArrivalsForEoriMonitor) {
       collection.flatMap {
-        _.find(Json.obj("eoriNumber" -> eoriNumber), Option.empty[JsObject])
+        _.find(Json.obj("eoriNumber" -> eoriNumber, "channel" -> channelFilter), Option.empty[JsObject])
           .cursor[Arrival]()
           .collect[Seq](-1, Cursor.FailOnError())
           .map {

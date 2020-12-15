@@ -26,6 +26,7 @@ import models.MessageStatus.SubmissionPending
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalStatus
+import models.ChannelType.api
 import models.MessageSender
 import models.MessageStatus
 import models.MessageType
@@ -90,6 +91,7 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
 
       val expectedArrival = Arrival(
         arrivalId = id,
+        channel = api,
         movementReferenceNumber = mrn,
         eoriNumber = eori,
         status = ArrivalStatus.Initialized,
@@ -102,7 +104,7 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
         nextMessageCorrelationId = 2
       )
 
-      service.makeArrivalMovement(eori, movement).futureValue.right.get mustEqual expectedArrival
+      service.makeArrivalMovement(eori, movement, api).futureValue.right.get mustEqual expectedArrival
 
       application.stop()
     }
@@ -135,7 +137,7 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
           </HEAHEA>
         </Foo>
 
-      service.makeArrivalMovement(eori, invalidPayload).futureValue.left.get mustBe an[InvalidRootNode]
+      service.makeArrivalMovement(eori, invalidPayload, api).futureValue.left.get mustBe an[InvalidRootNode]
 
       application.stop()
     }

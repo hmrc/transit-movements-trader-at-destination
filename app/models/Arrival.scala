@@ -24,6 +24,7 @@ import cats.implicits._
 
 case class Arrival(
   arrivalId: ArrivalId,
+  channel: ChannelType,
   movementReferenceNumber: MovementReferenceNumber,
   eoriNumber: String,
   status: ArrivalStatus,
@@ -53,6 +54,7 @@ object Arrival {
   implicit val readsArrival: Reads[Arrival] =
     (
       (__ \ "_id").read[ArrivalId] and
+        (__ \ "channel").read[ChannelType] and
         (__ \ "movementReferenceNumber").read[MovementReferenceNumber] and
         (__ \ "eoriNumber").read[String] and
         (__ \ "status").read[ArrivalStatus] and
@@ -66,6 +68,7 @@ object Arrival {
   implicit def writesArrival(implicit write: Writes[LocalDateTime]): OWrites[Arrival] =
     (
       (__ \ "_id").write[ArrivalId] and
+        (__ \ "channel").write[ChannelType] and
         (__ \ "movementReferenceNumber").write[MovementReferenceNumber] and
         (__ \ "eoriNumber").write[String] and
         (__ \ "status").write[ArrivalStatus] and
