@@ -94,6 +94,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
           val result = route(application, request).value
 
           status(result) mustEqual OK
+          header(LOCATION, result) mustBe Some(routes.MessagesController.getMessage(arrival.arrivalId, arrival.nextMessageId).url)
           verify(mockAuditService, times(1)).auditNCTSMessages(eqTo(GoodsReleasedResponse), any())(any())
         }
       }
