@@ -57,7 +57,7 @@ class NCTSMessageController @Inject()(cc: ControllerComponents,
 
           result match {
             case SubmissionSuccess =>
-              auditService.auditNCTSMessages(request.request.arrival, messageInbound.messageType, xml)
+              auditService.auditNCTSMessages(request.request.arrival.channel, messageInbound.messageType, xml)
               Ok
             case SubmissionFailureInternal => internalServerError("Internal Submission Failure " + processingResult)
             case SubmissionFailureExternal => badRequestError("External Submission Failure " + processingResult)

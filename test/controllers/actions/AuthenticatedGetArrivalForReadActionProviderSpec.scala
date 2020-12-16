@@ -177,6 +177,34 @@ class AuthenticatedGetArrivalForReadActionProviderSpec
         }
       }
 
+      "must return Not Found when the arrival exists but does not share the channel" in {
+
+        val arrivalId = arbitrary[ArrivalId].sample.value
+
+        val mockAuthConnector: AuthConnector = mock[AuthConnector]
+        val mockArrivalMovementRepository    = mock[ArrivalMovementRepository]
+
+        when(mockAuthConnector.authorise[Enrolments](any(), any())(any(), any()))
+          .thenReturn(Future.successful(validEnrolments))
+        when(mockArrivalMovementRepository.get(any(), any())) thenReturn Future.successful(None)
+
+        val application = new GuiceApplicationBuilder()
+          .overrides(
+            bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
+            bind[AuthConnector].toInstance(mockAuthConnector)
+          )
+          .build()
+
+        running(application) {
+          val actionProvider = application.injector.instanceOf[AuthenticatedGetArrivalForReadActionProvider]
+
+          val controller = new Harness(actionProvider)
+          val result     = controller.get(arrivalId)(fakeRequest)
+
+          status(result) mustBe NOT_FOUND
+        }
+      }
+
       "must return InternalServerError when repository has issues" in {
         val arrivalId = arbitrary[ArrivalId].sample.value
 

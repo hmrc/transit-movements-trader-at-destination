@@ -38,14 +38,14 @@ class AuditService @Inject()(auditConnector: AuditConnector, jsonHelper: JsonHel
     auditConnector.sendExplicitAudit(auditType, Json.toJson(details))
   }
 
-  def auditNCTSMessages(arrival: Arrival, messageResponse: MessageResponse, xmlRequestBody: NodeSeq)(implicit hc: HeaderCarrier): Unit = {
+  def auditNCTSMessages(channel: ChannelType, messageResponse: MessageResponse, xmlRequestBody: NodeSeq)(implicit hc: HeaderCarrier): Unit = {
     val auditType: String = messageResponse match {
       case GoodsReleasedResponse            => GoodsReleased
       case ArrivalRejectedResponse          => ArrivalNotificationRejected
       case UnloadingPermissionResponse      => UnloadingPermissionReceived
       case UnloadingRemarksRejectedResponse => UnloadingPermissionRejected
     }
-    auditEvent(auditType, xmlRequestBody, arrival.channel)
+    auditEvent(auditType, xmlRequestBody, channel)
   }
 
 }
