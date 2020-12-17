@@ -6,7 +6,7 @@ object AppDependencies {
   private val catsVersion = "2.1.1"
 
   val compile: Seq[ModuleID] = Seq(
-    "uk.gov.hmrc"       %% "auth-client"                     % "3.2.0-play-26", // To be removed when bootstrap upgrades dependencies
+//    "uk.gov.hmrc"       %% "auth-client"                     % "3.2.0-play-26", // To be removed when bootstrap upgrades dependencies
     "uk.gov.hmrc"       %% "bootstrap-play-26"               % "2.2.0",
     "org.reactivemongo" %% "play2-reactivemongo"             % "0.20.11-play26",
     "com.typesafe.play" %% "play-iteratees"                  % "2.6.1",
