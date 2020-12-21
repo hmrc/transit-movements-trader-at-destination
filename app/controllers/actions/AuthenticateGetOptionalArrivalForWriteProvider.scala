@@ -63,13 +63,13 @@ class AuthenticateGetOptionalArrivalForWriteAction(
             Future.successful(BadRequest(s"Failed to retrieve MovementReferenceNumber with error: $error"))
 
           case Right(mrn) => {
-            arrivalMovementRepository.get(request.eoriNumber, mrn, request.getChannel).flatMap {
-              case None => block(AuthenticatedOptionalArrivalRequest(request, None, request.eoriNumber))
+            arrivalMovementRepository.get(request.eoriNumber, mrn, request.channel).flatMap {
+              case None => block(AuthenticatedOptionalArrivalRequest(request, None, request.channel, request.eoriNumber))
               case Some(arrival) =>
                 lockRepository.lock(arrival.arrivalId).flatMap {
                   case false => Future.successful(Locked)
                   case true =>
-                    block(AuthenticatedOptionalArrivalRequest(request, Some(arrival), request.eoriNumber))
+                    block(AuthenticatedOptionalArrivalRequest(request, Some(arrival), request.channel, request.eoriNumber))
                       .flatMap {
                         result =>
                           lockRepository.unlock(arrival.arrivalId).map {
@@ -87,9 +87,9 @@ class AuthenticateGetOptionalArrivalForWriteAction(
                 }
             }
           }
+          case invalidBody =>
+            logger.warn(s"Invalid request body. Expected XML (NodeSeq) got: ${invalidBody.getClass}")
+            Future.successful(BadRequest(s"Invalid request body: ${invalidBody.getClass}"))
         }
-      case invalidBody =>
-        logger.warn(s"Invalid request body. Expected XML (NodeSeq) got: ${invalidBody.getClass}")
-        Future.successful(BadRequest(s"Invalid request body: ${invalidBody.getClass}"))
     }
 }

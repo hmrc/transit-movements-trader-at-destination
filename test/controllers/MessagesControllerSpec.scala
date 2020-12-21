@@ -19,7 +19,6 @@ package controllers
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-
 import audit.AuditService
 import audit.AuditType
 import base.SpecBase
@@ -33,7 +32,7 @@ import models.MessageStatus.SubmissionSucceeded
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalStatus
-import models.ChannelType.api
+import models.ChannelType.web
 import models.MessageId
 import models.MessageSender
 import models.MessageType
@@ -155,8 +154,11 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           .build()
 
         running(application) {
-          val request = FakeRequest(POST, routes.MessagesController.post(arrival.arrivalId).url).withXmlBody(requestXmlBody)
-          val result  = route(application, request).value
+          val request =
+            FakeRequest(POST, routes.MessagesController.post(arrival.arrivalId).url)
+              .withHeaders("channel" -> arrival.channel.toString)
+              .withXmlBody(requestXmlBody)
+          val result = route(application, request).value
 
           status(result) mustEqual ACCEPTED
           header("Location", result).value must be(routes.MessagesController.getMessage(arrival.arrivalId, MessageId.fromIndex(1)).url)
@@ -190,7 +192,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           .build()
 
         running(application) {
-          val request = FakeRequest(POST, routes.MessagesController.post(ArrivalId(1)).url).withXmlBody(requestXmlBody)
+          val request = FakeRequest(POST, routes.MessagesController.post(ArrivalId(1)).url).withHeaders("channel" -> web.toString).withXmlBody(requestXmlBody)
 
           val result = route(application, request).value
 
@@ -219,7 +221,9 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           .build()
 
         running(application) {
-          val request = FakeRequest(POST, routes.MessagesController.post(arrival.arrivalId).url).withXmlBody(requestXmlBody)
+          val request = FakeRequest(POST, routes.MessagesController.post(arrival.arrivalId).url)
+            .withHeaders("channel" -> arrival.channel.toString)
+            .withXmlBody(requestXmlBody)
 
           val result = route(application, request).value
 
@@ -337,7 +341,9 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           .build()
 
         running(application) {
-          val request = FakeRequest(POST, routes.MessagesController.post(arrival.arrivalId).url).withXmlBody(requestXmlBody)
+          val request = FakeRequest(POST, routes.MessagesController.post(arrival.arrivalId).url)
+            .withHeaders("channel" -> arrival.channel.toString)
+            .withXmlBody(requestXmlBody)
 
           val result = route(application, request).value
 
@@ -395,7 +401,9 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           .build()
 
         running(application) {
-          val request = FakeRequest(POST, routes.MessagesController.post(arrival.arrivalId).url).withXmlBody(requestXmlBody)
+          val request = FakeRequest(POST, routes.MessagesController.post(arrival.arrivalId).url)
+            .withHeaders("channel" -> arrival.channel.toString)
+            .withXmlBody(requestXmlBody)
 
           val result = route(application, request).value
 
@@ -422,7 +430,8 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
 
         running(application) {
           val request = FakeRequest(GET, routes.MessagesController.getMessage(arrival.arrivalId, MessageId.fromIndex(0)).url)
-          val result  = route(application, request).value
+            .withHeaders("channel" -> arrival.channel.toString)
+          val result = route(application, request).value
 
           status(result) mustEqual OK
           contentAsJson(result) mustEqual Json.toJson(ResponseMovementMessage.build(arrival.arrivalId, MessageId.fromIndex(0), message))
@@ -444,7 +453,8 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
 
         running(application) {
           val request = FakeRequest(GET, routes.MessagesController.getMessage(arrival.arrivalId, MessageId.fromIndex(0)).url)
-          val result  = route(application, request).value
+            .withHeaders("channel" -> arrival.channel.toString)
+          val result = route(application, request).value
 
           status(result) mustEqual OK
           contentAsJson(result) mustEqual Json.toJson(ResponseMovementMessage.build(arrival.arrivalId, MessageId.fromIndex(0), message))
@@ -463,8 +473,9 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
               .build()
 
           running(application) {
-            val request = FakeRequest(GET, routes.MessagesController.getMessage(ArrivalId(1), MessageId.fromIndex(0)).url)
-            val result  = route(application, request).value
+            val request =
+              FakeRequest(GET, routes.MessagesController.getMessage(ArrivalId(1), MessageId.fromIndex(0)).url).withHeaders("channel" -> web.toString)
+            val result = route(application, request).value
 
             status(result) mustEqual NOT_FOUND
           }
@@ -485,7 +496,8 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
 
           running(application) {
             val request = FakeRequest(GET, routes.MessagesController.getMessage(arrival.arrivalId, MessageId.fromIndex(5)).url)
-            val result  = route(application, request).value
+              .withHeaders("channel" -> arrival.channel.toString)
+            val result = route(application, request).value
 
             status(result) mustEqual NOT_FOUND
           }
@@ -506,7 +518,8 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
 
           running(application) {
             val request = FakeRequest(GET, routes.MessagesController.getMessage(arrival.arrivalId, MessageId.fromIndex(0)).url)
-            val result  = route(application, request).value
+              .withHeaders("channel" -> arrival.channel.toString)
+            val result = route(application, request).value
 
             status(result) mustEqual NOT_FOUND
           }
@@ -527,7 +540,8 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
 
           running(application) {
             val request = FakeRequest(GET, routes.MessagesController.getMessage(arrival.arrivalId, MessageId.fromIndex(0)).url)
-            val result  = route(application, request).value
+              .withHeaders("channel" -> arrival.channel.toString)
+            val result = route(application, request).value
 
             status(result) mustEqual NOT_FOUND
           }
@@ -557,7 +571,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
               .build()
 
           running(application) {
-            lazy val request = FakeRequest(GET, routes.MessagesController.getMessages(arrival.arrivalId).url)
+            lazy val request = FakeRequest(GET, routes.MessagesController.getMessages(arrival.arrivalId).url).withHeaders("channel" -> arrival.channel.toString)
             val result       = route(application, request).value
 
             status(result) mustEqual OK
@@ -583,7 +597,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
               .build()
 
           running(application) {
-            val request = FakeRequest(GET, routes.MessagesController.getMessages(arrival.arrivalId).url)
+            val request = FakeRequest(GET, routes.MessagesController.getMessages(arrival.arrivalId).url).withHeaders("channel" -> arrival.channel.toString)
             val result  = route(application, request).value
 
             status(result) mustEqual OK
@@ -613,7 +627,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
               .build()
 
           running(application) {
-            val request = FakeRequest(GET, routes.MessagesController.getMessages(arrival.arrivalId).url)
+            val request = FakeRequest(GET, routes.MessagesController.getMessages(arrival.arrivalId).url).withHeaders("channel" -> arrival.channel.toString)
             val result  = route(application, request).value
 
             status(result) mustEqual OK
@@ -639,7 +653,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
               .build()
 
           running(application) {
-            val request = FakeRequest(GET, routes.MessagesController.getMessages(arrival.arrivalId).url)
+            val request = FakeRequest(GET, routes.MessagesController.getMessages(arrival.arrivalId).url).withHeaders("channel" -> arrival.channel.toString)
             val result  = route(application, request).value
 
             status(result) mustEqual OK
@@ -660,7 +674,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
               .build()
 
           running(application) {
-            val request = FakeRequest(GET, routes.MessagesController.getMessages(ArrivalId(1)).url)
+            val request = FakeRequest(GET, routes.MessagesController.getMessages(ArrivalId(1)).url).withHeaders("channel" -> web.toString)
             val result  = route(application, request).value
 
             status(result) mustEqual NOT_FOUND
@@ -681,7 +695,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
               .build()
 
           running(application) {
-            val request = FakeRequest(GET, routes.MessagesController.getMessages(arrival.arrivalId).url)
+            val request = FakeRequest(GET, routes.MessagesController.getMessages(arrival.arrivalId).url).withHeaders("channel" -> arrival.channel.toString)
             val result  = route(application, request).value
 
             status(result) mustEqual NOT_FOUND

@@ -68,7 +68,7 @@ class MessagesController @Inject()(
             .submitMessage(arrivalId, request.arrival.nextMessageId, message, ArrivalStatus.UnloadingRemarksSubmitted)
             .map {
               result =>
-                val counter = Monitors.countMessages(MessageType.UnloadingRemarks, request.getChannel, result)
+                val counter = Monitors.countMessages(MessageType.UnloadingRemarks, request.channel, result)
                 metricsService.inc(counter)
 
                 result match {
@@ -77,7 +77,7 @@ class MessagesController @Inject()(
                   case submissionFailureRejected: SubmissionFailureRejected =>
                     BadRequest(submissionFailureRejected.responseBody)
                   case SubmissionSuccess =>
-                    auditService.auditEvent(AuditType.UnloadingRemarksSubmitted, request.body, request.getChannel)
+                    auditService.auditEvent(AuditType.UnloadingRemarksSubmitted, request.body, request.channel)
                     Accepted("Message accepted")
                       .withHeaders("Location" -> routes.MessagesController.getMessage(request.arrival.arrivalId, request.arrival.nextMessageId).url)
                 }

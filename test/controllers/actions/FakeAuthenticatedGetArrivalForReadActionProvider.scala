@@ -18,6 +18,7 @@ package controllers.actions
 
 import models.Arrival
 import models.ArrivalId
+import models.ChannelType.web
 import models.request.ArrivalRequest
 import org.scalatest.exceptions.TestFailedException
 import play.api.mvc._
@@ -34,7 +35,7 @@ class FakeAuthenticatedGetArrivalForReadActionProvider(arrival: Arrival) extends
 
       override def invokeBlock[A](request: Request[A], block: ArrivalRequest[A] => Future[Result]): Future[Result] =
         if (arrival.arrivalId == arrivalId) {
-          block(ArrivalRequest(request, arrival))
+          block(ArrivalRequest(request, arrival, web))
         } else {
           throw new TestFailedException(
             s"Bad test data setup. ArrivalId on the Arrival was ${arrival.arrivalId} but expected to retrieve arrival with Id of $arrivalId",

@@ -18,6 +18,7 @@ package controllers.actions
 
 import generators.ModelGenerators
 import models.Arrival
+import models.ChannelType.web
 import models.MovementReferenceNumber
 import org.mockito.ArgumentMatchers.{eq => eqTo, _}
 import org.mockito.Mockito._
@@ -34,6 +35,7 @@ import play.api.libs.json.JsString
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
+import play.api.mvc.Headers
 import play.api.mvc.Results
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
@@ -133,7 +135,7 @@ class AuthenticatedGetOptionalArrivalForWriteActionProviderSpec
 
           val controller = new Harness(actionProvider, cc)
 
-          val result = controller.get()(fakeRequest)
+          val result = controller.get()(fakeRequest.withHeaders("channel" -> web.toString))
           status(result) mustBe OK
           contentAsJson(result) mustBe JsBoolean(false)
         }
@@ -166,7 +168,7 @@ class AuthenticatedGetOptionalArrivalForWriteActionProviderSpec
           val cc             = application.injector.instanceOf[ControllerComponents]
 
           val controller = new Harness(actionProvider, cc)
-          val result     = controller.get()(fakeRequest)
+          val result     = controller.get()(fakeRequest.withHeaders("channel" -> arrival.channel.toString))
 
           status(result) mustBe OK
           contentAsJson(result) mustBe JsBoolean(true)
@@ -202,7 +204,7 @@ class AuthenticatedGetOptionalArrivalForWriteActionProviderSpec
           val cc             = application.injector.instanceOf[ControllerComponents]
 
           val controller = new Harness(actionProvider, cc)
-          val result     = controller.failingAction()(fakeRequest)
+          val result     = controller.failingAction()(fakeRequest.withHeaders("channel" -> arrival.channel.toString))
 
           status(result) mustBe INTERNAL_SERVER_ERROR
           verify(mockLockRepository, times(1)).unlock(eqTo(arrival.arrivalId))
@@ -244,7 +246,7 @@ class AuthenticatedGetOptionalArrivalForWriteActionProviderSpec
           val cc             = application.injector.instanceOf[ControllerComponents]
 
           val controller = new Harness(actionProvider, cc)
-          val result     = controller.get(fakeRequest)
+          val result     = controller.get(fakeRequest.withHeaders("channel" -> web.toString))
 
           status(result) mustBe FORBIDDEN
         }
@@ -278,7 +280,7 @@ class AuthenticatedGetOptionalArrivalForWriteActionProviderSpec
           val cc             = application.injector.instanceOf[ControllerComponents]
 
           val controller = new Harness(actionProvider, cc)
-          val result     = controller.get()(fakeRequest)
+          val result     = controller.get()(fakeRequest.withHeaders("channel" -> arrival.channel.toString))
 
           status(result) mustBe LOCKED
         }
@@ -336,6 +338,58 @@ class AuthenticatedGetOptionalArrivalForWriteActionProviderSpec
           val request: FakeRequest[AnyContent] = FakeRequest().withBody(AnyContent(JsString("Happy Apples")))
 
           val result = controller.getJson()(request)
+
+          status(result) mustBe BAD_REQUEST
+        }
+      }
+    }
+
+    "when channel header missing" - {
+      "must return BadRequest" in {
+        val mockAuthConnector: AuthConnector = mock[AuthConnector]
+
+        when(mockAuthConnector.authorise[Enrolments](any(), any())(any(), any()))
+          .thenReturn(Future.successful(validEnrolments))
+
+        val application = new GuiceApplicationBuilder()
+          .overrides(
+            bind[AuthConnector].toInstance(mockAuthConnector)
+          )
+          .build()
+
+        running(application) {
+          val actionProvider = application.injector.instanceOf[AuthenticatedGetOptionalArrivalForWriteActionProvider]
+          val cc             = application.injector.instanceOf[ControllerComponents]
+
+          val controller = new Harness(actionProvider, cc)
+
+          val result = controller.get()(fakeRequest.withHeaders(Headers.create()))
+
+          status(result) mustBe BAD_REQUEST
+        }
+      }
+    }
+
+    "when channel header contains invalid value" - {
+      "must return BadRequest" in {
+        val mockAuthConnector: AuthConnector = mock[AuthConnector]
+
+        when(mockAuthConnector.authorise[Enrolments](any(), any())(any(), any()))
+          .thenReturn(Future.successful(validEnrolments))
+
+        val application = new GuiceApplicationBuilder()
+          .overrides(
+            bind[AuthConnector].toInstance(mockAuthConnector)
+          )
+          .build()
+
+        running(application) {
+          val actionProvider = application.injector.instanceOf[AuthenticatedGetOptionalArrivalForWriteActionProvider]
+          val cc             = application.injector.instanceOf[ControllerComponents]
+
+          val controller = new Harness(actionProvider, cc)
+
+          val result = controller.get()(fakeRequest.withHeaders("channel" -> "web2"))
 
           status(result) mustBe BAD_REQUEST
         }

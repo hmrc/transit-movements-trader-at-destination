@@ -79,7 +79,7 @@ class MovementsController @Inject()(
                 .submitMessage(arrival.arrivalId, arrival.nextMessageId, message, ArrivalStatus.ArrivalSubmitted)
                 .map {
                   result =>
-                    val counter = Monitors.countMessages(MessageType.ArrivalNotification, request.getChannel, result)
+                    val counter = Monitors.countMessages(MessageType.ArrivalNotification, request.channel, result)
                     metricsService.inc(counter)
 
                     result match {
@@ -88,8 +88,8 @@ class MovementsController @Inject()(
                       case submissionFailureRejected: SubmissionFailureRejected =>
                         BadRequest(submissionFailureRejected.responseBody)
                       case SubmissionSuccess =>
-                        auditService.auditEvent(AuditType.ArrivalNotificationSubmitted, request.body, request.getChannel)
-                        auditService.auditEvent(AuditType.MesSenMES3Added, message.message, request.getChannel)
+                        auditService.auditEvent(AuditType.ArrivalNotificationSubmitted, request.body, request.channel)
+                        auditService.auditEvent(AuditType.MesSenMES3Added, message.message, request.channel)
                         Accepted("Message accepted")
                           .withHeaders("Location" -> routes.MovementsController.getArrival(arrival.arrivalId).url)
                     }
@@ -100,7 +100,7 @@ class MovementsController @Inject()(
           }
         case _ =>
           arrivalMovementService
-            .makeArrivalMovement(request.eoriNumber, request.body, request.getChannel)
+            .makeArrivalMovement(request.eoriNumber, request.body, request.channel)
             .flatMap {
               case Right(arrival) =>
                 submitMessageService
@@ -111,8 +111,8 @@ class MovementsController @Inject()(
                     case submissionFailureRejected: SubmissionFailureRejected =>
                       BadRequest(submissionFailureRejected.responseBody)
                     case SubmissionSuccess =>
-                      auditService.auditEvent(AuditType.ArrivalNotificationSubmitted, request.body, request.getChannel)
-                      auditService.auditEvent(AuditType.MesSenMES3Added, request.body, request.getChannel)
+                      auditService.auditEvent(AuditType.ArrivalNotificationSubmitted, request.body, request.channel)
+                      auditService.auditEvent(AuditType.MesSenMES3Added, request.body, request.channel)
                       Accepted("Message accepted")
                         .withHeaders("Location" -> routes.MovementsController.getArrival(arrival.arrivalId).url)
                   }
@@ -146,8 +146,8 @@ class MovementsController @Inject()(
               case submissionFailureRejected: SubmissionFailureRejected =>
                 BadRequest(submissionFailureRejected.responseBody)
               case SubmissionSuccess =>
-                auditService.auditEvent(AuditType.ArrivalNotificationReSubmitted, request.body, request.getChannel)
-                auditService.auditEvent(AuditType.MesSenMES3Added, message.message, request.getChannel)
+                auditService.auditEvent(AuditType.ArrivalNotificationReSubmitted, request.body, request.channel)
+                auditService.auditEvent(AuditType.MesSenMES3Added, message.message, request.channel)
                 Accepted("Message accepted")
                   .withHeaders("Location" -> routes.MovementsController.getArrival(request.arrival.arrivalId).url)
             }
@@ -165,7 +165,7 @@ class MovementsController @Inject()(
   def getArrivals(): Action[AnyContent] = authenticate().async {
     implicit request =>
       arrivalMovementRepository
-        .fetchAllArrivals(request.eoriNumber, request.getChannel)
+        .fetchAllArrivals(request.eoriNumber, request.channel)
         .map {
           allArrivals =>
             Ok(Json.toJsObject(ResponseArrivals(allArrivals.map {

@@ -17,11 +17,11 @@
 package controllers
 
 import audit.AuditService
-import audit.AuditType
 import base.SpecBase
 import generators.ModelGenerators
 import models.Arrival
 import models.ArrivalId
+import models.ChannelType.web
 import models.GoodsReleasedResponse
 import models.MessageSender
 import models.SubmissionProcessingResult
@@ -89,6 +89,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
 
         running(application) {
           val request = FakeRequest(POST, routes.NCTSMessageController.post(messageSender).url)
+            .withHeaders("channel" -> arrival.channel.toString)
             .withXmlBody(xml)
 
           val result = route(application, request).value
@@ -113,6 +114,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
         running(application) {
           val request = FakeRequest(POST, routes.NCTSMessageController.post(messageSender).url)
             .withXmlBody(xml)
+            .withHeaders("channel" -> web.toString)
 
           val result = route(application, request).value
 
@@ -142,6 +144,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
         running(application) {
           val request = FakeRequest(POST, routes.NCTSMessageController.post(messageSender).url)
             .withXmlBody(xml)
+            .withHeaders("channel" -> arrival.channel.toString)
 
           val result = route(application, request).value
 
@@ -197,6 +200,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
 
         running(application) {
           val request = FakeRequest(POST, routes.NCTSMessageController.post(messageSender).url)
+            .withHeaders("channel" -> arrival.channel.toString)
             .withXmlBody(xml)
 
           val result = route(application, request).value

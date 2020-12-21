@@ -25,6 +25,7 @@ import models.Arrival
 import models.ArrivalId
 import models.ArrivalRejectedResponse
 import models.ArrivalStatus
+import models.ChannelType.web
 import models.GoodsReleasedResponse
 import models.MessageInbound
 import models.MessageType
@@ -53,7 +54,7 @@ class InboundMessageTransformerSpec extends AnyFreeSpec with Matchers with Scala
   val arrivalId: ArrivalId = arrival.arrivalId
 
   def fakeRequest(code: String, arrivalStatus: ArrivalStatus): ArrivalRequest[AnyContentAsEmpty.type] =
-    ArrivalRequest(FakeRequest("", "").withHeaders("X-Message-Type" -> code), arrival.copy(status = arrivalStatus))
+    ArrivalRequest(FakeRequest("", "").withHeaders("X-Message-Type" -> code), arrival.copy(status = arrivalStatus), web)
 
   val successfulResponse: Request[AnyContent] => Future[Result] = {
     _ =>

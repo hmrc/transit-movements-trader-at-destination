@@ -21,12 +21,12 @@ import logging.Logging
 import models.ArrivalId
 import models.request.ArrivalRequest
 import models.request.AuthenticatedRequest
-import models.request.ChannelUtil
 import play.api.mvc.ActionRefiner
 import play.api.mvc.Request
 import play.api.mvc.Result
 import play.api.mvc.Results.InternalServerError
 import play.api.mvc.Results.NotFound
+import play.api.mvc.Results.BadRequest
 import repositories.ArrivalMovementRepository
 
 import scala.concurrent.ExecutionContext
@@ -47,11 +47,16 @@ private[actions] class GetArrivalAction(
     extends ActionRefiner[Request, ArrivalRequest] {
 
   override protected def refine[A](request: Request[A]): Future[Either[Result, ArrivalRequest[A]]] =
-    repository.get(arrivalId, ChannelUtil.getChannel(request)).map {
-      case Some(arrival) =>
-        Right(ArrivalRequest(request, arrival))
+    ChannelUtil.getChannel(request) match {
       case None =>
-        Left(NotFound)
+        Future.successful(Left(BadRequest("Missing channel header or incorrect value specified in channel header")))
+      case Some(channel) =>
+        repository.get(arrivalId, channel).map {
+          case Some(arrival) =>
+            Right(ArrivalRequest(request, arrival, channel))
+          case None =>
+            Left(NotFound)
+        }
     }
 }
 
@@ -71,20 +76,25 @@ private[actions] class AuthenticatedGetArrivalAction(
     with Logging {
 
   override protected def refine[A](request: AuthenticatedRequest[A]): Future[Either[Result, ArrivalRequest[A]]] =
-    repository
-      .get(arrivalId, request.getChannel)
-      .map {
-        case Some(arrival) if arrival.eoriNumber == request.eoriNumber =>
-          Right(ArrivalRequest(request.request, arrival))
-        case Some(_) =>
-          logger.warn("Attempt to retrieve an arrival for another EORI")
-          Left(NotFound)
-        case None =>
-          Left(NotFound)
-      }
-      .recover {
-        case e =>
-          logger.error(s"Failed with the following error: $e")
-          Left(InternalServerError)
-      }
+    ChannelUtil.getChannel(request) match {
+      case None =>
+        Future.successful(Left(BadRequest("Missing channel header or incorrect value specified in channel header")))
+      case Some(channel) =>
+        repository
+          .get(arrivalId, channel)
+          .map {
+            case Some(arrival) if arrival.eoriNumber == request.eoriNumber =>
+              Right(ArrivalRequest(request.request, arrival, channel))
+            case Some(_) =>
+              logger.warn("Attempt to retrieve an arrival for another EORI")
+              Left(NotFound)
+            case None =>
+              Left(NotFound)
+          }
+          .recover {
+            case e =>
+              logger.error(s"Failed with the following error: $e")
+              Left(InternalServerError)
+          }
+    }
 }
