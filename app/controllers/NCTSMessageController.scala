@@ -18,6 +18,7 @@ package controllers
 
 import audit.AuditService
 import controllers.actions.GetArrivalForWriteActionProvider
+
 import javax.inject.Inject
 import logging.Logging
 import metrics.MetricsService
@@ -58,7 +59,7 @@ class NCTSMessageController @Inject()(cc: ControllerComponents,
           result match {
             case SubmissionSuccess =>
               auditService.auditNCTSMessages(messageInbound.messageType, xml)
-              Ok
+              Ok.withHeaders(LOCATION -> routes.MessagesController.getMessage(request.request.arrival.arrivalId, request.request.arrival.nextMessageId).url)
             case SubmissionFailureInternal => internalServerError("Internal Submission Failure " + processingResult)
             case SubmissionFailureExternal => badRequestError("External Submission Failure " + processingResult)
           }
