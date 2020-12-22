@@ -16,6 +16,7 @@ import models.ArrivalId
 import models.ArrivalIdSelector
 import models.ArrivalStatus
 import models.ArrivalStatusUpdate
+import models.ChannelType.{api, web}
 import models.MessageId
 import models.MessageType
 import models.MongoDateTimeFormats
@@ -101,7 +102,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with FailOnUnindexedQueri
 
           repository.updateArrival(selector, arrivalStatus).futureValue
 
-          val updatedArrival = repository.get(arrival.arrivalId).futureValue.value
+          val updatedArrival = repository.get(arrival.arrivalId, arrival.channel).futureValue.value
 
           updatedArrival.status mustEqual arrivalStatus.arrivalStatus
           updatedArrival.lastUpdated.withSecond(0).withNano(0) mustEqual latsUpdated
@@ -127,7 +128,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with FailOnUnindexedQueri
 
           val result = repository.updateArrival(selector, arrivalStatus).futureValue
 
-          val updatedArrival = repository.get(arrival.arrivalId).futureValue.value
+          val updatedArrival = repository.get(arrival.arrivalId, arrival.channel).futureValue.value
 
           result mustBe a[Failure[_]]
           updatedArrival.status must not be (arrivalStatus.arrivalStatus)
@@ -152,7 +153,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with FailOnUnindexedQueri
           repository.insert(arrival).futureValue
           repository.setArrivalStateAndMessageState(arrival.arrivalId, messageId, ArrivalSubmitted, SubmissionSucceeded).futureValue
 
-          val updatedArrival = repository.get(arrival.arrivalId).futureValue
+          val updatedArrival = repository.get(arrival.arrivalId, arrival.channel).futureValue
 
           updatedArrival.value.status mustEqual ArrivalSubmitted
 
@@ -181,7 +182,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with FailOnUnindexedQueri
           val setResult = repository.setArrivalStateAndMessageState(ArrivalId(2), messageId, ArrivalSubmitted, SubmissionSucceeded)
           setResult.futureValue must not be (defined)
 
-          val result = repository.get(arrival.arrivalId).futureValue.value
+          val result = repository.get(arrival.arrivalId, arrival.channel).futureValue.value
           result.status mustEqual Initialized
           typeMatchOnTestValue(result.messages.head) {
             result: MovementMessageWithStatus =>
@@ -361,8 +362,8 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with FailOnUnindexedQueri
 
     }
 
-    "get(arrivalId: ArrivalId)" - {
-      "must get an arrival when it exists" in {
+    "get(arrivalId: ArrivalId, channelFilter: ChannelType)" - {
+      "must get an arrival when it exists and has the right channel type" in {
         database.flatMap(_.drop()).futureValue
 
         val app: Application = builder.build()
@@ -375,7 +376,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with FailOnUnindexedQueri
           val arrival = arbitrary[Arrival].sample.value
 
           repository.insert(arrival).futureValue
-          val result = repository.get(arrival.arrivalId).futureValue
+          val result = repository.get(arrival.arrivalId, arrival.channel).futureValue
 
           result.value mustEqual arrival.copy(lastUpdated = result.value.lastUpdated)
         }
@@ -394,15 +395,34 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with FailOnUnindexedQueri
           val arrival = arbitrary[Arrival].sample.value copy (arrivalId = ArrivalId(1))
 
           repository.insert(arrival).futureValue
-          val result = repository.get(ArrivalId(2)).futureValue
+          val result = repository.get(ArrivalId(2), arrival.channel).futureValue
+
+          result must not be defined
+        }
+      }
+
+      "must return None when an arrival does exist but with the wrong channel type" in {
+        database.flatMap(_.drop()).futureValue
+
+        val app: Application = builder.build()
+
+        running(app) {
+          started(app).futureValue
+
+          val repository = app.injector.instanceOf[ArrivalMovementRepository]
+
+          val arrival = arbitrary[Arrival].sample.value copy (channel = api)
+
+          repository.insert(arrival).futureValue
+          val result = repository.get(arrival.arrivalId, web).futureValue
 
           result must not be defined
         }
       }
     }
 
-    "get(eoriNumber: String, mrn: MovementReferenceNumber)" - {
-      "must get an arrival if one exists with a matching eoriNumber and mrn" in {
+    "get(eoriNumber: String, mrn: MovementReferenceNumber, channelFilter: ChannelType)" - {
+      "must get an arrival if one exists with a matching eoriNumber, channelType and mrn" in {
         database.flatMap(_.drop()).futureValue
 
         val app: Application = builder.build()
@@ -418,13 +438,13 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with FailOnUnindexedQueri
 
           repository.insert(arrival).futureValue
 
-          val result = repository.get(eori, movementReferenceNumber).futureValue
+          val result = repository.get(eori, movementReferenceNumber, arrival.channel).futureValue
 
           result.value mustEqual arrival.copy(lastUpdated = result.value.lastUpdated)
         }
       }
 
-      "must return a None if any exist with a matching eoriNumber but no matching mrn" in {
+      "must return a None if any exist with a matching eoriNumber and channel but no matching mrn" in {
         database.flatMap(_.drop()).futureValue
 
         val app: Application = builder.build()
@@ -442,13 +462,13 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with FailOnUnindexedQueri
 
           repository.insert(arrival).futureValue
 
-          val result = repository.get(eori, movementReferenceNumber).futureValue
+          val result = repository.get(eori, movementReferenceNumber, arrival.channel).futureValue
 
           result mustEqual None
         }
       }
 
-      "must return a None if any exist with a matching mrn but no matching eoriNumber" in {
+      "must return a None if any exist with a matching mrn and channel but no matching eoriNumber" in {
         database.flatMap(_.drop()).futureValue
 
         val app: Application = builder.build()
@@ -466,7 +486,30 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with FailOnUnindexedQueri
 
           repository.insert(arrival).futureValue
 
-          val result = repository.get(eori, movementReferenceNumber).futureValue
+          val result = repository.get(eori, movementReferenceNumber, arrival.channel).futureValue
+
+          result mustEqual None
+        }
+      }
+
+      "must return a None if any exist with a matching mrn and eori but no matching channel" in {
+        database.flatMap(_.drop()).futureValue
+
+        val app: Application = builder.build()
+
+        running(app) {
+          started(app).futureValue
+
+          val repository = app.injector.instanceOf[ArrivalMovementRepository]
+
+          val movementReferenceNumber = arbitrary[MovementReferenceNumber].sample.value
+
+          val eori      = "eori"
+          val arrival   = arbitrary[Arrival].sample.value copy (eoriNumber = eori, movementReferenceNumber = movementReferenceNumber, channel = api)
+
+          repository.insert(arrival).futureValue
+
+          val result = repository.get(eori, movementReferenceNumber, web).futureValue
 
           result mustEqual None
         }
@@ -487,11 +530,11 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with FailOnUnindexedQueri
 
           val eori      = "eori"
           val otherEori = "otherEori"
-          val arrival   = arbitrary[Arrival].sample.value copy (eoriNumber = otherEori, movementReferenceNumber = otherMovementReferenceNumber)
+          val arrival   = arbitrary[Arrival].sample.value copy (eoriNumber = otherEori, movementReferenceNumber = otherMovementReferenceNumber, channel = api)
 
           repository.insert(arrival).futureValue
 
-          val result = repository.get(eori, movementReferenceNumber).futureValue
+          val result = repository.get(eori, movementReferenceNumber, web).futureValue
 
           result mustEqual None
         }
@@ -499,20 +542,21 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with FailOnUnindexedQueri
     }
 
     "fetchAllArrivals" - {
-      "must return Arrival Movements that match an eoriNumber" in {
+      "must return Arrival Movements that match an eoriNumber and channel type" in {
         database.flatMap(_.drop()).futureValue
 
         val app: Application = builder.build()
 
-        val arrivalMovement1 = arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber)
-        val arrivalMovement2 = arbitrary[Arrival].suchThat(_.eoriNumber != eoriNumber).sample.value
+        val arrivalMovement1 = arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = api)
+        val arrivalMovement2 = arbitrary[Arrival].suchThat(_.eoriNumber != eoriNumber).sample.value.copy(channel = api)
+        val arrivalMovement3 = arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = web)
 
         running(app) {
           started(app).futureValue
 
           val service: ArrivalMovementRepository = app.injector.instanceOf[ArrivalMovementRepository]
 
-          val allMovements = Seq(arrivalMovement1, arrivalMovement2)
+          val allMovements = Seq(arrivalMovement1, arrivalMovement2, arrivalMovement3)
 
           val jsonArr = allMovements.map(Json.toJsObject(_))
 
@@ -521,9 +565,8 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with FailOnUnindexedQueri
               db.collection[JSONCollection](ArrivalMovementRepository.collectionName).insert(false).many(jsonArr)
           }.futureValue
 
-          val result: Seq[Arrival] = service.fetchAllArrivals(eoriNumber).futureValue
-
-          result mustBe Seq(arrivalMovement1)
+          service.fetchAllArrivals(eoriNumber, api).futureValue mustBe Seq(arrivalMovement1)
+          service.fetchAllArrivals(eoriNumber, web).futureValue mustBe Seq(arrivalMovement3)
         }
       }
 
@@ -531,8 +574,8 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with FailOnUnindexedQueri
         database.flatMap(_.drop()).futureValue
 
         val app: Application = builder.build()
-        val arrivalMovement1 = arbitrary[Arrival].suchThat(_.eoriNumber != eoriNumber).sample.value
-        val arrivalMovement2 = arbitrary[Arrival].suchThat(_.eoriNumber != eoriNumber).sample.value
+        val arrivalMovement1 = arbitrary[Arrival].suchThat(_.eoriNumber != eoriNumber).sample.value.copy(channel = api)
+        val arrivalMovement2 = arbitrary[Arrival].suchThat(_.eoriNumber != eoriNumber).sample.value.copy(channel = api)
 
         running(app) {
           started(app).futureValue
@@ -548,7 +591,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with FailOnUnindexedQueri
               db.collection[JSONCollection](ArrivalMovementRepository.collectionName).insert(false).many(jsonArr)
           }.futureValue
 
-          val result = service.fetchAllArrivals(eoriNumber).futureValue
+          val result = service.fetchAllArrivals(eoriNumber, api).futureValue
 
           result mustBe Seq.empty[Arrival]
         }

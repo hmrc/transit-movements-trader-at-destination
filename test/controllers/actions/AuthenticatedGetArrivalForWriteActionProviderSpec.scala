@@ -22,6 +22,8 @@ import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
 import models.Arrival
 import models.ArrivalId
+import models.ChannelType.api
+import models.ChannelType.web
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
@@ -33,6 +35,7 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.AnyContentAsEmpty
+import play.api.mvc.Headers
 import play.api.mvc.Results
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
@@ -109,7 +112,7 @@ class AuthenticatedGetArrivalForWriteActionProviderSpec
 
         when(mockAuthConnector.authorise[Enrolments](any(), any())(any(), any()))
           .thenReturn(Future.successful(validEnrolments))
-        when(mockArrivalMovementRepository.get(any())) thenReturn Future.successful(Some(arrival))
+        when(mockArrivalMovementRepository.get(any(), any())) thenReturn Future.successful(Some(arrival))
         when(mockLockRepository.lock(any())) thenReturn Future.successful(true)
         when(mockLockRepository.unlock(any())) thenReturn Future.successful(())
 
@@ -125,7 +128,7 @@ class AuthenticatedGetArrivalForWriteActionProviderSpec
           val actionProvider = application.injector.instanceOf[AuthenticatedGetArrivalForWriteActionProvider]
 
           val controller = new Harness(actionProvider)
-          val result     = controller.get(arrival.arrivalId)(fakeRequest)
+          val result     = controller.get(arrival.arrivalId)(fakeRequest.withHeaders("channel" -> arrival.channel.toString))
 
           status(result) mustBe OK
           contentAsString(result) mustBe arrival.arrivalId.toString
@@ -144,7 +147,7 @@ class AuthenticatedGetArrivalForWriteActionProviderSpec
 
         when(mockAuthConnector.authorise[Enrolments](any(), any())(any(), any()))
           .thenReturn(Future.successful(validEnrolments))
-        when(mockArrivalMovementRepository.get(any())) thenReturn Future.successful(Some(arrival))
+        when(mockArrivalMovementRepository.get(any(), any())) thenReturn Future.successful(Some(arrival))
         when(mockLockRepository.lock(any())) thenReturn Future.successful(true)
         when(mockLockRepository.unlock(any())) thenReturn Future.successful(())
 
@@ -160,7 +163,7 @@ class AuthenticatedGetArrivalForWriteActionProviderSpec
           val actionProvider = application.injector.instanceOf[AuthenticatedGetArrivalForWriteActionProvider]
 
           val controller = new Harness(actionProvider)
-          val result     = controller.get(arrival.arrivalId)(fakeRequest)
+          val result     = controller.get(arrival.arrivalId)(fakeRequest.withHeaders("channel" -> arrival.channel.toString))
 
           status(result) mustBe NOT_FOUND
           verify(mockLockRepository, times(1)).lock(eqTo(arrival.arrivalId))
@@ -178,7 +181,7 @@ class AuthenticatedGetArrivalForWriteActionProviderSpec
 
         when(mockAuthConnector.authorise[Enrolments](any(), any())(any(), any()))
           .thenReturn(Future.successful(validEnrolments))
-        when(mockArrivalMovementRepository.get(any())) thenReturn Future.successful(None)
+        when(mockArrivalMovementRepository.get(any(), any())) thenReturn Future.successful(None)
         when(mockLockRepository.lock(any())) thenReturn Future.successful(true)
         when(mockLockRepository.unlock(any())) thenReturn Future.successful(())
 
@@ -194,11 +197,67 @@ class AuthenticatedGetArrivalForWriteActionProviderSpec
           val actionProvider = application.injector.instanceOf[AuthenticatedGetArrivalForWriteActionProvider]
 
           val controller = new Harness(actionProvider)
-          val result     = controller.get(arrivalId)(fakeRequest)
+          val result     = controller.get(arrivalId)(fakeRequest.withHeaders("channel" -> web.toString))
 
           status(result) mustBe NOT_FOUND
           verify(mockLockRepository, times(1)).lock(eqTo(arrivalId))
           verify(mockLockRepository, times(1)).unlock(eqTo(arrivalId))
+        }
+      }
+
+      "must return Not Found when the arrival exists but does not share the channel" in {
+
+        val arrivalId = arbitrary[ArrivalId].sample.value
+
+        val mockAuthConnector: AuthConnector = mock[AuthConnector]
+        val mockArrivalMovementRepository    = mock[ArrivalMovementRepository]
+
+        when(mockAuthConnector.authorise[Enrolments](any(), any())(any(), any()))
+          .thenReturn(Future.successful(validEnrolments))
+        when(mockArrivalMovementRepository.get(any(), eqTo(api))) thenReturn Future.successful(None)
+
+        val application = new GuiceApplicationBuilder()
+          .overrides(
+            bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
+            bind[AuthConnector].toInstance(mockAuthConnector)
+          )
+          .build()
+
+        running(application) {
+          val actionProvider = application.injector.instanceOf[AuthenticatedGetArrivalForWriteActionProvider]
+
+          val controller = new Harness(actionProvider)
+          val result     = controller.get(arrivalId)(fakeRequest.withHeaders("channel" -> api.toString))
+
+          status(result) mustBe NOT_FOUND
+        }
+      }
+
+      "must return Ok when the arrival exists and shares the same channel" in {
+
+        val arrival = arbitrary[Arrival].sample.value copy (eoriNumber = eoriNumber, channel = api)
+
+        val mockAuthConnector: AuthConnector = mock[AuthConnector]
+        val mockArrivalMovementRepository    = mock[ArrivalMovementRepository]
+
+        when(mockAuthConnector.authorise[Enrolments](any(), any())(any(), any()))
+          .thenReturn(Future.successful(validEnrolments))
+        when(mockArrivalMovementRepository.get(any(), eqTo(api))) thenReturn Future.successful(Some(arrival))
+
+        val application = new GuiceApplicationBuilder()
+          .overrides(
+            bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
+            bind[AuthConnector].toInstance(mockAuthConnector)
+          )
+          .build()
+
+        running(application) {
+          val actionProvider = application.injector.instanceOf[AuthenticatedGetArrivalForWriteActionProvider]
+
+          val controller = new Harness(actionProvider)
+          val result     = controller.get(arrival.arrivalId)(fakeRequest.withHeaders("channel" -> arrival.channel.toString))
+
+          status(result) mustBe OK
         }
       }
 
@@ -212,7 +271,7 @@ class AuthenticatedGetArrivalForWriteActionProviderSpec
 
         when(mockAuthConnector.authorise[Enrolments](any(), any())(any(), any()))
           .thenReturn(Future.successful(validEnrolments))
-        when(mockArrivalMovementRepository.get(any())) thenReturn Future.successful(Some(arrival))
+        when(mockArrivalMovementRepository.get(any(), any())) thenReturn Future.successful(Some(arrival))
         when(mockLockRepository.lock(any())) thenReturn Future.successful(true)
         when(mockLockRepository.unlock(any())) thenReturn Future.successful(())
 
@@ -228,7 +287,7 @@ class AuthenticatedGetArrivalForWriteActionProviderSpec
           val actionProvider = application.injector.instanceOf[AuthenticatedGetArrivalForWriteActionProvider]
 
           val controller = new Harness(actionProvider)
-          val result     = controller.failingAction(arrival.arrivalId)(fakeRequest)
+          val result     = controller.failingAction(arrival.arrivalId)(fakeRequest.withHeaders("channel" -> arrival.channel.toString))
 
           status(result) mustBe INTERNAL_SERVER_ERROR
           verify(mockLockRepository, times(1)).unlock(eqTo(arrival.arrivalId))
@@ -276,7 +335,7 @@ class AuthenticatedGetArrivalForWriteActionProviderSpec
           val actionProvider = application.injector.instanceOf[AuthenticatedGetArrivalForWriteActionProvider]
 
           val controller = new Harness(actionProvider)
-          val result     = controller.get(arrivalId)(fakeRequest)
+          val result     = controller.get(arrivalId)(fakeRequest.withHeaders("channel" -> web.toString))
 
           status(result) mustBe FORBIDDEN
           verify(mockLockRepository, times(1)).lock(eqTo(arrivalId))
@@ -308,6 +367,118 @@ class AuthenticatedGetArrivalForWriteActionProviderSpec
           val result     = controller.get(arrivalId)(fakeRequest)
 
           status(result) mustBe LOCKED
+        }
+      }
+    }
+
+    "when channel header is missing" - {
+
+      val eoriNumber = "EORI"
+
+      val validEnrolments: Enrolments = Enrolments(
+        Set(
+          Enrolment(
+            key = "IR-SA",
+            identifiers = Seq(
+              EnrolmentIdentifier(
+                "UTR",
+                "123"
+              )
+            ),
+            state = "Activated"
+          ),
+          Enrolment(
+            key = "HMCE-NCTS-ORG",
+            identifiers = Seq(
+              EnrolmentIdentifier(
+                "VATRegNoTURN",
+                eoriNumber
+              )
+            ),
+            state = "Activated"
+          )
+        )
+      )
+
+      "must return BadRequest" in {
+
+        val arrivalId = arbitrary[ArrivalId].sample.value
+
+        val mockAuthConnector = mock[AuthConnector]
+
+        when(mockAuthConnector.authorise[Enrolments](any(), any())(any(), any()))
+          .thenReturn(Future.successful(validEnrolments))
+
+        val application = new GuiceApplicationBuilder()
+          .overrides(
+            bind[AuthConnector].toInstance(mockAuthConnector)
+          )
+          .build()
+
+        running(application) {
+          val actionProvider = application.injector.instanceOf[AuthenticatedGetArrivalForWriteActionProvider]
+
+          val controller = new Harness(actionProvider)
+          val result     = controller.get(arrivalId)(fakeRequest.withHeaders(Headers.create()))
+
+          status(result) mustEqual BAD_REQUEST
+          contentAsString(result) mustEqual "Missing channel header or incorrect value specified in channel header"
+        }
+      }
+    }
+
+    "when channel header contains invalid value" - {
+
+      val eoriNumber = "EORI"
+
+      val validEnrolments: Enrolments = Enrolments(
+        Set(
+          Enrolment(
+            key = "IR-SA",
+            identifiers = Seq(
+              EnrolmentIdentifier(
+                "UTR",
+                "123"
+              )
+            ),
+            state = "Activated"
+          ),
+          Enrolment(
+            key = "HMCE-NCTS-ORG",
+            identifiers = Seq(
+              EnrolmentIdentifier(
+                "VATRegNoTURN",
+                eoriNumber
+              )
+            ),
+            state = "Activated"
+          )
+        )
+      )
+
+      "must return BadRequest" in {
+
+        val arrivalId = arbitrary[ArrivalId].sample.value
+
+        val mockAuthConnector = mock[AuthConnector]
+
+        when(mockAuthConnector.authorise[Enrolments](any(), any())(any(), any()))
+          .thenReturn(Future.successful(validEnrolments))
+
+        val application = new GuiceApplicationBuilder()
+          .overrides(
+            bind[AuthConnector].toInstance(mockAuthConnector)
+          )
+          .build()
+
+        running(application) {
+          val actionProvider = application.injector.instanceOf[AuthenticatedGetArrivalForWriteActionProvider]
+
+          val controller = new Harness(actionProvider)
+          val result     = controller.get(arrivalId)(fakeRequest.withHeaders("channel" -> "web2"))
+
+          status(result) mustEqual BAD_REQUEST
+          contentAsString(result) mustEqual "Missing channel header or incorrect value specified in channel header"
         }
       }
     }

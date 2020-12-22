@@ -24,6 +24,7 @@ import java.time.Month
 import base.SpecBase
 import cats.data.NonEmptyList
 import generators.ModelGenerators
+import models.ChannelType.api
 import models.MessageStatus.SubmissionPending
 import models.response.ResponseArrivalWithMessages
 import org.scalacheck.Arbitrary.arbitrary
@@ -74,6 +75,7 @@ class ResponseArrivalWithMessagesSpec extends SpecBase with ScalaCheckPropertyCh
 
   val initializedArrival = Arrival(
     arrivalId = arrivalId,
+    channel = api,
     movementReferenceNumber = mrn,
     eoriNumber = "eori",
     status = ArrivalStatus.Initialized,

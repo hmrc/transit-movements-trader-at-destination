@@ -18,7 +18,6 @@ package audit
 
 import audit.AuditType._
 import javax.inject.Inject
-import models.ChannelType.ncts
 import models._
 import play.api.libs.json.Format.GenericFormat
 import play.api.libs.json.JsObject
@@ -39,14 +38,14 @@ class AuditService @Inject()(auditConnector: AuditConnector, jsonHelper: JsonHel
     auditConnector.sendExplicitAudit(auditType, Json.toJson(details))
   }
 
-  def auditNCTSMessages(messageResponse: MessageResponse, xmlRequestBody: NodeSeq)(implicit hc: HeaderCarrier): Unit = {
+  def auditNCTSMessages(channel: ChannelType, messageResponse: MessageResponse, xmlRequestBody: NodeSeq)(implicit hc: HeaderCarrier): Unit = {
     val auditType: String = messageResponse match {
       case GoodsReleasedResponse            => GoodsReleased
       case ArrivalRejectedResponse          => ArrivalNotificationRejected
       case UnloadingPermissionResponse      => UnloadingPermissionReceived
       case UnloadingRemarksRejectedResponse => UnloadingPermissionRejected
     }
-    auditEvent(auditType, xmlRequestBody, ncts)
+    auditEvent(auditType, xmlRequestBody, channel)
   }
 
 }

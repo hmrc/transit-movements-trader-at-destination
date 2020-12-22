@@ -34,6 +34,7 @@ import models.ArrivalPutUpdate
 import models.ArrivalStatus
 import models.ArrivalStatusUpdate
 import models.ArrivalUpdate
+import models.ChannelType
 import models.CompoundStatusUpdate
 import models.MessageId
 import models.MessageReceivedEvent
@@ -50,6 +51,8 @@ import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
 import uk.gov.hmrc.http.HttpResponse
+
+import scala.concurrent.Channel
 
 trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
 
@@ -138,10 +141,16 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
       Gen.oneOf(ArrivalStatus.values)
     }
 
+  implicit lazy val arbitraryChannel: Arbitrary[ChannelType] =
+    Arbitrary {
+      Gen.oneOf(ChannelType.values)
+    }
+
   implicit lazy val arbitraryArrival: Arbitrary[Arrival] = {
     Arbitrary {
       for {
         arrivalId               <- arbitrary[ArrivalId]
+        channel                 <- arbitrary[ChannelType]
         movementReferenceNumber <- arbitrary[MovementReferenceNumber]
         eoriNumber              <- arbitrary[String]
         status                  <- arbitrary[ArrivalStatus]
@@ -151,6 +160,7 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
       } yield
         Arrival(
           arrivalId = arrivalId,
+          channel = channel,
           movementReferenceNumber = movementReferenceNumber,
           eoriNumber = eoriNumber,
           status = status,

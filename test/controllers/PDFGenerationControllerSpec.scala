@@ -104,7 +104,7 @@ class PDFGenerationControllerSpec extends SpecBase with ScalaCheckPropertyChecks
 
         forAll(genArrivalWithSuccessfulArrival, genErrorCode) {
           (arrival, errorCode) =>
-            when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
+            when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(arrival)))
             when(mockUnloadingPermissionPDFService.getPDF(any())(any(), any()))
               .thenReturn(Future.successful(Left(OtherError(errorCode, ""))))
 

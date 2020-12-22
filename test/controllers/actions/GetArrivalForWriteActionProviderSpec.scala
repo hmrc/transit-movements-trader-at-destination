@@ -32,6 +32,7 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.AnyContentAsEmpty
+import play.api.mvc.Headers
 import play.api.mvc.Results
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
@@ -72,7 +73,7 @@ class GetArrivalForWriteActionProviderSpec
       val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
       val mockLockRepository            = mock[LockRepository]
 
-      when(mockArrivalMovementRepository.get(any())) thenReturn Future.successful(Some(arrival))
+      when(mockArrivalMovementRepository.get(any(), any())) thenReturn Future.successful(Some(arrival))
       when(mockLockRepository.lock(any())) thenReturn Future.successful(true)
       when(mockLockRepository.unlock(any())) thenReturn Future.successful(())
 
@@ -87,7 +88,7 @@ class GetArrivalForWriteActionProviderSpec
         val actionProvider = application.injector.instanceOf[GetArrivalForWriteActionProvider]
 
         val controller = new Harness(actionProvider)
-        val result     = controller.get(arrival.arrivalId)(fakeRequest)
+        val result     = controller.get(arrival.arrivalId)(fakeRequest.withHeaders("channel" -> arrival.channel.toString))
 
         status(result) mustEqual OK
         contentAsString(result) mustEqual arrival.arrivalId.toString
@@ -103,7 +104,7 @@ class GetArrivalForWriteActionProviderSpec
       val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
       val mockLockRepository            = mock[LockRepository]
 
-      when(mockArrivalMovementRepository.get(any())) thenReturn Future.successful(None)
+      when(mockArrivalMovementRepository.get(any(), any())) thenReturn Future.successful(None)
       when(mockLockRepository.lock(any())) thenReturn Future.successful(true)
       when(mockLockRepository.unlock(any())) thenReturn Future.successful(())
 
@@ -118,7 +119,7 @@ class GetArrivalForWriteActionProviderSpec
         val actionProvider = application.injector.instanceOf[GetArrivalForWriteActionProvider]
 
         val controller = new Harness(actionProvider)
-        val result     = controller.get(arrival.arrivalId)(fakeRequest)
+        val result     = controller.get(arrival.arrivalId)(fakeRequest.withHeaders("channel" -> arrival.channel.toString))
 
         status(result) mustEqual NOT_FOUND
         verify(mockLockRepository, times(1)).lock(eqTo(arrival.arrivalId))
@@ -150,7 +151,7 @@ class GetArrivalForWriteActionProviderSpec
 
         status(result) mustEqual LOCKED
         verify(mockLockRepository, never).unlock(any())
-        verify(mockArrivalMovementRepository, never).get(any())
+        verify(mockArrivalMovementRepository, never).get(any(), any())
       }
     }
 
@@ -161,7 +162,7 @@ class GetArrivalForWriteActionProviderSpec
       val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
       val mockLockRepository            = mock[LockRepository]
 
-      when(mockArrivalMovementRepository.get(any())) thenReturn Future.successful(Some(arrival))
+      when(mockArrivalMovementRepository.get(any(), any())) thenReturn Future.successful(Some(arrival))
       when(mockLockRepository.lock(any())) thenReturn Future.successful(true)
       when(mockLockRepository.unlock(any())) thenReturn Future.successful(())
 
@@ -176,10 +177,48 @@ class GetArrivalForWriteActionProviderSpec
         val actionProvider = application.injector.instanceOf[GetArrivalForWriteActionProvider]
 
         val controller = new Harness(actionProvider)
-        val result     = controller.failingAction(arrival.arrivalId)(fakeRequest)
+        val result     = controller.failingAction(arrival.arrivalId)(fakeRequest.withHeaders("channel" -> arrival.channel.toString))
 
         status(result) mustEqual INTERNAL_SERVER_ERROR
         verify(mockLockRepository, times(1)).lock(eqTo(arrival.arrivalId))
+      }
+    }
+
+    "must return Bad Request if channel header is missing" in {
+
+      val arrival = arbitrary[Arrival].sample.value
+
+      val application = new GuiceApplicationBuilder()
+        .overrides()
+        .build()
+
+      running(application) {
+        val actionProvider = application.injector.instanceOf[GetArrivalForWriteActionProvider]
+
+        val controller = new Harness(actionProvider)
+        val result     = controller.get(arrival.arrivalId)(fakeRequest.withHeaders(Headers.create()))
+
+        status(result) mustEqual BAD_REQUEST
+        contentAsString(result) mustEqual "Missing channel header or incorrect value specified in channel header"
+      }
+    }
+
+    "must return Bad Request if channel header contains invalid value" in {
+
+      val arrival = arbitrary[Arrival].sample.value
+
+      val application = new GuiceApplicationBuilder()
+        .overrides()
+        .build()
+
+      running(application) {
+        val actionProvider = application.injector.instanceOf[GetArrivalForWriteActionProvider]
+
+        val controller = new Harness(actionProvider)
+        val result     = controller.get(arrival.arrivalId)(fakeRequest.withHeaders("channel" -> "web2"))
+
+        status(result) mustEqual BAD_REQUEST
+        contentAsString(result) mustEqual "Missing channel header or incorrect value specified in channel header"
       }
     }
   }

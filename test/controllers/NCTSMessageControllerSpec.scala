@@ -17,11 +17,11 @@
 package controllers
 
 import audit.AuditService
-import audit.AuditType
 import base.SpecBase
 import generators.ModelGenerators
 import models.Arrival
 import models.ArrivalId
+import models.ChannelType.web
 import models.GoodsReleasedResponse
 import models.MessageSender
 import models.SubmissionProcessingResult
@@ -71,7 +71,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
     "when a lock can be acquired" - {
       "must return OK, when the service validates and save the message" in {
 
-        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
+        when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(arrival)))
         when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any(), any()))
           .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionSuccess))
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
@@ -89,18 +89,19 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
 
         running(application) {
           val request = FakeRequest(POST, routes.NCTSMessageController.post(messageSender).url)
+            .withHeaders("channel" -> arrival.channel.toString)
             .withXmlBody(xml)
 
           val result = route(application, request).value
 
           status(result) mustEqual OK
+          verify(mockAuditService, times(1)).auditNCTSMessages(any(), eqTo(GoodsReleasedResponse), any())(any())
           header(LOCATION, result) mustBe Some(routes.MessagesController.getMessage(arrival.arrivalId, arrival.nextMessageId).url)
-          verify(mockAuditService, times(1)).auditNCTSMessages(eqTo(GoodsReleasedResponse), any())(any())
         }
       }
 
       "must lock, return NotFound and unlock when given a message for an arrival that does not exist" in {
-        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(None))
+        when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(None))
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
 
@@ -114,6 +115,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
         running(application) {
           val request = FakeRequest(POST, routes.NCTSMessageController.post(messageSender).url)
             .withXmlBody(xml)
+            .withHeaders("channel" -> web.toString)
 
           val result = route(application, request).value
 
@@ -125,7 +127,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
       }
 
       "must lock, return Internal Server Error and unlock if adding the message to the movement fails" in {
-        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
+        when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(arrival)))
         when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any(), any()))
           .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureInternal))
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
@@ -143,6 +145,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
         running(application) {
           val request = FakeRequest(POST, routes.NCTSMessageController.post(messageSender).url)
             .withXmlBody(xml)
+            .withHeaders("channel" -> arrival.channel.toString)
 
           val result = route(application, request).value
 
@@ -154,7 +157,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
 
       "must lock the arrival, return BadRequest error and unlock when an XMessageType is invalid" in {
 
-        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
+        when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(arrival)))
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
 
@@ -181,7 +184,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
       }
 
       "must lock the arrival, return BadRequest error and unlock when fail to validate message" in {
-        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
+        when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(arrival)))
         when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any(), any()))
           .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureExternal))
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
@@ -198,6 +201,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
 
         running(application) {
           val request = FakeRequest(POST, routes.NCTSMessageController.post(messageSender).url)
+            .withHeaders("channel" -> arrival.channel.toString)
             .withXmlBody(xml)
 
           val result = route(application, request).value
@@ -214,7 +218,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
     "when a lock cannot be acquired" - {
 
       "must return Locked" in {
-        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
+        when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(arrival)))
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(false))
 
         val application = baseApplicationBuilder

@@ -17,8 +17,8 @@
 package models.request
 
 import models.Arrival
+import models.ChannelType
 import play.api.mvc.WrappedRequest
 
-case class AuthenticatedOptionalArrivalRequest[A](request: AuthenticatedRequest[A], arrival: Option[Arrival], eoriNumber: String)
+case class AuthenticatedOptionalArrivalRequest[A](request: AuthenticatedRequest[A], arrival: Option[Arrival], channel: ChannelType, eoriNumber: String)
     extends WrappedRequest[A](request)
-    with ChannelOptionalRequest[A]

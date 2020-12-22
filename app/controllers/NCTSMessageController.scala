@@ -53,12 +53,12 @@ class NCTSMessageController @Inject()(cc: ControllerComponents,
 
       processingResult map {
         result =>
-          val counter = Monitors.countMessages(messageInbound.messageType.messageType, request.request.getChannel, result)
+          val counter = Monitors.countMessages(messageInbound.messageType.messageType, request.request.channel, result)
           metricsService.inc(counter)
 
           result match {
             case SubmissionSuccess =>
-              auditService.auditNCTSMessages(messageInbound.messageType, xml)
+              auditService.auditNCTSMessages(request.request.arrival.channel, messageInbound.messageType, xml)
               Ok.withHeaders(LOCATION -> routes.MessagesController.getMessage(request.request.arrival.arrivalId, request.request.arrival.nextMessageId).url)
             case SubmissionFailureInternal => internalServerError("Internal Submission Failure " + processingResult)
             case SubmissionFailureExternal => badRequestError("External Submission Failure " + processingResult)

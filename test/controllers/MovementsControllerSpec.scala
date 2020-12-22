@@ -19,7 +19,6 @@ package controllers
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-
 import audit.AuditService
 import audit.AuditType
 import base.SpecBase
@@ -36,6 +35,7 @@ import models.Arrival
 import models.ArrivalId
 import models.ArrivalStatus
 import models.ChannelType.api
+import models.ChannelType.web
 import models.MessageId
 import models.MessageSender
 import models.MessageType
@@ -107,6 +107,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
   val initializedArrival = Arrival(
     arrivalId = arrivalId,
+    channel = api,
     movementReferenceNumber = mrn,
     eoriNumber = "eori",
     status = ArrivalStatus.Initialized,
@@ -127,7 +128,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           val mockAuditService         = mock[AuditService]
 
           val expectedMessage: MovementMessageWithStatus = movementMessage(1).copy(messageCorrelationId = 1)
-          val newArrival                                 = initializedArrival.copy(messages = NonEmptyList.of[MovementMessageWithStatus](expectedMessage))
+          val newArrival                                 = initializedArrival.copy(messages = NonEmptyList.of[MovementMessageWithStatus](expectedMessage), channel = web)
           val captor: ArgumentCaptor[Arrival]            = ArgumentCaptor.forClass(classOf[Arrival])
 
           when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(newArrival.arrivalId))
@@ -144,7 +145,10 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
           running(application) {
 
-            val request = FakeRequest(POST, routes.MovementsController.post().url).withXmlBody(requestXmlBody.map(trim))
+            val request =
+              FakeRequest(POST, routes.MovementsController.post().url)
+                .withHeaders("channel" -> newArrival.channel.toString)
+                .withXmlBody(requestXmlBody.map(trim))
 
             val result = route(application, request).value
 
@@ -176,7 +180,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
           running(application) {
 
-            val request = FakeRequest(POST, routes.MovementsController.post().url).withXmlBody(requestXmlBody.map(trim))
+            val request = FakeRequest(POST, routes.MovementsController.post().url).withHeaders("channel" -> web.toString).withXmlBody(requestXmlBody.map(trim))
 
             val result = route(application, request).value
 
@@ -204,7 +208,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
           running(application) {
 
-            val request = FakeRequest(POST, routes.MovementsController.post().url).withXmlBody(requestXmlBody.map(trim))
+            val request = FakeRequest(POST, routes.MovementsController.post().url).withHeaders("channel" -> web.toString).withXmlBody(requestXmlBody.map(trim))
 
             val result = route(application, request).value
 
@@ -232,7 +236,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
           running(application) {
 
-            val request = FakeRequest(POST, routes.MovementsController.post().url).withXmlBody(requestXmlBody.map(trim))
+            val request = FakeRequest(POST, routes.MovementsController.post().url).withHeaders("channel" -> web.toString).withXmlBody(requestXmlBody.map(trim))
 
             val result = route(application, request).value
 
@@ -264,7 +268,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
                 </HEAHEA>
               </CC007A>
 
-            val request = FakeRequest(POST, routes.MovementsController.post().url).withXmlBody(requestXmlBody.map(trim))
+            val request = FakeRequest(POST, routes.MovementsController.post().url).withHeaders("channel" -> web.toString).withXmlBody(requestXmlBody.map(trim))
 
             val result = route(application, request).value
 
@@ -291,7 +295,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
             val requestXmlBody =
               <CC007A><SynVerNumMES2>1</SynVerNumMES2><HEAHEA><DocNumHEA5>MRN</DocNumHEA5></HEAHEA></CC007A>
 
-            val request = FakeRequest(POST, routes.MovementsController.post().url).withXmlBody(requestXmlBody.map(trim))
+            val request = FakeRequest(POST, routes.MovementsController.post().url).withHeaders("channel" -> web.toString).withXmlBody(requestXmlBody.map(trim))
 
             val result = route(application, request).value
 
@@ -316,7 +320,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           running(application) {
             val requestXmlBody = <InvalidRootNode><SynVerNumMES2>1</SynVerNumMES2></InvalidRootNode>
 
-            val request = FakeRequest(POST, routes.MovementsController.post().url).withXmlBody(requestXmlBody.map(trim))
+            val request = FakeRequest(POST, routes.MovementsController.post().url).withHeaders("channel" -> web.toString).withXmlBody(requestXmlBody.map(trim))
 
             val result = route(application, request).value
 
@@ -345,7 +349,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
           running(application) {
 
-            val request = FakeRequest(POST, routes.MovementsController.post().url).withXmlBody(requestXmlBody.map(trim))
+            val request = FakeRequest(POST, routes.MovementsController.post().url).withHeaders("channel" -> web.toString).withXmlBody(requestXmlBody.map(trim))
 
             val result = route(application, request).value
 
@@ -373,7 +377,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
           running(application) {
 
-            val request = FakeRequest(POST, routes.MovementsController.post().url).withXmlBody(requestXmlBody.map(trim))
+            val request = FakeRequest(POST, routes.MovementsController.post().url).withHeaders("channel" -> web.toString).withXmlBody(requestXmlBody.map(trim))
 
             val result = route(application, request).value
 
@@ -407,7 +411,9 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
           running(application) {
 
-            val request = FakeRequest(POST, routes.MovementsController.post().url).withXmlBody(requestXmlBody.map(trim))
+            val request = FakeRequest(POST, routes.MovementsController.post().url)
+              .withHeaders("channel" -> failedToSubmitArrival.channel.toString)
+              .withXmlBody(requestXmlBody.map(trim))
 
             val result                                     = route(application, request).value
             val expectedMessage: MovementMessageWithStatus = movementMessage(2).copy(messageCorrelationId = 2)
@@ -461,7 +467,8 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
           running(application) {
 
-            val request = FakeRequest(POST, routes.MovementsController.post().url).withXmlBody(requestXmlBody.map(trim))
+            val request =
+              FakeRequest(POST, routes.MovementsController.post().url).withHeaders("channel" -> arrival.channel.toString).withXmlBody(requestXmlBody.map(trim))
 
             val result = route(application, request).value
 
@@ -490,7 +497,9 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
           running(application) {
 
-            val request = FakeRequest(POST, routes.MovementsController.post().url).withXmlBody(requestXmlBody.map(trim))
+            val request = FakeRequest(POST, routes.MovementsController.post().url)
+              .withHeaders("channel" -> initializedArrival.channel.toString)
+              .withXmlBody(requestXmlBody.map(trim))
 
             val result = route(application, request).value
 
@@ -515,7 +524,9 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
           running(app) {
 
-            val request = FakeRequest(POST, routes.MovementsController.post().url).withXmlBody(requestXmlBody.map(trim))
+            val request = FakeRequest(POST, routes.MovementsController.post().url)
+              .withHeaders("channel" -> initializedArrival.channel.toString)
+              .withXmlBody(requestXmlBody.map(trim))
 
             val result = route(app, request).value
 
@@ -536,7 +547,8 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           running(application) {
             val requestXmlBody = <CC007A><SynVerNumMES2>1</SynVerNumMES2><HEAHEA></HEAHEA></CC007A>
 
-            val request = FakeRequest(POST, routes.MovementsController.post().url).withXmlBody(requestXmlBody.map(trim))
+            val request =
+              FakeRequest(POST, routes.MovementsController.post().url).withHeaders("channel" -> arrival.channel.toString).withXmlBody(requestXmlBody.map(trim))
 
             val result = route(application, request).value
 
@@ -558,7 +570,9 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
             val requestXmlBody = <InvalidRootNode><SynVerNumMES2>1</SynVerNumMES2></InvalidRootNode>
 
-            val request = FakeRequest(POST, routes.MovementsController.post().url).withXmlBody(requestXmlBody.map(trim))
+            val request = FakeRequest(POST, routes.MovementsController.post().url)
+              .withHeaders("channel" -> initializedArrival.channel.toString)
+              .withXmlBody(requestXmlBody.map(trim))
 
             val result = route(application, request).value
 
@@ -582,7 +596,9 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
           running(app) {
 
-            val request = FakeRequest(POST, routes.MovementsController.post().url).withXmlBody(requestXmlBody.map(trim))
+            val request = FakeRequest(POST, routes.MovementsController.post().url)
+              .withHeaders("channel" -> initializedArrival.channel.toString)
+              .withXmlBody(requestXmlBody.map(trim))
 
             val result = route(app, request).value
 
@@ -606,7 +622,9 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
           running(app) {
 
-            val request = FakeRequest(POST, routes.MovementsController.post().url).withXmlBody(requestXmlBody.map(trim))
+            val request = FakeRequest(POST, routes.MovementsController.post().url)
+              .withHeaders("channel" -> initializedArrival.channel.toString)
+              .withXmlBody(requestXmlBody.map(trim))
 
             val result = route(app, request).value
 
@@ -625,7 +643,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
-        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(initializedArrival)))
+        when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(initializedArrival)))
 
         when(mockSubmitMessageService.submitIe007Message(any(), any(), any(), any())(any()))
           .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionSuccess))
@@ -644,8 +662,10 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
         running(application) {
 
-          val request = FakeRequest(PUT, routes.MovementsController.putArrival(initializedArrival.arrivalId).url).withXmlBody(requestXmlBody.map(trim))
-          val result  = route(application, request).value
+          val request = FakeRequest(PUT, routes.MovementsController.putArrival(initializedArrival.arrivalId).url)
+            .withHeaders("channel" -> initializedArrival.channel.toString)
+            .withXmlBody(requestXmlBody.map(trim))
+          val result = route(application, request).value
 
           status(result) mustEqual ACCEPTED
           header("Location", result).value must be(routes.MovementsController.getArrival(initializedArrival.arrivalId).url)
@@ -673,7 +693,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
-        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(None))
+        when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(None))
 
         val application = baseApplicationBuilder
           .overrides(
@@ -698,7 +718,9 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
               </HEAHEA>
             </CC007A>
 
-          val request = FakeRequest(PUT, routes.MovementsController.putArrival(ArrivalId(1)).url).withXmlBody(requestXmlBody.map(trim))
+          val request = FakeRequest(PUT, routes.MovementsController.putArrival(ArrivalId(1)).url)
+            .withHeaders("channel" -> web.toString)
+            .withXmlBody(requestXmlBody.map(trim))
 
           val result = route(application, request).value
 
@@ -715,7 +737,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
-        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(initializedArrival)))
+        when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(initializedArrival)))
 
         when(mockSubmitMessageService.submitIe007Message(any(), any(), any(), any())(any()))
           .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureInternal))
@@ -744,7 +766,9 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
               </HEAHEA>
             </CC007A>
 
-          val request = FakeRequest(PUT, routes.MovementsController.putArrival(initializedArrival.arrivalId).url).withXmlBody(requestXmlBody.map(trim))
+          val request = FakeRequest(PUT, routes.MovementsController.putArrival(initializedArrival.arrivalId).url)
+            .withHeaders("channel" -> initializedArrival.channel.toString)
+            .withXmlBody(requestXmlBody.map(trim))
 
           val result = route(application, request).value
 
@@ -762,7 +786,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
-        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(initializedArrival)))
+        when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(initializedArrival)))
 
         when(mockSubmitMessageService.submitIe007Message(any(), any(), any(), any())(any()))
           .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureExternal))
@@ -791,7 +815,9 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
               </HEAHEA>
             </CC007A>
 
-          val request = FakeRequest(PUT, routes.MovementsController.putArrival(initializedArrival.arrivalId).url).withXmlBody(requestXmlBody.map(trim))
+          val request = FakeRequest(PUT, routes.MovementsController.putArrival(initializedArrival.arrivalId).url)
+            .withHeaders("channel" -> initializedArrival.channel.toString)
+            .withXmlBody(requestXmlBody.map(trim))
 
           val result = route(app, request).value
 
@@ -806,7 +832,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
-        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
+        when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(arrival)))
 
         val application =
           baseApplicationBuilder
@@ -819,7 +845,9 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         running(application) {
           val requestXmlBody = <CC007A><SynVerNumMES2>1</SynVerNumMES2><HEAHEA></HEAHEA></CC007A>
 
-          val request = FakeRequest(PUT, routes.MovementsController.putArrival(arrival.arrivalId).url).withXmlBody(requestXmlBody.map(trim))
+          val request = FakeRequest(PUT, routes.MovementsController.putArrival(arrival.arrivalId).url)
+            .withHeaders("channel" -> arrival.channel.toString)
+            .withXmlBody(requestXmlBody.map(trim))
 
           val result = route(application, request).value
 
@@ -834,7 +862,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
-        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(initializedArrival)))
+        when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(initializedArrival)))
 
         val application =
           baseApplicationBuilder
@@ -864,7 +892,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
-        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(initializedArrival)))
+        when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(initializedArrival)))
 
         when(mockSubmitMessageService.submitIe007Message(any(), any(), any(), any())(any()))
           .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureRejected(ErrorInPayload.responseBody)))
@@ -910,7 +938,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
-        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(initializedArrival)))
+        when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(initializedArrival)))
 
         when(mockSubmitMessageService.submitIe007Message(any(), any(), any(), any())(any()))
           .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureInternal))
@@ -939,7 +967,9 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
               </HEAHEA>
             </CC007A>
 
-          val request = FakeRequest(PUT, routes.MovementsController.putArrival(initializedArrival.arrivalId).url).withXmlBody(requestXmlBody.map(trim))
+          val request = FakeRequest(PUT, routes.MovementsController.putArrival(initializedArrival.arrivalId).url)
+            .withXmlBody(requestXmlBody.map(trim))
+            .withHeaders("channel" -> initializedArrival.channel.toString)
 
           val result = route(application, request).value
 
@@ -962,7 +992,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         running(application) {
           forAll(listWithMaxLength[Arrival](10)) {
             arrivals =>
-              when(mockArrivalMovementRepository.fetchAllArrivals(any())).thenReturn(Future.successful(arrivals))
+              when(mockArrivalMovementRepository.fetchAllArrivals(any(), any())).thenReturn(Future.successful(arrivals))
 
               val request = FakeRequest(GET, routes.MovementsController.getArrivals().url)
 
@@ -981,7 +1011,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
       "must return an INTERNAL_SERVER_ERROR when we cannot retrieve the Arrival Movements" in {
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
-        when(mockArrivalMovementRepository.fetchAllArrivals(any()))
+        when(mockArrivalMovementRepository.fetchAllArrivals(any(), any()))
           .thenReturn(Future.failed(new Exception))
 
         val application =
@@ -1010,10 +1040,10 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           .build()
 
         val arrival = Arbitrary.arbitrary[Arrival].sample.value.copy(eoriNumber = "eori")
-        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
+        when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(arrival)))
 
         running(application) {
-          val request = FakeRequest(GET, routes.MovementsController.getArrival(ArrivalId(1)).url)
+          val request = FakeRequest(GET, routes.MovementsController.getArrival(ArrivalId(1)).url).withHeaders("channel" -> arrival.channel.toString)
 
           val result = route(application, request).value
 
@@ -1029,10 +1059,10 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           .overrides(bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository))
           .build()
 
-        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(None))
+        when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(None))
 
         running(application) {
-          val request = FakeRequest(GET, routes.MovementsController.getArrival(ArrivalId(1)).url)
+          val request = FakeRequest(GET, routes.MovementsController.getArrival(ArrivalId(1)).url).withHeaders("channel" -> web.toString)
           val result  = route(application, request).value
 
           status(result) mustEqual NOT_FOUND
@@ -1047,10 +1077,10 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           .build()
 
         val arrival = Arbitrary.arbitrary[Arrival].sample.value.copy(eoriNumber = "eori2")
-        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
+        when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(arrival)))
 
         running(application) {
-          val request = FakeRequest(GET, routes.MovementsController.getArrival(ArrivalId(1)).url)
+          val request = FakeRequest(GET, routes.MovementsController.getArrival(ArrivalId(1)).url).withHeaders("channel" -> arrival.channel.toString)
           val result  = route(application, request).value
 
           status(result) mustEqual NOT_FOUND
@@ -1060,7 +1090,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
       "must return an INTERNAL_SERVER_ERROR when we cannot retrieve the arrival movement" in {
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
 
-        when(mockArrivalMovementRepository.get(any()))
+        when(mockArrivalMovementRepository.get(any(), any()))
           .thenReturn(Future.failed(new Exception))
 
         val application = baseApplicationBuilder
@@ -1068,7 +1098,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           .build()
 
         running(application) {
-          val request = FakeRequest(GET, routes.MovementsController.getArrival(ArrivalId(1)).url)
+          val request = FakeRequest(GET, routes.MovementsController.getArrival(ArrivalId(1)).url).withHeaders("channel" -> web.toString)
           val result  = route(application, request).value
 
           status(result) mustEqual INTERNAL_SERVER_ERROR
