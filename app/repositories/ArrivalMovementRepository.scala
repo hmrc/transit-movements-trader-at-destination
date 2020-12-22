@@ -58,22 +58,20 @@ import scala.util.Try
 class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi, appConfig: AppConfig, metricsService: MetricsService)(implicit ec: ExecutionContext)
     extends MongoDateTimeFormats {
 
-  private val index: Aux[BSONSerializationPack.type] = IndexUtils.index(
+  private val eoriNumberIndex: Aux[BSONSerializationPack.type] = IndexUtils.index(
     key = Seq("eoriNumber" -> IndexType.Ascending),
     name = Some("eori-number-index")
   )
 
-  private val channelIndex: Aux[BSONSerializationPack.type] = IndexUtils.index(
-    key = Seq("channelType" -> IndexType.Ascending),
-    name = Some("channel-type-index")
+  private val movementReferenceNumber: Aux[BSONSerializationPack.type] = IndexUtils.index(
+    key = Seq("movementReferenceNumber" -> IndexType.Ascending),
+    name = Some("movement-reference-number-index")
   )
-
-  private val cacheTtl = appConfig.cacheTtl
 
   private val lastUpdatedIndex: Aux[BSONSerializationPack.type] = IndexUtils.index(
     key = Seq("lastUpdated" -> IndexType.Ascending),
     name = Some("last-updated-index"),
-    options = BSONDocument("expireAfterSeconds" -> cacheTtl)
+    options = BSONDocument("expireAfterSeconds" -> appConfig.cacheTtl)
   )
 
   val started: Future[Unit] = {
@@ -81,8 +79,8 @@ class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi, appConfig: Ap
       .flatMap {
         jsonCollection =>
           for {
-            _   <- jsonCollection.indexesManager.ensure(index)
-            _   <- jsonCollection.indexesManager.ensure(channelIndex)
+            _   <- jsonCollection.indexesManager.ensure(eoriNumberIndex)
+            _   <- jsonCollection.indexesManager.ensure(movementReferenceNumber)
             res <- jsonCollection.indexesManager.ensure(lastUpdatedIndex)
           } yield res
       }
