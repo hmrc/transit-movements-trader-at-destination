@@ -114,6 +114,20 @@ class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi, appConfig: Ap
     }
   }
 
+  def get(arrivalId: ArrivalId): Future[Option[Arrival]] = {
+
+    val selector = Json.obj(
+      "_id" -> arrivalId
+    )
+
+    metricsService.timeAsyncCall(Monitors.GetArrivalByIdMonitor) {
+      collection.flatMap {
+        _.find(selector, None)
+          .one[Arrival]
+      }
+    }
+  }
+
   def get(eoriNumber: String, mrn: MovementReferenceNumber, channelFilter: ChannelType): Future[Option[Arrival]] = {
     val selector = Json.obj(
       "movementReferenceNumber" -> mrn.value,

@@ -47,16 +47,11 @@ private[actions] class GetArrivalAction(
     extends ActionRefiner[Request, ArrivalRequest] {
 
   override protected def refine[A](request: Request[A]): Future[Either[Result, ArrivalRequest[A]]] =
-    ChannelUtil.getChannel(request) match {
+    repository.get(arrivalId).map {
+      case Some(arrival) =>
+        Right(ArrivalRequest(request, arrival, arrival.channel))
       case None =>
-        Future.successful(Left(BadRequest("Missing channel header or incorrect value specified in channel header")))
-      case Some(channel) =>
-        repository.get(arrivalId, channel).map {
-          case Some(arrival) =>
-            Right(ArrivalRequest(request, arrival, channel))
-          case None =>
-            Left(NotFound)
-        }
+        Left(NotFound)
     }
 }
 
