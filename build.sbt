@@ -19,6 +19,8 @@ lazy val microservice = Project(appName, file("."))
     scalafmtOnCompile in ThisBuild := true,
     useSuperShell in ThisBuild := false
   )
+  .settings(headerSettings(IntegrationTest): _*)
+  .settings(automateHeaderSettings(IntegrationTest))
   .settings(publishingSettings: _*)
   .settings(resolvers += Resolver.jcenterRepo)
   .settings(PlayKeys.playDefaultPort := 9480)
