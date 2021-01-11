@@ -20,6 +20,7 @@ import java.time._
 
 import cats.data.NonEmptyList
 import connectors.MessageConnector.EisSubmissionResult
+import connectors.MessageConnector.EisSubmissionResult.DownstreamBadGateway
 import connectors.MessageConnector.EisSubmissionResult.DownstreamInternalServerError
 import connectors.MessageConnector.EisSubmissionResult.EisSubmissionFailure
 import connectors.MessageConnector.EisSubmissionResult.EisSubmissionFailureDownstream
@@ -253,6 +254,7 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
     Arbitrary {
       Gen.oneOf(
         DownstreamInternalServerError,
+        DownstreamBadGateway,
         UnexpectedHttpResponse(HttpResponse(418, ""))
       )
     }

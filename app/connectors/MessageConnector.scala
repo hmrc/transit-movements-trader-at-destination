@@ -79,7 +79,7 @@ object MessageConnector {
   }
 
   object EisSubmissionResult {
-    private val possibleResponses           = List(EisSubmissionSuccessful, ErrorInPayload, VirusFoundOrInvalidToken, DownstreamInternalServerError)
+    private val possibleResponses           = List(EisSubmissionSuccessful, ErrorInPayload, VirusFoundOrInvalidToken, DownstreamInternalServerError, DownstreamBadGateway)
     private val statusesOfPossibleResponses = possibleResponses.map(_.statusCode)
     private val statusToResponseMapping     = statusesOfPossibleResponses.zip(possibleResponses).toMap
 
@@ -95,6 +95,7 @@ object MessageConnector {
 
     sealed abstract class EisSubmissionFailureDownstream(statusCode: Int, responseBody: String) extends EisSubmissionFailure(statusCode, responseBody)
     object DownstreamInternalServerError                                                        extends EisSubmissionFailureDownstream(500, "Downstream internal server error")
+    object DownstreamBadGateway                                                                 extends EisSubmissionFailureDownstream(502, "Downstream internal server error")
     case class UnexpectedHttpResponse(httpResponse: HttpResponse)
         extends EisSubmissionFailureDownstream(httpResponse.status, "Unexpected HTTP Response received")
   }
