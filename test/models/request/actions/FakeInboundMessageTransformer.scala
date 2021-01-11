@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 HM Revenue & Customs
+ * Copyright 2021 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import models.request.ArrivalRequest
 import models.GoodsReleasedResponse
 import models.MessageInbound
 import play.api.mvc.Result
-import play.api.mvc.Results.BadRequest
+import play.api.mvc.Results.BadGateway
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -43,6 +43,6 @@ class FakeInboundMessageBadRequestTransformer @Inject()(implicit ec: ExecutionCo
 
   override protected def refine[A](request: ArrivalRequest[A]): Future[Either[Result, InboundRequest[A]]] =
     Future.successful(
-      Left(BadRequest)
+      Left(BadGateway)
     )
 }

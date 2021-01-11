@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 HM Revenue & Customs
+ * Copyright 2021 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,7 +61,7 @@ class NCTSMessageController @Inject()(cc: ControllerComponents,
               auditService.auditNCTSMessages(request.request.arrival.channel, messageInbound.messageType, xml)
               Ok.withHeaders(LOCATION -> routes.MessagesController.getMessage(request.request.arrival.arrivalId, request.request.arrival.nextMessageId).url)
             case SubmissionFailureInternal => internalServerError("Internal Submission Failure " + processingResult)
-            case SubmissionFailureExternal => badRequestError("External Submission Failure " + processingResult)
+            case SubmissionFailureExternal => badGateWayError("External Submission Failure " + processingResult)
           }
       }
 
@@ -72,9 +72,9 @@ class NCTSMessageController @Inject()(cc: ControllerComponents,
     InternalServerError(message)
   }
 
-  private def badRequestError(message: String): Result = {
+  private def badGateWayError(message: String): Result = {
     logger.warn(message)
-    BadRequest(message)
+    BadGateway(message)
   }
 
 }

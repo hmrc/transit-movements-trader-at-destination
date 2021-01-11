@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 HM Revenue & Customs
+ * Copyright 2021 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import models.MessageType
 import models.UnloadingPermissionResponse
 import models.UnloadingRemarksRejectedResponse
 import models.request.ArrivalRequest
-import play.api.mvc.Results.BadRequest
+import play.api.mvc.Results.BadGateway
 import play.api.mvc._
 
 import scala.concurrent.ExecutionContext
@@ -54,13 +54,13 @@ class InboundMessageTransformer @Inject()(implicit ec: ExecutionContext) extends
               Right(InboundRequest(MessageInbound(response, nextState), request))
             )
           case Left(error) =>
-            Future.successful(Left(badRequestError(error.reason)))
+            Future.successful(Left(badGateWayError(error.reason)))
         }
       case None =>
         logger.warn(s"Unsupported X-Message-Type ${request.headers.get("X-Message-Type")}")
 
         Future.successful(
-          Left(badRequestError(s"Unsupported X-Message-Type: ${request.headers.get("X-Message-Type")}"))
+          Left(badGateWayError(s"Unsupported X-Message-Type: ${request.headers.get("X-Message-Type")}"))
         )
     }
   }
@@ -74,9 +74,9 @@ class InboundMessageTransformer @Inject()(implicit ec: ExecutionContext) extends
     case _                                                => None
   }
 
-  private def badRequestError(message: String): Result = {
+  private def badGateWayError(message: String): Result = {
     logger.error(message)
-    BadRequest(message)
+    BadGateway(message)
   }
 
 }

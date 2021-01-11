@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 HM Revenue & Customs
+ * Copyright 2021 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,7 +76,7 @@ class InboundMessageTransformerSpec extends AnyFreeSpec with Matchers with Scala
 
       val testAction = action.invokeBlock(fakeRequest("invalid-code", GoodsReleased), successfulResponse)
 
-      testAction.futureValue.header.status mustBe BAD_REQUEST
+      testAction.futureValue.header.status mustBe BAD_GATEWAY
     }
 
     "return correct http response for message type" in {
@@ -94,7 +94,7 @@ class InboundMessageTransformerSpec extends AnyFreeSpec with Matchers with Scala
           } else {
             val testAction = action.invokeBlock(fakeRequest(message.code, GoodsReleased), successfulResponse)
 
-            testAction.futureValue.header.status mustBe BAD_REQUEST
+            testAction.futureValue.header.status mustBe BAD_GATEWAY
           }
       }
 
@@ -115,7 +115,7 @@ class InboundMessageTransformerSpec extends AnyFreeSpec with Matchers with Scala
     "handle out-of-sequence-message" in {
       val testAction = action.invokeBlock(fakeRequest("IE044", ArrivalStatus.UnloadingRemarksSubmitted), successfulResponse)
 
-      testAction.futureValue.header.status mustBe BAD_REQUEST
+      testAction.futureValue.header.status mustBe BAD_GATEWAY
     }
 
   }

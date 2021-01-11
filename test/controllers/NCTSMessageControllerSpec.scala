@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 HM Revenue & Customs
+ * Copyright 2021 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -155,7 +155,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
         }
       }
 
-      "must lock the arrival, return BadRequest error and unlock when an XMessageType is invalid" in {
+      "must lock the arrival, return BAD_GATEWAY error and unlock when an XMessageType is invalid" in {
 
         when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
@@ -176,14 +176,14 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
 
           val result = route(application, request).value
 
-          status(result) mustEqual BAD_REQUEST
+          status(result) mustEqual BAD_GATEWAY
           verify(mockLockRepository, times(1)).lock(arrivalId)
           verify(mockSaveMessageService, never()).validateXmlAndSaveMessage(any(), any(), any(), any())
           verify(mockLockRepository, times(1)).unlock(arrivalId)
         }
       }
 
-      "must lock the arrival, return BadRequest error and unlock when fail to validate message" in {
+      "must lock the arrival, return BadGateway error and unlock when fail to validate message" in {
         when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
         when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any(), any()))
           .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureExternal))
@@ -206,7 +206,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
 
           val result = route(application, request).value
 
-          status(result) mustEqual BAD_REQUEST
+          status(result) mustEqual BAD_GATEWAY
           verify(mockLockRepository, times(1)).lock(arrivalId)
           verify(mockSaveMessageService, times(1)).validateXmlAndSaveMessage(any(), any(), any(), any())
           verify(mockLockRepository, times(1)).unlock(arrivalId)
