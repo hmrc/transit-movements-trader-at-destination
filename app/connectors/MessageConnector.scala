@@ -74,7 +74,7 @@ class MessageConnector @Inject()(config: AppConfig, http: HttpClient, metricsSer
 
 object MessageConnector {
 
-  sealed abstract class EisSubmissionResult(val statusCode: Int, val responseBody: String) {
+  sealed abstract class EisSubmissionResult(val statusCode: Seq[Int], val responseBody: String) {
     override def toString: String = s"EisSubmissionResult(code = $statusCode and details = $responseBody)"
   }
 
@@ -84,18 +84,18 @@ object MessageConnector {
     private val statusToResponseMapping     = statusesOfPossibleResponses.zip(possibleResponses).toMap
 
     def responseToStatus(httpResponse: HttpResponse): EisSubmissionResult =
-      statusToResponseMapping.getOrElse(httpResponse.status, UnexpectedHttpResponse(httpResponse))
-    object EisSubmissionSuccessful extends EisSubmissionResult(202, "EIS Successful Submission")
+      statusToResponseMapping.getOrElse(Seq(httpResponse.status), UnexpectedHttpResponse(httpResponse))
+    object EisSubmissionSuccessful extends EisSubmissionResult(Seq(202), "EIS Successful Submission")
 
-    sealed abstract class EisSubmissionFailure(statusCode: Int, responseBody: String) extends EisSubmissionResult(statusCode, responseBody)
+    sealed abstract class EisSubmissionFailure(statusCode: Seq[Int], responseBody: String) extends EisSubmissionResult(statusCode, responseBody)
 
-    sealed abstract class EisSubmissionRejected(statusCode: Int, responseBody: String) extends EisSubmissionFailure(statusCode, responseBody)
+    sealed abstract class EisSubmissionRejected(statusCode: Int, responseBody: String) extends EisSubmissionFailure(Seq(statusCode), responseBody)
     object ErrorInPayload                                                              extends EisSubmissionRejected(400, "Message failed schema validation")
     object VirusFoundOrInvalidToken                                                    extends EisSubmissionRejected(403, "Virus found, token invalid etc")
 
-    sealed abstract class EisSubmissionFailureDownstream(statusCode: Int, responseBody: String) extends EisSubmissionFailure(statusCode, responseBody)
-    object DownstreamInternalServerError                                                        extends EisSubmissionFailureDownstream(500, "Downstream internal server error")
+    sealed abstract class EisSubmissionFailureDownstream(statusCode: Seq[Int], responseBody: String) extends EisSubmissionFailure(statusCode, responseBody)
+    object DownstreamInternalServerError                                                             extends EisSubmissionFailureDownstream(Seq(500, 502), "Downstream internal server error")
     case class UnexpectedHttpResponse(httpResponse: HttpResponse)
-        extends EisSubmissionFailureDownstream(httpResponse.status, "Unexpected HTTP Response received")
+        extends EisSubmissionFailureDownstream(Seq(httpResponse.status), "Unexpected HTTP Response received")
   }
 }

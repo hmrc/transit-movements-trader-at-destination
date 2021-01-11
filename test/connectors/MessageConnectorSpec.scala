@@ -178,11 +178,37 @@ class MessageConnectorSpec
 
           val result = connector.post(arrivalId, postValue, OffsetDateTime.now())
 
-          result.futureValue mustEqual DownstreamInternalServerError
+          result.futureValue.statusCode mustEqual Seq(500)
         }
       }
+      "return a DownstreamFailure for a return code of 502" in {
 
-      "return an UnexpectedHttpResonse for an error code other than 202, 400, 403, 500" in {
+        server.stubFor(
+          post(urlEqualTo(postUrl))
+            .withHeader("Content-Type", equalTo("application/xml"))
+            .withHeader("Accept", equalTo("application/xml"))
+            .withHeader("X-Message-Type", equalTo(messageType.toString))
+            .withHeader("X-Message-Sender", equalTo(messageSender))
+            .willReturn(
+              aResponse()
+                .withStatus(502)
+            )
+        )
+
+        val postValue = MovementMessageWithStatus(LocalDateTime.now(), messageType, <CC007A>test</CC007A>, MessageStatus.SubmissionPending, 1)
+        val arrivalId = ArrivalId(123)
+
+        val app = appBuilder.build()
+
+        running(app) {
+          val connector = app.injector.instanceOf[MessageConnector]
+
+          val result = connector.post(arrivalId, postValue, OffsetDateTime.now())
+
+          result.futureValue.statusCode mustEqual Seq(502)
+        }
+      }
+      "return an UnexpectedHttpResponse for an error code other than 202, 400, 403, 500" in {
 
         server.stubFor(
           post(urlEqualTo(postUrl))
@@ -206,7 +232,7 @@ class MessageConnectorSpec
 
           val result = connector.post(arrivalId, postValue, OffsetDateTime.now())
 
-          result.futureValue.statusCode mustEqual 418
+          result.futureValue.statusCode mustEqual Seq(418)
         }
       }
     }
