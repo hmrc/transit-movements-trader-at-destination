@@ -106,15 +106,21 @@ class MovementsController @Inject()(
                 submitMessageService
                   .submitArrival(arrival)
                   .map {
-                    case SubmissionFailureExternal => BadGateway
-                    case SubmissionFailureInternal => InternalServerError
-                    case submissionFailureRejected: SubmissionFailureRejected =>
-                      BadRequest(submissionFailureRejected.responseBody)
-                    case SubmissionSuccess =>
-                      auditService.auditEvent(AuditType.ArrivalNotificationSubmitted, request.body, request.channel)
-                      auditService.auditEvent(AuditType.MesSenMES3Added, request.body, request.channel)
-                      Accepted("Message accepted")
-                        .withHeaders("Location" -> routes.MovementsController.getArrival(arrival.arrivalId).url)
+                    result =>
+                      val counter = Monitors.countMessages(MessageType.ArrivalNotification, request.channel, result)
+                      metricsService.inc(counter)
+
+                      result match {
+                        case SubmissionFailureExternal => BadGateway
+                        case SubmissionFailureInternal => InternalServerError
+                        case submissionFailureRejected: SubmissionFailureRejected =>
+                          BadRequest(submissionFailureRejected.responseBody)
+                        case SubmissionSuccess =>
+                          auditService.auditEvent(AuditType.ArrivalNotificationSubmitted, request.body, request.channel)
+                          auditService.auditEvent(AuditType.MesSenMES3Added, request.body, request.channel)
+                          Accepted("Message accepted")
+                            .withHeaders("Location" -> routes.MovementsController.getArrival(arrival.arrivalId).url)
+                      }
                   }
                   .recover {
                     case _ => {
