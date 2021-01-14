@@ -208,7 +208,7 @@ class MessageConnectorSpec
           result.futureValue.statusCode mustEqual Seq(502)
         }
       }
-      "return an UnexpectedHttpResponse for an error code other than 202, 400, 403, 500" in {
+      "return an UnexpectedHttpResponse for an error code other than 202, 400, 403, 500 or 502" in {
 
         server.stubFor(
           post(urlEqualTo(postUrl))
