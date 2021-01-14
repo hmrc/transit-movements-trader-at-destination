@@ -21,6 +21,7 @@ import java.time.OffsetDateTime
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.matching.StringValuePattern
+import connectors.MessageConnector.EisSubmissionResult.DownstreamBadGateway
 import connectors.MessageConnector.EisSubmissionResult.DownstreamInternalServerError
 import connectors.MessageConnector.EisSubmissionResult.EisSubmissionSuccessful
 import connectors.MessageConnector.EisSubmissionResult.ErrorInPayload
@@ -179,6 +180,34 @@ class MessageConnectorSpec
           val result = connector.post(arrivalId, postValue, OffsetDateTime.now())
 
           result.futureValue mustEqual DownstreamInternalServerError
+        }
+      }
+
+      "return a DownstreamBadGateway for a return code of 502" in {
+
+        server.stubFor(
+          post(urlEqualTo(postUrl))
+            .withHeader("Content-Type", equalTo("application/xml"))
+            .withHeader("Accept", equalTo("application/xml"))
+            .withHeader("X-Message-Type", equalTo(messageType.toString))
+            .withHeader("X-Message-Sender", equalTo(messageSender))
+            .willReturn(
+              aResponse()
+                .withStatus(502)
+            )
+        )
+
+        val postValue = MovementMessageWithStatus(LocalDateTime.now(), messageType, <CC007A>test</CC007A>, MessageStatus.SubmissionPending, 1)
+        val arrivalId = ArrivalId(123)
+
+        val app = appBuilder.build()
+
+        running(app) {
+          val connector = app.injector.instanceOf[MessageConnector]
+
+          val result = connector.post(arrivalId, postValue, OffsetDateTime.now())
+
+          result.futureValue mustEqual DownstreamBadGateway
         }
       }
 
