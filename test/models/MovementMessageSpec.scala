@@ -23,6 +23,7 @@ import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
+import play.api.libs.json.JsSuccess
 import play.api.libs.json.Json
 
 class MovementMessageSpec extends AnyFreeSpec with Matchers with ScalaCheckPropertyChecks with ModelGenerators {
@@ -52,6 +53,58 @@ class MovementMessageSpec extends AnyFreeSpec with Matchers with ScalaCheckPrope
         }
       }
     }
+
+    ".reads" - {
+
+      "must succeed when the json contains all of the nodes" in {
+
+        forAll(arbitrary[LocalDateTime], arbitrary[MessageType], arbitrary[MessageStatus], arbitrary[Int]) {
+          case (dateTime, messageType, status, messageCorrelationId) =>
+            val xml = <xml><node1>foo</node1><node2>bar</node2></xml>
+            val messageJson = {
+              Json.obj(
+                "xml" ->
+                  Json.obj(
+                    "node1" -> "foo",
+                    "node2" -> "bar"
+                  ))
+            }
+
+            val json = Json.obj(
+              "dateTime"             -> Json.toJson(dateTime)(MongoDateTimeFormats.localDateTimeWrite),
+              "messageType"          -> Json.toJson(messageType),
+              "message"              -> xml.toString,
+              "status"               -> Json.toJson(status),
+              "messageCorrelationId" -> messageCorrelationId,
+              "messageJson"          -> messageJson
+            )
+
+            val expectedMovementMessage = MovementMessageWithStatus(dateTime, messageType, xml, status, messageCorrelationId, messageJson)
+
+            json.validate[MovementMessageWithStatus] mustEqual JsSuccess(expectedMovementMessage)
+        }
+      }
+
+      "must succeed when the json does not contain the `messageJson` node, setting that field to an empty Json object" in {
+
+        forAll(arbitrary[LocalDateTime], arbitrary[MessageType], arbitrary[MessageStatus], arbitrary[Int]) {
+          case (dateTime, messageType, status, messageCorrelationId) =>
+            val xml = <xml><node1>foo</node1><node2>bar</node2></xml>
+
+            val json = Json.obj(
+              "dateTime"             -> Json.toJson(dateTime)(MongoDateTimeFormats.localDateTimeWrite),
+              "messageType"          -> Json.toJson(messageType),
+              "message"              -> xml.toString,
+              "status"               -> Json.toJson(status),
+              "messageCorrelationId" -> messageCorrelationId
+            )
+
+            val expectedMovementMessage = MovementMessageWithStatus(dateTime, messageType, xml, status, messageCorrelationId, Json.obj())
+
+            json.validate[MovementMessageWithStatus] mustEqual JsSuccess(expectedMovementMessage)
+        }
+      }
+    }
   }
 
   "MovementMessageWithoutStatus" - {
@@ -76,6 +129,56 @@ class MovementMessageSpec extends AnyFreeSpec with Matchers with ScalaCheckPrope
             val modelFromConstruction = MovementMessageWithoutStatus(dateTime, messageType, xml, messageCorrelationId, expectedJson)
 
             modelFromApply mustEqual modelFromConstruction
+        }
+      }
+    }
+
+    ".reads" - {
+
+      "must succeed when the json contains all of the nodes" in {
+
+        forAll(arbitrary[LocalDateTime], arbitrary[MessageType], arbitrary[Int]) {
+          case (dateTime, messageType, messageCorrelationId) =>
+            val xml = <xml><node1>foo</node1><node2>bar</node2></xml>
+            val messageJson = {
+              Json.obj(
+                "xml" ->
+                  Json.obj(
+                    "node1" -> "foo",
+                    "node2" -> "bar"
+                  ))
+            }
+
+            val json = Json.obj(
+              "dateTime"             -> Json.toJson(dateTime)(MongoDateTimeFormats.localDateTimeWrite),
+              "messageType"          -> Json.toJson(messageType),
+              "message"              -> xml.toString,
+              "messageCorrelationId" -> messageCorrelationId,
+              "messageJson"          -> messageJson
+            )
+
+            val expectedMovementMessage = MovementMessageWithoutStatus(dateTime, messageType, xml, messageCorrelationId, messageJson)
+
+            json.validate[MovementMessageWithoutStatus] mustEqual JsSuccess(expectedMovementMessage)
+        }
+      }
+
+      "must succeed when the json does not contain the `messageJson` node, setting that field to an empty Json object" in {
+
+        forAll(arbitrary[LocalDateTime], arbitrary[MessageType], arbitrary[Int]) {
+          case (dateTime, messageType, messageCorrelationId) =>
+            val xml = <xml><node1>foo</node1><node2>bar</node2></xml>
+
+            val json = Json.obj(
+              "dateTime"             -> Json.toJson(dateTime)(MongoDateTimeFormats.localDateTimeWrite),
+              "messageType"          -> Json.toJson(messageType),
+              "message"              -> xml.toString,
+              "messageCorrelationId" -> messageCorrelationId
+            )
+
+            val expectedMovementMessage = MovementMessageWithoutStatus(dateTime, messageType, xml, messageCorrelationId, Json.obj())
+
+            json.validate[MovementMessageWithoutStatus] mustEqual JsSuccess(expectedMovementMessage)
         }
       }
     }

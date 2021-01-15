@@ -81,8 +81,25 @@ object MovementMessage extends NodeSeqFormat with MongoDateTimeFormats {
 
 object MovementMessageWithStatus extends NodeSeqFormat with MongoDateTimeFormats with XmlToJson {
 
+  val writesMovementMessage: OWrites[MovementMessageWithStatus] =
+    Json.writes[MovementMessageWithStatus]
+
+  val readsMovementMessage: Reads[MovementMessageWithStatus] = {
+
+    import play.api.libs.functional.syntax._
+
+    (
+      (__ \ "dateTime").read[LocalDateTime] and
+        (__ \ "messageType").read[MessageType] and
+        (__ \ "message").read[NodeSeq] and
+        (__ \ "status").read[MessageStatus] and
+        (__ \ "messageCorrelationId").read[Int] and
+        (__ \ "messageJson").read[JsObject].orElse(Reads.pure(Json.obj()))
+    )(MovementMessageWithStatus(_, _, _, _, _, _))
+  }
+
   implicit val formatsMovementMessage: OFormat[MovementMessageWithStatus] =
-    Json.format[MovementMessageWithStatus]
+    OFormat(readsMovementMessage, writesMovementMessage)
 
   def apply(dateTime: LocalDateTime, messageType: MessageType, message: NodeSeq, status: MessageStatus, messageCorrelationId: Int): MovementMessageWithStatus =
     MovementMessageWithStatus(dateTime, messageType, message, status, messageCorrelationId, toJson(message))
@@ -90,8 +107,24 @@ object MovementMessageWithStatus extends NodeSeqFormat with MongoDateTimeFormats
 
 object MovementMessageWithoutStatus extends NodeSeqFormat with MongoDateTimeFormats with XmlToJson {
 
+  val writesMovementMessage: OWrites[MovementMessageWithoutStatus] =
+    Json.writes[MovementMessageWithoutStatus]
+
+  val readsMovementMessage: Reads[MovementMessageWithoutStatus] = {
+
+    import play.api.libs.functional.syntax._
+
+    (
+      (__ \ "dateTime").read[LocalDateTime] and
+        (__ \ "messageType").read[MessageType] and
+        (__ \ "message").read[NodeSeq] and
+        (__ \ "messageCorrelationId").read[Int] and
+        (__ \ "messageJson").read[JsObject].orElse(Reads.pure(Json.obj()))
+    )(MovementMessageWithoutStatus(_, _, _, _, _))
+  }
+
   implicit val formatsMovementMessage: OFormat[MovementMessageWithoutStatus] =
-    Json.format[MovementMessageWithoutStatus]
+    OFormat(readsMovementMessage, writesMovementMessage)
 
   def apply(dateTime: LocalDateTime, messageType: MessageType, message: NodeSeq, messageCorrelationId: Int): MovementMessageWithoutStatus =
     MovementMessageWithoutStatus(dateTime, messageType, message, messageCorrelationId, toJson(message))
