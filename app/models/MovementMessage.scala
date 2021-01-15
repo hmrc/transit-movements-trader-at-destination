@@ -47,19 +47,19 @@ sealed trait XmlToJson extends Logging {
     }
 }
 
-final case class MovementMessageWithStatus(dateTime: LocalDateTime,
-                                           messageType: MessageType,
-                                           message: NodeSeq,
-                                           status: MessageStatus,
-                                           messageCorrelationId: Int,
-                                           messageJson: JsObject)
+final case class MovementMessageWithStatus private (dateTime: LocalDateTime,
+                                                    messageType: MessageType,
+                                                    message: NodeSeq,
+                                                    status: MessageStatus,
+                                                    messageCorrelationId: Int,
+                                                    messageJson: JsObject)
     extends MovementMessage { def optStatus: Option[MessageStatus] = Some(status) }
 
-final case class MovementMessageWithoutStatus(dateTime: LocalDateTime,
-                                              messageType: MessageType,
-                                              message: NodeSeq,
-                                              messageCorrelationId: Int,
-                                              messageJson: JsObject)
+final case class MovementMessageWithoutStatus private (dateTime: LocalDateTime,
+                                                       messageType: MessageType,
+                                                       message: NodeSeq,
+                                                       messageCorrelationId: Int,
+                                                       messageJson: JsObject)
     extends MovementMessage { def optStatus: Option[MessageStatus] = None }
 
 object MovementMessage extends NodeSeqFormat with MongoDateTimeFormats {

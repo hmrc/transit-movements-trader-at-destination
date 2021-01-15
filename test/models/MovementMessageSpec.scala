@@ -46,10 +46,9 @@ class MovementMessageSpec extends AnyFreeSpec with Matchers with ScalaCheckPrope
                   ))
             }
 
-            val modelFromApply        = MovementMessageWithStatus(dateTime, messageType, xml, status, messageCorrelationId)
-            val modelFromConstruction = MovementMessageWithStatus(dateTime, messageType, xml, status, messageCorrelationId, expectedJson)
+            val model = MovementMessageWithStatus(dateTime, messageType, xml, status, messageCorrelationId)
 
-            modelFromApply mustEqual modelFromConstruction
+            model.messageJson mustEqual expectedJson
         }
       }
     }
@@ -125,10 +124,9 @@ class MovementMessageSpec extends AnyFreeSpec with Matchers with ScalaCheckPrope
                   ))
             }
 
-            val modelFromApply        = MovementMessageWithoutStatus(dateTime, messageType, xml, messageCorrelationId)
-            val modelFromConstruction = MovementMessageWithoutStatus(dateTime, messageType, xml, messageCorrelationId, expectedJson)
+            val model = MovementMessageWithoutStatus(dateTime, messageType, xml, messageCorrelationId)
 
-            modelFromApply mustEqual modelFromConstruction
+            model.messageJson mustEqual expectedJson
         }
       }
     }
