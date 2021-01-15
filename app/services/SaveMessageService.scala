@@ -16,14 +16,17 @@
 
 package services
 
+import audit.AuditService
 import com.google.inject.Inject
 import logging.Logging
 import models.ArrivalStatus
+import models.ChannelType
 import models.MessageResponse
 import models.MessageSender
 import models.SubmissionProcessingResult
 import models.SubmissionProcessingResult._
 import repositories.ArrivalMovementRepository
+import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -33,13 +36,15 @@ import scala.xml.NodeSeq
 
 class SaveMessageService @Inject()(arrivalMovementRepository: ArrivalMovementRepository,
                                    arrivalMovementService: ArrivalMovementMessageService,
-                                   xmlValidationService: XmlValidationService)(implicit ec: ExecutionContext)
+                                   xmlValidationService: XmlValidationService,
+                                   auditService: AuditService)(implicit ec: ExecutionContext)
     extends Logging {
 
   def validateXmlAndSaveMessage(messageXml: NodeSeq,
                                 messageSender: MessageSender,
                                 messageResponse: MessageResponse,
-                                arrivalStatus: ArrivalStatus): Future[SubmissionProcessingResult] =
+                                arrivalStatus: ArrivalStatus,
+                                channel: ChannelType)(implicit hc: HeaderCarrier): Future[SubmissionProcessingResult] =
     xmlValidationService.validate(messageXml.toString(), messageResponse.xsdFile) match {
       case Success(_) =>
         arrivalMovementService.makeInboundMessage(messageSender.messageCorrelationId, messageResponse.messageType)(messageXml) match {
@@ -49,6 +54,7 @@ class SaveMessageService @Inject()(arrivalMovementRepository: ArrivalMovementRep
               .map {
                 case Success(_) => {
                   logger.debug(s"Saved message successfully")
+                  auditService.auditNCTSMessages(channel, messageResponse, message)
                   SubmissionSuccess
                 }
                 case Failure(error) => {

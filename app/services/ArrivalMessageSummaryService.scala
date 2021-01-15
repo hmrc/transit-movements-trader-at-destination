@@ -41,15 +41,15 @@ class ArrivalMessageSummaryService {
         case NonEmptyList(arrivalNotification, _ :: Nil) =>
           arrivalNotification
 
-        case NonEmptyList((msg @ MovementMessageWithStatus(_, ArrivalNotification, _, _, _), id), tail) =>
+        case NonEmptyList((msg: MovementMessageWithStatus, id), tail) if msg.messageType == ArrivalNotification =>
           // This is a workaround since we cannot infer the type of head
           // to be (MovementMessageWithStatus, MessageId) using @ in the pattern match
           val head: (MovementMessageWithStatus, MessageId) = (msg, id)
 
           tail
             .foldLeft(NonEmptyList.of(head))({
-              case (acc, (m @ MovementMessageWithStatus(_, ArrivalNotification, _, _, _), mid)) => acc :+ Tuple2(m, mid)
-              case (acc, _)                                                                     => acc
+              case (acc, (m: MovementMessageWithStatus, mid)) if m.messageType == ArrivalNotification => acc :+ Tuple2(m, mid)
+              case (acc, _)                                                                           => acc
             })
             .toList
             .maxBy(_._1.messageCorrelationId)
@@ -97,8 +97,8 @@ class ArrivalMessageSummaryService {
 
           val unloadingRemarks = arrival.messagesWithId
             .foldLeft(Seq.empty[(MovementMessageWithStatus, MessageId)]) {
-              case (acc, (m @ MovementMessageWithStatus(_, UnloadingRemarks, _, _, _), mid)) => acc :+ Tuple2(m, mid)
-              case (acc, _)                                                                  => acc
+              case (acc, (m: MovementMessageWithStatus, mid)) if m.messageType == UnloadingRemarks => acc :+ Tuple2(m, mid)
+              case (acc, _)                                                                        => acc
             }
 
           Some(unloadingRemarks.maxBy(_._1.messageCorrelationId))
@@ -142,16 +142,16 @@ object ArrivalMessageSummaryService {
   private val arrivalNotificationCount: NonEmptyList[MovementMessage] => Int = {
     movementMessages =>
       movementMessages.toList.count {
-        case MovementMessageWithStatus(_, ArrivalNotification, _, _, _) => true
-        case _                                                          => false
+        case m: MovementMessageWithStatus if m.messageType == ArrivalNotification => true
+        case _                                                                    => false
       }
   }
 
   private val unloadingRemarksCount: NonEmptyList[MovementMessage] => Int = {
     movementMessages =>
       movementMessages.toList.count {
-        case MovementMessageWithStatus(_, UnloadingRemarks, _, _, _) => true
-        case _                                                       => false
+        case m: MovementMessageWithStatus if m.messageType == UnloadingRemarks => true
+        case _                                                                 => false
       }
   }
 
@@ -159,8 +159,8 @@ object ArrivalMessageSummaryService {
     messagesWithId => messageType =>
       messagesWithId
         .foldLeft(Seq.empty[(MovementMessageWithoutStatus, MessageId)]) {
-          case (acc, (m @ MovementMessageWithoutStatus(_, `messageType`, _, _), mid)) => acc :+ Tuple2(m, mid)
-          case (acc, _)                                                               => acc
+          case (acc, (m: MovementMessageWithoutStatus, mid)) if m.messageType == messageType => acc :+ Tuple2(m, mid)
+          case (acc, _)                                                                      => acc
         }
   }
 }

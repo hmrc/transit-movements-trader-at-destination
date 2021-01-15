@@ -16,13 +16,11 @@
 
 package controllers
 
-import audit.AuditService
 import base.SpecBase
 import generators.ModelGenerators
 import models.Arrival
 import models.ArrivalId
 import models.ChannelType.web
-import models.GoodsReleasedResponse
 import models.MessageSender
 import models.SubmissionProcessingResult
 import models.request.actions.FakeInboundMessageBadRequestTransformer
@@ -36,7 +34,6 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import org.mockito.ArgumentMatchers.{eq => eqTo}
 import repositories.ArrivalMovementRepository
 import repositories.LockRepository
 import services.SaveMessageService
@@ -48,7 +45,6 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
   private val mockArrivalMovementRepository: ArrivalMovementRepository = mock[ArrivalMovementRepository]
   private val mockLockRepository: LockRepository                       = mock[LockRepository]
   private val mockSaveMessageService: SaveMessageService               = mock[SaveMessageService]
-  private val mockAuditService: AuditService                           = mock[AuditService]
 
   private val arrivalId     = ArrivalId(1)
   private val version       = 1
@@ -63,7 +59,6 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
     reset(mockArrivalMovementRepository)
     reset(mockLockRepository)
     reset(mockSaveMessageService)
-    reset(mockAuditService)
   }
 
   "post" - {
@@ -72,7 +67,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
       "must return OK, when the service validates and save the message" in {
 
         when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
-        when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any(), any()))
+        when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any(), any(), any())(any()))
           .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionSuccess))
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
@@ -82,8 +77,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
             bind[LockRepository].toInstance(mockLockRepository),
             bind[SaveMessageService].toInstance(mockSaveMessageService),
-            bind[InboundMessageTransformerInterface].to[FakeInboundMessageTransformer],
-            bind[AuditService].toInstance(mockAuditService)
+            bind[InboundMessageTransformerInterface].to[FakeInboundMessageTransformer]
           )
           .build()
 
@@ -95,7 +89,6 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
           val result = route(application, request).value
 
           status(result) mustEqual OK
-          verify(mockAuditService, times(1)).auditNCTSMessages(any(), eqTo(GoodsReleasedResponse), any())(any())
           header(LOCATION, result) mustBe Some(routes.MessagesController.getMessage(arrival.arrivalId, arrival.nextMessageId).url)
         }
       }
@@ -128,7 +121,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
 
       "must lock, return Internal Server Error and unlock if adding the message to the movement fails" in {
         when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
-        when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any(), any()))
+        when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any(), any(), any())(any()))
           .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureInternal))
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
@@ -178,14 +171,14 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
 
           status(result) mustEqual BAD_REQUEST
           verify(mockLockRepository, times(1)).lock(arrivalId)
-          verify(mockSaveMessageService, never()).validateXmlAndSaveMessage(any(), any(), any(), any())
+          verify(mockSaveMessageService, never()).validateXmlAndSaveMessage(any(), any(), any(), any(), any())(any())
           verify(mockLockRepository, times(1)).unlock(arrivalId)
         }
       }
 
       "must lock the arrival, return BadRequest error and unlock when fail to validate message" in {
         when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
-        when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any(), any()))
+        when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any(), any(), any())(any()))
           .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureExternal))
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
@@ -208,7 +201,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
 
           status(result) mustEqual BAD_REQUEST
           verify(mockLockRepository, times(1)).lock(arrivalId)
-          verify(mockSaveMessageService, times(1)).validateXmlAndSaveMessage(any(), any(), any(), any())
+          verify(mockSaveMessageService, times(1)).validateXmlAndSaveMessage(any(), any(), any(), any(), any())(any())
           verify(mockLockRepository, times(1)).unlock(arrivalId)
         }
       }

@@ -20,32 +20,31 @@ import audit.AuditType._
 import javax.inject.Inject
 import models._
 import play.api.libs.json.Format.GenericFormat
-import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-import utils.JsonHelper
+import utils.MessageTranslation
 
 import scala.concurrent.ExecutionContext
-import scala.xml.NodeSeq
 
-class AuditService @Inject()(auditConnector: AuditConnector, jsonHelper: JsonHelper)(implicit ec: ExecutionContext) {
+class AuditService @Inject()(auditConnector: AuditConnector, messageTranslation: MessageTranslation)(implicit ec: ExecutionContext) {
 
-  def auditEvent(auditType: String, xmlRequestBody: NodeSeq, channel: ChannelType)(implicit hc: HeaderCarrier): Unit = {
-    val json: JsObject = jsonHelper.convertXmlToJson(xmlRequestBody.toString())
+  def auditEvent(auditType: String, message: MovementMessage, channel: ChannelType)(implicit hc: HeaderCarrier): Unit = {
 
+    val json    = messageTranslation.translate(message.messageJson)
     val details = AuditDetails(channel, json)
+
     auditConnector.sendExplicitAudit(auditType, Json.toJson(details))
   }
 
-  def auditNCTSMessages(channel: ChannelType, messageResponse: MessageResponse, xmlRequestBody: NodeSeq)(implicit hc: HeaderCarrier): Unit = {
+  def auditNCTSMessages(channel: ChannelType, messageResponse: MessageResponse, message: MovementMessage)(implicit hc: HeaderCarrier): Unit = {
     val auditType: String = messageResponse match {
       case GoodsReleasedResponse            => GoodsReleased
       case ArrivalRejectedResponse          => ArrivalNotificationRejected
       case UnloadingPermissionResponse      => UnloadingPermissionReceived
       case UnloadingRemarksRejectedResponse => UnloadingPermissionRejected
     }
-    auditEvent(auditType, xmlRequestBody, channel)
+    auditEvent(auditType, message, channel)
   }
 
 }

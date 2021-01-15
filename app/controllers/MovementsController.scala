@@ -88,8 +88,8 @@ class MovementsController @Inject()(
                       case submissionFailureRejected: SubmissionFailureRejected =>
                         BadRequest(submissionFailureRejected.responseBody)
                       case SubmissionSuccess =>
-                        auditService.auditEvent(AuditType.ArrivalNotificationSubmitted, request.body, request.channel)
-                        auditService.auditEvent(AuditType.MesSenMES3Added, message.message, request.channel)
+                        auditService.auditEvent(AuditType.ArrivalNotificationSubmitted, message, request.channel)
+                        auditService.auditEvent(AuditType.MesSenMES3Added, message, request.channel)
                         Accepted("Message accepted")
                           .withHeaders("Location" -> routes.MovementsController.getArrival(arrival.arrivalId).url)
                     }
@@ -111,15 +111,14 @@ class MovementsController @Inject()(
                     case submissionFailureRejected: SubmissionFailureRejected =>
                       BadRequest(submissionFailureRejected.responseBody)
                     case SubmissionSuccess =>
-                      auditService.auditEvent(AuditType.ArrivalNotificationSubmitted, request.body, request.channel)
-                      auditService.auditEvent(AuditType.MesSenMES3Added, request.body, request.channel)
+                      auditService.auditEvent(AuditType.ArrivalNotificationSubmitted, arrival.messages.head, request.channel)
+                      auditService.auditEvent(AuditType.MesSenMES3Added, arrival.messages.head, request.channel)
                       Accepted("Message accepted")
                         .withHeaders("Location" -> routes.MovementsController.getArrival(arrival.arrivalId).url)
                   }
                   .recover {
-                    case _ => {
+                    case _ =>
                       InternalServerError
-                    }
                   }
               case Left(error) =>
                 logger.error(s"Failed to create ArrivalMovement with the following error: $error")
@@ -146,8 +145,8 @@ class MovementsController @Inject()(
               case submissionFailureRejected: SubmissionFailureRejected =>
                 BadRequest(submissionFailureRejected.responseBody)
               case SubmissionSuccess =>
-                auditService.auditEvent(AuditType.ArrivalNotificationReSubmitted, request.body, request.channel)
-                auditService.auditEvent(AuditType.MesSenMES3Added, message.message, request.channel)
+                auditService.auditEvent(AuditType.ArrivalNotificationReSubmitted, message, request.channel)
+                auditService.auditEvent(AuditType.MesSenMES3Added, message, request.channel)
                 Accepted("Message accepted")
                   .withHeaders("Location" -> routes.MovementsController.getArrival(request.arrival.arrivalId).url)
             }

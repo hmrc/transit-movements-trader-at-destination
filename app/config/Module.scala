@@ -24,7 +24,6 @@ import controllers.actions.AuthenticatedGetArrivalForReadActionProviderImpl
 import controllers.actions.AuthenticatedGetOptionalArrivalForWriteActionProvider
 import controllers.actions.AuthenticatedGetOptionalArrivalForWriteActionProviderImpl
 import repositories.ArrivalMovementRepository
-import utils.JsonHelper
 import utils.MessageTranslation
 
 class Module extends AbstractModule {
@@ -35,8 +34,6 @@ class Module extends AbstractModule {
     bind(classOf[ArrivalMovementRepository]).asEagerSingleton()
     bind(classOf[AuthenticatedGetOptionalArrivalForWriteActionProvider]).to(classOf[AuthenticatedGetOptionalArrivalForWriteActionProviderImpl])
     bind(classOf[AuthenticatedGetArrivalForReadActionProvider]).to(classOf[AuthenticatedGetArrivalForReadActionProviderImpl])
-    bind(classOf[JsonHelper]).asEagerSingleton()
     bind(classOf[MessageTranslation]).asEagerSingleton()
   }
-
 }

@@ -16,12 +16,10 @@
 
 package audit
 
+import java.time.LocalDateTime
+
 import base.SpecBase
-import models.Arrival
-import models.ArrivalRejectedResponse
-import models.GoodsReleasedResponse
-import models.UnloadingPermissionResponse
-import models.UnloadingRemarksRejectedResponse
+import models._
 import models.ChannelType.api
 import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.{eq => eqTo}
@@ -49,6 +47,8 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
       val requestXml         = <xml>test</xml>
       val requestedXmlToJson = Json.parse("{\"channel\":\"api\",\"xml\":\"test\"}")
 
+      val movementMessage = MovementMessageWithStatus(LocalDateTime.now, MessageType.ArrivalNotification, requestXml, MessageStatus.SubmissionSucceeded, 1)
+
       val auditType = "Some AuditEvent"
 
       val application = baseApplicationBuilder
@@ -56,7 +56,7 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
         .build()
       running(application) {
         val auditService = application.injector.instanceOf[AuditService]
-        auditService.auditEvent(auditType, requestXml, api)
+        auditService.auditEvent(auditType, movementMessage, api)
 
         verify(mockAuditConnector, times(1)).sendExplicitAudit(eqTo(auditType), eqTo(requestedXmlToJson))(any(), any(), any())
       }
@@ -66,6 +66,8 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
       val requestXml         = <xml>test</xml>
       val requestedXmlToJson = Json.parse("{\"channel\":\"api\",\"xml\":\"test\"}")
 
+      val movementMessage = MovementMessageWithoutStatus(LocalDateTime.now, MessageType.GoodsReleased, requestXml, 1)
+
       val application = baseApplicationBuilder
         .overrides(bind[AuditConnector].toInstance(mockAuditConnector))
         .build()
@@ -73,7 +75,7 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
       running(application) {
         val auditService = application.injector.instanceOf[AuditService]
 
-        auditService.auditNCTSMessages(channel = api, GoodsReleasedResponse, requestXml)
+        auditService.auditNCTSMessages(channel = api, GoodsReleasedResponse, movementMessage)
 
         verify(mockAuditConnector, times(1)).sendExplicitAudit(eqTo(AuditType.GoodsReleased), eqTo(requestedXmlToJson))(any(), any(), any())
       }
@@ -83,6 +85,8 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
       val requestXml         = <xml>test</xml>
       val requestedXmlToJson = Json.parse("{\"channel\":\"api\",\"xml\":\"test\"}")
 
+      val movementMessage = MovementMessageWithoutStatus(LocalDateTime.now, MessageType.ArrivalRejection, requestXml, 1)
+
       val application = baseApplicationBuilder
         .overrides(bind[AuditConnector].toInstance(mockAuditConnector))
         .build()
@@ -90,7 +94,7 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
       running(application) {
         val auditService = application.injector.instanceOf[AuditService]
 
-        auditService.auditNCTSMessages(channel = api, ArrivalRejectedResponse, requestXml)
+        auditService.auditNCTSMessages(channel = api, ArrivalRejectedResponse, movementMessage)
 
         verify(mockAuditConnector, times(1)).sendExplicitAudit(eqTo(AuditType.ArrivalNotificationRejected), eqTo(requestedXmlToJson))(any(), any(), any())
       }
@@ -100,6 +104,8 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
       val requestXml         = <xml>test</xml>
       val requestedXmlToJson = Json.parse("{\"channel\":\"api\",\"xml\":\"test\"}")
 
+      val movementMessage = MovementMessageWithoutStatus(LocalDateTime.now, MessageType.UnloadingPermission, requestXml, 1)
+
       val application = baseApplicationBuilder
         .overrides(bind[AuditConnector].toInstance(mockAuditConnector))
         .build()
@@ -107,7 +113,7 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
       running(application) {
         val auditService = application.injector.instanceOf[AuditService]
 
-        auditService.auditNCTSMessages(api, UnloadingPermissionResponse, requestXml)
+        auditService.auditNCTSMessages(api, UnloadingPermissionResponse, movementMessage)
 
         verify(mockAuditConnector, times(1)).sendExplicitAudit(eqTo(AuditType.UnloadingPermissionReceived), eqTo(requestedXmlToJson))(any(), any(), any())
       }
@@ -118,6 +124,8 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
       val requestXml         = <xml>test</xml>
       val requestedXmlToJson = Json.parse("{\"channel\":\"api\",\"xml\":\"test\"}")
 
+      val movementMessage = MovementMessageWithoutStatus(LocalDateTime.now, MessageType.UnloadingRemarksRejection, requestXml, 1)
+
       val application = baseApplicationBuilder
         .overrides(bind[AuditConnector].toInstance(mockAuditConnector))
         .build()
@@ -125,7 +133,7 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
       running(application) {
         val auditService = application.injector.instanceOf[AuditService]
 
-        auditService.auditNCTSMessages(channel = api, UnloadingRemarksRejectedResponse, requestXml)
+        auditService.auditNCTSMessages(channel = api, UnloadingRemarksRejectedResponse, movementMessage)
 
         verify(mockAuditConnector, times(1)).sendExplicitAudit(eqTo(AuditType.UnloadingPermissionRejected), eqTo(requestedXmlToJson))(any(), any(), any())
       }

@@ -16,7 +16,6 @@
 
 package controllers
 
-import audit.AuditService
 import controllers.actions.GetArrivalForWriteActionProvider
 
 import javax.inject.Inject
@@ -39,7 +38,6 @@ import scala.xml.NodeSeq
 class NCTSMessageController @Inject()(cc: ControllerComponents,
                                       getArrival: GetArrivalForWriteActionProvider,
                                       inboundMessage: InboundMessageTransformerInterface,
-                                      auditService: AuditService,
                                       saveMessageService: SaveMessageService,
                                       metricsService: MetricsService)(implicit ec: ExecutionContext)
     extends BackendController(cc)
@@ -49,7 +47,8 @@ class NCTSMessageController @Inject()(cc: ControllerComponents,
     implicit request =>
       val messageInbound: MessageInbound = request.inboundMessage
       val xml: NodeSeq                   = request.request.request.body
-      val processingResult               = saveMessageService.validateXmlAndSaveMessage(xml, messageSender, messageInbound.messageType, messageInbound.nextState)
+      val processingResult =
+        saveMessageService.validateXmlAndSaveMessage(xml, messageSender, messageInbound.messageType, messageInbound.nextState, request.request.channel)
 
       processingResult map {
         result =>
@@ -58,7 +57,6 @@ class NCTSMessageController @Inject()(cc: ControllerComponents,
 
           result match {
             case SubmissionSuccess =>
-              auditService.auditNCTSMessages(request.request.arrival.channel, messageInbound.messageType, xml)
               Ok.withHeaders(LOCATION -> routes.MessagesController.getMessage(request.request.arrival.arrivalId, request.request.arrival.nextMessageId).url)
             case SubmissionFailureInternal => internalServerError("Internal Submission Failure " + processingResult)
             case SubmissionFailureExternal => badRequestError("External Submission Failure " + processingResult)
