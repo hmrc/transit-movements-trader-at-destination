@@ -72,7 +72,7 @@ class MovementsController @Inject()(
       case _                                                           => false
     }
 
-  private def SubmissionResultHandler(
+  private def handleSubmissionResult(
     result: SubmissionProcessingResult,
     arrivalNotificationType: String,
     message: NodeSeq,
@@ -105,7 +105,7 @@ class MovementsController @Inject()(
                     val counter = Monitors.countMessages(MessageType.ArrivalNotification, request.channel, result)
                     metricsService.inc(counter)
 
-                    SubmissionResultHandler(result, AuditType.ArrivalNotificationSubmitted, message.message, request.channel, arrival.arrivalId)
+                    handleSubmissionResult(result, AuditType.ArrivalNotificationSubmitted, message.message, request.channel, arrival.arrivalId)
                 }
             case Left(error) =>
               logger.error(s"Failed to create ArrivalMovementWithStatus with the following error: $error")
@@ -120,7 +120,7 @@ class MovementsController @Inject()(
                   .submitArrival(arrival)
                   .map {
                     result =>
-                      SubmissionResultHandler(result, AuditType.ArrivalNotificationSubmitted, request.body, request.channel, arrival.arrivalId)
+                      handleSubmissionResult(result, AuditType.ArrivalNotificationSubmitted, request.body, request.channel, arrival.arrivalId)
                   }
                   .recover {
                     case _ => {
@@ -148,7 +148,7 @@ class MovementsController @Inject()(
             .submitIe007Message(arrivalId, request.arrival.nextMessageId, message, mrn)
             .map {
               result =>
-                SubmissionResultHandler(result, AuditType.ArrivalNotificationReSubmitted, message.message, request.channel, request.arrival.arrivalId)
+                handleSubmissionResult(result, AuditType.ArrivalNotificationReSubmitted, message.message, request.channel, request.arrival.arrivalId)
             }
         case Left(error) =>
           logger.error(s"Failed to create message and MovementReferenceNumber with error: $error")
