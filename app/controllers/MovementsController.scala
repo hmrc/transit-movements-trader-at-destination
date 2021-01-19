@@ -20,6 +20,7 @@ import audit.AuditService
 import audit.AuditType
 import cats.data.NonEmptyList
 import controllers.actions._
+
 import javax.inject.Inject
 import logging.Logging
 import metrics.MetricsService
@@ -27,9 +28,11 @@ import metrics.Monitors
 import models.MessageStatus.SubmissionSucceeded
 import models.ArrivalId
 import models.ArrivalStatus
+import models.ChannelType
 import models.MessageType
 import models.MovementMessage
 import models.ResponseArrivals
+import models.SubmissionProcessingResult
 import models.SubmissionProcessingResult._
 import models.request.ArrivalRequest
 import models.response.ResponseArrival
@@ -40,6 +43,7 @@ import play.api.mvc.ControllerComponents
 import repositories.ArrivalMovementRepository
 import services.ArrivalMovementMessageService
 import services.SubmitMessageService
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.ExecutionContext
@@ -68,6 +72,25 @@ class MovementsController @Inject()(
       case _                                                           => false
     }
 
+  private def handleSubmissionResult(
+    result: SubmissionProcessingResult,
+    arrivalNotificationType: String,
+    message: MovementMessage,
+    requestChannel: ChannelType,
+    arrivalId: ArrivalId
+  )(implicit hc: HeaderCarrier) =
+    result match {
+      case SubmissionFailureInternal => InternalServerError
+      case SubmissionFailureExternal => BadGateway
+      case submissionFailureRejected: SubmissionFailureRejected =>
+        BadRequest(submissionFailureRejected.responseBody)
+      case SubmissionSuccess =>
+        auditService.auditEvent(arrivalNotificationType, message, requestChannel)
+        auditService.auditEvent(AuditType.MesSenMES3Added, message, requestChannel)
+        Accepted("Message accepted")
+          .withHeaders("Location" -> routes.MovementsController.getArrival(arrivalId).url)
+    }
+
   def post: Action[NodeSeq] = (authenticatedOptionalArrival()(parse.xml) andThen validateMessageSenderNode.filter).async {
     implicit request =>
       request.arrival match {
@@ -82,17 +105,8 @@ class MovementsController @Inject()(
                     val counter = Monitors.countMessages(MessageType.ArrivalNotification, request.channel, result)
                     metricsService.inc(counter)
 
-                    result match {
-                      case SubmissionFailureInternal => InternalServerError
-                      case SubmissionFailureExternal => BadGateway
-                      case submissionFailureRejected: SubmissionFailureRejected =>
-                        BadRequest(submissionFailureRejected.responseBody)
-                      case SubmissionSuccess =>
-                        auditService.auditEvent(AuditType.ArrivalNotificationSubmitted, message, request.channel)
-                        auditService.auditEvent(AuditType.MesSenMES3Added, message, request.channel)
-                        Accepted("Message accepted")
-                          .withHeaders("Location" -> routes.MovementsController.getArrival(arrival.arrivalId).url)
-                    }
+                    handleSubmissionResult(result, AuditType.ArrivalNotificationSubmitted, message, request.channel, arrival.arrivalId)
+
                 }
             case Left(error) =>
               logger.error(s"Failed to create ArrivalMovementWithStatus with the following error: $error")
@@ -106,15 +120,8 @@ class MovementsController @Inject()(
                 submitMessageService
                   .submitArrival(arrival)
                   .map {
-                    case SubmissionFailureExternal => BadGateway
-                    case SubmissionFailureInternal => InternalServerError
-                    case submissionFailureRejected: SubmissionFailureRejected =>
-                      BadRequest(submissionFailureRejected.responseBody)
-                    case SubmissionSuccess =>
-                      auditService.auditEvent(AuditType.ArrivalNotificationSubmitted, arrival.messages.head, request.channel)
-                      auditService.auditEvent(AuditType.MesSenMES3Added, arrival.messages.head, request.channel)
-                      Accepted("Message accepted")
-                        .withHeaders("Location" -> routes.MovementsController.getArrival(arrival.arrivalId).url)
+                    result =>
+                      handleSubmissionResult(result, AuditType.ArrivalNotificationSubmitted, arrival.messages.head, request.channel, arrival.arrivalId)
                   }
                   .recover {
                     case _ =>
@@ -140,15 +147,8 @@ class MovementsController @Inject()(
           submitMessageService
             .submitIe007Message(arrivalId, request.arrival.nextMessageId, message, mrn)
             .map {
-              case SubmissionFailureInternal => InternalServerError
-              case SubmissionFailureExternal => BadGateway
-              case submissionFailureRejected: SubmissionFailureRejected =>
-                BadRequest(submissionFailureRejected.responseBody)
-              case SubmissionSuccess =>
-                auditService.auditEvent(AuditType.ArrivalNotificationReSubmitted, message, request.channel)
-                auditService.auditEvent(AuditType.MesSenMES3Added, message, request.channel)
-                Accepted("Message accepted")
-                  .withHeaders("Location" -> routes.MovementsController.getArrival(request.arrival.arrivalId).url)
+              result =>
+                handleSubmissionResult(result, AuditType.ArrivalNotificationReSubmitted, message, request.channel, request.arrival.arrivalId)
             }
         case Left(error) =>
           logger.error(s"Failed to create message and MovementReferenceNumber with error: $error")
