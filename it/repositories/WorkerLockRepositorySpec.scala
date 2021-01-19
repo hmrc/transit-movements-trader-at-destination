@@ -17,6 +17,8 @@
 package repositories
 
 import base.ItSpecBase
+import models.LockResult
+import models.LockResult.LockAcquired
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.JsObject
@@ -45,7 +47,7 @@ class WorkerLockRepositorySpec extends ItSpecBase with FailOnUnindexedQueries wi
 
         val result = repository.lock(id).futureValue
 
-        result mustEqual true
+        result mustEqual LockResult.LockAcquired
 
         val selector = Json.obj("_id" -> id)
         val lock = database.flatMap {
@@ -72,8 +74,8 @@ class WorkerLockRepositorySpec extends ItSpecBase with FailOnUnindexedQueries wi
         val result1 = repository.lock(id).futureValue
         val result2 = repository.lock(id).futureValue
 
-        result1 mustEqual true
-        result2 mustEqual false
+        result1 mustEqual LockResult.LockAcquired
+        result2 mustEqual LockResult.AlreadyLocked
       }
     }
   }
@@ -136,7 +138,7 @@ class WorkerLockRepositorySpec extends ItSpecBase with FailOnUnindexedQueries wi
 
         val result = repository.lock(id).futureValue
 
-        result mustEqual true
+        result mustEqual LockAcquired
 
         val selector = Json.obj("_id" -> id, "created" -> Json.obj("$type" -> "date"))
 

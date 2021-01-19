@@ -20,6 +20,7 @@ import java.time.LocalDateTime
 
 import config.AppConfig
 import javax.inject.Inject
+import models.LockResult
 import play.api.libs.json.Json
 import play.modules.reactivemongo.ReactiveMongoApi
 import reactivemongo.api.commands.LastError
@@ -57,7 +58,7 @@ class WorkerLockRepository @Inject()(mongo: ReactiveMongoApi, appConfig: AppConf
       }
       .map(_ => true)
 
-  def lock(id: String): Future[Boolean] = {
+  def lock(id: String): Future[LockResult] = {
 
     val lock = Json.obj(
       "_id"     -> id,
@@ -67,17 +68,17 @@ class WorkerLockRepository @Inject()(mongo: ReactiveMongoApi, appConfig: AppConf
     collection.flatMap {
       _.insert(ordered = false)
         .one(lock)
-        .map(_ => true)
+        .map(_ => LockResult.LockAcquired)
     } recover {
       case e: LastError if e.code.contains(documentExistsErrorCodeValue) =>
-        false
+        LockResult.AlreadyLocked
     }
   }
 
-  def unlock(id: String): Future[Unit] =
+  def unlock(id: String): Future[Boolean] =
     collection.flatMap {
       _.findAndRemove(Json.obj("_id" -> id))
-        .map(_ => ())
+        .map(_ => true)
     }
 }
 

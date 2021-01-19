@@ -8,6 +8,7 @@ object AppDependencies {
   val compile: Seq[ModuleID] = Seq(
     "uk.gov.hmrc"       %% "bootstrap-play-26"               % "2.2.0",
     "org.reactivemongo" %% "play2-reactivemongo"             % "0.20.11-play26",
+    "org.reactivemongo" %% "reactivemongo-akkastream"        % "0.20.11",
     "com.typesafe.play" %% "play-iteratees"                  % "2.6.1",
     "com.typesafe.play" %% "play-iteratees-reactive-streams" % "2.6.1",
     "org.typelevel"     %% "cats-core"                       % catsVersion,
