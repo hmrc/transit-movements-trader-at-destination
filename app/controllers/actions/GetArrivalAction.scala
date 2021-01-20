@@ -73,6 +73,7 @@ private[actions] class AuthenticatedGetArrivalAction(
   override protected def refine[A](request: AuthenticatedRequest[A]): Future[Either[Result, ArrivalRequest[A]]] =
     ChannelUtil.getChannel(request) match {
       case None =>
+        logger.warn(s"Missing channel header for request id ${request.headers.get("http_x_request_id")}")
         Future.successful(Left(BadRequest("Missing channel header or incorrect value specified in channel header")))
       case Some(channel) =>
         repository

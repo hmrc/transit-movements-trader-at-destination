@@ -54,6 +54,7 @@ class InboundMessageTransformer @Inject()(implicit ec: ExecutionContext) extends
               Right(InboundRequest(MessageInbound(response, nextState), request))
             )
           case Left(error) =>
+            logger.warn(s"Unable to transition movement state ${error.reason}")
             Future.successful(Left(badRequestError(error.reason)))
         }
       case None =>

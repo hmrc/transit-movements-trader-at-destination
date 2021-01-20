@@ -46,7 +46,9 @@ class ValidateMessageSenderNodeFilter extends Logging {
               Future.successful(Some(BadRequest(HtmlFormat.empty)))
           }
         }
-        case _ => Future.successful(Some(BadRequest(HtmlFormat.empty)))
+        case _ =>
+          logger.warn("Unable to process request")
+          Future.successful(Some(BadRequest(HtmlFormat.empty)))
       }
 
   }
