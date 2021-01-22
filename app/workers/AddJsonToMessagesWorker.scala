@@ -73,11 +73,11 @@ class AddJsonToMessagesWorker @Inject()(
 
     override def next(): Future[LockResult] =
       if (hasNext) {
-        logger.info("Attempting to acquire a lock")
+        logger.info(s"Attempting to acquire lock $lockId")
 
         workerLockRepository.lock(lockId).map {
           result =>
-            logger.info(s"Result of attempting to acquire a lock: $result")
+            logger.info(s"Result of attempting to acquire lock $lockId: $result")
             result
         }
       } else {
