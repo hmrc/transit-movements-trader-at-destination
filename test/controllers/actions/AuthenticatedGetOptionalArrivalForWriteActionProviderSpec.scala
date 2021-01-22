@@ -153,7 +153,7 @@ class AuthenticatedGetOptionalArrivalForWriteActionProviderSpec
           .thenReturn(Future.successful(validEnrolments))
         when(mockArrivalMovementRepository.get(any(), any(), any())) thenReturn Future.successful(Some(arrival))
         when(mockLockRepository.lock(any())) thenReturn Future.successful(true)
-        when(mockLockRepository.unlock(any())) thenReturn Future.successful(())
+        when(mockLockRepository.unlock(any())) thenReturn Future.successful(true)
 
         val application = new GuiceApplicationBuilder()
           .overrides(
@@ -189,7 +189,7 @@ class AuthenticatedGetOptionalArrivalForWriteActionProviderSpec
           .thenReturn(Future.successful(validEnrolments))
         when(mockArrivalMovementRepository.get(any(), any(), any())) thenReturn Future.successful(Some(arrival))
         when(mockLockRepository.lock(any())) thenReturn Future.successful(true)
-        when(mockLockRepository.unlock(any())) thenReturn Future.successful(())
+        when(mockLockRepository.unlock(any())) thenReturn Future.successful(true)
 
         val application = new GuiceApplicationBuilder()
           .overrides(

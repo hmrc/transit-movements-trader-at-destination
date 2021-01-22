@@ -25,7 +25,6 @@ import models.Arrival
 import models.LockResult.AlreadyLocked
 import models.LockResult.LockAcquired
 import org.mockito.ArgumentMatchers.any
-import org.mockito.ArgumentMatchers.{eq => eqTo}
 import org.mockito.Mockito.atLeastOnce
 import org.mockito.Mockito.never
 import org.mockito.Mockito.times
@@ -39,6 +38,7 @@ import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.mockito.MockitoSugar
 import repositories.ArrivalMovementRepository
+import repositories.LockRepository
 import repositories.WorkerLockRepository
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -59,84 +59,155 @@ class AddJsonToMessagesWorkerSpec
 
   "AddJsonToMessagesWorker" - {
 
-    "must obtain and release a lock" in new Fixture {
+    "when the worker is enabled in config" - {
 
-      private val arrival = arbitrary[Arrival].sample.value
+      "when a lock for the overall worker can be obtained" - {
 
-      when(workerConfig.addJsonToMessagesWorkerSettings) thenReturn defaultSettings
-      when(lockRepo.lock(any())) thenReturn Future.successful(LockAcquired)
-      when(lockRepo.unlock(any())) thenReturn Future.successful(true)
-      when(arrivalsRepo.arrivalsWithoutJsonMessages(any())) thenReturn Future.successful(Seq(arrival))
-      when(arrivalsRepo.resetMessages(any(), any())) thenReturn Future.successful(true)
+        "and locks on the arrivals can be obtained" - {
 
-      val worker: AddJsonToMessagesWorker = new AddJsonToMessagesWorker(workerConfig, lockRepo, arrivalsRepo)
+          "must update the messages on the items it has to process" in new Fixture {
 
-      val result: Seq[(Arrival, NotUsed)] = worker.tap.pull.futureValue.value
-      result.size mustEqual 1
+            private val arrival1 = arbitrary[Arrival].sample.value
+            private val arrival2 = arbitrary[Arrival].sample.value
 
-      verify(lockRepo, atLeastOnce).lock(eqTo(lockName))
-      verify(lockRepo, times(1)).unlock(eqTo(lockName))
+            when(workerConfig.addJsonToMessagesWorkerSettings) thenReturn defaultSettings
+            when(lockRepo.lock(any())) thenReturn Future.successful(LockAcquired)
+            when(lockRepo.unlock(any())) thenReturn Future.successful(true)
+            when(arrivalsRepo.arrivalsWithoutJsonMessages(any())) thenReturn Future.successful(Seq(arrival1, arrival2))
+            when(arrivalsRepo.resetMessages(any(), any())) thenReturn Future.successful(true)
+            when(arrivalsLockRepo.lock(any())) thenReturn Future.successful(true)
+            when(arrivalsLockRepo.unlock(any())) thenReturn Future.successful(true)
+
+            val worker: AddJsonToMessagesWorker = new AddJsonToMessagesWorker(workerConfig, lockRepo, arrivalsRepo, arrivalsLockRepo)
+
+            val result: Seq[(Arrival, NotUsed)] = worker.tap.pull.futureValue.value
+            result.size mustEqual 2
+
+            verify(lockRepo, atLeastOnce).lock(lockName)
+            verify(lockRepo, times(1)).unlock(lockName)
+            verify(arrivalsLockRepo, times(1)).lock(arrival1.arrivalId)
+            verify(arrivalsLockRepo, times(1)).lock(arrival2.arrivalId)
+            verify(arrivalsLockRepo, times(1)).unlock(arrival1.arrivalId)
+            verify(arrivalsLockRepo, times(1)).unlock(arrival2.arrivalId)
+            verify(arrivalsRepo, times(1)).resetMessages(arrival1.arrivalId, arrival1.messages)
+            verify(arrivalsRepo, times(1)).resetMessages(arrival2.arrivalId, arrival2.messages)
+          }
+
+          "and an error occurs trying to update the messages" - {
+
+            "must unlock the arrival and proceed to process remaining items" in new Fixture {
+
+              private val arrival1 = arbitrary[Arrival].sample.value
+              private val arrival2 = arbitrary[Arrival].sample.value
+
+              when(workerConfig.addJsonToMessagesWorkerSettings) thenReturn defaultSettings
+              when(lockRepo.lock(any())) thenReturn Future.successful(LockAcquired)
+              when(lockRepo.unlock(any())) thenReturn Future.successful(true)
+              when(arrivalsRepo.arrivalsWithoutJsonMessages(any())) thenReturn Future.successful(Seq(arrival1, arrival2))
+              when(arrivalsRepo.resetMessages(any(), any())) thenReturn Future.failed(new Exception("foo")) thenReturn Future.successful(true)
+              when(arrivalsLockRepo.lock(any())) thenReturn Future.successful(true)
+              when(arrivalsLockRepo.unlock(any())) thenReturn Future.successful(true)
+
+              val worker: AddJsonToMessagesWorker = new AddJsonToMessagesWorker(workerConfig, lockRepo, arrivalsRepo, arrivalsLockRepo)
+
+              val result: Seq[(Arrival, NotUsed)] = worker.tap.pull.futureValue.value
+              result.size mustEqual 2
+
+              verify(lockRepo, atLeastOnce).lock(lockName)
+              verify(lockRepo, times(1)).unlock(lockName)
+              verify(arrivalsLockRepo, times(1)).lock(arrival1.arrivalId)
+              verify(arrivalsLockRepo, times(1)).lock(arrival2.arrivalId)
+              verify(arrivalsLockRepo, times(1)).unlock(arrival1.arrivalId)
+              verify(arrivalsLockRepo, times(1)).unlock(arrival2.arrivalId)
+              verify(arrivalsRepo, times(1)).resetMessages(arrival1.arrivalId, arrival1.messages)
+              verify(arrivalsRepo, times(1)).resetMessages(arrival2.arrivalId, arrival2.messages)
+            }
+          }
+        }
+
+        "and a lock on the arrival cannot be obtained" - {
+
+          "must not update the arrival's messages" in new Fixture {
+
+            private val arrival1 = arbitrary[Arrival].sample.value
+            private val arrival2 = arbitrary[Arrival].sample.value
+
+            when(workerConfig.addJsonToMessagesWorkerSettings) thenReturn defaultSettings
+            when(lockRepo.lock(any())) thenReturn Future.successful(LockAcquired)
+            when(lockRepo.unlock(any())) thenReturn Future.successful(true)
+            when(arrivalsRepo.arrivalsWithoutJsonMessages(any())) thenReturn Future.successful(Seq(arrival1, arrival2))
+            when(arrivalsRepo.resetMessages(any(), any())) thenReturn Future.successful(true)
+            when(arrivalsLockRepo.lock(any())) thenReturn Future.successful(false)
+            when(arrivalsLockRepo.unlock(any())) thenReturn Future.successful(true)
+
+            val worker: AddJsonToMessagesWorker = new AddJsonToMessagesWorker(workerConfig, lockRepo, arrivalsRepo, arrivalsLockRepo)
+
+            val result: Seq[(Arrival, NotUsed)] = worker.tap.pull.futureValue.value
+            result.size mustEqual 2
+
+            verify(lockRepo, atLeastOnce).lock(lockName)
+            verify(lockRepo, times(1)).unlock(lockName)
+            verify(arrivalsLockRepo, times(1)).lock(arrival1.arrivalId)
+            verify(arrivalsLockRepo, times(1)).lock(arrival2.arrivalId)
+            verify(arrivalsLockRepo, never).unlock(arrival1.arrivalId)
+            verify(arrivalsLockRepo, never).unlock(arrival2.arrivalId)
+            verify(arrivalsRepo, never).resetMessages(arrival1.arrivalId, arrival1.messages)
+            verify(arrivalsRepo, never).resetMessages(arrival2.arrivalId, arrival2.messages)
+          }
+        }
+      }
+
+      "when a lock for the overall worker cannot be obtained" - {
+
+        "must not process any items" in new Fixture {
+
+          private val arrival = arbitrary[Arrival].sample.value
+
+          when(workerConfig.addJsonToMessagesWorkerSettings) thenReturn defaultSettings
+          when(lockRepo.lock(any())) thenReturn Future.successful(AlreadyLocked)
+          when(lockRepo.unlock(any())) thenReturn Future.successful(true)
+          when(arrivalsRepo.arrivalsWithoutJsonMessages(any())) thenReturn Future.successful(Seq(arrival))
+          when(arrivalsRepo.resetMessages(any(), any())) thenReturn Future.successful(true)
+          when(arrivalsLockRepo.lock(any())) thenReturn Future.successful(false)
+
+          val worker: AddJsonToMessagesWorker = new AddJsonToMessagesWorker(workerConfig, lockRepo, arrivalsRepo, arrivalsLockRepo)
+
+          worker.tap.pull.isReadyWithin(1.second) mustEqual false
+
+          verify(arrivalsLockRepo, never).lock(arrival.arrivalId)
+          verify(arrivalsLockRepo, never).unlock(arrival.arrivalId)
+          verify(arrivalsRepo, never).arrivalsWithoutJsonMessages(any())
+          verify(arrivalsRepo, never).resetMessages(any(), any())
+          verify(lockRepo, never).unlock(any())
+        }
+      }
     }
 
-    "must update the messages on the items it has to process when a lock can be acquired" in new Fixture {
+    "when the worker is disabled in config" - {
 
-      private val arrival1 = arbitrary[Arrival].sample.value
-      private val arrival2 = arbitrary[Arrival].sample.value
+      "must not process any items" in new Fixture {
 
-      when(workerConfig.addJsonToMessagesWorkerSettings) thenReturn defaultSettings
-      when(lockRepo.lock(any())) thenReturn Future.successful(LockAcquired)
-      when(lockRepo.unlock(any())) thenReturn Future.successful(true)
-      when(arrivalsRepo.arrivalsWithoutJsonMessages(any())) thenReturn Future.successful(Seq(arrival1, arrival2))
-      when(arrivalsRepo.resetMessages(any(), any())) thenReturn Future.successful(true)
+        private val arrival = arbitrary[Arrival].sample.value
 
-      val worker: AddJsonToMessagesWorker = new AddJsonToMessagesWorker(workerConfig, lockRepo, arrivalsRepo)
+        val settings = defaultSettings copy (enabled = false)
+        when(workerConfig.addJsonToMessagesWorkerSettings) thenReturn settings
+        when(lockRepo.lock(any())) thenReturn Future.successful(AlreadyLocked)
+        when(lockRepo.unlock(any())) thenReturn Future.successful(true)
+        when(arrivalsRepo.arrivalsWithoutJsonMessages(any())) thenReturn Future.successful(Seq(arrival))
+        when(arrivalsRepo.resetMessages(any(), any())) thenReturn Future.successful(true)
+        when(arrivalsLockRepo.lock(any())) thenReturn Future.successful(true)
+        when(arrivalsLockRepo.unlock(any())) thenReturn Future.successful(true)
 
-      val result: Seq[(Arrival, NotUsed)] = worker.tap.pull.futureValue.value
-      result.size mustEqual 2
+        val worker: AddJsonToMessagesWorker = new AddJsonToMessagesWorker(workerConfig, lockRepo, arrivalsRepo, arrivalsLockRepo)
 
-      verify(arrivalsRepo, times(1)).resetMessages(arrival1.arrivalId, arrival1.messages)
-      verify(arrivalsRepo, times(1)).resetMessages(arrival2.arrivalId, arrival2.messages)
-    }
+        val result = worker.tap.pull.futureValue
+        result must not be defined
 
-    "must not process any items when a lock cannot be acquired" in new Fixture {
-
-      private val arrival = arbitrary[Arrival].sample.value
-
-      when(workerConfig.addJsonToMessagesWorkerSettings) thenReturn defaultSettings
-      when(lockRepo.lock(any())) thenReturn Future.successful(AlreadyLocked)
-      when(lockRepo.unlock(any())) thenReturn Future.successful(true)
-      when(arrivalsRepo.arrivalsWithoutJsonMessages(any())) thenReturn Future.successful(Seq(arrival))
-      when(arrivalsRepo.resetMessages(any(), any())) thenReturn Future.successful(true)
-
-      val worker: AddJsonToMessagesWorker = new AddJsonToMessagesWorker(workerConfig, lockRepo, arrivalsRepo)
-
-      worker.tap.pull.isReadyWithin(1.second) mustEqual false
-
-      verify(arrivalsRepo, never).arrivalsWithoutJsonMessages(any())
-      verify(arrivalsRepo, never).resetMessages(any(), any())
-      verify(lockRepo, never).unlock(any())
-    }
-
-    "must not process any items when the worker is disabled in config" in new Fixture {
-
-      private val arrival = arbitrary[Arrival].sample.value
-
-      val settings = defaultSettings copy (enabled = false)
-      when(workerConfig.addJsonToMessagesWorkerSettings) thenReturn settings
-      when(lockRepo.lock(any())) thenReturn Future.successful(AlreadyLocked)
-      when(lockRepo.unlock(any())) thenReturn Future.successful(true)
-      when(arrivalsRepo.arrivalsWithoutJsonMessages(any())) thenReturn Future.successful(Seq(arrival))
-      when(arrivalsRepo.resetMessages(any(), any())) thenReturn Future.successful(true)
-
-      val worker: AddJsonToMessagesWorker = new AddJsonToMessagesWorker(workerConfig, lockRepo, arrivalsRepo)
-
-      val result = worker.tap.pull.futureValue
-      result must not be defined
-
-      verify(lockRepo, never).lock(any())
-      verify(lockRepo, never).unlock(any())
-      verify(arrivalsRepo, never).arrivalsWithoutJsonMessages(any())
-      verify(arrivalsRepo, never).resetMessages(any(), any())
+        verify(lockRepo, never).lock(any())
+        verify(lockRepo, never).unlock(any())
+        verify(arrivalsRepo, never).arrivalsWithoutJsonMessages(any())
+        verify(arrivalsRepo, never).resetMessages(any(), any())
+      }
     }
   }
 
@@ -144,6 +215,7 @@ class AddJsonToMessagesWorkerSpec
     protected val workerConfig: WorkerConfig              = mock[WorkerConfig]
     protected val lockRepo: WorkerLockRepository          = mock[WorkerLockRepository]
     protected val arrivalsRepo: ArrivalMovementRepository = mock[ArrivalMovementRepository]
+    protected val arrivalsLockRepo: LockRepository        = mock[LockRepository]
 
     protected val lockName: String = "add-json-to-messages-worker"
 

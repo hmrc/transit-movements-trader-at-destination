@@ -34,6 +34,7 @@ import models.MovementMessageWithStatus
 import models.MovementMessageWithoutStatus
 import models.LockResult.LockAcquired
 import repositories.ArrivalMovementRepository
+import repositories.LockRepository
 import repositories.WorkerLockRepository
 
 import scala.concurrent.ExecutionContext
@@ -43,7 +44,8 @@ import scala.util.control.NonFatal
 class AddJsonToMessagesWorker @Inject()(
   workerConfig: WorkerConfig,
   workerLockRepository: WorkerLockRepository,
-  arrivalMovementRepository: ArrivalMovementRepository
+  arrivalMovementRepository: ArrivalMovementRepository,
+  arrivalLockRepository: LockRepository
 )(implicit ec: ExecutionContext, m: Materializer)
     extends Logging {
 
@@ -83,21 +85,38 @@ class AddJsonToMessagesWorker @Inject()(
       }
   }
 
-  private def processArrival(arrival: Arrival): Future[(Arrival, NotUsed)] = {
-    logger.info(s"Adding JSON to messages on arrival ${arrival.arrivalId}")
+  private def processArrival(arrival: Arrival): Future[(Arrival, NotUsed)] =
+    arrivalLockRepository.lock(arrival.arrivalId).flatMap {
+      case true =>
+        logger.info(s"Adding JSON to messages on arrival ${arrival.arrivalId.index}")
 
-    val updatedMessages: NonEmptyList[MovementMessage] = arrival.messages.map {
-      case m: MovementMessageWithoutStatus =>
-        MovementMessageWithoutStatus(m.dateTime, m.messageType, m.message, m.messageCorrelationId)
-      case m: MovementMessageWithStatus =>
-        MovementMessageWithStatus(m.dateTime, m.messageType, m.message, m.status, m.messageCorrelationId)
-    }
+        val updatedMessages: NonEmptyList[MovementMessage] = arrival.messages.map {
+          case m: MovementMessageWithoutStatus =>
+            MovementMessageWithoutStatus(m.dateTime, m.messageType, m.message, m.messageCorrelationId)
+          case m: MovementMessageWithStatus =>
+            MovementMessageWithStatus(m.dateTime, m.messageType, m.message, m.status, m.messageCorrelationId)
+        }
 
-    arrivalMovementRepository.resetMessages(arrival.arrivalId, updatedMessages).map {
-      _ =>
-        (arrival, NotUsed)
+        arrivalMovementRepository.resetMessages(arrival.arrivalId, updatedMessages).flatMap {
+          _ =>
+            arrivalLockRepository.unlock(arrival.arrivalId).map {
+              _ =>
+                (arrival, NotUsed)
+            }
+        } recoverWith {
+          case e: Throwable =>
+            logger.error(s"Received an error trying to reset messages for arrival s${arrival.arrivalId.index}", e)
+
+            arrivalLockRepository.unlock(arrival.arrivalId).map {
+              _ =>
+                (arrival, NotUsed)
+            }
+        }
+
+      case false =>
+        logger.info(s"Arrival ${arrival.arrivalId} is locked, so messages will not be updated")
+        Future.successful((arrival, NotUsed))
     }
-  }
 
   private def runBatch(batch: Seq[Arrival]): Future[Seq[(Arrival, NotUsed)]] =
     Source

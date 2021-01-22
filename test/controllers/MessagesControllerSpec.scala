@@ -138,7 +138,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
         val mockAuditService                                  = mock[AuditService]
 
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
-        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
+        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(true))
         when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(arrival)))
 
         when(mockSubmitMessageService.submitMessage(any(), any(), any(), eqTo(ArrivalStatus.UnloadingRemarksSubmitted))(any()))
@@ -180,7 +180,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
         val mockLockRepository            = mock[LockRepository]
 
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
-        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
+        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(true))
         when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(None))
 
         val application = baseApplicationBuilder
@@ -206,7 +206,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
         val mockSubmitMessageService      = mock[SubmitMessageService]
 
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
-        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
+        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(true))
         when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(arrival)))
 
         when(mockSubmitMessageService.submitMessage(any(), any(), any(), any())(any()))
@@ -236,7 +236,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
         val mockLockRepository            = mock[LockRepository]
 
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
-        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
+        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(true))
         when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(arrival)))
 
         val application =
@@ -269,7 +269,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
         val mockLockRepository            = mock[LockRepository]
 
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
-        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
+        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(true))
         when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(arrival)))
 
         val application =
@@ -297,7 +297,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
         val mockLockRepository            = mock[LockRepository]
 
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
-        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
+        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(true))
         when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(arrival)))
 
         val application =
@@ -326,7 +326,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
         val mockSubmitMessageService      = mock[SubmitMessageService]
 
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
-        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
+        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(true))
         when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(arrival)))
 
         when(mockSubmitMessageService.submitMessage(any(), any(), any(), any())(any()))
@@ -357,7 +357,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
         val mockSubmitMessageService      = mock[SubmitMessageService]
 
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
-        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
+        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(true))
         when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(arrival)))
 
         when(mockSubmitMessageService.submitMessage(any(), any(), any(), any())(any()))
@@ -386,7 +386,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
         val mockSubmitMessageService      = mock[SubmitMessageService]
 
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
-        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
+        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(true))
         when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(arrival)))
 
         when(mockSubmitMessageService.submitMessage(any(), any(), any(), any())(any()))
