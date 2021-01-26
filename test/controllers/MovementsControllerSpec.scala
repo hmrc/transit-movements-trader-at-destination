@@ -990,7 +990,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
             .build()
 
         running(application) {
-          forAll(listWithMaxLength[Arrival](10)) {
+          forAll(listWithMaxLength[ResponseArrival](10)) {
             arrivals =>
               when(mockArrivalMovementRepository.fetchAllArrivals(any(), any())).thenReturn(Future.successful(arrivals))
 
@@ -999,10 +999,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
               val result = route(application, request).value
 
               status(result) mustEqual OK
-              contentAsJson(result) mustEqual Json.toJson(ResponseArrivals(arrivals.map {
-                a =>
-                  ResponseArrival.build(a)
-              }))
+              contentAsJson(result) mustEqual Json.toJson(ResponseArrivals(arrivals))
 
               reset(mockArrivalMovementRepository)
           }

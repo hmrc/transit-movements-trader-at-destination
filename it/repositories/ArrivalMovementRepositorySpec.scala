@@ -19,8 +19,8 @@ package repositories
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-
 import base._
+import controllers.routes
 import models.ArrivalStatus.ArrivalSubmitted
 import models.ArrivalStatus.GoodsReleased
 import models.ArrivalStatus.Initialized
@@ -32,13 +32,15 @@ import models.ArrivalId
 import models.ArrivalIdSelector
 import models.ArrivalStatus
 import models.ArrivalStatusUpdate
-import models.ChannelType.{api, web}
+import models.ChannelType.api
+import models.ChannelType.web
 import models.MessageId
 import models.MessageType
 import models.MongoDateTimeFormats
 import models.MovementMessageWithStatus
 import models.MovementMessageWithoutStatus
 import models.MovementReferenceNumber
+import models.response.ResponseArrival
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalactic.source
 import org.scalatest.exceptions.StackDepthException
@@ -520,8 +522,8 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with FailOnUnindexedQueri
 
           val movementReferenceNumber = arbitrary[MovementReferenceNumber].sample.value
 
-          val eori      = "eori"
-          val arrival   = arbitrary[Arrival].sample.value copy (eoriNumber = eori, movementReferenceNumber = movementReferenceNumber, channel = api)
+          val eori    = "eori"
+          val arrival = arbitrary[Arrival].sample.value copy (eoriNumber = eori, movementReferenceNumber = movementReferenceNumber, channel = api)
 
           repository.insert(arrival).futureValue
 
@@ -558,7 +560,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with FailOnUnindexedQueri
     }
 
     "fetchAllArrivals" - {
-      "must return Arrival Movements that match an eoriNumber and channel type" in {
+      "must return Arrival Movements details that match an eoriNumber and channel type" in {
         database.flatMap(_.drop()).futureValue
 
         val app: Application = builder.build()
@@ -570,7 +572,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with FailOnUnindexedQueri
         running(app) {
           started(app).futureValue
 
-          val service: ArrivalMovementRepository = app.injector.instanceOf[ArrivalMovementRepository]
+          val repository: ArrivalMovementRepository = app.injector.instanceOf[ArrivalMovementRepository]
 
           val allMovements = Seq(arrivalMovement1, arrivalMovement2, arrivalMovement3)
 
@@ -581,8 +583,28 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with FailOnUnindexedQueri
               db.collection[JSONCollection](ArrivalMovementRepository.collectionName).insert(false).many(jsonArr)
           }.futureValue
 
-          service.fetchAllArrivals(eoriNumber, api).futureValue mustBe Seq(arrivalMovement1)
-          service.fetchAllArrivals(eoriNumber, web).futureValue mustBe Seq(arrivalMovement3)
+          val expectedApiFetchAll1 = ResponseArrival(
+            arrivalMovement1.arrivalId,
+            routes.MovementsController.getArrival(arrivalMovement1.arrivalId).url,
+            routes.MessagesController.getMessages(arrivalMovement1.arrivalId).url,
+            arrivalMovement1.movementReferenceNumber,
+            arrivalMovement1.status,
+            arrivalMovement1.created,
+            arrivalMovement1.lastUpdated
+          )
+
+          val expectedApiFetchAll3 = ResponseArrival(
+            arrivalMovement3.arrivalId,
+            routes.MovementsController.getArrival(arrivalMovement3.arrivalId).url,
+            routes.MessagesController.getMessages(arrivalMovement3.arrivalId).url,
+            arrivalMovement3.movementReferenceNumber,
+            arrivalMovement3.status,
+            arrivalMovement3.created,
+            arrivalMovement3.lastUpdated
+          )
+
+          repository.fetchAllArrivals(eoriNumber, api).futureValue mustBe Seq(expectedApiFetchAll1)
+          repository.fetchAllArrivals(eoriNumber, web).futureValue mustBe Seq(expectedApiFetchAll3)
         }
       }
 
