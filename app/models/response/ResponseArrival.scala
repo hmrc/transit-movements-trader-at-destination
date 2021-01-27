@@ -17,18 +17,14 @@
 package models.response
 
 import java.time.LocalDateTime
+
 import controllers.routes
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalStatus
-import models.MongoDateTimeFormats
 import models.MovementReferenceNumber
-import play.api.libs.json.JsObject
-import play.api.libs.json.JsResult
-import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 import play.api.libs.json.OWrites
-import play.api.libs.json.Reads
 
 case class ResponseArrival(arrivalId: ArrivalId,
                            location: String,
@@ -38,7 +34,7 @@ case class ResponseArrival(arrivalId: ArrivalId,
                            created: LocalDateTime,
                            updated: LocalDateTime)
 
-object ResponseArrival extends MongoDateTimeFormats {
+object ResponseArrival {
 
   def build(arrival: Arrival): ResponseArrival =
     ResponseArrival(
@@ -50,35 +46,6 @@ object ResponseArrival extends MongoDateTimeFormats {
       arrival.created,
       updated = arrival.lastUpdated
     )
-
-  val projection: JsObject = Json.obj(
-    "_id"                     -> 1,
-    "movementReferenceNumber" -> 1,
-    "status"                  -> 1,
-    "created"                 -> 1,
-    "lastUpdated"             -> 1
-  )
-
-  implicit def reads: Reads[ResponseArrival] =
-    json =>
-      for {
-        arrivalId <- (json \ "_id").validate[ArrivalId]
-        location         = routes.MovementsController.getArrival(arrivalId).url
-        messagesLocation = routes.MessagesController.getMessages(arrivalId).url
-        movementReferenceNumber <- (json \ "movementReferenceNumber").validate[MovementReferenceNumber]
-        status                  <- (json \ "status").validate[ArrivalStatus]
-        created                 <- (json \ "created").validate[LocalDateTime]
-        updated                 <- (json \ "lastUpdated").validate[LocalDateTime]
-      } yield
-        ResponseArrival(
-          arrivalId,
-          location,
-          messagesLocation,
-          movementReferenceNumber,
-          status,
-          created,
-          updated
-      )
 
   implicit val writes: OWrites[ResponseArrival] = Json.writes[ResponseArrival]
 

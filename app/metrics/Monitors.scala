@@ -21,7 +21,6 @@ import models.Arrival
 import models.ChannelType
 import models.MessageType
 import models.SubmissionProcessingResult
-import models.response.ResponseArrival
 import play.api.libs.ws.WSResponse
 
 trait RequestMonitor[A] {
@@ -48,13 +47,13 @@ case class WSResponseMonitor(name: String) extends RequestMonitor[WSResponse] {
 case class DefaultRequestMonitor[A](name: String) extends RequestMonitor[A]
 
 object Monitors {
-  val UnloadingPermissionMonitor: WSResponseMonitor                          = WSResponseMonitor("get-unloading-permission")
-  val PostToEisMonitor: EisRequestMonitor                                    = EisRequestMonitor("post-message-to-eis")
-  val GetArrivalsForEoriMonitor: DefaultRequestMonitor[Seq[ResponseArrival]] = DefaultRequestMonitor[Seq[ResponseArrival]]("get-arrivals-for-eori")
-  val GetArrivalByIdMonitor: DefaultRequestMonitor[Option[Arrival]]          = DefaultRequestMonitor[Option[Arrival]]("get-arrival-by-arrival-id")
-  val GetArrivalByMrnMonitor: DefaultRequestMonitor[Option[Arrival]]         = DefaultRequestMonitor[Option[Arrival]]("get-arrival-by-mrn")
+  val UnloadingPermissionMonitor: WSResponseMonitor                  = WSResponseMonitor("get-unloading-permission")
+  val PostToEisMonitor: EisRequestMonitor                            = EisRequestMonitor("post-message-to-eis")
+  val GetArrivalsForEoriMonitor: DefaultRequestMonitor[Seq[Arrival]] = DefaultRequestMonitor[Seq[Arrival]]("get-arrivals-for-eori")
+  val GetArrivalByIdMonitor: DefaultRequestMonitor[Option[Arrival]]  = DefaultRequestMonitor[Option[Arrival]]("get-arrival-by-arrival-id")
+  val GetArrivalByMrnMonitor: DefaultRequestMonitor[Option[Arrival]] = DefaultRequestMonitor[Option[Arrival]]("get-arrival-by-mrn")
 
-  def arrivalsPerEori(arrivals: Seq[ResponseArrival]): Counter =
+  def arrivalsPerEori(arrivals: Seq[Arrival]): Counter =
     arrivals.size match {
       case s if s == 0   => Counter("arrivals-per-eori-0")
       case s if s <= 10  => Counter("arrivals-per-eori-1-10")
