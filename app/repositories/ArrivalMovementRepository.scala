@@ -17,6 +17,7 @@
 package repositories
 
 import java.time.LocalDateTime
+
 import com.google.inject.Inject
 import config.AppConfig
 import metrics.MetricsService
@@ -36,7 +37,6 @@ import models.MessageStatusUpdate
 import models.MongoDateTimeFormats
 import models.MovementMessage
 import models.MovementReferenceNumber
-import models.response.ResponseArrival
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import play.modules.reactivemongo.ReactiveMongoApi
@@ -143,11 +143,11 @@ class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi, appConfig: Ap
     }
   }
 
-  def fetchAllArrivals(eoriNumber: String, channelFilter: ChannelType): Future[Seq[ResponseArrival]] =
+  def fetchAllArrivals(eoriNumber: String, channelFilter: ChannelType): Future[Seq[Arrival]] =
     metricsService.timeAsyncCall(Monitors.GetArrivalsForEoriMonitor) {
       collection.flatMap {
-        _.find(Json.obj("eoriNumber" -> eoriNumber, "channel" -> channelFilter), Some(ResponseArrival.projection))
-          .cursor[ResponseArrival]()
+        _.find(Json.obj("eoriNumber" -> eoriNumber, "channel" -> channelFilter), Option.empty[JsObject])
+          .cursor[Arrival]()
           .collect[Seq](-1, Cursor.FailOnError())
           .map {
             arrivals =>
