@@ -17,7 +17,6 @@
 package generators
 
 import java.time._
-
 import cats.data.NonEmptyList
 import connectors.MessageConnector.EisSubmissionResult
 import connectors.MessageConnector.EisSubmissionResult.DownstreamBadGateway
@@ -47,6 +46,7 @@ import models.MovementMessageWithoutStatus
 import models.MovementReferenceNumber
 import models.RejectionError
 import models.SubmissionProcessingResult
+import models.response.ResponseArrival
 import models.response.ResponseMovementMessage
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Arbitrary
@@ -167,7 +167,7 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
           status = status,
           created = created,
           updated = updated,
-          lastUpdated = LocalDateTime.now,
+          lastUpdated = updated,
           messages = messages,
           nextMessageCorrelationId = messages.length + 1
         )
@@ -266,5 +266,18 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
         arbitrary[EisSubmissionFailureDownstream],
         Gen.const(EisSubmissionSuccessful)
       )
+    )
+
+  implicit val arbitraryResponseArrival: Arbitrary[ResponseArrival] =
+    Arbitrary(
+      for {
+        arrivalId               <- arbitrary[ArrivalId]
+        location                <- arbitrary[String]
+        messagesLocation        <- arbitrary[String]
+        movementReferenceNumber <- arbitrary[MovementReferenceNumber]
+        status                  <- arbitrary[ArrivalStatus]
+        created                 <- arbitrary[LocalDateTime]
+        updated                 <- arbitrary[LocalDateTime]
+      } yield ResponseArrival(arrivalId, location, messagesLocation, movementReferenceNumber, status, created, updated)
     )
 }
