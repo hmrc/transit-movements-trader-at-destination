@@ -1001,8 +1001,66 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
               status(result) mustEqual OK
               contentAsJson(result) mustEqual Json.toJson(ResponseArrivals(arrivals))
 
+              val expectedJson =
+                s"""{
+                   |  "arrivals": [
+                   |  ]
+                   |}""".stripMargin
+
               reset(mockArrivalMovementRepository)
           }
+        }
+      }
+
+      "must return Ok with the retrieved an arrival passing the Json into the correct format" in {
+        val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+
+        val application =
+          baseApplicationBuilder
+            .overrides(bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository))
+            .build()
+
+        running(application) {
+
+          val createdAndUpdatedDate = LocalDateTime.now()
+
+          val arrivals = Seq(
+            ResponseArrival(
+              ArrivalId(12),
+              "/some/location",
+              "/messages/location",
+              MovementReferenceNumber("1234567890"),
+              ArrivalStatus.ArrivalSubmitted,
+              createdAndUpdatedDate,
+              createdAndUpdatedDate
+            )
+          )
+          when(mockArrivalMovementRepository.fetchAllArrivals(any(), any())).thenReturn(Future.successful(arrivals))
+
+          val request = FakeRequest(GET, routes.MovementsController.getArrivals().url)
+
+          val result = route(application, request).value
+
+          status(result) mustEqual OK
+
+          val expectedJson =
+            s"""{
+               |  "arrivals": [
+               |    {
+               |      "arrivalId": 12,
+               |      "location": "/some/location",
+               |      "messagesLocation": "/messages/location",
+               |      "movementReferenceNumber": "1234567890",
+               |      "status": "ArrivalSubmitted",
+               |      "created": "${createdAndUpdatedDate.toString}",
+               |      "updated": "${createdAndUpdatedDate.toString}"
+               |    }
+               |  ]
+               |}""".stripMargin
+
+          contentAsJson(result) mustBe Json.parse(expectedJson)
+
+          reset(mockArrivalMovementRepository)
         }
       }
 

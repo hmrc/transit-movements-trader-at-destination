@@ -38,7 +38,7 @@ case class ResponseArrival(arrivalId: ArrivalId,
                            created: LocalDateTime,
                            updated: LocalDateTime)
 
-object ResponseArrival extends MongoDateTimeFormats {
+object ResponseArrival {
 
   def build(arrival: Arrival): ResponseArrival =
     ResponseArrival(
@@ -67,8 +67,8 @@ object ResponseArrival extends MongoDateTimeFormats {
         messagesLocation = routes.MessagesController.getMessages(arrivalId).url
         movementReferenceNumber <- (json \ "movementReferenceNumber").validate[MovementReferenceNumber]
         status                  <- (json \ "status").validate[ArrivalStatus]
-        created                 <- (json \ "created").validate[LocalDateTime]
-        updated                 <- (json \ "lastUpdated").validate[LocalDateTime]
+        created                 <- (json \ "created").validate[LocalDateTime](MongoDateTimeFormats.localDateTimeRead)
+        updated                 <- (json \ "lastUpdated").validate[LocalDateTime](MongoDateTimeFormats.localDateTimeRead)
       } yield
         ResponseArrival(
           arrivalId,
