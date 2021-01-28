@@ -167,10 +167,7 @@ class MovementsController @Inject()(
         .fetchAllArrivals(request.eoriNumber, request.channel)
         .map {
           allArrivals =>
-            Ok(Json.toJsObject(ResponseArrivals(allArrivals.map {
-              arrival =>
-                ResponseArrival.build(arrival)
-            })))
+            Ok(Json.toJsObject(ResponseArrivals(allArrivals)))
         }
         .recover {
           case e =>
