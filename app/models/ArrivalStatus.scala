@@ -31,6 +31,7 @@ object ArrivalStatus extends Enumerable.Implicits with MongoDateTimeFormats {
       case MessageReceivedEvent.UnloadingPermission      => Right(UnloadingPermission)
       case MessageReceivedEvent.ArrivalRejected          => Right(ArrivalRejected)
       case MessageReceivedEvent.UnloadingRemarksRejected => Right(UnloadingRemarksRejected)
+      case MessageReceivedEvent.InvalidXml               => Right(InvalidXml)
       case _                                             => Left(TransitionError(s"Tried to transition from Initialized to $messageReceived."))
     }
   }
@@ -42,6 +43,7 @@ object ArrivalStatus extends Enumerable.Implicits with MongoDateTimeFormats {
       case MessageReceivedEvent.UnloadingPermission      => Right(UnloadingPermission)
       case MessageReceivedEvent.ArrivalRejected          => Right(ArrivalRejected)
       case MessageReceivedEvent.UnloadingRemarksRejected => Right(UnloadingRemarksRejected)
+      case MessageReceivedEvent.InvalidXml               => Right(InvalidXml)
       case _                                             => Left(TransitionError(s"Tried to transition from ArrivalSubmitted to $messageReceived."))
     }
   }
@@ -64,6 +66,13 @@ object ArrivalStatus extends Enumerable.Implicits with MongoDateTimeFormats {
       case MessageReceivedEvent.ArrivalRejected => Right(ArrivalRejected)
       case MessageReceivedEvent.GoodsReleased   => Right(GoodsReleased)
       case _                                    => Left(TransitionError(s"Tried to transition from ArrivalRejected to $messageReceived."))
+    }
+  }
+
+  case object InvalidXml extends ArrivalStatus {
+    override def transition(messageReceived: MessageReceivedEvent): Either[TransitionError, ArrivalStatus] = messageReceived match {
+      case MessageReceivedEvent.InvalidXml => Right(InvalidXml)
+      case _                               => Left(TransitionError(s"Tried to transition from InvalidXml to $messageReceived."))
     }
   }
 

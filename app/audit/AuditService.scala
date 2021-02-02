@@ -44,6 +44,7 @@ class AuditService @Inject()(auditConnector: AuditConnector, jsonHelper: JsonHel
       case ArrivalRejectedResponse          => ArrivalNotificationRejected
       case UnloadingPermissionResponse      => UnloadingPermissionReceived
       case UnloadingRemarksRejectedResponse => UnloadingPermissionRejected
+      case InvalidXmlResponse               => InvalidXml
     }
     auditEvent(auditType, xmlRequestBody, channel)
   }
