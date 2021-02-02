@@ -21,6 +21,7 @@ import com.google.inject.Inject
 import logging.Logging
 import models.ArrivalRejectedResponse
 import models.GoodsReleasedResponse
+import models.InvalidXmlResponse
 import models.MessageInbound
 import models.MessageResponse
 import models.MessageType
@@ -71,6 +72,7 @@ class InboundMessageTransformer @Inject()(implicit ec: ExecutionContext) extends
     case Some(MessageType.ArrivalRejection.code)          => Some(ArrivalRejectedResponse)
     case Some(MessageType.UnloadingPermission.code)       => Some(UnloadingPermissionResponse)
     case Some(MessageType.UnloadingRemarksRejection.code) => Some(UnloadingRemarksRejectedResponse)
+    case Some(MessageType.InvalidXml.code)                => Some(InvalidXmlResponse)
     case _                                                => None
   }
 

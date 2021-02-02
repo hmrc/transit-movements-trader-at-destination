@@ -25,12 +25,13 @@ import models.Arrival
 import models.ArrivalId
 import models.ArrivalRejectedResponse
 import models.ArrivalStatus
-import models.ChannelType.web
 import models.GoodsReleasedResponse
+import models.InvalidXmlResponse
 import models.MessageInbound
 import models.MessageType
 import models.UnloadingPermissionResponse
 import models.UnloadingRemarksRejectedResponse
+import models.ChannelType.web
 import models.request.ArrivalRequest
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
@@ -67,7 +68,8 @@ class InboundMessageTransformerSpec extends AnyFreeSpec with Matchers with Scala
     MessageType.ArrivalRejection.code          -> MessageInbound(ArrivalRejectedResponse, ArrivalRejected),
     MessageType.UnloadingRemarksRejection.code -> MessageInbound(UnloadingRemarksRejectedResponse, UnloadingRemarksRejected),
     MessageType.UnloadingPermission.code       -> MessageInbound(UnloadingPermissionResponse, UnloadingPermission),
-    MessageType.GoodsReleased.code             -> MessageInbound(GoodsReleasedResponse, GoodsReleased)
+    MessageType.GoodsReleased.code             -> MessageInbound(GoodsReleasedResponse, GoodsReleased),
+    MessageType.InvalidXml.code                -> MessageInbound(InvalidXmlResponse, GoodsReleased)
   )
 
   "InboundMessageTransformer" - {

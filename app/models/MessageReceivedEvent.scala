@@ -26,6 +26,7 @@ object MessageReceivedEvent {
   case object UnloadingRemarksSubmitted extends MessageReceivedEvent
   case object UnloadingRemarksRejected  extends MessageReceivedEvent
   case object GoodsReleased             extends MessageReceivedEvent
+  case object InvalidXml                extends MessageReceivedEvent
 
   val values: Seq[MessageReceivedEvent] = Seq(
     ArrivalSubmitted,
@@ -33,6 +34,7 @@ object MessageReceivedEvent {
     UnloadingPermission,
     UnloadingRemarksSubmitted,
     GoodsReleased,
-    UnloadingRemarksRejected
+    UnloadingRemarksRejected,
+    InvalidXml
   )
 }
