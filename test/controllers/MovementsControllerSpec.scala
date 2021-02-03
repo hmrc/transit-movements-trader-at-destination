@@ -397,7 +397,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           val captor                   = ArgumentCaptor.forClass(classOf[MovementMessageWithStatus])
           val mockAuditService         = mock[AuditService]
 
-          when(mockSubmitMessageService.submitMessage(any(), any(), any(), any())(any()))
+          when(mockSubmitMessageService.submitMessage(any(), any(), any(), any(), any())(any()))
             .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionSuccess))
 
           val application = baseApplicationBuilder
@@ -423,7 +423,8 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
             verify(mockSubmitMessageService, times(1)).submitMessage(eqTo(initializedArrival.arrivalId),
                                                                      eqTo(MessageId.fromIndex(1)),
                                                                      captor.capture(),
-                                                                     eqTo(ArrivalStatus.ArrivalSubmitted))(any())
+                                                                     eqTo(ArrivalStatus.ArrivalSubmitted),
+                                                                     any())(any())
 
             val movement: MovementMessageWithStatus = captor.getValue
             movement.messageCorrelationId mustEqual expectedMessage.messageCorrelationId
@@ -484,7 +485,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         "must return InternalServerError if there was an internal failure when saving and sending" in {
           val mockSubmitMessageService = mock[SubmitMessageService]
 
-          when(mockSubmitMessageService.submitMessage(any(), any(), any(), any())(any()))
+          when(mockSubmitMessageService.submitMessage(any(), any(), any(), any(), any())(any()))
             .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureInternal))
 
           val application = baseApplicationBuilder
@@ -511,7 +512,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         "must return BadGateway if there was an external failure when saving and sending" in {
           val mockSubmitMessageService = mock[SubmitMessageService]
 
-          when(mockSubmitMessageService.submitMessage(any(), any(), any(), any())(any()))
+          when(mockSubmitMessageService.submitMessage(any(), any(), any(), any(), any())(any()))
             .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureExternal))
 
           val app = baseApplicationBuilder
@@ -583,7 +584,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         "must return BadRequest if the message has been rejected from EIS due to error in payload" in {
           val mockSubmitMessageService = mock[SubmitMessageService]
 
-          when(mockSubmitMessageService.submitMessage(any(), any(), any(), any())(any()))
+          when(mockSubmitMessageService.submitMessage(any(), any(), any(), any(), any())(any()))
             .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureRejected(ErrorInPayload.responseBody)))
 
           val app = baseApplicationBuilder
@@ -609,7 +610,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         "must return InternalServerError if there has been a rejection from EIS due to virus found or invalid token" in {
           val mockSubmitMessageService = mock[SubmitMessageService]
 
-          when(mockSubmitMessageService.submitMessage(any(), any(), any(), any())(any()))
+          when(mockSubmitMessageService.submitMessage(any(), any(), any(), any(), any())(any()))
             .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureInternal))
 
           val app = baseApplicationBuilder
@@ -645,7 +646,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
         when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(initializedArrival)))
 
-        when(mockSubmitMessageService.submitIe007Message(any(), any(), any(), any())(any()))
+        when(mockSubmitMessageService.submitIe007Message(any(), any(), any(), any(), any())(any()))
           .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionSuccess))
         val captor = ArgumentCaptor.forClass(classOf[MovementMessageWithStatus])
 
@@ -672,7 +673,8 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           verify(mockSubmitMessageService, times(1)).submitIe007Message(eqTo(initializedArrival.arrivalId),
                                                                         eqTo(MessageId.fromIndex(1)),
                                                                         captor.capture(),
-                                                                        eqTo(initializedArrival.movementReferenceNumber))(any())
+                                                                        eqTo(initializedArrival.movementReferenceNumber),
+                                                                        any())(any())
 
           val movement: MovementMessageWithStatus = captor.getValue
           movement.messageCorrelationId mustEqual expectedMessage.messageCorrelationId
@@ -739,7 +741,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
         when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(initializedArrival)))
 
-        when(mockSubmitMessageService.submitIe007Message(any(), any(), any(), any())(any()))
+        when(mockSubmitMessageService.submitIe007Message(any(), any(), any(), any(), any())(any()))
           .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureInternal))
 
         val application = baseApplicationBuilder
@@ -788,7 +790,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
         when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(initializedArrival)))
 
-        when(mockSubmitMessageService.submitIe007Message(any(), any(), any(), any())(any()))
+        when(mockSubmitMessageService.submitIe007Message(any(), any(), any(), any(), any())(any()))
           .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureExternal))
 
         val app = baseApplicationBuilder
@@ -894,7 +896,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
         when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(initializedArrival)))
 
-        when(mockSubmitMessageService.submitIe007Message(any(), any(), any(), any())(any()))
+        when(mockSubmitMessageService.submitIe007Message(any(), any(), any(), any(), any())(any()))
           .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureRejected(ErrorInPayload.responseBody)))
 
         val application = baseApplicationBuilder
@@ -940,7 +942,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
         when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(initializedArrival)))
 
-        when(mockSubmitMessageService.submitIe007Message(any(), any(), any(), any())(any()))
+        when(mockSubmitMessageService.submitIe007Message(any(), any(), any(), any(), any())(any()))
           .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureInternal))
 
         val application = baseApplicationBuilder

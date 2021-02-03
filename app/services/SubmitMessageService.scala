@@ -33,6 +33,7 @@ import models.ArrivalIdSelector
 import models.ArrivalPutUpdate
 import models.ArrivalStatus
 import models.ArrivalStatusUpdate
+import models.ChannelType
 import models.CompoundStatusUpdate
 import models.MessageId
 import models.MessageSelector
@@ -55,7 +56,7 @@ class SubmitMessageService @Inject()(
 )(implicit ec: ExecutionContext)
     extends Logging {
 
-  def submitMessage(arrivalId: ArrivalId, messageId: MessageId, message: MovementMessageWithStatus, arrivalStatus: ArrivalStatus)(
+  def submitMessage(arrivalId: ArrivalId, messageId: MessageId, message: MovementMessageWithStatus, arrivalStatus: ArrivalStatus, channelType: ChannelType)(
     implicit hc: HeaderCarrier): Future[SubmissionProcessingResult] =
     arrivalMovementRepository.addNewMessage(arrivalId, message) flatMap {
       case Failure(_) =>
@@ -63,7 +64,7 @@ class SubmitMessageService @Inject()(
 
       case Success(_) => {
         messageConnector
-          .post(arrivalId, message, OffsetDateTime.now)
+          .post(arrivalId, message, OffsetDateTime.now, channelType)
           .flatMap {
             case submissionResult @ EisSubmissionSuccessful =>
               val newStatus = message.status.transition(submissionResult)
@@ -120,15 +121,18 @@ class SubmitMessageService @Inject()(
       }
     }
 
-  def submitIe007Message(arrivalId: ArrivalId, messageId: MessageId, message: MovementMessageWithStatus, mrn: MovementReferenceNumber)(
-    implicit hc: HeaderCarrier): Future[SubmissionProcessingResult] =
+  def submitIe007Message(arrivalId: ArrivalId,
+                         messageId: MessageId,
+                         message: MovementMessageWithStatus,
+                         mrn: MovementReferenceNumber,
+                         channelType: ChannelType)(implicit hc: HeaderCarrier): Future[SubmissionProcessingResult] =
     arrivalMovementRepository.addNewMessage(arrivalId, message) flatMap {
       case Failure(_) =>
         Future.successful(SubmissionProcessingResult.SubmissionFailureInternal)
 
       case Success(_) => {
         messageConnector
-          .post(arrivalId, message, OffsetDateTime.now)
+          .post(arrivalId, message, OffsetDateTime.now, channelType)
           .flatMap {
             case submissionResult @ EisSubmissionSuccessful =>
               val selector  = ArrivalIdSelector(arrivalId)
@@ -196,7 +200,7 @@ class SubmitMessageService @Inject()(
           val (message, messageId) = arrival.messagesWithId.head.leftMap(_.asInstanceOf[MovementMessageWithStatus])
 
           messageConnector
-            .post(arrival.arrivalId, message, OffsetDateTime.now)
+            .post(arrival.arrivalId, message, OffsetDateTime.now, arrival.channel)
             .flatMap {
               case submissionResult @ EisSubmissionSuccessful =>
                 arrivalMovementRepository
