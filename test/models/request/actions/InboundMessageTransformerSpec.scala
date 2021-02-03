@@ -21,7 +21,7 @@ import models.ArrivalStatus.ArrivalRejected
 import models.ArrivalStatus.GoodsReleased
 import models.ArrivalStatus.UnloadingPermission
 import models.ArrivalStatus.UnloadingRemarksRejected
-import models.ArrivalStatus.Error
+import models.ArrivalStatus.XMLSubmissionNegativeAcknowledgement
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalRejectedResponse
@@ -66,19 +66,11 @@ class InboundMessageTransformerSpec extends AnyFreeSpec with Matchers with Scala
   def action = new InboundMessageTransformer()
 
   val responseMessages: Map[String, MessageInbound] = Map(
-<<<<<<< HEAD
     MessageType.ArrivalRejection.code                     -> MessageInbound(ArrivalRejectedResponse, ArrivalRejected),
     MessageType.UnloadingRemarksRejection.code            -> MessageInbound(UnloadingRemarksRejectedResponse, UnloadingRemarksRejected),
     MessageType.UnloadingPermission.code                  -> MessageInbound(UnloadingPermissionResponse, UnloadingPermission),
     MessageType.GoodsReleased.code                        -> MessageInbound(GoodsReleasedResponse, GoodsReleased),
-    MessageType.XMLSubmissionNegativeAcknowledgement.code -> MessageInbound(XMLSubmissionNegativeAcknowledgementResponse, GoodsReleased)
-=======
-    MessageType.ArrivalRejection.code          -> MessageInbound(ArrivalRejectedResponse, ArrivalRejected),
-    MessageType.UnloadingRemarksRejection.code -> MessageInbound(UnloadingRemarksRejectedResponse, UnloadingRemarksRejected),
-    MessageType.UnloadingPermission.code       -> MessageInbound(UnloadingPermissionResponse, UnloadingPermission),
-    MessageType.GoodsReleased.code             -> MessageInbound(GoodsReleasedResponse, GoodsReleased),
-    MessageType.InvalidXml.code                -> MessageInbound(InvalidXmlResponse, Error)
->>>>>>> c15d16b747a11f78309cad8eb4aad9112d5f7253
+    MessageType.XMLSubmissionNegativeAcknowledgement.code -> MessageInbound(XMLSubmissionNegativeAcknowledgementResponse, XMLSubmissionNegativeAcknowledgement)
   )
 
   "InboundMessageTransformer" - {
