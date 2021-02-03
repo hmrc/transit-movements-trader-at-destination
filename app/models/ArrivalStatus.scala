@@ -31,7 +31,7 @@ object ArrivalStatus extends Enumerable.Implicits with MongoDateTimeFormats {
       case MessageReceivedEvent.UnloadingPermission      => Right(UnloadingPermission)
       case MessageReceivedEvent.ArrivalRejected          => Right(ArrivalRejected)
       case MessageReceivedEvent.UnloadingRemarksRejected => Right(UnloadingRemarksRejected)
-      case MessageReceivedEvent.InvalidXml               => Right(InvalidXml)
+      case MessageReceivedEvent.InvalidXml               => Right(Error)
       case _                                             => Left(TransitionError(s"Tried to transition from Initialized to $messageReceived."))
     }
   }
@@ -43,7 +43,7 @@ object ArrivalStatus extends Enumerable.Implicits with MongoDateTimeFormats {
       case MessageReceivedEvent.UnloadingPermission      => Right(UnloadingPermission)
       case MessageReceivedEvent.ArrivalRejected          => Right(ArrivalRejected)
       case MessageReceivedEvent.UnloadingRemarksRejected => Right(UnloadingRemarksRejected)
-      case MessageReceivedEvent.InvalidXml               => Right(InvalidXml)
+      case MessageReceivedEvent.InvalidXml               => Right(Error)
       case _                                             => Left(TransitionError(s"Tried to transition from ArrivalSubmitted to $messageReceived."))
     }
   }
@@ -69,9 +69,9 @@ object ArrivalStatus extends Enumerable.Implicits with MongoDateTimeFormats {
     }
   }
 
-  case object InvalidXml extends ArrivalStatus {
+  case object Error extends ArrivalStatus {
     override def transition(messageReceived: MessageReceivedEvent): Either[TransitionError, ArrivalStatus] = messageReceived match {
-      case MessageReceivedEvent.InvalidXml => Right(InvalidXml)
+      case MessageReceivedEvent.InvalidXml => Right(Error)
       case _                               => Left(TransitionError(s"Tried to transition from InvalidXml to $messageReceived."))
     }
   }
@@ -102,7 +102,7 @@ object ArrivalStatus extends Enumerable.Implicits with MongoDateTimeFormats {
     GoodsReleased,
     ArrivalRejected,
     UnloadingRemarksRejected,
-    InvalidXml
+    Error
   )
 
   implicit val enumerable: Enumerable[ArrivalStatus] =

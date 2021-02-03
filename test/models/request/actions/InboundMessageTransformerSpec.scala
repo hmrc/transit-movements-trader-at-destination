@@ -21,6 +21,7 @@ import models.ArrivalStatus.ArrivalRejected
 import models.ArrivalStatus.GoodsReleased
 import models.ArrivalStatus.UnloadingPermission
 import models.ArrivalStatus.UnloadingRemarksRejected
+import models.ArrivalStatus.Error
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalRejectedResponse
@@ -69,7 +70,7 @@ class InboundMessageTransformerSpec extends AnyFreeSpec with Matchers with Scala
     MessageType.UnloadingRemarksRejection.code -> MessageInbound(UnloadingRemarksRejectedResponse, UnloadingRemarksRejected),
     MessageType.UnloadingPermission.code       -> MessageInbound(UnloadingPermissionResponse, UnloadingPermission),
     MessageType.GoodsReleased.code             -> MessageInbound(GoodsReleasedResponse, GoodsReleased),
-    MessageType.InvalidXml.code                -> MessageInbound(InvalidXmlResponse, GoodsReleased)
+    MessageType.InvalidXml.code                -> MessageInbound(InvalidXmlResponse, Error)
   )
 
   "InboundMessageTransformer" - {
