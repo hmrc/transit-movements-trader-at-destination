@@ -20,13 +20,13 @@ sealed trait MessageReceivedEvent
 
 object MessageReceivedEvent {
 
-  case object ArrivalSubmitted          extends MessageReceivedEvent
-  case object ArrivalRejected           extends MessageReceivedEvent
-  case object UnloadingPermission       extends MessageReceivedEvent
-  case object UnloadingRemarksSubmitted extends MessageReceivedEvent
-  case object UnloadingRemarksRejected  extends MessageReceivedEvent
-  case object GoodsReleased             extends MessageReceivedEvent
-  case object InvalidXml                extends MessageReceivedEvent
+  case object ArrivalSubmitted                     extends MessageReceivedEvent
+  case object ArrivalRejected                      extends MessageReceivedEvent
+  case object UnloadingPermission                  extends MessageReceivedEvent
+  case object UnloadingRemarksSubmitted            extends MessageReceivedEvent
+  case object UnloadingRemarksRejected             extends MessageReceivedEvent
+  case object GoodsReleased                        extends MessageReceivedEvent
+  case object XMLSubmissionNegativeAcknowledgement extends MessageReceivedEvent
 
   val values: Seq[MessageReceivedEvent] = Seq(
     ArrivalSubmitted,
@@ -35,6 +35,6 @@ object MessageReceivedEvent {
     UnloadingRemarksSubmitted,
     GoodsReleased,
     UnloadingRemarksRejected,
-    InvalidXml
+    XMLSubmissionNegativeAcknowledgement
   )
 }

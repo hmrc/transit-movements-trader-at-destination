@@ -27,23 +27,23 @@ class ArrivalStatusSpec extends SpecBase with ScalaCheckDrivenPropertyChecks wit
     "Initialized must" - {
 
       "transition to ArrivalSubmitted when receiving a ArrivalSubmitted event" in {
-        Initialized.transition(MessageReceivedEvent.ArrivalSubmitted) mustEqual Right(ArrivalSubmitted)
+        Initialized.transition(MessageReceivedEvent.ArrivalSubmitted) mustBe Right(ArrivalSubmitted)
       }
 
       "transition to Goods Released when receiving a GoodsReleased event" in {
-        Initialized.transition(MessageReceivedEvent.GoodsReleased) mustEqual Right(GoodsReleased)
+        Initialized.transition(MessageReceivedEvent.GoodsReleased) mustBe Right(GoodsReleased)
       }
 
       "transition to Unloading Permsission when receiving a UnloadingPermission event" in {
-        Initialized.transition(MessageReceivedEvent.UnloadingPermission) mustEqual Right(UnloadingPermission)
+        Initialized.transition(MessageReceivedEvent.UnloadingPermission) mustBe Right(UnloadingPermission)
       }
 
       "transition to Arrival Rejected when receiving a ArrivalRejected event" in {
-        Initialized.transition(MessageReceivedEvent.ArrivalRejected) mustEqual Right(ArrivalRejected)
+        Initialized.transition(MessageReceivedEvent.ArrivalRejected) mustBe Right(ArrivalRejected)
       }
 
       "transition to Unloading remarks Rejected when receiving a UnloadingRemarksRejected event" in {
-        Initialized.transition(MessageReceivedEvent.UnloadingRemarksRejected) mustEqual Right(UnloadingRemarksRejected)
+        Initialized.transition(MessageReceivedEvent.UnloadingRemarksRejected) mustBe Right(UnloadingRemarksRejected)
       }
 
       "return an error message if any other event is provided" in {
@@ -53,7 +53,7 @@ class ArrivalStatusSpec extends SpecBase with ScalaCheckDrivenPropertyChecks wit
           MessageReceivedEvent.UnloadingPermission,
           MessageReceivedEvent.ArrivalRejected,
           MessageReceivedEvent.UnloadingRemarksRejected,
-          MessageReceivedEvent.InvalidXml
+          MessageReceivedEvent.XMLSubmissionNegativeAcknowledgement
         )
         val invalidMessages = MessageReceivedEvent.values.diff(validMessages)
         invalidMessages.foreach {
@@ -77,23 +77,23 @@ class ArrivalStatusSpec extends SpecBase with ScalaCheckDrivenPropertyChecks wit
     "ArrivalSubmitted must " - {
 
       "transition to ArrivalSubmitted when receiving an ArrivalSubmitted event" in {
-        ArrivalSubmitted.transition(MessageReceivedEvent.ArrivalSubmitted) mustEqual Right(ArrivalSubmitted)
+        ArrivalSubmitted.transition(MessageReceivedEvent.ArrivalSubmitted) mustBe Right(ArrivalSubmitted)
       }
 
       "transition to GoodsReceived when receiving a GoodsReleased event" in {
-        ArrivalSubmitted.transition(MessageReceivedEvent.GoodsReleased) mustEqual Right(GoodsReleased)
+        ArrivalSubmitted.transition(MessageReceivedEvent.GoodsReleased) mustBe Right(GoodsReleased)
       }
 
       "transition to Unloading Permission when receiving a UnloadingPermission event" in {
-        ArrivalSubmitted.transition(MessageReceivedEvent.UnloadingPermission) mustEqual Right(UnloadingPermission)
+        ArrivalSubmitted.transition(MessageReceivedEvent.UnloadingPermission) mustBe Right(UnloadingPermission)
       }
 
       "transition to ArrivalRejected when receiving a ArrivalRejected event" in {
-        ArrivalSubmitted.transition(MessageReceivedEvent.ArrivalRejected) mustEqual Right(ArrivalRejected)
+        ArrivalSubmitted.transition(MessageReceivedEvent.ArrivalRejected) mustBe Right(ArrivalRejected)
       }
 
       "transition to Unloading remarks Rejected when receiving a UnloadingRemarksRejected event" in {
-        ArrivalSubmitted.transition(MessageReceivedEvent.UnloadingRemarksRejected) mustEqual Right(UnloadingRemarksRejected)
+        ArrivalSubmitted.transition(MessageReceivedEvent.UnloadingRemarksRejected) mustBe Right(UnloadingRemarksRejected)
       }
 
       "return an error message if any other event is provided" in {
@@ -103,7 +103,7 @@ class ArrivalStatusSpec extends SpecBase with ScalaCheckDrivenPropertyChecks wit
           MessageReceivedEvent.UnloadingPermission,
           MessageReceivedEvent.ArrivalRejected,
           MessageReceivedEvent.UnloadingRemarksRejected,
-          MessageReceivedEvent.InvalidXml
+          MessageReceivedEvent.XMLSubmissionNegativeAcknowledgement
         )
         val invalidMessages = MessageReceivedEvent.values.diff(validMessages)
         invalidMessages.foreach {
@@ -116,15 +116,15 @@ class ArrivalStatusSpec extends SpecBase with ScalaCheckDrivenPropertyChecks wit
     "UnloadingRemarksSubmitted must " - {
 
       "transition to Unloading Remarks Rejected when receiving an UnloadingRemarksRejected event" in {
-        UnloadingRemarksSubmitted.transition(MessageReceivedEvent.UnloadingRemarksRejected) mustEqual Right(UnloadingRemarksRejected)
+        UnloadingRemarksSubmitted.transition(MessageReceivedEvent.UnloadingRemarksRejected) mustBe Right(UnloadingRemarksRejected)
       }
 
       "transition to UnloadingRemarksSubmitted when receiving an UnloadingRemarksSubmitted event" in {
-        UnloadingRemarksSubmitted.transition(MessageReceivedEvent.UnloadingRemarksSubmitted) mustEqual Right(UnloadingRemarksSubmitted)
+        UnloadingRemarksSubmitted.transition(MessageReceivedEvent.UnloadingRemarksSubmitted) mustBe Right(UnloadingRemarksSubmitted)
       }
 
       "transition to GoodsReceived when receiving a GoodsReleased event" in {
-        UnloadingRemarksSubmitted.transition(MessageReceivedEvent.GoodsReleased) mustEqual Right(GoodsReleased)
+        UnloadingRemarksSubmitted.transition(MessageReceivedEvent.GoodsReleased) mustBe Right(GoodsReleased)
       }
 
       "return an error message if any other event is provided" in {
@@ -141,18 +141,18 @@ class ArrivalStatusSpec extends SpecBase with ScalaCheckDrivenPropertyChecks wit
     "GoodsReleased will always transition to GoodsReleased" in {
       forAll(arbitrary[MessageReceivedEvent]) {
         messageReceivedEvent =>
-          GoodsReleased.transition(messageReceivedEvent) mustEqual Right(GoodsReleased)
+          GoodsReleased.transition(messageReceivedEvent) mustBe Right(GoodsReleased)
       }
     }
 
     "ArrivalRejected must " - {
 
       "transition to ArrivalRejected state when receiving an ArrivalRejected event" in {
-        ArrivalRejected.transition(MessageReceivedEvent.ArrivalRejected) mustEqual Right(ArrivalRejected)
+        ArrivalRejected.transition(MessageReceivedEvent.ArrivalRejected) mustBe Right(ArrivalRejected)
       }
 
       "transition to GoodsReleased state when receiving an GoodsReleased event" in {
-        ArrivalRejected.transition(MessageReceivedEvent.GoodsReleased) mustEqual Right(GoodsReleased)
+        ArrivalRejected.transition(MessageReceivedEvent.GoodsReleased) mustBe Right(GoodsReleased)
       }
 
       "return an error message if any other event is provided" in {
@@ -165,18 +165,35 @@ class ArrivalStatusSpec extends SpecBase with ScalaCheckDrivenPropertyChecks wit
       }
     }
 
+    "XMLSubmissionNegativeAcknowledgement must " - {
+
+      "transition to XMLSubmissionNegativeAcknowledgement state when receiving an XMLSubmissionNegativeAcknowledgement event" in {
+        XMLSubmissionNegativeAcknowledgement.transition(MessageReceivedEvent.XMLSubmissionNegativeAcknowledgement) mustBe Right(
+          XMLSubmissionNegativeAcknowledgement)
+      }
+
+      "return an error message if any other event is provided" in {
+        val validMessages   = Seq(MessageReceivedEvent.XMLSubmissionNegativeAcknowledgement)
+        val invalidMessages = MessageReceivedEvent.values.diff(validMessages)
+        invalidMessages.foreach {
+          m =>
+            ArrivalStatus.XMLSubmissionNegativeAcknowledgement.transition(m).isLeft mustBe true
+        }
+      }
+    }
+
     "UnloadingRemarksRejected must " - {
 
       "transition to UnloadingRemarksRejected state when receiving an UnloadingRemarksRejected event" in {
-        UnloadingRemarksRejected.transition(MessageReceivedEvent.UnloadingRemarksRejected) mustEqual Right(UnloadingRemarksRejected)
+        UnloadingRemarksRejected.transition(MessageReceivedEvent.UnloadingRemarksRejected) mustBe Right(UnloadingRemarksRejected)
       }
 
       "transition to GoodsReleased state when receiving an GoodsReleased event" in {
-        UnloadingRemarksRejected.transition(MessageReceivedEvent.GoodsReleased) mustEqual Right(GoodsReleased)
+        UnloadingRemarksRejected.transition(MessageReceivedEvent.GoodsReleased) mustBe Right(GoodsReleased)
       }
 
       "transition to UnloadingRemarksSubmitted state when receiving an UnloadingRemarksSubmitted event" in {
-        UnloadingRemarksRejected.transition(MessageReceivedEvent.UnloadingRemarksSubmitted) mustEqual Right(UnloadingRemarksSubmitted)
+        UnloadingRemarksRejected.transition(MessageReceivedEvent.UnloadingRemarksSubmitted) mustBe Right(UnloadingRemarksSubmitted)
       }
 
       "return an error message if any other event is provided" in {
@@ -193,15 +210,15 @@ class ArrivalStatusSpec extends SpecBase with ScalaCheckDrivenPropertyChecks wit
     "UnloadingPermission must " - {
 
       "transition to UnloadingPermission state when receiving an UnloadingPermission event" in {
-        UnloadingPermission.transition(MessageReceivedEvent.UnloadingPermission) mustEqual Right(UnloadingPermission)
+        UnloadingPermission.transition(MessageReceivedEvent.UnloadingPermission) mustBe Right(UnloadingPermission)
       }
 
       "transition to UnloadingRemarksSubmitted state when receiving an UnloadingRemarksSubmitted event" in {
-        UnloadingPermission.transition(MessageReceivedEvent.UnloadingRemarksSubmitted) mustEqual Right(UnloadingRemarksSubmitted)
+        UnloadingPermission.transition(MessageReceivedEvent.UnloadingRemarksSubmitted) mustBe Right(UnloadingRemarksSubmitted)
       }
 
       "transition to Goods Released state when receiving an GoodsReleased event" in {
-        UnloadingPermission.transition(MessageReceivedEvent.GoodsReleased) mustEqual Right(GoodsReleased)
+        UnloadingPermission.transition(MessageReceivedEvent.GoodsReleased) mustBe Right(GoodsReleased)
       }
 
       "return an error message if any other event is provided" in {

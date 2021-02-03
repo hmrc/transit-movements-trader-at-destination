@@ -21,7 +21,7 @@ import com.google.inject.Inject
 import logging.Logging
 import models.ArrivalRejectedResponse
 import models.GoodsReleasedResponse
-import models.InvalidXmlResponse
+import models.XMLSubmissionNegativeAcknowledgementResponse
 import models.MessageInbound
 import models.MessageResponse
 import models.MessageType
@@ -69,12 +69,12 @@ class InboundMessageTransformer @Inject()(implicit ec: ExecutionContext) extends
 
   //TODO: Consider moving this into MessageResponse
   private[models] def messageResponse(code: Option[String]): Option[MessageResponse] = code match {
-    case Some(MessageType.GoodsReleased.code)             => Some(GoodsReleasedResponse)
-    case Some(MessageType.ArrivalRejection.code)          => Some(ArrivalRejectedResponse)
-    case Some(MessageType.UnloadingPermission.code)       => Some(UnloadingPermissionResponse)
-    case Some(MessageType.UnloadingRemarksRejection.code) => Some(UnloadingRemarksRejectedResponse)
-    case Some(MessageType.InvalidXml.code)                => Some(InvalidXmlResponse)
-    case _                                                => None
+    case Some(MessageType.GoodsReleased.code)                        => Some(GoodsReleasedResponse)
+    case Some(MessageType.ArrivalRejection.code)                     => Some(ArrivalRejectedResponse)
+    case Some(MessageType.UnloadingPermission.code)                  => Some(UnloadingPermissionResponse)
+    case Some(MessageType.UnloadingRemarksRejection.code)            => Some(UnloadingRemarksRejectedResponse)
+    case Some(MessageType.XMLSubmissionNegativeAcknowledgement.code) => Some(XMLSubmissionNegativeAcknowledgementResponse)
+    case _                                                           => None
   }
 
   private def badRequestError(message: String): Result = {

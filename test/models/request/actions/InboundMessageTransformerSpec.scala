@@ -26,7 +26,7 @@ import models.ArrivalId
 import models.ArrivalRejectedResponse
 import models.ArrivalStatus
 import models.GoodsReleasedResponse
-import models.InvalidXmlResponse
+import models.XMLSubmissionNegativeAcknowledgementResponse
 import models.MessageInbound
 import models.MessageType
 import models.UnloadingPermissionResponse
@@ -65,11 +65,11 @@ class InboundMessageTransformerSpec extends AnyFreeSpec with Matchers with Scala
   def action = new InboundMessageTransformer()
 
   val responseMessages: Map[String, MessageInbound] = Map(
-    MessageType.ArrivalRejection.code          -> MessageInbound(ArrivalRejectedResponse, ArrivalRejected),
-    MessageType.UnloadingRemarksRejection.code -> MessageInbound(UnloadingRemarksRejectedResponse, UnloadingRemarksRejected),
-    MessageType.UnloadingPermission.code       -> MessageInbound(UnloadingPermissionResponse, UnloadingPermission),
-    MessageType.GoodsReleased.code             -> MessageInbound(GoodsReleasedResponse, GoodsReleased),
-    MessageType.InvalidXml.code                -> MessageInbound(InvalidXmlResponse, GoodsReleased)
+    MessageType.ArrivalRejection.code                     -> MessageInbound(ArrivalRejectedResponse, ArrivalRejected),
+    MessageType.UnloadingRemarksRejection.code            -> MessageInbound(UnloadingRemarksRejectedResponse, UnloadingRemarksRejected),
+    MessageType.UnloadingPermission.code                  -> MessageInbound(UnloadingPermissionResponse, UnloadingPermission),
+    MessageType.GoodsReleased.code                        -> MessageInbound(GoodsReleasedResponse, GoodsReleased),
+    MessageType.XMLSubmissionNegativeAcknowledgement.code -> MessageInbound(XMLSubmissionNegativeAcknowledgementResponse, GoodsReleased)
   )
 
   "InboundMessageTransformer" - {

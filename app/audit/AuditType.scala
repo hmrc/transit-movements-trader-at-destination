@@ -18,13 +18,13 @@ package audit
 
 object AuditType {
 
-  val ArrivalNotificationSubmitted   = "ArrivalNotificationSubmitted"
-  val ArrivalNotificationReSubmitted = "ArrivalNotificationReSubmitted"
-  val GoodsReleased                  = "GoodsReleased"
-  val ArrivalNotificationRejected    = "ArrivalNotificationRejected"
-  val UnloadingRemarksSubmitted      = "UnloadingRemarksSubmitted"
-  val UnloadingPermissionReceived    = "UnloadingPermissionReceived"
-  val UnloadingPermissionRejected    = "UnloadingPermissionRejected"
-  val MesSenMES3Added                = "MesSenMES3Added"
-  val InvalidXml                     = "InvalidXml"
+  val ArrivalNotificationSubmitted         = "ArrivalNotificationSubmitted"
+  val ArrivalNotificationReSubmitted       = "ArrivalNotificationReSubmitted"
+  val GoodsReleased                        = "GoodsReleased"
+  val ArrivalNotificationRejected          = "ArrivalNotificationRejected"
+  val UnloadingRemarksSubmitted            = "UnloadingRemarksSubmitted"
+  val UnloadingPermissionReceived          = "UnloadingPermissionReceived"
+  val UnloadingPermissionRejected          = "UnloadingPermissionRejected"
+  val MesSenMES3Added                      = "MesSenMES3Added"
+  val XMLSubmissionNegativeAcknowledgement = "XMLSubmissionNegativeAcknowledgement"
 }
