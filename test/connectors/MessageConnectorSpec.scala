@@ -20,7 +20,6 @@ import java.time.LocalDateTime
 import java.time.OffsetDateTime
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import com.github.tomakehurst.wiremock.matching.StringValuePattern
 import connectors.MessageConnector.EisSubmissionResult.DownstreamBadGateway
 import connectors.MessageConnector.EisSubmissionResult.DownstreamInternalServerError
 import connectors.MessageConnector.EisSubmissionResult.EisSubmissionSuccessful
@@ -28,6 +27,7 @@ import connectors.MessageConnector.EisSubmissionResult.ErrorInPayload
 import connectors.MessageConnector.EisSubmissionResult.VirusFoundOrInvalidToken
 import generators.ModelGenerators
 import models.ArrivalId
+import models.ChannelType.web
 import models.MessageStatus
 import models.MessageType
 import models.MovementMessageWithStatus
@@ -41,7 +41,6 @@ import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.test.Helpers.running
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.http.logging.SessionId
 
 class MessageConnectorSpec
     extends AnyFreeSpec
@@ -78,6 +77,7 @@ class MessageConnectorSpec
             .withHeader("Accept", equalTo("application/xml"))
             .withHeader("X-Message-Type", equalTo(messageType.toString))
             .withHeader("X-Message-Sender", equalTo(messageSender))
+            .withHeader("channel", equalTo(web.toString))
             .withRequestBody(matchingXPath("/transitRequest"))
             .willReturn(
               aResponse()
@@ -93,7 +93,7 @@ class MessageConnectorSpec
         running(app) {
           val connector = app.injector.instanceOf[MessageConnector]
 
-          val result = connector.post(arrivalId, postValue, OffsetDateTime.now())
+          val result = connector.post(arrivalId, postValue, OffsetDateTime.now(), web)
 
           result.futureValue mustEqual EisSubmissionSuccessful
         }
@@ -107,6 +107,7 @@ class MessageConnectorSpec
             .withHeader("Accept", equalTo("application/xml"))
             .withHeader("X-Message-Type", equalTo(messageType.toString))
             .withHeader("X-Message-Sender", equalTo(messageSender))
+            .withHeader("channel", equalTo(web.toString))
             .willReturn(
               aResponse()
                 .withStatus(400)
@@ -121,7 +122,7 @@ class MessageConnectorSpec
         running(app) {
           val connector = app.injector.instanceOf[MessageConnector]
 
-          val result = connector.post(arrivalId, postValue, OffsetDateTime.now())
+          val result = connector.post(arrivalId, postValue, OffsetDateTime.now(), web)
 
           result.futureValue mustEqual ErrorInPayload
         }
@@ -135,6 +136,7 @@ class MessageConnectorSpec
             .withHeader("Accept", equalTo("application/xml"))
             .withHeader("X-Message-Type", equalTo(messageType.toString))
             .withHeader("X-Message-Sender", equalTo(messageSender))
+            .withHeader("channel", equalTo(web.toString))
             .willReturn(
               aResponse()
                 .withStatus(403)
@@ -149,7 +151,7 @@ class MessageConnectorSpec
         running(app) {
           val connector = app.injector.instanceOf[MessageConnector]
 
-          val result = connector.post(arrivalId, postValue, OffsetDateTime.now())
+          val result = connector.post(arrivalId, postValue, OffsetDateTime.now(), web)
 
           result.futureValue mustEqual VirusFoundOrInvalidToken
         }
@@ -163,6 +165,7 @@ class MessageConnectorSpec
             .withHeader("Accept", equalTo("application/xml"))
             .withHeader("X-Message-Type", equalTo(messageType.toString))
             .withHeader("X-Message-Sender", equalTo(messageSender))
+            .withHeader("channel", equalTo(web.toString))
             .willReturn(
               aResponse()
                 .withStatus(500)
@@ -177,7 +180,7 @@ class MessageConnectorSpec
         running(app) {
           val connector = app.injector.instanceOf[MessageConnector]
 
-          val result = connector.post(arrivalId, postValue, OffsetDateTime.now())
+          val result = connector.post(arrivalId, postValue, OffsetDateTime.now(), web)
 
           result.futureValue mustEqual DownstreamInternalServerError
         }
@@ -191,6 +194,7 @@ class MessageConnectorSpec
             .withHeader("Accept", equalTo("application/xml"))
             .withHeader("X-Message-Type", equalTo(messageType.toString))
             .withHeader("X-Message-Sender", equalTo(messageSender))
+            .withHeader("channel", equalTo(web.toString))
             .willReturn(
               aResponse()
                 .withStatus(502)
@@ -205,7 +209,7 @@ class MessageConnectorSpec
         running(app) {
           val connector = app.injector.instanceOf[MessageConnector]
 
-          val result = connector.post(arrivalId, postValue, OffsetDateTime.now())
+          val result = connector.post(arrivalId, postValue, OffsetDateTime.now(), web)
 
           result.futureValue mustEqual DownstreamBadGateway
         }
@@ -219,6 +223,7 @@ class MessageConnectorSpec
             .withHeader("Accept", equalTo("application/xml"))
             .withHeader("X-Message-Type", equalTo(messageType.toString))
             .withHeader("X-Message-Sender", equalTo(messageSender))
+            .withHeader("channel", equalTo(web.toString))
             .willReturn(
               aResponse()
                 .withStatus(418)
@@ -233,7 +238,7 @@ class MessageConnectorSpec
         running(app) {
           val connector = app.injector.instanceOf[MessageConnector]
 
-          val result = connector.post(arrivalId, postValue, OffsetDateTime.now())
+          val result = connector.post(arrivalId, postValue, OffsetDateTime.now(), web)
 
           result.futureValue.statusCode mustEqual 418
         }

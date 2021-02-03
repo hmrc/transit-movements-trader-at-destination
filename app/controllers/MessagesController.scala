@@ -65,7 +65,7 @@ class MessagesController @Inject()(
         .makeOutboundMessage(arrivalId, request.arrival.nextMessageCorrelationId, MessageType.UnloadingRemarks)(request.body) match {
         case Right(message) =>
           submitMessageService
-            .submitMessage(arrivalId, request.arrival.nextMessageId, message, ArrivalStatus.UnloadingRemarksSubmitted)
+            .submitMessage(arrivalId, request.arrival.nextMessageId, message, ArrivalStatus.UnloadingRemarksSubmitted, request.channel)
             .map {
               result =>
                 val counter = Monitors.countMessages(MessageType.UnloadingRemarks, request.channel, result)
