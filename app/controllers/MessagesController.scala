@@ -77,7 +77,7 @@ class MessagesController @Inject()(
                   case submissionFailureRejected: SubmissionFailureRejected =>
                     BadRequest(submissionFailureRejected.responseBody)
                   case SubmissionSuccess =>
-                    auditService.auditEvent(AuditType.UnloadingRemarksSubmitted, request.body, request.channel)
+                    auditService.auditEvent(AuditType.UnloadingRemarksSubmitted, message, request.channel)
                     Accepted("Message accepted")
                       .withHeaders("Location" -> routes.MessagesController.getMessage(request.arrival.arrivalId, request.arrival.nextMessageId).url)
                 }

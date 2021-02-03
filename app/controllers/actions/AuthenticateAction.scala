@@ -50,6 +50,7 @@ private[actions] class AuthenticateAction @Inject()(override val authConnector: 
   override protected def refine[A](request: Request[A]): Future[Either[Result, AuthenticatedRequest[A]]] = {
     ChannelUtil.getChannel(request) match {
       case None =>
+        logger.warn(s"Missing channel header for request id ${request.headers.get("http_x_request_id")}")
         Future.successful(Left(BadRequest("Missing channel header or incorrect value specified in channel header")))
       case Some(channel) =>
         implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)

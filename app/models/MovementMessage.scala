@@ -18,9 +18,15 @@ package models
 
 import java.time.LocalDateTime
 
+import logging.Logging
+import org.json.XML
+import play.api.libs.json.Json
 import play.api.libs.json._
 import utils.NodeSeqFormat
 
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
 import scala.xml.NodeSeq
 
 sealed trait MovementMessage {
@@ -28,17 +34,33 @@ sealed trait MovementMessage {
   def messageType: MessageType
   def message: NodeSeq
   def optStatus: Option[MessageStatus]
+  def messageJson: JsObject
 }
 
-final case class MovementMessageWithStatus(dateTime: LocalDateTime,
-                                           messageType: MessageType,
-                                           message: NodeSeq,
-                                           status: MessageStatus,
-                                           messageCorrelationId: Int)
-    extends MovementMessage { def optStatus = Some(status) }
+sealed trait XmlToJson extends Logging {
+  protected def toJson(xml: NodeSeq): JsObject =
+    Try(Json.parse(XML.toJSONObject(xml.toString).toString).as[JsObject]) match {
+      case Success(data) => data
+      case Failure(error) =>
+        logger.error(s"Failed to convert xml to json with error: ${error.getMessage}")
+        Json.obj()
+    }
+}
 
-final case class MovementMessageWithoutStatus(dateTime: LocalDateTime, messageType: MessageType, message: NodeSeq, messageCorrelationId: Int)
-    extends MovementMessage { def optStatus = None }
+final case class MovementMessageWithStatus private (dateTime: LocalDateTime,
+                                                    messageType: MessageType,
+                                                    message: NodeSeq,
+                                                    status: MessageStatus,
+                                                    messageCorrelationId: Int,
+                                                    messageJson: JsObject)
+    extends MovementMessage { def optStatus: Option[MessageStatus] = Some(status) }
+
+final case class MovementMessageWithoutStatus private (dateTime: LocalDateTime,
+                                                       messageType: MessageType,
+                                                       message: NodeSeq,
+                                                       messageCorrelationId: Int,
+                                                       messageJson: JsObject)
+    extends MovementMessage { def optStatus: Option[MessageStatus] = None }
 
 object MovementMessage extends NodeSeqFormat with MongoDateTimeFormats {
 
@@ -55,17 +77,55 @@ object MovementMessage extends NodeSeqFormat with MongoDateTimeFormats {
     case ns: MovementMessageWithStatus    => Json.toJsObject(ns)(MovementMessageWithStatus.formatsMovementMessage)
     case ws: MovementMessageWithoutStatus => Json.toJsObject(ws)(MovementMessageWithoutStatus.formatsMovementMessage)
   }
-
 }
 
-object MovementMessageWithStatus extends NodeSeqFormat with MongoDateTimeFormats {
+object MovementMessageWithStatus extends NodeSeqFormat with MongoDateTimeFormats with XmlToJson {
+
+  val writesMovementMessage: OWrites[MovementMessageWithStatus] =
+    Json.writes[MovementMessageWithStatus]
+
+  val readsMovementMessage: Reads[MovementMessageWithStatus] = {
+
+    import play.api.libs.functional.syntax._
+
+    (
+      (__ \ "dateTime").read[LocalDateTime] and
+        (__ \ "messageType").read[MessageType] and
+        (__ \ "message").read[NodeSeq] and
+        (__ \ "status").read[MessageStatus] and
+        (__ \ "messageCorrelationId").read[Int] and
+        (__ \ "messageJson").read[JsObject].orElse(Reads.pure(Json.obj()))
+    )(MovementMessageWithStatus(_, _, _, _, _, _))
+  }
 
   implicit val formatsMovementMessage: OFormat[MovementMessageWithStatus] =
-    Json.format[MovementMessageWithStatus]
+    OFormat(readsMovementMessage, writesMovementMessage)
+
+  def apply(dateTime: LocalDateTime, messageType: MessageType, message: NodeSeq, status: MessageStatus, messageCorrelationId: Int): MovementMessageWithStatus =
+    MovementMessageWithStatus(dateTime, messageType, message, status, messageCorrelationId, toJson(message))
 }
 
-object MovementMessageWithoutStatus extends NodeSeqFormat with MongoDateTimeFormats {
+object MovementMessageWithoutStatus extends NodeSeqFormat with MongoDateTimeFormats with XmlToJson {
+
+  val writesMovementMessage: OWrites[MovementMessageWithoutStatus] =
+    Json.writes[MovementMessageWithoutStatus]
+
+  val readsMovementMessage: Reads[MovementMessageWithoutStatus] = {
+
+    import play.api.libs.functional.syntax._
+
+    (
+      (__ \ "dateTime").read[LocalDateTime] and
+        (__ \ "messageType").read[MessageType] and
+        (__ \ "message").read[NodeSeq] and
+        (__ \ "messageCorrelationId").read[Int] and
+        (__ \ "messageJson").read[JsObject].orElse(Reads.pure(Json.obj()))
+    )(MovementMessageWithoutStatus(_, _, _, _, _))
+  }
 
   implicit val formatsMovementMessage: OFormat[MovementMessageWithoutStatus] =
-    Json.format[MovementMessageWithoutStatus]
+    OFormat(readsMovementMessage, writesMovementMessage)
+
+  def apply(dateTime: LocalDateTime, messageType: MessageType, message: NodeSeq, messageCorrelationId: Int): MovementMessageWithoutStatus =
+    MovementMessageWithoutStatus(dateTime, messageType, message, messageCorrelationId, toJson(message))
 }
