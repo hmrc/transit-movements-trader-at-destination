@@ -52,7 +52,8 @@ class ArrivalStatusSpec extends SpecBase with ScalaCheckDrivenPropertyChecks wit
           MessageReceivedEvent.GoodsReleased,
           MessageReceivedEvent.UnloadingPermission,
           MessageReceivedEvent.ArrivalRejected,
-          MessageReceivedEvent.UnloadingRemarksRejected
+          MessageReceivedEvent.UnloadingRemarksRejected,
+          MessageReceivedEvent.InvalidXml
         )
         val invalidMessages = MessageReceivedEvent.values.diff(validMessages)
         invalidMessages.foreach {
@@ -101,7 +102,8 @@ class ArrivalStatusSpec extends SpecBase with ScalaCheckDrivenPropertyChecks wit
           MessageReceivedEvent.GoodsReleased,
           MessageReceivedEvent.UnloadingPermission,
           MessageReceivedEvent.ArrivalRejected,
-          MessageReceivedEvent.UnloadingRemarksRejected
+          MessageReceivedEvent.UnloadingRemarksRejected,
+          MessageReceivedEvent.InvalidXml
         )
         val invalidMessages = MessageReceivedEvent.values.diff(validMessages)
         invalidMessages.foreach {
