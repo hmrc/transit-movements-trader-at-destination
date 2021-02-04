@@ -48,7 +48,7 @@ class MessagesSummarySpec extends AnyFreeSpec with Matchers with ModelGenerators
     "return arrival rejection link" in {
 
       val messageId   = 1
-      val rejectionId = 2
+      val xmlNegativeMessageId = 2
 
       Json.toJson(
         MessagesSummary(arrival, MessageId.fromIndex(0), Some(MessageId.fromIndex(1)), None)
@@ -57,10 +57,26 @@ class MessagesSummarySpec extends AnyFreeSpec with Matchers with ModelGenerators
         "messages" ->
           Json.obj(
             "IE007" -> s"/transit-movements-trader-at-destination/movements/arrivals/${arrival.arrivalId.index}/messages/$messageId",
-            "IE008" -> s"/transit-movements-trader-at-destination/movements/arrivals/${arrival.arrivalId.index}/messages/$rejectionId"
+            "IE008" -> s"/transit-movements-trader-at-destination/movements/arrivals/${arrival.arrivalId.index}/messages/$xmlNegativeMessageId"
           )
       )
+    }
 
+    "return xml Submission Negative Acknowledgement link" in {
+
+      val messageId   = 1
+      val rejectionId = 2
+
+      Json.toJson(
+        MessagesSummary(arrival = arrival, arrivalNotification = MessageId.fromIndex(0), xmlSubmissionNegativeAcknowledgement = Some(MessageId.fromIndex(1)))
+      ) mustBe Json.obj(
+        "arrivalId" -> arrival.arrivalId,
+        "messages" ->
+          Json.obj(
+            "IE007" -> s"/transit-movements-trader-at-destination/movements/arrivals/${arrival.arrivalId.index}/messages/$messageId",
+            "IE917" -> s"/transit-movements-trader-at-destination/movements/arrivals/${arrival.arrivalId.index}/messages/$rejectionId"
+          )
+      )
     }
 
     "return unloading permission link" in {
