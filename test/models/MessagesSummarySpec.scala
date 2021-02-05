@@ -47,7 +47,7 @@ class MessagesSummarySpec extends AnyFreeSpec with Matchers with ModelGenerators
 
     "return arrival rejection link" in {
 
-      val messageId   = 1
+      val messageId            = 1
       val xmlNegativeMessageId = 2
 
       Json.toJson(
