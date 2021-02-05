@@ -17,8 +17,12 @@
 package repositories
 
 import java.time.LocalDateTime
+
+import akka.stream.Materializer
+import cats.data.NonEmptyList
 import com.google.inject.Inject
 import config.AppConfig
+import logging.Logging
 import metrics.MetricsService
 import metrics.Monitors
 import models.Arrival
@@ -40,11 +44,12 @@ import models.response.ResponseArrival
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import play.modules.reactivemongo.ReactiveMongoApi
+import reactivemongo.akkastream.cursorProducer
 import reactivemongo.api.Cursor
-import reactivemongo.bson.BSONDocument
 import reactivemongo.api.bson.collection.BSONSerializationPack
 import reactivemongo.api.indexes.Index.Aux
 import reactivemongo.api.indexes.IndexType
+import reactivemongo.bson.BSONDocument
 import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 import reactivemongo.play.json.collection.JSONCollection
 import utils.IndexUtils
@@ -55,8 +60,13 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 
-class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi, appConfig: AppConfig, metricsService: MetricsService)(implicit ec: ExecutionContext)
-    extends MongoDateTimeFormats {
+class ArrivalMovementRepository @Inject()(
+  mongo: ReactiveMongoApi,
+  appConfig: AppConfig,
+  metricsService: MetricsService
+)(implicit ec: ExecutionContext, m: Materializer)
+    extends MongoDateTimeFormats
+    with Logging {
 
   private val eoriNumberIndex: Aux[BSONSerializationPack.type] = IndexUtils.index(
     key = Seq("eoriNumber" -> IndexType.Ascending),
@@ -248,6 +258,60 @@ class ArrivalMovementRepository @Inject()(mongo: ReactiveMongoApi, appConfig: Ap
                 if (le.updatedExisting) Success(()) else Failure(new Exception(s"Could not find arrival $arrivalId"))
             }
             .getOrElse(Failure(new Exception("Failed to update arrival")))
+        }
+    }
+  }
+
+  def arrivalsWithoutJsonMessages(limit: Int): Future[Seq[Arrival]] = {
+
+    val messagesWithNoJson =
+      Json.obj(
+        "messages" -> Json.obj(
+          "$elemMatch" -> Json.obj(
+            "messageJson" -> Json.obj(
+              "$exists" -> false
+            )
+          )
+        )
+      )
+
+    val messagesWithEmptyJson =
+      Json.obj(
+        "messages" -> Json.obj(
+          "$elemMatch" -> Json.obj(
+            "messageJson" -> Json.obj()
+          )
+        )
+      )
+
+    val query = Json.obj("$or" -> Json.arr(messagesWithNoJson, messagesWithEmptyJson))
+
+    collection
+      .flatMap {
+        _.find[JsObject, Arrival](query, None)
+          .cursor[Arrival]()
+          .collect[Seq](limit, Cursor.FailOnError())
+      }
+      .map(x => { logger.info(s"Found ${x.size} arrivals without JSON to process"); x })
+  }
+
+  def resetMessages(arrivalId: ArrivalId, messages: NonEmptyList[MovementMessage]): Future[Boolean] = {
+
+    val selector = Json.obj(
+      "_id" -> arrivalId
+    )
+
+    val modifier = Json.obj(
+      "$set" -> Json.obj(
+        "messages" -> Json.toJson(messages.toList)
+      )
+    )
+
+    collection.flatMap {
+      _.findAndUpdate(selector, modifier)
+        .map {
+          _ =>
+            true // TODO: Handle problems?
         }
     }
   }
