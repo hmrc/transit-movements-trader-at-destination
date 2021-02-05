@@ -40,6 +40,7 @@ import models.MessageStatusUpdate
 import models.MongoDateTimeFormats
 import models.MovementMessage
 import models.MovementReferenceNumber
+import models.response.ResponseArrival
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import play.modules.reactivemongo.ReactiveMongoApi
@@ -152,11 +153,11 @@ class ArrivalMovementRepository @Inject()(
     }
   }
 
-  def fetchAllArrivals(eoriNumber: String, channelFilter: ChannelType): Future[Seq[Arrival]] =
+  def fetchAllArrivals(eoriNumber: String, channelFilter: ChannelType): Future[Seq[ResponseArrival]] =
     metricsService.timeAsyncCall(Monitors.GetArrivalsForEoriMonitor) {
       collection.flatMap {
-        _.find(Json.obj("eoriNumber" -> eoriNumber, "channel" -> channelFilter), Option.empty[JsObject])
-          .cursor[Arrival]()
+        _.find(Json.obj("eoriNumber" -> eoriNumber, "channel" -> channelFilter), Some(ResponseArrival.projection))
+          .cursor[ResponseArrival]()
           .collect[Seq](-1, Cursor.FailOnError())
           .map {
             arrivals =>

@@ -25,6 +25,7 @@ import connectors.MessageConnector.EisSubmissionResult._
 import metrics.MetricsService
 import metrics.Monitors
 import models.ArrivalId
+import models.ChannelType
 import models.MessageSender
 import models.MessageType
 import models.MovementMessageWithStatus
@@ -40,7 +41,7 @@ import scala.concurrent.Future
 
 class MessageConnector @Inject()(config: AppConfig, http: HttpClient, metricsService: MetricsService)(implicit ec: ExecutionContext) {
 
-  def post(arrivalId: ArrivalId, message: MovementMessageWithStatus, dateTime: OffsetDateTime)(
+  def post(arrivalId: ArrivalId, message: MovementMessageWithStatus, dateTime: OffsetDateTime, channelType: ChannelType)(
     implicit headerCarrier: HeaderCarrier
   ): Future[EisSubmissionResult] = {
 
@@ -52,7 +53,7 @@ class MessageConnector @Inject()(config: AppConfig, http: HttpClient, metricsSer
 
     val newHeaders = headerCarrier
       .copy(authorization = None)
-      .withExtraHeaders(addHeaders(message.messageType, dateTime, messageSender): _*)
+      .withExtraHeaders(addHeaders(message.messageType, dateTime, messageSender, channelType): _*)
 
     metricsService.timeAsyncCall(Monitors.PostToEisMonitor) {
       http
@@ -61,14 +62,15 @@ class MessageConnector @Inject()(config: AppConfig, http: HttpClient, metricsSer
     }
   }
 
-  private def addHeaders(messageType: MessageType, dateTime: OffsetDateTime, messageSender: MessageSender)(
+  private def addHeaders(messageType: MessageType, dateTime: OffsetDateTime, messageSender: MessageSender, channelType: ChannelType)(
     implicit headerCarrier: HeaderCarrier): Seq[(String, String)] =
     Seq(
       "Date"             -> Format.dateFormattedForHeader(dateTime),
       "Content-Type"     -> "application/xml",
       "Accept"           -> "application/xml",
       "X-Message-Type"   -> messageType.toString,
-      "X-Message-Sender" -> messageSender.toString
+      "X-Message-Sender" -> messageSender.toString,
+      "channel"          -> channelType.toString
     )
 }
 

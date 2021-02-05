@@ -99,7 +99,7 @@ class MovementsController @Inject()(
             .makeOutboundMessage(arrival.arrivalId, arrival.nextMessageCorrelationId, MessageType.ArrivalNotification)(request.body) match {
             case Right(message) =>
               submitMessageService
-                .submitMessage(arrival.arrivalId, arrival.nextMessageId, message, ArrivalStatus.ArrivalSubmitted)
+                .submitMessage(arrival.arrivalId, arrival.nextMessageId, message, ArrivalStatus.ArrivalSubmitted, request.channel)
                 .map {
                   result =>
                     val counter = Monitors.countMessages(MessageType.ArrivalNotification, request.channel, result)
@@ -145,7 +145,7 @@ class MovementsController @Inject()(
         .messageAndMrn(arrivalId, request.arrival.nextMessageCorrelationId)(request.body) match {
         case Right((message, mrn)) =>
           submitMessageService
-            .submitIe007Message(arrivalId, request.arrival.nextMessageId, message, mrn)
+            .submitIe007Message(arrivalId, request.arrival.nextMessageId, message, mrn, request.channel)
             .map {
               result =>
                 handleSubmissionResult(result, AuditType.ArrivalNotificationReSubmitted, message, request.channel, request.arrival.arrivalId)
@@ -167,10 +167,7 @@ class MovementsController @Inject()(
         .fetchAllArrivals(request.eoriNumber, request.channel)
         .map {
           allArrivals =>
-            Ok(Json.toJsObject(ResponseArrivals(allArrivals.map {
-              arrival =>
-                ResponseArrival.build(arrival)
-            })))
+            Ok(Json.toJsObject(ResponseArrivals(allArrivals)))
         }
         .recover {
           case e =>

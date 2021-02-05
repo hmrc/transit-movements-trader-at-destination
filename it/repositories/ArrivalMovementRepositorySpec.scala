@@ -16,14 +16,14 @@
 
 package repositories
 
-import java.time.{LocalDate, LocalDateTime, LocalTime}
-
 import base._
 import cats.data.NonEmptyList
+import controllers.routes
 import models.ArrivalStatus.{ArrivalSubmitted, GoodsReleased, Initialized, UnloadingRemarksSubmitted}
 import models.ChannelType.{api, web}
 import models.MessageStatus.{SubmissionPending, SubmissionSucceeded}
 import models.{Arrival, ArrivalId, ArrivalIdSelector, ArrivalStatus, ArrivalStatusUpdate, MessageId, MessageType, MongoDateTimeFormats, MovementMessageWithStatus, MovementMessageWithoutStatus, MovementReferenceNumber}
+import models.response.ResponseArrival
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalactic.source
 import org.scalatest.TestSuiteMixin
@@ -37,6 +37,7 @@ import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 import reactivemongo.play.json.collection.JSONCollection
 import utils.Format
 
+import java.time.{LocalDate, LocalDateTime, LocalTime}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success}
@@ -505,8 +506,8 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
 
           val movementReferenceNumber = arbitrary[MovementReferenceNumber].sample.value
 
-          val eori      = "eori"
-          val arrival   = arbitrary[Arrival].sample.value copy (eoriNumber = eori, movementReferenceNumber = movementReferenceNumber, channel = api)
+          val eori    = "eori"
+          val arrival = arbitrary[Arrival].sample.value copy (eoriNumber = eori, movementReferenceNumber = movementReferenceNumber, channel = api)
 
           repository.insert(arrival).futureValue
 
@@ -543,7 +544,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
     }
 
     "fetchAllArrivals" - {
-      "must return Arrival Movements that match an eoriNumber and channel type" in {
+      "must return Arrival Movements details that match an eoriNumber and channel type" in {
         database.flatMap(_.drop()).futureValue
 
         val app: Application = builder.build()
@@ -555,7 +556,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
         running(app) {
           started(app).futureValue
 
-          val service: ArrivalMovementRepository = app.injector.instanceOf[ArrivalMovementRepository]
+          val repository: ArrivalMovementRepository = app.injector.instanceOf[ArrivalMovementRepository]
 
           val allMovements = Seq(arrivalMovement1, arrivalMovement2, arrivalMovement3)
 
@@ -566,8 +567,28 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
               db.collection[JSONCollection](ArrivalMovementRepository.collectionName).insert(false).many(jsonArr)
           }.futureValue
 
-          service.fetchAllArrivals(eoriNumber, api).futureValue mustBe Seq(arrivalMovement1)
-          service.fetchAllArrivals(eoriNumber, web).futureValue mustBe Seq(arrivalMovement3)
+          val expectedApiFetchAll1 = ResponseArrival(
+            arrivalMovement1.arrivalId,
+            routes.MovementsController.getArrival(arrivalMovement1.arrivalId).url,
+            routes.MessagesController.getMessages(arrivalMovement1.arrivalId).url,
+            arrivalMovement1.movementReferenceNumber,
+            arrivalMovement1.status,
+            arrivalMovement1.created,
+            arrivalMovement1.lastUpdated
+          )
+
+          val expectedApiFetchAll3 = ResponseArrival(
+            arrivalMovement3.arrivalId,
+            routes.MovementsController.getArrival(arrivalMovement3.arrivalId).url,
+            routes.MessagesController.getMessages(arrivalMovement3.arrivalId).url,
+            arrivalMovement3.movementReferenceNumber,
+            arrivalMovement3.status,
+            arrivalMovement3.created,
+            arrivalMovement3.lastUpdated
+          )
+
+          repository.fetchAllArrivals(eoriNumber, api).futureValue mustBe Seq(expectedApiFetchAll1)
+          repository.fetchAllArrivals(eoriNumber, web).futureValue mustBe Seq(expectedApiFetchAll3)
         }
       }
 
