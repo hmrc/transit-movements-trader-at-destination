@@ -20,7 +20,6 @@ import base.SpecBase
 import connectors.ManageDocumentsConnector
 import generators.ModelGenerators
 import models.WSError.NotFoundError
-import models.WSError.OtherError
 import models.response.ResponseMovementMessage
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
