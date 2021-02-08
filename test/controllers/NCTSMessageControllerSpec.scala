@@ -70,7 +70,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
         when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any(), any(), any())(any()))
           .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionSuccess))
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
-        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
+        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(true))
 
         val application = baseApplicationBuilder
           .overrides(
@@ -96,7 +96,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
       "must lock, return NotFound and unlock when given a message for an arrival that does not exist" in {
         when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(None))
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
-        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
+        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(true))
 
         val application = baseApplicationBuilder
           .overrides(
@@ -124,7 +124,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
         when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any(), any(), any())(any()))
           .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureInternal))
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
-        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
+        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(true))
 
         val application = baseApplicationBuilder
           .overrides(
@@ -152,7 +152,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
 
         when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
-        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
+        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(true))
 
         val application = baseApplicationBuilder
           .overrides(
@@ -181,7 +181,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
         when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any(), any(), any())(any()))
           .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureExternal))
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
-        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(()))
+        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(true))
 
         val application = baseApplicationBuilder
           .overrides(

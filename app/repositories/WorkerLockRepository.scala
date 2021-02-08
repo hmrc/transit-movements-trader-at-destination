@@ -20,7 +20,7 @@ import java.time.LocalDateTime
 
 import config.AppConfig
 import javax.inject.Inject
-import models.ArrivalId
+import models.LockResult
 import play.api.libs.json.Json
 import play.modules.reactivemongo.ReactiveMongoApi
 import reactivemongo.api.commands.LastError
@@ -36,14 +36,14 @@ import models.MongoDateTimeFormats._
 import reactivemongo.api.bson.collection.BSONSerializationPack
 import utils.IndexUtils
 
-class LockRepository @Inject()(mongo: ReactiveMongoApi, appConfig: AppConfig)(implicit ec: ExecutionContext) {
+class WorkerLockRepository @Inject()(mongo: ReactiveMongoApi, appConfig: AppConfig)(implicit ec: ExecutionContext) {
 
   private val documentExistsErrorCodeValue = 11000
 
   private val ttl = appConfig.lockRepositoryTtl
 
   private def collection: Future[JSONCollection] =
-    mongo.database.map(_.collection[JSONCollection](LockRepository.collectionName))
+    mongo.database.map(_.collection[JSONCollection](WorkerLockRepository.collectionName))
 
   private val createdIndex: Aux[BSONSerializationPack.type] = IndexUtils.index(
     key = Seq("created" -> IndexType.Ascending),
@@ -51,38 +51,38 @@ class LockRepository @Inject()(mongo: ReactiveMongoApi, appConfig: AppConfig)(im
     options = BSONDocument("expireAfterSeconds" -> ttl)
   )
 
-  val started: Future[Unit] =
+  val started: Future[Boolean] =
     collection
       .flatMap {
         _.indexesManager.ensure(createdIndex)
       }
-      .map(_ => ())
+      .map(_ => true)
 
-  def lock(arrivalId: ArrivalId): Future[Boolean] = {
+  def lock(id: String): Future[LockResult] = {
 
     val lock = Json.obj(
-      "_id"     -> arrivalId,
+      "_id"     -> id,
       "created" -> LocalDateTime.now
     )
 
     collection.flatMap {
       _.insert(ordered = false)
         .one(lock)
-        .map(_ => true)
+        .map(_ => LockResult.LockAcquired)
     } recover {
       case e: LastError if e.code.contains(documentExistsErrorCodeValue) =>
-        false
+        LockResult.AlreadyLocked
     }
   }
 
-  def unlock(arrivalId: ArrivalId): Future[Boolean] =
+  def unlock(id: String): Future[Boolean] =
     collection.flatMap {
-      _.findAndRemove(Json.obj("_id" -> arrivalId))
+      _.findAndRemove(Json.obj("_id" -> id))
         .map(_ => true)
     }
 }
 
-object LockRepository {
+object WorkerLockRepository {
 
-  val collectionName = "locks"
+  val collectionName = "worker-locks"
 }
