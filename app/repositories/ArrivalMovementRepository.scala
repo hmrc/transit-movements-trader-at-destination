@@ -68,39 +68,32 @@ class ArrivalMovementRepository @Inject()(
     extends MongoDateTimeFormats
     with Logging {
 
-  private val eoriNumberIndex: Aux[BSONSerializationPack.type] = IndexUtils.index(
-    key = Seq("eoriNumber" -> IndexType.Ascending),
-    name = Some("eori-number-index")
-  )
-
-  private val movementReferenceNumber: Aux[BSONSerializationPack.type] = IndexUtils.index(
-    key = Seq("movementReferenceNumber" -> IndexType.Ascending),
-    name = Some("movement-reference-number-index")
-  )
-
-  private val lastUpdatedIndex: Aux[BSONSerializationPack.type] = IndexUtils.index(
-    key = Seq("lastUpdated" -> IndexType.Ascending),
-    name = Some("last-updated-index"),
-    options = BSONDocument("expireAfterSeconds" -> appConfig.cacheTtl)
-  )
-
   val started: Future[Unit] = {
     collection
       .flatMap {
         jsonCollection =>
           for {
+            _   <- dropLastUpdatedIndex(jsonCollection)
             _   <- jsonCollection.indexesManager.ensure(eoriNumberIndex)
-            _   <- jsonCollection.indexesManager.ensure(movementReferenceNumber)
-            res <- jsonCollection.indexesManager.ensure(lastUpdatedIndex)
+            res <- jsonCollection.indexesManager.ensure(movementReferenceNumber)
           } yield res
       }
       .map(_ => ())
   }
-
+  private val eoriNumberIndex: Aux[BSONSerializationPack.type] = IndexUtils.index(
+    key = Seq("eoriNumber" -> IndexType.Ascending),
+    name = Some("eori-number-index")
+  )
+  private val movementReferenceNumber: Aux[BSONSerializationPack.type] = IndexUtils.index(
+    key = Seq("movementReferenceNumber" -> IndexType.Ascending),
+    name = Some("movement-reference-number-index")
+  )
+  private val lastUpdatedIndex: Aux[BSONSerializationPack.type] = IndexUtils.index(
+    key = Seq("lastUpdated" -> IndexType.Ascending),
+    name = Some("last-updated-index"),
+    options = BSONDocument("expireAfterSeconds" -> appConfig.cacheTtl)
+  )
   private val collectionName = ArrivalMovementRepository.collectionName
-
-  private def collection: Future[JSONCollection] =
-    mongo.database.map(_.collection[JSONCollection](collectionName))
 
   def insert(arrival: Arrival): Future[Unit] =
     collection.flatMap {
@@ -167,6 +160,19 @@ class ArrivalMovementRepository @Inject()(
       }
     }
 
+  @deprecated("Use updateArrival since this will be removed in the next version", "next")
+  def setArrivalStateAndMessageState(arrivalId: ArrivalId,
+                                     messageId: MessageId,
+                                     arrivalState: ArrivalStatus,
+                                     messageState: MessageStatus): Future[Option[Unit]] = {
+
+    val selector = ArrivalIdSelector(arrivalId)
+
+    val modifier = CompoundStatusUpdate(ArrivalStatusUpdate(arrivalState), MessageStatusUpdate(messageId, messageState))
+
+    updateArrival(selector, modifier).map(_.toOption)
+  }
+
   def updateArrival[A](selector: ArrivalSelector, modifier: A)(implicit ev: ArrivalModifier[A]): Future[Try[Unit]] = {
 
     import models.ArrivalModifier.toJson
@@ -186,18 +192,8 @@ class ArrivalMovementRepository @Inject()(
     }
   }
 
-  @deprecated("Use updateArrival since this will be removed in the next version", "next")
-  def setArrivalStateAndMessageState(arrivalId: ArrivalId,
-                                     messageId: MessageId,
-                                     arrivalState: ArrivalStatus,
-                                     messageState: MessageStatus): Future[Option[Unit]] = {
-
-    val selector = ArrivalIdSelector(arrivalId)
-
-    val modifier = CompoundStatusUpdate(ArrivalStatusUpdate(arrivalState), MessageStatusUpdate(messageId, messageState))
-
-    updateArrival(selector, modifier).map(_.toOption)
-  }
+  private def collection: Future[JSONCollection] =
+    mongo.database.map(_.collection[JSONCollection](collectionName))
 
   def addNewMessage(arrivalId: ArrivalId, message: MovementMessage): Future[Try[Unit]] = {
 
@@ -312,6 +308,24 @@ class ArrivalMovementRepository @Inject()(
         .map {
           _ =>
             true // TODO: Handle problems?
+        }
+    }
+  }
+
+  private def dropLastUpdatedIndex(collection: JSONCollection): Future[Boolean] = {
+    val indexName = lastUpdatedIndex.name.getOrElse("none")
+    collection.indexesManager.list.flatMap {
+      indexes =>
+        if (indexes.exists(_.name.contains())) {
+
+          logger.warn(s"Dropping $indexName index")
+
+          collection.indexesManager
+            .drop(indexName)
+            .map(_ => true)
+        } else {
+          logger.info(s"$indexName does not exist or has already been dropped")
+          Future.successful(true)
         }
     }
   }
