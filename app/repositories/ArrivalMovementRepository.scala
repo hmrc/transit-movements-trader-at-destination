@@ -74,6 +74,7 @@ class ArrivalMovementRepository @Inject()(
         jsonCollection =>
           for {
             _   <- dropLastUpdatedIndex(jsonCollection)
+            _   <- jsonCollection.indexesManager.ensure(lastUpdatedIndex)
             _   <- jsonCollection.indexesManager.ensure(eoriNumberIndex)
             res <- jsonCollection.indexesManager.ensure(movementReferenceNumber)
           } yield res
@@ -316,7 +317,7 @@ class ArrivalMovementRepository @Inject()(
     val indexName = lastUpdatedIndex.name.getOrElse("none")
     collection.indexesManager.list.flatMap {
       indexes =>
-        if (indexes.exists(_.name.contains())) {
+        if (indexes.exists(_.name.contains(indexName))) {
 
           logger.warn(s"Dropping $indexName index")
 
