@@ -63,7 +63,10 @@ object Monitors {
       case s if s <= 100 => Counter("arrivals-per-eori-51-100")
       case s if s <= 250 => Counter("arrivals-per-eori-101-250")
       case s if s <= 500 => Counter("arrivals-per-eori-251-500")
-      case _             => Counter("arrivals-per-eori-501-or-more")
+      case s if s <= 1000 => Counter("arrivals-per-eori-501-1000")
+      case s if s <= 2000 => Counter("arrivals-per-eori-1001-2000")
+      case s if s <= 3000 => Counter("arrivals-per-eori-2001-3000")
+      case _             => Counter("arrivals-per-eori-3001-or-more")
     }
 
   def countMessages(messageType: MessageType, channel: ChannelType, outcome: SubmissionProcessingResult): Counter =
