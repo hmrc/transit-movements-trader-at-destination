@@ -78,7 +78,8 @@ class AddJsonToMessagesWorkerSpec
             when(arrivalsLockRepo.lock(any())) thenReturn Future.successful(true)
             when(arrivalsLockRepo.unlock(any())) thenReturn Future.successful(true)
 
-            val worker: AddJsonToMessagesWorker = new AddJsonToMessagesWorker(workerConfig, lockRepo, arrivalsRepo, arrivalsLockRepo)
+            val addJsonToMessagesTransformer    = new AddJsonToMessagesTransformer(arrivalsRepo, arrivalsLockRepo)
+            val worker: AddJsonToMessagesWorker = new AddJsonToMessagesWorker(workerConfig, lockRepo, arrivalsRepo, addJsonToMessagesTransformer)
 
             val result = worker.tap.pull.futureValue.value
             result.size mustEqual 2
@@ -108,7 +109,8 @@ class AddJsonToMessagesWorkerSpec
               when(arrivalsLockRepo.lock(any())) thenReturn Future.successful(true)
               when(arrivalsLockRepo.unlock(any())) thenReturn Future.successful(true)
 
-              val worker: AddJsonToMessagesWorker = new AddJsonToMessagesWorker(workerConfig, lockRepo, arrivalsRepo, arrivalsLockRepo)
+              val addJsonToMessagesTransformer    = new AddJsonToMessagesTransformer(arrivalsRepo, arrivalsLockRepo)
+              val worker: AddJsonToMessagesWorker = new AddJsonToMessagesWorker(workerConfig, lockRepo, arrivalsRepo, addJsonToMessagesTransformer)
 
               val result = worker.tap.pull.futureValue.value
               result.size mustEqual 2
@@ -140,7 +142,8 @@ class AddJsonToMessagesWorkerSpec
             when(arrivalsLockRepo.lock(any())) thenReturn Future.successful(false)
             when(arrivalsLockRepo.unlock(any())) thenReturn Future.successful(true)
 
-            val worker: AddJsonToMessagesWorker = new AddJsonToMessagesWorker(workerConfig, lockRepo, arrivalsRepo, arrivalsLockRepo)
+            val addJsonToMessagesTransformer    = new AddJsonToMessagesTransformer(arrivalsRepo, arrivalsLockRepo)
+            val worker: AddJsonToMessagesWorker = new AddJsonToMessagesWorker(workerConfig, lockRepo, arrivalsRepo, addJsonToMessagesTransformer)
 
             val result = worker.tap.pull.futureValue.value
             result.size mustEqual 2
@@ -170,7 +173,8 @@ class AddJsonToMessagesWorkerSpec
           when(arrivalsRepo.resetMessages(any(), any())) thenReturn Future.successful(true)
           when(arrivalsLockRepo.lock(any())) thenReturn Future.successful(false)
 
-          val worker: AddJsonToMessagesWorker = new AddJsonToMessagesWorker(workerConfig, lockRepo, arrivalsRepo, arrivalsLockRepo)
+          val addJsonToMessagesTransformer    = new AddJsonToMessagesTransformer(arrivalsRepo, arrivalsLockRepo)
+          val worker: AddJsonToMessagesWorker = new AddJsonToMessagesWorker(workerConfig, lockRepo, arrivalsRepo, addJsonToMessagesTransformer)
 
           worker.tap.pull.isReadyWithin(1.second) mustEqual false
 
@@ -198,7 +202,8 @@ class AddJsonToMessagesWorkerSpec
         when(arrivalsLockRepo.lock(any())) thenReturn Future.successful(true)
         when(arrivalsLockRepo.unlock(any())) thenReturn Future.successful(true)
 
-        val worker: AddJsonToMessagesWorker = new AddJsonToMessagesWorker(workerConfig, lockRepo, arrivalsRepo, arrivalsLockRepo)
+        val addJsonToMessagesTransformer    = new AddJsonToMessagesTransformer(arrivalsRepo, arrivalsLockRepo)
+        val worker: AddJsonToMessagesWorker = new AddJsonToMessagesWorker(workerConfig, lockRepo, arrivalsRepo, addJsonToMessagesTransformer)
 
         val result = worker.tap.pull.futureValue
         result must not be defined

@@ -45,7 +45,7 @@ class AddJsonToMessagesWorker @Inject()(
   workerConfig: WorkerConfig,
   workerLockRepository: WorkerLockRepository,
   arrivalMovementRepository: ArrivalMovementRepository,
-  arrivalLockRepository: LockRepository
+  addJsonToMessagesTransformer: AddJsonToMessagesTransformer
 )(implicit ec: ExecutionContext, m: Materializer)
     extends Logging {
 
@@ -85,44 +85,11 @@ class AddJsonToMessagesWorker @Inject()(
       }
   }
 
-  private def processArrival(arrival: Arrival): Future[(Arrival, NotUsed)] =
-    arrivalLockRepository.lock(arrival.arrivalId).flatMap {
-      case true =>
-        logger.info(s"Adding JSON to messages on arrival ${arrival.arrivalId.index}")
-
-        val updatedMessages: NonEmptyList[MovementMessage] = arrival.messages.map {
-          case m: MovementMessageWithoutStatus =>
-            MovementMessageWithoutStatus(m.dateTime, m.messageType, m.message, m.messageCorrelationId)
-          case m: MovementMessageWithStatus =>
-            MovementMessageWithStatus(m.dateTime, m.messageType, m.message, m.status, m.messageCorrelationId)
-        }
-
-        arrivalMovementRepository.resetMessages(arrival.arrivalId, updatedMessages).flatMap {
-          _ =>
-            arrivalLockRepository.unlock(arrival.arrivalId).map {
-              _ =>
-                (arrival, NotUsed)
-            }
-        } recoverWith {
-          case e: Throwable =>
-            logger.error(s"Received an error trying to reset messages for arrival s${arrival.arrivalId.index}", e)
-
-            arrivalLockRepository.unlock(arrival.arrivalId).map {
-              _ =>
-                (arrival, NotUsed)
-            }
-        }
-
-      case false =>
-        logger.info(s"Arrival ${arrival.arrivalId} is locked, so messages will not be updated")
-        Future.successful((arrival, NotUsed))
-    }
-
   private def runBatch(batch: Seq[Arrival]): Future[Seq[(Arrival, NotUsed)]] =
     Source
       .fromIterator(() => batch.iterator)
       .throttle(settings.elements, settings.per)
-      .mapAsync(settings.parallelism)(processArrival)
+      .mapAsync(settings.parallelism)(addJsonToMessagesTransformer.run)
       .grouped(settings.groupSize)
       .wireTapMat(Sink.queue())(Keep.right)
       .to(Sink.ignore)
