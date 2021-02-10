@@ -19,6 +19,8 @@ package controllers
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.format.DateTimeFormatter
+
 import audit.AuditService
 import audit.AuditType
 import base.SpecBase
@@ -72,6 +74,8 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
   val localDate     = LocalDate.now()
   val localTime     = LocalTime.of(1, 1)
   val localDateTime = LocalDateTime.of(localDate, localTime)
+
+  val dateFormat = DateTimeFormatter.ISO_LOCAL_DATE_TIME
 
   val arrivalId = arbitrary[ArrivalId].sample.value
   val mrn       = arbitrary[MovementReferenceNumber].sample.value
@@ -1003,12 +1007,6 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
               status(result) mustEqual OK
               contentAsJson(result) mustEqual Json.toJson(ResponseArrivals(arrivals))
 
-              val expectedJson =
-                s"""{
-                   |  "arrivals": [
-                   |  ]
-                   |}""".stripMargin
-
               reset(mockArrivalMovementRepository)
           }
         }
@@ -1024,7 +1022,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
         running(application) {
 
-          val createdAndUpdatedDate = LocalDateTime.now()
+          val createdAndUpdatedDate = LocalDateTime.parse("2021-02-10T09:46:25.55")
 
           val arrivals = Seq(
             ResponseArrival(
@@ -1054,8 +1052,8 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
                |      "messagesLocation": "/messages/location",
                |      "movementReferenceNumber": "1234567890",
                |      "status": "ArrivalSubmitted",
-               |      "created": "${createdAndUpdatedDate.toString}",
-               |      "updated": "${createdAndUpdatedDate.toString}"
+               |      "created": "${dateFormat.format(createdAndUpdatedDate)}",
+               |      "updated": "${dateFormat.format(createdAndUpdatedDate)}"
                |    }
                |  ]
                |}""".stripMargin
