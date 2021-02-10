@@ -19,28 +19,48 @@ package repositories
 import base._
 import cats.data.NonEmptyList
 import controllers.routes
-import models.ArrivalStatus.{ArrivalSubmitted, GoodsReleased, Initialized, UnloadingRemarksSubmitted}
-import models.ChannelType.{api, web}
-import models.MessageStatus.{SubmissionPending, SubmissionSucceeded}
-import models.{Arrival, ArrivalId, ArrivalIdSelector, ArrivalStatus, ArrivalStatusUpdate, MessageId, MessageType, MongoDateTimeFormats, MovementMessageWithStatus, MovementMessageWithoutStatus, MovementReferenceNumber}
+import models.ArrivalStatus.ArrivalSubmitted
+import models.ArrivalStatus.GoodsReleased
+import models.ArrivalStatus.Initialized
+import models.ArrivalStatus.UnloadingRemarksSubmitted
+import models.ChannelType.api
+import models.ChannelType.web
+import models.MessageStatus.SubmissionPending
+import models.MessageStatus.SubmissionSucceeded
+import models.Arrival
+import models.ArrivalId
+import models.ArrivalIdSelector
+import models.ArrivalStatus
+import models.ArrivalStatusUpdate
+import models.MessageId
+import models.MessageType
+import models.MongoDateTimeFormats
+import models.MovementMessageWithStatus
+import models.MovementMessageWithoutStatus
+import models.MovementReferenceNumber
 import models.response.ResponseArrival
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalactic.source
 import org.scalatest.TestSuiteMixin
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.exceptions.{StackDepthException, TestFailedException}
+import org.scalatest.exceptions.StackDepthException
+import org.scalatest.exceptions.TestFailedException
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.JsObject
+import play.api.libs.json.Json
 import play.api.test.Helpers._
 import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 import reactivemongo.play.json.collection.JSONCollection
 import utils.Format
 
-import java.time.{LocalDate, LocalDateTime, LocalTime}
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.reflect.ClassTag
-import scala.util.{Failure, Success}
+import scala.util.Failure
+import scala.util.Success
 
 class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with ScalaFutures with TestSuiteMixin with MongoDateTimeFormats {
 
@@ -635,13 +655,13 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
       val arrival3 = arbitrary[Arrival].suchThat(x => !Seq(arrival1.arrivalId, arrival2.arrivalId).contains(x.arrivalId)).sample.value
       val arrival4 = arbitrary[Arrival].suchThat(x => !Seq(arrival1.arrivalId, arrival2.arrivalId, arrival3.arrivalId).contains(x.arrivalId)).sample.value
 
-      val messageWithJson = Json.toJson(arbitrary[MovementMessageWithStatus].sample.value).as[JsObject] ++ Json.obj("messageJson" -> Json.obj("foo" -> "bar"))
-      val messageWithoutJson = Json.toJson(arbitrary[MovementMessageWithStatus].sample.value).as[JsObject] - "messageJson"
+      val messageWithJson      = Json.toJson(arbitrary[MovementMessageWithStatus].sample.value).as[JsObject] ++ Json.obj("messageJson" -> Json.obj("foo" -> "bar"))
+      val messageWithoutJson   = Json.toJson(arbitrary[MovementMessageWithStatus].sample.value).as[JsObject] - "messageJson"
       val messageWithEmptyJson = Json.toJson(arbitrary[MovementMessageWithStatus].sample.value).as[JsObject] ++ Json.obj("messageJson" -> Json.obj())
 
-      val arrivalWithJson = Json.toJson(arrival1).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithJson))
-      val arrivalWithoutJson = Json.toJson(arrival2).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithoutJson))
-      val arrivalWithSomeJson = Json.toJson(arrival3).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithJson, messageWithoutJson))
+      val arrivalWithJson      = Json.toJson(arrival1).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithJson))
+      val arrivalWithoutJson   = Json.toJson(arrival2).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithoutJson))
+      val arrivalWithSomeJson  = Json.toJson(arrival3).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithJson, messageWithoutJson))
       val arrivalWithEmptyJson = Json.toJson(arrival4).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithEmptyJson))
 
       running(app) {
@@ -651,8 +671,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
 
         database.flatMap {
           db =>
-            db
-              .collection[JSONCollection](ArrivalMovementRepository.collectionName)
+            db.collection[JSONCollection](ArrivalMovementRepository.collectionName)
               .insert(false)
               .many(Seq(arrivalWithJson, arrivalWithoutJson, arrivalWithSomeJson, arrivalWithEmptyJson))
         }.futureValue
@@ -691,7 +710,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
         val updatedArrival = repo.get(arrival.arrivalId).futureValue
 
         resetResult mustEqual true
-        updatedArrival.value mustEqual arrival.copy (messages = newMessages)
+        updatedArrival.value mustEqual arrival.copy(messages = newMessages)
       }
     }
   }

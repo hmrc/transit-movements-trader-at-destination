@@ -17,26 +17,26 @@
 package workers
 
 import akka.NotUsed
+import akka.stream.ActorAttributes
+import akka.stream.Materializer
+import akka.stream.Supervision
 import akka.stream.scaladsl.Keep
 import akka.stream.scaladsl.Sink
 import akka.stream.scaladsl.SinkQueueWithCancel
 import akka.stream.scaladsl.Source
-import akka.stream.ActorAttributes
-import akka.stream.Materializer
-import akka.stream.Supervision
 import cats.data.NonEmptyList
-import javax.inject.Inject
 import logging.Logging
+import models.LockResult.LockAcquired
 import models.Arrival
 import models.LockResult
 import models.MovementMessage
 import models.MovementMessageWithStatus
 import models.MovementMessageWithoutStatus
-import models.LockResult.LockAcquired
-import repositories.ArrivalMovementRepository
 import repositories.LockRepository
+import repositories.ArrivalMovementRepository
 import repositories.WorkerLockRepository
 
+import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.control.NonFatal

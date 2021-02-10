@@ -16,7 +16,6 @@
 
 package models.response
 
-import java.time.LocalDateTime
 import controllers.routes
 import models.Arrival
 import models.ArrivalId
@@ -24,11 +23,11 @@ import models.ArrivalStatus
 import models.MongoDateTimeFormats
 import models.MovementReferenceNumber
 import play.api.libs.json.JsObject
-import play.api.libs.json.JsResult
-import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 import play.api.libs.json.OWrites
 import play.api.libs.json.Reads
+
+import java.time.LocalDateTime
 
 case class ResponseArrival(arrivalId: ArrivalId,
                            location: String,

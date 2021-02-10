@@ -80,7 +80,7 @@ class AddJsonToMessagesWorkerSpec
 
             val worker: AddJsonToMessagesWorker = new AddJsonToMessagesWorker(workerConfig, lockRepo, arrivalsRepo, arrivalsLockRepo)
 
-            val result: Seq[(Arrival, NotUsed)] = worker.tap.pull.futureValue.value
+            val result = worker.tap.pull.futureValue.value
             result.size mustEqual 2
 
             verify(lockRepo, atLeastOnce).lock(lockName)
@@ -110,7 +110,7 @@ class AddJsonToMessagesWorkerSpec
 
               val worker: AddJsonToMessagesWorker = new AddJsonToMessagesWorker(workerConfig, lockRepo, arrivalsRepo, arrivalsLockRepo)
 
-              val result: Seq[(Arrival, NotUsed)] = worker.tap.pull.futureValue.value
+              val result = worker.tap.pull.futureValue.value
               result.size mustEqual 2
 
               verify(lockRepo, atLeastOnce).lock(lockName)
@@ -142,7 +142,7 @@ class AddJsonToMessagesWorkerSpec
 
             val worker: AddJsonToMessagesWorker = new AddJsonToMessagesWorker(workerConfig, lockRepo, arrivalsRepo, arrivalsLockRepo)
 
-            val result: Seq[(Arrival, NotUsed)] = worker.tap.pull.futureValue.value
+            val result = worker.tap.pull.futureValue.value
             result.size mustEqual 2
 
             verify(lockRepo, atLeastOnce).lock(lockName)
