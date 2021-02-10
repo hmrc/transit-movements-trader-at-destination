@@ -20,9 +20,10 @@ import base.SpecBase
 import generators.ModelGenerators
 import models.ArrivalStatus._
 import org.scalacheck.Arbitrary.arbitrary
+import org.scalatest.EitherValues
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
-class ArrivalStatusSpec extends SpecBase with ScalaCheckDrivenPropertyChecks with ModelGenerators {
+class ArrivalStatusSpec extends SpecBase with ScalaCheckDrivenPropertyChecks with ModelGenerators with EitherValues {
   "transition" - {
     "Initialized must" - {
 
@@ -184,6 +185,51 @@ class ArrivalStatusSpec extends SpecBase with ScalaCheckDrivenPropertyChecks wit
             ArrivalStatus.XMLSubmissionNegativeAcknowledgement.transition(m).isLeft mustBe true
         }
       }
+
+      "IE917 for IE007" in {
+        val step1 = Initialized.transition(MessageReceivedEvent.ArrivalSubmitted).right.value
+
+        step1 mustEqual ArrivalSubmitted
+
+        val step2 = step1.transition(MessageReceivedEvent.XMLSubmissionNegativeAcknowledgement).right.value
+
+        step2 mustEqual XMLSubmissionNegativeAcknowledgement
+
+        val step3 = step2.transition(MessageReceivedEvent.ArrivalSubmitted).right.value
+
+        step3 mustEqual ArrivalSubmitted
+      }
+
+      "IE917 for IE044" in {
+        val step1 = Initialized.transition(MessageReceivedEvent.ArrivalSubmitted).right.value
+
+        step1 mustEqual ArrivalSubmitted
+
+        val step2 = step1.transition(MessageReceivedEvent.XMLSubmissionNegativeAcknowledgement).right.value
+
+        step2 mustEqual XMLSubmissionNegativeAcknowledgement
+
+        val step3 = step2.transition(MessageReceivedEvent.ArrivalSubmitted).right.value
+
+        step3 mustEqual ArrivalSubmitted
+
+        val step4 = step3.transition(MessageReceivedEvent.UnloadingPermission).right.value
+
+        step4 mustEqual UnloadingPermission
+
+        val step5 = step4.transition(MessageReceivedEvent.UnloadingRemarksSubmitted).right.value
+
+        step5 mustEqual UnloadingRemarksSubmitted
+
+        val step6 = step5.transition(MessageReceivedEvent.XMLSubmissionNegativeAcknowledgement).right.value
+
+        step6 mustEqual XMLSubmissionNegativeAcknowledgement
+
+        val step7 = step6.transition(MessageReceivedEvent.UnloadingRemarksSubmitted).right.value
+
+        step7 mustEqual UnloadingRemarksSubmitted
+
+      }
     }
 
     "UnloadingRemarksRejected must " - {
@@ -235,6 +281,7 @@ class ArrivalStatusSpec extends SpecBase with ScalaCheckDrivenPropertyChecks wit
       }
 
     }
+
   }
 
 }
