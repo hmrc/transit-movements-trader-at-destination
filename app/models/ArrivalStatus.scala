@@ -73,6 +73,13 @@ object ArrivalStatus extends Enumerable.Implicits with MongoDateTimeFormats {
     override def transition(messageReceived: MessageReceivedEvent): Either[TransitionError, ArrivalStatus] = messageReceived match {
       case MessageReceivedEvent.XMLSubmissionNegativeAcknowledgement => Right(XMLSubmissionNegativeAcknowledgement)
       case MessageReceivedEvent.ArrivalSubmitted                     => Right(ArrivalSubmitted)
+      case _                                                         => Left(TransitionError(s"Tried to transition from XMLSubmissionNegativeAcknowledgement to $messageReceived."))
+    }
+  }
+
+  case object UnloadingRemarksXMLSubmissionNegativeAcknowledgement extends ArrivalStatus {
+    override def transition(messageReceived: MessageReceivedEvent): Either[TransitionError, ArrivalStatus] = messageReceived match {
+      case MessageReceivedEvent.XMLSubmissionNegativeAcknowledgement => Right(UnloadingRemarksXMLSubmissionNegativeAcknowledgement)
       case MessageReceivedEvent.UnloadingRemarksSubmitted            => Right(UnloadingRemarksSubmitted)
       case _                                                         => Left(TransitionError(s"Tried to transition from XMLSubmissionNegativeAcknowledgement to $messageReceived."))
     }
@@ -82,7 +89,7 @@ object ArrivalStatus extends Enumerable.Implicits with MongoDateTimeFormats {
     override def transition(messageReceived: MessageReceivedEvent): Either[TransitionError, ArrivalStatus] = messageReceived match {
       case MessageReceivedEvent.UnloadingRemarksSubmitted            => Right(UnloadingRemarksSubmitted)
       case MessageReceivedEvent.UnloadingRemarksRejected             => Right(UnloadingRemarksRejected)
-      case MessageReceivedEvent.XMLSubmissionNegativeAcknowledgement => Right(XMLSubmissionNegativeAcknowledgement)
+      case MessageReceivedEvent.XMLSubmissionNegativeAcknowledgement => Right(UnloadingRemarksXMLSubmissionNegativeAcknowledgement)
       case MessageReceivedEvent.GoodsReleased                        => Right(GoodsReleased)
       case _                                                         => Left(TransitionError(s"Tried to transition from UnloadingRemarksSubmitted to $messageReceived."))
     }
