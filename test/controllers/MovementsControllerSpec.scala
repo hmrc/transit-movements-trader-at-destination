@@ -75,7 +75,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
   val localTime     = LocalTime.of(1, 1)
   val localDateTime = LocalDateTime.of(localDate, localTime)
 
-  val dateFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'.'SS")
+  val dateFormat = DateTimeFormatter.ISO_LOCAL_DATE_TIME
 
   val arrivalId = arbitrary[ArrivalId].sample.value
   val mrn       = arbitrary[MovementReferenceNumber].sample.value
@@ -87,7 +87,6 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
       <SynVerNumMES2>1</SynVerNumMES2>
       <HEAHEA>
         <DocNumHEA5>{mrn.value}</DocNumHEA5>
-
       </HEAHEA>
     </CC007A>
 
