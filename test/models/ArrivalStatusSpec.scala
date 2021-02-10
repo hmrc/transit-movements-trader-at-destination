@@ -134,7 +134,12 @@ class ArrivalStatusSpec extends SpecBase with ScalaCheckDrivenPropertyChecks wit
 
       "return an error message if any other event is provided" in {
         val validMessages =
-          Seq(MessageReceivedEvent.UnloadingRemarksRejected, MessageReceivedEvent.UnloadingRemarksSubmitted, MessageReceivedEvent.GoodsReleased)
+          Seq(
+            MessageReceivedEvent.UnloadingRemarksRejected,
+            MessageReceivedEvent.UnloadingRemarksSubmitted,
+            MessageReceivedEvent.GoodsReleased,
+            MessageReceivedEvent.XMLSubmissionNegativeAcknowledgement
+          )
         val invalidMessages = MessageReceivedEvent.values.diff(validMessages)
         invalidMessages.foreach {
           m =>
@@ -178,7 +183,8 @@ class ArrivalStatusSpec extends SpecBase with ScalaCheckDrivenPropertyChecks wit
       }
 
       "return an error message if any other event is provided" in {
-        val validMessages   = Seq(MessageReceivedEvent.XMLSubmissionNegativeAcknowledgement)
+        val validMessages =
+          Seq(MessageReceivedEvent.XMLSubmissionNegativeAcknowledgement, MessageReceivedEvent.ArrivalSubmitted, MessageReceivedEvent.UnloadingRemarksSubmitted)
         val invalidMessages = MessageReceivedEvent.values.diff(validMessages)
         invalidMessages.foreach {
           m =>
