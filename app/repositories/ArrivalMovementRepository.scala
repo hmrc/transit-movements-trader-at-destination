@@ -91,10 +91,11 @@ class ArrivalMovementRepository @Inject()(
   )
   private val lastUpdatedIndex: Aux[BSONSerializationPack.type] = IndexUtils.index(
     key = Seq("lastUpdated" -> IndexType.Ascending),
-    name = Some("last-updated-index"),
+    name = Some("last-updated-new-index"),
     options = BSONDocument("expireAfterSeconds" -> appConfig.cacheTtl)
   )
-  private val collectionName = ArrivalMovementRepository.collectionName
+  private val oldLastUpdatedIndexName = "last-updated-index"
+  private val collectionName          = ArrivalMovementRepository.collectionName
 
   def insert(arrival: Arrival): Future[Unit] =
     collection.flatMap {
@@ -313,23 +314,21 @@ class ArrivalMovementRepository @Inject()(
     }
   }
 
-  private def dropLastUpdatedIndex(collection: JSONCollection): Future[Boolean] = {
-    val indexName = lastUpdatedIndex.name.getOrElse("none")
+  private def dropLastUpdatedIndex(collection: JSONCollection): Future[Boolean] =
     collection.indexesManager.list.flatMap {
       indexes =>
-        if (indexes.exists(_.name.contains(indexName))) {
+        if (indexes.exists(_.name.contains(oldLastUpdatedIndexName))) {
 
-          logger.warn(s"Dropping $indexName index")
+          logger.warn(s"Dropping $oldLastUpdatedIndexName index")
 
           collection.indexesManager
-            .drop(indexName)
+            .drop(oldLastUpdatedIndexName)
             .map(_ => true)
         } else {
-          logger.info(s"$indexName does not exist or has already been dropped")
+          logger.info(s"$oldLastUpdatedIndexName does not exist or has already been dropped")
           Future.successful(true)
         }
     }
-  }
 }
 
 object ArrivalMovementRepository {
