@@ -78,10 +78,11 @@ object ArrivalStatus extends Enumerable.Implicits with MongoDateTimeFormats {
 
   case object UnloadingRemarksSubmitted extends ArrivalStatus {
     override def transition(messageReceived: MessageReceivedEvent): Either[TransitionError, ArrivalStatus] = messageReceived match {
-      case MessageReceivedEvent.UnloadingRemarksSubmitted => Right(UnloadingRemarksSubmitted)
-      case MessageReceivedEvent.UnloadingRemarksRejected  => Right(UnloadingRemarksRejected)
-      case MessageReceivedEvent.GoodsReleased             => Right(GoodsReleased)
-      case _                                              => Left(TransitionError(s"Tried to transition from UnloadingRemarksSubmitted to $messageReceived."))
+      case MessageReceivedEvent.UnloadingRemarksSubmitted            => Right(UnloadingRemarksSubmitted)
+      case MessageReceivedEvent.UnloadingRemarksRejected             => Right(UnloadingRemarksRejected)
+      case MessageReceivedEvent.XMLSubmissionNegativeAcknowledgement => Right(XMLSubmissionNegativeAcknowledgement)
+      case MessageReceivedEvent.GoodsReleased                        => Right(GoodsReleased)
+      case _                                                         => Left(TransitionError(s"Tried to transition from UnloadingRemarksSubmitted to $messageReceived."))
     }
   }
 

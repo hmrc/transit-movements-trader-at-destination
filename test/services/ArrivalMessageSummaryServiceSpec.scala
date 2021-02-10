@@ -238,6 +238,24 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
 
       }
 
+      "latest IE917 when there are IE007 and IE044 and a IE917" in {
+        val service = new ArrivalMessageSummaryService
+
+        forAll(ie007Gen, ie044Gen, ie917Gen) {
+          (ie007, ie044, ie917) =>
+            val messages = NonEmptyList.of(ie007, ie044, ie917)
+
+            forAll(arrivalMovement(messages)) {
+              arrival =>
+                val (message, messageId) = service.xmlSubmissionNegativeAcknowledgementR(arrival).value
+
+                message mustEqual ie917
+                messageId mustEqual MessageId.fromMessageIdValue(3).value
+            }
+        }
+
+      }
+
       "IE917 when all IE007 have been rejected" in {
         val service = new ArrivalMessageSummaryService
 

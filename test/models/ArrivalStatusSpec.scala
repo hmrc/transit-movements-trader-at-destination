@@ -119,6 +119,10 @@ class ArrivalStatusSpec extends SpecBase with ScalaCheckDrivenPropertyChecks wit
         UnloadingRemarksSubmitted.transition(MessageReceivedEvent.UnloadingRemarksRejected) mustBe Right(UnloadingRemarksRejected)
       }
 
+      "transition to Unloading Remarks Rejected when receiving an XMLSubmissionNegativeAcknowledgement event" in {
+        UnloadingRemarksSubmitted.transition(MessageReceivedEvent.XMLSubmissionNegativeAcknowledgement) mustBe Right(XMLSubmissionNegativeAcknowledgement)
+      }
+
       "transition to UnloadingRemarksSubmitted when receiving an UnloadingRemarksSubmitted event" in {
         UnloadingRemarksSubmitted.transition(MessageReceivedEvent.UnloadingRemarksSubmitted) mustBe Right(UnloadingRemarksSubmitted)
       }
