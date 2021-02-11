@@ -181,8 +181,8 @@ class ArrivalStatusSpec extends SpecBase with ScalaCheckDrivenPropertyChecks wit
     "XMLSubmissionNegativeAcknowledgement must " - {
 
       "transition to XMLSubmissionNegativeAcknowledgement state when receiving an XMLSubmissionNegativeAcknowledgement event" in {
-        XMLSubmissionNegativeAcknowledgement.transition(MessageReceivedEvent.XMLSubmissionNegativeAcknowledgement).right.value mustBe
-          XMLSubmissionNegativeAcknowledgement
+        ArrivalXMLSubmissionNegativeAcknowledgement.transition(MessageReceivedEvent.XMLSubmissionNegativeAcknowledgement).right.value mustBe
+          ArrivalXMLSubmissionNegativeAcknowledgement
       }
 
       "return an error message if any other event is provided" in {
@@ -191,7 +191,7 @@ class ArrivalStatusSpec extends SpecBase with ScalaCheckDrivenPropertyChecks wit
         val invalidMessages = MessageReceivedEvent.values.diff(validMessages)
         invalidMessages.foreach {
           m =>
-            ArrivalStatus.XMLSubmissionNegativeAcknowledgement.transition(m).isLeft mustBe true
+            ArrivalStatus.ArrivalXMLSubmissionNegativeAcknowledgement.transition(m).isLeft mustBe true
         }
       }
 
@@ -202,7 +202,7 @@ class ArrivalStatusSpec extends SpecBase with ScalaCheckDrivenPropertyChecks wit
 
         val step2 = step1.transition(MessageReceivedEvent.XMLSubmissionNegativeAcknowledgement).right.value
 
-        step2 mustEqual XMLSubmissionNegativeAcknowledgement
+        step2 mustEqual ArrivalXMLSubmissionNegativeAcknowledgement
 
         val step3 = step2.transition(MessageReceivedEvent.ArrivalSubmitted).right.value
 
@@ -217,7 +217,7 @@ class ArrivalStatusSpec extends SpecBase with ScalaCheckDrivenPropertyChecks wit
 
         val step2 = step1.transition(MessageReceivedEvent.XMLSubmissionNegativeAcknowledgement).right.value
 
-        step2 mustEqual XMLSubmissionNegativeAcknowledgement
+        step2 mustEqual ArrivalXMLSubmissionNegativeAcknowledgement
 
         val step3 = step2.transition(MessageReceivedEvent.ArrivalSubmitted).right.value
 
@@ -266,7 +266,7 @@ class ArrivalStatusSpec extends SpecBase with ScalaCheckDrivenPropertyChecks wit
 
         val step2 = step1.transition(MessageReceivedEvent.XMLSubmissionNegativeAcknowledgement).right.value
 
-        step2 mustEqual XMLSubmissionNegativeAcknowledgement
+        step2 mustEqual ArrivalXMLSubmissionNegativeAcknowledgement
 
         val step3 = step2.transition(MessageReceivedEvent.ArrivalSubmitted).right.value
 
@@ -281,7 +281,7 @@ class ArrivalStatusSpec extends SpecBase with ScalaCheckDrivenPropertyChecks wit
 
         val step2 = step1.transition(MessageReceivedEvent.XMLSubmissionNegativeAcknowledgement).right.value
 
-        step2 mustEqual XMLSubmissionNegativeAcknowledgement
+        step2 mustEqual ArrivalXMLSubmissionNegativeAcknowledgement
 
         val step3 = step2.transition(MessageReceivedEvent.ArrivalSubmitted).right.value
 

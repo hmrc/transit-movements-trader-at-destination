@@ -18,10 +18,11 @@ package models.request.actions
 
 import generators.ModelGenerators
 import models.ArrivalStatus.ArrivalRejected
+import models.ArrivalStatus.ArrivalXMLSubmissionNegativeAcknowledgement
 import models.ArrivalStatus.GoodsReleased
 import models.ArrivalStatus.UnloadingPermission
 import models.ArrivalStatus.UnloadingRemarksRejected
-import models.ArrivalStatus.XMLSubmissionNegativeAcknowledgement
+import models.ArrivalStatus.UnloadingRemarksXMLSubmissionNegativeAcknowledgement
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalRejectedResponse
@@ -67,11 +68,12 @@ class InboundMessageTransformerSpec extends AnyFreeSpec with Matchers with Scala
   def action = new InboundMessageTransformer()
 
   val responseMessages: Map[String, MessageInbound] = Map(
-    MessageType.ArrivalRejection.code                     -> MessageInbound(ArrivalRejectedResponse, ArrivalRejected),
-    MessageType.UnloadingRemarksRejection.code            -> MessageInbound(UnloadingRemarksRejectedResponse, UnloadingRemarksRejected),
-    MessageType.UnloadingPermission.code                  -> MessageInbound(UnloadingPermissionResponse, UnloadingPermission),
-    MessageType.GoodsReleased.code                        -> MessageInbound(GoodsReleasedResponse, GoodsReleased),
-    MessageType.XMLSubmissionNegativeAcknowledgement.code -> MessageInbound(XMLSubmissionNegativeAcknowledgementResponse, XMLSubmissionNegativeAcknowledgement)
+    MessageType.ArrivalRejection.code          -> MessageInbound(ArrivalRejectedResponse, ArrivalRejected),
+    MessageType.UnloadingRemarksRejection.code -> MessageInbound(UnloadingRemarksRejectedResponse, UnloadingRemarksRejected),
+    MessageType.UnloadingPermission.code       -> MessageInbound(UnloadingPermissionResponse, UnloadingPermission),
+    MessageType.GoodsReleased.code             -> MessageInbound(GoodsReleasedResponse, GoodsReleased),
+    MessageType.XMLSubmissionNegativeAcknowledgement.code -> MessageInbound(XMLSubmissionNegativeAcknowledgementResponse,
+                                                                            ArrivalXMLSubmissionNegativeAcknowledgement)
   )
 
   "InboundMessageTransformer" - {

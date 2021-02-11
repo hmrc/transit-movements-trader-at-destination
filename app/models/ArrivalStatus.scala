@@ -31,7 +31,7 @@ object ArrivalStatus extends Enumerable.Implicits with MongoDateTimeFormats {
       case MessageReceivedEvent.UnloadingPermission                  => Right(UnloadingPermission)
       case MessageReceivedEvent.ArrivalRejected                      => Right(ArrivalRejected)
       case MessageReceivedEvent.UnloadingRemarksRejected             => Right(UnloadingRemarksRejected)
-      case MessageReceivedEvent.XMLSubmissionNegativeAcknowledgement => Right(XMLSubmissionNegativeAcknowledgement)
+      case MessageReceivedEvent.XMLSubmissionNegativeAcknowledgement => Right(ArrivalXMLSubmissionNegativeAcknowledgement)
       case _                                                         => Left(TransitionError(s"Tried to transition from Initialized to $messageReceived."))
     }
   }
@@ -43,7 +43,7 @@ object ArrivalStatus extends Enumerable.Implicits with MongoDateTimeFormats {
       case MessageReceivedEvent.UnloadingPermission                  => Right(UnloadingPermission)
       case MessageReceivedEvent.ArrivalRejected                      => Right(ArrivalRejected)
       case MessageReceivedEvent.UnloadingRemarksRejected             => Right(UnloadingRemarksRejected)
-      case MessageReceivedEvent.XMLSubmissionNegativeAcknowledgement => Right(XMLSubmissionNegativeAcknowledgement)
+      case MessageReceivedEvent.XMLSubmissionNegativeAcknowledgement => Right(ArrivalXMLSubmissionNegativeAcknowledgement)
       case _                                                         => Left(TransitionError(s"Tried to transition from ArrivalSubmitted to $messageReceived."))
     }
   }
@@ -69,9 +69,9 @@ object ArrivalStatus extends Enumerable.Implicits with MongoDateTimeFormats {
     }
   }
 
-  case object XMLSubmissionNegativeAcknowledgement extends ArrivalStatus {
+  case object ArrivalXMLSubmissionNegativeAcknowledgement extends ArrivalStatus {
     override def transition(messageReceived: MessageReceivedEvent): Either[TransitionError, ArrivalStatus] = messageReceived match {
-      case MessageReceivedEvent.XMLSubmissionNegativeAcknowledgement => Right(XMLSubmissionNegativeAcknowledgement)
+      case MessageReceivedEvent.XMLSubmissionNegativeAcknowledgement => Right(ArrivalXMLSubmissionNegativeAcknowledgement)
       case MessageReceivedEvent.ArrivalSubmitted                     => Right(ArrivalSubmitted)
       case _                                                         => Left(TransitionError(s"Tried to transition from XMLSubmissionNegativeAcknowledgement to $messageReceived."))
     }
@@ -112,7 +112,7 @@ object ArrivalStatus extends Enumerable.Implicits with MongoDateTimeFormats {
     GoodsReleased,
     ArrivalRejected,
     UnloadingRemarksRejected,
-    XMLSubmissionNegativeAcknowledgement,
+    ArrivalXMLSubmissionNegativeAcknowledgement,
     UnloadingRemarksXMLSubmissionNegativeAcknowledgement
   )
 
