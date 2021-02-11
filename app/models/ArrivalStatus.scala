@@ -112,7 +112,8 @@ object ArrivalStatus extends Enumerable.Implicits with MongoDateTimeFormats {
     GoodsReleased,
     ArrivalRejected,
     UnloadingRemarksRejected,
-    XMLSubmissionNegativeAcknowledgement
+    XMLSubmissionNegativeAcknowledgement,
+    UnloadingRemarksXMLSubmissionNegativeAcknowledgement
   )
 
   implicit val enumerable: Enumerable[ArrivalStatus] =
