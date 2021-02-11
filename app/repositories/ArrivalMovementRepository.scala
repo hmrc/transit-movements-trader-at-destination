@@ -16,9 +16,13 @@
 
 package repositories
 
-import java.time.LocalDateTime
+import akka.Done
+import akka.NotUsed
 
+import java.time.LocalDateTime
 import akka.stream.Materializer
+import akka.stream.scaladsl.Sink
+import akka.stream.scaladsl.Source
 import cats.data.NonEmptyList
 import com.google.inject.Inject
 import config.AppConfig
@@ -45,6 +49,7 @@ import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import play.modules.reactivemongo.ReactiveMongoApi
 import reactivemongo.akkastream.cursorProducer
+import reactivemongo.akkastream.State
 import reactivemongo.api.Cursor
 import reactivemongo.api.bson.collection.BSONSerializationPack
 import reactivemongo.api.indexes.Index.Aux
@@ -262,7 +267,7 @@ class ArrivalMovementRepository @Inject()(
     }
   }
 
-  def arrivalsWithoutJsonMessages(limit: Int): Future[Seq[Arrival]] = {
+  def arrivalsWithoutJsonMessagesSource(limit: Int): Future[Source[Arrival, Future[Done]]] = {
 
     val messagesWithNoJson =
       Json.obj(
@@ -287,13 +292,19 @@ class ArrivalMovementRepository @Inject()(
     val query = Json.obj("$or" -> Json.arr(messagesWithNoJson, messagesWithEmptyJson))
 
     collection
-      .flatMap {
+      .map {
         _.find[JsObject, Arrival](query, None)
           .cursor[Arrival]()
-          .collect[Seq](limit, Cursor.FailOnError())
+          .documentSource(maxDocs = limit)
+          .mapMaterializedValue(_.map(_ => Done))
       }
-      .map(x => { logger.info(s"Found ${x.size} arrivals without JSON to process"); x })
   }
+
+  def arrivalsWithoutJsonMessages(limit: Int): Future[Seq[Arrival]] =
+    arrivalsWithoutJsonMessagesSource(limit).flatMap(
+      _.runWith(Sink.seq[Arrival])
+        .map(x => { logger.info(s"Found ${x.size} arrivals without JSON to process"); x })
+    )
 
   def resetMessages(arrivalId: ArrivalId, messages: NonEmptyList[MovementMessage]): Future[Boolean] = {
 
