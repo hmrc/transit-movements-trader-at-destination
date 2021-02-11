@@ -67,13 +67,15 @@ class InboundMessageTransformerSpec extends AnyFreeSpec with Matchers with Scala
 
   def action = new InboundMessageTransformer()
 
+  val xmlNegativeAcknowledgement: ArrivalStatus =
+    Gen.oneOf(Seq(ArrivalXMLSubmissionNegativeAcknowledgement, UnloadingRemarksXMLSubmissionNegativeAcknowledgement)).sample.value
+
   val responseMessages: Map[String, MessageInbound] = Map(
-    MessageType.ArrivalRejection.code          -> MessageInbound(ArrivalRejectedResponse, ArrivalRejected),
-    MessageType.UnloadingRemarksRejection.code -> MessageInbound(UnloadingRemarksRejectedResponse, UnloadingRemarksRejected),
-    MessageType.UnloadingPermission.code       -> MessageInbound(UnloadingPermissionResponse, UnloadingPermission),
-    MessageType.GoodsReleased.code             -> MessageInbound(GoodsReleasedResponse, GoodsReleased),
-    MessageType.XMLSubmissionNegativeAcknowledgement.code -> MessageInbound(XMLSubmissionNegativeAcknowledgementResponse,
-                                                                            ArrivalXMLSubmissionNegativeAcknowledgement)
+    MessageType.ArrivalRejection.code                     -> MessageInbound(ArrivalRejectedResponse, ArrivalRejected),
+    MessageType.UnloadingRemarksRejection.code            -> MessageInbound(UnloadingRemarksRejectedResponse, UnloadingRemarksRejected),
+    MessageType.UnloadingPermission.code                  -> MessageInbound(UnloadingPermissionResponse, UnloadingPermission),
+    MessageType.GoodsReleased.code                        -> MessageInbound(GoodsReleasedResponse, GoodsReleased),
+    MessageType.XMLSubmissionNegativeAcknowledgement.code -> MessageInbound(XMLSubmissionNegativeAcknowledgementResponse, xmlNegativeAcknowledgement)
   )
 
   "InboundMessageTransformer" - {
