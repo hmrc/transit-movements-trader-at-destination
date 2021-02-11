@@ -21,4 +21,6 @@ sealed trait LockResult
 object LockResult {
   case object LockAcquired  extends LockResult
   case object AlreadyLocked extends LockResult
+
+  val values: Seq[LockResult] = Seq(LockAcquired, AlreadyLocked)
 }
