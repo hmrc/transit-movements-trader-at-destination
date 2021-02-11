@@ -16,10 +16,8 @@
 
 package logging
 
-import play.api.Logger
+private[logging] trait LoggerName {
 
-trait Logging extends LoggerName {
-
-  final val logger: Logger = Logger(loggerName)
+  final val loggerName = s"application.${this.getClass.getCanonicalName}"
 
 }
