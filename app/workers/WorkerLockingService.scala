@@ -16,26 +16,38 @@
 
 package workers
 
+import com.google.inject.ImplementedBy
 import logging.Logging
 import models.LockResult
+import play.api.inject.ApplicationLifecycle
 import repositories.WorkerLockRepository
 
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-private[workers] class WorkerLockingService @Inject()(
+@ImplementedBy(classOf[WorkerLockingServiceImpl])
+private[workers] trait WorkerLockingService extends Iterator[Future[LockResult]] {
+
+  def releaseLock(): Future[Boolean]
+
+}
+
+private[workers] class WorkerLockingServiceImpl @Inject()(
   workerConfig: WorkerConfig,
-  workerLockRepository: WorkerLockRepository
+  workerLockRepository: WorkerLockRepository,
+  lifecycle: ApplicationLifecycle
 )(implicit ec: ExecutionContext)
-    extends Iterator[Future[LockResult]]
+    extends WorkerLockingService
     with Logging {
 
   private val lockId = "add-json-to-messages-worker"
 
   private val settings = workerConfig.addJsonToMessagesWorkerSettings
 
-  override def hasNext: Boolean = settings.enabled
+  private var workerEnabled = settings.enabled
+
+  override def hasNext: Boolean = workerEnabled
 
   override def next(): Future[LockResult] =
     if (hasNext) {
@@ -49,6 +61,11 @@ private[workers] class WorkerLockingService @Inject()(
     } else {
       throw new NoSuchElementException("This worker is disabled in configuration, so there are no more locks to be had")
     }
+
+  lifecycle.addStopHook(() => {
+    workerEnabled = false
+    Future.successful(())
+  })
 
   def releaseLock(): Future[Boolean] =
     workerLockRepository.unlock(lockId).map {

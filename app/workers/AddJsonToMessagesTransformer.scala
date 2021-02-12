@@ -60,7 +60,7 @@ private[workers] class AddJsonToMessagesTransformer @Inject()(
       .grouped(settings.groupSize)
       .withAttributes(supervisionStrategy)
 
-  def run(arrival: Arrival): Future[(Arrival, NotUsed)] =
+  private def run(arrival: Arrival): Future[(Arrival, NotUsed)] =
     arrivalLockRepository.lock(arrival.arrivalId).flatMap {
       case true =>
         logger.info(s"Adding JSON to messages on arrival ${arrival.arrivalId.index}")

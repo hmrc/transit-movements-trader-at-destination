@@ -22,6 +22,8 @@ import org.mockito.Mockito.when
 import org.scalacheck.Gen
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import org.mockito.ArgumentMatchers._
+import play.api.inject.ApplicationLifecycle
+import play.api.inject.DefaultApplicationLifecycle
 import repositories.WorkerLockRepository
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -37,8 +39,9 @@ class WorkerLockingServiceSpec extends SpecBase with ScalaCheckPropertyChecks {
     when(mockWorkerConfig.addJsonToMessagesWorkerSettings).thenReturn(mockWorkerSettings)
 
     val mockWorkerLockRepository = mock[WorkerLockRepository]
+    val mockApplicationLifecycle = mock[ApplicationLifecycle]
 
-    val workerLockingService = new WorkerLockingService(mockWorkerConfig, mockWorkerLockRepository)
+    val workerLockingService = new WorkerLockingServiceImpl(mockWorkerConfig, mockWorkerLockRepository, mockApplicationLifecycle)
   }
 
   "when the worker is enabled" - {
@@ -97,4 +100,25 @@ class WorkerLockingServiceSpec extends SpecBase with ScalaCheckPropertyChecks {
 
   }
 
+  "does not produce more elements when the application is shutting down" in {
+
+    val mockWorkerSettings = mock[WorkerSettings]
+    when(mockWorkerSettings.enabled).thenReturn(true)
+
+    val mockWorkerConfig = mock[WorkerConfig]
+    when(mockWorkerConfig.addJsonToMessagesWorkerSettings).thenReturn(mockWorkerSettings)
+
+    val mockWorkerLockRepository = mock[WorkerLockRepository]
+
+    val applicationLifecycle = new DefaultApplicationLifecycle()
+
+    val workerLockingService = new WorkerLockingServiceImpl(mockWorkerConfig, mockWorkerLockRepository, applicationLifecycle)
+
+    workerLockingService.hasNext mustEqual true
+
+    applicationLifecycle.stop()
+
+    workerLockingService.hasNext mustEqual false
+
+  }
 }
