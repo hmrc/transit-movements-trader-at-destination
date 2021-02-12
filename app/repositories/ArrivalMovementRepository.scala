@@ -16,7 +16,6 @@
 
 package repositories
 
-import java.time.LocalDateTime
 import akka.stream.Materializer
 import cats.data.NonEmptyList
 import com.google.inject.Inject
@@ -54,6 +53,7 @@ import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 import reactivemongo.play.json.collection.JSONCollection
 import utils.IndexUtils
 
+import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -69,39 +69,56 @@ class ArrivalMovementRepository @Inject()(
     extends MongoDateTimeFormats
     with Logging {
 
-  private val eoriNumberIndex: Aux[BSONSerializationPack.type] = IndexUtils.index(
-    key = Seq("eoriNumber" -> IndexType.Ascending),
-    name = Some("eori-number-index")
-  )
-
-  private val movementReferenceNumber: Aux[BSONSerializationPack.type] = IndexUtils.index(
-    key = Seq("movementReferenceNumber" -> IndexType.Ascending),
-    name = Some("movement-reference-number-index")
-  )
-
-  private val lastUpdatedIndex: Aux[BSONSerializationPack.type] = IndexUtils.index(
-    key = Seq("lastUpdated" -> IndexType.Ascending),
-    name = Some("last-updated-index"),
-    options = BSONDocument("expireAfterSeconds" -> appConfig.cacheTtl)
-  )
-
   val started: Future[Unit] = {
     collection
       .flatMap {
         jsonCollection =>
           for {
+            _   <- dropLastUpdatedIndex(jsonCollection)
+            _   <- jsonCollection.indexesManager.ensure(lastUpdatedIndex)
             _   <- jsonCollection.indexesManager.ensure(eoriNumberIndex)
-            _   <- jsonCollection.indexesManager.ensure(movementReferenceNumber)
-            res <- jsonCollection.indexesManager.ensure(lastUpdatedIndex)
+            res <- jsonCollection.indexesManager.ensure(movementReferenceNumber)
           } yield res
       }
       .map(_ => ())
   }
 
-  private val collectionName = ArrivalMovementRepository.collectionName
+  val logSubmittedArrivals: Future[Boolean] = {
 
-  private def collection: Future[JSONCollection] =
-    mongo.database.map(_.collection[JSONCollection](collectionName))
+    val byId     = Json.obj("_id"    -> -1)
+    val selector = Json.obj("status" -> ArrivalStatus.ArrivalSubmitted.toString)
+
+    collection
+      .flatMap {
+        _.find(selector, None)
+          .sort(byId)
+          .cursor[SubmittedArrivalSummary]()
+          .collect[List](100, Cursor.FailOnError())
+      }
+      .map {
+        results =>
+          results
+            .filter(_.lastUpdated.isBefore(LocalDateTime.now.minusDays(1)))
+            .foreach(result => logger.warn(result.logMessage))
+
+          true
+      }
+  }
+  private val eoriNumberIndex: Aux[BSONSerializationPack.type] = IndexUtils.index(
+    key = Seq("eoriNumber" -> IndexType.Ascending),
+    name = Some("eori-number-index")
+  )
+  private val movementReferenceNumber: Aux[BSONSerializationPack.type] = IndexUtils.index(
+    key = Seq("movementReferenceNumber" -> IndexType.Ascending),
+    name = Some("movement-reference-number-index")
+  )
+  private val lastUpdatedIndex: Aux[BSONSerializationPack.type] = IndexUtils.index(
+    key = Seq("lastUpdated" -> IndexType.Ascending),
+    name = Some("last-updated-index-6m"),
+    options = BSONDocument("expireAfterSeconds" -> appConfig.cacheTtl)
+  )
+  private val oldLastUpdatedIndexName = "last-updated-index"
+  private val collectionName          = ArrivalMovementRepository.collectionName
 
   def insert(arrival: Arrival): Future[Unit] =
     collection.flatMap {
@@ -168,6 +185,19 @@ class ArrivalMovementRepository @Inject()(
       }
     }
 
+  @deprecated("Use updateArrival since this will be removed in the next version", "next")
+  def setArrivalStateAndMessageState(arrivalId: ArrivalId,
+                                     messageId: MessageId,
+                                     arrivalState: ArrivalStatus,
+                                     messageState: MessageStatus): Future[Option[Unit]] = {
+
+    val selector = ArrivalIdSelector(arrivalId)
+
+    val modifier = CompoundStatusUpdate(ArrivalStatusUpdate(arrivalState), MessageStatusUpdate(messageId, messageState))
+
+    updateArrival(selector, modifier).map(_.toOption)
+  }
+
   def updateArrival[A](selector: ArrivalSelector, modifier: A)(implicit ev: ArrivalModifier[A]): Future[Try[Unit]] = {
 
     import models.ArrivalModifier.toJson
@@ -185,19 +215,6 @@ class ArrivalMovementRepository @Inject()(
                 .getOrElse(Failure(new Exception("Unable to update message status")))
         }
     }
-  }
-
-  @deprecated("Use updateArrival since this will be removed in the next version", "next")
-  def setArrivalStateAndMessageState(arrivalId: ArrivalId,
-                                     messageId: MessageId,
-                                     arrivalState: ArrivalStatus,
-                                     messageState: MessageStatus): Future[Option[Unit]] = {
-
-    val selector = ArrivalIdSelector(arrivalId)
-
-    val modifier = CompoundStatusUpdate(ArrivalStatusUpdate(arrivalState), MessageStatusUpdate(messageId, messageState))
-
-    updateArrival(selector, modifier).map(_.toOption)
   }
 
   def addNewMessage(arrivalId: ArrivalId, message: MovementMessage): Future[Try[Unit]] = {
@@ -296,6 +313,9 @@ class ArrivalMovementRepository @Inject()(
       .map(x => { logger.info(s"Found ${x.size} arrivals without JSON to process"); x })
   }
 
+  private def collection: Future[JSONCollection] =
+    mongo.database.map(_.collection[JSONCollection](collectionName))
+
   def resetMessages(arrivalId: ArrivalId, messages: NonEmptyList[MovementMessage]): Future[Boolean] = {
 
     val selector = Json.obj(
@@ -317,27 +337,22 @@ class ArrivalMovementRepository @Inject()(
     }
   }
 
-  val logSubmittedArrivals: Future[Boolean] = {
+  private def dropLastUpdatedIndex(collection: JSONCollection): Future[Boolean] =
+    collection.indexesManager.list.flatMap {
+      indexes =>
+        if (indexes.exists(_.name.contains(oldLastUpdatedIndexName))) {
 
-    val byId     = Json.obj("_id"    -> -1)
-    val selector = Json.obj("status" -> ArrivalStatus.ArrivalSubmitted.toString)
+          logger.warn(s"Dropping $oldLastUpdatedIndexName index")
 
-    collection
-      .flatMap {
-        _.find(selector, None)
-          .sort(byId)
-          .cursor[SubmittedArrivalSummary]()
-          .collect[List](100, Cursor.FailOnError())
-      }
-      .map {
-        results =>
-          results
-            .filter(_.lastUpdated.isBefore(LocalDateTime.now.minusDays(1)))
-            .foreach(result => logger.warn(result.logMessage))
+          collection.indexesManager
+            .drop(oldLastUpdatedIndexName)
+            .map(_ => true)
+        } else {
+          logger.info(s"$oldLastUpdatedIndexName does not exist or has already been dropped")
+          Future.successful(true)
+        }
+    }
 
-          true
-      }
-  }
 }
 
 object ArrivalMovementRepository {
