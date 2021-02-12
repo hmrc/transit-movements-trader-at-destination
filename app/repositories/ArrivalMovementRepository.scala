@@ -17,7 +17,6 @@
 package repositories
 
 import java.time.LocalDateTime
-
 import akka.stream.Materializer
 import cats.data.NonEmptyList
 import com.google.inject.Inject
@@ -43,6 +42,7 @@ import models.MovementReferenceNumber
 import models.response.ResponseArrival
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
+import play.api.libs.json.OFormat
 import play.modules.reactivemongo.ReactiveMongoApi
 import reactivemongo.akkastream.cursorProducer
 import reactivemongo.api.Cursor
@@ -54,6 +54,7 @@ import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 import reactivemongo.play.json.collection.JSONCollection
 import utils.IndexUtils
 
+import java.time.format.DateTimeFormatter
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.Failure
@@ -315,8 +316,60 @@ class ArrivalMovementRepository @Inject()(
         }
     }
   }
+
+  val logSubmittedArrivals: Future[Boolean] = {
+
+    val byId     = Json.obj("_id"    -> -1)
+    val selector = Json.obj("status" -> ArrivalStatus.ArrivalSubmitted.toString)
+
+    collection
+      .flatMap {
+        _.find(selector, None)
+          .sort(byId)
+          .cursor[SubmittedArrivalSummary]()
+          .collect[List](100, Cursor.FailOnError())
+      }
+      .map {
+        results =>
+          results
+            .filter(_.lastUpdated.isBefore(LocalDateTime.now.minusDays(1)))
+            .foreach(result => logger.warn(result.logMessage))
+
+          true
+      }
+  }
 }
 
 object ArrivalMovementRepository {
   val collectionName = "arrival-movements"
+}
+
+case class SubmittedArrivalSummary(
+  _id: ArrivalId,
+  movementReferenceNumber: MovementReferenceNumber,
+  eoriNumber: String,
+  nextMessageCorrelationId: Int,
+  lastUpdated: LocalDateTime,
+  created: LocalDateTime
+) {
+
+  val obfuscatedEori: String               = s"ending ${eoriNumber.takeRight(4)}"
+  val dateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+
+  val logMessage: String = {
+    s"""Movement in ArrivalSubmitted status
+       |  Arrival Id: ${_id.index}
+       |  MRN: ${movementReferenceNumber.value}
+       |  EORI: $obfuscatedEori
+       |  Last updated: ${dateTimeFormatter.format(lastUpdated)}
+       |  Created: ${dateTimeFormatter.format(created)}
+       |  Next message correlation Id: $nextMessageCorrelationId
+       |""".stripMargin
+  }
+}
+
+object SubmittedArrivalSummary extends MongoDateTimeFormats {
+
+  implicit val format: OFormat[SubmittedArrivalSummary] =
+    Json.format[SubmittedArrivalSummary]
 }
