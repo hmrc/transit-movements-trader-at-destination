@@ -17,6 +17,10 @@
 package workers
 
 import akka.NotUsed
+import akka.stream.ActorAttributes
+import akka.stream.Attributes
+import akka.stream.Supervision
+import akka.stream.scaladsl.Flow
 import cats.data.NonEmptyList
 import logging.Logging
 import models.Arrival
@@ -29,12 +33,32 @@ import repositories.LockRepository
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.util.control.NonFatal
 
 private[workers] class AddJsonToMessagesTransformer @Inject()(
+  workerConfig: WorkerConfig,
   arrivalMovementRepository: ArrivalMovementRepository,
   arrivalLockRepository: LockRepository
 )(implicit ec: ExecutionContext)
     extends Logging {
+
+  private val settings = workerConfig.addJsonToMessagesWorkerSettings
+
+  private val supervisionStrategy: Attributes = ActorAttributes.supervisionStrategy {
+    case NonFatal(e) =>
+      logger.warn("Worker saw this exception but will resume", e)
+      Supervision.resume
+    case _ =>
+      logger.error("Worker saw a fatal exception and will be stopped")
+      Supervision.stop
+  }
+
+  val flow: Flow[Arrival, Seq[(Arrival, NotUsed)], NotUsed] =
+    Flow[Arrival]
+      .throttle(settings.elements, settings.per)
+      .mapAsync(settings.parallelism)(run)
+      .grouped(settings.groupSize)
+      .withAttributes(supervisionStrategy)
 
   def run(arrival: Arrival): Future[(Arrival, NotUsed)] =
     arrivalLockRepository.lock(arrival.arrivalId).flatMap {
