@@ -77,6 +77,19 @@ class ArrivalMessageSummaryService {
           None
     }
 
+  private[services] val xmlSubmissionNegativeAcknowledgementR: Reader[Arrival, Option[(MovementMessage, MessageId)]] =
+    Reader[Arrival, Option[(MovementMessage, MessageId)]] {
+      arrival =>
+        val negativeAcknowledgements = getLatestMessageWithoutStatus(arrival.messagesWithId)(XMLSubmissionNegativeAcknowledgement)
+
+        val negativeAcknowledgementCount = negativeAcknowledgements.length
+
+        if (negativeAcknowledgementCount > 0 && arrivalNotificationCount(arrival.messages) == negativeAcknowledgementCount)
+          Some(negativeAcknowledgements.maxBy(_._1.messageCorrelationId))
+        else
+          None
+    }
+
   private[services] val unloadingPermissionR: Reader[Arrival, Option[(MovementMessage, MessageId)]] =
     Reader[Arrival, Option[(MovementMessage, MessageId)]] {
       arrival =>
@@ -122,18 +135,22 @@ class ArrivalMessageSummaryService {
 
   def arrivalMessagesSummary(arrival: Arrival): MessagesSummary =
     (for {
-      arrivalNotification <- arrivalNotificationR
-      arrivalRejection    <- arrivalRejectionR
-      unloadingPermission <- unloadingPermissionR
-      unloadingRemarks    <- unloadingRemarksR
-      unloadingRejections <- unloadingRemarksRejectionsR
+      arrivalNotification                  <- arrivalNotificationR
+      arrivalRejection                     <- arrivalRejectionR
+      unloadingPermission                  <- unloadingPermissionR
+      unloadingRemarks                     <- unloadingRemarksR
+      unloadingRejections                  <- unloadingRemarksRejectionsR
+      xmlSubmissionNegativeAcknowledgement <- xmlSubmissionNegativeAcknowledgementR
     } yield {
-      MessagesSummary(arrival,
-                      arrivalNotification._2,
-                      arrivalRejection.map(_._2),
-                      unloadingPermission.map(_._2),
-                      unloadingRemarks.map(_._2),
-                      unloadingRejections.map(_._2))
+      MessagesSummary(
+        arrival = arrival,
+        arrivalNotification = arrivalNotification._2,
+        arrivalRejection = arrivalRejection.map(_._2),
+        unloadingPermission = unloadingPermission.map(_._2),
+        unloadingRemarks = unloadingRemarks.map(_._2),
+        unloadingRemarksRejection = unloadingRejections.map(_._2),
+        xmlSubmissionNegativeAcknowledgement = xmlSubmissionNegativeAcknowledgement.map(_._2)
+      )
     }).run(arrival)
 
 }

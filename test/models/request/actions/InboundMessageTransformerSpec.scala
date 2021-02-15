@@ -18,19 +18,23 @@ package models.request.actions
 
 import generators.ModelGenerators
 import models.ArrivalStatus.ArrivalRejected
+import models.ArrivalStatus.ArrivalXMLSubmissionNegativeAcknowledgement
 import models.ArrivalStatus.GoodsReleased
 import models.ArrivalStatus.UnloadingPermission
 import models.ArrivalStatus.UnloadingRemarksRejected
+import models.ArrivalStatus.UnloadingRemarksXMLSubmissionNegativeAcknowledgement
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalRejectedResponse
 import models.ArrivalStatus
-import models.ChannelType.web
+import models.ChannelType
 import models.GoodsReleasedResponse
 import models.MessageInbound
 import models.MessageType
 import models.UnloadingPermissionResponse
 import models.UnloadingRemarksRejectedResponse
+import models.XMLSubmissionNegativeAcknowledgementResponse
+import models.ChannelType.web
 import models.request.ArrivalRequest
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
@@ -63,11 +67,15 @@ class InboundMessageTransformerSpec extends AnyFreeSpec with Matchers with Scala
 
   def action = new InboundMessageTransformer()
 
+  val xmlNegativeAcknowledgement: ArrivalStatus =
+    Gen.oneOf(Seq(ArrivalXMLSubmissionNegativeAcknowledgement, UnloadingRemarksXMLSubmissionNegativeAcknowledgement)).sample.value
+
   val responseMessages: Map[String, MessageInbound] = Map(
-    MessageType.ArrivalRejection.code          -> MessageInbound(ArrivalRejectedResponse, ArrivalRejected),
-    MessageType.UnloadingRemarksRejection.code -> MessageInbound(UnloadingRemarksRejectedResponse, UnloadingRemarksRejected),
-    MessageType.UnloadingPermission.code       -> MessageInbound(UnloadingPermissionResponse, UnloadingPermission),
-    MessageType.GoodsReleased.code             -> MessageInbound(GoodsReleasedResponse, GoodsReleased)
+    MessageType.ArrivalRejection.code                     -> MessageInbound(ArrivalRejectedResponse, ArrivalRejected),
+    MessageType.UnloadingRemarksRejection.code            -> MessageInbound(UnloadingRemarksRejectedResponse, UnloadingRemarksRejected),
+    MessageType.UnloadingPermission.code                  -> MessageInbound(UnloadingPermissionResponse, UnloadingPermission),
+    MessageType.GoodsReleased.code                        -> MessageInbound(GoodsReleasedResponse, GoodsReleased),
+    MessageType.XMLSubmissionNegativeAcknowledgement.code -> MessageInbound(XMLSubmissionNegativeAcknowledgementResponse, xmlNegativeAcknowledgement)
   )
 
   "InboundMessageTransformer" - {
@@ -102,12 +110,12 @@ class InboundMessageTransformerSpec extends AnyFreeSpec with Matchers with Scala
 
     "return correct MessageResponse for incoming message `X-Message-Type`" in {
 
-      forAll(Gen.oneOf(MessageType.values)) {
-        message =>
+      forAll(Gen.oneOf(MessageType.values), Gen.oneOf(ChannelType.values)) {
+        (message, channel) =>
           if (responseMessages.exists(x => message.code == x._1)) {
-            action.messageResponse(Some(message.code)).value mustBe responseMessages(message.code).messageType
+            action.messageResponse(Some(message.code), channel).value mustBe responseMessages(message.code).messageType
           } else {
-            action.messageResponse(Some(message.code)) mustBe None
+            action.messageResponse(Some(message.code), channel) mustBe None
           }
       }
     }

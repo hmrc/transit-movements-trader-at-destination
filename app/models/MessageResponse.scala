@@ -18,6 +18,7 @@ package models
 
 import models.XSDFile.ArrivalRejectedXSD
 import models.XSDFile.GoodsReleasedXSD
+import models.XSDFile.InvalidXmlXSD
 import models.XSDFile.UnloadingPermissionXSD
 import models.XSDFile.UnloadingRemarksRejectedXSD
 
@@ -49,4 +50,10 @@ case object UnloadingRemarksRejectedResponse extends MessageResponse {
   override val messageReceived          = MessageReceivedEvent.UnloadingRemarksRejected
   override val messageType: MessageType = MessageType.UnloadingRemarksRejection
   override val xsdFile: XSDFile         = UnloadingRemarksRejectedXSD
+}
+
+case object XMLSubmissionNegativeAcknowledgementResponse extends MessageResponse {
+  override val messageReceived          = MessageReceivedEvent.XMLSubmissionNegativeAcknowledgement
+  override val messageType: MessageType = MessageType.XMLSubmissionNegativeAcknowledgement
+  override val xsdFile: XSDFile         = InvalidXmlXSD
 }

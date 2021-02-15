@@ -50,6 +50,7 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
   val ie043Gen = messageGeneratorResponse(UnloadingPermission)
   val ie044Gen = messageGeneratorSent(UnloadingRemarks)
   val ie058Gen = messageGeneratorResponse(UnloadingRemarksRejection)
+  val ie917Gen = messageGeneratorResponse(XMLSubmissionNegativeAcknowledgement)
 
   def arrivalMovement(msgs: NonEmptyList[MovementMessage]): Gen[Arrival] =
     for {
@@ -194,6 +195,79 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
                 val (message, messageId) = service.arrivalRejectionR(arrival).value
 
                 message mustEqual ie008
+                messageId mustEqual MessageId.fromMessageIdValue(4).value
+            }
+        }
+
+      }
+    }
+
+  }
+
+  "xmlSubmissionNegativeAcknowledgementR" - {
+
+    "must return" - {
+      "None when there are none in the movement" in {
+        val service = new ArrivalMessageSummaryService
+
+        forAll(ie007Gen) {
+          ie007 =>
+            forAll(arrivalMovement(NonEmptyList.one(ie007))) {
+              arrival =>
+                service.xmlSubmissionNegativeAcknowledgementR(arrival) must not be (defined)
+
+            }
+        }
+      }
+
+      "latest IE917 when there is only an IE007 and a IE917" in {
+        val service = new ArrivalMessageSummaryService
+
+        forAll(ie007Gen, ie917Gen) {
+          (ie007, ie917) =>
+            val messages = NonEmptyList.of(ie007, ie917)
+
+            forAll(arrivalMovement(messages)) {
+              arrival =>
+                val (message, messageId) = service.xmlSubmissionNegativeAcknowledgementR(arrival).value
+
+                message mustEqual ie917
+                messageId mustEqual MessageId.fromMessageIdValue(2).value
+            }
+        }
+
+      }
+
+      "latest IE917 when there are IE007 and IE044 and a IE917" in {
+        val service = new ArrivalMessageSummaryService
+
+        forAll(ie007Gen, ie044Gen, ie917Gen) {
+          (ie007, ie044, ie917) =>
+            val messages = NonEmptyList.of(ie007, ie044, ie917)
+
+            forAll(arrivalMovement(messages)) {
+              arrival =>
+                val (message, messageId) = service.xmlSubmissionNegativeAcknowledgementR(arrival).value
+
+                message mustEqual ie917
+                messageId mustEqual MessageId.fromMessageIdValue(3).value
+            }
+        }
+
+      }
+
+      "IE917 when all IE007 have been rejected" in {
+        val service = new ArrivalMessageSummaryService
+
+        forAll(ie007Gen.submitted.msgCorrId(1), ie917Gen.msgCorrId(1), ie007Gen.msgCorrId(2), ie917Gen.msgCorrId(2)) {
+          case (ie007Old, ie917Old, ie007, ie917) =>
+            val messages = NonEmptyList.of(ie007Old, ie917Old, ie007, ie917)
+
+            forAll(arrivalMovement(messages)) {
+              arrival =>
+                val (message, messageId) = service.xmlSubmissionNegativeAcknowledgementR(arrival).value
+
+                message mustEqual ie917
                 messageId mustEqual MessageId.fromMessageIdValue(4).value
             }
         }

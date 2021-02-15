@@ -20,12 +20,14 @@ import com.google.inject.ImplementedBy
 import com.google.inject.Inject
 import logging.Logging
 import models.ArrivalRejectedResponse
+import models.ChannelType
 import models.GoodsReleasedResponse
 import models.MessageInbound
 import models.MessageResponse
 import models.MessageType
 import models.UnloadingPermissionResponse
 import models.UnloadingRemarksRejectedResponse
+import models.XMLSubmissionNegativeAcknowledgementResponse
 import models.request.ArrivalRequest
 import play.api.mvc.Results.BadRequest
 import play.api.mvc._
@@ -41,7 +43,7 @@ class InboundMessageTransformer @Inject()(implicit ec: ExecutionContext) extends
 
     logger.debug(s"CTC Headers ${request.headers}")
 
-    messageResponse(request.headers.get("X-Message-Type")) match {
+    messageResponse(request.headers.get("X-Message-Type"), request.channel) match {
       case Some(response) =>
         logger.debug(s"X-Message-Type is ${request.headers.get("X-Message-Type")}")
         logger.debug(s"Message type code ${response.messageType.code}")
@@ -67,12 +69,15 @@ class InboundMessageTransformer @Inject()(implicit ec: ExecutionContext) extends
   }
 
   //TODO: Consider moving this into MessageResponse
-  private[models] def messageResponse(code: Option[String]): Option[MessageResponse] = code match {
+  private[models] def messageResponse(code: Option[String], channel: ChannelType): Option[MessageResponse] = code match {
     case Some(MessageType.GoodsReleased.code)             => Some(GoodsReleasedResponse)
     case Some(MessageType.ArrivalRejection.code)          => Some(ArrivalRejectedResponse)
     case Some(MessageType.UnloadingPermission.code)       => Some(UnloadingPermissionResponse)
     case Some(MessageType.UnloadingRemarksRejection.code) => Some(UnloadingRemarksRejectedResponse)
-    case _                                                => None
+    case Some(MessageType.XMLSubmissionNegativeAcknowledgement.code) =>
+      logger.error(s"Received the message ${MessageType.XMLSubmissionNegativeAcknowledgement.code} for the $channel channel")
+      Some(XMLSubmissionNegativeAcknowledgementResponse)
+    case _ => None
   }
 
   private def badRequestError(message: String): Result = {
