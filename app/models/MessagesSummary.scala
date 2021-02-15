@@ -23,13 +23,20 @@ case class MessagesSummary(arrival: Arrival,
                            arrivalRejection: Option[MessageId] = None,
                            unloadingPermission: Option[MessageId] = None,
                            unloadingRemarks: Option[MessageId] = None,
-                           unloadingRemarksRejection: Option[MessageId] = None)
+                           unloadingRemarksRejection: Option[MessageId] = None,
+                           xmlSubmissionNegativeAcknowledgement: Option[MessageId] = None)
 
 object MessagesSummary {
 
   implicit val writes: OWrites[MessagesSummary] =
     OWrites[MessagesSummary] {
-      case MessagesSummary(arrival, arrivalNotification, arrivalRejection, unloadingPermission, unloadingRemarks, unloadingRemarksRejection) =>
+      case MessagesSummary(arrival,
+                           arrivalNotification,
+                           arrivalRejection,
+                           unloadingPermission,
+                           unloadingRemarks,
+                           unloadingRemarksRejection,
+                           xmlSubmissionNegativeAcknowledgement) =>
         Json
           .obj(
             "arrivalId" -> arrival.arrivalId,
@@ -39,6 +46,8 @@ object MessagesSummary {
               MessageType.UnloadingPermission.code -> unloadingPermission.map(controllers.routes.MessagesController.getMessage(arrival.arrivalId, _).url),
               MessageType.UnloadingRemarks.code    -> unloadingRemarks.map(controllers.routes.MessagesController.getMessage(arrival.arrivalId, _).url),
               MessageType.UnloadingRemarksRejection.code -> unloadingRemarksRejection.map(
+                controllers.routes.MessagesController.getMessage(arrival.arrivalId, _).url),
+              MessageType.XMLSubmissionNegativeAcknowledgement.code -> xmlSubmissionNegativeAcknowledgement.map(
                 controllers.routes.MessagesController.getMessage(arrival.arrivalId, _).url)
             )
           )

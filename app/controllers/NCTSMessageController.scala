@@ -62,7 +62,6 @@ class NCTSMessageController @Inject()(cc: ControllerComponents,
             case SubmissionFailureExternal => badRequestError("External Submission Failure " + processingResult)
           }
       }
-
   }
 
   private def internalServerError(message: String): Result = {

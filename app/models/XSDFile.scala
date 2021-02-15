@@ -23,4 +23,5 @@ object XSDFile {
   object ArrivalRejectedXSD          extends XSDFile("/xsd/CC008A.xsd")
   object UnloadingPermissionXSD      extends XSDFile("/xsd/CC043A.xsd")
   object UnloadingRemarksRejectedXSD extends XSDFile("/xsd/CC058A.xsd")
+  object InvalidXmlXSD               extends XSDFile("/xsd/CC917A.xsd")
 }
