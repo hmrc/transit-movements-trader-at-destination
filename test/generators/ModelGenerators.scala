@@ -53,8 +53,6 @@ import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
 import uk.gov.hmrc.http.HttpResponse
 
-import scala.concurrent.Channel
-
 trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
 
   private val pastDate: LocalDate = LocalDate.of(1900, 1, 1)

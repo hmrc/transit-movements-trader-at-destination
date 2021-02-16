@@ -56,10 +56,11 @@ class UnloadingPermissionPDFServiceSpec extends SpecBase with ModelGenerators wi
             when(mockMessageRetrievalService.getUnloadingPermission(any()))
               .thenReturn(Some(responseMovementMessage))
 
-            val wsResponse: AhcWSResponse = new AhcWSResponse(
-              new Response.ResponseBuilder()
-                .accumulate(new CacheableHttpResponseStatus(Uri.create("http://uri"), errorCode, "status text", "protocols!"))
-                .build())
+            val responseBuilder = new Response.ResponseBuilder()
+
+            responseBuilder.accumulate(new CacheableHttpResponseStatus(Uri.create("http://uri"), errorCode, "status text", "protocols!"))
+
+            val wsResponse: AhcWSResponse = new AhcWSResponse(responseBuilder.build())
 
             when(mockManageDocumentConnector.getUnloadingPermissionPdf(any())(any()))
               .thenReturn(Future.successful(wsResponse))
@@ -84,11 +85,12 @@ class UnloadingPermissionPDFServiceSpec extends SpecBase with ModelGenerators wi
             when(mockMessageRetrievalService.getUnloadingPermission(any()))
               .thenReturn(Some(responseMovementMessage))
 
-            val wsResponse: AhcWSResponse = new AhcWSResponse(
-              new Response.ResponseBuilder()
-                .accumulate(new CacheableHttpResponseStatus(Uri.create("http://uri"), 200, "status text", "protocols!"))
-                .accumulate(new CacheableHttpResponseBodyPart(pdf, true))
-                .build())
+            val responseBuilder = new Response.ResponseBuilder()
+
+            responseBuilder.accumulate(new CacheableHttpResponseStatus(Uri.create("http://uri"), 200, "status text", "protocols!"))
+            responseBuilder.accumulate(new CacheableHttpResponseBodyPart(pdf, true))
+
+            val wsResponse: AhcWSResponse = new AhcWSResponse(responseBuilder.build())
 
             when(mockManageDocumentConnector.getUnloadingPermissionPdf(any())(any()))
               .thenReturn(Future.successful(wsResponse))
