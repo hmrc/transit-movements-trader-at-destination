@@ -41,6 +41,7 @@ import models.MessageReceivedEvent
 import models.MessageStatus
 import models.MessageStatusUpdate
 import models.MessageType
+import models.MovementMessage
 import models.MovementMessageWithStatus
 import models.MovementMessageWithoutStatus
 import models.MovementReferenceNumber
@@ -128,6 +129,11 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
       } yield MovementMessageWithoutStatus(LocalDateTime.of(date, time), messageType, xml, 1)
     }
   }
+
+  implicit lazy val arbitraryMovementMessage: Arbitrary[MovementMessage] =
+    Arbitrary {
+      Gen.oneOf(arbitrary[MovementMessageWithoutStatus], arbitrary[MovementMessageWithStatus])
+    }
 
   implicit lazy val arbitraryArrivalId: Arbitrary[ArrivalId] = {
     Arbitrary {

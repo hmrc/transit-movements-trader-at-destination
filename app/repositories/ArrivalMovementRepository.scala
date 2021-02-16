@@ -17,9 +17,6 @@
 package repositories
 
 import akka.Done
-import akka.NotUsed
-
-import java.time.LocalDateTime
 import akka.stream.Materializer
 import akka.stream.scaladsl.Sink
 import akka.stream.scaladsl.Source
@@ -50,7 +47,6 @@ import play.api.libs.json.Json
 import play.api.libs.json.OFormat
 import play.modules.reactivemongo.ReactiveMongoApi
 import reactivemongo.akkastream.cursorProducer
-import reactivemongo.akkastream.State
 import reactivemongo.api.Cursor
 import reactivemongo.api.bson.collection.BSONSerializationPack
 import reactivemongo.api.indexes.Index.Aux
