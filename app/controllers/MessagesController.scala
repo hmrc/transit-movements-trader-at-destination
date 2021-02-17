@@ -74,7 +74,8 @@ class MessagesController @Inject()(
             .map {
               result =>
                 movementSummaryLogger.info(
-                  s"Received message ${MessageType.UnloadingRemarks.toString} for this arrival with result $result\n${request.arrival.summaryInformation.mkString("\n")}")
+                  s"Received message ${MessageType.UnloadingRemarks.toString} for this arrival with result $result\n${request.arrival.summaryInformation
+                    .mkString("\n")}")
 
                 val counter = Monitors.countMessages(MessageType.UnloadingRemarks, request.channel, result)
                 metricsService.inc(counter)
