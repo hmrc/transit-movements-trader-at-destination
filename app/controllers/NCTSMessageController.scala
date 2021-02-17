@@ -26,6 +26,7 @@ import models.MessageInbound
 import models.MessageSender
 import models.SubmissionProcessingResult._
 import models.request.actions.InboundMessageTransformerInterface
+import play.api.Logger
 import play.api.mvc.Action
 import play.api.mvc.ControllerComponents
 import play.api.mvc.Result
@@ -43,6 +44,9 @@ class NCTSMessageController @Inject()(cc: ControllerComponents,
     extends BackendController(cc)
     with Logging {
 
+  private val movementSummaryLogger: Logger =
+    Logger(s"application.${this.getClass.getCanonicalName}.movementSummary")
+
   def post(messageSender: MessageSender): Action[NodeSeq] = (getArrival(messageSender.arrivalId)(parse.xml) andThen inboundMessage).async {
     implicit request =>
       val messageInbound: MessageInbound = request.inboundMessage
@@ -52,6 +56,13 @@ class NCTSMessageController @Inject()(cc: ControllerComponents,
 
       processingResult map {
         result =>
+          val summaryInfo: Map[String, String] = Map(
+            "X-Correlation-Id" -> request.headers.get("X-Correlation-ID").getOrElse("undefined"),
+            "X-Request-Id"     -> request.headers.get("X-Request-ID").getOrElse("undefined")
+          ) ++ request.request.arrival.summaryInformation
+
+          movementSummaryLogger.info(s"Received message ${messageInbound.messageType.messageType.toString} for this arrival\n${summaryInfo.mkString("\n")}")
+
           val counter = Monitors.countMessages(messageInbound.messageType.messageType, request.request.channel, result)
           metricsService.inc(counter)
 
