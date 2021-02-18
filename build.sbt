@@ -64,7 +64,7 @@ lazy val testSettings = Seq(
   fork := true,
   javaOptions ++= Seq(
     "-Dconfig.resource=test.application.conf",
-    "-Dlogger.resource=test.logback.xml"
+    "-Dlogger.resource=logback-test.xml"
   ),
   unmanagedResourceDirectories := Seq(
     baseDirectory.value / "test" / "resources"
