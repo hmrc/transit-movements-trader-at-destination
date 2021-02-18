@@ -16,7 +16,6 @@
 
 package workers
 
-import com.google.inject.ImplementedBy
 import logging.Logging
 import models.LockResult
 import play.api.inject.ApplicationLifecycle
@@ -26,7 +25,6 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-@ImplementedBy(classOf[WorkerLockingServiceImpl])
 private[workers] trait WorkerLockingService extends Iterator[Future[LockResult]] {
 
   def releaseLock(): Future[Boolean]

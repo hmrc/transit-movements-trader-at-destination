@@ -20,6 +20,8 @@ import com.google.inject.AbstractModule
 
 class WorkerModule extends AbstractModule {
 
-  override def configure(): Unit =
+  override def configure(): Unit = {
     bind(classOf[AddJsonToMessagesWorker]).asEagerSingleton()
+    bind(classOf[WorkerLockingService]).to(classOf[WorkerLockingServiceImpl]).asEagerSingleton()
+  }
 }
