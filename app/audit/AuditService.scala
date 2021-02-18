@@ -39,10 +39,11 @@ class AuditService @Inject()(auditConnector: AuditConnector, messageTranslation:
 
   def auditNCTSMessages(channel: ChannelType, messageResponse: MessageResponse, message: MovementMessage)(implicit hc: HeaderCarrier): Unit = {
     val auditType: String = messageResponse match {
-      case GoodsReleasedResponse            => GoodsReleased
-      case ArrivalRejectedResponse          => ArrivalNotificationRejected
-      case UnloadingPermissionResponse      => UnloadingPermissionReceived
-      case UnloadingRemarksRejectedResponse => UnloadingPermissionRejected
+      case GoodsReleasedResponse                        => GoodsReleased
+      case ArrivalRejectedResponse                      => ArrivalNotificationRejected
+      case UnloadingPermissionResponse                  => UnloadingPermissionReceived
+      case UnloadingRemarksRejectedResponse             => UnloadingPermissionRejected
+      case XMLSubmissionNegativeAcknowledgementResponse => XMLSubmissionNegativeAcknowledgement
     }
     auditEvent(auditType, message, channel)
   }

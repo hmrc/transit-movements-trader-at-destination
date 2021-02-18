@@ -32,7 +32,6 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.AnyContentAsEmpty
-import play.api.mvc.Headers
 import play.api.mvc.Results
 import play.api.test.FakeRequest
 import play.api.test.Helpers._

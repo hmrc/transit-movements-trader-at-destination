@@ -27,14 +27,24 @@ sealed trait MessageType extends IeMetadata {
 
 object MessageType extends Enumerable.Implicits {
 
-  case object ArrivalNotification       extends IeMetadata("IE007", "CC007A") with MessageType
-  case object ArrivalRejection          extends IeMetadata("IE008", "CC008A") with MessageType
-  case object UnloadingPermission       extends IeMetadata("IE043", "CC043A") with MessageType
-  case object UnloadingRemarks          extends IeMetadata("IE044", "CC044A") with MessageType
-  case object UnloadingRemarksRejection extends IeMetadata("IE058", "CC058A") with MessageType
-  case object GoodsReleased             extends IeMetadata("IE025", "CC025A") with MessageType
+  case object ArrivalNotification                  extends IeMetadata("IE007", "CC007A") with MessageType
+  case object ArrivalRejection                     extends IeMetadata("IE008", "CC008A") with MessageType
+  case object UnloadingPermission                  extends IeMetadata("IE043", "CC043A") with MessageType
+  case object UnloadingRemarks                     extends IeMetadata("IE044", "CC044A") with MessageType
+  case object UnloadingRemarksRejection            extends IeMetadata("IE058", "CC058A") with MessageType
+  case object GoodsReleased                        extends IeMetadata("IE025", "CC025A") with MessageType
+  case object XMLSubmissionNegativeAcknowledgement extends IeMetadata("IE917", "CC917A") with MessageType
 
-  val values: Seq[MessageType] = Seq(ArrivalNotification, ArrivalRejection, GoodsReleased, UnloadingPermission, UnloadingRemarks, UnloadingRemarksRejection)
+  val values: Seq[MessageType] =
+    Seq(
+      ArrivalNotification,
+      ArrivalRejection,
+      GoodsReleased,
+      UnloadingPermission,
+      UnloadingRemarks,
+      UnloadingRemarksRejection,
+      XMLSubmissionNegativeAcknowledgement
+    )
 
   def getMessageType: ReaderT[Option, NodeSeq, MessageType] =
     ReaderT[Option, NodeSeq, MessageType] {
