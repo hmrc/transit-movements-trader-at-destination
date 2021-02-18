@@ -29,6 +29,7 @@ import models.MovementMessageWithStatus
 import models.MovementMessageWithoutStatus
 import repositories.ArrivalMovementRepository
 import repositories.LockRepository
+import WorkerProcessingException._
 
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
@@ -45,11 +46,28 @@ private[workers] class AddJsonToMessagesTransformer @Inject()(
   private val settings = workerConfig.addJsonToMessagesWorkerSettings
 
   private val supervisionStrategy: Attributes = ActorAttributes.supervisionStrategy {
-    case NonFatal(e) =>
-      logger.warn("Worker saw this exception but will resume", e)
+    case WorkerResumeableException(message, cause) =>
+      logger.warn(message, cause)
       Supervision.resume
-    case _ =>
-      logger.error("Worker saw a fatal exception and will be stopped")
+
+    case WorkerResumeable(message) =>
+      logger.info(message)
+      Supervision.resume
+
+    case WorkerUnresumeable(message) =>
+      logger.error(message)
+      Supervision.stop
+
+    case WorkerResumeableException(message, cause) =>
+      logger.error(message, cause)
+      Supervision.resume
+
+    case NonFatal(e) =>
+      logger.warn("Worker saw an exception but will resume", e)
+      Supervision.resume
+
+    case e =>
+      logger.error("Worker saw a fatal exception and will be stopped", e)
       Supervision.stop
   }
 
@@ -77,20 +95,19 @@ private[workers] class AddJsonToMessagesTransformer @Inject()(
             arrivalLockRepository.unlock(arrival.arrivalId).map {
               _ =>
                 (arrival, NotUsed)
+            } recover {
+              case e: Throwable =>
+                (arrival, NotUsed)
             }
         } recoverWith {
           case e: Throwable =>
-            logger.error(s"Received an error trying to reset messages for arrival s${arrival.arrivalId.index}", e)
-
-            arrivalLockRepository.unlock(arrival.arrivalId).map {
-              _ =>
-                (arrival, NotUsed)
-            }
+            arrivalLockRepository
+              .unlock(arrival.arrivalId)
+              .map(_ => throw new WorkerResumeableException(s"Received an error trying to reset messages for arrival s${arrival.arrivalId.index}", e))
         }
 
       case false =>
-        logger.info(s"Arrival ${arrival.arrivalId} is locked, so messages will not be updated")
-        Future.successful((arrival, NotUsed))
+        throw new WorkerResumeable(s"Arrival ${arrival.arrivalId} is locked, so messages will not be updated")
     }
 
 }

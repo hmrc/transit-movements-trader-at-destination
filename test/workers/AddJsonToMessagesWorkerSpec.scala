@@ -129,7 +129,7 @@ class AddJsonToMessagesWorkerSpec
                 new AddJsonToMessagesWorker(workerConfig, arrivalsRepo, addJsonToMessagesTransformer, workerLockingService)
 
               val result = worker.tap.pull.futureValue.value
-              result.size mustEqual 2
+              result.size mustEqual 1
 
 //              verify(lockRepo, atLeastOnce).lock(lockName)
 //              verify(lockRepo, times(1)).unlock(lockName)
@@ -163,12 +163,10 @@ class AddJsonToMessagesWorkerSpec
 
             val addJsonToMessagesTransformer = new AddJsonToMessagesTransformer(workerConfig, arrivalsRepo, arrivalsLockRepo)
 
-            val mockApplicationLifecycle = mock[ApplicationLifecycle]
             val worker: AddJsonToMessagesWorker =
               new AddJsonToMessagesWorker(workerConfig, arrivalsRepo, addJsonToMessagesTransformer, workerLockingService)
 
-            val result = worker.tap.pull.futureValue.value
-            result.size mustEqual 2
+            val result = worker.tap.pull.futureValue mustEqual None
 
 //            verify(lockRepo, atLeastOnce).lock(lockName)
 //            verify(lockRepo, times(1)).unlock(lockName)
@@ -236,7 +234,6 @@ class AddJsonToMessagesWorkerSpec
 
         val addJsonToMessagesTransformer = new AddJsonToMessagesTransformer(workerConfig, arrivalsRepo, arrivalsLockRepo)
 
-        val mockApplicationLifecycle = mock[ApplicationLifecycle]
         val worker: AddJsonToMessagesWorker =
           new AddJsonToMessagesWorker(workerConfig, arrivalsRepo, addJsonToMessagesTransformer, workerLockingService)
 

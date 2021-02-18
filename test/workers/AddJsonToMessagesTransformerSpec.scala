@@ -39,14 +39,15 @@ import repositories.ArrivalMovementRepository
 import repositories.LockRepository
 import repositories.WorkerLockRepository
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 
 class AddJsonToMessagesTransformerSpec extends SpecBase with ModelGenerators with ScalaCheckPropertyChecks {
 
-  implicit private val actorSystem: ActorSystem = ActorSystem()
-  implicit private val mat: Materializer        = ActorMaterializer()
+  implicit private val actorSystem: ActorSystem             = ActorSystem()
+  implicit private val mat: Materializer                    = ActorMaterializer()
+  implicit protected val executionContext: ExecutionContext = actorSystem.dispatcher
 
   implicit val arbArrival: Gen[Arrival] =
     for {
@@ -93,8 +94,6 @@ class AddJsonToMessagesTransformerSpec extends SpecBase with ModelGenerators wit
       when(workerConfig.addJsonToMessagesWorkerSettings).thenReturn(defaultSettings.copy(groupSize = groupSize))
       when(arrivalsRepo.resetMessages(any(), any())).thenReturn(Future.successful(true))
 
-      val expectedResultFromStream = arrivals.map(Seq(_))
-
       val result: Seq[Seq[Arrival]] = source
         .via(addJsonToMessagesTransformer.flow)
         .map(_.map(_._1))
@@ -105,6 +104,136 @@ class AddJsonToMessagesTransformerSpec extends SpecBase with ModelGenerators wit
       result must contain theSameElementsInOrderAs arrivals.grouped(groupSize).toList
 
     }
+
+    "resumes if there is a problem while updating a message" - {
+
+      "when the update of a arrival fails" in new Fixture {
+        val a0 :: a1 :: a2 :: Nil = listOfN(3, arbitrary[Arrival]).sample.value
+        val arrivals              = List(a0.copy(arrivalId = ArrivalId(0)), a1.copy(arrivalId = ArrivalId(1)), a2.copy(arrivalId = ArrivalId(2)))
+        val source                = Source(arrivals)
+
+        when(workerConfig.addJsonToMessagesWorkerSettings).thenReturn(defaultSettings)
+        when(
+          arrivalsRepo.resetMessages(arrivalIdArgumentCaptor.capture(), messagesArgumentCaptor.capture())
+        ).thenReturn(Future.successful(true))
+          .thenReturn(Future.failed(new Exception("did not insert")))
+          .thenReturn(Future.successful(true))
+
+        val successfulUpdates: Seq[Seq[Arrival]] = source
+          .via(addJsonToMessagesTransformer.flow)
+          .map(_.map(_._1))
+          .runWith(TestSink.probe[Seq[Arrival]])
+          .request(3)
+          .expectNextN(2)
+
+        arrivalIdArgumentCaptor.getAllValues must contain theSameElementsAs arrivals.map(_.arrivalId)
+        successfulUpdates must contain theSameElementsAs (List(List(arrivals(0)), List(arrivals(2))))
+        messagesArgumentCaptor.getAllValues must contain theSameElementsAs arrivals.map(_.messages)
+
+      }
+
+      "when the arrival lock cannot be acquired" in new Fixture {
+        val a0 :: a1 :: a2 :: Nil = listOfN(3, arbitrary[Arrival]).sample.value
+        val arrivals              = List(a0.copy(arrivalId = ArrivalId(0)), a1.copy(arrivalId = ArrivalId(1)), a2.copy(arrivalId = ArrivalId(2)))
+        val source                = Source(arrivals)
+
+        when(workerConfig.addJsonToMessagesWorkerSettings).thenReturn(defaultSettings)
+        when(arrivalsRepo.resetMessages(any(), messagesArgumentCaptor.capture())).thenReturn(Future.successful(true))
+
+        when(arrivalsLockRepo.lock(arrivalIdArgumentCaptor.capture()))
+          .thenReturn(Future.successful(true))
+          .thenReturn(Future.successful(false))
+          .thenReturn(Future.successful(true))
+
+        val successfulUpdates: Seq[Seq[Arrival]] = source
+          .via(addJsonToMessagesTransformer.flow)
+          .map(_.map(_._1))
+          .runWith(TestSink.probe[Seq[Arrival]])
+          .request(3)
+          .expectNextN(2)
+
+        arrivalIdArgumentCaptor.getAllValues must contain theSameElementsAs arrivals.map(_.arrivalId)
+        successfulUpdates must contain theSameElementsAs (List(List(arrivals(0)), List(arrivals(2))))
+        messagesArgumentCaptor.getAllValues must contain theSameElementsAs List(a0.messages, a2.messages)
+      }
+
+      "when the arrival locking fails" in new Fixture {
+        val a0 :: a1 :: a2 :: Nil = listOfN(3, arbitrary[Arrival]).sample.value
+        val arrivals              = List(a0.copy(arrivalId = ArrivalId(0)), a1.copy(arrivalId = ArrivalId(1)), a2.copy(arrivalId = ArrivalId(2)))
+        val source                = Source(arrivals)
+
+        when(workerConfig.addJsonToMessagesWorkerSettings).thenReturn(defaultSettings)
+        when(arrivalsRepo.resetMessages(any(), messagesArgumentCaptor.capture())).thenReturn(Future.successful(true))
+
+        when(arrivalsLockRepo.lock(arrivalIdArgumentCaptor.capture()))
+          .thenReturn(Future.successful(true))
+          .thenReturn(Future.failed(new Exception("locking failed")))
+          .thenReturn(Future.successful(true))
+
+        val successfulUpdates: Seq[Seq[Arrival]] = source
+          .via(addJsonToMessagesTransformer.flow)
+          .map(_.map(_._1))
+          .runWith(TestSink.probe[Seq[Arrival]])
+          .request(3)
+          .expectNextN(2)
+
+        arrivalIdArgumentCaptor.getAllValues must contain theSameElementsAs arrivals.map(_.arrivalId)
+        successfulUpdates must contain theSameElementsAs (List(List(arrivals(0)), List(arrivals(2))))
+        messagesArgumentCaptor.getAllValues must contain theSameElementsAs List(a0.messages, a2.messages)
+      }
+
+      "when the arrival unlocking cannot be performed" in new Fixture {
+        val a0 :: a1 :: a2 :: Nil = listOfN(3, arbitrary[Arrival]).sample.value
+        val arrivals              = List(a0.copy(arrivalId = ArrivalId(0)), a1.copy(arrivalId = ArrivalId(1)), a2.copy(arrivalId = ArrivalId(2)))
+        val source                = Source(arrivals)
+
+        when(workerConfig.addJsonToMessagesWorkerSettings).thenReturn(defaultSettings)
+        when(arrivalsRepo.resetMessages(any(), messagesArgumentCaptor.capture())).thenReturn(Future.successful(true))
+
+        when(arrivalsLockRepo.unlock(arrivalIdArgumentCaptor.capture()))
+          .thenReturn(Future.successful(true))
+          .thenReturn(Future.successful(false))
+          .thenReturn(Future.successful(true))
+
+        val successfulUpdates: Seq[Seq[Arrival]] = source
+          .via(addJsonToMessagesTransformer.flow)
+          .map(_.map(_._1))
+          .runWith(TestSink.probe[Seq[Arrival]])
+          .request(3)
+          .expectNextN(3)
+
+        arrivalIdArgumentCaptor.getAllValues must contain theSameElementsAs arrivals.map(_.arrivalId)
+        successfulUpdates must contain theSameElementsAs arrivals.map(Seq(_))
+        messagesArgumentCaptor.getAllValues must contain theSameElementsAs arrivals.map(_.messages)
+      }
+
+      "when the arrival unlocking fails" in new Fixture {
+        val a0 :: a1 :: a2 :: Nil = listOfN(3, arbitrary[Arrival]).sample.value
+        val arrivals              = List(a0.copy(arrivalId = ArrivalId(0)), a1.copy(arrivalId = ArrivalId(1)), a2.copy(arrivalId = ArrivalId(2)))
+        val source                = Source(arrivals)
+
+        when(workerConfig.addJsonToMessagesWorkerSettings).thenReturn(defaultSettings)
+        when(arrivalsRepo.resetMessages(any(), messagesArgumentCaptor.capture())).thenReturn(Future.successful(true))
+
+        when(arrivalsLockRepo.unlock(arrivalIdArgumentCaptor.capture()))
+          .thenReturn(Future.successful(true))
+          .thenReturn(Future.failed(new Exception("unlocking failed")))
+          .thenReturn(Future.successful(true))
+
+        val successfulUpdates: Seq[Seq[Arrival]] = source
+          .via(addJsonToMessagesTransformer.flow)
+          .map(_.map(_._1))
+          .runWith(TestSink.probe[Seq[Arrival]])
+          .request(3)
+          .expectNextN(3)
+
+        arrivalIdArgumentCaptor.getAllValues must contain theSameElementsAs arrivals.map(_.arrivalId)
+        successfulUpdates must contain theSameElementsAs arrivals.map(Seq(_))
+        messagesArgumentCaptor.getAllValues must contain theSameElementsAs arrivals.map(_.messages)
+      }
+
+    }
+
   }
 
   abstract class Fixture {
