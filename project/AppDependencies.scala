@@ -6,7 +6,7 @@ object AppDependencies {
   private val catsVersion = "2.1.1"
 
   val compile: Seq[ModuleID] = Seq(
-    "uk.gov.hmrc"       %% "bootstrap-backend-play-27"               % "3.3.0",
+    "uk.gov.hmrc"       %% "bootstrap-backend-play-27"       % "3.3.0",
     "org.reactivemongo" %% "play2-reactivemongo"             % "0.20.11-play26",
     "org.reactivemongo" %% "reactivemongo-akkastream"        % "0.20.11",
     "com.typesafe.play" %% "play-iteratees"                  % "2.6.1",
@@ -28,6 +28,6 @@ object AppDependencies {
     "org.typelevel"          %% "discipline-core"      % "1.0.2",
     "org.typelevel"          %% "discipline-scalatest" % "1.0.1",
     "com.vladsch.flexmark"   % "flexmark-all"          % "0.35.10",
-    "com.typesafe.akka"      %% "akka-stream-testkit"  % "2.5.26"
+    "com.typesafe.akka"      %% "akka-stream-testkit"  % "2.5.31"
   ).map(_ % "test, it")
 }
