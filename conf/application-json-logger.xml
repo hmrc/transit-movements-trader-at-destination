@@ -15,6 +15,10 @@
 
     <logger name="application.workers.AddJsonToMessagesWorker" level="${logger.application.workers.AddJsonToMessagesWorker:-INFO}"/>
 
+    <logger name="application.controllers.MessagesController.movementSummary" level="${logger.application.controllers.MessagesController.movementSummary:-INFO}"/>
+    <logger name="application.controllers.NCTSMessageController.movementSummary" level="${logger.application.controllers.NCTSMessageController.movementSummary:-INFO}"/>
+    <logger name="application.controllers.MovementsController.movementSummary" level="${logger.application.controllers.MovementsController.movementSummary:-INFO}"/>
+
     <root level="${logger.application:-WARN}">
         <appender-ref ref="STDOUT"/>
     </root>

@@ -21,6 +21,7 @@ import audit.AuditService
 import audit.AuditType
 import controllers.actions.AuthenticatedGetArrivalForReadActionProvider
 import controllers.actions.AuthenticatedGetArrivalForWriteActionProvider
+
 import javax.inject.Inject
 import logging.Logging
 import metrics.MetricsService
@@ -34,6 +35,7 @@ import models.SubmissionProcessingResult._
 import models.request.ArrivalRequest
 import models.response.ResponseArrivalWithMessages
 import models.response.ResponseMovementMessage
+import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
@@ -59,6 +61,9 @@ class MessagesController @Inject()(
     extends BackendController(cc)
     with Logging {
 
+  private val movementSummaryLogger: Logger =
+    Logger(s"application.${this.getClass.getCanonicalName}.movementSummary")
+
   def post(arrivalId: ArrivalId): Action[NodeSeq] = (authenticateForWrite(arrivalId)(parse.xml) andThen validateMessageSenderNode.filter).async {
     implicit request: ArrivalRequest[NodeSeq] =>
       arrivalMovementService
@@ -68,6 +73,10 @@ class MessagesController @Inject()(
             .submitMessage(arrivalId, request.arrival.nextMessageId, message, ArrivalStatus.UnloadingRemarksSubmitted, request.channel)
             .map {
               result =>
+                movementSummaryLogger.info(
+                  s"Received message ${MessageType.UnloadingRemarks.toString} for this arrival with result $result\n${request.arrival.summaryInformation
+                    .mkString("\n")}")
+
                 val counter = Monitors.countMessages(MessageType.UnloadingRemarks, request.channel, result)
                 metricsService.inc(counter)
 

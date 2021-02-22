@@ -36,6 +36,7 @@ import models.SubmissionProcessingResult
 import models.SubmissionProcessingResult._
 import models.request.ArrivalRequest
 import models.response.ResponseArrival
+import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
@@ -65,6 +66,9 @@ class MovementsController @Inject()(
 )(implicit ec: ExecutionContext)
     extends BackendController(cc)
     with Logging {
+
+  private val movementSummaryLogger: Logger =
+    Logger(s"application.${this.getClass.getCanonicalName}.movementSummary")
 
   private val allMessageUnsent: NonEmptyList[MovementMessage] => Boolean =
     _.map(_.optStatus).forall {
@@ -105,6 +109,7 @@ class MovementsController @Inject()(
                     val counter = Monitors.countMessages(MessageType.ArrivalNotification, request.channel, result)
                     metricsService.inc(counter)
 
+                    movementSummaryLogger.info(s"Submitted an arrival with result ${result.toString}\n${arrival.summaryInformation.mkString("\n")}")
                     handleSubmissionResult(result, AuditType.ArrivalNotificationSubmitted, message, request.channel, arrival.arrivalId)
 
                 }
@@ -121,6 +126,7 @@ class MovementsController @Inject()(
                   .submitArrival(arrival)
                   .map {
                     result =>
+                      movementSummaryLogger.info(s"Submitted an arrival with result ${result.toString}\n${arrival.summaryInformation.mkString("\n")}")
                       handleSubmissionResult(result, AuditType.ArrivalNotificationSubmitted, arrival.messages.head, request.channel, arrival.arrivalId)
                   }
                   .recover {
@@ -148,6 +154,7 @@ class MovementsController @Inject()(
             .submitIe007Message(arrivalId, request.arrival.nextMessageId, message, mrn, request.channel)
             .map {
               result =>
+                movementSummaryLogger.info(s"Submitted an arrival with result ${result.toString}\n${request.arrival.summaryInformation.mkString("\n")}")
                 handleSubmissionResult(result, AuditType.ArrivalNotificationReSubmitted, message, request.channel, request.arrival.arrivalId)
             }
         case Left(error) =>

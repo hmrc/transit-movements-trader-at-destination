@@ -22,6 +22,8 @@ import play.api.libs.functional.syntax._
 import cats.data._
 import cats.implicits._
 
+import java.time.format.DateTimeFormatter
+
 case class Arrival(
   arrivalId: ArrivalId,
   channel: ChannelType,
@@ -40,6 +42,19 @@ case class Arrival(
   lazy val messagesWithId: NonEmptyList[(MovementMessage, MessageId)] =
     messages.mapWithIndex(_ -> MessageId.fromIndex(_))
 
+  private val obfuscatedEori: String          = s"ending ${eoriNumber.takeRight(4)}"
+  private val isoFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+
+  val summaryInformation: Map[String, String] = Map(
+    "Arrival id"                  -> arrivalId.index.toString,
+    "Channel"                     -> channel.toString,
+    "EORI"                        -> obfuscatedEori,
+    "MRN"                         -> movementReferenceNumber.value,
+    "Created"                     -> isoFormatter.format(created),
+    "Last updated"                -> isoFormatter.format(lastUpdated),
+    "Messages"                    -> messages.toList.map(_.messageType.toString).mkString(", "),
+    "Next message correlation id" -> nextMessageCorrelationId.toString
+  )
 }
 
 object Arrival {
