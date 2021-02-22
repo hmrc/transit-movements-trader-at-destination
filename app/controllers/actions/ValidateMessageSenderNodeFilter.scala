@@ -15,6 +15,7 @@
  */
 
 package controllers.actions
+
 import logging.Logging
 import play.api.mvc.Results.BadRequest
 import play.api.mvc._
@@ -26,31 +27,23 @@ import scala.xml.NodeSeq
 
 class ValidateMessageSenderNodeFilter extends Logging {
 
-  def filter[R[_]](implicit ec: ExecutionContext): ActionFilter[R] = new ActionFilter[R] {
+  def filter[R[_] <: Request[_]](implicit ec: ExecutionContext): ActionFilter[R] = new ActionFilter[R] {
 
     def executionContext: ExecutionContext = ec
 
     override protected def filter[A](request: R[A]): Future[Option[Result]] =
-      request match {
-        case x: Request[A] => {
-          x.body match {
-            case nodeSeq: NodeSeq =>
-              if ((nodeSeq \\ "MesSenMES3").isEmpty) {
-                Future.successful(None)
-              } else {
-                logger.warn("MesSenMES3 should not exist in body")
-                Future.successful(Some(BadRequest(HtmlFormat.empty)))
-              }
-            case invalidBody =>
-              logger.warn(s"Invalid request body. Expected XML (NodeSeq) got: ${invalidBody.getClass}")
-              Future.successful(Some(BadRequest(HtmlFormat.empty)))
+      request.body match {
+        case nodeSeq: NodeSeq =>
+          if ((nodeSeq \\ "MesSenMES3").isEmpty) {
+            Future.successful(None)
+          } else {
+            logger.warn("MesSenMES3 should not exist in body")
+            Future.successful(Some(BadRequest(HtmlFormat.empty)))
           }
-        }
-        case _ =>
-          logger.warn("Unable to process request")
+        case invalidBody =>
+          logger.warn(s"Invalid request body. Expected XML (NodeSeq) got: ${invalidBody.getClass}")
           Future.successful(Some(BadRequest(HtmlFormat.empty)))
       }
-
   }
 
 }
