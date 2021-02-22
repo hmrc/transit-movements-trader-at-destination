@@ -90,7 +90,9 @@ class AddJsonToMessagesTransformerSpec extends SpecBase with ModelGenerators wit
       val arrivals = listOfN(7, arbitrary[Arrival]).sample.value
       val source   = Source(arrivals)
 
-      val groupSize = 3
+      val groupSize          = 3
+      val expectedFlowResult = arrivals.grouped(groupSize).toList
+
       when(workerConfig.addJsonToMessagesWorkerSettings).thenReturn(defaultSettings.copy(groupSize = groupSize))
       when(arrivalsRepo.resetMessages(any(), any())).thenReturn(Future.successful(true))
 
@@ -99,9 +101,9 @@ class AddJsonToMessagesTransformerSpec extends SpecBase with ModelGenerators wit
         .map(_.map(_._1))
         .runWith(TestSink.probe[Seq[Arrival]])
         .request(4)
-        .expectNextN(3)
+        .expectNextN(expectedFlowResult.size)
 
-      result must contain theSameElementsInOrderAs arrivals.grouped(groupSize).toList
+      result must contain theSameElementsInOrderAs expectedFlowResult
 
     }
 
