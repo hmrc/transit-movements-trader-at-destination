@@ -93,12 +93,12 @@ class ArrivalMessageSummaryService {
   private[services] val unloadingPermissionR: Reader[Arrival, Option[(MovementMessage, MessageId)]] =
     Reader[Arrival, Option[(MovementMessage, MessageId)]] {
       arrival =>
-        val unloadingPermission = getLatestMessageWithoutStatus(arrival.messagesWithId)(UnloadingPermission)
+        val unloadingPermissions = getLatestMessageWithoutStatus(arrival.messagesWithId)(UnloadingPermission)
 
-        val unloadingPermissionCount = unloadingPermission.length
+        val unloadingPermissionCount = unloadingPermissions.length
 
         if (unloadingPermissionCount > 0 && arrivalNotificationCount(arrival.messages) > 0)
-          Some(unloadingPermission.maxBy(_._1.messageCorrelationId))
+          Some(unloadingPermissions.minBy(_._1.messageCorrelationId))
         else
           None
     }
