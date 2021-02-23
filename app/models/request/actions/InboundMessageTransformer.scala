@@ -43,7 +43,7 @@ class InboundMessageTransformer @Inject()(implicit ec: ExecutionContext) extends
 
     logger.debug(s"CTC Headers ${request.headers}")
 
-    messageResponse(request.headers.get("X-Message-Type"), request.channel) match {
+    request.headers.get("X-Message-Type").flatMap(messageResponse(request.channel)) match {
       case Some(response) =>
         logger.debug(s"X-Message-Type is ${request.headers.get("X-Message-Type")}")
         logger.debug(s"Message type code ${response.messageType.code}")
@@ -68,17 +68,18 @@ class InboundMessageTransformer @Inject()(implicit ec: ExecutionContext) extends
     }
   }
 
-  //TODO: Consider moving this into MessageResponse
-  private[models] def messageResponse(code: Option[String], channel: ChannelType): Option[MessageResponse] = code match {
-    case Some(MessageType.GoodsReleased.code)             => Some(GoodsReleasedResponse)
-    case Some(MessageType.ArrivalRejection.code)          => Some(ArrivalRejectedResponse)
-    case Some(MessageType.UnloadingPermission.code)       => Some(UnloadingPermissionResponse)
-    case Some(MessageType.UnloadingRemarksRejection.code) => Some(UnloadingRemarksRejectedResponse)
-    case Some(MessageType.XMLSubmissionNegativeAcknowledgement.code) =>
-      logger.error(s"Received the message ${MessageType.XMLSubmissionNegativeAcknowledgement.code} for the $channel channel")
-      Some(XMLSubmissionNegativeAcknowledgementResponse)
-    case _ => None
-  }
+  //TODO: This mapping should have ALL message types. Consider moving this into MessageResponse.
+  private[models] def messageResponse(channel: ChannelType)(code: String): Option[MessageResponse] =
+    code match {
+      case MessageType.GoodsReleased.code             => Some(GoodsReleasedResponse)
+      case MessageType.ArrivalRejection.code          => Some(ArrivalRejectedResponse)
+      case MessageType.UnloadingPermission.code       => Some(UnloadingPermissionResponse)
+      case MessageType.UnloadingRemarksRejection.code => Some(UnloadingRemarksRejectedResponse)
+      case MessageType.XMLSubmissionNegativeAcknowledgement.code =>
+        logger.error(s"Received the message ${MessageType.XMLSubmissionNegativeAcknowledgement.code} for the $channel channel")
+        Some(XMLSubmissionNegativeAcknowledgementResponse)
+      case _ => None
+    }
 
   private def badRequestError(message: String): Result = {
     logger.error(message)

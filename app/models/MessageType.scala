@@ -39,10 +39,10 @@ object MessageType extends Enumerable.Implicits {
     Seq(
       ArrivalNotification,
       ArrivalRejection,
-      GoodsReleased,
       UnloadingPermission,
       UnloadingRemarks,
       UnloadingRemarksRejection,
+      GoodsReleased,
       XMLSubmissionNegativeAcknowledgement
     )
 
