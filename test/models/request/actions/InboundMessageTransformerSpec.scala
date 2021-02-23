@@ -17,11 +17,9 @@
 package models.request.actions
 
 import generators.ModelGenerators
-import models.ArrivalStatus.ArrivalRejected
+import models.ArrivalStatus.ArrivalSubmitted
 import models.ArrivalStatus.ArrivalXMLSubmissionNegativeAcknowledgement
-import models.ArrivalStatus.GoodsReleased
 import models.ArrivalStatus.UnloadingPermission
-import models.ArrivalStatus.UnloadingRemarksRejected
 import models.ArrivalStatus.UnloadingRemarksXMLSubmissionNegativeAcknowledgement
 import models.Arrival
 import models.ArrivalId
@@ -29,12 +27,10 @@ import models.ArrivalRejectedResponse
 import models.ArrivalStatus
 import models.ChannelType
 import models.GoodsReleasedResponse
-import models.MessageInbound
 import models.MessageType
 import models.UnloadingPermissionResponse
 import models.UnloadingRemarksRejectedResponse
 import models.XMLSubmissionNegativeAcknowledgementResponse
-import models.ChannelType.web
 import models.request.ArrivalRequest
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
@@ -54,78 +50,102 @@ import scala.concurrent.Future
 
 class InboundMessageTransformerSpec extends AnyFreeSpec with Matchers with ScalaCheckPropertyChecks with ModelGenerators with OptionValues with ScalaFutures {
 
-  val arrival: Arrival     = arbitrary[Arrival].sample.value
-  val arrivalId: ArrivalId = arrival.arrivalId
+  private val arrival: Arrival     = arbitrary[Arrival].sample.value
+  private val arrivalId: ArrivalId = arrival.arrivalId
 
-  def fakeRequest(code: String, arrivalStatus: ArrivalStatus): ArrivalRequest[AnyContentAsEmpty.type] =
-    ArrivalRequest(FakeRequest("", "").withHeaders("X-Message-Type" -> code), arrival.copy(status = arrivalStatus), web)
-
-  val successfulResponse: Request[AnyContent] => Future[Result] = {
+  private val successfulResponse: Request[AnyContent] => Future[Result] = {
     _ =>
       Future.successful(Ok(HtmlFormat.empty))
   }
 
-  def action = new InboundMessageTransformer()
+  private def action = new InboundMessageTransformer()
 
-  val xmlNegativeAcknowledgement: ArrivalStatus =
+  private val xmlNegativeAcknowledgement: ArrivalStatus =
     Gen.oneOf(Seq(ArrivalXMLSubmissionNegativeAcknowledgement, UnloadingRemarksXMLSubmissionNegativeAcknowledgement)).sample.value
-
-  val responseMessages: Map[String, MessageInbound] = Map(
-    MessageType.ArrivalRejection.code                     -> MessageInbound(ArrivalRejectedResponse, ArrivalRejected),
-    MessageType.UnloadingRemarksRejection.code            -> MessageInbound(UnloadingRemarksRejectedResponse, UnloadingRemarksRejected),
-    MessageType.UnloadingPermission.code                  -> MessageInbound(UnloadingPermissionResponse, UnloadingPermission),
-    MessageType.GoodsReleased.code                        -> MessageInbound(GoodsReleasedResponse, GoodsReleased),
-    MessageType.XMLSubmissionNegativeAcknowledgement.code -> MessageInbound(XMLSubmissionNegativeAcknowledgementResponse, xmlNegativeAcknowledgement)
-  )
 
   "InboundMessageTransformer" - {
 
-    "handle unsupported `X-Message-Type`" in {
+    "returns 200 for supported `X-Message-Type`" in {
+      forAll(arbitrary[ChannelType]) {
+        channel =>
+          val arrivalMovement = arrival.copy(status = ArrivalStatus.ArrivalSubmitted)
 
-      val testAction = action.invokeBlock(fakeRequest("invalid-code", GoodsReleased), successfulResponse)
+          val request =
+            ArrivalRequest(FakeRequest("", "").withHeaders("X-Message-Type" -> MessageType.ArrivalRejection.code), arrivalMovement, channel)
 
-      testAction.futureValue.header.status mustBe BAD_REQUEST
+          val testAction = action.invokeBlock(request, successfulResponse)
+
+          testAction.futureValue.header.status mustBe OK
+
+      }
     }
 
-    "return correct http response for message type" in {
+    "return 400 for unsupported `X-Message-Type`" in {
+      forAll(arbitrary[ChannelType]) {
+        channel =>
+          val request =
+            ArrivalRequest(FakeRequest("", "").withHeaders("X-Message-Type" -> "invalid-message-type"), arrival, channel)
 
-      forAll(Gen.oneOf(MessageType.values)) {
-        message =>
-          if (responseMessages.exists(x => message.code == x._1)) {
+          val testAction = action.invokeBlock(request, successfulResponse)
 
-            val messageInbound: MessageInbound = responseMessages(message.code)
+          testAction.futureValue.header.status mustBe BAD_REQUEST
 
-            val testAction = action.invokeBlock(fakeRequest(message.code, messageInbound.nextState), successfulResponse)
+      }
+    }
 
-            testAction.futureValue.header.status mustBe OK
+    "when the incoming message is an allowable transition from the current status" in {
+      forAll(arbitrary[ChannelType]) {
+        channel =>
+          val arrivalMovement = arrival.copy(status = ArrivalSubmitted)
 
-          } else {
-            val testAction = action.invokeBlock(fakeRequest(message.code, GoodsReleased), successfulResponse)
+          val request =
+            ArrivalRequest(FakeRequest("", "").withHeaders("X-Message-Type" -> MessageType.GoodsReleased.code), arrivalMovement, channel)
 
-            testAction.futureValue.header.status mustBe BAD_REQUEST
-          }
+          val testAction = action.invokeBlock(request, successfulResponse)
+
+          testAction.futureValue.header.status mustBe OK
+
       }
 
     }
 
-    "return correct MessageResponse for incoming message `X-Message-Type`" in {
+    "when the incoming message is not an allowable transition from the current status" in {
+      forAll(arbitrary[ChannelType]) {
+        channel =>
+          val arrivalMovement = arrival.copy(status = UnloadingPermission)
 
-      forAll(Gen.oneOf(MessageType.values), Gen.oneOf(ChannelType.values)) {
-        (message, channel) =>
-          if (responseMessages.exists(x => message.code == x._1)) {
-            action.messageResponse(Some(message.code), channel).value mustBe responseMessages(message.code).messageType
-          } else {
-            action.messageResponse(Some(message.code), channel) mustBe None
-          }
+          val request =
+            ArrivalRequest(FakeRequest("", "").withHeaders("X-Message-Type" -> MessageType.ArrivalRejection.code), arrivalMovement, channel)
+
+          val testAction = action.invokeBlock(request, successfulResponse)
+
+          testAction.futureValue.header.status mustBe BAD_REQUEST
+
       }
     }
 
-    "handle out-of-sequence-message" in {
-      val testAction = action.invokeBlock(fakeRequest("IE044", ArrivalStatus.UnloadingRemarksSubmitted), successfulResponse)
+    ".messageResponse" - {
+      "determines the MessageResponse for the `X-Message-Type` header" in {
 
-      testAction.futureValue.header.status mustBe BAD_REQUEST
+        //TODO: This test needs to be refactored. This is a duplication of logic from the implementation.
+        val messageTypeAndExpectedMessageResponse = Seq(
+          (MessageType.GoodsReleased, GoodsReleasedResponse),
+          (MessageType.ArrivalRejection, ArrivalRejectedResponse),
+          (MessageType.UnloadingPermission, UnloadingPermissionResponse),
+          (MessageType.UnloadingRemarksRejection, UnloadingRemarksRejectedResponse),
+          (MessageType.XMLSubmissionNegativeAcknowledgement, XMLSubmissionNegativeAcknowledgementResponse)
+        )
+
+        forAll(arbitrary[ChannelType]) {
+          channel =>
+            messageTypeAndExpectedMessageResponse.foreach {
+              case (messageType, messageResponse) =>
+                action.messageResponse(channel)(messageType.code).value mustEqual messageResponse
+                ()
+            }
+        }
+      }
     }
-
   }
 
 }
