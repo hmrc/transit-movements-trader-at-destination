@@ -328,16 +328,16 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
       "latest IE043 when multiple IE043 messages exist" in {
         val service = new ArrivalMessageSummaryService
 
-        forAll(ie007Gen.submitted.msgCorrId(1), ie043Gen.msgCorrId(2), ie043Gen.msgCorrId(3)) {
-          case (ie007, ie043Old, ie043) =>
-            val messages = NonEmptyList.of(ie007, ie043Old, ie043)
+        forAll(ie007Gen.submitted.msgCorrId(1), ie043Gen.msgCorrId(2), ie043Gen.msgCorrId(3), ie043Gen.msgCorrId(4)) {
+          case (ie007, ie043a, ie043b, ie043c) =>
+            val messages = NonEmptyList.of(ie007, ie043a, ie043b, ie043c)
 
             forAll(arrivalMovement(messages)) {
               arrival =>
                 val (message, messageId) = service.unloadingPermissionR(arrival).value
 
-                message mustEqual ie043
-                messageId mustEqual MessageId.fromMessageIdValue(3).value
+                message mustEqual ie043a
+                messageId mustEqual MessageId.fromMessageIdValue(2).value
             }
         }
 
