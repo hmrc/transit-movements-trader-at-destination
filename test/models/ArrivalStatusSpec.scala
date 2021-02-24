@@ -320,9 +320,18 @@ class ArrivalStatusSpec extends SpecBase with ScalaCheckDrivenPropertyChecks wit
         UnloadingRemarksRejected.transition(MessageReceivedEvent.UnloadingRemarksSubmitted).right.value mustBe UnloadingRemarksSubmitted
       }
 
+      "transition to UnloadingPermissionSubmitted state when receiving an UnloadingPermission event" in {
+        UnloadingRemarksRejected.transition(MessageReceivedEvent.UnloadingPermission).right.value mustBe UnloadingPermission
+      }
+
       "return an error message if any other event is provided" in {
         val validMessages =
-          Seq(MessageReceivedEvent.UnloadingRemarksRejected, MessageReceivedEvent.GoodsReleased, MessageReceivedEvent.UnloadingRemarksSubmitted)
+          Seq(
+            MessageReceivedEvent.UnloadingRemarksRejected,
+            MessageReceivedEvent.GoodsReleased,
+            MessageReceivedEvent.UnloadingRemarksSubmitted,
+            MessageReceivedEvent.UnloadingPermission
+          )
         val invalidMessages = MessageReceivedEvent.values.diff(validMessages)
         invalidMessages.foreach {
           m =>
