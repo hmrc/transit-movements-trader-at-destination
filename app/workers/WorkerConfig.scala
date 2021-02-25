@@ -16,29 +16,12 @@
 
 package workers
 
-import javax.inject.Inject
 import play.api.Configuration
 
-import scala.concurrent.duration.FiniteDuration
+import javax.inject.Inject
 
 class WorkerConfig @Inject()(config: Configuration) {
 
   val addJsonToMessagesWorkerSettings: WorkerSettings =
-    WorkerSettings(
-      enabled = config.get[Boolean]("workers.add-json-to-messages.enabled"),
-      interval = config.get[FiniteDuration]("workers.add-json-to-messages.interval"),
-      groupSize = config.get[Int]("workers.add-json-to-messages.group-size"),
-      parallelism = config.get[Int]("workers.add-json-to-messages.parallelism"),
-      elements = config.get[Int]("workers.add-json-to-messages.throttle.elements"),
-      per = config.get[FiniteDuration]("workers.add-json-to-messages.throttle.per")
-    )
+    config.get[WorkerSettings]("workers.add-json-to-messages")
 }
-
-case class WorkerSettings(
-  enabled: Boolean,
-  interval: FiniteDuration,
-  groupSize: Int,
-  parallelism: Int,
-  elements: Int,
-  per: FiniteDuration
-)
