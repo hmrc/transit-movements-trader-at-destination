@@ -58,9 +58,9 @@ private[workers] class AddJsonToMessagesTransformer @Inject()(
       logger.error(message)
       Supervision.stop
 
-    case WorkerResumeableException(message, cause) =>
+    case WorkerUnresumeableException(message, cause) =>
       logger.error(message, cause)
-      Supervision.resume
+      Supervision.stop
 
     case NonFatal(e) =>
       logger.warn("Worker saw an exception but will resume", e)
