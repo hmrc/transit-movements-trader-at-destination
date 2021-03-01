@@ -42,7 +42,7 @@ case class Arrival(
   lazy val messagesWithId: NonEmptyList[(MovementMessage, MessageId)] =
     messages.mapWithIndex(_ -> MessageId.fromIndex(_))
 
-  private val obfuscatedEori: String          = s"ending ${eoriNumber.takeRight(4)}"
+  private val obfuscatedEori: String          = s"ending ${eoriNumber.takeRight(7)}"
   private val isoFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
 
   val summaryInformation: Map[String, String] = Map(
