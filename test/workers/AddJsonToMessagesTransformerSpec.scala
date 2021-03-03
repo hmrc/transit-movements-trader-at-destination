@@ -33,7 +33,6 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
-import org.scalacheck.Gen.listOfN
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import repositories.ArrivalMovementRepository
 import repositories.LockRepository
@@ -58,10 +57,21 @@ class AddJsonToMessagesTransformerSpec extends SpecBase with ModelGenerators wit
     }
 
   "the flow" - {
+    def listOfArrivals(count: Int): Gen[List[Arrival]] =
+      arbitrary[Arrival].map {
+        arrival =>
+          Iterator
+            .range(1, count + 1)
+            .map(ArrivalId(_))
+            .map(arrivalId => arrival.copy(arrivalId = arrivalId))
+            .toList
+      }
+
     "adds json for all the messages" in new Fixture {
 
-      val arrivals = listOfN(6, arbitrary[Arrival]).sample.value
-      val source   = Source(arrivals)
+      val arrivals = listOfArrivals(6).sample.value
+
+      val source = Source(arrivals)
 
       when(workerConfig.addJsonToMessagesWorkerSettings).thenReturn(defaultSettings)
       when(
@@ -87,7 +97,7 @@ class AddJsonToMessagesTransformerSpec extends SpecBase with ModelGenerators wit
 
     "groups the messages into configured chunks" in new Fixture {
 
-      val arrivals = listOfN(7, arbitrary[Arrival]).sample.value
+      val arrivals = listOfArrivals(7).sample.value
       val source   = Source(arrivals)
 
       val groupSize          = 3
@@ -110,9 +120,8 @@ class AddJsonToMessagesTransformerSpec extends SpecBase with ModelGenerators wit
     "resumes if there is a problem while updating a message" - {
 
       "when the update of a arrival fails" in new Fixture {
-        val a0 :: a1 :: a2 :: Nil = listOfN(3, arbitrary[Arrival]).sample.value
-        val arrivals              = List(a0.copy(arrivalId = ArrivalId(0)), a1.copy(arrivalId = ArrivalId(1)), a2.copy(arrivalId = ArrivalId(2)))
-        val source                = Source(arrivals)
+        val arrivals = listOfArrivals(3).sample.value
+        val source   = Source(arrivals)
 
         when(workerConfig.addJsonToMessagesWorkerSettings).thenReturn(defaultSettings)
         when(
@@ -135,9 +144,8 @@ class AddJsonToMessagesTransformerSpec extends SpecBase with ModelGenerators wit
       }
 
       "when the arrival lock cannot be acquired" in new Fixture {
-        val a0 :: a1 :: a2 :: Nil = listOfN(3, arbitrary[Arrival]).sample.value
-        val arrivals              = List(a0.copy(arrivalId = ArrivalId(0)), a1.copy(arrivalId = ArrivalId(1)), a2.copy(arrivalId = ArrivalId(2)))
-        val source                = Source(arrivals)
+        val arrivals = listOfArrivals(3).sample.value
+        val source   = Source(arrivals)
 
         when(workerConfig.addJsonToMessagesWorkerSettings).thenReturn(defaultSettings)
         when(arrivalsRepo.resetMessages(any(), messagesArgumentCaptor.capture())).thenReturn(Future.successful(true))
@@ -156,13 +164,12 @@ class AddJsonToMessagesTransformerSpec extends SpecBase with ModelGenerators wit
 
         arrivalIdArgumentCaptor.getAllValues must contain theSameElementsAs arrivals.map(_.arrivalId)
         successfulUpdates must contain theSameElementsAs (List(List(arrivals(0)), List(arrivals(2))))
-        messagesArgumentCaptor.getAllValues must contain theSameElementsAs List(a0.messages, a2.messages)
+        messagesArgumentCaptor.getAllValues must contain theSameElementsAs List(arrivals(0).messages, arrivals(2).messages)
       }
 
       "when the arrival locking fails" in new Fixture {
-        val a0 :: a1 :: a2 :: Nil = listOfN(3, arbitrary[Arrival]).sample.value
-        val arrivals              = List(a0.copy(arrivalId = ArrivalId(0)), a1.copy(arrivalId = ArrivalId(1)), a2.copy(arrivalId = ArrivalId(2)))
-        val source                = Source(arrivals)
+        val arrivals = listOfArrivals(3).sample.value
+        val source   = Source(arrivals)
 
         when(workerConfig.addJsonToMessagesWorkerSettings).thenReturn(defaultSettings)
         when(arrivalsRepo.resetMessages(any(), messagesArgumentCaptor.capture())).thenReturn(Future.successful(true))
@@ -181,13 +188,12 @@ class AddJsonToMessagesTransformerSpec extends SpecBase with ModelGenerators wit
 
         arrivalIdArgumentCaptor.getAllValues must contain theSameElementsAs arrivals.map(_.arrivalId)
         successfulUpdates must contain theSameElementsAs (List(List(arrivals(0)), List(arrivals(2))))
-        messagesArgumentCaptor.getAllValues must contain theSameElementsAs List(a0.messages, a2.messages)
+        messagesArgumentCaptor.getAllValues must contain theSameElementsAs List(arrivals(0).messages, arrivals(2).messages)
       }
 
       "when the arrival unlocking cannot be performed" in new Fixture {
-        val a0 :: a1 :: a2 :: Nil = listOfN(3, arbitrary[Arrival]).sample.value
-        val arrivals              = List(a0.copy(arrivalId = ArrivalId(0)), a1.copy(arrivalId = ArrivalId(1)), a2.copy(arrivalId = ArrivalId(2)))
-        val source                = Source(arrivals)
+        val arrivals = listOfArrivals(3).sample.value
+        val source   = Source(arrivals)
 
         when(workerConfig.addJsonToMessagesWorkerSettings).thenReturn(defaultSettings)
         when(arrivalsRepo.resetMessages(any(), messagesArgumentCaptor.capture())).thenReturn(Future.successful(true))
@@ -210,9 +216,8 @@ class AddJsonToMessagesTransformerSpec extends SpecBase with ModelGenerators wit
       }
 
       "when the arrival unlocking fails" in new Fixture {
-        val a0 :: a1 :: a2 :: Nil = listOfN(3, arbitrary[Arrival]).sample.value
-        val arrivals              = List(a0.copy(arrivalId = ArrivalId(0)), a1.copy(arrivalId = ArrivalId(1)), a2.copy(arrivalId = ArrivalId(2)))
-        val source                = Source(arrivals)
+        val arrivals = listOfArrivals(3).sample.value
+        val source   = Source(arrivals)
 
         when(workerConfig.addJsonToMessagesWorkerSettings).thenReturn(defaultSettings)
         when(arrivalsRepo.resetMessages(any(), messagesArgumentCaptor.capture())).thenReturn(Future.successful(true))
