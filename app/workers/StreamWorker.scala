@@ -28,8 +28,7 @@ import logging.Logging
 import models.LockResult
 import models.LockResult.LockAcquired
 import play.api.Configuration
-
-import scala.concurrent.ExecutionContext
+import workers.WorkerLogKeys._
 
 /**
   *
@@ -46,11 +45,15 @@ import scala.concurrent.ExecutionContext
 abstract class StreamWorker[A](
   workerLockingService: WorkerLockingService
 )(val workerName: String, config: Configuration)(implicit materializer: Materializer)
-    extends WorkerSupervisionStrategy
-    with Logging {
+    extends Logging {
 
   final val workerSettings @ WorkerSettings(enabled, interval, groupSize, parallelism, elements, per) =
     config.get[WorkerSettings](s"""workers.$workerName""")
+
+  def flow: Flow[LockResult, A, NotUsed]
+
+  private val supervisionStrategy: WorkerSupervisionStrategy =
+    ResumeNonFatalSupervisionStrategy(workerName, logger)
 
   final val source: Source[LockResult, NotUsed] =
     Source
@@ -58,14 +61,14 @@ abstract class StreamWorker[A](
       .throttle(1, interval)
       .mapAsync(1)(identity)
       .filter(_ == LockAcquired)
-
-  def flow: Flow[LockResult, A, NotUsed]
+      .withAttributes(supervisionStrategy.supervisionStrategy)
 
   final val sink: Sink[A, NotUsed] =
     Flow[A]
       .map(_ => workerLockingService.releaseLock())
       .to(Sink.ignore)
       .mapMaterializedValue(_ => NotUsed)
+      .withAttributes(supervisionStrategy.supervisionStrategy)
 
   private val sourceAndFlow: Source[A, NotUsed] =
     source
@@ -77,26 +80,14 @@ abstract class StreamWorker[A](
       .to(sink)
 
   val running: Boolean = if (enabled) {
-    logger.info(s"[WORKER_STARTED][$workerName]")
+    logger.info(s"[$WORKER_STARTED][$workerName]")
     sourceAndFlow
       .to(sink)
       .run()
     true
   } else {
-    logger.info(s"[WORKER_DISABLED][$workerName]")
+    logger.info(s"[$WORKER_STARTED][$workerName]")
     false
   }
-
-}
-
-object WorkerLogKeys {
-
-  val WORKER_STARTED            = "WORKER_STARTED"
-  val WORKER_DISABLED           = "WORKER_DISABLED"
-  val WORKER_ERROR_RESUMEABLE   = "WORKER_ERROR_RESUMEABLE"
-  val WORKER_ERROR_UNRESUMEABLE = "WORKER_ERROR_UNRESUMEABLE"
-  val WORKER_ERROR_FATAL        = "WORKER_ERROR_FATAL"
-  val WORKER_ERROR_NONFATAL     = "WORKER_ERROR_NONFATAL"
-  val WORKER_LOG                = "WORKER_LOG"
 
 }

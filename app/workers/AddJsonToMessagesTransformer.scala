@@ -30,6 +30,7 @@ import models.MovementMessageWithoutStatus
 import repositories.ArrivalMovementRepository
 import repositories.LockRepository
 import WorkerProcessingException._
+import play.api.Logger
 
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
@@ -45,38 +46,14 @@ private[workers] class AddJsonToMessagesTransformer @Inject()(
 
   private val settings = workerConfig.addJsonToMessagesWorkerSettings
 
-  private val supervisionStrategy: Attributes = ActorAttributes.supervisionStrategy {
-    case WorkerResumeableException(message, cause) =>
-      logger.warn(message, cause)
-      Supervision.resume
-
-    case WorkerResumeable(message) =>
-      logger.info(message)
-      Supervision.resume
-
-    case WorkerUnresumeable(message) =>
-      logger.error(message)
-      Supervision.stop
-
-    case WorkerUnresumeableException(message, cause) =>
-      logger.error(message, cause)
-      Supervision.stop
-
-    case NonFatal(e) =>
-      logger.warn("Worker saw an exception but will resume", e)
-      Supervision.resume
-
-    case e =>
-      logger.error("Worker saw a fatal exception and will be stopped", e)
-      Supervision.stop
-  }
+  private val supervisionStrategy: WorkerProcessingProblemSupervisionStrategy = new WorkerProcessingProblemSupervisionStrategy("add-json-to-messages", logger)
 
   val flow: Flow[Arrival, Seq[(Arrival, NotUsed)], NotUsed] =
     Flow[Arrival]
       .throttle(settings.elements, settings.per)
       .mapAsync(settings.parallelism)(run)
       .grouped(settings.groupSize)
-      .withAttributes(supervisionStrategy)
+      .withAttributes(supervisionStrategy.supervisionStrategy)
 
   private def run(arrival: Arrival): Future[(Arrival, NotUsed)] =
     arrivalLockRepository.lock(arrival.arrivalId).flatMap {

@@ -22,11 +22,15 @@ import akka.stream.Supervision
 import akka.stream.Supervision.Directive
 import logging.Logging
 import WorkerLogKeys._
+import play.api.Logger
+import workers.WorkerProcessingException.WorkerResumeable
+import workers.WorkerProcessingException.WorkerResumeableException
+import workers.WorkerProcessingException.WorkerUnresumeable
+import workers.WorkerProcessingException.WorkerUnresumeableException
 
 import scala.util.control.NonFatal
 
-trait WorkerSupervisionStrategy {
-  self: Logging with ({ type W = { def workerName: String } })#W =>
+abstract private[workers] class WorkerSupervisionStrategy(workerName: String, logger: Logger) {
 
   /**
     * The partial function that if supplied will be composed with fatalErrorSupervisionStrategy.
@@ -34,24 +38,75 @@ trait WorkerSupervisionStrategy {
     * fatalErrorSupervisionStrategy will be used.
     *
     */
-  def customSupervisionStrategy: Option[PartialFunction[Throwable, Directive]]
+  def customSupervisorStrategyDecider: Option[PartialFunction[Throwable, Directive]]
 
-  final val fatalErrorSupervisionStrategy: PartialFunction[Throwable, Directive] = {
+  final private val fatalErrorSupervisionStrategy: PartialFunction[Throwable, Directive] = {
     case e if !NonFatal(e) =>
       logger.error(s"[$WORKER_ERROR_FATAL][$workerName] Worker saw a fatal exception and will be stopped", e)
       Supervision.Stop
   }
 
-  final val defaultSupervisorStrategy: PartialFunction[Throwable, Directive] = {
+  final private val nonFatalSupervisionStrategy: PartialFunction[Throwable, Directive] = {
     case NonFatal(e) =>
       logger.warn(s"[$WORKER_ERROR_NONFATAL][$workerName] Worker saw this exception but will resume", e)
       Supervision.Resume
   }
 
-  final val supervisionStrategy: Attributes = ActorAttributes.supervisionStrategy {
-    customSupervisionStrategy
+  final def supervisionStrategy: Attributes = ActorAttributes.supervisionStrategy {
+    customSupervisorStrategyDecider
       .map(_ orElse fatalErrorSupervisionStrategy)
-      .getOrElse(defaultSupervisorStrategy orElse fatalErrorSupervisionStrategy)
+      .getOrElse(nonFatalSupervisionStrategy orElse fatalErrorSupervisionStrategy)
   }
+
+}
+
+/**
+  * A supervision strategy that resumes on non-fatal errors.
+  */
+class ResumeNonFatalSupervisionStrategy(workerName: String, logger: Logger) extends WorkerSupervisionStrategy(workerName, logger) {
+
+  override def customSupervisorStrategyDecider: Option[PartialFunction[Throwable, Directive]] = None
+
+}
+
+object ResumeNonFatalSupervisionStrategy {
+
+  def apply(workerName: String, logger: Logger): ResumeNonFatalSupervisionStrategy =
+    new ResumeNonFatalSupervisionStrategy(workerName, logger)
+
+}
+
+class WorkerProcessingProblemSupervisionStrategy(workerName: String, logger: Logger) extends WorkerSupervisionStrategy(workerName, logger) {
+  import WorkerLogKeys._
+
+  override def customSupervisorStrategyDecider: Option[PartialFunction[Throwable, Supervision.Directive]] =
+    Some({
+      case WorkerResumeableException(message, cause) =>
+        logger.warn(s"[$WORKER_ERROR_RESUMEABLE][$workerName] $message", cause)
+        Supervision.resume
+
+      case WorkerResumeable(message) =>
+        logger.info(s"[$WORKER_ERROR_RESUMEABLE][$workerName] $message")
+        Supervision.resume
+
+      case WorkerUnresumeable(message) =>
+        logger.error(s"[$WORKER_ERROR_UNRESUMEABLE][$workerName] $message")
+        Supervision.stop
+
+      case WorkerUnresumeableException(message, cause) =>
+        logger.error(s"[$WORKER_ERROR_UNRESUMEABLE][$workerName] $message", cause)
+        Supervision.stop
+
+      case NonFatal(e) =>
+        logger.warn(s"[$WORKER_ERROR_NONFATAL][$workerName] Worker saw an exception but will resume", e)
+        Supervision.resume
+    })
+
+}
+
+object WorkerProcessingProblemSupervisionStrategy {
+
+  def apply(workerName: String, logger: Logger): WorkerProcessingProblemSupervisionStrategy =
+    new WorkerProcessingProblemSupervisionStrategy(workerName, logger)
 
 }
