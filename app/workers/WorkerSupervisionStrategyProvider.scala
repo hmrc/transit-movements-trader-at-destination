@@ -20,9 +20,8 @@ import akka.stream.ActorAttributes
 import akka.stream.Attributes
 import akka.stream.Supervision
 import akka.stream.Supervision.Directive
-import logging.Logging
-import WorkerLogKeys._
 import play.api.Logger
+import workers.WorkerLogKeys._
 import workers.WorkerProcessingException.WorkerResumeable
 import workers.WorkerProcessingException.WorkerResumeableException
 import workers.WorkerProcessingException.WorkerUnresumeable
@@ -30,7 +29,7 @@ import workers.WorkerProcessingException.WorkerUnresumeableException
 
 import scala.util.control.NonFatal
 
-abstract private[workers] class WorkerSupervisionStrategy(workerName: String, logger: Logger) {
+abstract private[workers] class WorkerSupervisionStrategyProvider(workerName: String, logger: Logger) {
 
   /**
     * The partial function that if supplied will be composed with fatalErrorSupervisionStrategy.
@@ -63,20 +62,20 @@ abstract private[workers] class WorkerSupervisionStrategy(workerName: String, lo
 /**
   * A supervision strategy that resumes on non-fatal errors.
   */
-class ResumeNonFatalSupervisionStrategy(workerName: String, logger: Logger) extends WorkerSupervisionStrategy(workerName, logger) {
+class ResumeNonFatalSupervisionStrategyProvider(workerName: String, logger: Logger) extends WorkerSupervisionStrategyProvider(workerName, logger) {
 
   override def customSupervisorStrategyDecider: Option[PartialFunction[Throwable, Directive]] = None
 
 }
 
-object ResumeNonFatalSupervisionStrategy {
+object ResumeNonFatalSupervisionStrategyProvider {
 
-  def apply(workerName: String, logger: Logger): ResumeNonFatalSupervisionStrategy =
-    new ResumeNonFatalSupervisionStrategy(workerName, logger)
+  def apply(workerName: String, logger: Logger): ResumeNonFatalSupervisionStrategyProvider =
+    new ResumeNonFatalSupervisionStrategyProvider(workerName, logger)
 
 }
 
-class WorkerProcessingProblemSupervisionStrategy(workerName: String, logger: Logger) extends WorkerSupervisionStrategy(workerName, logger) {
+class WorkerProcessingProblemSupervisionStrategyProvider(workerName: String, logger: Logger) extends WorkerSupervisionStrategyProvider(workerName, logger) {
   import WorkerLogKeys._
 
   override def customSupervisorStrategyDecider: Option[PartialFunction[Throwable, Supervision.Directive]] =
@@ -104,9 +103,9 @@ class WorkerProcessingProblemSupervisionStrategy(workerName: String, logger: Log
 
 }
 
-object WorkerProcessingProblemSupervisionStrategy {
+object WorkerProcessingProblemSupervisionStrategyProvider {
 
-  def apply(workerName: String, logger: Logger): WorkerProcessingProblemSupervisionStrategy =
-    new WorkerProcessingProblemSupervisionStrategy(workerName, logger)
+  def apply(workerName: String, logger: Logger): WorkerProcessingProblemSupervisionStrategyProvider =
+    new WorkerProcessingProblemSupervisionStrategyProvider(workerName, logger)
 
 }

@@ -46,7 +46,8 @@ private[workers] class AddJsonToMessagesTransformer @Inject()(
 
   private val settings = workerConfig.addJsonToMessagesWorkerSettings
 
-  private val supervisionStrategy: WorkerProcessingProblemSupervisionStrategy = new WorkerProcessingProblemSupervisionStrategy("add-json-to-messages", logger)
+  private val supervisionStrategy: WorkerProcessingProblemSupervisionStrategyProvider =
+    new WorkerProcessingProblemSupervisionStrategyProvider("add-json-to-messages", logger)
 
   val flow: Flow[Arrival, Seq[(Arrival, NotUsed)], NotUsed] =
     Flow[Arrival]

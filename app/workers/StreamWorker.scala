@@ -52,8 +52,8 @@ abstract class StreamWorker[A](
 
   def flow: Flow[LockResult, A, NotUsed]
 
-  private val supervisionStrategy: WorkerSupervisionStrategy =
-    ResumeNonFatalSupervisionStrategy(workerName, logger)
+  private val supervisionStrategy: WorkerSupervisionStrategyProvider =
+    ResumeNonFatalSupervisionStrategyProvider(workerName, logger)
 
   final val source: Source[LockResult, NotUsed] =
     Source
