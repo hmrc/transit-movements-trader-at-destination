@@ -67,24 +67,18 @@ abstract class StreamWorker[A](
       .to(Sink.ignore)
       .mapMaterializedValue(_ => NotUsed)
 
-  private val sourceAndFlow: Source[A, NotUsed] =
-    source
-      .via(flow)
-
-  val runWithTap: RunnableGraph[SinkQueueWithCancel[A]] =
-    sourceAndFlow
-      .wireTapMat(Sink.queue())(Keep.right)
-      .to(sink)
-
-  val running: Boolean = if (enabled) {
+  val tap: Option[SinkQueueWithCancel[A]] = if (enabled) {
     logger.info(s"[WORKER_STARTED][$workerName]")
-    sourceAndFlow
-      .to(sink)
-      .run()
-    true
+    Some(
+      source
+        .via(flow)
+        .wireTapMat(Sink.queue())(Keep.right)
+        .to(sink)
+        .run()
+    )
   } else {
     logger.info(s"[WORKER_DISABLED][$workerName]")
-    false
+    None
   }
 
 }
