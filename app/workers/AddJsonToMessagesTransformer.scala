@@ -54,7 +54,7 @@ private[workers] class AddJsonToMessagesTransformer @Inject()(
       .throttle(settings.elements, settings.per)
       .mapAsync(settings.parallelism)(run)
       .grouped(settings.groupSize)
-      .withAttributes(supervisionStrategy.supervisionStrategy)
+      .withAttributes(ActorAttributes.supervisionStrategy(supervisionStrategy.supervisionStrategy))
 
   private def run(arrival: Arrival): Future[(Arrival, NotUsed)] =
     arrivalLockRepository.lock(arrival.arrivalId).flatMap {

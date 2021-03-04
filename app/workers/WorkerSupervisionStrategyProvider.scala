@@ -51,11 +51,10 @@ abstract private[workers] class WorkerSupervisionStrategyProvider(workerName: St
       Supervision.Resume
   }
 
-  final def supervisionStrategy: Attributes = ActorAttributes.supervisionStrategy {
+  final def supervisionStrategy: Supervision.Decider =
     customSupervisorStrategyDecider
       .map(_ orElse fatalErrorSupervisionStrategy)
       .getOrElse(nonFatalSupervisionStrategy orElse fatalErrorSupervisionStrategy)
-  }
 
 }
 

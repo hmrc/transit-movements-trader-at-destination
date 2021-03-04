@@ -17,6 +17,7 @@
 package workers
 
 import akka.NotUsed
+import akka.stream.ActorAttributes
 import akka.stream.Materializer
 import akka.stream.scaladsl.Flow
 import akka.stream.scaladsl.Keep
@@ -61,14 +62,14 @@ abstract class StreamWorker[A](
       .throttle(1, interval)
       .mapAsync(1)(identity)
       .filter(_ == LockAcquired)
-      .withAttributes(supervisionStrategy.supervisionStrategy)
+      .withAttributes(ActorAttributes.supervisionStrategy(supervisionStrategy.supervisionStrategy))
 
   final val sink: Sink[A, NotUsed] =
     Flow[A]
       .map(_ => workerLockingService.releaseLock())
       .to(Sink.ignore)
       .mapMaterializedValue(_ => NotUsed)
-      .withAttributes(supervisionStrategy.supervisionStrategy)
+      .withAttributes(ActorAttributes.supervisionStrategy(supervisionStrategy.supervisionStrategy))
 
   private val sourceAndFlow: Source[A, NotUsed] =
     source
