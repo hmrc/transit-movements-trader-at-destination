@@ -53,8 +53,8 @@ abstract class StreamWorker[A](
 
   def flow: Flow[LockResult, A, NotUsed]
 
-  private val supervisionStrategy: WorkerSupervisionStrategyProvider =
-    ResumeNonFatalSupervisionStrategyProvider(workerName, logger)
+  private val supervisionDeciderProvider: WorkerSupervisionDeciderProvider =
+    ResumeNonFatalSupervisionDeciderProvider(workerName, logger)
 
   final val source: Source[LockResult, NotUsed] =
     Source
@@ -62,14 +62,14 @@ abstract class StreamWorker[A](
       .throttle(1, interval)
       .mapAsync(1)(identity)
       .filter(_ == LockAcquired)
-      .withAttributes(ActorAttributes.supervisionStrategy(supervisionStrategy.supervisionStrategy))
+      .withAttributes(ActorAttributes.supervisionStrategy(supervisionDeciderProvider.supervisionDecider))
 
   final val sink: Sink[A, NotUsed] =
     Flow[A]
       .map(_ => workerLockingService.releaseLock())
       .to(Sink.ignore)
       .mapMaterializedValue(_ => NotUsed)
-      .withAttributes(ActorAttributes.supervisionStrategy(supervisionStrategy.supervisionStrategy))
+      .withAttributes(ActorAttributes.supervisionStrategy(supervisionDeciderProvider.supervisionDecider))
 
   private val sourceAndFlow: Source[A, NotUsed] =
     source

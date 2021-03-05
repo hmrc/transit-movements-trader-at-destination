@@ -29,7 +29,7 @@ import workers.WorkerProcessingException.WorkerUnresumeableException
 
 import scala.util.control.NonFatal
 
-abstract private[workers] class WorkerSupervisionStrategyProvider(workerName: String, logger: Logger) {
+abstract private[workers] class WorkerSupervisionDeciderProvider(workerName: String, logger: Logger) {
 
   /**
     * The partial function that if supplied will be composed with fatalErrorSupervisionStrategy.
@@ -37,47 +37,47 @@ abstract private[workers] class WorkerSupervisionStrategyProvider(workerName: St
     * fatalErrorSupervisionStrategy will be used.
     *
     */
-  def customSupervisorStrategyDecider: Option[PartialFunction[Throwable, Directive]]
+  def customSupervisorDecider: Option[PartialFunction[Throwable, Directive]]
 
-  final private val fatalErrorSupervisionStrategy: PartialFunction[Throwable, Directive] = {
+  final private val fatalErrorSupervisorDecider: PartialFunction[Throwable, Directive] = {
     case e if !NonFatal(e) =>
       logger.error(s"[$WORKER_ERROR_FATAL][$workerName] Worker saw a fatal exception and will be stopped", e)
       Supervision.Stop
   }
 
-  final private val nonFatalSupervisionStrategy: PartialFunction[Throwable, Directive] = {
+  final private val nonFatalSupervisorDecider: PartialFunction[Throwable, Directive] = {
     case NonFatal(e) =>
       logger.warn(s"[$WORKER_ERROR_NONFATAL][$workerName] Worker saw this exception but will resume", e)
       Supervision.Resume
   }
 
-  final def supervisionStrategy: Supervision.Decider =
-    customSupervisorStrategyDecider
-      .map(_ orElse fatalErrorSupervisionStrategy)
-      .getOrElse(nonFatalSupervisionStrategy orElse fatalErrorSupervisionStrategy)
+  final def supervisionDecider: Supervision.Decider =
+    customSupervisorDecider
+      .map(_ orElse fatalErrorSupervisorDecider)
+      .getOrElse(nonFatalSupervisorDecider orElse fatalErrorSupervisorDecider)
 
 }
 
 /**
   * A supervision strategy that resumes on non-fatal errors.
   */
-class ResumeNonFatalSupervisionStrategyProvider(workerName: String, logger: Logger) extends WorkerSupervisionStrategyProvider(workerName, logger) {
+class ResumeNonFatalSupervisionDeciderProvider(workerName: String, logger: Logger) extends WorkerSupervisionDeciderProvider(workerName, logger) {
 
-  override def customSupervisorStrategyDecider: Option[PartialFunction[Throwable, Directive]] = None
-
-}
-
-object ResumeNonFatalSupervisionStrategyProvider {
-
-  def apply(workerName: String, logger: Logger): ResumeNonFatalSupervisionStrategyProvider =
-    new ResumeNonFatalSupervisionStrategyProvider(workerName, logger)
+  override def customSupervisorDecider: Option[PartialFunction[Throwable, Directive]] = None
 
 }
 
-class WorkerProcessingProblemSupervisionStrategyProvider(workerName: String, logger: Logger) extends WorkerSupervisionStrategyProvider(workerName, logger) {
+object ResumeNonFatalSupervisionDeciderProvider {
+
+  def apply(workerName: String, logger: Logger): ResumeNonFatalSupervisionDeciderProvider =
+    new ResumeNonFatalSupervisionDeciderProvider(workerName, logger)
+
+}
+
+class WorkerProcessingProblemSupervisionDeciderProvider(workerName: String, logger: Logger) extends WorkerSupervisionDeciderProvider(workerName, logger) {
   import WorkerLogKeys._
 
-  override def customSupervisorStrategyDecider: Option[PartialFunction[Throwable, Supervision.Directive]] =
+  override def customSupervisorDecider: Option[PartialFunction[Throwable, Supervision.Directive]] =
     Some({
       case WorkerResumeableException(message, cause) =>
         logger.warn(s"[$WORKER_ERROR_RESUMEABLE][$workerName] $message", cause)
@@ -102,9 +102,9 @@ class WorkerProcessingProblemSupervisionStrategyProvider(workerName: String, log
 
 }
 
-object WorkerProcessingProblemSupervisionStrategyProvider {
+object WorkerProcessingProblemSupervisionDeciderProvider {
 
-  def apply(workerName: String, logger: Logger): WorkerProcessingProblemSupervisionStrategyProvider =
-    new WorkerProcessingProblemSupervisionStrategyProvider(workerName, logger)
+  def apply(workerName: String, logger: Logger): WorkerProcessingProblemSupervisionDeciderProvider =
+    new WorkerProcessingProblemSupervisionDeciderProvider(workerName, logger)
 
 }

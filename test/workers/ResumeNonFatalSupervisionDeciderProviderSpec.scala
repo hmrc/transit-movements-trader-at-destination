@@ -22,19 +22,19 @@ import play.api.Logger
 
 import scala.util.control.ControlThrowable
 
-class ResumeNonFatalSupervisionStrategyProviderSpec extends SpecBase {
+class ResumeNonFatalSupervisionDeciderProviderSpec extends SpecBase {
   val mockLogger  = mock[Logger]
-  private val sut = ResumeNonFatalSupervisionStrategyProvider("worker-name", mockLogger)
+  private val sut = ResumeNonFatalSupervisionDeciderProvider("worker-name", mockLogger)
 
   "when a fatal exception is received then a Stop Directive is returned" in {
 
-    sut.supervisionStrategy(new ControlThrowable {}) must equal(Supervision.Stop)
+    sut.supervisionDecider(new ControlThrowable {}) must equal(Supervision.Stop)
 
   }
 
   "when a non-fatal exception is received then a Resume Directive is returned" in {
 
-    sut.supervisionStrategy(new RuntimeException("a non-fatal exception")) must equal(Supervision.Resume)
+    sut.supervisionDecider(new RuntimeException("a non-fatal exception")) must equal(Supervision.Resume)
 
   }
 

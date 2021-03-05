@@ -23,32 +23,32 @@ import workers.WorkerProcessingException._
 
 import scala.util.control.ControlThrowable
 
-class WorkerProcessingProblemSupervisionStrategyProviderSpec extends SpecBase {
+class WorkerProcessingProblemSupervisionDeciderProviderSpec extends SpecBase {
   val mockLogger  = mock[Logger]
-  private val sut = WorkerProcessingProblemSupervisionStrategyProvider("worker-name", mockLogger)
+  private val sut = WorkerProcessingProblemSupervisionDeciderProvider("worker-name", mockLogger)
 
   "when a fatal exception is received then a Stop Directive is returned" in {
-    sut.supervisionStrategy(new ControlThrowable {}) must equal(Supervision.Stop)
+    sut.supervisionDecider(new ControlThrowable {}) must equal(Supervision.Stop)
   }
 
   "WorkerResumeableException exception is received then a Resume Directive is returned" in {
-    sut.supervisionStrategy(new WorkerResumeableException("msg", new Throwable)) mustEqual Supervision.Resume
+    sut.supervisionDecider(new WorkerResumeableException("msg", new Throwable)) mustEqual Supervision.Resume
   }
 
   "WorkerResumeable exception is received then a Resume Directive is returned" in {
-    sut.supervisionStrategy(new WorkerResumeable("msg")) mustEqual Supervision.Resume
+    sut.supervisionDecider(new WorkerResumeable("msg")) mustEqual Supervision.Resume
   }
 
   "WorkerUnresumeable exception is received then a Stop Directive is returned" in {
-    sut.supervisionStrategy(new WorkerUnresumeable("msg")) mustEqual Supervision.Stop
+    sut.supervisionDecider(new WorkerUnresumeable("msg")) mustEqual Supervision.Stop
   }
 
   "WorkerUnresumeableException exception is received then a Stop Directive is returned" in {
-    sut.supervisionStrategy(new WorkerUnresumeableException("msg", new Throwable)) mustEqual Supervision.Stop
+    sut.supervisionDecider(new WorkerUnresumeableException("msg", new Throwable)) mustEqual Supervision.Stop
   }
 
   "when a non-fatal exception is received then a Resume Directive is returned" in {
-    sut.supervisionStrategy(new RuntimeException("a non-fatal exception")) must equal(Supervision.Resume)
+    sut.supervisionDecider(new RuntimeException("a non-fatal exception")) must equal(Supervision.Resume)
   }
 
 }

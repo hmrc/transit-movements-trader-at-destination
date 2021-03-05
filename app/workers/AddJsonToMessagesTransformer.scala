@@ -46,15 +46,15 @@ private[workers] class AddJsonToMessagesTransformer @Inject()(
 
   private val settings = workerConfig.addJsonToMessagesWorkerSettings
 
-  private val supervisionStrategy: WorkerProcessingProblemSupervisionStrategyProvider =
-    new WorkerProcessingProblemSupervisionStrategyProvider("add-json-to-messages", logger)
+  private val supervisionDeciderProvider: WorkerProcessingProblemSupervisionDeciderProvider =
+    new WorkerProcessingProblemSupervisionDeciderProvider("add-json-to-messages", logger)
 
   val flow: Flow[Arrival, Seq[(Arrival, NotUsed)], NotUsed] =
     Flow[Arrival]
       .throttle(settings.elements, settings.per)
       .mapAsync(settings.parallelism)(run)
       .grouped(settings.groupSize)
-      .withAttributes(ActorAttributes.supervisionStrategy(supervisionStrategy.supervisionStrategy))
+      .withAttributes(ActorAttributes.supervisionStrategy(supervisionDeciderProvider.supervisionDecider))
 
   private def run(arrival: Arrival): Future[(Arrival, NotUsed)] =
     arrivalLockRepository.lock(arrival.arrivalId).flatMap {
