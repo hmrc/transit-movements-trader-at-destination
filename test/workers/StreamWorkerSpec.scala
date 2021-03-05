@@ -47,7 +47,7 @@ class StreamWorkerSpec extends SpecBase {
 
       val flow = Flow[LockResult].map(_ => 1)
 
-      val stream = streamWorker(flow).runWithTap.run()
+      val stream = streamWorker(flow).tap.value
 
       stream.pull.futureValue.value mustEqual 1
       stream.pull.futureValue.value mustEqual 1
@@ -69,7 +69,7 @@ class StreamWorkerSpec extends SpecBase {
 
       val flow = Flow[LockResult].map(_ => 1)
 
-      val stream = streamWorker(flow).runWithTap.run()
+      val stream = streamWorker(flow).tap.value
 
       stream.pull.futureValue.value mustEqual 1
       stream.pull.futureValue.value mustEqual 1
@@ -87,7 +87,7 @@ class StreamWorkerSpec extends SpecBase {
 
       val flow = Flow[LockResult].map(_ => 1)
 
-      val stream = streamWorker(flow).runWithTap.run()
+      val stream = streamWorker(flow).tap.value
 
       stream.pull.futureValue must not be (defined)
       numberOfUnlocks mustEqual 0
@@ -106,7 +106,7 @@ class StreamWorkerSpec extends SpecBase {
 
       val flow = Flow[LockResult].map(_ => 1)
 
-      val stream = streamWorker(flow).runWithTap.run()
+      val stream = streamWorker(flow).tap.value
 
       numberOfUnlocks mustEqual 0
       stream.pull.futureValue must not be (defined)
@@ -127,7 +127,7 @@ class StreamWorkerSpec extends SpecBase {
 
       val flow = Flow[LockResult].map(_ => 1)
 
-      val stream = streamWorker(flow).runWithTap.run()
+      val stream = streamWorker(flow).tap.value
 
       numberOfUnlocks mustEqual 0
       stream.pull.futureValue must be(defined)
@@ -160,7 +160,7 @@ class StreamWorkerSpec extends SpecBase {
       parallelism = 32,
       elements = 1,
       per = 1.second,
-      enabled = false // Disables the automatic running of the stream for exclusive testing via runWithTap
+      enabled = true
     )
 
     protected val playConfig: Configuration = mock[Configuration]

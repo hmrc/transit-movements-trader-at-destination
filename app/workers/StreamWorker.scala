@@ -21,7 +21,6 @@ import akka.stream.ActorAttributes
 import akka.stream.Materializer
 import akka.stream.scaladsl.Flow
 import akka.stream.scaladsl.Keep
-import akka.stream.scaladsl.RunnableGraph
 import akka.stream.scaladsl.Sink
 import akka.stream.scaladsl.SinkQueueWithCancel
 import akka.stream.scaladsl.Source
@@ -71,24 +70,18 @@ abstract class StreamWorker[A](
       .mapMaterializedValue(_ => NotUsed)
       .withAttributes(ActorAttributes.supervisionStrategy(supervisionDeciderProvider.supervisionDecider))
 
-  private val sourceAndFlow: Source[A, NotUsed] =
-    source
-      .via(flow)
-
-  val runWithTap: RunnableGraph[SinkQueueWithCancel[A]] =
-    sourceAndFlow
-      .wireTapMat(Sink.queue())(Keep.right)
-      .to(sink)
-
-  val running: Boolean = if (enabled) {
+  val tap: Option[SinkQueueWithCancel[A]] = if (enabled) {
     logger.info(s"[$WORKER_STARTED][$workerName]")
-    sourceAndFlow
-      .to(sink)
-      .run()
-    true
+    Some(
+      source
+        .via(flow)
+        .wireTapMat(Sink.queue())(Keep.right)
+        .to(sink)
+        .run()
+    )
   } else {
     logger.info(s"[$WORKER_STARTED][$workerName]")
-    false
+    None
   }
 
 }
