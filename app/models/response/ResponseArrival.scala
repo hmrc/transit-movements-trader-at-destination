@@ -16,7 +16,6 @@
 
 package models.response
 
-import java.time.LocalDateTime
 import controllers.routes
 import models.Arrival
 import models.ArrivalId
@@ -27,6 +26,8 @@ import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import play.api.libs.json.OWrites
 import play.api.libs.json.Reads
+
+import java.time.LocalDateTime
 
 case class ResponseArrival(arrivalId: ArrivalId,
                            location: String,

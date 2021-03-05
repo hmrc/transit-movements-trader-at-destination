@@ -16,12 +16,13 @@
 
 package workers
 
-import com.google.inject.AbstractModule
-
-class WorkerModule extends AbstractModule {
-
-  override def configure(): Unit = {
-    bind(classOf[AddJsonToMessagesWorker]).asEagerSingleton()
-    bind(classOf[WorkerLockingService]).to(classOf[WorkerLockingServiceImpl]).asEagerSingleton()
-  }
+private[workers] object WorkerLogKeys extends Enumeration {
+  type WorkerLogKeys = Value
+  val WORKER_STARTED            = Value
+  val WORKER_DISABLED           = Value
+  val WORKER_ERROR_RESUMEABLE   = Value
+  val WORKER_ERROR_UNRESUMEABLE = Value
+  val WORKER_ERROR_FATAL        = Value
+  val WORKER_ERROR_NONFATAL     = Value
+  val WORKER_LOG                = Value
 }

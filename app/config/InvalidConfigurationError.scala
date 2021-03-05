@@ -14,14 +14,6 @@
  * limitations under the License.
  */
 
-package workers
+package config
 
-import com.google.inject.AbstractModule
-
-class WorkerModule extends AbstractModule {
-
-  override def configure(): Unit = {
-    bind(classOf[AddJsonToMessagesWorker]).asEagerSingleton()
-    bind(classOf[WorkerLockingService]).to(classOf[WorkerLockingServiceImpl]).asEagerSingleton()
-  }
-}
+class InvalidConfigurationError(errorMessage: String) extends RuntimeException(errorMessage)

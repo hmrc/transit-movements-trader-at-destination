@@ -16,12 +16,16 @@
 
 package workers
 
-import com.google.inject.AbstractModule
+sealed private[workers] trait WorkerProcessingProblem
 
-class WorkerModule extends AbstractModule {
+private[workers] object WorkerProcessingException {
 
-  override def configure(): Unit = {
-    bind(classOf[AddJsonToMessagesWorker]).asEagerSingleton()
-    bind(classOf[WorkerLockingService]).to(classOf[WorkerLockingServiceImpl]).asEagerSingleton()
-  }
+  case class WorkerUnresumeable(message: String) extends RuntimeException(message) with WorkerProcessingProblem
+
+  case class WorkerUnresumeableException(message: String, cause: Throwable) extends RuntimeException(message, cause) with WorkerProcessingProblem
+
+  case class WorkerResumeable(message: String) extends RuntimeException(message) with WorkerProcessingProblem
+
+  case class WorkerResumeableException(message: String, cause: Throwable) extends RuntimeException(message, cause) with WorkerProcessingProblem
+
 }

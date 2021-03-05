@@ -14,14 +14,18 @@
  * limitations under the License.
  */
 
-package workers
+import akka.event.Logging.LogLevel
+import play.api.ConfigLoader
+import play.api.Configuration
 
-import com.google.inject.AbstractModule
+package object config {
 
-class WorkerModule extends AbstractModule {
+  implicit lazy val configLoader: ConfigLoader[LogLevel] = ConfigLoader {
+    config => prefix =>
+      val configAtPath = Configuration(config).get[Configuration](prefix)
+      val level        = configAtPath.get[String]("level")
 
-  override def configure(): Unit = {
-    bind(classOf[AddJsonToMessagesWorker]).asEagerSingleton()
-    bind(classOf[WorkerLockingService]).to(classOf[WorkerLockingServiceImpl]).asEagerSingleton()
+      StreamLoggingConfig.getLogLevel(level)
   }
+
 }

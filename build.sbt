@@ -37,8 +37,8 @@ lazy val microservice = Project(appName, file("."))
 
 lazy val scoverageSettings = {
   Seq(
-    ScoverageKeys.coverageExcludedPackages := """uk\.gov\.hmrc\.BuildInfo*;.*\.Routes;.*\.RoutesPrefix;.*\.Reverse[^.]*;testonly;config.*""",
-    ScoverageKeys.coverageMinimum := 85.00,
+    ScoverageKeys.coverageExcludedPackages := """uk\.gov\.hmrc\.BuildInfo*;.*\.Routes;.*\.RoutesPrefix;.*\.Reverse[^.]*;testonly;controllers.testOnly;config.*;logging""",
+    ScoverageKeys.coverageMinimum := 82.00,
     ScoverageKeys.coverageExcludedFiles := "<empty>;.*javascript.*;.*Routes.*;",
     ScoverageKeys.coverageFailOnMinimum := true,
     ScoverageKeys.coverageHighlighting := true,
@@ -64,9 +64,10 @@ lazy val itSettings = Defaults.itSettings ++ Seq(
 )
 
 lazy val testSettings = Seq(
-  fork := false,
+  fork := true,
   javaOptions ++= Seq(
-    "-Dconfig.resource=test.application.conf"
+    "-Dconfig.resource=test.application.conf",
+    "-Dlogger.resource=logback-test.xml"
   ),
   unmanagedResourceDirectories := Seq(
     baseDirectory.value / "test" / "resources"

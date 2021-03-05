@@ -35,5 +35,6 @@ class Module extends AbstractModule {
     bind(classOf[AuthenticatedGetOptionalArrivalForWriteActionProvider]).to(classOf[AuthenticatedGetOptionalArrivalForWriteActionProviderImpl])
     bind(classOf[AuthenticatedGetArrivalForReadActionProvider]).to(classOf[AuthenticatedGetArrivalForReadActionProviderImpl])
     bind(classOf[MessageTranslation]).asEagerSingleton()
+    bind(classOf[StreamLoggingConfig]).to(classOf[StreamLoggingConfigImpl]).asEagerSingleton()
   }
 }

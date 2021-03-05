@@ -18,7 +18,8 @@ package logging
 
 import play.api.Logger
 
-trait Logging {
+trait Logging extends LoggerName {
 
-  protected val logger: Logger = Logger(s"application.${this.getClass.getCanonicalName}")
+  final val logger: Logger = Logger(loggerName)
+
 }

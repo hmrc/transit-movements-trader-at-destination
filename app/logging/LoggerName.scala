@@ -14,14 +14,10 @@
  * limitations under the License.
  */
 
-package workers
+package logging
 
-import com.google.inject.AbstractModule
+private[logging] trait LoggerName {
 
-class WorkerModule extends AbstractModule {
+  final val loggerName = s"application.${this.getClass.getCanonicalName}"
 
-  override def configure(): Unit = {
-    bind(classOf[AddJsonToMessagesWorker]).asEagerSingleton()
-    bind(classOf[WorkerLockingService]).to(classOf[WorkerLockingServiceImpl]).asEagerSingleton()
-  }
 }

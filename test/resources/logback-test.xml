@@ -4,7 +4,10 @@
             <pattern>%date{ISO8601} level=[%level] logger=[%logger] thread=[%thread] message=[%message] %replace(exception=[%xException]){'^exception=\[\]$',''}%n</pattern>
         </encoder>
     </appender>
-    <root level="ERROR">
+
+    <logger name="application" level="OFF" />
+
+    <root level="OFF">
         <appender-ref ref="CONSOLE"/>
     </root>
 </configuration>

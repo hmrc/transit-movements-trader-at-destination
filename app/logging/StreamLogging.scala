@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-package workers
+package logging
 
-import com.google.inject.AbstractModule
+import akka.actor.ActorSystem
+import akka.event.{Logging => AkkaEventLogging}
+import akka.event.LoggingAdapter
 
-class WorkerModule extends AbstractModule {
+trait StreamLoggerAdapter extends LoggerName {
 
-  override def configure(): Unit = {
-    bind(classOf[AddJsonToMessagesWorker]).asEagerSingleton()
-    bind(classOf[WorkerLockingService]).to(classOf[WorkerLockingServiceImpl]).asEagerSingleton()
-  }
+  implicit def adapter(implicit actorSystem: ActorSystem): LoggingAdapter =
+    AkkaEventLogging(actorSystem, loggerName)
+
 }
