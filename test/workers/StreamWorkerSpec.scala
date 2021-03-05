@@ -170,8 +170,6 @@ class StreamWorkerSpec extends SpecBase {
 
       override def flow: Flow[LockResult, Int, NotUsed] = testFlow
 
-      override def customSupervisionStrategy: Option[PartialFunction[Throwable, Supervision.Directive]] = None
-
     }
 
   }
