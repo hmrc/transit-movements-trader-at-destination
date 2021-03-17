@@ -117,10 +117,10 @@ class ArrivalMovementRepository @Inject()(
   )
   private val lastUpdatedIndex: Aux[BSONSerializationPack.type] = IndexUtils.index(
     key = Seq("lastUpdated" -> IndexType.Ascending),
-    name = Some("last-updated-index-6m"),
+    name = Some("last-updated-index"),
     options = BSONDocument("expireAfterSeconds" -> appConfig.cacheTtl)
   )
-  private val oldLastUpdatedIndexName = "last-updated-index"
+  private val oldLastUpdatedIndexName = "last-updated-index-6m"
   private val collectionName          = ArrivalMovementRepository.collectionName
 
   def insert(arrival: Arrival): Future[Unit] =
