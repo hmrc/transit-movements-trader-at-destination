@@ -18,14 +18,13 @@ package controllers
 
 import base.SpecBase
 import generators.ModelGenerators
+import models.ChannelType.web
 import models.Arrival
 import models.ArrivalId
-import models.ChannelType.web
 import models.MessageSender
 import models.SubmissionProcessingResult
-import models.request.actions.FakeInboundMessageBadRequestTransformer
-import models.request.actions.FakeInboundMessageTransformer
-import models.request.actions.InboundMessageTransformerInterface
+import models.request.actions.FakeMessageTransformer
+import models.request.actions.MessageTransformerInterface
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
 import org.scalacheck.Arbitrary
@@ -77,7 +76,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
             bind[LockRepository].toInstance(mockLockRepository),
             bind[SaveMessageService].toInstance(mockSaveMessageService),
-            bind[InboundMessageTransformerInterface].to[FakeInboundMessageTransformer]
+            bind[MessageTransformerInterface].to[FakeMessageTransformer]
           )
           .build()
 
@@ -131,7 +130,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
             bind[LockRepository].toInstance(mockLockRepository),
             bind[SaveMessageService].toInstance(mockSaveMessageService),
-            bind[InboundMessageTransformerInterface].to[FakeInboundMessageTransformer]
+            bind[MessageTransformerInterface].to[FakeMessageTransformer]
           )
           .build()
 
@@ -159,7 +158,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
             bind[LockRepository].toInstance(mockLockRepository),
             bind[SaveMessageService].toInstance(mockSaveMessageService),
-            bind[InboundMessageTransformerInterface].to[FakeInboundMessageBadRequestTransformer]
+            bind[MessageTransformerInterface].to[FakeMessageTransformer]
           )
           .build()
 
@@ -188,7 +187,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
             bind[LockRepository].toInstance(mockLockRepository),
             bind[SaveMessageService].toInstance(mockSaveMessageService),
-            bind[InboundMessageTransformerInterface].to[FakeInboundMessageTransformer]
+            bind[MessageTransformerInterface].to[FakeMessageTransformer]
           )
           .build()
 

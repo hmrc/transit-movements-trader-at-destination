@@ -83,10 +83,22 @@ class ArrivalMovementMessageService @Inject()(arrivalIdRepository: ArrivalIdRepo
                           messageCorrelationId: Int,
                           messageType: MessageType): ReaderT[ParseHandler, NodeSeq, MovementMessageWithStatus] =
     for {
-      _          <- correctRootNodeR(messageType)
-      dateTime   <- dateTimeOfPrepR
-      xmlMessage <- updateMesSenMES3(arrivalId, messageCorrelationId)
-    } yield MovementMessageWithStatus(dateTime, messageType, xmlMessage, SubmissionPending, messageCorrelationId)
+      _ <- {
+        println(s"\n\n 1")
+        correctRootNodeR(messageType)
+      }
+      dateTime <- {
+        println(s"\n\n 2")
+        dateTimeOfPrepR
+      }
+      xmlMessage <- {
+        println(s"\n\n 3")
+        updateMesSenMES3(arrivalId, messageCorrelationId)
+      }
+    } yield {
+      println(s"\n\n 4")
+      MovementMessageWithStatus(dateTime, messageType, xmlMessage, SubmissionPending, messageCorrelationId)
+    }
 
   private[this] def nodeSeqToEither(xml: NodeSeq): ParseHandler[NodeSeq] =
     if (xml != null) {

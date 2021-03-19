@@ -19,27 +19,27 @@ package models.request.actions
 import com.google.inject.ImplementedBy
 import com.google.inject.Inject
 import logging.Logging
+import models.request.ArrivalRequest
 import models.ArrivalRejectedResponse
 import models.ChannelType
 import models.GoodsReleasedResponse
-import models.MessageInbound
+import models.Message
 import models.MessageResponse
 import models.MessageType
 import models.UnloadingPermissionResponse
 import models.UnloadingRemarksRejectedResponse
 import models.XMLSubmissionNegativeAcknowledgementResponse
-import models.request.ArrivalRequest
 import play.api.mvc.Results.BadRequest
 import play.api.mvc._
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class InboundMessageTransformer @Inject()(implicit ec: ExecutionContext) extends InboundMessageTransformerInterface with Logging {
+class MessageTransformer @Inject()(implicit ec: ExecutionContext) extends MessageTransformerInterface with Logging {
 
   def executionContext: ExecutionContext = ec
 
-  override protected def refine[A](request: ArrivalRequest[A]): Future[Either[Result, InboundRequest[A]]] = {
+  override protected def refine[A](request: ArrivalRequest[A]): Future[Either[Result, MessageTransformRequest[A]]] = {
 
     logger.debug(s"CTC Headers ${request.headers}")
 
@@ -53,7 +53,7 @@ class InboundMessageTransformer @Inject()(implicit ec: ExecutionContext) extends
             logger.debug(s"Next state $nextState")
 
             Future.successful(
-              Right(InboundRequest(MessageInbound(response, nextState), request))
+              Right(MessageTransformRequest(Message(response, nextState), request))
             )
           case Left(error) =>
             logger.warn(s"Unable to transition movement state ${error.reason}")
@@ -88,7 +88,8 @@ class InboundMessageTransformer @Inject()(implicit ec: ExecutionContext) extends
 
 }
 
-@ImplementedBy(classOf[InboundMessageTransformer])
-trait InboundMessageTransformerInterface extends ActionRefiner[ArrivalRequest, InboundRequest]
+// TODO remove this, not required
+@ImplementedBy(classOf[MessageTransformer])
+trait MessageTransformerInterface extends ActionRefiner[ArrivalRequest, MessageTransformRequest]
 
-case class InboundRequest[A](val inboundMessage: MessageInbound, val request: ArrivalRequest[A]) extends WrappedRequest[A](request)
+case class MessageTransformRequest[A](val message: Message, val arrivalRequest: ArrivalRequest[A]) extends WrappedRequest[A](arrivalRequest)

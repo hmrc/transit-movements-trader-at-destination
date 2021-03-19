@@ -19,6 +19,7 @@ package controllers
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+
 import audit.AuditService
 import audit.AuditType
 import base.SpecBase
@@ -40,6 +41,8 @@ import models.MovementMessageWithStatus
 import models.MovementMessageWithoutStatus
 import models.MovementReferenceNumber
 import models.SubmissionProcessingResult
+import models.request.actions.FakeMessageTransformer
+import models.request.actions.MessageTransformerInterface
 import models.response.ResponseArrivalWithMessages
 import models.response.ResponseMovementMessage
 import org.mockito.ArgumentCaptor
@@ -125,6 +128,8 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
 
   val arrival = arrivalWithOneMessage.sample.value
 
+//  private val arrival = Arbitrary.arbitrary[Arrival].sample.value
+
   "MessagesController" - {
 
     "post" - {
@@ -141,7 +146,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(true))
         when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(arrival)))
 
-        when(mockSubmitMessageService.submitMessage(any(), any(), any(), eqTo(ArrivalStatus.UnloadingRemarksSubmitted), any())(any()))
+        when(mockSubmitMessageService.submitMessage(any(), any(), any(), any(), any())(any()))
           .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionSuccess))
 
         val application = baseApplicationBuilder
@@ -149,7 +154,8 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
             bind[LockRepository].toInstance(mockLockRepository),
             bind[SubmitMessageService].toInstance(mockSubmitMessageService),
-            bind[AuditService].toInstance(mockAuditService)
+            bind[AuditService].toInstance(mockAuditService),
+            bind[MessageTransformerInterface].to[FakeMessageTransformer]
           )
           .build()
 

@@ -18,30 +18,30 @@ package models.request.actions
 
 import com.google.inject.Inject
 import models.ArrivalStatus.GoodsReleased
-import models.request.ArrivalRequest
 import models.GoodsReleasedResponse
-import models.MessageInbound
+import models.Message
+import models.request.ArrivalRequest
 import play.api.mvc.Result
 import play.api.mvc.Results.BadRequest
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class FakeInboundMessageTransformer @Inject()(implicit ec: ExecutionContext) extends InboundMessageTransformerInterface {
+class FakeMessageTransformer @Inject()(implicit ec: ExecutionContext) extends MessageTransformerInterface {
 
   override def executionContext: ExecutionContext = ec
 
-  override protected def refine[A](request: ArrivalRequest[A]): Future[Either[Result, InboundRequest[A]]] =
+  override protected def refine[A](request: ArrivalRequest[A]): Future[Either[Result, MessageTransformRequest[A]]] =
     Future.successful(
-      Right(InboundRequest(MessageInbound(GoodsReleasedResponse, GoodsReleased), request))
+      Right(MessageTransformRequest(Message(GoodsReleasedResponse, GoodsReleased), request))
     )
 }
 
-class FakeInboundMessageBadRequestTransformer @Inject()(implicit ec: ExecutionContext) extends InboundMessageTransformerInterface {
+class FakeInboundMessageBadRequestTransformer @Inject()(implicit ec: ExecutionContext) extends MessageTransformerInterface {
 
   override def executionContext: ExecutionContext = ec
 
-  override protected def refine[A](request: ArrivalRequest[A]): Future[Either[Result, InboundRequest[A]]] =
+  override protected def refine[A](request: ArrivalRequest[A]): Future[Either[Result, MessageTransformRequest[A]]] =
     Future.successful(
       Left(BadRequest)
     )

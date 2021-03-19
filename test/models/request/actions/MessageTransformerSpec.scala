@@ -48,20 +48,16 @@ import play.twirl.api.HtmlFormat
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class InboundMessageTransformerSpec extends AnyFreeSpec with Matchers with ScalaCheckPropertyChecks with ModelGenerators with OptionValues with ScalaFutures {
+class MessageTransformerSpec extends AnyFreeSpec with Matchers with ScalaCheckPropertyChecks with ModelGenerators with OptionValues with ScalaFutures {
 
-  private val arrival: Arrival     = arbitrary[Arrival].sample.value
-  private val arrivalId: ArrivalId = arrival.arrivalId
+  private val arrival: Arrival = arbitrary[Arrival].sample.value
 
   private val successfulResponse: Request[AnyContent] => Future[Result] = {
     _ =>
       Future.successful(Ok(HtmlFormat.empty))
   }
 
-  private def action = new InboundMessageTransformer()
-
-  private val xmlNegativeAcknowledgement: ArrivalStatus =
-    Gen.oneOf(Seq(ArrivalXMLSubmissionNegativeAcknowledgement, UnloadingRemarksXMLSubmissionNegativeAcknowledgement)).sample.value
+  private def action = new MessageTransformer()
 
   "InboundMessageTransformer" - {
 

@@ -40,10 +40,16 @@ object XmlMessageParser {
   def correctRootNodeR(messageType: MessageType): ReaderT[ParseHandler, NodeSeq, NodeSeq] =
     ReaderT[ParseHandler, NodeSeq, NodeSeq] {
       nodeSeq =>
-        if (nodeSeq.head.label == messageType.rootNode)
+        if (nodeSeq.head.label == messageType.rootNode) {
+          println(s"\n\n ${nodeSeq.head.label == messageType.rootNode}")
+
           Right(nodeSeq)
-        else
-          Left(InvalidRootNode(s"Node ${nodeSeq.head.label} didn't match ${messageType.rootNode}"))
+        } else
+          println(s"\n\n ${nodeSeq.head.label == messageType.rootNode}")
+        println(s"\n\n ${nodeSeq.head.label}")
+        println(s"\n\n ${messageType.rootNode}")
+
+        Left(InvalidRootNode(s"Node ${nodeSeq.head.label} didn't match ${messageType.rootNode}"))
     }
 
   val dateOfPrepR: ReaderT[ParseHandler, NodeSeq, LocalDate] =
