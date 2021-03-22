@@ -19,7 +19,6 @@ package models.request.actions
 import com.google.inject.ImplementedBy
 import com.google.inject.Inject
 import logging.Logging
-import models.request.ArrivalRequest
 import models.ArrivalRejectedResponse
 import models.ChannelType
 import models.GoodsReleasedResponse
@@ -28,7 +27,9 @@ import models.MessageResponse
 import models.MessageType
 import models.UnloadingPermissionResponse
 import models.UnloadingRemarksRejectedResponse
+import models.UnloadingRemarksResponse
 import models.XMLSubmissionNegativeAcknowledgementResponse
+import models.request.ArrivalRequest
 import play.api.mvc.Results.BadRequest
 import play.api.mvc._
 
@@ -39,7 +40,7 @@ class MessageTransformer @Inject()(implicit ec: ExecutionContext) extends Messag
 
   def executionContext: ExecutionContext = ec
 
-  override protected def refine[A](request: ArrivalRequest[A]): Future[Either[Result, MessageTransformRequest[A]]] = {
+  override def refine[A](request: ArrivalRequest[A]): Future[Either[Result, MessageTransformRequest[A]]] = {
 
     logger.debug(s"CTC Headers ${request.headers}")
 
@@ -74,6 +75,7 @@ class MessageTransformer @Inject()(implicit ec: ExecutionContext) extends Messag
       case MessageType.GoodsReleased.code             => Some(GoodsReleasedResponse)
       case MessageType.ArrivalRejection.code          => Some(ArrivalRejectedResponse)
       case MessageType.UnloadingPermission.code       => Some(UnloadingPermissionResponse)
+      case MessageType.UnloadingRemarks.code          => Some(UnloadingRemarksResponse)
       case MessageType.UnloadingRemarksRejection.code => Some(UnloadingRemarksRejectedResponse)
       case MessageType.XMLSubmissionNegativeAcknowledgement.code =>
         logger.error(s"Received the message ${MessageType.XMLSubmissionNegativeAcknowledgement.code} for the $channel channel")
@@ -92,4 +94,4 @@ class MessageTransformer @Inject()(implicit ec: ExecutionContext) extends Messag
 @ImplementedBy(classOf[MessageTransformer])
 trait MessageTransformerInterface extends ActionRefiner[ArrivalRequest, MessageTransformRequest]
 
-case class MessageTransformRequest[A](val message: Message, val arrivalRequest: ArrivalRequest[A]) extends WrappedRequest[A](arrivalRequest)
+case class MessageTransformRequest[A](message: Message, arrivalRequest: ArrivalRequest[A]) extends WrappedRequest[A](arrivalRequest)

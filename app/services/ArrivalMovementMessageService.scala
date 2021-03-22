@@ -21,6 +21,7 @@ import cats.implicits._
 import com.google.inject.Inject
 import models.ArrivalStatus.Initialized
 import models.MessageStatus.SubmissionPending
+import models.ParseError.EmptyNodeSeq
 import models.Arrival
 import models.ArrivalId
 import models.ChannelType
@@ -28,7 +29,6 @@ import models.MessageType
 import models.MovementMessageWithStatus
 import models.MovementMessageWithoutStatus
 import models.MovementReferenceNumber
-import models.ParseError.EmptyNodeSeq
 import repositories.ArrivalIdRepository
 import utils.XMLTransformer
 
@@ -83,27 +83,15 @@ class ArrivalMovementMessageService @Inject()(arrivalIdRepository: ArrivalIdRepo
                           messageCorrelationId: Int,
                           messageType: MessageType): ReaderT[ParseHandler, NodeSeq, MovementMessageWithStatus] =
     for {
-      _ <- {
-        println(s"\n\n 1")
-        correctRootNodeR(messageType)
-      }
-      dateTime <- {
-        println(s"\n\n 2")
-        dateTimeOfPrepR
-      }
-      xmlMessage <- {
-        println(s"\n\n 3")
-        updateMesSenMES3(arrivalId, messageCorrelationId)
-      }
-    } yield {
-      println(s"\n\n 4")
-      MovementMessageWithStatus(dateTime, messageType, xmlMessage, SubmissionPending, messageCorrelationId)
-    }
+      _          <- correctRootNodeR(messageType)
+      dateTime   <- dateTimeOfPrepR
+      xmlMessage <- updateMesSenMES3(arrivalId, messageCorrelationId)
+    } yield MovementMessageWithStatus(dateTime, messageType, xmlMessage, SubmissionPending, messageCorrelationId)
 
   private[this] def nodeSeqToEither(xml: NodeSeq): ParseHandler[NodeSeq] =
-    if (xml != null) {
-      Right(xml)
-    } else {
-      Left(EmptyNodeSeq("Request body is empty"))
-    }
+    Option(xml).fold[ParseHandler[NodeSeq]](
+      ifEmpty = Left(EmptyNodeSeq("Request body is empty"))
+    )(
+      xml => Right(xml)
+    )
 }

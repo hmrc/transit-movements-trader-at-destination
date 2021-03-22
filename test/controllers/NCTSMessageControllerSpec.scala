@@ -23,6 +23,7 @@ import models.Arrival
 import models.ArrivalId
 import models.MessageSender
 import models.SubmissionProcessingResult
+import models.request.actions.FakeInboundMessageBadRequestTransformer
 import models.request.actions.FakeMessageTransformer
 import models.request.actions.MessageTransformerInterface
 import org.mockito.ArgumentMatchers._
@@ -158,7 +159,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
             bind[LockRepository].toInstance(mockLockRepository),
             bind[SaveMessageService].toInstance(mockSaveMessageService),
-            bind[MessageTransformerInterface].to[FakeMessageTransformer]
+            bind[MessageTransformerInterface].to[FakeInboundMessageBadRequestTransformer]
           )
           .build()
 

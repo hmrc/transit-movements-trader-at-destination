@@ -21,7 +21,7 @@ import com.google.inject.Inject
 import logging.Logging
 import models.ArrivalStatus
 import models.ChannelType
-import models.MessageResponse
+import models.InboundMessageResponse
 import models.MessageSender
 import models.SubmissionProcessingResult
 import models.SubmissionProcessingResult._
@@ -42,7 +42,7 @@ class SaveMessageService @Inject()(arrivalMovementRepository: ArrivalMovementRep
 
   def validateXmlAndSaveMessage(messageXml: NodeSeq,
                                 messageSender: MessageSender,
-                                messageResponse: MessageResponse,
+                                messageResponse: InboundMessageResponse,
                                 arrivalStatus: ArrivalStatus,
                                 channel: ChannelType)(implicit hc: HeaderCarrier): Future[SubmissionProcessingResult] =
     xmlValidationService.validate(messageXml.toString(), messageResponse.xsdFile) match {
