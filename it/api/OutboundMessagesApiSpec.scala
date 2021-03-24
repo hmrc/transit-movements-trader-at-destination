@@ -102,48 +102,6 @@ class OutboundMessagesApiSpec extends AnyFreeSpec with GuiceOneServerPerSuite wi
         )
         .post(requestBody)).status mustBe BAD_REQUEST
     }
-
-    "return a Bad request if a second request comes in for the same unloading remarks" in {
-
-      val movements = NonEmptyList(
-        MovementMessageWithStatus(LocalDateTime.now(), MessageType.ArrivalNotification, <CC007A></CC007A>, MessageStatus.SubmissionSucceeded, 1),
-        MovementMessageWithoutStatus(LocalDateTime.now(), MessageType.UnloadingPermission, <CC043A></CC043A>, 1) :: Nil
-      )
-
-      val arrival = arbitrary[Arrival].sample.value.copy(messages = movements, status = UnloadingPermission)
-
-      val requestBody = <CC044A>
-        <DatOfPreMES9>{Format.dateFormatted(LocalDateTime.now())}</DatOfPreMES9>
-        <TimOfPreMES10>{Format.timeFormatted(LocalDateTime.now())}</TimOfPreMES10>
-        <SynVerNumMES2>1</SynVerNumMES2>
-        <HEAHEA>
-          <DocNumHEA5>{arrival.movementReferenceNumber.value}</DocNumHEA5>
-        </HEAHEA>
-      </CC044A>
-
-      repo.insert(arrival).futureValue
-
-      Stubs(server)
-        .successfulAuth(arrival.eoriNumber)
-        .successfulSubmission()
-        .build()
-
-      await(ws
-        .url(s"http://localhost:$port/transit-movements-trader-at-destination/movements/arrivals/${arrival.arrivalId.index}/messages")
-        .withHttpHeaders(
-          "Channel" -> arrival.channel.toString,
-          "Content-Type" -> "application/xml"
-        )
-        .post(requestBody)).status mustBe ACCEPTED
-
-      await(ws
-        .url(s"http://localhost:$port/transit-movements-trader-at-destination/movements/arrivals/${arrival.arrivalId.index}/messages")
-        .withHttpHeaders(
-          "Channel" -> arrival.channel.toString,
-          "Content-Type" -> "application/xml"
-        )
-        .post(requestBody)).status mustBe BAD_REQUEST
-    }
   }
 
 

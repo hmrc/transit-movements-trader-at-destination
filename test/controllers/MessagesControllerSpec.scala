@@ -134,9 +134,6 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
 
   val arrival = arrivalWithOneMessage.sample.value
 
-  val mockMessageTransformer = mock[MessageTransformer]
-//  val mockMessageTransformerInterface = mock[MessageTransformerInterface]
-
   "MessagesController" - {
 
     "post" - {
@@ -148,6 +145,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
         val mockSubmitMessageService                          = mock[SubmitMessageService]
         val captor: ArgumentCaptor[MovementMessageWithStatus] = ArgumentCaptor.forClass(classOf[MovementMessageWithStatus])
         val mockAuditService                                  = mock[AuditService]
+        val mockMessageTransformer                            = mock[MessageTransformer]
 
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(true))
@@ -202,6 +200,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
         val mockMessageConnector          = mock[MessageConnector]
         val mockLockRepository            = mock[LockRepository]
+        val mockMessageTransformer        = mock[MessageTransformer]
 
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(true))
@@ -239,6 +238,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
         val mockLockRepository            = mock[LockRepository]
         val mockSubmitMessageService      = mock[SubmitMessageService]
+        val mockMessageTransformer        = mock[MessageTransformer]
 
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(true))
@@ -280,6 +280,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
       "must return BadRequest if the payload is missing SynVerNumMES2 node" in {
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
         val mockLockRepository            = mock[LockRepository]
+        val mockMessageTransformer        = mock[MessageTransformer]
 
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(true))
@@ -324,6 +325,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
       "must return BadRequest if the payload is malformed" in {
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
         val mockLockRepository            = mock[LockRepository]
+        val mockMessageTransformer        = mock[MessageTransformer]
 
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(true))
@@ -363,6 +365,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
         val mockMessageConnector          = mock[MessageConnector]
         val mockLockRepository            = mock[LockRepository]
+        val mockMessageTransformer        = mock[MessageTransformer]
 
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(true))
@@ -403,6 +406,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
         val mockLockRepository            = mock[LockRepository]
         val mockSubmitMessageService      = mock[SubmitMessageService]
+        val mockMessageTransformer        = mock[MessageTransformer]
 
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(true))
@@ -445,6 +449,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
         val mockLockRepository            = mock[LockRepository]
         val mockSubmitMessageService      = mock[SubmitMessageService]
+        val mockMessageTransformer        = mock[MessageTransformer]
 
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(true))
@@ -485,6 +490,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
         val mockLockRepository            = mock[LockRepository]
         val mockSubmitMessageService      = mock[SubmitMessageService]
+        val mockMessageTransformer        = mock[MessageTransformer]
 
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(true))
