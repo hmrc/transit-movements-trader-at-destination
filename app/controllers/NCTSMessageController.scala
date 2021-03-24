@@ -55,16 +55,6 @@ class NCTSMessageController @Inject()(cc: ControllerComponents,
 
         val xml: NodeSeq = request.arrivalRequest.request.body
 
-        println()
-        println()
-        println()
-        println()
-        println(messageInbound, messageSender)
-        println()
-        println()
-        println()
-        println()
-
         val processingResult =
           saveMessageService.validateXmlAndSaveMessage(xml, messageSender, messageInbound.messageType, messageInbound.nextState, request.arrivalRequest.channel)
 
