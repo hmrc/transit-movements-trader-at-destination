@@ -38,7 +38,6 @@ object ArrivalStatus extends Enumerable.Implicits with MongoDateTimeFormats {
 
   case object ArrivalSubmitted extends ArrivalStatus {
     override def transition(messageReceived: MessageReceivedEvent): Either[TransitionError, ArrivalStatus] = messageReceived match {
-      case MessageReceivedEvent.ArrivalSubmitted                     => Right(ArrivalSubmitted)
       case MessageReceivedEvent.GoodsReleased                        => Right(GoodsReleased)
       case MessageReceivedEvent.UnloadingPermission                  => Right(UnloadingPermission)
       case MessageReceivedEvent.ArrivalRejected                      => Right(ArrivalRejected)
@@ -57,6 +56,7 @@ object ArrivalStatus extends Enumerable.Implicits with MongoDateTimeFormats {
     }
   }
 
+  /*TODO: investigate this as part of a separate ticket*/
   case object GoodsReleased extends ArrivalStatus {
     override def transition(messageReceived: MessageReceivedEvent): Either[TransitionError, ArrivalStatus] = Right(this)
   }
@@ -87,7 +87,6 @@ object ArrivalStatus extends Enumerable.Implicits with MongoDateTimeFormats {
 
   case object UnloadingRemarksSubmitted extends ArrivalStatus {
     override def transition(messageReceived: MessageReceivedEvent): Either[TransitionError, ArrivalStatus] = messageReceived match {
-      case MessageReceivedEvent.UnloadingRemarksSubmitted            => Right(UnloadingRemarksSubmitted)
       case MessageReceivedEvent.UnloadingRemarksRejected             => Right(UnloadingRemarksRejected)
       case MessageReceivedEvent.UnloadingPermission                  => Right(UnloadingPermission)
       case MessageReceivedEvent.XMLSubmissionNegativeAcknowledgement => Right(UnloadingRemarksXMLSubmissionNegativeAcknowledgement)

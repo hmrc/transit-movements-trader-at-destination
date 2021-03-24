@@ -17,14 +17,14 @@
 package controllers
 
 import controllers.actions.GetArrivalForWriteActionProvider
-import controllers.actions.InboundMessageTransformer
+import controllers.actions.MessageTransformerInterface
+import controllers.actions.ValidateInboundMessageAction
 import logging.Logging
 import metrics.MetricsService
 import metrics.Monitors
 import models.InboundMessage
 import models.MessageSender
 import models.SubmissionProcessingResult._
-import models.request.actions.MessageTransformerInterface
 import play.api.Logger
 import play.api.mvc.Action
 import play.api.mvc.ControllerComponents
@@ -39,7 +39,7 @@ import scala.xml.NodeSeq
 class NCTSMessageController @Inject()(cc: ControllerComponents,
                                       getArrival: GetArrivalForWriteActionProvider,
                                       validateTransitionState: MessageTransformerInterface,
-                                      validateInboundMessage: InboundMessageTransformer,
+                                      validateInboundMessage: ValidateInboundMessageAction,
                                       saveMessageService: SaveMessageService,
                                       metricsService: MetricsService)(implicit ec: ExecutionContext)
     extends BackendController(cc)
@@ -54,6 +54,16 @@ class NCTSMessageController @Inject()(cc: ControllerComponents,
         val messageInbound: InboundMessage = request.message
 
         val xml: NodeSeq = request.arrivalRequest.request.body
+
+        println()
+        println()
+        println()
+        println()
+        println(messageInbound, messageSender)
+        println()
+        println()
+        println()
+        println()
 
         val processingResult =
           saveMessageService.validateXmlAndSaveMessage(xml, messageSender, messageInbound.messageType, messageInbound.nextState, request.arrivalRequest.channel)

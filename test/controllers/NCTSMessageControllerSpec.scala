@@ -17,15 +17,15 @@
 package controllers
 
 import base.SpecBase
+import controllers.actions.FakeInboundMessageBadRequestTransformer
+import controllers.actions.FakeMessageTransformer
+import controllers.actions.MessageTransformerInterface
 import generators.ModelGenerators
 import models.ChannelType.web
 import models.Arrival
 import models.ArrivalId
 import models.MessageSender
 import models.SubmissionProcessingResult
-import models.request.actions.FakeInboundMessageBadRequestTransformer
-import models.request.actions.FakeMessageTransformer
-import models.request.actions.MessageTransformerInterface
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
 import org.scalacheck.Arbitrary

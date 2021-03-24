@@ -14,15 +14,12 @@
  * limitations under the License.
  */
 
-package models.request.actions
+package controllers.actions
 
 import generators.ModelGenerators
 import models.ArrivalStatus.ArrivalSubmitted
-import models.ArrivalStatus.ArrivalXMLSubmissionNegativeAcknowledgement
 import models.ArrivalStatus.UnloadingPermission
-import models.ArrivalStatus.UnloadingRemarksXMLSubmissionNegativeAcknowledgement
 import models.Arrival
-import models.ArrivalId
 import models.ArrivalRejectedResponse
 import models.ArrivalStatus
 import models.ChannelType
@@ -33,7 +30,7 @@ import models.UnloadingRemarksRejectedResponse
 import models.XMLSubmissionNegativeAcknowledgementResponse
 import models.request.ArrivalRequest
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalacheck.Gen
+import org.scalatest.EitherValues
 import org.scalatest.OptionValues
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.freespec.AnyFreeSpec
@@ -41,51 +38,76 @@ import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.mvc.Results.Ok
 import play.api.mvc._
+import play.api.test.DefaultAwaitTimeout
 import play.api.test.FakeRequest
+import play.api.test.FutureAwaits
 import play.api.test.Helpers._
 import play.twirl.api.HtmlFormat
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.xml.NodeSeq
 
-class MessageTransformerSpec extends AnyFreeSpec with Matchers with ScalaCheckPropertyChecks with ModelGenerators with OptionValues with ScalaFutures {
+class MessageTransformerSpec
+    extends AnyFreeSpec
+    with Matchers
+    with ScalaCheckPropertyChecks
+    with ModelGenerators
+    with OptionValues
+    with EitherValues
+    with FutureAwaits
+    with DefaultAwaitTimeout
+    with ScalaFutures {
 
   private val arrival: Arrival = arbitrary[Arrival].sample.value
 
-  private val successfulResponse: Request[AnyContent] => Future[Result] = {
+  private val successfulResponse: Request[NodeSeq] => Future[Result] = {
     _ =>
       Future.successful(Ok(HtmlFormat.empty))
   }
 
-  private def action = new MessageTransformer()
+  private lazy val action = new MessageTransformer()
 
   "InboundMessageTransformer" - {
 
-    "returns 200 for supported `X-Message-Type`" in {
+    "returns 200 for supported root node" in {
       forAll(arbitrary[ChannelType]) {
         channel =>
           val arrivalMovement = arrival.copy(status = ArrivalStatus.ArrivalSubmitted)
 
           val request =
-            ArrivalRequest(FakeRequest("", "").withHeaders("X-Message-Type" -> MessageType.ArrivalRejection.code), arrivalMovement, channel)
+            ArrivalRequest(
+              FakeRequest("", "")
+                .withHeaders(
+                  "X-Message-Type" -> MessageType.ArrivalRejection.code,
+                  "Content-Type"   -> "application/xml"
+                )
+                .withBody[NodeSeq](<CC008A> </CC008A>),
+              arrivalMovement,
+              channel
+            )
 
           val testAction = action.invokeBlock(request, successfulResponse)
 
-          testAction.futureValue.header.status mustBe OK
-
+          status(testAction) mustBe OK
       }
     }
 
-    "return 400 for unsupported `X-Message-Type`" in {
+    "return 400 for unsupported xml body" in {
       forAll(arbitrary[ChannelType]) {
         channel =>
           val request =
-            ArrivalRequest(FakeRequest("", "").withHeaders("X-Message-Type" -> "invalid-message-type"), arrival, channel)
+            ArrivalRequest(
+              FakeRequest("", "")
+                .withHeaders("X-Message-Type" -> "invalid-message-type", "Content-Type" -> "application/xml")
+                .withBody[NodeSeq](<INVALID></INVALID>),
+              arrival,
+              channel
+            )
 
           val testAction = action.invokeBlock(request, successfulResponse)
 
           testAction.futureValue.header.status mustBe BAD_REQUEST
-
       }
     }
 
@@ -95,12 +117,17 @@ class MessageTransformerSpec extends AnyFreeSpec with Matchers with ScalaCheckPr
           val arrivalMovement = arrival.copy(status = ArrivalSubmitted)
 
           val request =
-            ArrivalRequest(FakeRequest("", "").withHeaders("X-Message-Type" -> MessageType.GoodsReleased.code), arrivalMovement, channel)
+            ArrivalRequest(
+              FakeRequest("", "")
+                .withHeaders("X-Message-Type" -> MessageType.GoodsReleased.code, "Content-Type" -> "application/xml")
+                .withBody[NodeSeq](<CC025A></CC025A>),
+              arrivalMovement,
+              channel
+            )
 
           val testAction = action.invokeBlock(request, successfulResponse)
 
           testAction.futureValue.header.status mustBe OK
-
       }
 
     }
@@ -111,12 +138,20 @@ class MessageTransformerSpec extends AnyFreeSpec with Matchers with ScalaCheckPr
           val arrivalMovement = arrival.copy(status = UnloadingPermission)
 
           val request =
-            ArrivalRequest(FakeRequest("", "").withHeaders("X-Message-Type" -> MessageType.ArrivalRejection.code), arrivalMovement, channel)
+            ArrivalRequest(
+              FakeRequest("", "")
+                .withHeaders(
+                  "X-Message-Type" -> MessageType.ArrivalRejection.code,
+                  "Content-Type"   -> "application/xml"
+                )
+                .withBody[NodeSeq](<CC008A></CC008A>),
+              arrivalMovement,
+              channel
+            )
 
           val testAction = action.invokeBlock(request, successfulResponse)
 
           testAction.futureValue.header.status mustBe BAD_REQUEST
-
       }
     }
 
@@ -136,7 +171,7 @@ class MessageTransformerSpec extends AnyFreeSpec with Matchers with ScalaCheckPr
           channel =>
             messageTypeAndExpectedMessageResponse.foreach {
               case (messageType, messageResponse) =>
-                action.messageResponse(channel)(messageType.code).value mustEqual messageResponse
+                action.messageResponse(channel)(messageType.rootNode).value mustEqual messageResponse
                 ()
             }
         }

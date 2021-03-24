@@ -19,10 +19,8 @@ package controllers.actions
 import logging.Logging
 import models.InboundMessage
 import models.InboundMessageResponse
-import models.Message
 import models.request.ArrivalRequest
-import models.request.actions.MessageTransformRequest
-import play.api.mvc.Results.InternalServerError
+import play.api.mvc.Results.BadRequest
 import play.api.mvc.ActionRefiner
 import play.api.mvc.Result
 import play.api.mvc.WrappedRequest
@@ -31,16 +29,17 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class InboundMessageTransformer @Inject()(implicit val executionContext: ExecutionContext)
+class ValidateInboundMessageAction @Inject()(implicit val executionContext: ExecutionContext)
     extends ActionRefiner[MessageTransformRequest, InboundMessageRequest]
     with Logging {
-  override protected def refine[A](request: MessageTransformRequest[A]): Future[Either[Result, InboundMessageRequest[A]]] =
+  override def refine[A](request: MessageTransformRequest[A]): Future[Either[Result, InboundMessageRequest[A]]] =
     request.message.messageType match {
       case message: InboundMessageResponse =>
         Future.successful(Right(InboundMessageRequest(message = InboundMessage(message, request.message.nextState), arrivalRequest = request.arrivalRequest)))
-      case _ =>
-        logger.error("[refine] found an outbound message when expecting an inbound message ( OUTBOUND_MESSAGE_FOUND_FOR_INBOUND_MESSAGE )")
-        Future.successful(Left(InternalServerError(s"Found Outbound Message when expecting an Inbound Message")))
+      case message =>
+        logger.error(
+          s"Found an outbound message (${message.messageType}) when expecting an inbound message for arrivalId: ${request.arrivalRequest.arrival.arrivalId.index} ( OUTBOUND_MESSAGE_FOUND_FOR_INBOUND_MESSAGE )")
+        Future.successful(Left(BadRequest(s"Unsupported X-Message-Type ${request.headers.get("X-Message-Type")}")))
     }
 }
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package models.request.actions
+package controllers.actions
 
 import com.google.inject.Inject
 import models.ArrivalStatus.GoodsReleased
@@ -27,20 +27,14 @@ import play.api.mvc.Results.BadRequest
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class FakeMessageTransformer @Inject()(implicit ec: ExecutionContext) extends MessageTransformerInterface {
-
-  override def executionContext: ExecutionContext = ec
-
+class FakeMessageTransformer @Inject()(implicit val executionContext: ExecutionContext) extends MessageTransformerInterface {
   override protected def refine[A](request: ArrivalRequest[A]): Future[Either[Result, MessageTransformRequest[A]]] =
     Future.successful(
       Right(MessageTransformRequest(Message(GoodsReleasedResponse, GoodsReleased), request))
     )
 }
 
-class FakeInboundMessageBadRequestTransformer @Inject()(implicit ec: ExecutionContext) extends MessageTransformerInterface {
-
-  override def executionContext: ExecutionContext = ec
-
+class FakeInboundMessageBadRequestTransformer @Inject()(implicit val executionContext: ExecutionContext) extends MessageTransformerInterface {
   override protected def refine[A](request: ArrivalRequest[A]): Future[Either[Result, MessageTransformRequest[A]]] =
     Future.successful(
       Left(BadRequest)

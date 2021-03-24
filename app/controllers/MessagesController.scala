@@ -20,6 +20,7 @@ import audit.AuditService
 import audit.AuditType
 import controllers.actions.AuthenticatedGetArrivalForReadActionProvider
 import controllers.actions.AuthenticatedGetArrivalForWriteActionProvider
+import controllers.actions.MessageTransformerInterface
 import controllers.actions._
 import logging.Logging
 import metrics.MetricsService
@@ -29,7 +30,6 @@ import models.ArrivalId
 import models.MessageId
 import models.MessageType
 import models.SubmissionProcessingResult._
-import models.request.actions.MessageTransformerInterface
 import models.response.ResponseArrivalWithMessages
 import models.response.ResponseMovementMessage
 import play.api.Logger
@@ -55,7 +55,7 @@ class MessagesController @Inject()(
   validateMessageSenderNode: ValidateMessageSenderNodeFilter,
   auditService: AuditService,
   validateTransitionState: MessageTransformerInterface,
-  validateOutboundMessage: OutboundMessageTransformer,
+  validateOutboundMessage: ValidateOutboundMessageAction,
   metricsService: MetricsService
 )(implicit ec: ExecutionContext)
     extends BackendController(cc)
