@@ -27,9 +27,11 @@ import models.GoodsReleasedResponse
 import models.MessageType
 import models.UnloadingPermissionResponse
 import models.UnloadingRemarksRejectedResponse
+import models.UnloadingRemarksResponse
 import models.XMLSubmissionNegativeAcknowledgementResponse
 import models.request.ArrivalRequest
 import org.scalacheck.Arbitrary.arbitrary
+import org.scalacheck.Gen
 import org.scalatest.EitherValues
 import org.scalatest.OptionValues
 import org.scalatest.concurrent.ScalaFutures
@@ -46,6 +48,8 @@ import play.twirl.api.HtmlFormat
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.xml.Elem
+import scala.xml.Node
 import scala.xml.NodeSeq
 
 class MessageTransformerSpec
@@ -68,7 +72,7 @@ class MessageTransformerSpec
 
   private lazy val action = new MessageTransformer()
 
-  "InboundMessageTransformer" - {
+  "MessageTransformer" - {
 
     "returns 200 for supported root node" in {
       forAll(arbitrary[ChannelType]) {
@@ -156,13 +160,14 @@ class MessageTransformerSpec
     }
 
     ".messageResponse" - {
-      "determines the MessageResponse for the `X-Message-Type` header" in {
+      "determines the MessageResponse for the root node" in {
 
         //TODO: This test needs to be refactored. This is a duplication of logic from the implementation.
         val messageTypeAndExpectedMessageResponse = Seq(
           (MessageType.GoodsReleased, GoodsReleasedResponse),
           (MessageType.ArrivalRejection, ArrivalRejectedResponse),
           (MessageType.UnloadingPermission, UnloadingPermissionResponse),
+          (MessageType.UnloadingRemarks, UnloadingRemarksResponse),
           (MessageType.UnloadingRemarksRejection, UnloadingRemarksRejectedResponse),
           (MessageType.XMLSubmissionNegativeAcknowledgement, XMLSubmissionNegativeAcknowledgementResponse)
         )

@@ -56,7 +56,6 @@ object ArrivalStatus extends Enumerable.Implicits with MongoDateTimeFormats {
     }
   }
 
-  /*TODO: investigate this as part of a separate ticket*/
   case object GoodsReleased extends ArrivalStatus {
     override def transition(messageReceived: MessageReceivedEvent): Either[TransitionError, ArrivalStatus] = Right(this)
   }

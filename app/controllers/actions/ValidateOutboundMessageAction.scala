@@ -37,7 +37,7 @@ class ValidateOutboundMessageAction @Inject()(implicit val executionContext: Exe
       case message: OutboundMessageResponse =>
         Future.successful(Right(OutboundMessageRequest(message = OutboundMessage(message, request.message.nextState), arrivalRequest = request.arrivalRequest)))
       case message =>
-        logger.error(
+        logger.warn(
           s"Found an inbound message (${message.messageType}) when expecting an outbound message for arrivalId: ${request.arrivalRequest.arrival.arrivalId.index} ( INBOUND_MESSAGE_FOUND_FOR_OUTBOUND_MESSAGE )")
         Future.successful(Left(BadRequest(s"Unsupported X-Message-Type ${request.headers.get("X-Message-Type")}")))
     }
