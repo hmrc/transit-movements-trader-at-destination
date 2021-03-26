@@ -22,6 +22,7 @@ import generators.ModelGenerators
 import models.MessageStatus._
 import models.MessageType._
 import models.Arrival
+import models.ArrivalStatus
 import models.MessageId
 import models.MessageType
 import models.MessagesSummary
@@ -505,7 +506,8 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
             val messages = NonEmptyList.of(ie007, ie043, ie044, ie058)
 
             forAll(arrivalMovement(messages)) {
-              arrival =>
+              arr =>
+                val arrival              = arr.copy(status = ArrivalStatus.UnloadingRemarksRejected)
                 val (message, messageId) = service.unloadingRemarksRejectionsR(arrival).value
 
                 message mustEqual ie058
@@ -528,7 +530,8 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
             val messages = NonEmptyList.of(ie007, ie043, ie044Old, ie058Old, ie044, ie058)
 
             forAll(arrivalMovement(messages)) {
-              arrival =>
+              arr =>
+                val arrival              = arr.copy(status = ArrivalStatus.UnloadingRemarksRejected)
                 val (message, messageId) = service.unloadingRemarksRejectionsR(arrival).value
 
                 message mustEqual ie058
@@ -653,7 +656,8 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
             val messages = NonEmptyList.of(ie007, ie0043, ie044Old, ie058, ie044)
 
             forAll(arrivalMovement(messages)) {
-              arrival =>
+              arr =>
+                val arrival = arr.copy(status = ArrivalStatus.UnloadingRemarksSubmitted)
                 val expectedMessageSummary =
                   MessagesSummary(arrival, MessageId.fromMessageIdValue(1).value, None, MessageId.fromMessageIdValue(2), MessageId.fromMessageIdValue(5), None)
 
@@ -663,7 +667,7 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
 
       }
 
-      "latest IE044 and IE058 when there has been multiple corrections without a successful IE044 correction" in {
+      "latest IE044 and IE058 when there has been multiple corrections without a successful IE044 correction and state is UnloadingRemarksRejected" in {
         val service = new ArrivalMessageSummaryService
 
         forAll(ie007Gen.submitted.msgCorrId(1),
@@ -676,7 +680,9 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
             val messages = NonEmptyList.of(ie007, ie0043, ie044Old, ie058Old, ie044, ie058)
 
             forAll(arrivalMovement(messages)) {
-              arrival =>
+              arr =>
+                val arrival = arr.copy(status = ArrivalStatus.UnloadingRemarksRejected)
+
                 val expectedMessageSummary =
                   MessagesSummary(arrival,
                                   MessageId.fromMessageIdValue(1).value,
