@@ -19,7 +19,8 @@ package controllers.testOnly
 import javax.inject.Inject
 import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
-import play.api.mvc.{Action, ControllerComponents}
+import play.api.mvc.Action
+import play.api.mvc.ControllerComponents
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.ExecutionContext
@@ -31,19 +32,13 @@ class TestOnlySeedDataController @Inject()(override val messagesApi: MessagesApi
     implicit request =>
       Ok(Json.toJson(request.body))
   }
-  
-  private def output(seedDataParameters: SeedDataParameters): String = {
 
+  private def output(seedDataParameters: SeedDataParameters): String =
     //  eoriRangeStart: "ZZ0000001",
     //  eoriRangeEnd: "ZZ0000101",
     //  movementsPerUser: 10,
     //  startMrn: 2100000000,
     //  endMrn: 2100000010,
-
     ???
-  }
 
 }
-
-
-
