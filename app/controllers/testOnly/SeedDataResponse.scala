@@ -19,8 +19,8 @@ package controllers.testOnly
 import play.api.libs.json.Json
 
 case class SeedDataResponse(
-  eoriRangeStart: String,
-  eoriRangeEnd: String,
+  eoriRangeStart: SeedEori,
+  eoriRangeEnd: SeedEori,
   movementsPerUser: Int,
   startMrn: String,
   endMrn: String

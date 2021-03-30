@@ -42,11 +42,6 @@ class TestOnlySeedDataController @Inject()(override val messagesApi: MessagesApi
       movementsPerUser
     ) = seedDataParameters
 
-    // Eori range
-    val eoriCount          = startEori.substring(2) + numberOfUsers
-    val eoriPrefix: String = startEori.slice(0, 1)
-    val endEori            = eoriPrefix + eoriCount
-
     // MRN range
     val mrnPrefix = startMrn.substring(0, 4)
     val mrnSuffix = startMrn.substring(4, 18)
@@ -56,10 +51,11 @@ class TestOnlySeedDataController @Inject()(override val messagesApi: MessagesApi
     val replaceMrn = range.map {
       x =>
         val indexOfStringToTrim = mrnSuffix.length - (x.toString.length - 1)
+        println(s"\n ${mrnPrefix + mrnSuffix.substring(0, indexOfStringToTrim) + x}")
         mrnPrefix + mrnSuffix.substring(0, indexOfStringToTrim) + x
     }
 
-    SeedDataResponse(startEori, endEori, movementsPerUser, startMrn, replaceMrn.last)
+    SeedDataResponse(???, ???, movementsPerUser, startMrn, replaceMrn.last)
   }
 
 }

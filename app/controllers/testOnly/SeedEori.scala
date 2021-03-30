@@ -16,16 +16,25 @@
 
 package controllers.testOnly
 
-import play.api.libs.json.Json
-import play.api.libs.json.Reads
+import play.api.libs.json._
+import play.api.libs.functional.syntax._
 
-case class SeedDataParameters(
-  startEori: SeedEori,
-  numberOfUsers: Int,
-  startMrn: String,
-  movementsPerUser: Int
-)
+case class SeedEori(prefix: String, suffix: Int, padLength: Int)
 
-object SeedDataParameters {
-  implicit val reads: Reads[SeedDataParameters] = Json.reads[SeedDataParameters]
+object SeedEori {
+
+  implicit val read: Reads[SeedEori] = (
+    __.read[String].map(_.substring(0, 2)) and
+      __.read[String].map(_.substring(2).toInt) and
+      __.read[String].map(_.substring(2).length)
+  )(SeedEori(_, _, _))
+
+  implicit val writes: Writes[SeedEori] = Writes[SeedEori](
+    x => {
+      val addPadding = s"%0${x.padLength}d".format(x.suffix)
+
+      JsString(x.prefix + addPadding)
+    }
+  )
+
 }

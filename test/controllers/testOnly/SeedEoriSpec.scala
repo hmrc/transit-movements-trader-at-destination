@@ -16,16 +16,31 @@
 
 package controllers.testOnly
 
+import base.SpecBase
 import play.api.libs.json.Json
-import play.api.libs.json.Reads
 
-case class SeedDataParameters(
-  startEori: SeedEori,
-  numberOfUsers: Int,
-  startMrn: String,
-  movementsPerUser: Int
-)
+class SeedEoriSpec extends SpecBase {
 
-object SeedDataParameters {
-  implicit val reads: Reads[SeedDataParameters] = Json.reads[SeedDataParameters]
+  "SeedEori" - {
+
+    "must read from valid value" in {
+
+      val json = Json.toJson("ZZ00000001")
+
+      json.as[SeedEori] mustEqual SeedEori("ZZ", 1, 8)
+    }
+
+    "must write from valid value in correct format" in {
+
+      val json  = Json.toJson("ZZ00000001")
+      val json2 = Json.toJson("ZZ12345678")
+
+      val seedEori  = SeedEori("ZZ", 1, 8)
+      val seedEori2 = SeedEori("ZZ", 12345678, 1)
+
+      Json.toJson(seedEori) mustEqual json
+      Json.toJson(seedEori2) mustEqual json2
+    }
+  }
+
 }
