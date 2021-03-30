@@ -46,7 +46,7 @@ class TestOnlySeedDataControllerSpec extends SpecBase with ScalaCheckPropertyChe
             |{
             |  "startEori": "ZZ0000001",
             |  "numberOfUsers": 100,
-            |  "startMrn": "2100000000",
+            |  "startMrn": "21GB00000000000000",
             |  "movementsPerUser": 10
             |}""".stripMargin).as[JsObject])
 
@@ -57,10 +57,10 @@ class TestOnlySeedDataControllerSpec extends SpecBase with ScalaCheckPropertyChe
         "eoriStart"        -> "ZZ0000001",
         "eoriEnd"          -> "ZZ0000101",
         "movementsPerUser" -> 10,
-        "startMrn"         -> "2100000000",
-        "endMrn"           -> "2100000010",
+        "startMrn"         -> "21GB00000000000000",
+        "endMrn"           -> "21GB00000000000010",
       )
     }
-
   }
+
 }

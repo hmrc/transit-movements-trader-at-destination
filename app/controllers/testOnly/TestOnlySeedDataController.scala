@@ -30,15 +30,36 @@ class TestOnlySeedDataController @Inject()(override val messagesApi: MessagesApi
 
   def seedData: Action[SeedDataParameters] = Action(parse.json[SeedDataParameters]) {
     implicit request =>
-      Ok(Json.toJson(request.body))
+      Ok(Json.toJson(output(request.body)))
   }
 
-  private def output(seedDataParameters: SeedDataParameters): String =
-    //  eoriRangeStart: "ZZ0000001",
-    //  eoriRangeEnd: "ZZ0000101",
-    //  movementsPerUser: 10,
-    //  startMrn: 2100000000,
-    //  endMrn: 2100000010,
-    ???
+  private def output(seedDataParameters: SeedDataParameters): SeedDataResponse = {
+
+    val SeedDataParameters(
+      startEori,
+      numberOfUsers,
+      startMrn,
+      movementsPerUser
+    ) = seedDataParameters
+
+    // Eori range
+    val eoriCount          = startEori.substring(2) + numberOfUsers
+    val eoriPrefix: String = startEori.slice(0, 1)
+    val endEori            = eoriPrefix + eoriCount
+
+    // MRN range
+    val mrnPrefix = startMrn.substring(0, 4)
+    val mrnSuffix = startMrn.substring(4, 18)
+
+    val range: Seq[Int] = 1 to movementsPerUser
+
+    val replaceMrn = range.map {
+      x =>
+        val indexOfStringToTrim = mrnSuffix.length - (x.toString.length - 1)
+        mrnPrefix + mrnSuffix.substring(0, indexOfStringToTrim) + x
+    }
+
+    SeedDataResponse(startEori, endEori, movementsPerUser, startMrn, replaceMrn.last)
+  }
 
 }
