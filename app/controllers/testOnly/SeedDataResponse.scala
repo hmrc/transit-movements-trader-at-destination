@@ -22,8 +22,8 @@ case class SeedDataResponse(
   eoriRangeStart: SeedEori,
   eoriRangeEnd: SeedEori,
   movementsPerUser: Int,
-  startMrn: String,
-  endMrn: String
+  mrnRangeStart: SeedMrn,
+  mrnRangeEnd: SeedMrn
 )
 
 object SeedDataResponse {

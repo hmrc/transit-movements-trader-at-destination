@@ -42,20 +42,21 @@ class TestOnlySeedDataController @Inject()(override val messagesApi: MessagesApi
       movementsPerUser
     ) = seedDataParameters
 
-    // MRN range
-    val mrnPrefix = startMrn.substring(0, 4)
-    val mrnSuffix = startMrn.substring(4, 18)
+    val eoriRange = startEori.suffix to (startEori.suffix + numberOfUsers)
 
-    val range: Seq[Int] = 1 to movementsPerUser
-
-    val replaceMrn = range.map {
-      x =>
-        val indexOfStringToTrim = mrnSuffix.length - (x.toString.length - 1)
-        println(s"\n ${mrnPrefix + mrnSuffix.substring(0, indexOfStringToTrim) + x}")
-        mrnPrefix + mrnSuffix.substring(0, indexOfStringToTrim) + x
+    val rangeOfEori: Seq[SeedEori] = eoriRange.map {
+      suffix =>
+        SeedEori(startEori.prefix, suffix, startEori.padLength)
     }
 
-    SeedDataResponse(???, ???, movementsPerUser, startMrn, replaceMrn.last)
+    val mrnRange = startMrn.suffix to (startMrn.suffix + movementsPerUser)
+
+    val rangeOfMrn: Seq[SeedMrn] = mrnRange.map {
+      suffix =>
+        SeedMrn(startMrn.prefix, suffix, startMrn.padLength)
+    }
+
+    SeedDataResponse(startEori, rangeOfEori.last, movementsPerUser, startMrn, rangeOfMrn.last)
   }
 
 }
