@@ -51,7 +51,7 @@ class TestOnlySeedDataControllerSpec extends SpecBase with ScalaCheckPropertyChe
 
   override def fakeApplication(): Application =
     new GuiceApplicationBuilder()
-      .configure("play.http.router" -> "testOnlyDoNotUseInAppConf.Routes")
+      .configure("play.http.router" -> "testOnlyDoNotUseInAppConf.Routes", "feature-flags.testOnly" -> true)
       .overrides(
         bind[Clock].toInstance(Clock.fixed(Instant.now(), ZoneId.systemDefault)),
         bind[ArrivalMovementRepository].toInstance(mockRepository),

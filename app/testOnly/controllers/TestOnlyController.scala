@@ -17,6 +17,7 @@
 package testOnly.controllers
 
 import javax.inject.Inject
+import play.api.Configuration
 import play.api.i18n.MessagesApi
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
@@ -27,20 +28,32 @@ import repositories.ArrivalMovementRepository
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
-class TestOnlyController @Inject()(override val messagesApi: MessagesApi, mongo: ReactiveMongoApi, cc: ControllerComponents)(implicit ec: ExecutionContext)
+class TestOnlyController @Inject()(
+  override val messagesApi: MessagesApi,
+  mongo: ReactiveMongoApi,
+  cc: ControllerComponents,
+  config: Configuration
+)(implicit ec: ExecutionContext)
     extends BackendController(cc) {
+
+  private val featureFlag: Boolean = config.get[Boolean]("feature-flags.testOnly")
 
   def dropArrivalMovementCollection: Action[AnyContent] = Action.async {
     implicit request =>
-      mongo.database
-        .map(_.collection[JSONCollection](ArrivalMovementRepository.collectionName))
-        .flatMap(
-          _.drop(failIfNotFound = false) map {
-            case true  => Ok(s"Dropped  '${ArrivalMovementRepository.collectionName}' Mongo collection")
-            case false => Ok("collection does not exist or something gone wrong")
-          }
-        )
+      if (featureFlag) {
+        mongo.database
+          .map(_.collection[JSONCollection](ArrivalMovementRepository.collectionName))
+          .flatMap(
+            _.drop(failIfNotFound = false) map {
+              case true  => Ok(s"Dropped  '${ArrivalMovementRepository.collectionName}' Mongo collection")
+              case false => Ok("collection does not exist or something gone wrong")
+            }
+          )
+      } else {
+        Future.successful(NotImplemented(s"Feature disabled, cannot drop ${ArrivalMovementRepository.collectionName}"))
+      }
   }
 
 }

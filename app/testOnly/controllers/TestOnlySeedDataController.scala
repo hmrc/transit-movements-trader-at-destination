@@ -17,8 +17,11 @@
 package testOnly.controllers
 
 import java.time.Clock
+
+import config.AppConfig
 import javax.inject.Inject
 import models.Arrival
+import play.api.Configuration
 import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
 import play.api.mvc.Action
@@ -38,28 +41,35 @@ class TestOnlySeedDataController @Inject()(
   override val messagesApi: MessagesApi,
   cc: ControllerComponents,
   clock: Clock,
-  repository: ArrivalMovementRepository
+  repository: ArrivalMovementRepository,
+  config: Configuration
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
+  private val featureFlag: Boolean = config.get[Boolean]("feature-flags.testOnly")
+
   def seedData: Action[SeedDataParameters] = Action.async(parse.json[SeedDataParameters]) {
     implicit request =>
-      val SeedDataParameters(
-        startEori,
-        numberOfUsers,
-        startMrn,
-        movementsPerUser
-      ) = request.body
+      if (featureFlag) {
+        val SeedDataParameters(
+          startEori,
+          numberOfUsers,
+          startMrn,
+          movementsPerUser
+        ) = request.body
 
-      val maxEori: SeedEori = SeedEori(startEori.prefix, startEori.suffix + numberOfUsers, startEori.padLength)
-      val maxMrn: SeedMrn   = SeedMrn(startMrn.prefix, startMrn.suffix + movementsPerUser, startMrn.padLength)
-      val totalMovements    = numberOfUsers * movementsPerUser
+        val maxEori: SeedEori = SeedEori(startEori.prefix, startEori.suffix + numberOfUsers, startEori.padLength)
+        val maxMrn: SeedMrn   = SeedMrn(startMrn.prefix, startMrn.suffix + movementsPerUser, startMrn.padLength)
+        val totalMovements    = numberOfUsers * movementsPerUser
 
-      val response = SeedDataResponse(numberOfUsers, startEori, maxEori, movementsPerUser, startMrn, maxMrn, totalMovements)
+        val response = SeedDataResponse(numberOfUsers, startEori, maxEori, movementsPerUser, startMrn, maxMrn, totalMovements)
 
-      output(request.body).map {
-        _ =>
-          Ok(Json.toJson(response))
+        output(request.body).map {
+          _ =>
+            Ok(Json.toJson(response))
+        }
+      } else {
+        Future.successful(NotImplemented("Feature disabled, could not seed data"))
       }
   }
 
