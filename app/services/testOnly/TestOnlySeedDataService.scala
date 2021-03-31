@@ -35,11 +35,23 @@ import scala.xml.NodeSeq
 
 object TestOnlySeedDataService {
 
-  def seedArrivals(seedDataParameters: SeedDataParameters, clock: Clock): Iterator[Arrival] =
-    for {
-      arrivalId   <- Iterator.from(999999).map(ArrivalId(_))
-      (eori, mrn) <- TestOnlyDataIteratorService.seedDataIterator(seedDataParameters)
-    } yield makeArrivalMovement(eori.format, mrn.format, arrivalId, clock)
+  def seedArrivals(seedDataParameters: SeedDataParameters, clock: Clock): Iterator[Arrival] = {
+
+    val arrivalIds = arrivalIdIterator(seedDataParameters.numberOfUsers, seedDataParameters.movementsPerUser)
+    val seedData   = TestOnlyDataIteratorService.seedDataIterator(seedDataParameters)
+
+    val zipDataAndId = seedData zip arrivalIds
+
+    zipDataAndId.map {
+      case ((eori, mrn), id) =>
+        makeArrivalMovement(eori.format, mrn.format, id, clock)
+    }
+  }
+
+  private def arrivalIdIterator(numberOfUsers: Int, movementsPerUser: Int): Iterator[ArrivalId] = {
+    val rangeEnd = Int.MaxValue - (numberOfUsers + movementsPerUser - 1)
+    (rangeEnd to Int.MaxValue).iterator.map(ArrivalId(_))
+  }
 
   private def makeArrivalMovement(eori: String, mrn: String, arrivalId: ArrivalId, clock: Clock): Arrival = {
 
