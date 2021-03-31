@@ -19,13 +19,20 @@ package controllers.testOnly
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 
-case class SeedEori(prefix: String, suffix: Int, padLength: Int)
+case class SeedEori(prefix: String, suffix: Long, padLength: Int) {
+
+  def format: String = {
+    val addPadding = s"%0${padLength}d".format(suffix)
+    prefix + addPadding
+  }
+
+}
 
 object SeedEori {
 
   implicit val read: Reads[SeedEori] = (
     __.read[String].map(_.substring(0, 2)) and
-      __.read[String].map(_.substring(2).toInt) and
+      __.read[String].map(_.substring(2).toLong) and
       __.read[String].map(_.substring(2).length)
   )(SeedEori(_, _, _))
 

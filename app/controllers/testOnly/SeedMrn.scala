@@ -19,7 +19,14 @@ package controllers.testOnly
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 
-case class SeedMrn(prefix: String, suffix: Long, padLength: Int)
+case class SeedMrn(prefix: String, suffix: Long, padLength: Int) {
+
+  def format: String = {
+    val addPadding = s"%0${padLength}d".format(suffix)
+    prefix + addPadding
+  }
+
+}
 
 object SeedMrn {
 

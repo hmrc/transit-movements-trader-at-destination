@@ -25,18 +25,18 @@ class SeedEoriSpec extends SpecBase {
 
     "must read from valid value" in {
 
-      val json = Json.toJson("ZZ00000001")
+      val json = Json.toJson("ZZ000000000001")
 
-      json.as[SeedEori] mustEqual SeedEori("ZZ", 1, 8)
+      json.as[SeedEori] mustEqual SeedEori("ZZ", 1, 12)
     }
 
     "must write from valid value in correct format" in {
 
-      val json  = Json.toJson("ZZ00000001")
-      val json2 = Json.toJson("ZZ12345678")
+      val json  = Json.toJson("ZZ000000000001")
+      val json2 = Json.toJson("GB602070107000")
 
-      val seedEori  = SeedEori("ZZ", 1, 8)
-      val seedEori2 = SeedEori("ZZ", 12345678, 1)
+      val seedEori  = SeedEori("ZZ", 1, 12)
+      val seedEori2 = SeedEori("GB", 602070107000L, 1)
 
       Json.toJson(seedEori) mustEqual json
       Json.toJson(seedEori2) mustEqual json2
