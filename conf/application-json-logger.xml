@@ -11,7 +11,9 @@
     <logger name="controllers.MovementsController" level="${logger.MovementsController:-ERROR}"/>
     <logger name="controllers.PDFGenerationController" level="${logger.UnloadingRemarksPDF:-ERROR}"/>
     <logger name="services.UnloadingPermissionPDFService" level="${logger.UnloadingPermissionPDFService:-ERROR}"/>
-    <logger name="models.request.actions.InboundMessageTransformer" level="${logger.InboundMessageTransformer:-ERROR}"/>
+    <logger name="controllers.actions.MessageTransformer" level="${logger.MessageTransformer:-ERROR}"/>
+    <logger name="controllers.actions.ValidateInboundMessageAction" level="${logger.ValidateInboundMessageAction:-WARN}"/>
+    <logger name="controllers.actions.ValidateOutboundMessageAction" level="${logger.ValidateOutboundMessageAction:-WARN}"/>
 
     <logger name="application.workers.AddJsonToMessagesWorker" level="${logger.application.workers.AddJsonToMessagesWorker:-INFO}"/>
 

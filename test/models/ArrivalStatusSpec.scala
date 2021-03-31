@@ -77,8 +77,9 @@ class ArrivalStatusSpec extends SpecBase with ScalaCheckDrivenPropertyChecks wit
 
     "ArrivalSubmitted must " - {
 
-      "transition to ArrivalSubmitted when receiving an ArrivalSubmitted event" in {
-        ArrivalSubmitted.transition(MessageReceivedEvent.ArrivalSubmitted).right.value mustBe ArrivalSubmitted
+      "do not transition to ArrivalSubmitted when receiving an ArrivalSubmitted event" in {
+        ArrivalSubmitted.transition(MessageReceivedEvent.ArrivalSubmitted).left.value mustBe TransitionError(
+          "Tried to transition from ArrivalSubmitted to ArrivalSubmitted.")
       }
 
       "transition to GoodsReceived when receiving a GoodsReleased event" in {
@@ -127,8 +128,9 @@ class ArrivalStatusSpec extends SpecBase with ScalaCheckDrivenPropertyChecks wit
           .value mustBe UnloadingRemarksXMLSubmissionNegativeAcknowledgement
       }
 
-      "transition to UnloadingRemarksSubmitted when receiving an UnloadingRemarksSubmitted event" in {
-        UnloadingRemarksSubmitted.transition(MessageReceivedEvent.UnloadingRemarksSubmitted).right.value mustBe UnloadingRemarksSubmitted
+      "do not transition to UnloadingRemarksSubmitted when receiving an UnloadingRemarksSubmitted event" in {
+        UnloadingRemarksSubmitted.transition(MessageReceivedEvent.UnloadingRemarksSubmitted).left.value mustBe TransitionError(
+          "Tried to transition from UnloadingRemarksSubmitted to UnloadingRemarksSubmitted.")
       }
 
       "transition to GoodsReceived when receiving a GoodsReleased event" in {

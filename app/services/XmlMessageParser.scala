@@ -16,10 +16,6 @@
 
 package services
 
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.LocalTime
-
 import cats.data._
 import cats.implicits._
 import models.MessageType
@@ -28,6 +24,9 @@ import models.ParseError
 import models.ParseError._
 import utils.Format
 
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
@@ -40,10 +39,11 @@ object XmlMessageParser {
   def correctRootNodeR(messageType: MessageType): ReaderT[ParseHandler, NodeSeq, NodeSeq] =
     ReaderT[ParseHandler, NodeSeq, NodeSeq] {
       nodeSeq =>
-        if (nodeSeq.head.label == messageType.rootNode)
+        if (nodeSeq.head.label == messageType.rootNode) {
           Right(nodeSeq)
-        else
+        } else {
           Left(InvalidRootNode(s"Node ${nodeSeq.head.label} didn't match ${messageType.rootNode}"))
+        }
     }
 
   val dateOfPrepR: ReaderT[ParseHandler, NodeSeq, LocalDate] =

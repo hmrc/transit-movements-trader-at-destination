@@ -14,34 +14,28 @@
  * limitations under the License.
  */
 
-package models.request.actions
+package controllers.actions
 
 import com.google.inject.Inject
 import models.ArrivalStatus.GoodsReleased
-import models.request.ArrivalRequest
 import models.GoodsReleasedResponse
-import models.MessageInbound
+import models.Message
+import models.request.ArrivalRequest
 import play.api.mvc.Result
 import play.api.mvc.Results.BadRequest
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class FakeInboundMessageTransformer @Inject()(implicit ec: ExecutionContext) extends InboundMessageTransformerInterface {
-
-  override def executionContext: ExecutionContext = ec
-
-  override protected def refine[A](request: ArrivalRequest[A]): Future[Either[Result, InboundRequest[A]]] =
+class FakeMessageTransformer @Inject()(implicit val executionContext: ExecutionContext) extends MessageTransformerInterface {
+  override protected def refine[A](request: ArrivalRequest[A]): Future[Either[Result, MessageTransformRequest[A]]] =
     Future.successful(
-      Right(InboundRequest(MessageInbound(GoodsReleasedResponse, GoodsReleased), request))
+      Right(MessageTransformRequest(Message(GoodsReleasedResponse, GoodsReleased), request))
     )
 }
 
-class FakeInboundMessageBadRequestTransformer @Inject()(implicit ec: ExecutionContext) extends InboundMessageTransformerInterface {
-
-  override def executionContext: ExecutionContext = ec
-
-  override protected def refine[A](request: ArrivalRequest[A]): Future[Either[Result, InboundRequest[A]]] =
+class FakeInboundMessageBadRequestTransformer @Inject()(implicit val executionContext: ExecutionContext) extends MessageTransformerInterface {
+  override protected def refine[A](request: ArrivalRequest[A]): Future[Either[Result, MessageTransformRequest[A]]] =
     Future.successful(
       Left(BadRequest)
     )

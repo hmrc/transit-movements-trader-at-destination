@@ -16,14 +16,14 @@
 
 package controllers.actions
 
-import javax.inject.Inject
 import logging.Logging
 import models.ArrivalId
-import play.api.mvc._
 import play.api.mvc.Results.InternalServerError
 import play.api.mvc.Results.Locked
+import play.api.mvc._
 import repositories.LockRepository
 
+import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 

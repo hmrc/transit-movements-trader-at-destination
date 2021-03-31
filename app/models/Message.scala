@@ -16,4 +16,7 @@
 
 package models
 
-case class MessageInbound(messageType: MessageResponse, nextState: ArrivalStatus)
+case class InboundMessage(messageType: InboundMessageResponse, nextState: ArrivalStatus)
+case class OutboundMessage(messageType: OutboundMessageResponse, nextState: ArrivalStatus)
+
+case class Message(messageType: MessageResponse, nextState: ArrivalStatus)
