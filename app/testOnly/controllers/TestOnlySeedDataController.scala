@@ -17,13 +17,13 @@
 package testOnly.controllers
 
 import java.time.Clock
-
 import javax.inject.Inject
 import models.Arrival
 import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.ControllerComponents
+import repositories.ArrivalMovementRepository
 import testOnly.models.SeedDataParameters
 import testOnly.models.SeedDataResponse
 import testOnly.models.SeedEori
@@ -32,28 +32,43 @@ import testOnly.services.TestOnlySeedDataService
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
-class TestOnlySeedDataController @Inject()(override val messagesApi: MessagesApi, cc: ControllerComponents, clock: Clock)(implicit ec: ExecutionContext)
+class TestOnlySeedDataController @Inject()(
+  override val messagesApi: MessagesApi,
+  cc: ControllerComponents,
+  clock: Clock,
+  repository: ArrivalMovementRepository
+)(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
-  def seedData: Action[SeedDataParameters] = Action(parse.json[SeedDataParameters]) {
+  def seedData: Action[SeedDataParameters] = Action.async(parse.json[SeedDataParameters]) {
     implicit request =>
-      Ok(Json.toJson(output(request.body)))
+      val SeedDataParameters(
+        startEori,
+        numberOfUsers,
+        startMrn,
+        movementsPerUser
+      ) = request.body
+
+      val maxEori: SeedEori = SeedEori(startEori.prefix, startEori.suffix + numberOfUsers, startEori.padLength)
+      val maxMrn: SeedMrn   = SeedMrn(startMrn.prefix, startMrn.suffix + movementsPerUser, startMrn.padLength)
+
+      val response = SeedDataResponse(startEori, maxEori, movementsPerUser, startMrn, maxMrn)
+
+      output(request.body).map {
+        _ =>
+          Ok(Json.toJson(response))
+      }
   }
 
-  private def output(seedDataParameters: SeedDataParameters): SeedDataResponse = {
-    val SeedDataParameters(
-      startEori,
-      numberOfUsers,
-      startMrn,
-      movementsPerUser
-    ) = seedDataParameters
+  private def output(seedDataParameters: SeedDataParameters): Future[Unit] =
+    Future
+      .sequence {
+        TestOnlySeedDataService
+          .seedArrivals(seedDataParameters, clock)
+          .map(repository.insert)
+      }
+      .map(_ => ())
 
-    val dataToInsert: Iterator[Arrival] = TestOnlySeedDataService.seedArrivals(seedDataParameters, clock) // TODO: Use this
-
-    val maxEori: SeedEori = SeedEori(startEori.prefix, startEori.suffix + numberOfUsers, startEori.padLength)
-    val maxMrn: SeedMrn   = SeedMrn(startMrn.prefix, startMrn.suffix + movementsPerUser, startMrn.padLength)
-
-    SeedDataResponse(startEori, maxEori, movementsPerUser, startMrn, maxMrn)
-  }
 }

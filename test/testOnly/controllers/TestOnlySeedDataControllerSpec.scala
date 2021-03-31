@@ -19,10 +19,15 @@ package testOnly.controllers
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneId
-
 import base._
 import generators.ModelGenerators
 import models.ChannelType
+import org.mockito.ArgumentMatchers._
+import org.mockito.Mockito
+import org.mockito.Mockito.times
+import org.mockito.Mockito.verify
+import org.mockito.Mockito.when
+import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.Application
@@ -33,18 +38,31 @@ import play.api.libs.json.Json
 import play.api.mvc.AnyContentAsJson
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
+import repositories.ArrivalMovementRepository
 
-class TestOnlySeedDataControllerSpec extends SpecBase with ScalaCheckPropertyChecks with ModelGenerators with GuiceOneAppPerSuite {
+import scala.concurrent.Future
+
+class TestOnlySeedDataControllerSpec extends SpecBase with ScalaCheckPropertyChecks with ModelGenerators with GuiceOneAppPerSuite with BeforeAndAfterEach {
+
+  val mockRepository = mock[ArrivalMovementRepository]
+
+  override def beforeEach: Unit =
+    Mockito.reset(mockRepository)
 
   override def fakeApplication(): Application =
     new GuiceApplicationBuilder()
       .configure("play.http.router" -> "testOnlyDoNotUseInAppConf.Routes")
-      .overrides(bind[Clock].toInstance(Clock.fixed(Instant.now(), ZoneId.systemDefault)))
+      .overrides(
+        bind[Clock].toInstance(Clock.fixed(Instant.now(), ZoneId.systemDefault)),
+        bind[ArrivalMovementRepository].toInstance(mockRepository),
+      )
       .build()
 
   "seedData" - {
 
     "must return OK, when the service validates and save the message" in {
+
+      when(mockRepository.insert(any())).thenReturn(Future.successful(()))
 
       val request: FakeRequest[AnyContentAsJson] = FakeRequest(POST, testOnly.controllers.routes.TestOnlySeedDataController.seedData().url)
         .withHeaders("channel" -> ChannelType.web.toString)
@@ -66,6 +84,8 @@ class TestOnlySeedDataControllerSpec extends SpecBase with ScalaCheckPropertyChe
         "mrnRangeStart"    -> "21GB00000000000001",
         "mrnRangeEnd"      -> "21GB00000000000011",
       )
+
+      verify(mockRepository, times(1000)).insert(any())
     }
   }
 }
