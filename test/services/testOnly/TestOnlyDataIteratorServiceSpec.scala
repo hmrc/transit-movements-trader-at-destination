@@ -16,28 +16,34 @@
 
 package services.testOnly
 
+import base.SpecBase
 import models.testOnly.SeedDataParameters
 import models.testOnly.SeedEori
 import models.testOnly.SeedMrn
 
-private[testOnly] object TestOnlyDataIteratorService {
+class TestOnlyDataIteratorServiceSpec extends SpecBase {
 
-  def seedDataIterator(seedDataParameters: SeedDataParameters): Iterator[(SeedEori, SeedMrn)] = {
-    val SeedDataParameters(
-      startEori,
-      numberOfUsers,
-      startMrn,
-      movementsPerUser
-    ) = seedDataParameters
+  "seedDataIterator" - {
 
-    (startEori.suffix to (startEori.suffix + numberOfUsers - 1)).toIterator
-      .map(SeedEori(startEori.prefix, _, startEori.padLength))
-      .flatMap {
-        seedEori =>
-          (startMrn.suffix to (startMrn.suffix + movementsPerUser - 1)).toIterator
-            .map(SeedMrn(startMrn.prefix, _, startMrn.padLength))
-            .map(x => (seedEori, x))
-      }
+    "must create an iteration of eori's and mrn's" in {
+
+      val seedEori  = SeedEori("ZZ", 1, 12)
+      val seedEori1 = SeedEori("ZZ", 2, 12)
+
+      val seedMrn  = SeedMrn("21GB", 1, 14)
+      val seedMrn1 = SeedMrn("21GB", 2, 14)
+
+      val seedDataParameters = SeedDataParameters(seedEori, 2, seedMrn, 2)
+
+      val expectedResult = Seq(
+        (seedEori, seedMrn),
+        (seedEori, seedMrn1),
+        (seedEori1, seedMrn),
+        (seedEori1, seedMrn1)
+      )
+
+      TestOnlyDataIteratorService.seedDataIterator(seedDataParameters).toSeq mustBe expectedResult
+    }
   }
 
 }
