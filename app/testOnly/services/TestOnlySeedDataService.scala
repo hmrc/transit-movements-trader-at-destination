@@ -46,7 +46,7 @@ object TestOnlySeedDataService {
   }
 
   private def arrivalIdIterator(numberOfUsers: Int, movementsPerUser: Int): Iterator[ArrivalId] = {
-    val rangeEnd = Int.MaxValue - (numberOfUsers + movementsPerUser - 1)
+    val rangeEnd = Int.MaxValue - ((numberOfUsers * movementsPerUser) - 1)
     (rangeEnd to Int.MaxValue).iterator.map(ArrivalId(_))
   }
 

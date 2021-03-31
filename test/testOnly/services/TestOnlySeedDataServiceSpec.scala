@@ -19,15 +19,18 @@ package testOnly.services
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneId
-
 import base.SpecBase
 import models.ArrivalId
 import models.MovementReferenceNumber
+import org.scalacheck.Gen
+import org.scalacheck.Shrink
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import testOnly.models.SeedDataParameters
 import testOnly.models.SeedEori
 import testOnly.models.SeedMrn
 
-class TestOnlySeedDataServiceSpec extends SpecBase {
+class TestOnlySeedDataServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChecks {
+  implicit def dontShrink[A]: Shrink[A] = Shrink.shrinkAny
 
   val testClock = Clock.fixed(Instant.now(), ZoneId.systemDefault)
 
@@ -56,6 +59,22 @@ class TestOnlySeedDataServiceSpec extends SpecBase {
           .map(x => (x.arrivalId, x.eoriNumber, x.movementReferenceNumber))
 
       result mustBe expectedResult
+    }
+
+    "the total number of Arrivals from the iterator is the (Number users x number of movements)" in {
+      val genInt = Gen.choose(10, 50)
+
+      val seedEori = SeedEori("ZZ", 1, 12)
+      val seedMrn  = SeedMrn("21GB", 1, 14)
+
+      forAll(genInt, genInt) {
+        (eoriCount, mrnCount) =>
+          val seedDataParameters = SeedDataParameters(seedEori, eoriCount, seedMrn, mrnCount)
+
+          val iterator = TestOnlySeedDataService.seedArrivals(seedDataParameters, testClock)
+
+          iterator.length mustEqual (eoriCount * mrnCount)
+      }
     }
   }
 
