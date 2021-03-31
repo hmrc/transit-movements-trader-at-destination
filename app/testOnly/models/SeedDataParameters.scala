@@ -16,16 +16,39 @@
 
 package testOnly.models
 
-import play.api.libs.json.Format
-import play.api.libs.json.Json
+import play.api.libs.json._
+import play.api.libs.functional.syntax._
 
-case class SeedDataParameters(
-  startEori: SeedEori,
-  numberOfUsers: Int,
-  startMrn: SeedMrn,
-  movementsPerUser: Int
-)
+class SeedDataParameters(
+  val numberOfUsers: Int,
+  val movementsPerUser: Int
+) {
+
+  override def equals(obj: Any): Boolean = obj match {
+    case x: SeedDataParameters => (numberOfUsers == x.numberOfUsers) && (movementsPerUser == x.movementsPerUser)
+    case _                     => false
+  }
+
+  val startEori: SeedEori = SeedEori("ZZ", 1, 12)
+  val startMrn: SeedMrn   = SeedMrn("21GB", 1, 14)
+}
 
 object SeedDataParameters {
-  implicit val format: Format[SeedDataParameters] = Json.format[SeedDataParameters]
+
+  def apply(numberOfUsers: Int, movementsPerUser: Int): SeedDataParameters = new SeedDataParameters(numberOfUsers, movementsPerUser)
+
+  def unapply(seedDataParameters: SeedDataParameters): Option[(SeedEori, Int, SeedMrn, Int)] =
+    Some(
+      (
+        seedDataParameters.startEori,
+        seedDataParameters.numberOfUsers,
+        seedDataParameters.startMrn,
+        seedDataParameters.movementsPerUser
+      ))
+
+  implicit val reads: Reads[SeedDataParameters] =
+    (
+      (__ \ "numberOfUsers").read[Int] and
+        (__ \ "movementsPerUser").read[Int]
+    )(SeedDataParameters.apply _)
 }

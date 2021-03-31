@@ -68,9 +68,7 @@ class TestOnlySeedDataControllerSpec extends SpecBase with ScalaCheckPropertyChe
         .withHeaders("channel" -> ChannelType.web.toString)
         .withJsonBody(Json.parse("""
             |{
-            |  "startEori": "ZZ0000001",
             |  "numberOfUsers": 100,
-            |  "startMrn": "21GB00000000000001",
             |  "movementsPerUser": 10
             |}""".stripMargin).as[JsObject])
 
@@ -78,11 +76,13 @@ class TestOnlySeedDataControllerSpec extends SpecBase with ScalaCheckPropertyChe
 
       status(result) mustEqual OK
       contentAsJson(result) mustEqual Json.obj(
-        "eoriRangeStart"   -> "ZZ0000001",
-        "eoriRangeEnd"     -> "ZZ0000101",
-        "movementsPerUser" -> 10,
-        "mrnRangeStart"    -> "21GB00000000000001",
-        "mrnRangeEnd"      -> "21GB00000000000011",
+        "eoriRangeStart"         -> "ZZ000000000001",
+        "eoriRangeEnd"           -> "ZZ000000000101",
+        "numberOfUsers"          -> 100,
+        "mrnRangeStart"          -> "21GB00000000000001",
+        "mrnRangeEnd"            -> "21GB00000000000011",
+        "movementsPerUser"       -> 10,
+        "totalInsertedMovements" -> 1000
       )
 
       verify(mockRepository, times(1000)).insert(any())

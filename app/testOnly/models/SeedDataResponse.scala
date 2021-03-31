@@ -19,11 +19,13 @@ package testOnly.models
 import play.api.libs.json.Json
 
 case class SeedDataResponse(
+  numberOfUsers: Int,
   eoriRangeStart: SeedEori,
   eoriRangeEnd: SeedEori,
   movementsPerUser: Int,
   mrnRangeStart: SeedMrn,
-  mrnRangeEnd: SeedMrn
+  mrnRangeEnd: SeedMrn,
+  totalInsertedMovements: Int
 )
 
 object SeedDataResponse {

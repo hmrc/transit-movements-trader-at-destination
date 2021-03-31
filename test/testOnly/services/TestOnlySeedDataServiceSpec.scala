@@ -43,7 +43,7 @@ class TestOnlySeedDataServiceSpec extends SpecBase with ScalaCheckDrivenProperty
       val seedMrn   = SeedMrn("21GB", 1, 14)
       val seedMrn1  = SeedMrn("21GB", 2, 14)
 
-      val seedDataParameters = SeedDataParameters(seedEori, 2, seedMrn, 2)
+      val seedDataParameters = SeedDataParameters(2, 2)
 
       val expectedResult = Seq(
         (ArrivalId(Int.MaxValue - 3), seedEori.format, MovementReferenceNumber(seedMrn.format)),
@@ -69,7 +69,7 @@ class TestOnlySeedDataServiceSpec extends SpecBase with ScalaCheckDrivenProperty
 
       forAll(genInt, genInt) {
         (eoriCount, mrnCount) =>
-          val seedDataParameters = SeedDataParameters(seedEori, eoriCount, seedMrn, mrnCount)
+          val seedDataParameters = SeedDataParameters(eoriCount, mrnCount)
 
           val iterator = TestOnlySeedDataService.seedArrivals(seedDataParameters, testClock)
 

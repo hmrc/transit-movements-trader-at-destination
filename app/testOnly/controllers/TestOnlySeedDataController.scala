@@ -53,8 +53,9 @@ class TestOnlySeedDataController @Inject()(
 
       val maxEori: SeedEori = SeedEori(startEori.prefix, startEori.suffix + numberOfUsers, startEori.padLength)
       val maxMrn: SeedMrn   = SeedMrn(startMrn.prefix, startMrn.suffix + movementsPerUser, startMrn.padLength)
+      val totalMovements    = numberOfUsers * movementsPerUser
 
-      val response = SeedDataResponse(startEori, maxEori, movementsPerUser, startMrn, maxMrn)
+      val response = SeedDataResponse(numberOfUsers, startEori, maxEori, movementsPerUser, startMrn, maxMrn, totalMovements)
 
       output(request.body).map {
         _ =>

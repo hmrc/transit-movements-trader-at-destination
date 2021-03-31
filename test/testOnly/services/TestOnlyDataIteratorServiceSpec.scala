@@ -33,7 +33,7 @@ class TestOnlyDataIteratorServiceSpec extends SpecBase {
       val seedMrn  = SeedMrn("21GB", 1, 14)
       val seedMrn1 = SeedMrn("21GB", 2, 14)
 
-      val seedDataParameters = SeedDataParameters(seedEori, 2, seedMrn, 2)
+      val seedDataParameters = SeedDataParameters(2, 2)
 
       val expectedResult = Seq(
         (seedEori, seedMrn),
