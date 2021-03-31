@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package controllers.testOnly
+package testOnly.models
 
 import base.SpecBase
-import models.testOnly.SeedMrn
 import play.api.libs.json.Json
 
 class SeedMrnSpec extends SpecBase {

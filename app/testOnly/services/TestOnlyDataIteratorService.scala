@@ -14,30 +14,21 @@
  * limitations under the License.
  */
 
-package services.testOnly
+package testOnly.services
 
-import models.testOnly.SeedDataParameters
-import models.testOnly.SeedEori
-import models.testOnly.SeedMrn
+import testOnly.models.SeedDataParameters
+import testOnly.models.SeedEori
+import testOnly.models.SeedMrn
 
 private[testOnly] object TestOnlyDataIteratorService {
 
   def seedDataIterator(seedDataParameters: SeedDataParameters): Iterator[(SeedEori, SeedMrn)] = {
-    val SeedDataParameters(
-      startEori,
-      numberOfUsers,
-      startMrn,
-      movementsPerUser
-    ) = seedDataParameters
+    val SeedDataParameters(startEori, numberOfUsers, startMrn, movementsPerUser) = seedDataParameters
 
-    (startEori.suffix to (startEori.suffix + numberOfUsers - 1)).toIterator
-      .map(SeedEori(startEori.prefix, _, startEori.padLength))
-      .flatMap {
-        seedEori =>
-          (startMrn.suffix to (startMrn.suffix + movementsPerUser - 1)).toIterator
-            .map(SeedMrn(startMrn.prefix, _, startMrn.padLength))
-            .map(x => (seedEori, x))
-      }
+    (startEori.suffix to (startEori.suffix + numberOfUsers - 1)).toIterator.map(SeedEori(startEori.prefix, _, startEori.padLength)).flatMap {
+      seedEori =>
+        (startMrn.suffix to (startMrn.suffix + movementsPerUser - 1)).toIterator.map(SeedMrn(startMrn.prefix, _, startMrn.padLength)).map(x => (seedEori, x))
+    }
   }
 
 }

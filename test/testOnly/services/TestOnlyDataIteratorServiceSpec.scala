@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package services.testOnly
+package testOnly.services
 
 import base.SpecBase
-import models.testOnly.SeedDataParameters
-import models.testOnly.SeedEori
-import models.testOnly.SeedMrn
+import testOnly.models.SeedDataParameters
+import testOnly.models.SeedEori
+import testOnly.models.SeedMrn
 
 class TestOnlyDataIteratorServiceSpec extends SpecBase {
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package controllers.testOnly
+package testOnly.controllers
 
 import javax.inject.Inject
 import play.api.i18n.MessagesApi

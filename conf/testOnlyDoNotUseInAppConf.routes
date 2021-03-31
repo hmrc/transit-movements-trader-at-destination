@@ -10,9 +10,9 @@
 # Failing to follow this rule may result in test routes deployed in production.
 
 + nocsrf
-DELETE  /test-only/transit-movements-trader-at-destination/dropArrivalMovementCollection controllers.testOnly.TestOnlyController.dropArrivalMovementCollection
+DELETE  /test-only/transit-movements-trader-at-destination/dropArrivalMovementCollection testOnly.controllers.TestOnlyController.dropArrivalMovementCollection
 
-POST    /test-only/transit-movements-trader-at-destination/seedData controllers.testOnly.TestOnlySeedDataController.seedData
+POST    /test-only/transit-movements-trader-at-destination/seedData testOnly.controllers.TestOnlySeedDataController.seedData
 
 # Add all the application routes to the prod.routes file
 ->         /                          prod.Routes

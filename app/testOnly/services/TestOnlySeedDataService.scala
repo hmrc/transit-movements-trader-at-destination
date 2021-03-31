@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package services.testOnly
+package testOnly.services
 
 import java.time.Clock
 import java.time.LocalDateTime
@@ -28,8 +28,8 @@ import models.ChannelType
 import models.MessageStatus
 import models.MovementMessageWithStatus
 import models.MovementReferenceNumber
-import models.testOnly.SeedDataParameters
 import play.api.libs.json.JsObject
+import testOnly.models.SeedDataParameters
 
 import scala.xml.NodeSeq
 
@@ -42,10 +42,7 @@ object TestOnlySeedDataService {
 
     val zipDataAndId = seedData zip arrivalIds
 
-    zipDataAndId.map {
-      case ((eori, mrn), id) =>
-        makeArrivalMovement(eori.format, mrn.format, id, clock)
-    }
+    zipDataAndId.map { case ((eori, mrn), id) => makeArrivalMovement(eori.format, mrn.format, id, clock) }
   }
 
   private def arrivalIdIterator(numberOfUsers: Int, movementsPerUser: Int): Iterator[ArrivalId] = {
@@ -57,27 +54,9 @@ object TestOnlySeedDataService {
 
     val dateTime = LocalDateTime.now(clock)
 
-    val movementMessage = MovementMessageWithStatus(
-      dateTime,
-      ArrivalNotification,
-      NodeSeq.Empty,
-      MessageStatus.SubmissionPending,
-      1,
-      JsObject.empty
-    )
+    val movementMessage = MovementMessageWithStatus(dateTime, ArrivalNotification, NodeSeq.Empty, MessageStatus.SubmissionPending, 1, JsObject.empty)
 
-    Arrival(
-      arrivalId,
-      ChannelType.web,
-      MovementReferenceNumber(mrn),
-      eori,
-      Initialized,
-      dateTime,
-      dateTime,
-      dateTime,
-      NonEmptyList.one(movementMessage),
-      2
-    )
+    Arrival(arrivalId, ChannelType.web, MovementReferenceNumber(mrn), eori, Initialized, dateTime, dateTime, dateTime, NonEmptyList.one(movementMessage), 2)
   }
 
 }

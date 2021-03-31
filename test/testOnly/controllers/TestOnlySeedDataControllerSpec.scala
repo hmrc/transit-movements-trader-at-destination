@@ -14,7 +14,11 @@
  * limitations under the License.
  */
 
-package controllers.testOnly
+package testOnly.controllers
+
+import java.time.Clock
+import java.time.Instant
+import java.time.ZoneId
 
 import base._
 import generators.ModelGenerators
@@ -22,17 +26,13 @@ import models.ChannelType
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.Application
+import play.api.inject._
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import play.api.mvc.AnyContentAsJson
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import play.api.inject._
-
-import java.time.Clock
-import java.time.Instant
-import java.time.ZoneId
 
 class TestOnlySeedDataControllerSpec extends SpecBase with ScalaCheckPropertyChecks with ModelGenerators with GuiceOneAppPerSuite {
 
@@ -46,7 +46,7 @@ class TestOnlySeedDataControllerSpec extends SpecBase with ScalaCheckPropertyChe
 
     "must return OK, when the service validates and save the message" in {
 
-      val request: FakeRequest[AnyContentAsJson] = FakeRequest(POST, controllers.testOnly.routes.TestOnlySeedDataController.seedData().url)
+      val request: FakeRequest[AnyContentAsJson] = FakeRequest(POST, testOnly.controllers.routes.TestOnlySeedDataController.seedData().url)
         .withHeaders("channel" -> ChannelType.web.toString)
         .withJsonBody(Json.parse("""
             |{

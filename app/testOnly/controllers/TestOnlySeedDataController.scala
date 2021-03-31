@@ -14,21 +14,21 @@
  * limitations under the License.
  */
 
-package controllers.testOnly
+package testOnly.controllers
 
 import java.time.Clock
 
 import javax.inject.Inject
 import models.Arrival
-import models.testOnly.SeedDataParameters
-import models.testOnly.SeedDataResponse
-import models.testOnly.SeedEori
-import models.testOnly.SeedMrn
 import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.ControllerComponents
-import services.testOnly.TestOnlySeedDataService
+import testOnly.models.SeedDataParameters
+import testOnly.models.SeedDataResponse
+import testOnly.models.SeedEori
+import testOnly.models.SeedMrn
+import testOnly.services.TestOnlySeedDataService
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.ExecutionContext

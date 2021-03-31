@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-package services.testOnly
-
-import base.SpecBase
-import models.ArrivalId
-import models.MovementReferenceNumber
-import models.testOnly.SeedDataParameters
-import models.testOnly.SeedEori
-import models.testOnly.SeedMrn
+package testOnly.services
 
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneId
+
+import base.SpecBase
+import models.ArrivalId
+import models.MovementReferenceNumber
+import testOnly.models.SeedDataParameters
+import testOnly.models.SeedEori
+import testOnly.models.SeedMrn
 
 class TestOnlySeedDataServiceSpec extends SpecBase {
 
@@ -33,7 +33,7 @@ class TestOnlySeedDataServiceSpec extends SpecBase {
 
   "seedArrivals" - {
 
-    "returns an iterator of arrivals with Arrival Id starting at ??? for the number of users and movements specified" in {
+    "returns an iterator of arrivals with Arrival Id's for the number of users and movements specified" in {
 
       val seedEori  = SeedEori("ZZ", 1, 12)
       val seedEori1 = SeedEori("ZZ", 2, 12)

@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package controllers.testOnly
+package testOnly.models
 
 import base.SpecBase
-import models.testOnly.SeedEori
 import play.api.libs.json.Json
 
 class SeedEoriSpec extends SpecBase {
