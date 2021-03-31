@@ -28,12 +28,18 @@ import play.api.libs.json.Json
 import play.api.mvc.AnyContentAsJson
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
+import play.api.inject._
+
+import java.time.Clock
+import java.time.Instant
+import java.time.ZoneId
 
 class TestOnlySeedDataControllerSpec extends SpecBase with ScalaCheckPropertyChecks with ModelGenerators with GuiceOneAppPerSuite {
 
   override def fakeApplication(): Application =
     new GuiceApplicationBuilder()
       .configure("play.http.router" -> "testOnlyDoNotUseInAppConf.Routes")
+      .overrides(bind[Clock].toInstance(Clock.fixed(Instant.now(), ZoneId.systemDefault)))
       .build()
 
   "seedData" - {

@@ -16,13 +16,15 @@
 
 package controllers.testOnly
 
+import java.time.Clock
 import java.time.LocalDateTime
-
 import cats.data.NonEmptyList
+
 import javax.inject.Inject
 import models.ArrivalStatus.Initialized
 import models.MessageType.ArrivalNotification
 import models.Arrival
+import models.ArrivalId
 import models.ChannelType
 import models.MessageStatus
 import models.MovementMessageWithStatus
@@ -40,8 +42,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.xml.NodeSeq
 
-class TestOnlySeedDataController @Inject()(override val messagesApi: MessagesApi, arrivalIdRepository: ArrivalIdRepository, cc: ControllerComponents)(
-  implicit ec: ExecutionContext)
+class TestOnlySeedDataController @Inject()(override val messagesApi: MessagesApi, cc: ControllerComponents, clock: Clock)(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
   def seedData: Action[SeedDataParameters] = Action(parse.json[SeedDataParameters]) {
@@ -50,7 +51,6 @@ class TestOnlySeedDataController @Inject()(override val messagesApi: MessagesApi
   }
 
   private def output(seedDataParameters: SeedDataParameters): SeedDataResponse = {
-
     val SeedDataParameters(
       startEori,
       numberOfUsers,
@@ -58,38 +58,36 @@ class TestOnlySeedDataController @Inject()(override val messagesApi: MessagesApi
       movementsPerUser
     ) = seedDataParameters
 
-    val eoriRange: immutable.Seq[Long] = startEori.suffix to (startEori.suffix + numberOfUsers)
+    val dataToInsert: Iterator[Arrival] = seedArrivals(seedDataParameters) // TODO: Use this
 
-    val rangeOfEori: Seq[SeedEori] = eoriRange.map {
-      suffix =>
-        SeedEori(startEori.prefix, suffix, startEori.padLength)
-    }
-
-    val mrnRange: immutable.Seq[Long] = startMrn.suffix to (startMrn.suffix + movementsPerUser)
-
-    val rangeOfMrn: Seq[SeedMrn] = mrnRange.map {
-      suffix =>
-        SeedMrn(startMrn.prefix, suffix, startMrn.padLength)
-    }
-
-
-    val arrivalList: Future[immutable.Seq[Arrival]] = Future.sequence {
-      eoriRange.flatMap { suffix =>
-        val eori = SeedEori(startEori.prefix, suffix, startEori.padLength).format
-
-        mrnRange.map { suffix =>
-          val mrn = SeedMrn(startMrn.prefix, suffix, startMrn.padLength).format
-          makeArrivalMovement(eori, mrn)
-        }
-      }
-    }
-
-    SeedDataResponse(startEori, rangeOfEori.last, movementsPerUser, startMrn, rangeOfMrn.last)
+    val maxEori: SeedEori = SeedEori(startEori.prefix, startEori.suffix + numberOfUsers, startEori.padLength)
+    val maxMrn: SeedMrn   = SeedMrn(startMrn.prefix, startMrn.suffix + movementsPerUser, startMrn.padLength)
+    SeedDataResponse(startEori, maxEori, movementsPerUser, startMrn, maxMrn)
   }
 
-  def makeArrivalMovement(eori: String, mrn: String): Future[Arrival] = {
+  private def seedDataIterator(seedDataParameters: SeedDataParameters): Iterator[(SeedEori, SeedMrn)] = {
+    val SeedDataParameters(
+      startEori,
+      numberOfUsers,
+      startMrn,
+      movementsPerUser
+    ) = seedDataParameters
 
-    val dateTime = LocalDateTime.now()
+    Iterator
+      .from(startEori.suffix.toInt, numberOfUsers) // TODO: Deal with long
+      .map(SeedEori(startEori.prefix, _, startEori.padLength))
+      .flatMap {
+        seedEori =>
+          Iterator
+            .from(startMrn.suffix.toInt, movementsPerUser) // TODO: Deal with long
+            .map(SeedMrn(startMrn.prefix, _, startMrn.padLength))
+            .map(x => (seedEori, x))
+      }
+  }
+
+  private def makeArrivalMovement(eori: String, mrn: String, arrivalId: ArrivalId): Arrival = {
+
+    val dateTime = LocalDateTime.now(clock)
 
     val movementMessage = MovementMessageWithStatus(
       dateTime,
@@ -100,21 +98,24 @@ class TestOnlySeedDataController @Inject()(override val messagesApi: MessagesApi
       JsObject.empty
     )
 
-    arrivalIdRepository.nextId().map {
-      arrivalId =>
-        Arrival(
-          arrivalId,
-          ChannelType.web,
-          MovementReferenceNumber(mrn),
-          eori,
-          Initialized,
-          dateTime,
-          dateTime,
-          dateTime,
-          NonEmptyList.one(movementMessage),
-          2
-        )
-    }
+    Arrival(
+      arrivalId,
+      ChannelType.web,
+      MovementReferenceNumber(mrn),
+      eori,
+      Initialized,
+      dateTime,
+      dateTime,
+      dateTime,
+      NonEmptyList.one(movementMessage),
+      2
+    )
   }
+
+  private def seedArrivals(seedDataParameters: SeedDataParameters): Iterator[Arrival] =
+    for {
+      arrivalId   <- Iterator.from(999999).map(ArrivalId(_))
+      (eori, mrn) <- seedDataIterator(seedDataParameters)
+    } yield makeArrivalMovement(eori.format, mrn.format, arrivalId)
 
 }
