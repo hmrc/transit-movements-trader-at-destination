@@ -17,6 +17,7 @@
 package controllers.testOnly
 
 import base.SpecBase
+import models.testOnly.SeedMrn
 import play.api.libs.json.Json
 
 class SeedMrnSpec extends SpecBase {

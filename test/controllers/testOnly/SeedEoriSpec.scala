@@ -17,6 +17,7 @@
 package controllers.testOnly
 
 import base.SpecBase
+import models.testOnly.SeedEori
 import play.api.libs.json.Json
 
 class SeedEoriSpec extends SpecBase {

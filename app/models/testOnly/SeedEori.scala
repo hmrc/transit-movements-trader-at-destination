@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package controllers.testOnly
+package models.testOnly
 
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 
-case class SeedMrn(prefix: String, suffix: Long, padLength: Int) {
+case class SeedEori(prefix: String, suffix: Long, padLength: Int) {
 
   def format: String = {
     val addPadding = s"%0${padLength}d".format(suffix)
@@ -28,15 +28,15 @@ case class SeedMrn(prefix: String, suffix: Long, padLength: Int) {
 
 }
 
-object SeedMrn {
+object SeedEori {
 
-  implicit val read: Reads[SeedMrn] = (
-    __.read[String].map(_.substring(0, 4)) and
-      __.read[String].map(_.substring(4, 18).toLong) and
-      __.read[String].map(_.substring(4).length)
-  )(SeedMrn(_, _, _))
+  implicit val read: Reads[SeedEori] = (
+    __.read[String].map(_.substring(0, 2)) and
+      __.read[String].map(_.substring(2).toLong) and
+      __.read[String].map(_.substring(2).length)
+  )(SeedEori(_, _, _))
 
-  implicit val writes: Writes[SeedMrn] = Writes[SeedMrn](
+  implicit val writes: Writes[SeedEori] = Writes[SeedEori](
     x => {
       val addPadding = s"%0${x.padLength}d".format(x.suffix)
 

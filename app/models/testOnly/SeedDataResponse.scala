@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-package controllers.testOnly
+package models.testOnly
 
-import play.api.libs.json.Format
 import play.api.libs.json.Json
 
-case class SeedDataParameters(
-  startEori: SeedEori,
-  numberOfUsers: Int,
-  startMrn: SeedMrn,
-  movementsPerUser: Int
+case class SeedDataResponse(
+  eoriRangeStart: SeedEori,
+  eoriRangeEnd: SeedEori,
+  movementsPerUser: Int,
+  mrnRangeStart: SeedMrn,
+  mrnRangeEnd: SeedMrn
 )
 
-object SeedDataParameters {
-  implicit val format: Format[SeedDataParameters] = Json.format[SeedDataParameters]
+object SeedDataResponse {
+  implicit val format = Json.format[SeedDataResponse]
 }
