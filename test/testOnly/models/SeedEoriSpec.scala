@@ -23,11 +23,25 @@ class SeedEoriSpec extends SpecBase {
 
   "SeedEori" - {
 
-    "must read from valid value" in {
+    "json deserialization" - {
+      "passes when the value is in the format: 2 alpha characters + 12 numeric characters" in {
+        val json = Json.toJson("ZZ000000000001")
 
-      val json = Json.toJson("ZZ000000000001")
+        json.as[SeedEori] mustEqual SeedEori("ZZ", 1, 12)
+      }
 
-      json.as[SeedEori] mustEqual SeedEori("ZZ", 1, 12)
+      "fails when there is a non-numeric character in the last 12 characters" in {
+        val json = Json.toJson("ZZ000X00000001")
+
+        json.validate[SeedEori].isError mustEqual true
+      }
+
+      "fails when the string is not the correct length" in {
+        val json = Json.toJson("ZZ001")
+
+        json.validate[SeedEori].isError mustEqual true
+      }
+
     }
 
     "must write from valid value in correct format" in {
@@ -41,6 +55,7 @@ class SeedEoriSpec extends SpecBase {
       Json.toJson(seedEori) mustEqual json
       Json.toJson(seedEori2) mustEqual json2
     }
+
   }
 
 }

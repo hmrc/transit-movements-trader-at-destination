@@ -19,6 +19,8 @@ package testOnly.models
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 
+import scala.util.matching.Regex
+
 case class SeedEori(prefix: String, suffix: Long, padLength: Int) {
 
   def format: String = {
@@ -30,11 +32,15 @@ case class SeedEori(prefix: String, suffix: Long, padLength: Int) {
 
 object SeedEori {
 
-  implicit val read: Reads[SeedEori] = (
-    __.read[String].map(_.substring(0, 2)) and
-      __.read[String].map(_.substring(2).toLong) and
-      __.read[String].map(_.substring(2).length)
-  )(SeedEori(_, _, _))
+  implicit val read: Reads[SeedEori] =
+    (
+      __.read[String].map(_.substring(0, 2)) and
+        __.read[String]
+          .map(_.substring(2))
+          .filter(s => """[0-9]{12}""".r.findFirstMatchIn(s).isDefined)
+          .map(_.toLong) and
+        __.read[String].map(_.substring(2).length)
+    )(SeedEori(_, _, _))
 
   implicit val writes: Writes[SeedEori] = Writes[SeedEori](
     x => {
