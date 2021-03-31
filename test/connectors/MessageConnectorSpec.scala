@@ -61,7 +61,7 @@ class MessageConnectorSpec
 
   private val messageType: MessageType = Gen.oneOf(MessageType.values).sample.value
 
-  private val messageSender = "MDTP-000000000000000000000000123-01"
+  private val messageSender = "MDTP-ARR-00000000000000000000123-01"
 
   "MessageConnector" - {
 
@@ -69,7 +69,7 @@ class MessageConnectorSpec
 
       "return SubmissionSuccess when when post is successful with Accepted" in {
 
-        val messageSender = "MDTP-000000000000000000000000123-01"
+        val messageSender = "MDTP-ARR-00000000000000000000123-01"
 
         server.stubFor(
           post(urlEqualTo(postUrl))

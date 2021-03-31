@@ -83,7 +83,7 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
           <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
           <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
           <SynVerNumMES2>1</SynVerNumMES2>
-          <MesSenMES3>MDTP-000000000000000000000000001-01</MesSenMES3>
+          <MesSenMES3>MDTP-ARR-00000000000000000000001-01</MesSenMES3>
           <HEAHEA>
             <DocNumHEA5>{mrn.value}</DocNumHEA5>
           </HEAHEA>
@@ -256,7 +256,7 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
         <CC044A><DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9><TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10><SynVerNumMES2>test</SynVerNumMES2></CC044A>
 
       val expectedMovement: NodeSeq =
-        <CC044A><DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9><TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10><SynVerNumMES2>test</SynVerNumMES2><MesSenMES3>MDTP-000000000000000000000000001-01</MesSenMES3></CC044A>
+        <CC044A><DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9><TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10><SynVerNumMES2>test</SynVerNumMES2><MesSenMES3>MDTP-ARR-00000000000000000000001-01</MesSenMES3></CC044A>
 
       val messageCorrelationId = 1
       val expectedMessage =
