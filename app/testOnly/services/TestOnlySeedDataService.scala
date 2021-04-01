@@ -28,10 +28,9 @@ import models.ChannelType
 import models.MessageStatus
 import models.MovementMessageWithStatus
 import models.MovementReferenceNumber
-import play.api.libs.json.JsObject
 import testOnly.models.SeedDataParameters
 
-import scala.xml.NodeSeq
+import scala.xml.Elem
 
 object TestOnlySeedDataService {
 
@@ -52,11 +51,23 @@ object TestOnlySeedDataService {
 
   private def makeArrivalMovement(eori: String, mrn: String, arrivalId: ArrivalId, clock: Clock): Arrival = {
 
+    import scala.xml.XML
+
     val dateTime = LocalDateTime.now(clock)
 
-    val movementMessage = MovementMessageWithStatus(dateTime, ArrivalNotification, NodeSeq.Empty, MessageStatus.SubmissionPending, 1, JsObject.empty)
+    val xml         = XML.loadFile("app/testOnly/xml/arrivals.xml")
+    val modifiedXml = replaceElements(xml, eori, mrn)
+
+    val movementMessage = MovementMessageWithStatus(dateTime, ArrivalNotification, modifiedXml, MessageStatus.SubmissionPending, 1)
 
     Arrival(arrivalId, ChannelType.web, MovementReferenceNumber(mrn), eori, Initialized, dateTime, dateTime, dateTime, NonEmptyList.one(movementMessage), 2)
   }
 
+  private def replaceElements(xml: Elem, eori: String, mrn: String) =
+    scala.xml.XML.loadString(
+      xml
+        .toString()
+        .replace("<DocNumHEA5/>", s"<DocNumHEA5>$mrn</DocNumHEA5>")
+        .replace("<TINTRD59/>", s"<TINTRD59>$eori</TINTRD59>")
+    )
 }

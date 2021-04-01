@@ -19,8 +19,6 @@ package testOnly.models
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 
-import scala.util.matching.Regex
-
 case class SeedEori(prefix: String, suffix: Long, padLength: Int) {
 
   def format: String = {

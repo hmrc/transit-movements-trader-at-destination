@@ -19,8 +19,11 @@ package testOnly.services
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneId
+
 import base.SpecBase
+import cats.data.NonEmptyList
 import models.ArrivalId
+import models.MovementMessage
 import models.MovementReferenceNumber
 import org.scalacheck.Gen
 import org.scalacheck.Shrink
@@ -61,11 +64,38 @@ class TestOnlySeedDataServiceSpec extends SpecBase with ScalaCheckDrivenProperty
       result mustBe expectedResult
     }
 
+    "returns an iterator of arrivals with dynamic xml" in {
+
+      val seedDataParameters = SeedDataParameters(2, 2)
+
+      val expectedEori1 = SeedEori("ZZ", 1, 12)
+      val expectedEori2 = SeedEori("ZZ", 2, 12)
+      val expectedMrn1  = SeedMrn("21GB", 1, 14)
+      val expectedMrn2  = SeedMrn("21GB", 2, 14)
+
+      val result: Seq[NonEmptyList[MovementMessage]] =
+        TestOnlySeedDataService
+          .seedArrivals(seedDataParameters, testClock)
+          .toSeq
+          .map(_.messages)
+
+      result.length mustBe 4
+
+      (result.head.head.message \\ "TRADESTRD" \\ "TINTRD59").text mustBe expectedEori1.format
+      (result.head.head.message \\ "HEAHEA" \\ "DocNumHEA5").text mustBe expectedMrn1.format
+
+      (result(1).head.message \\ "TRADESTRD" \\ "TINTRD59").text mustBe expectedEori1.format
+      (result(1).head.message \\ "HEAHEA" \\ "DocNumHEA5").text mustBe expectedMrn2.format
+
+      (result(2).head.message \\ "TRADESTRD" \\ "TINTRD59").text mustBe expectedEori2.format
+      (result(2).head.message \\ "HEAHEA" \\ "DocNumHEA5").text mustBe expectedMrn1.format
+
+      (result(3).head.message \\ "TRADESTRD" \\ "TINTRD59").text mustBe expectedEori2.format
+      (result(3).head.message \\ "HEAHEA" \\ "DocNumHEA5").text mustBe expectedMrn2.format
+    }
+
     "the total number of Arrivals from the iterator is the (Number users x number of movements)" in {
       val genInt = Gen.choose(10, 50)
-
-      val seedEori = SeedEori("ZZ", 1, 12)
-      val seedMrn  = SeedMrn("21GB", 1, 14)
 
       forAll(genInt, genInt) {
         (eoriCount, mrnCount) =>
