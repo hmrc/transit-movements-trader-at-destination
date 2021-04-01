@@ -56,6 +56,7 @@ import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 import reactivemongo.play.json.collection.JSONCollection
 import utils.IndexUtils
 
+import java.time.Clock
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import scala.concurrent.ExecutionContext
@@ -67,7 +68,8 @@ import scala.util.Try
 class ArrivalMovementRepository @Inject()(
   mongo: ReactiveMongoApi,
   appConfig: AppConfig,
-  metricsService: MetricsService
+  metricsService: MetricsService,
+  clock: Clock
 )(implicit ec: ExecutionContext, m: Materializer)
     extends MongoDateTimeFormats
     with Logging {
@@ -101,7 +103,7 @@ class ArrivalMovementRepository @Inject()(
       .map {
         results =>
           results
-            .filter(_.lastUpdated.isBefore(LocalDateTime.now.minusDays(1)))
+            .filter(_.lastUpdated.isBefore(LocalDateTime.now(clock).minusDays(1)))
             .foreach(result => logger.warn(result.logMessage))
 
           true
@@ -230,7 +232,7 @@ class ArrivalMovementRepository @Inject()(
       Json.obj(
         "$set" -> Json.obj(
           "updated"     -> message.dateTime,
-          "lastUpdated" -> LocalDateTime.now
+          "lastUpdated" -> LocalDateTime.now(clock)
         ),
         "$inc" -> Json.obj(
           "nextMessageCorrelationId" -> 1
@@ -262,7 +264,7 @@ class ArrivalMovementRepository @Inject()(
       Json.obj(
         "$set" -> Json.obj(
           "updated"     -> message.dateTime,
-          "lastUpdated" -> LocalDateTime.now,
+          "lastUpdated" -> LocalDateTime.now(clock),
           "status"      -> status.toString
         ),
         "$push" -> Json.obj(

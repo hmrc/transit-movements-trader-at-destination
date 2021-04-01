@@ -16,9 +16,10 @@
 
 package repositories
 
+import java.time.Clock
 import java.time.LocalDateTime
-
 import config.AppConfig
+
 import javax.inject.Inject
 import models.ArrivalId
 import play.api.libs.json.Json
@@ -36,7 +37,7 @@ import models.MongoDateTimeFormats._
 import reactivemongo.api.bson.collection.BSONSerializationPack
 import utils.IndexUtils
 
-class LockRepository @Inject()(mongo: ReactiveMongoApi, appConfig: AppConfig)(implicit ec: ExecutionContext) {
+class LockRepository @Inject()(mongo: ReactiveMongoApi, appConfig: AppConfig, clock: Clock)(implicit ec: ExecutionContext) {
 
   private val documentExistsErrorCodeValue = 11000
 
@@ -62,7 +63,7 @@ class LockRepository @Inject()(mongo: ReactiveMongoApi, appConfig: AppConfig)(im
 
     val lock = Json.obj(
       "_id"     -> arrivalId,
-      "created" -> LocalDateTime.now
+      "created" -> LocalDateTime.now(clock)
     )
 
     collection.flatMap {
