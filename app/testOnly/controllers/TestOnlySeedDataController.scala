@@ -18,9 +18,8 @@ package testOnly.controllers
 
 import java.time.Clock
 
-import config.AppConfig
 import javax.inject.Inject
-import models.Arrival
+import models.ArrivalId
 import play.api.Configuration
 import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
@@ -55,16 +54,19 @@ class TestOnlySeedDataController @Inject()(
           startEori,
           numberOfUsers,
           startMrn,
-          movementsPerUser
+          movementsPerUser,
+          startArrivalId
         ) = request.body
 
         val maxEori: SeedEori = SeedEori(startEori.prefix, startEori.suffix + numberOfUsers, startEori.padLength)
         val maxMrn: SeedMrn   = SeedMrn(startMrn.prefix, startMrn.suffix + movementsPerUser, startMrn.padLength)
-        val totalMovements    = numberOfUsers * movementsPerUser
 
-        val response = SeedDataResponse(numberOfUsers, startEori, maxEori, movementsPerUser, startMrn, maxMrn, totalMovements)
+        val totalMovements = numberOfUsers * movementsPerUser
+        val endArrivalId   = ArrivalId(startArrivalId.index + totalMovements - 1)
 
-        output(request.body).map {
+        val response = SeedDataResponse(numberOfUsers, startEori, maxEori, movementsPerUser, startMrn, maxMrn, totalMovements, startArrivalId, endArrivalId)
+
+        dataInsert(request.body).map {
           _ =>
             Ok(Json.toJson(response))
         }
@@ -73,7 +75,7 @@ class TestOnlySeedDataController @Inject()(
       }
   }
 
-  private def output(seedDataParameters: SeedDataParameters): Future[Unit] =
+  private def dataInsert(seedDataParameters: SeedDataParameters): Future[Unit] =
     Future
       .sequence {
         TestOnlySeedDataService

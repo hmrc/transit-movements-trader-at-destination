@@ -19,8 +19,10 @@ package testOnly.controllers
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneId
+
 import base._
 import generators.ModelGenerators
+import models.ArrivalId
 import models.ChannelType
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito
@@ -69,7 +71,8 @@ class TestOnlySeedDataControllerSpec extends SpecBase with ScalaCheckPropertyChe
         .withJsonBody(Json.parse("""
             |{
             |  "numberOfUsers": 100,
-            |  "movementsPerUser": 10
+            |  "movementsPerUser": 10,
+            |  "startArrivalId": 10
             |}""".stripMargin).as[JsObject])
 
       val result = route(app, request).value
@@ -82,7 +85,9 @@ class TestOnlySeedDataControllerSpec extends SpecBase with ScalaCheckPropertyChe
         "mrnRangeStart"          -> "21GB00000000000001",
         "mrnRangeEnd"            -> "21GB00000000000011",
         "movementsPerUser"       -> 10,
-        "totalInsertedMovements" -> 1000
+        "totalInsertedMovements" -> 1000,
+        "arrivalIdRangeStart"    -> 10,
+        "arrivalIdRangeEnd"      -> 1009
       )
 
       verify(mockRepository, times(1000)).insert(any())

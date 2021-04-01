@@ -17,6 +17,7 @@
 package testOnly.services
 
 import base.SpecBase
+import models.ArrivalId
 import testOnly.models.SeedDataParameters
 import testOnly.models.SeedEori
 import testOnly.models.SeedMrn
@@ -33,7 +34,7 @@ class TestOnlyDataIteratorServiceSpec extends SpecBase {
       val seedMrn  = SeedMrn("21GB", 1, 14)
       val seedMrn1 = SeedMrn("21GB", 2, 14)
 
-      val seedDataParameters = SeedDataParameters(2, 2)
+      val seedDataParameters = SeedDataParameters(2, 2, ArrivalId(0))
 
       val expectedResult = Seq(
         (seedEori, seedMrn),

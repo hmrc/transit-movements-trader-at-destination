@@ -46,13 +46,13 @@ class TestOnlySeedDataServiceSpec extends SpecBase with ScalaCheckDrivenProperty
       val seedMrn   = SeedMrn("21GB", 1, 14)
       val seedMrn1  = SeedMrn("21GB", 2, 14)
 
-      val seedDataParameters = SeedDataParameters(2, 2)
+      val seedDataParameters = SeedDataParameters(2, 2, ArrivalId(0))
 
       val expectedResult = Seq(
-        (ArrivalId(Int.MaxValue - 3), seedEori.format, MovementReferenceNumber(seedMrn.format)),
-        (ArrivalId(Int.MaxValue - 2), seedEori.format, MovementReferenceNumber(seedMrn1.format)),
-        (ArrivalId(Int.MaxValue - 1), seedEori1.format, MovementReferenceNumber(seedMrn.format)),
-        (ArrivalId(Int.MaxValue), seedEori1.format, MovementReferenceNumber(seedMrn1.format))
+        (ArrivalId(0), seedEori.format, MovementReferenceNumber(seedMrn.format)),
+        (ArrivalId(1), seedEori.format, MovementReferenceNumber(seedMrn1.format)),
+        (ArrivalId(2), seedEori1.format, MovementReferenceNumber(seedMrn.format)),
+        (ArrivalId(3), seedEori1.format, MovementReferenceNumber(seedMrn1.format))
       )
 
       val result =
@@ -66,7 +66,7 @@ class TestOnlySeedDataServiceSpec extends SpecBase with ScalaCheckDrivenProperty
 
     "returns an iterator of arrivals with dynamic xml" in {
 
-      val seedDataParameters = SeedDataParameters(2, 2)
+      val seedDataParameters = SeedDataParameters(2, 2, ArrivalId(0))
 
       val expectedEori1 = SeedEori("ZZ", 1, 12)
       val expectedEori2 = SeedEori("ZZ", 2, 12)
@@ -99,7 +99,7 @@ class TestOnlySeedDataServiceSpec extends SpecBase with ScalaCheckDrivenProperty
 
       forAll(genInt, genInt) {
         (eoriCount, mrnCount) =>
-          val seedDataParameters = SeedDataParameters(eoriCount, mrnCount)
+          val seedDataParameters = SeedDataParameters(eoriCount, mrnCount, ArrivalId(0))
 
           val iterator = TestOnlySeedDataService.seedArrivals(seedDataParameters, testClock)
 

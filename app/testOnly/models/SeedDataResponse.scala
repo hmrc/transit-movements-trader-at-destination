@@ -16,6 +16,7 @@
 
 package testOnly.models
 
+import models.ArrivalId
 import play.api.libs.json.Json
 
 case class SeedDataResponse(
@@ -25,7 +26,9 @@ case class SeedDataResponse(
   movementsPerUser: Int,
   mrnRangeStart: SeedMrn,
   mrnRangeEnd: SeedMrn,
-  totalInsertedMovements: Int
+  totalInsertedMovements: Int,
+  arrivalIdRangeStart: ArrivalId,
+  arrivalIdRangeEnd: ArrivalId
 )
 
 object SeedDataResponse {

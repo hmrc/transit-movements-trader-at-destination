@@ -16,12 +16,14 @@
 
 package testOnly.models
 
+import models.ArrivalId
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 
 class SeedDataParameters(
   val numberOfUsers: Int,
-  val movementsPerUser: Int
+  val movementsPerUser: Int,
+  val startArrivalId: ArrivalId
 ) {
 
   override def equals(obj: Any): Boolean = obj match {
@@ -35,20 +37,24 @@ class SeedDataParameters(
 
 object SeedDataParameters {
 
-  def apply(numberOfUsers: Int, movementsPerUser: Int): SeedDataParameters = new SeedDataParameters(numberOfUsers, movementsPerUser)
+  def apply(numberOfUsers: Int, movementsPerUser: Int, startArrivalId: ArrivalId): SeedDataParameters =
+    new SeedDataParameters(numberOfUsers, movementsPerUser, startArrivalId)
 
-  def unapply(seedDataParameters: SeedDataParameters): Option[(SeedEori, Int, SeedMrn, Int)] =
+  def unapply(seedDataParameters: SeedDataParameters): Option[(SeedEori, Int, SeedMrn, Int, ArrivalId)] =
     Some(
       (
         seedDataParameters.startEori,
         seedDataParameters.numberOfUsers,
         seedDataParameters.startMrn,
-        seedDataParameters.movementsPerUser
-      ))
+        seedDataParameters.movementsPerUser,
+        seedDataParameters.startArrivalId
+      )
+    )
 
   implicit val reads: Reads[SeedDataParameters] =
     (
       (__ \ "numberOfUsers").read[Int] and
-        (__ \ "movementsPerUser").read[Int]
+        (__ \ "movementsPerUser").read[Int] and
+        (__ \ "startArrivalId").read[ArrivalId]
     )(SeedDataParameters.apply _)
 }
