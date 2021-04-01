@@ -50,9 +50,16 @@ class MessageSenderSpec extends AnyFreeSpec with Matchers with ScalaCheckPropert
       MessageSender(validString).value mustEqual MessageSender(ArrivalId(456), 2)
     }
 
+    "must build when no arrival flag" in {
+
+      val validString = "MDTP-123-9"
+
+      MessageSender(validString).value mustEqual MessageSender(ArrivalId(123), 9)
+    }
+
     "must not build from an invalid string" in {
 
-      val pattern = "(?i)MDTP-ARR-(\\d+)-(\\d+)".r.anchored
+      val pattern = "(?i)MDTP-(?:ARR-)?(\\d+)-(\\d+)".r.anchored
 
       forAll(arbitrary[String]) {
         value =>

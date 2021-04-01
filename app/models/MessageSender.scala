@@ -31,7 +31,7 @@ final case class MessageSender(arrivalId: ArrivalId, messageCorrelationId: Int) 
 
 object MessageSender {
 
-  private val pattern = "(?i)MDTP-ARR-(\\d+)-(\\d+)".r.anchored
+  private val pattern = "(?i)MDTP-(?:ARR-)?(\\d+)-(\\d+)".r.anchored
 
   def apply(value: String): Option[MessageSender] =
     value match {
