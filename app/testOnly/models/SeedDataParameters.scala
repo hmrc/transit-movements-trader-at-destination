@@ -23,7 +23,8 @@ import play.api.libs.functional.syntax._
 class SeedDataParameters(
   val numberOfUsers: Int,
   val movementsPerUser: Int,
-  val startArrivalId: ArrivalId
+  val startArrivalId: ArrivalId,
+  firstEoriValue: Option[SeedEori] = None
 ) {
 
   override def equals(obj: Any): Boolean = obj match {
@@ -31,14 +32,14 @@ class SeedDataParameters(
     case _                     => false
   }
 
-  val startEori: SeedEori = SeedEori("ZZ", 1, 12)
+  val startEori: SeedEori = firstEoriValue.getOrElse(SeedEori("ZZ", 1, 12))
   val startMrn: SeedMrn   = SeedMrn("21GB", 1, 14)
 }
 
 object SeedDataParameters {
 
-  def apply(numberOfUsers: Int, movementsPerUser: Int, startArrivalId: ArrivalId): SeedDataParameters =
-    new SeedDataParameters(numberOfUsers, movementsPerUser, startArrivalId)
+  def apply(numberOfUsers: Int, movementsPerUser: Int, startArrivalId: ArrivalId, firstEoriValue: Option[SeedEori]): SeedDataParameters =
+    new SeedDataParameters(numberOfUsers, movementsPerUser, startArrivalId, firstEoriValue)
 
   def unapply(seedDataParameters: SeedDataParameters): Option[(SeedEori, Int, SeedMrn, Int, ArrivalId)] =
     Some(
@@ -55,6 +56,7 @@ object SeedDataParameters {
     (
       (__ \ "numberOfUsers").read[Int] and
         (__ \ "movementsPerUser").read[Int] and
-        (__ \ "startArrivalId").read[ArrivalId]
+        (__ \ "startArrivalId").read[ArrivalId] and
+        (__ \ "startEori").readNullable[SeedEori]
     )(SeedDataParameters.apply _)
 }

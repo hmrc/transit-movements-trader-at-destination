@@ -62,35 +62,69 @@ class TestOnlySeedDataControllerSpec extends SpecBase with ScalaCheckPropertyChe
 
   "seedData" - {
 
-    "must return OK, when the service validates and save the message" in {
+    "must return OK with details of the seeded data" - {
 
-      when(mockRepository.insert(any())).thenReturn(Future.successful(()))
+      "when there no first Eori value specified" in {
+        when(mockRepository.insert(any())).thenReturn(Future.successful(()))
 
-      val request: FakeRequest[AnyContentAsJson] = FakeRequest(POST, testOnly.controllers.routes.TestOnlySeedDataController.seedData().url)
-        .withHeaders("channel" -> ChannelType.web.toString)
-        .withJsonBody(Json.parse("""
-            |{
-            |  "numberOfUsers": 100,
-            |  "movementsPerUser": 10,
-            |  "startArrivalId": 10
-            |}""".stripMargin).as[JsObject])
+        val request: FakeRequest[AnyContentAsJson] = FakeRequest(POST, testOnly.controllers.routes.TestOnlySeedDataController.seedData().url)
+          .withHeaders("channel" -> ChannelType.web.toString)
+          .withJsonBody(Json.parse("""
+                                     |{
+                                     |  "numberOfUsers": 100,
+                                     |  "movementsPerUser": 10,
+                                     |  "startArrivalId": 10
+                                     |}""".stripMargin).as[JsObject])
 
-      val result = route(app, request).value
+        val result = route(app, request).value
 
-      status(result) mustEqual OK
-      contentAsJson(result) mustEqual Json.obj(
-        "eoriRangeStart"         -> "ZZ000000000001",
-        "eoriRangeEnd"           -> "ZZ000000000101",
-        "numberOfUsers"          -> 100,
-        "mrnRangeStart"          -> "21GB00000000000001",
-        "mrnRangeEnd"            -> "21GB00000000000011",
-        "movementsPerUser"       -> 10,
-        "totalInsertedMovements" -> 1000,
-        "arrivalIdRangeStart"    -> 10,
-        "arrivalIdRangeEnd"      -> 1009
-      )
+        status(result) mustEqual OK
+        contentAsJson(result) mustEqual Json.obj(
+          "eoriRangeStart"         -> "ZZ000000000001",
+          "eoriRangeEnd"           -> "ZZ000000000101",
+          "numberOfUsers"          -> 100,
+          "mrnRangeStart"          -> "21GB00000000000001",
+          "mrnRangeEnd"            -> "21GB00000000000011",
+          "movementsPerUser"       -> 10,
+          "totalInsertedMovements" -> 1000,
+          "arrivalIdRangeStart"    -> 10,
+          "arrivalIdRangeEnd"      -> 1009
+        )
 
-      verify(mockRepository, times(1000)).insert(any())
+        verify(mockRepository, times(1000)).insert(any())
+      }
+
+      "when there is a first Eori value specified" in {
+        when(mockRepository.insert(any())).thenReturn(Future.successful(()))
+
+        val request: FakeRequest[AnyContentAsJson] = FakeRequest(POST, testOnly.controllers.routes.TestOnlySeedDataController.seedData().url)
+          .withHeaders("channel" -> ChannelType.web.toString)
+          .withJsonBody(Json.parse("""
+                                     |{
+                                     |  "startEori": "ZZ000000000021",
+                                     |  "numberOfUsers": 100,
+                                     |  "movementsPerUser": 10,
+                                     |  "startArrivalId": 10
+                                     |}""".stripMargin).as[JsObject])
+
+        val result = route(app, request).value
+
+        status(result) mustEqual OK
+        contentAsJson(result) mustEqual Json.obj(
+          "eoriRangeStart"         -> "ZZ000000000021",
+          "eoriRangeEnd"           -> "ZZ000000000121",
+          "numberOfUsers"          -> 100,
+          "mrnRangeStart"          -> "21GB00000000000001",
+          "mrnRangeEnd"            -> "21GB00000000000011",
+          "movementsPerUser"       -> 10,
+          "totalInsertedMovements" -> 1000,
+          "arrivalIdRangeStart"    -> 10,
+          "arrivalIdRangeEnd"      -> 1009
+        )
+
+        verify(mockRepository, times(1000)).insert(any())
+      }
+
     }
   }
 }

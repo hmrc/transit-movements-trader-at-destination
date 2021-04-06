@@ -26,24 +26,47 @@ class TestOnlyDataIteratorServiceSpec extends SpecBase {
 
   "seedDataIterator" - {
 
-    "must create an iteration of eori's and mrn's" in {
+    "must create an iteration of eori's and mrn's" - {
 
-      val seedEori  = SeedEori("ZZ", 1, 12)
-      val seedEori1 = SeedEori("ZZ", 2, 12)
+      "when there is no start Eori specified" in {
+        val seedEori  = SeedEori("ZZ", 1, 12)
+        val seedEori1 = SeedEori("ZZ", 2, 12)
 
-      val seedMrn  = SeedMrn("21GB", 1, 14)
-      val seedMrn1 = SeedMrn("21GB", 2, 14)
+        val seedMrn  = SeedMrn("21GB", 1, 14)
+        val seedMrn1 = SeedMrn("21GB", 2, 14)
 
-      val seedDataParameters = SeedDataParameters(2, 2, ArrivalId(0))
+        val seedDataParameters = SeedDataParameters(2, 2, ArrivalId(0), None)
 
-      val expectedResult = Seq(
-        (seedEori, seedMrn),
-        (seedEori, seedMrn1),
-        (seedEori1, seedMrn),
-        (seedEori1, seedMrn1)
-      )
+        val expectedResult = Seq(
+          (seedEori, seedMrn),
+          (seedEori, seedMrn1),
+          (seedEori1, seedMrn),
+          (seedEori1, seedMrn1)
+        )
 
-      TestOnlyDataIteratorService.seedDataIterator(seedDataParameters).toSeq mustBe expectedResult
+        TestOnlyDataIteratorService.seedDataIterator(seedDataParameters).toSeq mustBe expectedResult
+      }
+
+      "when there is a start Eori specified" in {
+        val seedEori  = SeedEori("ZZ", 101, 12)
+        val seedEori1 = SeedEori("ZZ", 102, 12)
+
+        val seedMrn  = SeedMrn("21GB", 1, 14)
+        val seedMrn1 = SeedMrn("21GB", 2, 14)
+
+        val seedDataParameters = SeedDataParameters(2, 2, ArrivalId(0), Some(SeedEori("ZZ", 101, 12)))
+
+        val expectedResult = Seq(
+          (seedEori, seedMrn),
+          (seedEori, seedMrn1),
+          (seedEori1, seedMrn),
+          (seedEori1, seedMrn1)
+        )
+
+        TestOnlyDataIteratorService.seedDataIterator(seedDataParameters).toSeq mustBe expectedResult
+
+      }
+
     }
   }
 
