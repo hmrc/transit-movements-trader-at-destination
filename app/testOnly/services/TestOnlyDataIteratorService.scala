@@ -23,7 +23,10 @@ import testOnly.models.SeedMrn
 private[testOnly] object TestOnlyDataIteratorService {
 
   def seedDataIterator(seedDataParameters: SeedDataParameters): Iterator[(SeedEori, SeedMrn)] = {
-    val SeedDataParameters(startEori, numberOfUsers, startMrn, movementsPerUser, _) = seedDataParameters
+    val startEori        = seedDataParameters.startEori
+    val numberOfUsers    = seedDataParameters.numberOfUsers
+    val startMrn         = seedDataParameters.startMrn
+    val movementsPerUser = seedDataParameters.movementsPerUser
 
     (startEori.suffix to (startEori.suffix + numberOfUsers - 1)).toIterator.map(SeedEori(startEori.prefix, _, startEori.padLength)).flatMap {
       seedEori =>

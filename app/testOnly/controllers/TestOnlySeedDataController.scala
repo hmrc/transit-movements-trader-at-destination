@@ -50,14 +50,11 @@ class TestOnlySeedDataController @Inject()(
   def seedData: Action[SeedDataParameters] = Action.async(parse.json[SeedDataParameters]) {
     implicit request =>
       if (featureFlag) {
-        val SeedDataParameters(
-          startEori,
-          numberOfUsers,
-          startMrn,
-          movementsPerUser,
-          startArrivalId
-        ) = request.body
-
+        val startEori         = request.body.startEori
+        val numberOfUsers     = request.body.numberOfUsers
+        val startMrn          = request.body.startMrn
+        val movementsPerUser  = request.body.movementsPerUser
+        val startArrivalId    = request.body.startArrivalId
         val maxEori: SeedEori = SeedEori(startEori.prefix, startEori.suffix + numberOfUsers, startEori.padLength)
         val maxMrn: SeedMrn   = SeedMrn(startMrn.prefix, startMrn.suffix + movementsPerUser, startMrn.padLength)
 

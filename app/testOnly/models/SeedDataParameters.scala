@@ -33,24 +33,38 @@ class SeedDataParameters(
   }
 
   val startEori: SeedEori = firstEoriValue.getOrElse(SeedEori("ZZ", 1, 12))
-  val startMrn: SeedMrn   = SeedMrn("21GB", 1, 14)
+
+  val startMrn: SeedMrn = SeedMrn("21GB", 1, 14)
+
+  val numberOfMovements: Int = numberOfUsers * movementsPerUser
+
+  private val arrivalIdIterator: Iterator[ArrivalId] =
+    (startArrivalId.index to (startArrivalId.index + numberOfMovements)).iterator
+      .map(ArrivalId(_))
+
+  val seedData: Iterator[(ArrivalId, SeedEori, SeedMrn)] = {
+
+    val eoriMrnIterator =
+      (startEori.suffix to (startEori.suffix + numberOfUsers - 1)).toIterator
+        .map(SeedEori(startEori.prefix, _, startEori.padLength))
+        .flatMap {
+          eori =>
+            (startMrn.suffix to (startMrn.suffix + movementsPerUser - 1)).toIterator
+              .map(SeedMrn(startMrn.prefix, _, startMrn.padLength))
+              .map(mrn => (eori, mrn))
+        }
+
+    arrivalIdIterator.zip(eoriMrnIterator).map {
+      case (arrivalId, (eori, mrn)) => (arrivalId, eori, mrn)
+    }
+  }
+
 }
 
 object SeedDataParameters {
 
   def apply(numberOfUsers: Int, movementsPerUser: Int, startArrivalId: ArrivalId, firstEoriValue: Option[SeedEori]): SeedDataParameters =
     new SeedDataParameters(numberOfUsers, movementsPerUser, startArrivalId, firstEoriValue)
-
-  def unapply(seedDataParameters: SeedDataParameters): Option[(SeedEori, Int, SeedMrn, Int, ArrivalId)] =
-    Some(
-      (
-        seedDataParameters.startEori,
-        seedDataParameters.numberOfUsers,
-        seedDataParameters.startMrn,
-        seedDataParameters.movementsPerUser,
-        seedDataParameters.startArrivalId
-      )
-    )
 
   implicit val reads: Reads[SeedDataParameters] =
     (
