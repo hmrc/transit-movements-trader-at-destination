@@ -32,5 +32,31 @@ case class SeedDataResponse(
 )
 
 object SeedDataResponse {
+
+  def apply(seedDataParameters: SeedDataParameters): SeedDataResponse = {
+    val startEori        = seedDataParameters.startEori
+    val numberOfUsers    = seedDataParameters.numberOfUsers
+    val startMrn         = seedDataParameters.startMrn
+    val movementsPerUser = seedDataParameters.movementsPerUser
+    val startArrivalId   = seedDataParameters.startArrivalId
+
+    val maxEori: SeedEori = SeedEori(startEori.prefix, startEori.suffix + numberOfUsers, startEori.padLength)
+    val maxMrn: SeedMrn   = SeedMrn(startMrn.prefix, startMrn.suffix + movementsPerUser, startMrn.padLength)
+
+    val endArrivalId = ArrivalId(startArrivalId.index + seedDataParameters.numberOfMovements - 1)
+
+    SeedDataResponse(
+      numberOfUsers = numberOfUsers,
+      eoriRangeStart = startEori,
+      eoriRangeEnd = maxEori,
+      movementsPerUser = movementsPerUser,
+      mrnRangeStart = startMrn,
+      mrnRangeEnd = maxMrn,
+      totalInsertedMovements = seedDataParameters.numberOfMovements,
+      arrivalIdRangeStart = startArrivalId,
+      arrivalIdRangeEnd = endArrivalId
+    )
+  }
+
   implicit val format = Json.format[SeedDataResponse]
 }

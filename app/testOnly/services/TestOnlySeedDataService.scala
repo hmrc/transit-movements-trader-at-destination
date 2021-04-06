@@ -18,7 +18,6 @@ package testOnly.services
 
 import java.time.Clock
 import java.time.LocalDateTime
-
 import cats.data.NonEmptyList
 import models.ArrivalStatus.Initialized
 import models.MessageType.ArrivalNotification

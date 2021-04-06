@@ -16,8 +16,9 @@
 
 package testOnly.controllers
 
-import java.time.Clock
+import logging.Logging
 
+import java.time.Clock
 import javax.inject.Inject
 import models.ArrivalId
 import play.api.Configuration
@@ -43,28 +44,17 @@ class TestOnlySeedDataController @Inject()(
   repository: ArrivalMovementRepository,
   config: Configuration
 )(implicit ec: ExecutionContext)
-    extends BackendController(cc) {
+    extends BackendController(cc)
+    with Logging {
 
   private val featureFlag: Boolean = config.get[Boolean]("feature-flags.testOnly")
 
   def seedData: Action[SeedDataParameters] = Action.async(parse.json[SeedDataParameters]) {
     implicit request =>
       if (featureFlag) {
-        val startEori         = request.body.startEori
-        val numberOfUsers     = request.body.numberOfUsers
-        val startMrn          = request.body.startMrn
-        val movementsPerUser  = request.body.movementsPerUser
-        val startArrivalId    = request.body.startArrivalId
-        val maxEori: SeedEori = SeedEori(startEori.prefix, startEori.suffix + numberOfUsers, startEori.padLength)
-        val maxMrn: SeedMrn   = SeedMrn(startMrn.prefix, startMrn.suffix + movementsPerUser, startMrn.padLength)
-
-        val totalMovements = numberOfUsers * movementsPerUser
-        val endArrivalId   = ArrivalId(startArrivalId.index + totalMovements - 1)
-
-        val response = SeedDataResponse(numberOfUsers, startEori, maxEori, movementsPerUser, startMrn, maxMrn, totalMovements, startArrivalId, endArrivalId)
-
         dataInsert(request.body).map {
           _ =>
+            val response = SeedDataResponse(request.body)
             Ok(Json.toJson(response))
         }
       } else {
