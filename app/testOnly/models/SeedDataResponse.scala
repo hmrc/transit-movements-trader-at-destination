@@ -19,7 +19,7 @@ package testOnly.models
 import models.ArrivalId
 import play.api.libs.json.Json
 
-case class SeedDataResponse(
+private[testOnly] case class SeedDataResponse(
   numberOfUsers: Int,
   eoriRangeStart: SeedEori,
   eoriRangeEnd: SeedEori,
@@ -31,7 +31,7 @@ case class SeedDataResponse(
   arrivalIdRangeEnd: ArrivalId
 )
 
-object SeedDataResponse {
+private[testOnly] object SeedDataResponse {
 
   def apply(seedDataParameters: SeedDataParameters): SeedDataResponse = {
     val startEori        = seedDataParameters.startEori

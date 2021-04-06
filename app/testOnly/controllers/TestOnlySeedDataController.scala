@@ -17,10 +17,6 @@
 package testOnly.controllers
 
 import logging.Logging
-
-import java.time.Clock
-import javax.inject.Inject
-import models.ArrivalId
 import play.api.Configuration
 import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
@@ -29,11 +25,11 @@ import play.api.mvc.ControllerComponents
 import repositories.ArrivalMovementRepository
 import testOnly.models.SeedDataParameters
 import testOnly.models.SeedDataResponse
-import testOnly.models.SeedEori
-import testOnly.models.SeedMrn
 import testOnly.services.TestOnlySeedDataService
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
+import java.time.Clock
+import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 

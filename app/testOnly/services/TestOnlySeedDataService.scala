@@ -16,8 +16,6 @@
 
 package testOnly.services
 
-import java.time.Clock
-import java.time.LocalDateTime
 import cats.data.NonEmptyList
 import models.ArrivalStatus.Initialized
 import models.MessageType.ArrivalNotification
@@ -29,24 +27,18 @@ import models.MovementMessageWithStatus
 import models.MovementReferenceNumber
 import testOnly.models.SeedDataParameters
 
+import java.time.Clock
+import java.time.LocalDateTime
 import scala.xml.Elem
 
-object TestOnlySeedDataService {
+private[testOnly] object TestOnlySeedDataService {
 
-  def seedArrivals(seedDataParameters: SeedDataParameters, clock: Clock): Iterator[Arrival] = {
-
-    val arrivalIds = arrivalIdIterator(seedDataParameters.numberOfUsers, seedDataParameters.movementsPerUser, seedDataParameters.startArrivalId)
-    val seedData   = TestOnlyDataIteratorService.seedDataIterator(seedDataParameters)
-
-    val zipDataAndId = seedData zip arrivalIds
-
-    zipDataAndId.map { case ((eori, mrn), id) => makeArrivalMovement(eori.format, mrn.format, id, clock) }
-  }
-
-  private def arrivalIdIterator(numberOfUsers: Int, movementsPerUser: Int, startArrivalId: ArrivalId): Iterator[ArrivalId] = {
-    val rangeEnd = startArrivalId.index + ((numberOfUsers * movementsPerUser))
-    (startArrivalId.index to rangeEnd).iterator.map(ArrivalId(_))
-  }
+  def seedArrivals(seedDataParameters: SeedDataParameters, clock: Clock): Iterator[Arrival] =
+    seedDataParameters.seedData
+      .map {
+        case (id, eori, mrn) =>
+          makeArrivalMovement(eori.format, mrn.format, id, clock)
+      }
 
   private def makeArrivalMovement(eori: String, mrn: String, arrivalId: ArrivalId, clock: Clock): Arrival = {
 

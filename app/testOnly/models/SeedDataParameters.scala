@@ -17,10 +17,10 @@
 package testOnly.models
 
 import models.ArrivalId
-import play.api.libs.json._
 import play.api.libs.functional.syntax._
+import play.api.libs.json._
 
-class SeedDataParameters(
+private[testOnly] class SeedDataParameters(
   val numberOfUsers: Int,
   val movementsPerUser: Int,
   val startArrivalId: ArrivalId,

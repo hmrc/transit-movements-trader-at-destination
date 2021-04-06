@@ -16,7 +16,6 @@
 
 package testOnly.controllers
 
-import javax.inject.Inject
 import play.api.Configuration
 import play.api.i18n.MessagesApi
 import play.api.mvc.Action
@@ -27,6 +26,7 @@ import reactivemongo.play.json.collection.JSONCollection
 import repositories.ArrivalMovementRepository
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
+import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 

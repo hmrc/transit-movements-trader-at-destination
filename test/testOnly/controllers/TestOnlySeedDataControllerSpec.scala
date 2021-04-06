@@ -16,13 +16,8 @@
 
 package testOnly.controllers
 
-import java.time.Clock
-import java.time.Instant
-import java.time.ZoneId
-
 import base._
 import generators.ModelGenerators
-import models.ArrivalId
 import models.ChannelType
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito
@@ -42,6 +37,9 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import repositories.ArrivalMovementRepository
 
+import java.time.Clock
+import java.time.Instant
+import java.time.ZoneId
 import scala.concurrent.Future
 
 class TestOnlySeedDataControllerSpec extends SpecBase with ScalaCheckPropertyChecks with ModelGenerators with GuiceOneAppPerSuite with BeforeAndAfterEach {

@@ -16,10 +16,6 @@
 
 package testOnly.services
 
-import java.time.Clock
-import java.time.Instant
-import java.time.ZoneId
-
 import base.SpecBase
 import cats.data.NonEmptyList
 import models.ArrivalId
@@ -31,6 +27,10 @@ import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import testOnly.models.SeedDataParameters
 import testOnly.models.SeedEori
 import testOnly.models.SeedMrn
+
+import java.time.Clock
+import java.time.Instant
+import java.time.ZoneId
 
 class TestOnlySeedDataServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChecks {
   implicit def dontShrink[A]: Shrink[A] = Shrink.shrinkAny

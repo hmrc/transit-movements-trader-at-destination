@@ -19,7 +19,7 @@ package testOnly.models
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 
-case class SeedEori(prefix: String, suffix: Long, padLength: Int) {
+private[testOnly] case class SeedEori(prefix: String, suffix: Long, padLength: Int) {
 
   def format: String = {
     val addPadding = s"%0${padLength}d".format(suffix)
@@ -28,7 +28,7 @@ case class SeedEori(prefix: String, suffix: Long, padLength: Int) {
 
 }
 
-object SeedEori {
+private[testOnly] object SeedEori {
 
   implicit val read: Reads[SeedEori] =
     (
