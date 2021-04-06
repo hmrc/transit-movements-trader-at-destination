@@ -46,6 +46,15 @@ class TestOnlySeedDataController @Inject()(
 
   private val featureFlag: Boolean = config.get[Boolean]("feature-flags.testOnly")
 
+  /**
+    * Example request
+    * {{{
+    *   curl --location --request POST 'http://localhost:9480/test-only/transit-movements-trader-at-destination/seedData' \
+    *   --header 'Content-Type: application/json' \
+    *   --data-raw '{ "startEori": "ZZ000000000021", "numberOfUsers": 100, "startArrivalId": 10, "movementsPerUser": 100 }'
+    * }}}
+    *
+    */
   def seedData: Action[SeedDataParameters] = Action.async(parse.json[SeedDataParameters]) {
     implicit request =>
       if (featureFlag) {
@@ -53,6 +62,7 @@ class TestOnlySeedDataController @Inject()(
           _ =>
             val response = SeedDataResponse(request.body)
             Ok(Json.toJson(response))
+
         }
       } else {
         Future.successful(NotImplemented("Feature disabled, could not seed data"))
