@@ -68,7 +68,7 @@ class XMLTransformerSpec extends AnyFreeSpec with Matchers with StreamlinedXmlEq
 
         val movement: NodeSeq = <SynVerNumMES2>test</SynVerNumMES2>
 
-        val updatedMovement: NodeSeq = <SynVerNumMES2>test</SynVerNumMES2><MesSenMES3>MDTP-000000000000000000000000001-01</MesSenMES3>
+        val updatedMovement: NodeSeq = <SynVerNumMES2>test</SynVerNumMES2><MesSenMES3>MDTP-ARR-00000000000000000000001-01</MesSenMES3>
 
         XMLTransformer.updateMesSenMES3(ArrivalId(1), 1)(movement).right.get mustEqual updatedMovement
       }
@@ -77,7 +77,7 @@ class XMLTransformerSpec extends AnyFreeSpec with Matchers with StreamlinedXmlEq
 
         val movement: NodeSeq = <SynVerNumMES2>test</SynVerNumMES2><MesSenMES3>replaced</MesSenMES3>
 
-        val updatedMovement: NodeSeq = <SynVerNumMES2>test</SynVerNumMES2><MesSenMES3>MDTP-000000000000000000000000001-01</MesSenMES3>
+        val updatedMovement: NodeSeq = <SynVerNumMES2>test</SynVerNumMES2><MesSenMES3>MDTP-ARR-00000000000000000000001-01</MesSenMES3>
 
         XMLTransformer.updateMesSenMES3(ArrivalId(1), 1)(movement).right.get mustEqual updatedMovement
       }

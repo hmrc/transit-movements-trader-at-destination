@@ -31,28 +31,35 @@ class MessageSenderSpec extends AnyFreeSpec with Matchers with ScalaCheckPropert
 
     "must build from a valid string" in {
 
-      val validString = "MDTP-123-1"
+      val validString = "MDTP-ARR-123-1"
 
       MessageSender(validString).value mustEqual MessageSender(ArrivalId(123), 1)
     }
 
     "must build when mdtp is lowercase" in {
 
-      val validString = "mdtp-123-1"
+      val validString = "mdtp-arr-123-1"
 
       MessageSender(validString).value mustEqual MessageSender(ArrivalId(123), 1)
     }
 
     "must build when mdtp is mixed case" in {
 
-      val validString = "mDtP-456-2"
+      val validString = "mDtP-Arr-456-2"
 
       MessageSender(validString).value mustEqual MessageSender(ArrivalId(456), 2)
     }
 
+    "must build when no arrival flag" in {
+
+      val validString = "MDTP-123-9"
+
+      MessageSender(validString).value mustEqual MessageSender(ArrivalId(123), 9)
+    }
+
     "must not build from an invalid string" in {
 
-      val pattern = "(?i)MDTP-(\\d+)-(\\d+)".r.anchored
+      val pattern = "(?i)MDTP-(?:ARR-)?(\\d+)-(\\d+)".r.anchored
 
       forAll(arbitrary[String]) {
         value =>
@@ -66,7 +73,7 @@ class MessageSenderSpec extends AnyFreeSpec with Matchers with ScalaCheckPropert
 
       val messageSender = MessageSender(ArrivalId(123), 1)
 
-      messageSender.toString mustEqual "MDTP-000000000000000000000000123-01"
+      messageSender.toString mustEqual "MDTP-ARR-00000000000000000000123-01"
     }
 
     "must convert to string and apply correct padding to specified length" in {
