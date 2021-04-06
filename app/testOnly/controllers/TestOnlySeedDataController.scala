@@ -38,7 +38,8 @@ class TestOnlySeedDataController @Inject()(
   cc: ControllerComponents,
   clock: Clock,
   repository: ArrivalMovementRepository,
-  config: Configuration
+  config: Configuration,
+  seedingService: TestOnlySeedDataService
 )(implicit ec: ExecutionContext)
     extends BackendController(cc)
     with Logging {
@@ -61,7 +62,7 @@ class TestOnlySeedDataController @Inject()(
   private def dataInsert(seedDataParameters: SeedDataParameters): Future[Unit] =
     Future
       .sequence {
-        TestOnlySeedDataService
+        seedingService
           .seedArrivals(seedDataParameters, clock)
           .map(repository.insert)
       }

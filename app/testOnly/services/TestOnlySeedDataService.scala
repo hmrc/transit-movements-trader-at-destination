@@ -29,36 +29,16 @@ import testOnly.models.SeedDataParameters
 
 import java.time.Clock
 import java.time.LocalDateTime
+import javax.inject.Inject
 import scala.xml.Elem
 
-private[testOnly] object TestOnlySeedDataService {
+private[testOnly] class TestOnlySeedDataService @Inject()(testDataGenerator: TestDataGenerator) {
 
   def seedArrivals(seedDataParameters: SeedDataParameters, clock: Clock): Iterator[Arrival] =
     seedDataParameters.seedData
       .map {
         case (id, eori, mrn) =>
-          makeArrivalMovement(eori.format, mrn.format, id, clock)
+          testDataGenerator.arrivalMovement(eori, mrn, id)
       }
 
-  private def makeArrivalMovement(eori: String, mrn: String, arrivalId: ArrivalId, clock: Clock): Arrival = {
-
-    import scala.xml.XML
-
-    val dateTime = LocalDateTime.now(clock)
-
-    val xml         = XML.loadFile("app/testOnly/xml/arrivals.xml")
-    val modifiedXml = replaceElements(xml, eori, mrn)
-
-    val movementMessage = MovementMessageWithStatus(dateTime, ArrivalNotification, modifiedXml, MessageStatus.SubmissionPending, 1)
-
-    Arrival(arrivalId, ChannelType.web, MovementReferenceNumber(mrn), eori, Initialized, dateTime, dateTime, dateTime, NonEmptyList.one(movementMessage), 2)
-  }
-
-  private def replaceElements(xml: Elem, eori: String, mrn: String) =
-    scala.xml.XML.loadString(
-      xml
-        .toString()
-        .replace("<DocNumHEA5/>", s"<DocNumHEA5>$mrn</DocNumHEA5>")
-        .replace("<TINTRD59/>", s"<TINTRD59>$eori</TINTRD59>")
-    )
 }

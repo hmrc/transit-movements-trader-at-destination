@@ -35,7 +35,9 @@ import java.time.ZoneId
 class TestOnlySeedDataServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChecks {
   implicit def dontShrink[A]: Shrink[A] = Shrink.shrinkAny
 
-  val testClock = Clock.fixed(Instant.now(), ZoneId.systemDefault)
+  val testClock               = Clock.fixed(Instant.now(), ZoneId.systemDefault)
+  val testDataGenerator       = new TestDataGenerator(testClock)
+  val testOnlySeedDataService = new TestOnlySeedDataService(testDataGenerator)
 
   "seedArrivals" - {
 
@@ -56,7 +58,7 @@ class TestOnlySeedDataServiceSpec extends SpecBase with ScalaCheckDrivenProperty
       )
 
       val result =
-        TestOnlySeedDataService
+        testOnlySeedDataService
           .seedArrivals(seedDataParameters, testClock)
           .toSeq
           .map(x => (x.arrivalId, x.eoriNumber, x.movementReferenceNumber))
@@ -74,7 +76,7 @@ class TestOnlySeedDataServiceSpec extends SpecBase with ScalaCheckDrivenProperty
       val expectedMrn2  = SeedMrn("21GB", 2, 14)
 
       val result: Seq[NonEmptyList[MovementMessage]] =
-        TestOnlySeedDataService
+        testOnlySeedDataService
           .seedArrivals(seedDataParameters, testClock)
           .toSeq
           .map(_.messages)
@@ -101,7 +103,7 @@ class TestOnlySeedDataServiceSpec extends SpecBase with ScalaCheckDrivenProperty
         (eoriCount, mrnCount) =>
           val seedDataParameters = SeedDataParameters(eoriCount, mrnCount, ArrivalId(0), None)
 
-          val iterator = TestOnlySeedDataService.seedArrivals(seedDataParameters, testClock)
+          val iterator = testOnlySeedDataService.seedArrivals(seedDataParameters, testClock)
 
           iterator.length mustEqual (eoriCount * mrnCount)
       }
