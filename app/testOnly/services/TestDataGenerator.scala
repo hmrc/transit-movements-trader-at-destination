@@ -23,7 +23,7 @@ import models.ChannelType
 import models.MessageStatus
 import models.MovementMessageWithStatus
 import models.MovementReferenceNumber
-import models.ArrivalStatus.Initialized
+import models.ArrivalStatus.ArrivalSubmitted
 import models.MessageType.ArrivalNotification
 import testOnly.models.SeedEori
 import testOnly.models.SeedMrn
@@ -44,16 +44,18 @@ private[services] class TestDataGenerator @Inject()(clock: Clock) {
 
     val movementMessage = MovementMessageWithStatus(dateTime, ArrivalNotification, xml, MessageStatus.SubmissionPending, 1)
 
-    Arrival(arrivalId,
-            ChannelType.web,
-            MovementReferenceNumber(mrn.format),
-            eori.format,
-            Initialized,
-            dateTime,
-            dateTime,
-            dateTime,
-            NonEmptyList.one(movementMessage),
-            2)
+    Arrival(
+      arrivalId,
+      ChannelType.web,
+      MovementReferenceNumber(mrn.format),
+      eori.format,
+      ArrivalSubmitted,
+      dateTime,
+      dateTime,
+      dateTime,
+      NonEmptyList.one(movementMessage),
+      2
+    )
   }
 
 }
