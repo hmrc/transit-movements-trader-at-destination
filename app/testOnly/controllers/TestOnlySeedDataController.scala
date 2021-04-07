@@ -44,7 +44,7 @@ class TestOnlySeedDataController @Inject()(
     extends BackendController(cc)
     with Logging {
 
-  private val featureFlag: Boolean = config.get[Boolean]("feature-flags.testOnly")
+  private val featureFlag: Boolean = config.get[Boolean]("feature-flags.testOnly.enabled")
 
   /**
     * Example request

@@ -38,7 +38,7 @@ class TestOnlyController @Inject()(
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
-  private val featureFlag: Boolean = config.get[Boolean]("feature-flags.testOnly")
+  private val featureFlag: Boolean = config.get[Boolean]("feature-flags.testOnly.enabled")
 
   def dropArrivalMovementCollection: Action[AnyContent] = Action.async {
     implicit request =>
