@@ -42,7 +42,7 @@ private[services] class TestDataGenerator @Inject()(clock: Clock) {
 
     val xml = TestDataXMLGenerator.arrivalNotification(mrn.format, eori.format)
 
-    val movementMessage = MovementMessageWithStatus(dateTime, ArrivalNotification, xml, MessageStatus.SubmissionPending, 1)
+    val movementMessage = MovementMessageWithStatus(dateTime, ArrivalNotification, xml, MessageStatus.SubmissionSucceeded, 1)
 
     Arrival(
       arrivalId,
