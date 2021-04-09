@@ -18,6 +18,7 @@ package testOnly.models
 
 import base.SpecBase
 import models.ArrivalId
+import models.ChannelType
 import org.scalacheck.Gen
 import org.scalacheck.Shrink
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
@@ -43,7 +44,7 @@ class SeedDataParametersSpec extends SpecBase with ScalaCheckDrivenPropertyCheck
             number =>
               val startEori = SeedEori("ZZ", 11, 12)
 
-              val seedDataParameters = SeedDataParameters(number, 2, ArrivalId(0), Some(startEori))
+              val seedDataParameters = SeedDataParameters(number, 2, ArrivalId(0), Some(startEori), Some(ChannelType.web))
 
               val result = seedDataParameters.seedData.map(_._2).toSet
 
@@ -54,7 +55,7 @@ class SeedDataParametersSpec extends SpecBase with ScalaCheckDrivenPropertyCheck
         "the values of the eori must be increasing from the start value provided" in {
           val startEori = SeedEori("ZZ", 11, 12)
 
-          val seedDataParameters = SeedDataParameters(2, 2, ArrivalId(0), Some(startEori))
+          val seedDataParameters = SeedDataParameters(2, 2, ArrivalId(0), Some(startEori), Some(ChannelType.web))
 
           val result = seedDataParameters.seedData.map(_._2).toList
 
@@ -65,7 +66,7 @@ class SeedDataParametersSpec extends SpecBase with ScalaCheckDrivenPropertyCheck
           "when there is a start eori specified" in {
             val startEori = SeedEori("ZZ", 11, 12)
 
-            val seedDataParameters = SeedDataParameters(3, 2, ArrivalId(0), Some(startEori))
+            val seedDataParameters = SeedDataParameters(3, 2, ArrivalId(0), Some(startEori), Some(ChannelType.web))
 
             val result = seedDataParameters.seedData.map(_._2).toList
 
@@ -74,7 +75,7 @@ class SeedDataParametersSpec extends SpecBase with ScalaCheckDrivenPropertyCheck
 
           "when no start eori is specified" in {
 
-            val seedDataParameters = SeedDataParameters(3, 2, ArrivalId(0), None)
+            val seedDataParameters = SeedDataParameters(3, 2, ArrivalId(0), None, None)
 
             val result = seedDataParameters.seedData.map(_._2).toList
 
@@ -88,7 +89,7 @@ class SeedDataParametersSpec extends SpecBase with ScalaCheckDrivenPropertyCheck
         "there must be the same number as the configure number of movements" in {
           forAll(Gen.chooseNum(1, 100)) {
             number =>
-              val seedDataParameters = SeedDataParameters(number, 2, ArrivalId(0), None)
+              val seedDataParameters = SeedDataParameters(number, 2, ArrivalId(0), None, None)
 
               val result = seedDataParameters.seedData.map(_._1).toSet
 
@@ -97,7 +98,7 @@ class SeedDataParametersSpec extends SpecBase with ScalaCheckDrivenPropertyCheck
         }
 
         "the values of the ArrivalId must be increasing from the start value provided" in {
-          val seedDataParameters = SeedDataParameters(2, 2, ArrivalId(0), None)
+          val seedDataParameters = SeedDataParameters(2, 2, ArrivalId(0), None, None)
 
           val result = seedDataParameters.seedData.map(_._2).toList
 
@@ -106,7 +107,7 @@ class SeedDataParametersSpec extends SpecBase with ScalaCheckDrivenPropertyCheck
 
         "the values of the ArrivalId must have a difference of 1" in {
 
-          val seedDataParameters = SeedDataParameters(3, 2, ArrivalId(101), None)
+          val seedDataParameters = SeedDataParameters(3, 2, ArrivalId(101), None, None)
 
           val result = seedDataParameters.seedData.map(_._1).toList
 
@@ -127,7 +128,7 @@ class SeedDataParametersSpec extends SpecBase with ScalaCheckDrivenPropertyCheck
         "the values of the must be increasing from the default start mrn" in {
           forAll(Gen.chooseNum(1, 100)) {
             numberOfMrns =>
-              val seedDataParameters = SeedDataParameters(2, numberOfMrns, ArrivalId(0), None)
+              val seedDataParameters = SeedDataParameters(2, numberOfMrns, ArrivalId(0), None, None)
 
               val result = seedDataParameters.seedData.map(_._3).take(numberOfMrns).toList
 
@@ -137,7 +138,7 @@ class SeedDataParametersSpec extends SpecBase with ScalaCheckDrivenPropertyCheck
 
         "repeat for each EORI" in {
           val movementsPerUser   = 3
-          val seedDataParameters = SeedDataParameters(2, movementsPerUser, ArrivalId(0), None)
+          val seedDataParameters = SeedDataParameters(2, movementsPerUser, ArrivalId(0), None, None)
 
           val result = seedDataParameters.seedData.map(x => (x._2, x._3)).toList
 

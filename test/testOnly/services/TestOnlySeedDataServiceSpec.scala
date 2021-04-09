@@ -48,7 +48,7 @@ class TestOnlySeedDataServiceSpec extends SpecBase with ScalaCheckDrivenProperty
       val seedMrn   = SeedMrn("21GB", 1, 14)
       val seedMrn1  = SeedMrn("21GB", 2, 14)
 
-      val seedDataParameters = SeedDataParameters(2, 2, ArrivalId(0), None)
+      val seedDataParameters = SeedDataParameters(2, 2, ArrivalId(0), None, None)
 
       val expectedResult = Seq(
         (ArrivalId(0), seedEori.format, MovementReferenceNumber(seedMrn.format)),
@@ -68,7 +68,7 @@ class TestOnlySeedDataServiceSpec extends SpecBase with ScalaCheckDrivenProperty
 
     "returns an iterator of arrivals with dynamic xml" in {
 
-      val seedDataParameters = SeedDataParameters(2, 2, ArrivalId(0), None)
+      val seedDataParameters = SeedDataParameters(2, 2, ArrivalId(0), None, None)
 
       val expectedEori1 = SeedEori("ZZ", 1, 12)
       val expectedEori2 = SeedEori("ZZ", 2, 12)
@@ -101,7 +101,7 @@ class TestOnlySeedDataServiceSpec extends SpecBase with ScalaCheckDrivenProperty
 
       forAll(genInt, genInt) {
         (eoriCount, mrnCount) =>
-          val seedDataParameters = SeedDataParameters(eoriCount, mrnCount, ArrivalId(0), None)
+          val seedDataParameters = SeedDataParameters(eoriCount, mrnCount, ArrivalId(0), None, None)
 
           val iterator = testOnlySeedDataService.seedArrivals(seedDataParameters, testClock)
 

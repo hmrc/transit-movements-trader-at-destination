@@ -17,6 +17,7 @@
 package testOnly.models
 
 import models.ArrivalId
+import models.ChannelType
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 
@@ -24,7 +25,8 @@ private[testOnly] class SeedDataParameters(
   val numberOfUsers: Int,
   val movementsPerUser: Int,
   val startArrivalId: ArrivalId,
-  firstEoriValue: Option[SeedEori] = None
+  firstEoriValue: Option[SeedEori] = None,
+  channel: Option[ChannelType]
 ) {
 
   override def equals(obj: Any): Boolean = obj match {
@@ -37,6 +39,8 @@ private[testOnly] class SeedDataParameters(
   val startMrn: SeedMrn = SeedMrn("21GB", 1, 14)
 
   val numberOfMovements: Int = numberOfUsers * movementsPerUser
+
+  val channelType: ChannelType = channel.getOrElse(ChannelType.web)
 
   private val arrivalIdIterator: Iterator[ArrivalId] =
     (startArrivalId.index to (startArrivalId.index + numberOfMovements)).iterator
@@ -63,14 +67,19 @@ private[testOnly] class SeedDataParameters(
 
 object SeedDataParameters {
 
-  def apply(numberOfUsers: Int, movementsPerUser: Int, startArrivalId: ArrivalId, firstEoriValue: Option[SeedEori]): SeedDataParameters =
-    new SeedDataParameters(numberOfUsers, movementsPerUser, startArrivalId, firstEoriValue)
+  def apply(numberOfUsers: Int,
+            movementsPerUser: Int,
+            startArrivalId: ArrivalId,
+            firstEoriValue: Option[SeedEori],
+            channel: Option[ChannelType]): SeedDataParameters =
+    new SeedDataParameters(numberOfUsers, movementsPerUser, startArrivalId, firstEoriValue, channel)
 
   implicit val reads: Reads[SeedDataParameters] =
     (
       (__ \ "numberOfUsers").read[Int] and
         (__ \ "movementsPerUser").read[Int] and
         (__ \ "startArrivalId").read[ArrivalId] and
-        (__ \ "startEori").readNullable[SeedEori]
+        (__ \ "startEori").readNullable[SeedEori] and
+        (__ \ "channel").readNullable[ChannelType]
     )(SeedDataParameters.apply _)
 }
