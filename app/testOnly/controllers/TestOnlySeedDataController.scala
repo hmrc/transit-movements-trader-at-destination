@@ -53,8 +53,7 @@ class TestOnlySeedDataController @Inject()(
     * {{{
     *   curl --location --request POST 'http://localhost:9480/test-only/transit-movements-trader-at-destination/seedData' \
     *   --header 'Content-Type: application/json' \
-    *   --header 'channel: web'\
-    *   --data-raw '{ "startEori": "ZZ000000000021", "numberOfUsers": 100, "startArrivalId": 10, "movementsPerUser": 100 }'
+    *   --data-raw '{ "startEori": "ZZ000000000021", "numberOfUsers": 10, "startArrivalId": 10, "movementsPerUser": 10, "channel": "api" }'
     * }}}
     *
     */
