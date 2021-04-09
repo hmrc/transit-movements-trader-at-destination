@@ -38,7 +38,7 @@ private[testOnly] class TestOnlySeedDataService @Inject()(testDataGenerator: Tes
     seedDataParameters.seedData
       .map {
         case (id, eori, mrn) =>
-          testDataGenerator.arrivalMovement(eori, mrn, id)
+          testDataGenerator.arrivalMovement(eori, mrn, id, seedDataParameters.channelType)
       }
 
 }

@@ -36,7 +36,7 @@ import scala.xml.XML
 
 private[services] class TestDataGenerator @Inject()(clock: Clock) {
 
-  def arrivalMovement(eori: SeedEori, mrn: SeedMrn, arrivalId: ArrivalId): Arrival = {
+  def arrivalMovement(eori: SeedEori, mrn: SeedMrn, arrivalId: ArrivalId, channelType: ChannelType): Arrival = {
 
     val dateTime = LocalDateTime.now(clock)
 
@@ -46,7 +46,7 @@ private[services] class TestDataGenerator @Inject()(clock: Clock) {
 
     Arrival(
       arrivalId,
-      ChannelType.web,
+      channelType,
       MovementReferenceNumber(mrn.format),
       eori.format,
       ArrivalSubmitted,
