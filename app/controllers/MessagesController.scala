@@ -18,13 +18,13 @@ package controllers
 
 import audit.AuditService
 import audit.AuditType
+import com.kenshoo.play.metrics.Metrics
 import controllers.actions.AuthenticatedGetArrivalForReadActionProvider
 import controllers.actions.AuthenticatedGetArrivalForWriteActionProvider
 import controllers.actions.MessageTransformerInterface
 import controllers.actions._
 import logging.Logging
-import metrics.MetricsService
-import metrics.Monitors
+import metrics.HasActionMetrics
 import models.MessageStatus.SubmissionFailed
 import models.ArrivalId
 import models.MessageId
@@ -56,63 +56,73 @@ class MessagesController @Inject()(
   auditService: AuditService,
   validateTransitionState: MessageTransformerInterface,
   validateOutboundMessage: ValidateOutboundMessageAction,
-  metricsService: MetricsService
+  val metrics: Metrics
 )(implicit ec: ExecutionContext)
     extends BackendController(cc)
-    with Logging {
+    with Logging
+    with HasActionMetrics {
 
   private val movementSummaryLogger: Logger =
     Logger(s"application.${this.getClass.getCanonicalName}.movementSummary")
 
+  lazy val countMessages = histo("get-all-arrival-messages-count")
+
   def post(arrivalId: ArrivalId): Action[NodeSeq] =
-    (authenticateForWrite(arrivalId)(parse.xml) andThen validateMessageSenderNode.filter andThen validateTransitionState andThen validateOutboundMessage)
-      .async {
-        implicit request: OutboundMessageRequest[NodeSeq] =>
-          val arrival     = request.arrivalRequest.arrival
-          val messageType = request.message.messageType.messageType
+    withMetricsTimerAction("post-submit-message") {
+      (authenticateForWrite(arrivalId)(parse.xml) andThen validateMessageSenderNode.filter andThen validateTransitionState andThen validateOutboundMessage)
+        .async {
+          implicit request: OutboundMessageRequest[NodeSeq] =>
+            val arrival     = request.arrivalRequest.arrival
+            val messageType = request.message.messageType.messageType
 
-          arrivalMovementService
-            .makeOutboundMessage(arrivalId, arrival.nextMessageCorrelationId, messageType)(request.arrivalRequest.request.body) match {
-            case Right(message) =>
-              submitMessageService
-                .submitMessage(arrivalId, arrival.nextMessageId, message, request.message.nextState, arrival.channel)
-                .map {
-                  result =>
-                    movementSummaryLogger.info(
-                      s"Received message ${MessageType.UnloadingRemarks.toString} for this arrival with result $result\n${arrival.summaryInformation
-                        .mkString("\n")}")
+            arrivalMovementService
+              .makeOutboundMessage(arrivalId, arrival.nextMessageCorrelationId, messageType)(request.arrivalRequest.request.body) match {
+              case Right(message) =>
+                submitMessageService
+                  .submitMessage(arrivalId, arrival.nextMessageId, message, request.message.nextState, arrival.channel)
+                  .map {
+                    result =>
+                      movementSummaryLogger.info(
+                        s"Received message ${MessageType.UnloadingRemarks.toString} for this arrival with result $result\n${arrival.summaryInformation
+                          .mkString("\n")}"
+                      )
 
-                    val counter = Monitors.countMessages(messageType, arrival.channel, result)
-                    metricsService.inc(counter)
+                      result match {
+                        case SubmissionFailureInternal => InternalServerError
+                        case SubmissionFailureExternal => BadGateway
+                        case submissionFailureRejected: SubmissionFailureRejected =>
+                          BadRequest(submissionFailureRejected.responseBody)
+                        case SubmissionSuccess =>
+                          auditService.auditEvent(AuditType.UnloadingRemarksSubmitted, message, arrival.channel)
+                          Accepted("Message accepted")
+                            .withHeaders("Location" -> routes.MessagesController.getMessage(arrival.arrivalId, arrival.nextMessageId).url)
+                      }
+                  }
+              case Left(error) =>
+                logger.error(s"Failed to create MovementMessageWithStatus with error: $error")
+                Future.successful(BadRequest(s"Failed to create MovementMessageWithStatus with error: $error $messageType"))
+            }
+        }
+    }
 
-                    result match {
-                      case SubmissionFailureInternal => InternalServerError
-                      case SubmissionFailureExternal => BadGateway
-                      case submissionFailureRejected: SubmissionFailureRejected =>
-                        BadRequest(submissionFailureRejected.responseBody)
-                      case SubmissionSuccess =>
-                        auditService.auditEvent(AuditType.UnloadingRemarksSubmitted, message, arrival.channel)
-                        Accepted("Message accepted")
-                          .withHeaders("Location" -> routes.MessagesController.getMessage(arrival.arrivalId, arrival.nextMessageId).url)
-                    }
-                }
-            case Left(error) =>
-              logger.error(s"Failed to create MovementMessageWithStatus with error: $error")
-              Future.successful(BadRequest(s"Failed to create MovementMessageWithStatus with error: $error $messageType"))
-          }
+  def getMessage(arrivalId: ArrivalId, messageId: MessageId): Action[AnyContent] =
+    withMetricsTimerAction("get-arrival-message") {
+      authenticateForRead(arrivalId) {
+        implicit request =>
+          val messages = request.arrival.messages.toList
+
+          if (messages.isDefinedAt(messageId.index) && !messages(messageId.index).optStatus.contains(SubmissionFailed))
+            Ok(Json.toJsObject(ResponseMovementMessage.build(arrivalId, messageId, messages(messageId.index))))
+          else NotFound
       }
+    }
 
-  def getMessage(arrivalId: ArrivalId, messageId: MessageId): Action[AnyContent] = authenticateForRead(arrivalId) {
-    implicit request =>
-      val messages = request.arrival.messages.toList
-
-      if (messages.isDefinedAt(messageId.index) && !messages(messageId.index).optStatus.contains(SubmissionFailed))
-        Ok(Json.toJsObject(ResponseMovementMessage.build(arrivalId, messageId, messages(messageId.index))))
-      else NotFound
-  }
-
-  def getMessages(arrivalId: ArrivalId): Action[AnyContent] = authenticateForRead(arrivalId) {
-    implicit request =>
-      Ok(Json.toJsObject(ResponseArrivalWithMessages.build(request.arrival)))
-  }
+  def getMessages(arrivalId: ArrivalId): Action[AnyContent] =
+    withMetricsTimerAction("get-all-arrival-messages") {
+      authenticateForRead(arrivalId) {
+        implicit request =>
+          countMessages.update(request.arrival.messages.length)
+          Ok(Json.toJsObject(ResponseArrivalWithMessages.build(request.arrival)))
+      }
+    }
 }
