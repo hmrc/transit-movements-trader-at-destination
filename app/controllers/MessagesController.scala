@@ -24,6 +24,7 @@ import controllers.actions.AuthenticatedGetArrivalForWriteActionProvider
 import controllers.actions.MessageTransformerInterface
 import controllers.actions._
 import logging.Logging
+import metrics.Monitors
 import metrics.HasActionMetrics
 import models.MessageStatus.SubmissionFailed
 import models.ArrivalId
@@ -86,6 +87,8 @@ class MessagesController @Inject()(
                         s"Received message ${MessageType.UnloadingRemarks.toString} for this arrival with result $result\n${arrival.summaryInformation
                           .mkString("\n")}"
                       )
+
+                      Monitors.messageReceived(registry, messageType, arrival.channel, result)
 
                       result match {
                         case SubmissionFailureInternal => InternalServerError

@@ -21,6 +21,7 @@ import controllers.actions.GetArrivalForWriteActionProvider
 import controllers.actions.MessageTransformerInterface
 import controllers.actions.ValidateInboundMessageAction
 import logging.Logging
+import metrics.Monitors
 import metrics.HasActionMetrics
 import models.InboundMessage
 import models.MessageSender
@@ -76,6 +77,8 @@ class NCTSMessageController @Inject()(
               ) ++ request.arrivalRequest.arrival.summaryInformation
 
               movementSummaryLogger.info(s"Received message ${messageInbound.messageType.messageType.toString} for this arrival\n${summaryInfo.mkString("\n")}")
+
+              Monitors.messageReceived(registry, messageInbound.messageType.messageType, request.arrivalRequest.channel, result)
 
               result match {
                 case SubmissionSuccess =>

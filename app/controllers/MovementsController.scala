@@ -24,6 +24,7 @@ import cats.data.NonEmptyList
 import com.kenshoo.play.metrics.Metrics
 import controllers.actions._
 import logging.Logging
+import metrics.Monitors
 import metrics.HasActionMetrics
 import models.MessageStatus.SubmissionSucceeded
 import models.ArrivalId
@@ -112,6 +113,7 @@ class MovementsController @Inject()(
                     .submitMessage(arrival.arrivalId, arrival.nextMessageId, message, ArrivalStatus.ArrivalSubmitted, request.channel)
                     .map {
                       result =>
+                        Monitors.messageReceived(registry, MessageType.ArrivalNotification, request.channel, result)
                         movementSummaryLogger.info(s"Submitted an arrival with result ${result.toString}\n${arrival.summaryInformation.mkString("\n")}")
                         handleSubmissionResult(result, AuditType.ArrivalNotificationSubmitted, message, request.channel, arrival.arrivalId)
                     }
@@ -128,6 +130,7 @@ class MovementsController @Inject()(
                       .submitArrival(arrival)
                       .map {
                         result =>
+                          Monitors.messageReceived(registry, MessageType.ArrivalNotification, request.channel, result)
                           movementSummaryLogger.info(s"Submitted an arrival with result ${result.toString}\n${arrival.summaryInformation.mkString("\n")}")
                           handleSubmissionResult(result, AuditType.ArrivalNotificationSubmitted, arrival.messages.head, request.channel, arrival.arrivalId)
                       }
