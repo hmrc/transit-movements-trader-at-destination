@@ -16,8 +16,10 @@
 
 package controllers
 
+import com.kenshoo.play.metrics.Metrics
 import controllers.actions.AuthenticatedGetArrivalForReadActionProvider
 import javax.inject.Inject
+import metrics.HasActionMetrics
 import models.ArrivalId
 import play.api.libs.json.Json
 import play.api.mvc.Action
@@ -26,17 +28,24 @@ import play.api.mvc.ControllerComponents
 import services.ArrivalMessageSummaryService
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
+import scala.concurrent.ExecutionContext
+
 class MessagesSummaryController @Inject()(
   authenticateForRead: AuthenticatedGetArrivalForReadActionProvider,
   arrivalMessageSummaryService: ArrivalMessageSummaryService,
-  cc: ControllerComponents
-) extends BackendController(cc) {
+  cc: ControllerComponents,
+  val metrics: Metrics
+)(implicit ec: ExecutionContext)
+    extends BackendController(cc)
+    with HasActionMetrics {
 
-  def messagesSummary(arrivalId: ArrivalId): Action[AnyContent] = authenticateForRead(arrivalId) {
-    implicit request =>
-      val messageSummary = arrivalMessageSummaryService.arrivalMessagesSummary(request.arrival)
-
-      Ok(Json.toJsObject(messageSummary))
-  }
+  def messagesSummary(arrivalId: ArrivalId): Action[AnyContent] =
+    withMetricsTimerAction("get-arrival-messages-summary") {
+      authenticateForRead(arrivalId) {
+        implicit request =>
+          val messageSummary = arrivalMessageSummaryService.arrivalMessagesSummary(request.arrival)
+          Ok(Json.toJsObject(messageSummary))
+      }
+    }
 
 }
