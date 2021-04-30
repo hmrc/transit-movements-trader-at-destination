@@ -16,6 +16,7 @@
 
 package models
 
+import java.time.Clock
 import java.time.LocalDateTime
 
 import cats._
@@ -48,7 +49,7 @@ object ArrivalUpdate {
     case (p: ArrivalPutUpdate, c: CompoundStatusUpdate) => p.copy(arrivalUpdate = c)
   }
 
-  implicit val arrivalUpdateArrivalModifier: ArrivalModifier[ArrivalUpdate] = {
+  implicit def arrivalUpdateArrivalModifier(implicit clock: Clock): ArrivalModifier[ArrivalUpdate] = {
     case x: MessageStatusUpdate  => ArrivalModifier.toJson(x)
     case x: ArrivalStatusUpdate  => ArrivalModifier.toJson(x)
     case x: CompoundStatusUpdate => ArrivalModifier.toJson(x)
@@ -59,14 +60,15 @@ object ArrivalUpdate {
 final case class MessageStatusUpdate(messageId: MessageId, messageStatus: MessageStatus) extends ArrivalUpdate
 
 object MessageStatusUpdate extends MongoDateTimeFormats {
-  implicit def arrivalStateUpdate(implicit writes: Writes[MessageStatus]): ArrivalModifier[MessageStatusUpdate] =
+
+  implicit def arrivalStateUpdate(implicit clock: Clock, writes: Writes[MessageStatus]): ArrivalModifier[MessageStatusUpdate] =
     ArrivalModifier(
       value =>
         Json.obj(
           "$set" ->
             Json.obj(
               s"messages.${value.messageId.index}.status" -> value.messageStatus,
-              "lastUpdated"                               -> LocalDateTime.now.withSecond(0).withNano(0)
+              "lastUpdated"                               -> LocalDateTime.now(clock).withSecond(0).withNano(0)
             )
       )
     )
@@ -75,19 +77,22 @@ object MessageStatusUpdate extends MongoDateTimeFormats {
 final case class ArrivalStatusUpdate(arrivalStatus: ArrivalStatus) extends ArrivalUpdate
 
 object ArrivalStatusUpdate extends MongoDateTimeFormats {
-  implicit def arrivalStatusUpdate(implicit writes: Writes[ArrivalStatus]): ArrivalModifier[ArrivalStatusUpdate] =
+
+  implicit def arrivalStatusUpdate(implicit clock: Clock, writes: Writes[ArrivalStatus]): ArrivalModifier[ArrivalStatusUpdate] =
     value =>
       Json.obj(
         "$set" -> Json.obj(
           "status"      -> value.arrivalStatus,
-          "lastUpdated" -> LocalDateTime.now.withSecond(0).withNano(0)
-        ))
+          "lastUpdated" -> LocalDateTime.now(clock).withSecond(0).withNano(0)
+        )
+    )
 }
 
 final case class CompoundStatusUpdate(arrivalStatusUpdate: ArrivalStatusUpdate, messageStatusUpdate: MessageStatusUpdate) extends ArrivalUpdate
 
 object CompoundStatusUpdate {
-  implicit val arrivalUpdate: ArrivalModifier[CompoundStatusUpdate] =
+
+  implicit def arrivalUpdate(implicit clock: Clock): ArrivalModifier[CompoundStatusUpdate] =
     csu => ArrivalModifier.toJson(csu.arrivalStatusUpdate) deepMerge ArrivalModifier.toJson(csu.messageStatusUpdate)
 }
 
@@ -95,12 +100,13 @@ final case class ArrivalPutUpdate(movementReferenceNumber: MovementReferenceNumb
 
 object ArrivalPutUpdate extends MongoDateTimeFormats {
 
-  implicit val arrivalPutUpdateArrivalModifier: ArrivalModifier[ArrivalPutUpdate] = a =>
-    Json.obj(
-      "$set" -> Json.obj(
-        "movementReferenceNumber" -> a.movementReferenceNumber,
-        "lastUpdated"             -> LocalDateTime.now.withSecond(0).withNano(0)
-      )
-    ) deepMerge ArrivalModifier.toJson(a.arrivalUpdate)
+  implicit def arrivalPutUpdateArrivalModifier(implicit clock: Clock): ArrivalModifier[ArrivalPutUpdate] =
+    a =>
+      Json.obj(
+        "$set" -> Json.obj(
+          "movementReferenceNumber" -> a.movementReferenceNumber,
+          "lastUpdated"             -> LocalDateTime.now(clock).withSecond(0).withNano(0)
+        )
+      ) deepMerge ArrivalModifier.toJson(a.arrivalUpdate)
 
 }

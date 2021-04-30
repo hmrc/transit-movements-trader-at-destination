@@ -31,7 +31,7 @@ import play.api.mvc.Action
 import play.api.mvc.ControllerComponents
 import play.api.mvc.Result
 import services.SaveMessageService
-import uk.gov.hmrc.play.bootstrap.controller.BackendController
+import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext

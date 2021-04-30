@@ -29,6 +29,9 @@ import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
+import java.time.Clock
+import java.time.ZoneOffset
+import java.time.Instant
 
 class ArrivalUpdateSpec
     extends SpecBase
@@ -39,6 +42,8 @@ class ArrivalUpdateSpec
     with MongoDateTimeFormats {
 
   implicit val eqArrivalStatusUpdate: Eq[ArrivalUpdate] = _ == _
+  val currentDateTime                                   = LocalDateTime.now.withSecond(0).withNano(0).toInstant(ZoneOffset.UTC)
+  implicit val clock: Clock                             = Clock.fixed(currentDateTime, ZoneOffset.UTC)
 
   "ArrivalUpdate" - {
 
@@ -116,7 +121,7 @@ class ArrivalUpdateSpec
           val expectedUpdateJson = Json.obj(
             "$set" -> Json.obj(
               s"messages.${messageStatusUpdate.messageId.index}.status" -> messageStatusUpdate.messageStatus,
-              "lastUpdated"                                             -> LocalDateTime.now.withSecond(0).withNano(0)
+              "lastUpdated"                                             -> LocalDateTime.now(clock).withSecond(0).withNano(0)
             )
           )
 
@@ -132,7 +137,7 @@ class ArrivalUpdateSpec
           val expectedUpdateJson = Json.obj(
             "$set" -> Json.obj(
               "status"      -> arrivalStatusUpdate.arrivalStatus,
-              "lastUpdated" -> LocalDateTime.now.withSecond(0).withNano(0)
+              "lastUpdated" -> LocalDateTime.now(clock).withSecond(0).withNano(0)
             )
           )
 
@@ -149,7 +154,7 @@ class ArrivalUpdateSpec
             "$set" -> Json.obj(
               "status"                                                                       -> compoundStatusUpdate.arrivalStatusUpdate.arrivalStatus,
               s"messages.${compoundStatusUpdate.messageStatusUpdate.messageId.index}.status" -> compoundStatusUpdate.messageStatusUpdate.messageStatus,
-              "lastUpdated"                                                                  -> LocalDateTime.now.withSecond(0).withNano(0)
+              "lastUpdated"                                                                  -> LocalDateTime.now(clock).withSecond(0).withNano(0)
             )
           )
 
@@ -168,7 +173,7 @@ class ArrivalUpdateSpec
               "movementReferenceNumber"             -> arrivalPutUpdate.movementReferenceNumber,
               "status"                              -> arrivalPutUpdate.arrivalUpdate.arrivalStatusUpdate.arrivalStatus,
               s"messages.$expectedMessageId.status" -> arrivalPutUpdate.arrivalUpdate.messageStatusUpdate.messageStatus,
-              "lastUpdated"                         -> LocalDateTime.now.withSecond(0).withNano(0),
+              "lastUpdated"                         -> LocalDateTime.now(clock).withSecond(0).withNano(0)
             )
           )
 

@@ -26,7 +26,7 @@ import repositories.ArrivalMovementRepository
 import testOnly.models.SeedDataParameters
 import testOnly.models.SeedDataResponse
 import testOnly.services.TestOnlySeedDataService
-import uk.gov.hmrc.play.bootstrap.controller.BackendController
+import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import java.time.Clock
 import javax.inject.Inject

@@ -998,7 +998,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         running(application) {
           forAll(listWithMaxLength[ResponseArrival](10)) {
             arrivals =>
-              when(mockArrivalMovementRepository.fetchAllArrivals(any(), any())).thenReturn(Future.successful(arrivals))
+              when(mockArrivalMovementRepository.fetchAllArrivals(any(), any(), any())).thenReturn(Future.successful(arrivals))
 
               val request = FakeRequest(GET, routes.MovementsController.getArrivals().url)
 
@@ -1035,7 +1035,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
               createdAndUpdatedDate
             )
           )
-          when(mockArrivalMovementRepository.fetchAllArrivals(any(), any())).thenReturn(Future.successful(arrivals))
+          when(mockArrivalMovementRepository.fetchAllArrivals(any(), any(), any())).thenReturn(Future.successful(arrivals))
 
           val request = FakeRequest(GET, routes.MovementsController.getArrivals().url)
 
@@ -1066,7 +1066,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
       "must return an INTERNAL_SERVER_ERROR when we cannot retrieve the Arrival Movements" in {
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
-        when(mockArrivalMovementRepository.fetchAllArrivals(any(), any()))
+        when(mockArrivalMovementRepository.fetchAllArrivals(any(), any(), any()))
           .thenReturn(Future.failed(new Exception))
 
         val application =

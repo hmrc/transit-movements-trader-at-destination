@@ -25,6 +25,7 @@ import play.api.libs.json.Json
 import play.api.libs.json.Reads
 import play.api.libs.json.Writes
 import play.api.libs.json.__
+import java.time.OffsetDateTime
 
 trait MongoDateTimeFormats {
 
@@ -40,6 +41,12 @@ trait MongoDateTimeFormats {
       "$date" -> dateTime.atZone(ZoneOffset.UTC).toInstant.toEpochMilli
     )
   }
+
+  implicit val offsetDateTimeRead: Reads[OffsetDateTime] =
+    localDateTimeRead.map(_.atOffset(ZoneOffset.UTC))
+
+  implicit val offsetDateTimeWrite: Writes[OffsetDateTime] =
+    localDateTimeWrite.contramap(_.atZoneSameInstant(ZoneOffset.UTC).toLocalDateTime)
 }
 
 object MongoDateTimeFormats extends MongoDateTimeFormats
