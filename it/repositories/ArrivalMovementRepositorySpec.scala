@@ -41,6 +41,7 @@ import play.api.test.Helpers.running
 import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 import reactivemongo.play.json.collection.JSONCollection
 import utils.Format
+import config.AppConfig
 
 import java.time._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -729,5 +730,72 @@ class ArrivalMovementRepositorySpec
         updatedArrival.value mustEqual arrival.copy(messages = newMessages)
       }
     }
+
+    "Must return max 2 arrivals when the API maxRowsReturned = 2" in {
+        database.flatMap(_.drop()).futureValue
+
+        val app = new GuiceApplicationBuilder().build()
+        val eoriNumber: String = arbitrary[String].sample.value
+        val appConfig = app.injector.instanceOf[AppConfig]
+
+
+        val lastUpdated = LocalDateTime.now(stubClock).withSecond(0).withNano(0)
+        val movement1 = arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = api, lastUpdated = lastUpdated.withSecond(1))
+        val movement2 = arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = api, lastUpdated = lastUpdated.withSecond(2))
+        val movement3 = arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = api, lastUpdated = lastUpdated.withSecond(3))
+
+        running(app) {
+          started(app).futureValue
+          val repository = app.injector.instanceOf[ArrivalMovementRepository]
+          repository.insert(movement1).futureValue
+          repository.insert(movement2).futureValue
+          repository.insert(movement3).futureValue
+
+          val maxRows = appConfig.maxRowsReturned(api)
+          maxRows mustBe 2
+
+          val movements = repository.fetchAllArrivals(eoriNumber, api).futureValue
+          
+          movements.size mustBe maxRows
+
+          val ids = movements.map(m => m.arrivalId.index)
+
+          ids mustBe Seq(movement3.arrivalId.index,movement2.arrivalId.index)
+
+        }
+      }
+
+    "Must return max 1 arrivals when the WEB maxRowsReturned = 2" in {
+        database.flatMap(_.drop()).futureValue
+
+        val app = new GuiceApplicationBuilder().build()
+        val eoriNumber: String = arbitrary[String].sample.value
+        val appConfig = app.injector.instanceOf[AppConfig]
+
+        val lastUpdated = LocalDateTime.now(stubClock).withSecond(0).withNano(0)
+        val movement1 = arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = web, lastUpdated = lastUpdated.withSecond(1))
+        val movement2 = arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = web, lastUpdated = lastUpdated.withSecond(2))
+        val movement3 = arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = web, lastUpdated = lastUpdated.withSecond(3))
+
+        running(app) {
+          started(app).futureValue
+          val repository = app.injector.instanceOf[ArrivalMovementRepository]
+          repository.insert(movement1).futureValue
+          repository.insert(movement2).futureValue
+          repository.insert(movement3).futureValue
+
+          val maxRows = appConfig.maxRowsReturned(web)
+          maxRows mustBe 100
+
+          val movements = repository.fetchAllArrivals(eoriNumber, web).futureValue
+          
+          movements.size mustBe 3
+
+          val ids = movements.map( m => m.arrivalId.index)
+
+          ids mustBe Seq(movement3.arrivalId.index, movement2.arrivalId.index, movement1.arrivalId.index)
+
+        }
+      }
   }
 }

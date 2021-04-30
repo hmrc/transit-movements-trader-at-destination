@@ -180,8 +180,9 @@ class ArrivalMovementRepository @Inject()(
     metricsService.timeAsyncCall(Monitors.GetArrivalsForEoriMonitor) {
       collection.flatMap {
         _.find(Json.obj("eoriNumber" -> eoriNumber, "channel" -> channelFilter), Some(ResponseArrival.projection))
+          .sort(Json.obj("lastUpdated" -> -1))
           .cursor[ResponseArrival]()
-          .collect[Seq](-1, Cursor.FailOnError())
+          .collect[Seq](appConfig.maxRowsReturned(channelFilter), Cursor.FailOnError())
           .map {
             arrivals =>
               metricsService.inc(Monitors.arrivalsPerEori(arrivals))
