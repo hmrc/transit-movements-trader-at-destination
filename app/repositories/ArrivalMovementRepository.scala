@@ -22,10 +22,10 @@ import akka.stream.scaladsl.Sink
 import akka.stream.scaladsl.Source
 import cats.data.NonEmptyList
 import com.google.inject.Inject
+import com.kenshoo.play.metrics.Metrics
 import config.AppConfig
 import logging.Logging
-import metrics.MetricsService
-import metrics.Monitors
+import metrics.HasMetrics
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalIdSelector
@@ -68,11 +68,14 @@ import scala.util.Try
 class ArrivalMovementRepository @Inject()(
   mongo: ReactiveMongoApi,
   appConfig: AppConfig,
-  metricsService: MetricsService,
-  clock: Clock
+  clock: Clock,
+  val metrics: Metrics
 )(implicit ec: ExecutionContext, m: Materializer)
     extends MongoDateTimeFormats
-    with Logging {
+    with Logging
+    with HasMetrics {
+
+  val arrivalsForEoriCount = histo("arrivals-for-eori-count")
 
   val started: Future[Unit] = {
     collection
@@ -139,11 +142,12 @@ class ArrivalMovementRepository @Inject()(
       "channel" -> channelFilter
     )
 
-    metricsService.timeAsyncCall(Monitors.GetArrivalByIdMonitor) {
-      collection.flatMap {
-        _.find(selector, None)
-          .one[Arrival]
-      }
+    withMetricsTimerAsync("mongo-get-arrival-by-id") {
+      _ =>
+        collection.flatMap {
+          _.find(selector, None)
+            .one[Arrival]
+        }
     }
   }
 
@@ -153,11 +157,12 @@ class ArrivalMovementRepository @Inject()(
       "_id" -> arrivalId
     )
 
-    metricsService.timeAsyncCall(Monitors.GetArrivalByIdMonitor) {
-      collection.flatMap {
-        _.find(selector, None)
-          .one[Arrival]
-      }
+    withMetricsTimerAsync("mongo-get-arrival-by-id") {
+      _ =>
+        collection.flatMap {
+          _.find(selector, None)
+            .one[Arrival]
+        }
     }
   }
 
@@ -168,27 +173,29 @@ class ArrivalMovementRepository @Inject()(
       "channel"                 -> channelFilter
     )
 
-    metricsService.timeAsyncCall(Monitors.GetArrivalByMrnMonitor) {
-      collection.flatMap {
-        _.find(selector, None)
-          .one[Arrival]
-      }
+    withMetricsTimerAsync("mongo-get-arrival-by-mrn") {
+      _ =>
+        collection.flatMap {
+          _.find(selector, None)
+            .one[Arrival]
+        }
     }
   }
 
   def fetchAllArrivals(eoriNumber: String, channelFilter: ChannelType): Future[Seq[ResponseArrival]] =
-    metricsService.timeAsyncCall(Monitors.GetArrivalsForEoriMonitor) {
-      collection.flatMap {
-        _.find(Json.obj("eoriNumber" -> eoriNumber, "channel" -> channelFilter), Some(ResponseArrival.projection))
-          .sort(Json.obj("lastUpdated" -> -1))
-          .cursor[ResponseArrival]()
-          .collect[Seq](appConfig.maxRowsReturned(channelFilter), Cursor.FailOnError())
-          .map {
-            arrivals =>
-              metricsService.inc(Monitors.arrivalsPerEori(arrivals))
-              arrivals
-          }
-      }
+    withMetricsTimerAsync("mongo-get-arrivals-for-eori") {
+      _ =>
+        collection.flatMap {
+          _.find(Json.obj("eoriNumber" -> eoriNumber, "channel" -> channelFilter), Some(ResponseArrival.projection))
+            .sort(Json.obj("lastUpdated" -> -1))
+            .cursor[ResponseArrival]()
+            .collect[Seq](appConfig.maxRowsReturned(channelFilter), Cursor.FailOnError())
+            .map {
+              arrivals =>
+                arrivalsForEoriCount.update(arrivals.length)
+                arrivals
+            }
+        }
     }
 
   @deprecated("Use updateArrival since this will be removed in the next version", "next")

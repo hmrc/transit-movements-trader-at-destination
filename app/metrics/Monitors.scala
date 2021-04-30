@@ -16,59 +16,13 @@
 
 package metrics
 
-import connectors.MessageConnector.EisSubmissionResult
-import models.Arrival
+import com.codahale.metrics.MetricRegistry
 import models.ChannelType
 import models.MessageType
 import models.SubmissionProcessingResult
-import models.response.ResponseArrival
-import play.api.libs.ws.WSResponse
-
-trait RequestMonitor[A] {
-  val name: String
-
-  val path: String         = s"$name.request"
-  val timer: Timer         = Timer(path)
-  val callCounter: Counter = Counter(path)
-
-  def completionCounter(result: A): Option[Counter] = None
-  val failureCounter: Counter                       = Counter(s"$path.failed")
-}
-
-case class EisRequestMonitor(name: String) extends RequestMonitor[EisSubmissionResult] {
-  override def completionCounter(result: EisSubmissionResult): Option[Counter] =
-    Some(Counter(s"$path.responseStatus.${result.statusCode}"))
-}
-
-case class WSResponseMonitor(name: String) extends RequestMonitor[WSResponse] {
-  override def completionCounter(result: WSResponse): Option[Counter] =
-    Some(Counter(s"$path.responseStatus.${result.status}"))
-}
-
-case class DefaultRequestMonitor[A](name: String) extends RequestMonitor[A]
 
 object Monitors {
-  val UnloadingPermissionMonitor: WSResponseMonitor                          = WSResponseMonitor("get-unloading-permission")
-  val PostToEisMonitor: EisRequestMonitor                                    = EisRequestMonitor("post-message-to-eis")
-  val GetArrivalsForEoriMonitor: DefaultRequestMonitor[Seq[ResponseArrival]] = DefaultRequestMonitor[Seq[ResponseArrival]]("get-arrivals-for-eori")
-  val GetArrivalByIdMonitor: DefaultRequestMonitor[Option[Arrival]]          = DefaultRequestMonitor[Option[Arrival]]("get-arrival-by-arrival-id")
-  val GetArrivalByMrnMonitor: DefaultRequestMonitor[Option[Arrival]]         = DefaultRequestMonitor[Option[Arrival]]("get-arrival-by-mrn")
 
-  def arrivalsPerEori(arrivals: Seq[ResponseArrival]): Counter =
-    arrivals.size match {
-      case s if s == 0    => Counter("arrivals-per-eori-0")
-      case s if s <= 10   => Counter("arrivals-per-eori-1-10")
-      case s if s <= 25   => Counter("arrivals-per-eori-11-25")
-      case s if s <= 50   => Counter("arrivals-per-eori-26-50")
-      case s if s <= 100  => Counter("arrivals-per-eori-51-100")
-      case s if s <= 250  => Counter("arrivals-per-eori-101-250")
-      case s if s <= 500  => Counter("arrivals-per-eori-251-500")
-      case s if s <= 1000 => Counter("arrivals-per-eori-501-1000")
-      case s if s <= 2000 => Counter("arrivals-per-eori-1001-2000")
-      case s if s <= 3000 => Counter("arrivals-per-eori-2001-3000")
-      case _              => Counter("arrivals-per-eori-3001-or-more")
-    }
-
-  def countMessages(messageType: MessageType, channel: ChannelType, outcome: SubmissionProcessingResult): Counter =
-    Counter(s"message-received.${channel.toString}.${messageType.code}-${outcome.toString}")
+  def messageReceived(registry: MetricRegistry, messageType: MessageType, channel: ChannelType, outcome: SubmissionProcessingResult): Unit =
+    registry.meter(s"message-received.${channel.toString}.${messageType.code}.${SubmissionProcessingResult.format(outcome)}").mark()
 }

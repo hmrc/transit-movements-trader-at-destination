@@ -20,6 +20,17 @@ sealed trait SubmissionProcessingResult
 
 object SubmissionProcessingResult {
 
+  def format(result: SubmissionProcessingResult) = result match {
+    case SubmissionSuccess =>
+      "success"
+    case SubmissionFailureInternal =>
+      "failure-internal"
+    case SubmissionFailureExternal =>
+      "failure-external"
+    case SubmissionFailureRejected(responseBody) =>
+      "rejected"
+  }
+
   case object SubmissionSuccess extends SubmissionProcessingResult
 
   sealed trait SubmissionFailure extends SubmissionProcessingResult

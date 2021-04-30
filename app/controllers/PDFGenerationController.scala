@@ -16,10 +16,11 @@
 
 package controllers
 
+import com.kenshoo.play.metrics.Metrics
 import controllers.actions.AuthenticatedGetArrivalForReadActionProvider
-
 import javax.inject.Inject
 import logging.Logging
+import metrics.HasActionMetrics
 import models.ArrivalId
 import models.WSError._
 import play.api.mvc.Action
@@ -33,23 +34,27 @@ import scala.concurrent.ExecutionContext
 class PDFGenerationController @Inject()(
   cc: ControllerComponents,
   authenticateForRead: AuthenticatedGetArrivalForReadActionProvider,
-  unloadingPermissionPDFService: UnloadingPermissionPDFService
+  unloadingPermissionPDFService: UnloadingPermissionPDFService,
+  val metrics: Metrics
 )(implicit ec: ExecutionContext)
     extends BackendController(cc)
-    with Logging {
+    with Logging
+    with HasActionMetrics {
 
-  def getPDF(arrivalId: ArrivalId): Action[AnyContent] = authenticateForRead(arrivalId).async {
-    implicit request =>
-      unloadingPermissionPDFService.getPDF(request.arrival).map {
-        case Right(pdf) =>
-          Ok(pdf)
-        case Left(_: NotFoundError.type) =>
-          logger.error(s"Failed to find UnloadingPermission of index: ${request.arrival.arrivalId} ")
-          NotFound
-        case Left(otherError: OtherError) =>
-          logger.error(s"Failed create PDF for the following reason: ${otherError.code} - ${otherError.reason}")
-          BadGateway
+  def getPDF(arrivalId: ArrivalId): Action[AnyContent] =
+    withMetricsTimerAction("get-unloading-permission-pdf") {
+      authenticateForRead(arrivalId).async {
+        implicit request =>
+          unloadingPermissionPDFService.getPDF(request.arrival).map {
+            case Right(pdf) =>
+              Ok(pdf)
+            case Left(_: NotFoundError.type) =>
+              logger.error(s"Failed to find UnloadingPermission of index: ${request.arrival.arrivalId} ")
+              NotFound
+            case Left(otherError: OtherError) =>
+              logger.error(s"Failed create PDF for the following reason: ${otherError.code} - ${otherError.reason}")
+              BadGateway
+          }
       }
-  }
-
+    }
 }

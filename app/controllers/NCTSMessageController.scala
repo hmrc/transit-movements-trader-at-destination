@@ -16,12 +16,13 @@
 
 package controllers
 
+import com.kenshoo.play.metrics.Metrics
 import controllers.actions.GetArrivalForWriteActionProvider
 import controllers.actions.MessageTransformerInterface
 import controllers.actions.ValidateInboundMessageAction
 import logging.Logging
-import metrics.MetricsService
 import metrics.Monitors
+import metrics.HasActionMetrics
 import models.InboundMessage
 import models.MessageSender
 import models.SubmissionProcessingResult._
@@ -36,48 +37,59 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.xml.NodeSeq
 
-class NCTSMessageController @Inject()(cc: ControllerComponents,
-                                      getArrival: GetArrivalForWriteActionProvider,
-                                      validateTransitionState: MessageTransformerInterface,
-                                      validateInboundMessage: ValidateInboundMessageAction,
-                                      saveMessageService: SaveMessageService,
-                                      metricsService: MetricsService)(implicit ec: ExecutionContext)
+class NCTSMessageController @Inject()(
+  cc: ControllerComponents,
+  getArrival: GetArrivalForWriteActionProvider,
+  validateTransitionState: MessageTransformerInterface,
+  validateInboundMessage: ValidateInboundMessageAction,
+  saveMessageService: SaveMessageService,
+  val metrics: Metrics
+)(implicit ec: ExecutionContext)
     extends BackendController(cc)
-    with Logging {
+    with Logging
+    with HasActionMetrics {
 
   private val movementSummaryLogger: Logger =
     Logger(s"application.${this.getClass.getCanonicalName}.movementSummary")
 
   def post(messageSender: MessageSender): Action[NodeSeq] =
-    (getArrival(messageSender.arrivalId)(parse.xml) andThen validateTransitionState andThen validateInboundMessage).async {
-      implicit request =>
-        val messageInbound: InboundMessage = request.message
+    withMetricsTimerAction("post-receive-ncts-message") {
+      (getArrival(messageSender.arrivalId)(parse.xml) andThen validateTransitionState andThen validateInboundMessage).async {
+        implicit request =>
+          val messageInbound: InboundMessage = request.message
 
-        val xml: NodeSeq = request.arrivalRequest.request.body
+          val xml: NodeSeq = request.arrivalRequest.request.body
 
-        val processingResult =
-          saveMessageService.validateXmlAndSaveMessage(xml, messageSender, messageInbound.messageType, messageInbound.nextState, request.arrivalRequest.channel)
+          val processingResult =
+            saveMessageService.validateXmlAndSaveMessage(
+              xml,
+              messageSender,
+              messageInbound.messageType,
+              messageInbound.nextState,
+              request.arrivalRequest.channel
+            )
 
-        processingResult map {
-          result =>
-            val summaryInfo: Map[String, String] = Map(
-              "X-Correlation-Id" -> request.headers.get("X-Correlation-ID").getOrElse("undefined"),
-              "X-Request-Id"     -> request.headers.get("X-Request-ID").getOrElse("undefined")
-            ) ++ request.arrivalRequest.arrival.summaryInformation
+          processingResult map {
+            result =>
+              val summaryInfo: Map[String, String] = Map(
+                "X-Correlation-Id" -> request.headers.get("X-Correlation-ID").getOrElse("undefined"),
+                "X-Request-Id"     -> request.headers.get("X-Request-ID").getOrElse("undefined")
+              ) ++ request.arrivalRequest.arrival.summaryInformation
 
-            movementSummaryLogger.info(s"Received message ${messageInbound.messageType.messageType.toString} for this arrival\n${summaryInfo.mkString("\n")}")
+              movementSummaryLogger.info(s"Received message ${messageInbound.messageType.messageType.toString} for this arrival\n${summaryInfo.mkString("\n")}")
 
-            val counter = Monitors.countMessages(messageInbound.messageType.messageType, request.arrivalRequest.channel, result)
-            metricsService.inc(counter)
+              Monitors.messageReceived(registry, messageInbound.messageType.messageType, request.arrivalRequest.channel, result)
 
-            result match {
-              case SubmissionSuccess =>
-                Ok.withHeaders(
-                  LOCATION -> routes.MessagesController.getMessage(request.arrivalRequest.arrival.arrivalId, request.arrivalRequest.arrival.nextMessageId).url)
-              case SubmissionFailureInternal => internalServerError("Internal Submission Failure " + processingResult)
-              case SubmissionFailureExternal => badRequestError("External Submission Failure " + processingResult)
-            }
-        }
+              result match {
+                case SubmissionSuccess =>
+                  Ok.withHeaders(
+                    LOCATION -> routes.MessagesController.getMessage(request.arrivalRequest.arrival.arrivalId, request.arrivalRequest.arrival.nextMessageId).url
+                  )
+                case SubmissionFailureInternal => internalServerError("Internal Submission Failure " + processingResult)
+                case SubmissionFailureExternal => badRequestError("External Submission Failure " + processingResult)
+              }
+          }
+      }
     }
 
   private def internalServerError(message: String): Result = {

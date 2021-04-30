@@ -19,11 +19,11 @@ package connectors
 import java.time.OffsetDateTime
 
 import com.google.inject.Inject
+import com.kenshoo.play.metrics.Metrics
 import config.AppConfig
 import connectors.MessageConnector.EisSubmissionResult
 import connectors.MessageConnector.EisSubmissionResult._
-import metrics.MetricsService
-import metrics.Monitors
+import metrics.HasMetrics
 import models.ArrivalId
 import models.ChannelType
 import models.MessageSender
@@ -39,7 +39,7 @@ import utils.Format
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class MessageConnector @Inject()(config: AppConfig, http: HttpClient, metricsService: MetricsService)(implicit ec: ExecutionContext) {
+class MessageConnector @Inject()(config: AppConfig, http: HttpClient, val metrics: Metrics)(implicit ec: ExecutionContext) extends HasMetrics {
 
   def post(arrivalId: ArrivalId, message: MovementMessageWithStatus, dateTime: OffsetDateTime, channelType: ChannelType)(
     implicit headerCarrier: HeaderCarrier
@@ -55,10 +55,19 @@ class MessageConnector @Inject()(config: AppConfig, http: HttpClient, metricsSer
       .copy(authorization = None)
       .withExtraHeaders(addHeaders(message.messageType, dateTime, messageSender, channelType): _*)
 
-    metricsService.timeAsyncCall(Monitors.PostToEisMonitor) {
-      http
-        .POSTString[HttpResponse](url, xmlMessage)(readRaw, hc = newHeaders, implicitly)
-        .map(response => responseToStatus(response))
+    withMetricsTimerAsync("post-message") {
+      timer =>
+        http
+          .POSTString[HttpResponse](url, xmlMessage)(readRaw, hc = newHeaders, implicitly)
+          .map(response =>
+            responseToStatus(response) match {
+              case status @ EisSubmissionSuccessful =>
+                timer.completeWithSuccess()
+                status
+              case status =>
+                timer.completeWithFailure()
+                status
+          })
     }
   }
 
