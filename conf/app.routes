@@ -1,7 +1,7 @@
 # microservice specific routes
 
 POST    /movements/arrivals                                     controllers.MovementsController.post
-GET     /movements/arrivals                                     controllers.MovementsController.getArrivals(updated_since: Option[OffsetDateTime] ?= None)
+GET     /movements/arrivals                                     controllers.MovementsController.getArrivals(updatedSince: Option[OffsetDateTime] ?= None)
 
 GET     /movements/arrivals/:arrivalId                          controllers.MovementsController.getArrival(arrivalId: ArrivalId)
 PUT     /movements/arrivals/:arrivalId                          controllers.MovementsController.putArrival(arrivalId: ArrivalId)

@@ -126,7 +126,7 @@ class OutboundMessagesApiSpec
   }
 
   "getArrivals" - {
-    "accepts updated_since parameter in valid date format" in {
+    "accepts updatedSince parameter in valid date format" in {
       import models.ChannelType._
 
       val eoriNumber: String = arbitrary[String].sample.value
@@ -152,7 +152,7 @@ class OutboundMessagesApiSpec
 
       val response = await(
         ws
-          .url(s"http://localhost:$port/transit-movements-trader-at-destination/movements/arrivals?updated_since=${encodedStr}")
+          .url(s"http://localhost:$port/transit-movements-trader-at-destination/movements/arrivals?updatedSince=${encodedStr}")
           .withHttpHeaders(
             "Channel"      -> api.toString,
             "Content-Type" -> "application/xml"
@@ -165,7 +165,7 @@ class OutboundMessagesApiSpec
       (response.json \\ "arrivalId").toSet mustBe Set(JsNumber(arrivalMovement2.arrivalId.index), JsNumber(arrivalMovement4.arrivalId.index))
     }
 
-    "does not require updated_since parameter" in {
+    "does not require updatedSince parameter" in {
       import models.ChannelType._
 
       val eoriNumber: String = arbitrary[String].sample.value
@@ -187,7 +187,7 @@ class OutboundMessagesApiSpec
       response.status mustBe OK
     }
 
-    "rejects updated_since parameter in invalid date format" in {
+    "rejects updatedSince parameter in invalid date format" in {
       import models.ChannelType._
 
       val eoriNumber: String = arbitrary[String].sample.value
@@ -202,7 +202,7 @@ class OutboundMessagesApiSpec
 
       val response = await(
         ws
-          .url(s"http://localhost:$port/transit-movements-trader-at-destination/movements/arrivals?updated_since=${encodedStr}")
+          .url(s"http://localhost:$port/transit-movements-trader-at-destination/movements/arrivals?updatedSince=${encodedStr}")
           .withHttpHeaders(
             "Channel"      -> api.toString,
             "Content-Type" -> "application/xml"
