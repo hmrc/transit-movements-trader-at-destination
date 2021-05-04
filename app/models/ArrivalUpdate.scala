@@ -68,7 +68,7 @@ object MessageStatusUpdate extends MongoDateTimeFormats {
           "$set" ->
             Json.obj(
               s"messages.${value.messageId.index}.status" -> value.messageStatus,
-              "lastUpdated"                               -> LocalDateTime.now(clock).withSecond(0).withNano(0)
+              "lastUpdated"                               -> LocalDateTime.now(clock)
             )
       )
     )
@@ -83,7 +83,7 @@ object ArrivalStatusUpdate extends MongoDateTimeFormats {
       Json.obj(
         "$set" -> Json.obj(
           "status"      -> value.arrivalStatus,
-          "lastUpdated" -> LocalDateTime.now(clock).withSecond(0).withNano(0)
+          "lastUpdated" -> LocalDateTime.now(clock)
         )
     )
 }
@@ -105,7 +105,7 @@ object ArrivalPutUpdate extends MongoDateTimeFormats {
       Json.obj(
         "$set" -> Json.obj(
           "movementReferenceNumber" -> a.movementReferenceNumber,
-          "lastUpdated"             -> LocalDateTime.now(clock).withSecond(0).withNano(0)
+          "lastUpdated"             -> LocalDateTime.now(clock)
         )
       ) deepMerge ArrivalModifier.toJson(a.arrivalUpdate)
 
