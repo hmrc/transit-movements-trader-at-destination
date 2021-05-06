@@ -27,7 +27,6 @@ import repositories.ArrivalMovementRepository
 import utils.MessageTranslation
 
 import java.time.Clock
-import java.time.ZoneOffset
 
 class Module extends AbstractModule {
 
@@ -39,6 +38,6 @@ class Module extends AbstractModule {
     bind(classOf[AuthenticatedGetArrivalForReadActionProvider]).to(classOf[AuthenticatedGetArrivalForReadActionProviderImpl])
     bind(classOf[MessageTranslation]).asEagerSingleton()
     bind(classOf[StreamLoggingConfig]).to(classOf[StreamLoggingConfigImpl]).asEagerSingleton()
-    bind(classOf[Clock]).toInstance(Clock.systemDefaultZone.withZone(ZoneOffset.UTC))
+    bind(classOf[Clock]).toInstance(Clock.systemUTC)
   }
 }

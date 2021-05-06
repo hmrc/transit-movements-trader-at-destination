@@ -32,7 +32,8 @@ trait WiremockSuite extends BeforeAndAfterAll with BeforeAndAfterEach {
     new GuiceApplicationBuilder()
       .configure(
         portConfigKeys.map(key => key -> server.port().toString): _*
-      )
+
+     )
       .overrides(bindings: _*)
 
   protected def bindings: Seq[GuiceableModule] = Seq.empty

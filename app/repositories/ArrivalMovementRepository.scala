@@ -203,6 +203,7 @@ class ArrivalMovementRepository @Inject()(
                                      messageId: MessageId,
                                      arrivalState: ArrivalStatus,
                                      messageState: MessageStatus): Future[Option[Unit]] = {
+    implicit val modifierClock: Clock = clock
 
     val selector = ArrivalIdSelector(arrivalId)
 

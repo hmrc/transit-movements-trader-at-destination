@@ -33,7 +33,6 @@ import org.scalactic.source
 import org.scalatest.{BeforeAndAfterEach, TestSuiteMixin}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.exceptions.{StackDepthException, TestFailedException}
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsObject, Json}
@@ -58,10 +57,13 @@ class ArrivalMovementRepositorySpec
     with BeforeAndAfterEach {
 
   private val instant = Instant.now
-  private val stubClock: Clock = Clock.fixed(instant, ZoneId.systemDefault)
+  implicit private val stubClock: Clock = Clock.fixed(instant, ZoneId.systemDefault)
   private val appBuilder: GuiceApplicationBuilder =
     new GuiceApplicationBuilder()
       .overrides(bind[Clock].toInstance(stubClock))
+      .configure(
+        "metrics.jvm" -> false
+      )
 
   override def beforeEach(): Unit = {
     database.flatMap(_.drop).futureValue
@@ -740,9 +742,9 @@ class ArrivalMovementRepositorySpec
 
 
         val lastUpdated = LocalDateTime.now(stubClock).withSecond(0).withNano(0)
-        val movement1 = arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = api, lastUpdated = lastUpdated.withSecond(1))
-        val movement2 = arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = api, lastUpdated = lastUpdated.withSecond(2))
-        val movement3 = arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = api, lastUpdated = lastUpdated.withSecond(3))
+        val movement1 = arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = api, lastUpdated = lastUpdated.withSecond(10))
+        val movement2 = arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = api, lastUpdated = lastUpdated.withSecond(20))
+        val movement3 = arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = api, lastUpdated = lastUpdated.withSecond(30))
 
         running(app) {
           started(app).futureValue
