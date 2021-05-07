@@ -187,8 +187,9 @@ class ArrivalMovementRepository @Inject()(
       _ =>
         collection.flatMap {
           _.find(Json.obj("eoriNumber" -> eoriNumber, "channel" -> channelFilter), Some(ResponseArrival.projection))
+            .sort(Json.obj("lastUpdated" -> -1))
             .cursor[ResponseArrival]()
-            .collect[Seq](-1, Cursor.FailOnError())
+            .collect[Seq](appConfig.maxRowsReturned(channelFilter), Cursor.FailOnError())
             .map {
               arrivals =>
                 arrivalsForEoriCount.update(arrivals.length)
@@ -202,6 +203,7 @@ class ArrivalMovementRepository @Inject()(
                                      messageId: MessageId,
                                      arrivalState: ArrivalStatus,
                                      messageState: MessageStatus): Future[Option[Unit]] = {
+    implicit val modifierClock: Clock = clock
 
     val selector = ArrivalIdSelector(arrivalId)
 

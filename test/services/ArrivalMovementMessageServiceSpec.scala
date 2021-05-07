@@ -45,6 +45,8 @@ import utils.Format
 import scala.concurrent.Future
 import scala.xml.NodeSeq
 import scala.xml.Utility.trim
+import java.time.Clock
+import java.time.ZoneOffset
 
 class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatience with StreamlinedXmlEquality {
 
@@ -53,6 +55,7 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
       val dateOfPrep = LocalDate.now()
       val timeOfPrep = LocalTime.of(1, 1)
       val dateTime   = LocalDateTime.of(dateOfPrep, timeOfPrep)
+      val stubClock  = Clock.fixed(dateTime.toInstant(ZoneOffset.UTC), ZoneOffset.UTC)
 
       val id   = ArrivalId(1)
       val mrn  = MovementReferenceNumber("MRN")
@@ -62,7 +65,8 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
       when(mockArrivalIdRepository.nextId).thenReturn(Future.successful(id))
       val application = baseApplicationBuilder
         .overrides(
-          bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository)
+          bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
+          bind[Clock].toInstance(stubClock)
         )
         .build()
 
@@ -104,7 +108,7 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
         nextMessageCorrelationId = 2
       )
 
-      service.makeArrivalMovement(eori, movement, api).futureValue.right.get mustEqual expectedArrival
+      service.makeArrivalMovement(eori, movement, api).futureValue.right.get mustBe expectedArrival
 
       application.stop()
     }

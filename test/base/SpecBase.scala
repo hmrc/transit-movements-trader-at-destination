@@ -41,4 +41,7 @@ trait SpecBase extends AnyFreeSpec with Matchers with MockitoSugar with ScalaFut
       .overrides(
         bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider]
       )
+      .configure(
+        "metrics.jvm" -> false
+      )
 }

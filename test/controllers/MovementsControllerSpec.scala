@@ -68,12 +68,15 @@ import utils.Format
 import scala.concurrent.Future
 import scala.xml.Utility.trim
 import scala.xml.NodeSeq
+import java.time.ZoneOffset
+import java.time.Clock
 
 class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks with ModelGenerators with BeforeAndAfterEach with IntegrationPatience {
 
   val localDate     = LocalDate.now()
   val localTime     = LocalTime.of(1, 1)
   val localDateTime = LocalDateTime.of(localDate, localTime)
+  val stubClock     = Clock.fixed(localDateTime.toInstant(ZoneOffset.UTC), ZoneOffset.UTC)
 
   val dateFormat = DateTimeFormatter.ISO_LOCAL_DATE_TIME
 
@@ -132,8 +135,9 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           val mockAuditService         = mock[AuditService]
 
           val expectedMessage: MovementMessageWithStatus = movementMessage(1).copy(messageCorrelationId = 1)
-          val newArrival                                 = initializedArrival.copy(messages = NonEmptyList.of[MovementMessageWithStatus](expectedMessage), channel = web)
-          val captor: ArgumentCaptor[Arrival]            = ArgumentCaptor.forClass(classOf[Arrival])
+          val newArrival =
+            initializedArrival.copy(messages = NonEmptyList.of[MovementMessageWithStatus](expectedMessage), channel = web)
+          val captor: ArgumentCaptor[Arrival] = ArgumentCaptor.forClass(classOf[Arrival])
 
           when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(newArrival.arrivalId))
           when(mockSubmitMessageService.submitArrival(any())(any())).thenReturn(Future.successful(SubmissionProcessingResult.SubmissionSuccess))
@@ -143,7 +147,8 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
               bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
               bind[SubmitMessageService].toInstance(mockSubmitMessageService),
               bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider()),
-              bind[AuditService].toInstance(mockAuditService)
+              bind[AuditService].toInstance(mockAuditService),
+              bind[Clock].toInstance(stubClock)
             )
             .build()
 

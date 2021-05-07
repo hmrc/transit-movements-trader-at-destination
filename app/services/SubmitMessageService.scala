@@ -16,6 +16,7 @@
 
 package services
 
+import java.time.Clock
 import java.time.OffsetDateTime
 
 import cats.implicits._
@@ -53,7 +54,7 @@ import scala.util.Success
 class SubmitMessageService @Inject()(
   arrivalMovementRepository: ArrivalMovementRepository,
   messageConnector: MessageConnector,
-)(implicit ec: ExecutionContext)
+)(implicit clock: Clock, ec: ExecutionContext)
     extends Logging {
 
   def submitMessage(arrivalId: ArrivalId, messageId: MessageId, message: MovementMessageWithStatus, arrivalStatus: ArrivalStatus, channelType: ChannelType)(
