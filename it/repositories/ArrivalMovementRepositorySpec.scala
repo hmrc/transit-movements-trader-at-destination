@@ -742,9 +742,12 @@ class ArrivalMovementRepositorySpec
 
 
         val lastUpdated = LocalDateTime.now(stubClock).withSecond(0).withNano(0)
-        val movement1 = arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = api, lastUpdated = lastUpdated.withSecond(10))
-        val movement2 = arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = api, lastUpdated = lastUpdated.withSecond(20))
-        val movement3 = arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = api, lastUpdated = lastUpdated.withSecond(30))
+        val id1 = ArrivalId(1)
+        val id2 = ArrivalId(2)
+        val id3 = ArrivalId(3)
+        val movement1 = arbitrary[Arrival].sample.value.copy(arrivalId = id1, eoriNumber = eoriNumber, channel = api, lastUpdated = lastUpdated.withSecond(10))
+        val movement2 = arbitrary[Arrival].sample.value.copy(arrivalId = id2, eoriNumber = eoriNumber, channel = api, lastUpdated = lastUpdated.withSecond(20))
+        val movement3 = arbitrary[Arrival].sample.value.copy(arrivalId = id3, eoriNumber = eoriNumber, channel = api, lastUpdated = lastUpdated.withSecond(30))
 
         running(app) {
           started(app).futureValue
@@ -775,9 +778,12 @@ class ArrivalMovementRepositorySpec
         val appConfig = app.injector.instanceOf[AppConfig]
 
         val lastUpdated = LocalDateTime.now(stubClock).withSecond(0).withNano(0)
-        val movement1 = arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = web, lastUpdated = lastUpdated.withSecond(1))
-        val movement2 = arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = web, lastUpdated = lastUpdated.withSecond(2))
-        val movement3 = arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = web, lastUpdated = lastUpdated.withSecond(3))
+        val id1 = ArrivalId(11)
+        val id2 = ArrivalId(12)
+        val id3 = ArrivalId(13)
+        val movement1 = arbitrary[Arrival].sample.value.copy(arrivalId = id1, eoriNumber = eoriNumber, channel = web, lastUpdated = lastUpdated.withSecond(1))
+        val movement2 = arbitrary[Arrival].sample.value.copy(arrivalId = id2, eoriNumber = eoriNumber, channel = web, lastUpdated = lastUpdated.withSecond(2))
+        val movement3 = arbitrary[Arrival].sample.value.copy(arrivalId = id3, eoriNumber = eoriNumber, channel = web, lastUpdated = lastUpdated.withSecond(3))
 
         running(app) {
           started(app).futureValue
