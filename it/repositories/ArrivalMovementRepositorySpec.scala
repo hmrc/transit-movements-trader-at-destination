@@ -788,8 +788,8 @@ class ArrivalMovementRepositorySpec
           val maxRows = appConfig.maxRowsReturned(api)
           maxRows mustBe 2
 
-          val movements = repository.fetchAllArrivals(eoriNumber, api).futureValue
-          
+          val movements = repository.fetchAllArrivals(eoriNumber, api, updatedSince = None).futureValue
+
           movements.size mustBe maxRows
 
           val ids = movements.map(m => m.arrivalId.index)
@@ -824,8 +824,8 @@ class ArrivalMovementRepositorySpec
           val maxRows = appConfig.maxRowsReturned(web)
           maxRows mustBe 100
 
-          val movements = repository.fetchAllArrivals(eoriNumber, web).futureValue
-          
+          val movements = repository.fetchAllArrivals(eoriNumber, web, updatedSince = None).futureValue
+
           movements.size mustBe 3
 
           val ids = movements.map( m => m.arrivalId.index)
