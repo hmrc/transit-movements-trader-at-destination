@@ -554,8 +554,8 @@ class ArrivalMovementRepositorySpec
             arrivalMovement3.lastUpdated
           )
 
-          repository.fetchAllArrivals(eoriNumber, api).futureValue mustBe Seq(expectedApiFetchAll1)
-          repository.fetchAllArrivals(eoriNumber, web).futureValue mustBe Seq(expectedApiFetchAll3)
+          repository.fetchAllArrivals(eoriNumber, api, None).futureValue mustBe Seq(expectedApiFetchAll1)
+          repository.fetchAllArrivals(eoriNumber, web, None).futureValue mustBe Seq(expectedApiFetchAll3)
         }
       }
 
@@ -578,9 +578,38 @@ class ArrivalMovementRepositorySpec
               db.collection[JSONCollection](ArrivalMovementRepository.collectionName).insert(false).many(jsonArr)
           }.futureValue
 
-          val result = service.fetchAllArrivals(eoriNumber, api).futureValue
+          val result = service.fetchAllArrivals(eoriNumber, api, None).futureValue
 
           result mustBe Seq.empty[Arrival]
+        }
+      }
+
+      "must filter results by lastUpdated when updatedSince parameter is provided" in {
+
+        val arrivalMovement1 = arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = api, lastUpdated = LocalDateTime.of(2021, 4, 30, 9, 30, 31))
+        val arrivalMovement2 = arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = api, lastUpdated = LocalDateTime.of(2021, 4, 30, 9, 35, 32))
+        val arrivalMovement3 = arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = api, lastUpdated = LocalDateTime.of(2021, 4, 30, 9, 30, 21))
+        val arrivalMovement4 = arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = api, lastUpdated = LocalDateTime.of(2021, 4, 30, 10, 15, 16))
+
+        val app = appBuilder.build()
+        running(app) {
+
+          val service: ArrivalMovementRepository = app.injector.instanceOf[ArrivalMovementRepository]
+
+          val allMovements = Seq(arrivalMovement1, arrivalMovement2, arrivalMovement3, arrivalMovement4)
+
+          val jsonArr = allMovements.map(Json.toJsObject(_))
+
+          database.flatMap {
+            db =>
+              db.collection[JSONCollection](ArrivalMovementRepository.collectionName).insert(false).many(jsonArr)
+          }.futureValue
+
+          val dateTime = OffsetDateTime.of(LocalDateTime.of(2021, 4, 30, 10, 30, 32), ZoneOffset.ofHours(1))
+          val actual = service.fetchAllArrivals(eoriNumber, api, Some(dateTime)).futureValue.toSet
+          val expected = Set(arrivalMovement2, arrivalMovement4).map(ResponseArrival.build)
+
+          actual mustEqual expected
         }
       }
     }

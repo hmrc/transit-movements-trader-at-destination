@@ -31,6 +31,9 @@ import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
+import java.time.Clock
+import java.time.ZoneOffset
+import java.time.Instant
 
 class ArrivalUpdateSpec
     extends SpecBase
@@ -172,7 +175,7 @@ class ArrivalUpdateSpec
               "movementReferenceNumber"             -> arrivalPutUpdate.movementReferenceNumber,
               "status"                              -> arrivalPutUpdate.arrivalUpdate.arrivalStatusUpdate.arrivalStatus,
               s"messages.$expectedMessageId.status" -> arrivalPutUpdate.arrivalUpdate.messageStatusUpdate.messageStatus,
-              "lastUpdated"                         -> LocalDateTime.now(clock).withSecond(0).withNano(0),
+              "lastUpdated"                         -> LocalDateTime.now(clock).withSecond(0).withNano(0)
             )
           )
 

@@ -58,6 +58,7 @@ import utils.IndexUtils
 
 import java.time.Clock
 import java.time.LocalDateTime
+import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -112,21 +113,21 @@ class ArrivalMovementRepository @Inject()(
           true
       }
   }
-  private val eoriNumberIndex: Aux[BSONSerializationPack.type] = IndexUtils.index(
+  private lazy val eoriNumberIndex: Aux[BSONSerializationPack.type] = IndexUtils.index(
     key = Seq("eoriNumber" -> IndexType.Ascending),
     name = Some("eori-number-index")
   )
-  private val movementReferenceNumber: Aux[BSONSerializationPack.type] = IndexUtils.index(
+  private lazy val movementReferenceNumber: Aux[BSONSerializationPack.type] = IndexUtils.index(
     key = Seq("movementReferenceNumber" -> IndexType.Ascending),
     name = Some("movement-reference-number-index")
   )
-  private val lastUpdatedIndex: Aux[BSONSerializationPack.type] = IndexUtils.index(
+  private lazy val lastUpdatedIndex: Aux[BSONSerializationPack.type] = IndexUtils.index(
     key = Seq("lastUpdated" -> IndexType.Ascending),
     name = Some("last-updated-index"),
     options = BSONDocument("expireAfterSeconds" -> appConfig.cacheTtl)
   )
-  private val oldLastUpdatedIndexName = "last-updated-index-6m"
-  private val collectionName          = ArrivalMovementRepository.collectionName
+  private lazy val oldLastUpdatedIndexName = "last-updated-index-6m"
+  private lazy val collectionName          = ArrivalMovementRepository.collectionName
 
   def insert(arrival: Arrival): Future[Unit] =
     collection.flatMap {
@@ -182,9 +183,12 @@ class ArrivalMovementRepository @Inject()(
     }
   }
 
-  def fetchAllArrivals(eoriNumber: String, channelFilter: ChannelType): Future[Seq[ResponseArrival]] =
+  def fetchAllArrivals(eoriNumber: String, channelFilter: ChannelType, updatedSince: Option[OffsetDateTime]): Future[Seq[ResponseArrival]] =
     withMetricsTimerAsync("mongo-get-arrivals-for-eori") {
       _ =>
+        val dateFilter = updatedSince.map(dateTime => Json.obj("lastUpdated" -> Json.obj("$gte" -> dateTime))).getOrElse(Json.obj())
+        val selector   = Json.obj("eoriNumber" -> eoriNumber, "channel" -> channelFilter) ++ dateFilter
+
         collection.flatMap {
           _.find(Json.obj("eoriNumber" -> eoriNumber, "channel" -> channelFilter), Some(ResponseArrival.projection))
             .sort(Json.obj("lastUpdated" -> -1))

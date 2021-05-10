@@ -17,6 +17,7 @@
 package controllers
 
 import javax.inject.Inject
+import java.time.OffsetDateTime
 
 import audit.AuditService
 import audit.AuditType
@@ -46,7 +47,7 @@ import repositories.ArrivalMovementRepository
 import services.ArrivalMovementMessageService
 import services.SubmitMessageService
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.bootstrap.controller.BackendController
+import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -182,12 +183,12 @@ class MovementsController @Inject()(
       }
     }
 
-  def getArrivals(): Action[AnyContent] =
+  def getArrivals(updatedSince: Option[OffsetDateTime]): Action[AnyContent] =
     withMetricsTimerAction("get-all-arrivals") {
       authenticate().async {
         implicit request =>
           arrivalMovementRepository
-            .fetchAllArrivals(request.eoriNumber, request.channel)
+            .fetchAllArrivals(request.eoriNumber, request.channel, updatedSince)
             .map {
               allArrivals =>
                 countArrivals.update(allArrivals.length)
