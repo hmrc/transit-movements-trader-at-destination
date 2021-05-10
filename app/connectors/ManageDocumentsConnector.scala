@@ -34,7 +34,7 @@ class ManageDocumentsConnector @Inject()(config: AppConfig, ws: WSClient, val me
     val serviceUrl = s"${config.manageDocumentsUrl}/unloading-permission"
     val headers    = ("Content-Type", "application/xml")
 
-    withMetricsTimerResponse("get-unloading-permission-pdf") {
+    withMetricsTimerResponse("manage-documents-get-unloading-permission-pdf") {
       ws.url(serviceUrl)
         .withHttpHeaders(headers)
         .post(movementMessage.message.toString)

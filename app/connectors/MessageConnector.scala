@@ -55,7 +55,7 @@ class MessageConnector @Inject()(config: AppConfig, http: HttpClient, val metric
       .copy(authorization = None)
       .withExtraHeaders(addHeaders(message.messageType, dateTime, messageSender, channelType): _*)
 
-    withMetricsTimerAsync("post-message") {
+    withMetricsTimerAsync("submit-eis-message") {
       timer =>
         http
           .POSTString[HttpResponse](url, xmlMessage)(readRaw, hc = newHeaders, implicitly)
