@@ -39,9 +39,6 @@ sealed trait MovementMessage {
 
   def receivedBefore(requestedDate: OffsetDateTime): Boolean =
     dateTime.atOffset(ZoneOffset.UTC).isBefore(requestedDate)
-
-  def receivedSince(requestedDate: OffsetDateTime): Boolean =
-    !receivedBefore(requestedDate)
 }
 
 sealed trait XmlToJson extends Logging {

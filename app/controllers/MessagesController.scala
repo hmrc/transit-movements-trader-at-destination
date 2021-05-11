@@ -125,18 +125,9 @@ class MessagesController @Inject()(
     withMetricsTimerAction("get-all-arrival-messages") {
       authenticateForRead(arrivalId) {
         implicit request =>
-          val allMessages = request.arrival.messages.toList
-
-          val messagesSince = receivedSince
-            .map {
-              requestedDate =>
-                allMessages.count(_.receivedSince(requestedDate))
-            }
-            .getOrElse(allMessages.length)
-
-          countMessages.update(messagesSince)
-
-          Ok(Json.toJsObject(ResponseArrivalWithMessages.build(request.arrival, receivedSince)))
+          val response = ResponseArrivalWithMessages.build(request.arrival, receivedSince)
+          countMessages.update(response.messages.length)
+          Ok(Json.toJsObject(response))
       }
     }
 }
