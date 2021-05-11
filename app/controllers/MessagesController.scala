@@ -24,11 +24,11 @@ import controllers.actions.AuthenticatedGetArrivalForWriteActionProvider
 import controllers.actions.MessageTransformerInterface
 import controllers.actions._
 import logging.Logging
-import metrics.Monitors
 import metrics.HasActionMetrics
-import models.MessageStatus.SubmissionFailed
+import metrics.Monitors
 import models.ArrivalId
 import models.MessageId
+import models.MessageStatus.SubmissionFailed
 import models.MessageType
 import models.SubmissionProcessingResult._
 import models.response.ResponseArrivalWithMessages
@@ -42,6 +42,7 @@ import services.ArrivalMovementMessageService
 import services.SubmitMessageService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
+import java.time.OffsetDateTime
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -120,12 +121,22 @@ class MessagesController @Inject()(
       }
     }
 
-  def getMessages(arrivalId: ArrivalId): Action[AnyContent] =
+  def getMessages(arrivalId: ArrivalId, receivedSince: Option[OffsetDateTime]): Action[AnyContent] =
     withMetricsTimerAction("get-all-arrival-messages") {
       authenticateForRead(arrivalId) {
         implicit request =>
-          countMessages.update(request.arrival.messages.length)
-          Ok(Json.toJsObject(ResponseArrivalWithMessages.build(request.arrival)))
+          val allMessages = request.arrival.messages.toList
+
+          val messagesSince = receivedSince
+            .map {
+              requestedDate =>
+                allMessages.count(_.receivedSince(requestedDate))
+            }
+            .getOrElse(allMessages.length)
+
+          countMessages.update(messagesSince)
+
+          Ok(Json.toJsObject(ResponseArrivalWithMessages.build(request.arrival, receivedSince)))
       }
     }
 }
