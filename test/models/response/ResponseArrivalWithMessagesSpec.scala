@@ -16,11 +16,6 @@
 
 package models
 
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.LocalTime
-import java.time.Month
-
 import base.SpecBase
 import cats.data.NonEmptyList
 import generators.ModelGenerators
@@ -33,8 +28,13 @@ import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import utils.Format
 
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.Month
 import scala.xml.NodeSeq
 import scala.xml.Utility.trim
+import java.time.ZoneOffset
 
 class ResponseArrivalWithMessagesSpec extends SpecBase with ScalaCheckPropertyChecks with ModelGenerators with BeforeAndAfterEach with IntegrationPatience {
   val localDate     = LocalDate.now()
@@ -88,10 +88,18 @@ class ResponseArrivalWithMessagesSpec extends SpecBase with ScalaCheckPropertyCh
 
   "ResponseArrivalWithMessages" - {
     "must populate updated field from lastUpdated in Arrival" in {
-      val responseArrivalWithMessages = ResponseArrivalWithMessages.build(initializedArrival)
+      val responseArrivalWithMessages = ResponseArrivalWithMessages.build(initializedArrival, receivedSince = None)
+
+      responseArrivalWithMessages.messages mustNot be(empty)
 
       responseArrivalWithMessages.updated mustEqual initializedArrival.lastUpdated
       responseArrivalWithMessages.updated must not equal initializedArrival.updated
+    }
+
+    "must filter messages by requested date" in {
+      val requestedDate               = localDateTime.plusSeconds(1).atOffset(ZoneOffset.UTC)
+      val responseArrivalWithMessages = ResponseArrivalWithMessages.build(initializedArrival, receivedSince = Some(requestedDate))
+      responseArrivalWithMessages.messages mustBe empty
     }
   }
 }

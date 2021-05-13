@@ -16,29 +16,32 @@
 
 package models.response
 
-import java.time.LocalDateTime
-
 import controllers.routes
-import models.MessageStatus.SubmissionFailed
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalStatus
+import models.MessageStatus.SubmissionFailed
 import models.MovementReferenceNumber
 import play.api.libs.json.Json
 import play.api.libs.json.OWrites
 
-case class ResponseArrivalWithMessages(arrivalId: ArrivalId,
-                                       location: String,
-                                       messagesLocation: String,
-                                       movementReferenceNumber: MovementReferenceNumber,
-                                       status: ArrivalStatus,
-                                       created: LocalDateTime,
-                                       updated: LocalDateTime,
-                                       messages: Seq[ResponseMovementMessage])
+import java.time.LocalDateTime
+import java.time.OffsetDateTime
+
+case class ResponseArrivalWithMessages(
+  arrivalId: ArrivalId,
+  location: String,
+  messagesLocation: String,
+  movementReferenceNumber: MovementReferenceNumber,
+  status: ArrivalStatus,
+  created: LocalDateTime,
+  updated: LocalDateTime,
+  messages: Seq[ResponseMovementMessage]
+)
 
 object ResponseArrivalWithMessages {
 
-  def build(arrival: Arrival): ResponseArrivalWithMessages =
+  def build(arrival: Arrival, receivedSince: Option[OffsetDateTime]): ResponseArrivalWithMessages =
     ResponseArrivalWithMessages(
       arrival.arrivalId,
       routes.MovementsController.getArrival(arrival.arrivalId).url,
@@ -49,7 +52,10 @@ object ResponseArrivalWithMessages {
       updated = arrival.lastUpdated,
       arrival.messagesWithId
         .filterNot {
-          case (message, _) => message.optStatus == Some(SubmissionFailed)
+          case (message, _) =>
+            val failedMessage            = message.optStatus == Some(SubmissionFailed)
+            lazy val beforeRequestedDate = receivedSince.fold(false)(message.receivedBefore)
+            failedMessage || beforeRequestedDate
         }
         .map {
           case (message, messageId) => ResponseMovementMessage.build(arrival.arrivalId, messageId, message)

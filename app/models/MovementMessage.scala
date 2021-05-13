@@ -16,14 +16,15 @@
 
 package models
 
-import java.time.LocalDateTime
-
 import logging.Logging
 import org.json.XML
 import play.api.libs.json.Json
 import play.api.libs.json._
 import utils.NodeSeqFormat
 
+import java.time.LocalDateTime
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
@@ -35,6 +36,9 @@ sealed trait MovementMessage {
   def message: NodeSeq
   def optStatus: Option[MessageStatus]
   def messageJson: JsObject
+
+  def receivedBefore(requestedDate: OffsetDateTime): Boolean =
+    dateTime.atOffset(ZoneOffset.UTC).isBefore(requestedDate)
 }
 
 sealed trait XmlToJson extends Logging {

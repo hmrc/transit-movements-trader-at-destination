@@ -7,7 +7,7 @@ GET     /movements/arrivals/:arrivalId                          controllers.Move
 PUT     /movements/arrivals/:arrivalId                          controllers.MovementsController.putArrival(arrivalId: ArrivalId)
 
 POST    /movements/arrivals/:arrivalId/messages                 controllers.MessagesController.post(arrivalId: ArrivalId)
-GET     /movements/arrivals/:arrivalId/messages                 controllers.MessagesController.getMessages(arrivalId: ArrivalId)
+GET     /movements/arrivals/:arrivalId/messages                 controllers.MessagesController.getMessages(arrivalId: ArrivalId, receivedSince: Option[OffsetDateTime] ?= None)
 
 GET     /movements/arrivals/:arrivalId/messages/summary         controllers.MessagesSummaryController.messagesSummary(arrivalId: ArrivalId)
 GET     /movements/arrivals/:arrivalId/messages/:messageId      controllers.MessagesController.getMessage(arrivalId: ArrivalId, messageId: MessageId)
