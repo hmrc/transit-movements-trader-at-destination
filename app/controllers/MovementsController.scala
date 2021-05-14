@@ -206,7 +206,12 @@ class MovementsController @Inject()(
                 .map {
                   result =>
                     movementSummaryLogger.info(s"Submitted an arrival with result ${result.toString}\n${request.arrival.summaryInformation.mkString("\n")}")
-                    handleSubmissionResult(result, AuditType.ArrivalNotificationReSubmitted, message, request.channel, request.arrival.arrivalId)
+                    handleSubmissionResult(result,
+                                           AuditType.ArrivalNotificationReSubmitted,
+                                           message,
+                                           request.channel,
+                                           request.arrival.arrivalId,
+                                           request.arrival.notificationBox)
                 }
             case Left(error) =>
               logger.error(s"Failed to create message and MovementReferenceNumber with error: $error")
