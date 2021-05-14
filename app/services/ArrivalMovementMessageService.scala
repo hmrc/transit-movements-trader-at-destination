@@ -24,6 +24,7 @@ import models.MessageStatus.SubmissionPending
 import models.ParseError.EmptyNodeSeq
 import models.Arrival
 import models.ArrivalId
+import models.Box
 import models.ChannelType
 import models.MessageType
 import models.MovementMessageWithStatus
@@ -42,7 +43,7 @@ class ArrivalMovementMessageService @Inject()(arrivalIdRepository: ArrivalIdRepo
   import XMLTransformer._
   import XmlMessageParser._
 
-  def makeArrivalMovement(eori: String, nodeSeq: NodeSeq, channelType: ChannelType): Future[ParseHandler[Arrival]] =
+  def makeArrivalMovement(eori: String, nodeSeq: NodeSeq, channelType: ChannelType, boxOpt: Option[Box]): Future[ParseHandler[Arrival]] =
     arrivalIdRepository.nextId().map {
       arrivalId =>
         (for {
@@ -62,7 +63,8 @@ class ArrivalMovementMessageService @Inject()(arrivalIdRepository: ArrivalIdRepo
             dateTime,
             LocalDateTime.now(clock),
             NonEmptyList.one(message),
-            2
+            2,
+            boxOpt
           )
         }).apply(nodeSeq)
     }

@@ -34,7 +34,8 @@ case class Arrival(
   updated: LocalDateTime,
   lastUpdated: LocalDateTime = LocalDateTime.now,
   messages: NonEmptyList[MovementMessage],
-  nextMessageCorrelationId: Int
+  nextMessageCorrelationId: Int,
+  notificationBox: Option[Box]
 ) {
 
   lazy val nextMessageId: MessageId = MessageId.fromIndex(messages.length)
@@ -77,7 +78,8 @@ object Arrival {
         (__ \ "updated").read(MongoDateTimeFormats.localDateTimeRead) and
         (__ \ "lastUpdated").read(MongoDateTimeFormats.localDateTimeRead) and
         (__ \ "messages").read[NonEmptyList[MovementMessage]] and
-        (__ \ "nextMessageCorrelationId").read[Int]
+        (__ \ "nextMessageCorrelationId").read[Int] and
+        (__ \ "notificationBox").readNullable[Box]
     )(Arrival.apply _)
 
   implicit def writesArrival(implicit write: Writes[LocalDateTime]): OWrites[Arrival] =
@@ -91,7 +93,8 @@ object Arrival {
         (__ \ "updated").write(write) and
         (__ \ "lastUpdated").write(write) and
         (__ \ "messages").write[NonEmptyList[MovementMessage]] and
-        (__ \ "nextMessageCorrelationId").write[Int]
+        (__ \ "nextMessageCorrelationId").write[Int] and
+        (__ \ "notificationBox").writeNullable[Box]
     )(unlift(Arrival.unapply))
 
 }

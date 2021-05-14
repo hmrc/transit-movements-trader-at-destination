@@ -83,7 +83,8 @@ class ResponseArrivalSpec extends SpecBase with ScalaCheckPropertyChecks with Mo
     updated = LocalDateTime.of(2005, Month.FEBRUARY, 4, 0, 0),
     lastUpdated = localDateTime,
     nextMessageCorrelationId = movementMessage(1).messageCorrelationId + 1,
-    messages = NonEmptyList.one(movementMessage(1))
+    messages = NonEmptyList.one(movementMessage(1)),
+    notificationBox = None
   )
 
   "ResponseArrival" - {

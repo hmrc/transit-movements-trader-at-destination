@@ -54,7 +54,8 @@ private[services] class TestDataGenerator @Inject()(clock: Clock) {
       dateTime,
       dateTime,
       NonEmptyList.one(movementMessage),
-      2
+      2,
+      None
     )
   }
 

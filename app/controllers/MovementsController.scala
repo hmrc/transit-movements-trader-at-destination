@@ -103,7 +103,7 @@ class MovementsController @Inject()(
       case SubmissionSuccess =>
         auditService.auditEvent(arrivalNotificationType, message, requestChannel)
         auditService.auditEvent(AuditType.MesSenMES3Added, message, requestChannel)
-        Accepted.withHeaders("Location" -> routes.MovementsController.getArrival(arrivalId).url)
+        Accepted("Message Accepted").withHeaders("Location" -> routes.MovementsController.getArrival(arrivalId).url)
     }
 
   private def handleSubmissionResult(
@@ -159,7 +159,7 @@ class MovementsController @Inject()(
                     }
                   case _ =>
                     arrivalMovementService
-                      .makeArrivalMovement(request.eoriNumber, request.body, request.channel)
+                      .makeArrivalMovement(request.eoriNumber, request.body, request.channel, boxOpt)
                       .flatMap {
                         case Right(arrival) =>
                           submitMessageService

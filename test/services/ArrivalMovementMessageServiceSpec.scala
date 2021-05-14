@@ -105,10 +105,11 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
         messages = NonEmptyList.one(
           MovementMessageWithStatus(dateTime, MessageType.ArrivalNotification, savedMovement, MessageStatus.SubmissionPending, 1)
         ),
-        nextMessageCorrelationId = 2
+        nextMessageCorrelationId = 2,
+        notificationBox = None
       )
 
-      service.makeArrivalMovement(eori, movement, api).futureValue.right.get mustBe expectedArrival
+      service.makeArrivalMovement(eori, movement, api, None).futureValue.right.get mustBe expectedArrival
 
       application.stop()
     }
@@ -141,7 +142,7 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
           </HEAHEA>
         </Foo>
 
-      service.makeArrivalMovement(eori, invalidPayload, api).futureValue.left.get mustBe an[InvalidRootNode]
+      service.makeArrivalMovement(eori, invalidPayload, api, None).futureValue.left.get mustBe an[InvalidRootNode]
 
       application.stop()
     }
