@@ -33,6 +33,7 @@ import models.ArrivalModifier
 import models.ArrivalSelector
 import models.ArrivalStatus
 import models.ArrivalStatusUpdate
+import models.BoxId
 import models.ChannelType
 import models.CompoundStatusUpdate
 import models.MessageId
@@ -55,11 +56,11 @@ import reactivemongo.bson.BSONDocument
 import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 import reactivemongo.play.json.collection.JSONCollection
 import utils.IndexUtils
-
 import java.time.Clock
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.Failure
@@ -214,6 +215,26 @@ class ArrivalMovementRepository @Inject()(
     val modifier = CompoundStatusUpdate(ArrivalStatusUpdate(arrivalState), MessageStatusUpdate(messageId, messageState))
 
     updateArrival(selector, modifier).map(_.toOption)
+  }
+
+  def setBoxId(arrivalId: ArrivalId, boxId: BoxId): Future[Try[Unit]] = {
+    val selector = Json.obj(
+      "_id" -> arrivalId
+    )
+
+    val modifier = Json.obj("$set" -> Json.obj("boxId" -> boxId))
+
+    collection.flatMap {
+      _.findAndUpdate(selector, modifier)
+        .map {
+          _.lastError
+            .map {
+              le =>
+                if (le.updatedExisting) Success(()) else Failure(new Exception(s"Could not find departure $arrivalId"))
+            }
+            .getOrElse(Failure(new Exception("Failed to update arrival")))
+        }
+    }
   }
 
   def updateArrival[A](selector: ArrivalSelector, modifier: A)(implicit ev: ArrivalModifier[A]): Future[Try[Unit]] = {

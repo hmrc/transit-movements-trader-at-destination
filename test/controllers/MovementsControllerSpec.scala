@@ -27,8 +27,10 @@ import base.SpecBase
 import cats.data.NonEmptyList
 import connectors.MessageConnector
 import connectors.MessageConnector.EisSubmissionResult.ErrorInPayload
+import controllers.actions.AuthenticatedClientIdActionProvider
 import controllers.actions.AuthenticatedGetOptionalArrivalForWriteActionProvider
 import controllers.actions.FakeAuthenticatedGetOptionalArrivalForWriteActionProvider
+import controllers.actions.FakeAuthenticatedClientIdActionProvider
 import generators.ModelGenerators
 import models.MessageStatus.SubmissionFailed
 import models.MessageStatus.SubmissionPending
@@ -62,6 +64,7 @@ import play.api.test.Helpers._
 import repositories.ArrivalIdRepository
 import repositories.ArrivalMovementRepository
 import repositories.LockRepository
+import services.PushPullNotificationService
 import services.SubmitMessageService
 import utils.Format
 
@@ -133,6 +136,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           val mockArrivalIdRepository  = mock[ArrivalIdRepository]
           val mockSubmitMessageService = mock[SubmitMessageService]
           val mockAuditService         = mock[AuditService]
+          val mockNotificationService  = mock[PushPullNotificationService]
 
           val expectedMessage: MovementMessageWithStatus = movementMessage(1).copy(messageCorrelationId = 1)
           val newArrival =
@@ -141,11 +145,14 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
           when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(newArrival.arrivalId))
           when(mockSubmitMessageService.submitArrival(any())(any())).thenReturn(Future.successful(SubmissionProcessingResult.SubmissionSuccess))
+          when(mockNotificationService.getBox(any())(any(), any())).thenReturn(Future.successful(None))
 
           val application = baseApplicationBuilder
             .overrides(
               bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
               bind[SubmitMessageService].toInstance(mockSubmitMessageService),
+              bind[PushPullNotificationService].toInstance(mockNotificationService),
+              bind[AuthenticatedClientIdActionProvider].toInstance(FakeAuthenticatedClientIdActionProvider()),
               bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider()),
               bind[AuditService].toInstance(mockAuditService),
               bind[Clock].toInstance(stubClock)
@@ -177,12 +184,16 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
         "must return InternalServerError if the InternalReference generation fails" in {
           val mockArrivalIdRepository = mock[ArrivalIdRepository]
+          val mockNotificationService = mock[PushPullNotificationService]
 
           when(mockArrivalIdRepository.nextId()).thenReturn(Future.failed(new Exception))
+          when(mockNotificationService.getBox(any())(any(), any())).thenReturn(Future.successful(None))
 
           val application = baseApplicationBuilder
             .overrides(
+              bind[PushPullNotificationService].toInstance(mockNotificationService),
               bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
+              bind[AuthenticatedClientIdActionProvider].toInstance(FakeAuthenticatedClientIdActionProvider()),
               bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider())
             )
             .build()
@@ -201,16 +212,20 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         "must return InternalServerError if there was an internal failure when saving and sending" in {
           val mockArrivalIdRepository  = mock[ArrivalIdRepository]
           val mockSubmitMessageService = mock[SubmitMessageService]
+          val mockNotificationService  = mock[PushPullNotificationService]
 
           val arrivalId = ArrivalId(1)
 
           when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
           when(mockSubmitMessageService.submitArrival(any())(any())).thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureInternal))
+          when(mockNotificationService.getBox(any())(any(), any())).thenReturn(Future.successful(None))
 
           val application = baseApplicationBuilder
             .overrides(
               bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
+              bind[PushPullNotificationService].toInstance(mockNotificationService),
               bind[SubmitMessageService].toInstance(mockSubmitMessageService),
+              bind[AuthenticatedClientIdActionProvider].toInstance(FakeAuthenticatedClientIdActionProvider()),
               bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider())
             )
             .build()
@@ -229,16 +244,20 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         "must return BadGateway if there was an external failure when saving and sending" in {
           val mockArrivalIdRepository  = mock[ArrivalIdRepository]
           val mockSubmitMessageService = mock[SubmitMessageService]
+          val mockNotificationService  = mock[PushPullNotificationService]
 
           val arrivalId = ArrivalId(1)
 
           when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
           when(mockSubmitMessageService.submitArrival(any())(any())).thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureExternal))
+          when(mockNotificationService.getBox(any())(any(), any())).thenReturn(Future.successful(None))
 
           val application = baseApplicationBuilder
             .overrides(
+              bind[PushPullNotificationService].toInstance(mockNotificationService),
               bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
               bind[SubmitMessageService].toInstance(mockSubmitMessageService),
+              bind[AuthenticatedClientIdActionProvider].toInstance(FakeAuthenticatedClientIdActionProvider()),
               bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider())
             )
             .build()
@@ -256,13 +275,18 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         "must return BadRequest if the payload is missing SynVerNumMES2 node" in {
           val mockArrivalIdRepository  = mock[ArrivalIdRepository]
           val mockSubmitMessageService = mock[SubmitMessageService]
+          val mockNotificationService  = mock[PushPullNotificationService]
 
           when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
+          when(mockNotificationService.getBox(any())(any(), any())).thenReturn(Future.successful(None))
+
           val application =
             baseApplicationBuilder
               .overrides(
+                bind[PushPullNotificationService].toInstance(mockNotificationService),
                 bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
                 bind[SubmitMessageService].toInstance(mockSubmitMessageService),
+                bind[AuthenticatedClientIdActionProvider].toInstance(FakeAuthenticatedClientIdActionProvider()),
                 bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider())
               )
               .build()
@@ -289,13 +313,18 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         "must return BadRequest if the payload is malformed" in {
           val mockArrivalIdRepository  = mock[ArrivalIdRepository]
           val mockSubmitMessageService = mock[SubmitMessageService]
+          val mockNotificationService  = mock[PushPullNotificationService]
 
           when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
+          when(mockNotificationService.getBox(any())(any(), any())).thenReturn(Future.successful(None))
+
           val application =
             baseApplicationBuilder
               .overrides(
+                bind[PushPullNotificationService].toInstance(mockNotificationService),
                 bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
                 bind[SubmitMessageService].toInstance(mockSubmitMessageService),
+                bind[AuthenticatedClientIdActionProvider].toInstance(FakeAuthenticatedClientIdActionProvider()),
                 bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider())
               )
               .build()
@@ -315,13 +344,17 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
         "must return BadRequest if the message is not an arrival notification" in {
           val mockArrivalIdRepository = mock[ArrivalIdRepository]
+          val mockNotificationService = mock[PushPullNotificationService]
 
           when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
+          when(mockNotificationService.getBox(any())(any(), any())).thenReturn(Future.successful(None))
 
           val application =
             baseApplicationBuilder
               .overrides(
+                bind[PushPullNotificationService].toInstance(mockNotificationService),
                 bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
+                bind[AuthenticatedClientIdActionProvider].toInstance(FakeAuthenticatedClientIdActionProvider()),
                 bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider())
               )
               .build()
@@ -341,17 +374,21 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         "must return BadRequest if the message has been rejected from EIS due to error in payload" in {
           val mockArrivalIdRepository  = mock[ArrivalIdRepository]
           val mockSubmitMessageService = mock[SubmitMessageService]
+          val mockNotificationService  = mock[PushPullNotificationService]
 
           val arrivalId = ArrivalId(1)
 
           when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
           when(mockSubmitMessageService.submitArrival(any())(any()))
             .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureRejected(ErrorInPayload.responseBody)))
+          when(mockNotificationService.getBox(any())(any(), any())).thenReturn(Future.successful(None))
 
           val application = baseApplicationBuilder
             .overrides(
+              bind[PushPullNotificationService].toInstance(mockNotificationService),
               bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
               bind[SubmitMessageService].toInstance(mockSubmitMessageService),
+              bind[AuthenticatedClientIdActionProvider].toInstance(FakeAuthenticatedClientIdActionProvider()),
               bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider())
             )
             .build()
@@ -369,17 +406,21 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         "must return InternalServerError if there has been a rejection from EIS due to virus found or invalid token" in {
           val mockArrivalIdRepository  = mock[ArrivalIdRepository]
           val mockSubmitMessageService = mock[SubmitMessageService]
+          val mockNotificationService  = mock[PushPullNotificationService]
 
           val arrivalId = ArrivalId(1)
 
           when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
           when(mockSubmitMessageService.submitArrival(any())(any()))
             .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureInternal))
+          when(mockNotificationService.getBox(any())(any(), any())).thenReturn(Future.successful(None))
 
           val application = baseApplicationBuilder
             .overrides(
+              bind[PushPullNotificationService].toInstance(mockNotificationService),
               bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
               bind[SubmitMessageService].toInstance(mockSubmitMessageService),
+              bind[AuthenticatedClientIdActionProvider].toInstance(FakeAuthenticatedClientIdActionProvider()),
               bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider())
             )
             .build()
@@ -405,13 +446,17 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           val mockSubmitMessageService = mock[SubmitMessageService]
           val captor                   = ArgumentCaptor.forClass(classOf[MovementMessageWithStatus])
           val mockAuditService         = mock[AuditService]
+          val mockNotificationService  = mock[PushPullNotificationService]
 
           when(mockSubmitMessageService.submitMessage(any(), any(), any(), any(), any())(any()))
             .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionSuccess))
+          when(mockNotificationService.getBox(any())(any(), any())).thenReturn(Future.successful(None))
 
           val application = baseApplicationBuilder
             .overrides(
+              bind[PushPullNotificationService].toInstance(mockNotificationService),
               bind[SubmitMessageService].toInstance(mockSubmitMessageService),
+              bind[AuthenticatedClientIdActionProvider].toInstance(FakeAuthenticatedClientIdActionProvider()),
               bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(
                 FakeAuthenticatedGetOptionalArrivalForWriteActionProvider(failedToSubmitArrival)),
               bind[AuditService].toInstance(mockAuditService)
@@ -461,16 +506,20 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
           val mockSubmitMessageService = mock[SubmitMessageService]
           val mockArrivalIdRepository  = mock[ArrivalIdRepository]
+          val mockNotificationService  = mock[PushPullNotificationService]
 
           when(mockSubmitMessageService.submitArrival(any())(any()))
             .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionSuccess))
 
           when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(expectedArrival.arrivalId))
+          when(mockNotificationService.getBox(any())(any(), any())).thenReturn(Future.successful(None))
 
           val application = baseApplicationBuilder
             .overrides(
+              bind[PushPullNotificationService].toInstance(mockNotificationService),
               bind[SubmitMessageService].toInstance(mockSubmitMessageService),
               bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
+              bind[AuthenticatedClientIdActionProvider].toInstance(FakeAuthenticatedClientIdActionProvider()),
               bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider(arrival))
             )
             .build()
@@ -493,13 +542,17 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
         "must return InternalServerError if there was an internal failure when saving and sending" in {
           val mockSubmitMessageService = mock[SubmitMessageService]
+          val mockNotificationService  = mock[PushPullNotificationService]
 
           when(mockSubmitMessageService.submitMessage(any(), any(), any(), any(), any())(any()))
             .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureInternal))
+          when(mockNotificationService.getBox(any())(any(), any())).thenReturn(Future.successful(None))
 
           val application = baseApplicationBuilder
             .overrides(
+              bind[PushPullNotificationService].toInstance(mockNotificationService),
               bind[SubmitMessageService].toInstance(mockSubmitMessageService),
+              bind[AuthenticatedClientIdActionProvider].toInstance(FakeAuthenticatedClientIdActionProvider()),
               bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(
                 FakeAuthenticatedGetOptionalArrivalForWriteActionProvider(initializedArrival))
             )
@@ -520,13 +573,17 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
         "must return BadGateway if there was an external failure when saving and sending" in {
           val mockSubmitMessageService = mock[SubmitMessageService]
+          val mockNotificationService  = mock[PushPullNotificationService]
 
           when(mockSubmitMessageService.submitMessage(any(), any(), any(), any(), any())(any()))
             .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureExternal))
+          when(mockNotificationService.getBox(any())(any(), any())).thenReturn(Future.successful(None))
 
           val app = baseApplicationBuilder
             .overrides(
+              bind[PushPullNotificationService].toInstance(mockNotificationService),
               bind[SubmitMessageService].toInstance(mockSubmitMessageService),
+              bind[AuthenticatedClientIdActionProvider].toInstance(FakeAuthenticatedClientIdActionProvider()),
               bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(
                 FakeAuthenticatedGetOptionalArrivalForWriteActionProvider(initializedArrival))
             )
@@ -545,11 +602,15 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         }
 
         "must return BadRequest if the payload is malformed" in {
-          val arrival = Arbitrary.arbitrary[Arrival].sample.value.copy(eoriNumber = "eori")
+          val arrival                 = Arbitrary.arbitrary[Arrival].sample.value.copy(eoriNumber = "eori")
+          val mockNotificationService = mock[PushPullNotificationService]
+          when(mockNotificationService.getBox(any())(any(), any())).thenReturn(Future.successful(None))
 
           val application =
             baseApplicationBuilder
               .overrides(
+                bind[PushPullNotificationService].toInstance(mockNotificationService),
+                bind[AuthenticatedClientIdActionProvider].toInstance(FakeAuthenticatedClientIdActionProvider()),
                 bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider(arrival))
               )
               .build()
@@ -567,10 +628,14 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         }
 
         "must return BadRequest if the message is not an arrival notification" in {
+          val mockNotificationService = mock[PushPullNotificationService]
+          when(mockNotificationService.getBox(any())(any(), any())).thenReturn(Future.successful(None))
 
           val application =
             baseApplicationBuilder
               .overrides(
+                bind[PushPullNotificationService].toInstance(mockNotificationService),
+                bind[AuthenticatedClientIdActionProvider].toInstance(FakeAuthenticatedClientIdActionProvider()),
                 bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(
                   FakeAuthenticatedGetOptionalArrivalForWriteActionProvider(initializedArrival))
               )
@@ -592,13 +657,17 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
         "must return BadRequest if the message has been rejected from EIS due to error in payload" in {
           val mockSubmitMessageService = mock[SubmitMessageService]
+          val mockNotificationService  = mock[PushPullNotificationService]
 
           when(mockSubmitMessageService.submitMessage(any(), any(), any(), any(), any())(any()))
             .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureRejected(ErrorInPayload.responseBody)))
+          when(mockNotificationService.getBox(any())(any(), any())).thenReturn(Future.successful(None))
 
           val app = baseApplicationBuilder
             .overrides(
+              bind[PushPullNotificationService].toInstance(mockNotificationService),
               bind[SubmitMessageService].toInstance(mockSubmitMessageService),
+              bind[AuthenticatedClientIdActionProvider].toInstance(FakeAuthenticatedClientIdActionProvider()),
               bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(
                 FakeAuthenticatedGetOptionalArrivalForWriteActionProvider(initializedArrival))
             )
@@ -618,13 +687,17 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
         "must return InternalServerError if there has been a rejection from EIS due to virus found or invalid token" in {
           val mockSubmitMessageService = mock[SubmitMessageService]
+          val mockNotificationService  = mock[PushPullNotificationService]
 
           when(mockSubmitMessageService.submitMessage(any(), any(), any(), any(), any())(any()))
             .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureInternal))
+          when(mockNotificationService.getBox(any())(any(), any())).thenReturn(Future.successful(None))
 
           val app = baseApplicationBuilder
             .overrides(
+              bind[PushPullNotificationService].toInstance(mockNotificationService),
               bind[SubmitMessageService].toInstance(mockSubmitMessageService),
+              bind[AuthenticatedClientIdActionProvider].toInstance(FakeAuthenticatedClientIdActionProvider()),
               bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(
                 FakeAuthenticatedGetOptionalArrivalForWriteActionProvider(initializedArrival))
             )

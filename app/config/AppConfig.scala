@@ -35,6 +35,9 @@ class AppConfig @Inject()(config: Configuration, servicesConfig: ServicesConfig)
   private val eisBaseUrl: String = servicesConfig.baseUrl("eis")
   val eisUrl: String             = eisBaseUrl ++ config.get[String]("microservice.services.eis.uri")
 
+  private val pushPullBaseUrl: String = servicesConfig.baseUrl("push-pull-notifications-api")
+  val pushPullUrl: String             = pushPullBaseUrl ++ servicesConfig.getConfString("push-pull-notifications-api.uri", "")
+
   private val manageDocumentsBaseUrl: String = servicesConfig.baseUrl("manage-documents")
   val manageDocumentsUrl: String             = manageDocumentsBaseUrl ++ config.get[String]("microservice.services.manage-documents.uri")
 
@@ -45,4 +48,5 @@ class AppConfig @Inject()(config: Configuration, servicesConfig: ServicesConfig)
   val messageTranslationFile: String = config.get[String]("message-translation-file")
 
   def maxRowsReturned(ct: ChannelType): Int = config.get[Int](s"mongodb.$ct.maxRowsReturned")
+
 }
