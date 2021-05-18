@@ -190,7 +190,7 @@ class ArrivalMovementRepository @Inject()(
         val selector   = Json.obj("eoriNumber" -> eoriNumber, "channel" -> channelFilter) ++ dateFilter
 
         collection.flatMap {
-          _.find(Json.obj("eoriNumber" -> eoriNumber, "channel" -> channelFilter), Some(ResponseArrival.projection))
+          _.find(selector, Some(ResponseArrival.projection))
             .sort(Json.obj("lastUpdated" -> -1))
             .cursor[ResponseArrival]()
             .collect[Seq](appConfig.maxRowsReturned(channelFilter), Cursor.FailOnError())
