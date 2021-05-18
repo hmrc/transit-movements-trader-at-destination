@@ -586,10 +586,10 @@ class ArrivalMovementRepositorySpec
 
       "must filter results by lastUpdated when updatedSince parameter is provided" in {
 
-        val arrivalMovement1 = arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = api, lastUpdated = LocalDateTime.of(2021, 4, 30, 9, 30, 31))
-        val arrivalMovement2 = arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = api, lastUpdated = LocalDateTime.of(2021, 4, 30, 9, 35, 32))
-        val arrivalMovement3 = arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = api, lastUpdated = LocalDateTime.of(2021, 4, 30, 9, 30, 21))
-        val arrivalMovement4 = arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = api, lastUpdated = LocalDateTime.of(2021, 4, 30, 10, 15, 16))
+        val arrivalMovement1 = arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = web, lastUpdated = LocalDateTime.of(2021, 4, 30, 9, 30, 31))
+        val arrivalMovement2 = arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = web, lastUpdated = LocalDateTime.of(2021, 4, 30, 9, 35, 32))
+        val arrivalMovement3 = arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = web, lastUpdated = LocalDateTime.of(2021, 4, 30, 12, 30, 21))
+        val arrivalMovement4 = arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = web, lastUpdated = LocalDateTime.of(2021, 4, 30, 10, 15, 16))
 
         val app = appBuilder.build()
         running(app) {
@@ -605,9 +605,10 @@ class ArrivalMovementRepositorySpec
               db.collection[JSONCollection](ArrivalMovementRepository.collectionName).insert(false).many(jsonArr)
           }.futureValue
 
+          // We must use the web channel for this test as the API max rows returned in integration test config is 2
           val dateTime = OffsetDateTime.of(LocalDateTime.of(2021, 4, 30, 10, 30, 32), ZoneOffset.ofHours(1))
-          val actual = service.fetchAllArrivals(eoriNumber, api, Some(dateTime)).futureValue.toSet
-          val expected = Set(arrivalMovement2, arrivalMovement4).map(ResponseArrival.build)
+          val actual = service.fetchAllArrivals(eoriNumber, web, Some(dateTime)).futureValue.toSet
+          val expected = Set(arrivalMovement3, arrivalMovement4, arrivalMovement2).map(ResponseArrival.build)
 
           actual mustEqual expected
         }
