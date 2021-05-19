@@ -78,6 +78,7 @@ class MessageTransformer @Inject()(implicit val executionContext: ExecutionConte
 
   private def badRequestError(message: String): Result = {
     logger.error(message)
+    println("proof")
     BadRequest(message)
   }
 }

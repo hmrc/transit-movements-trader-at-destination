@@ -17,6 +17,7 @@
 package controllers
 
 import base.SpecBase
+import config.Constants
 import controllers.actions.FakeInboundMessageBadRequestTransformer
 import controllers.actions.FakeMessageTransformer
 import controllers.actions.MessageTransformerInterface
@@ -24,6 +25,8 @@ import generators.ModelGenerators
 import models.ChannelType.web
 import models.Arrival
 import models.ArrivalId
+import models.Box
+import models.BoxId
 import models.MessageSender
 import models.SubmissionProcessingResult
 import org.mockito.ArgumentMatchers._
@@ -36,29 +39,38 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import repositories.ArrivalMovementRepository
 import repositories.LockRepository
+import services.PushPullNotificationService
 import services.SaveMessageService
 
 import scala.concurrent.Future
 
 class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks with ModelGenerators with BeforeAndAfterEach {
 
-  private val mockArrivalMovementRepository: ArrivalMovementRepository = mock[ArrivalMovementRepository]
-  private val mockLockRepository: LockRepository                       = mock[LockRepository]
-  private val mockSaveMessageService: SaveMessageService               = mock[SaveMessageService]
+  private val mockArrivalMovementRepository: ArrivalMovementRepository     = mock[ArrivalMovementRepository]
+  private val mockLockRepository: LockRepository                           = mock[LockRepository]
+  private val mockSaveMessageService: SaveMessageService                   = mock[SaveMessageService]
+  private val mockPushPullNotificationService: PushPullNotificationService = mock[PushPullNotificationService]
 
   private val arrivalId     = ArrivalId(1)
   private val version       = 1
   private val messageSender = MessageSender(arrivalId, version)
 
-  private val arrival = Arbitrary.arbitrary[Arrival].sample.value
+  private val arrivalWithoutBox = Arbitrary.arbitrary[Arrival].sample.value
 
-  private val xml = <test></test>
+  private val testBoxId = "1c5b9365-18a6-55a5-99c9-83a091ac7f26"
+  private val testBox   = Box(BoxId(testBoxId), Constants.BoxName)
+
+  private val arrivalWithBox = arrivalWithoutBox.copy(notificationBox = Some(testBox))
+
+  private val xml         = <test></test>
+  private val passableXml = <CC917A></CC917A>
 
   override def beforeEach: Unit = {
     super.beforeEach()
     reset(mockArrivalMovementRepository)
     reset(mockLockRepository)
     reset(mockSaveMessageService)
+    reset(mockPushPullNotificationService)
   }
 
   "post" - {
@@ -66,7 +78,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
     "when a lock can be acquired" - {
       "must return OK, when the service validates and save the message" in {
 
-        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
+        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrivalWithoutBox)))
         when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any(), any(), any())(any()))
           .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionSuccess))
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
@@ -83,17 +95,17 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
 
         running(application) {
           val request = FakeRequest(POST, routes.NCTSMessageController.post(messageSender).url)
-            .withHeaders("channel" -> arrival.channel.toString)
+            .withHeaders("channel" -> arrivalWithoutBox.channel.toString)
             .withXmlBody(xml)
 
           val result = route(application, request).value
 
           status(result) mustEqual OK
-          header(LOCATION, result) mustBe Some(routes.MessagesController.getMessage(arrival.arrivalId, arrival.nextMessageId).url)
+          header(LOCATION, result) mustBe Some(routes.MessagesController.getMessage(arrivalWithoutBox.arrivalId, arrivalWithoutBox.nextMessageId).url)
         }
       }
 
-      "must lock, return NotFound and unlock when given a message for an arrival that does not exist" in {
+      "must lock, return NotFound and unlock when given a message for an arrivalWithoutBox that does not exist" in {
         when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(None))
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(true))
@@ -120,7 +132,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
       }
 
       "must lock, return Internal Server Error and unlock if adding the message to the movement fails" in {
-        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
+        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrivalWithoutBox)))
         when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any(), any(), any())(any()))
           .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureInternal))
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
@@ -138,7 +150,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
         running(application) {
           val request = FakeRequest(POST, routes.NCTSMessageController.post(messageSender).url)
             .withXmlBody(xml)
-            .withHeaders("channel" -> arrival.channel.toString)
+            .withHeaders("channel" -> arrivalWithoutBox.channel.toString)
 
           val result = route(application, request).value
 
@@ -148,9 +160,9 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
         }
       }
 
-      "must lock the arrival, return BadRequest error and unlock when an XMessageType is invalid" in {
+      "must lock the arrivalWithoutBox, return BadRequest error and unlock when an XMessageType is invalid" in {
 
-        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
+        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrivalWithoutBox)))
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(true))
 
@@ -176,8 +188,8 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
         }
       }
 
-      "must lock the arrival, return BadRequest error and unlock when fail to validate message" in {
-        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrival)))
+      "must lock the arrivalWithoutBox, return BadRequest error and unlock when fail to validate message" in {
+        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrivalWithoutBox)))
         when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any(), any(), any())(any()))
           .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureExternal))
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
@@ -194,7 +206,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
 
         running(application) {
           val request = FakeRequest(POST, routes.NCTSMessageController.post(messageSender).url)
-            .withHeaders("channel" -> arrival.channel.toString)
+            .withHeaders("channel" -> arrivalWithoutBox.channel.toString)
             .withXmlBody(xml)
 
           val result = route(application, request).value
@@ -206,12 +218,71 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
         }
       }
 
+      "must not send push notification when there is no notificationBox present" in {
+        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrivalWithoutBox)))
+        when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any(), any(), any())(any()))
+          .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionSuccess))
+        when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
+        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(true))
+
+        val application = baseApplicationBuilder
+          .overrides(
+            bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
+            bind[LockRepository].toInstance(mockLockRepository),
+            bind[SaveMessageService].toInstance(mockSaveMessageService),
+            bind[PushPullNotificationService].toInstance(mockPushPullNotificationService)
+          )
+          .build()
+
+        running(application) {
+          val request = FakeRequest(POST, routes.NCTSMessageController.post(messageSender).url)
+            .withHeaders("channel" -> arrivalWithoutBox.channel.toString)
+            .withXmlBody(passableXml)
+
+          val result = route(application, request).value
+
+          status(result) mustEqual OK
+          verifyNoInteractions(mockPushPullNotificationService)
+        }
+      }
+
+      "must send push notification when there is a notificationBox present" in {
+        def boxIdMatcher = refEq(testBoxId).asInstanceOf[BoxId]
+
+        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrivalWithBox)))
+        when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any(), any(), any())(any()))
+          .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionSuccess))
+        when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
+        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(true))
+        when(mockPushPullNotificationService.sendPushNotification(boxIdMatcher, any())(any(), any())).thenReturn(Future.unit)
+
+        val application = baseApplicationBuilder
+          .overrides(
+            bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
+            bind[LockRepository].toInstance(mockLockRepository),
+            bind[SaveMessageService].toInstance(mockSaveMessageService),
+            bind[PushPullNotificationService].toInstance(mockPushPullNotificationService)
+          )
+          .build()
+
+        running(application) {
+          val request = FakeRequest(POST, routes.NCTSMessageController.post(messageSender).url)
+            .withHeaders("channel" -> arrivalWithoutBox.channel.toString)
+            .withXmlBody(passableXml)
+
+          val result = route(application, request).value
+
+          status(result) mustEqual OK
+          verify(mockPushPullNotificationService, times(1)).sendPushNotification(boxIdMatcher, any())(any(), any())
+        }
+      }
+
     }
 
     "when a lock cannot be acquired" - {
 
       "must return Locked" in {
-        when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(arrival)))
+        when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(arrivalWithoutBox)))
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(false))
 
         val application = baseApplicationBuilder
