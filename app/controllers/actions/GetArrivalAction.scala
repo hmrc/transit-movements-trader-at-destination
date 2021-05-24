@@ -74,7 +74,6 @@ private[actions] class AuthenticatedGetArrivalAction(
     ChannelUtil.getChannel(request) match {
       case None =>
         logger.warn(s"Missing channel header for request id ${request.headers.get("http_x_request_id")}")
-        println(request.headers)
         Future.successful(Left(BadRequest("Missing channel header or incorrect value specified in channel header")))
       case Some(channel) =>
         repository
