@@ -62,8 +62,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
 
   private val arrivalWithBox = arrivalWithoutBox.copy(notificationBox = Some(testBox))
 
-  private val xml         = <test></test>
-  private val passableXml = <CC917A></CC917A>
+  private val xml = <test></test>
 
   override def beforeEach: Unit = {
     super.beforeEach()
@@ -230,14 +229,15 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
             bind[LockRepository].toInstance(mockLockRepository),
             bind[SaveMessageService].toInstance(mockSaveMessageService),
-            bind[PushPullNotificationService].toInstance(mockPushPullNotificationService)
+            bind[PushPullNotificationService].toInstance(mockPushPullNotificationService),
+            bind[MessageTransformerInterface].to[FakeMessageTransformer]
           )
           .build()
 
         running(application) {
           val request = FakeRequest(POST, routes.NCTSMessageController.post(messageSender).url)
             .withHeaders("channel" -> arrivalWithoutBox.channel.toString)
-            .withXmlBody(passableXml)
+            .withXmlBody(xml)
 
           val result = route(application, request).value
 
@@ -261,14 +261,15 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
             bind[LockRepository].toInstance(mockLockRepository),
             bind[SaveMessageService].toInstance(mockSaveMessageService),
-            bind[PushPullNotificationService].toInstance(mockPushPullNotificationService)
+            bind[PushPullNotificationService].toInstance(mockPushPullNotificationService),
+            bind[MessageTransformerInterface].to[FakeMessageTransformer]
           )
           .build()
 
         running(application) {
           val request = FakeRequest(POST, routes.NCTSMessageController.post(messageSender).url)
             .withHeaders("channel" -> arrivalWithoutBox.channel.toString)
-            .withXmlBody(passableXml)
+            .withXmlBody(xml)
 
           val result = route(application, request).value
 
