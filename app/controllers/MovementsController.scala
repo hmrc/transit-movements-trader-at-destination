@@ -137,57 +137,65 @@ class MovementsController @Inject()(
     withMetricsTimerAction("post-create-arrival") {
       (authenticateClientId() andThen authenticatedOptionalArrival() andThen validateMessageSenderNode.filter).async(parse.xml) {
         implicit request =>
-          getBox(request.clientIdOpt).flatMap {
-            boxOpt =>
-              {
-                (boxOpt, request.arrival) match {
-                  case (_, Some(arrival)) if allMessageUnsent(arrival.messages) =>
-                    arrivalMovementService
-                      .makeOutboundMessage(arrival.arrivalId, arrival.nextMessageCorrelationId, MessageType.ArrivalNotification)(request.body) match {
-                      case Right(message) =>
+          request.arrival match {
+            case Some(arrival) if allMessageUnsent(arrival.messages) =>
+              arrivalMovementService
+                .makeOutboundMessage(arrival.arrivalId, arrival.nextMessageCorrelationId, MessageType.ArrivalNotification)(request.body) match {
+                case Right(message) =>
+                  submitMessageService
+                    .submitMessage(arrival.arrivalId, arrival.nextMessageId, message, ArrivalStatus.ArrivalSubmitted, request.channel)
+                    .map {
+                      result =>
+                        Monitors.messageReceived(registry, MessageType.ArrivalNotification, request.channel, result)
+                        movementSummaryLogger.info(s"Submitted an arrival with result ${result.toString}\n${arrival.summaryInformation.mkString("\n")}")
+                        handleSubmissionResult(
+                          result,
+                          AuditType.ArrivalNotificationSubmitted,
+                          message,
+                          request.channel,
+                          arrival.arrivalId,
+                          arrival.notificationBox
+                        )
+                    }
+                case Left(error) =>
+                  logger.error(s"Failed to create ArrivalMovementWithStatus with the following error: $error")
+                  Future.successful(BadRequest(s"Failed to create ArrivalMovementWithStatus with the following error: $error"))
+              }
+            case _ =>
+              getBox(request.clientIdOpt).flatMap {
+                boxOpt =>
+                  arrivalMovementService
+                    .makeArrivalMovement(request.eoriNumber, request.body, request.channel, boxOpt)
+                    .flatMap {
+                      case Right(arrival) =>
                         submitMessageService
-                          .submitMessage(arrival.arrivalId, arrival.nextMessageId, message, ArrivalStatus.ArrivalSubmitted, request.channel)
+                          .submitArrival(arrival)
                           .map {
                             result =>
                               Monitors.messageReceived(registry, MessageType.ArrivalNotification, request.channel, result)
                               movementSummaryLogger.info(s"Submitted an arrival with result ${result.toString}\n${arrival.summaryInformation.mkString("\n")}")
-                              handleSubmissionResult(result, AuditType.ArrivalNotificationSubmitted, message, request.channel, arrival.arrivalId, boxOpt)
+                              handleSubmissionResult(
+                                result,
+                                AuditType.ArrivalNotificationSubmitted,
+                                arrival.messages.head,
+                                request.channel,
+                                arrival.arrivalId,
+                                boxOpt
+                              )
+                          }
+                          .recover {
+                            case _ =>
+                              InternalServerError
                           }
                       case Left(error) =>
-                        logger.error(s"Failed to create ArrivalMovementWithStatus with the following error: $error")
-                        Future.successful(BadRequest(s"Failed to create ArrivalMovementWithStatus with the following error: $error"))
+                        logger.error(s"Failed to create ArrivalMovement with the following error: $error")
+                        Future.successful(BadRequest(s"Failed to create ArrivalMovement with the following error: $error"))
                     }
-                  case _ =>
-                    arrivalMovementService
-                      .makeArrivalMovement(request.eoriNumber, request.body, request.channel, boxOpt)
-                      .flatMap {
-                        case Right(arrival) =>
-                          submitMessageService
-                            .submitArrival(arrival)
-                            .map {
-                              result =>
-                                Monitors.messageReceived(registry, MessageType.ArrivalNotification, request.channel, result)
-                                movementSummaryLogger.info(s"Submitted an arrival with result ${result.toString}\n${arrival.summaryInformation.mkString("\n")}")
-                                handleSubmissionResult(result,
-                                                       AuditType.ArrivalNotificationSubmitted,
-                                                       arrival.messages.head,
-                                                       request.channel,
-                                                       arrival.arrivalId)
-                            }
-                            .recover {
-                              case _ =>
-                                InternalServerError
-                            }
-                        case Left(error) =>
-                          logger.error(s"Failed to create ArrivalMovement with the following error: $error")
-                          Future.successful(BadRequest(s"Failed to create ArrivalMovement with the following error: $error"))
-                      }
-                      .recover {
-                        case error =>
-                          logger.error(s"Failed to create ArrivalMovement with the following error: $error")
-                          InternalServerError
-                      }
-                }
+                    .recover {
+                      case error =>
+                        logger.error(s"Failed to create ArrivalMovement with the following error: $error")
+                        InternalServerError
+                    }
               }
           }
       }
@@ -206,12 +214,14 @@ class MovementsController @Inject()(
                 .map {
                   result =>
                     movementSummaryLogger.info(s"Submitted an arrival with result ${result.toString}\n${request.arrival.summaryInformation.mkString("\n")}")
-                    handleSubmissionResult(result,
-                                           AuditType.ArrivalNotificationReSubmitted,
-                                           message,
-                                           request.channel,
-                                           request.arrival.arrivalId,
-                                           request.arrival.notificationBox)
+                    handleSubmissionResult(
+                      result,
+                      AuditType.ArrivalNotificationReSubmitted,
+                      message,
+                      request.channel,
+                      request.arrival.arrivalId,
+                      request.arrival.notificationBox
+                    )
                 }
             case Left(error) =>
               logger.error(s"Failed to create message and MovementReferenceNumber with error: $error")

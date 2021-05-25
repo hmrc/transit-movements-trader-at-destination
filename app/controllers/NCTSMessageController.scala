@@ -18,6 +18,7 @@ package controllers
 
 import com.kenshoo.play.metrics.Metrics
 import controllers.actions.GetArrivalForWriteActionProvider
+import controllers.actions.InboundMessageRequest
 import controllers.actions.MessageTransformerInterface
 import controllers.actions.ValidateInboundMessageAction
 import logging.Logging
@@ -30,11 +31,15 @@ import play.api.Logger
 import play.api.mvc.Action
 import play.api.mvc.ControllerComponents
 import play.api.mvc.Result
+import services.PushPullNotificationService
 import services.SaveMessageService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-
 import javax.inject.Inject
+import models.request.ArrivalRequest
+import uk.gov.hmrc.http.HeaderCarrier
+
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.xml.NodeSeq
 
 class NCTSMessageController @Inject()(
@@ -43,6 +48,7 @@ class NCTSMessageController @Inject()(
   validateTransitionState: MessageTransformerInterface,
   validateInboundMessage: ValidateInboundMessageAction,
   saveMessageService: SaveMessageService,
+  pushPullNotificationService: PushPullNotificationService,
   val metrics: Metrics
 )(implicit ec: ExecutionContext)
     extends BackendController(cc)
@@ -51,6 +57,14 @@ class NCTSMessageController @Inject()(
 
   private val movementSummaryLogger: Logger =
     Logger(s"application.${this.getClass.getCanonicalName}.movementSummary")
+
+  private def sendPushNotification(request: ArrivalRequest[NodeSeq])(implicit hc: HeaderCarrier): Future[Unit] =
+    request.arrival.notificationBox
+      .map {
+        box =>
+          pushPullNotificationService.sendPushNotification(box.boxId, request.body)
+      }
+      .getOrElse(Future.unit)
 
   def post(messageSender: MessageSender): Action[NodeSeq] =
     withMetricsTimerAction("post-receive-ncts-message") {
@@ -81,10 +95,14 @@ class NCTSMessageController @Inject()(
               Monitors.messageReceived(registry, messageInbound.messageType.messageType, request.arrivalRequest.channel, result)
 
               result match {
-                case SubmissionSuccess =>
+                case SubmissionSuccess => {
+                  sendPushNotification(request.arrivalRequest)
                   Ok.withHeaders(
-                    LOCATION -> routes.MessagesController.getMessage(request.arrivalRequest.arrival.arrivalId, request.arrivalRequest.arrival.nextMessageId).url
-                  )
+                    LOCATION -> routes.MessagesController
+                      .getMessage(request.arrivalRequest.arrival.arrivalId, request.arrivalRequest.arrival.nextMessageId)
+                      .url)
+                }
+
                 case SubmissionFailureInternal => internalServerError("Internal Submission Failure " + processingResult)
                 case SubmissionFailureExternal => badRequestError("External Submission Failure " + processingResult)
               }
