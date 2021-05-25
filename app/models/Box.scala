@@ -14,15 +14,16 @@
  * limitations under the License.
  */
 
-package models.request
+package models
 
-import models.Arrival
-import models.ChannelType
-import play.api.mvc.WrappedRequest
+import play.api.libs.json.Format
+import play.api.libs.json.Json
+import play.api.libs.json.OFormat
 
-case class AuthenticatedOptionalArrivalRequest[A](request: AuthenticatedClientRequest[A],
-                                                  arrival: Option[Arrival],
-                                                  clientIdOpt: Option[String],
-                                                  channel: ChannelType,
-                                                  eoriNumber: String)
-    extends WrappedRequest[A](request)
+case class Box(boxId: BoxId, boxName: String)
+
+object Box {
+  implicit val formatsBox: OFormat[Box] = Json.format[Box]
+
+  implicit val optionBoxFormats: Format[Option[Box]] = Format.optionWithNull[Box]
+}

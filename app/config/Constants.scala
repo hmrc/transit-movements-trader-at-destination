@@ -14,15 +14,8 @@
  * limitations under the License.
  */
 
-package models.request
+package config
 
-import models.Arrival
-import models.ChannelType
-import play.api.mvc.WrappedRequest
-
-case class AuthenticatedOptionalArrivalRequest[A](request: AuthenticatedClientRequest[A],
-                                                  arrival: Option[Arrival],
-                                                  clientIdOpt: Option[String],
-                                                  channel: ChannelType,
-                                                  eoriNumber: String)
-    extends WrappedRequest[A](request)
+object Constants {
+  val BoxName = s"customs/transits##1.0##notificationUrl"
+}

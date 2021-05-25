@@ -26,7 +26,7 @@ import controllers.routes
 import models.ArrivalStatus.{ArrivalSubmitted, GoodsReleased, Initialized, UnloadingRemarksSubmitted}
 import models.ChannelType.{api, web}
 import models.MessageStatus.{SubmissionPending, SubmissionSucceeded}
-import models.{Arrival, ArrivalId, ArrivalIdSelector, ArrivalStatus, ArrivalStatusUpdate, MessageId, MessageType, MongoDateTimeFormats, MovementMessageWithStatus, MovementMessageWithoutStatus, MovementReferenceNumber}
+import models.{Arrival, ArrivalId, ArrivalIdSelector, ArrivalStatus, ArrivalStatusUpdate, Box, BoxId, MessageId, MessageType, MongoDateTimeFormats, MovementMessageWithStatus, MovementMessageWithoutStatus, MovementReferenceNumber}
 import models.response.ResponseArrival
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalactic.source
@@ -40,9 +40,9 @@ import play.api.test.Helpers.running
 import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 import reactivemongo.play.json.collection.JSONCollection
 import utils.Format
-import config.AppConfig
-
+import config.{AppConfig, Constants}
 import java.time._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.reflect.ClassTag

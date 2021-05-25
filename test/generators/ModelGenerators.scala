@@ -173,7 +173,8 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
           updated = updated,
           lastUpdated = updated,
           messages = messages,
-          nextMessageCorrelationId = messages.length + 1
+          nextMessageCorrelationId = messages.length + 1,
+          notificationBox = None
         )
     }
   }

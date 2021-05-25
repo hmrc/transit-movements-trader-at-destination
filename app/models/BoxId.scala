@@ -14,15 +14,13 @@
  * limitations under the License.
  */
 
-package models.request
+package models
 
-import models.Arrival
-import models.ChannelType
-import play.api.mvc.WrappedRequest
+import play.api.libs.json.Format
+import play.api.libs.json.Json
 
-case class AuthenticatedOptionalArrivalRequest[A](request: AuthenticatedClientRequest[A],
-                                                  arrival: Option[Arrival],
-                                                  clientIdOpt: Option[String],
-                                                  channel: ChannelType,
-                                                  eoriNumber: String)
-    extends WrappedRequest[A](request)
+case class BoxId(value: String) extends AnyVal
+
+object BoxId {
+  implicit val formatsBoxId: Format[BoxId] = Json.valueFormat[BoxId]
+}

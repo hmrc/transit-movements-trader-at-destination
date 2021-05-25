@@ -18,6 +18,7 @@ package controllers.actions
 
 import models.Arrival
 import models.ChannelType.web
+import models.request.AuthenticatedClientRequest
 import models.request.AuthenticatedOptionalArrivalRequest
 import models.request.AuthenticatedRequest
 import play.api.mvc.ActionBuilder
@@ -38,9 +39,10 @@ class FakeAuthenticatedGetOptionalArrivalForWriteActionProvider(arrival: Option[
       override def parser: BodyParser[AnyContent] = stubBodyParser()
 
       override def invokeBlock[A](request: Request[A], block: AuthenticatedOptionalArrivalRequest[A] => Future[Result]): Future[Result] = {
+        val clientIdOpt                                 = Some("clientId")
         val eoriNumber                                  = arrival.fold("eori")(_.eoriNumber)
-        val authReq                                     = AuthenticatedRequest(request, web, eoriNumber)
-        val req: AuthenticatedOptionalArrivalRequest[A] = AuthenticatedOptionalArrivalRequest(authReq, arrival, web, eoriNumber)
+        val authReq                                     = AuthenticatedClientRequest(request, web, eoriNumber, clientIdOpt)
+        val req: AuthenticatedOptionalArrivalRequest[A] = AuthenticatedOptionalArrivalRequest(authReq, arrival, clientIdOpt, web, eoriNumber)
         block(req)
       }
 

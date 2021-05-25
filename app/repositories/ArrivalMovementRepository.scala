@@ -33,6 +33,7 @@ import models.ArrivalModifier
 import models.ArrivalSelector
 import models.ArrivalStatus
 import models.ArrivalStatusUpdate
+import models.BoxId
 import models.ChannelType
 import models.CompoundStatusUpdate
 import models.MessageId
@@ -55,11 +56,11 @@ import reactivemongo.bson.BSONDocument
 import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 import reactivemongo.play.json.collection.JSONCollection
 import utils.IndexUtils
-
 import java.time.Clock
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.Failure
