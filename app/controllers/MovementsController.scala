@@ -16,30 +16,26 @@
 
 package controllers
 
-import javax.inject.Inject
-import java.time.OffsetDateTime
-
 import audit.AuditService
 import audit.AuditType
 import cats.data.NonEmptyList
 import com.kenshoo.play.metrics.Metrics
+import config.Constants
 import controllers.actions._
 import logging.Logging
-import metrics.Monitors
 import metrics.HasActionMetrics
-import models.MessageStatus.SubmissionSucceeded
+import metrics.Monitors
 import models.ArrivalId
 import models.ArrivalStatus
 import models.Box
 import models.ChannelType
+import models.MessageStatus.SubmissionSucceeded
 import models.MessageType
 import models.MovementMessage
 import models.ResponseArrivals
 import models.SubmissionProcessingResult
 import models.SubmissionProcessingResult._
 import models.request.ArrivalRequest
-import models.request.AuthenticatedClientRequest
-import models.request.AuthenticatedOptionalArrivalRequest
 import models.response.ResponseArrival
 import play.api.Logger
 import play.api.libs.json.Json
@@ -53,6 +49,8 @@ import services.SubmitMessageService
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
+import java.time.OffsetDateTime
+import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.xml.NodeSeq
@@ -63,7 +61,6 @@ class MovementsController @Inject()(
   arrivalMovementService: ArrivalMovementMessageService,
   submitMessageService: SubmitMessageService,
   authenticate: AuthenticateActionProvider,
-  authenticateClientId: AuthenticatedClientIdActionProvider,
   authenticatedArrivalForRead: AuthenticatedGetArrivalForReadActionProvider,
   authenticatedOptionalArrival: AuthenticatedGetOptionalArrivalForWriteActionProvider,
   authenticateForWrite: AuthenticatedGetArrivalForWriteActionProvider,
@@ -87,24 +84,6 @@ class MovementsController @Inject()(
 
   lazy val countArrivals = histo("get-all-arrivals-count")
   lazy val messagesCount = histo("get-arrival-by-id-messages-count")
-
-  private def handleSubmissionResult(
-    result: SubmissionProcessingResult,
-    arrivalNotificationType: String,
-    message: MovementMessage,
-    requestChannel: ChannelType,
-    arrivalId: ArrivalId
-  )(implicit hc: HeaderCarrier) =
-    result match {
-      case SubmissionFailureInternal => InternalServerError
-      case SubmissionFailureExternal => BadGateway
-      case submissionFailureRejected: SubmissionFailureRejected =>
-        BadRequest(submissionFailureRejected.responseBody)
-      case SubmissionSuccess =>
-        auditService.auditEvent(arrivalNotificationType, message, requestChannel)
-        auditService.auditEvent(AuditType.MesSenMES3Added, message, requestChannel)
-        Accepted("Message Accepted").withHeaders("Location" -> routes.MovementsController.getArrival(arrivalId).url)
-    }
 
   private def handleSubmissionResult(
     result: SubmissionProcessingResult,
@@ -135,7 +114,7 @@ class MovementsController @Inject()(
 
   def post: Action[NodeSeq] =
     withMetricsTimerAction("post-create-arrival") {
-      (authenticateClientId() andThen authenticatedOptionalArrival() andThen validateMessageSenderNode.filter).async(parse.xml) {
+      (authenticate() andThen authenticatedOptionalArrival() andThen validateMessageSenderNode.filter).async(parse.xml) {
         implicit request =>
           request.arrival match {
             case Some(arrival) if allMessageUnsent(arrival.messages) =>
@@ -162,7 +141,7 @@ class MovementsController @Inject()(
                   Future.successful(BadRequest(s"Failed to create ArrivalMovementWithStatus with the following error: $error"))
               }
             case _ =>
-              getBox(request.clientIdOpt).flatMap {
+              getBox(request.headers.get(Constants.XClientIdHeader)).flatMap {
                 boxOpt =>
                   arrivalMovementService
                     .makeArrivalMovement(request.eoriNumber, request.body, request.channel, boxOpt)

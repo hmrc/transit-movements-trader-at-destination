@@ -18,7 +18,6 @@ package controllers.actions
 
 import javax.inject.Inject
 import logging.Logging
-import models.request.AuthenticatedClientRequest
 import models.request.AuthenticatedOptionalArrivalRequest
 import models.request.AuthenticatedRequest
 import play.api.mvc._
@@ -38,24 +37,24 @@ trait AuthenticatedGetOptionalArrivalForWriteActionProvider {
 }
 
 class AuthenticatedGetOptionalArrivalForWriteActionProviderImpl @Inject()(
-  authenticateClientIdProvider: AuthenticatedClientIdActionProvider,
+  authenticateActionProvider: AuthenticateActionProvider,
   arrivalMovementRepository: ArrivalMovementRepository,
   lockRepository: LockRepository,
   ec: ExecutionContext
 ) extends AuthenticatedGetOptionalArrivalForWriteActionProvider {
 
   def apply(): ActionBuilder[AuthenticatedOptionalArrivalRequest, AnyContent] =
-    authenticateClientIdProvider() andThen new AuthenticateGetOptionalArrivalForWriteAction(arrivalMovementRepository, lockRepository, ec)
+    authenticateActionProvider() andThen new AuthenticateGetOptionalArrivalForWriteAction(arrivalMovementRepository, lockRepository, ec)
 }
 
 class AuthenticateGetOptionalArrivalForWriteAction(
   arrivalMovementRepository: ArrivalMovementRepository,
   lockRepository: LockRepository,
   implicit protected val executionContext: ExecutionContext
-) extends ActionFunction[AuthenticatedClientRequest, AuthenticatedOptionalArrivalRequest]
+) extends ActionFunction[AuthenticatedRequest, AuthenticatedOptionalArrivalRequest]
     with Logging {
 
-  override def invokeBlock[A](request: AuthenticatedClientRequest[A], block: AuthenticatedOptionalArrivalRequest[A] => Future[Result]): Future[Result] =
+  override def invokeBlock[A](request: AuthenticatedRequest[A], block: AuthenticatedOptionalArrivalRequest[A] => Future[Result]): Future[Result] =
     request.body match {
       case body: NodeSeq =>
         XmlMessageParser.mrnR(body) match {
@@ -64,12 +63,12 @@ class AuthenticateGetOptionalArrivalForWriteAction(
             Future.successful(BadRequest(s"Failed to retrieve MovementReferenceNumber with error: $error"))
           case Right(mrn) => {
             arrivalMovementRepository.get(request.eoriNumber, mrn, request.channel).flatMap {
-              case None => block(AuthenticatedOptionalArrivalRequest(request, None, request.clientIdOpt, request.channel, request.eoriNumber))
+              case None => block(AuthenticatedOptionalArrivalRequest(request, None, request.channel, request.eoriNumber))
               case Some(arrival) =>
                 lockRepository.lock(arrival.arrivalId).flatMap {
                   case false => Future.successful(Locked)
                   case true =>
-                    block(AuthenticatedOptionalArrivalRequest(request, Some(arrival), request.clientIdOpt, request.channel, request.eoriNumber))
+                    block(AuthenticatedOptionalArrivalRequest(request, Some(arrival), request.channel, request.eoriNumber))
                       .flatMap {
                         result =>
                           lockRepository.unlock(arrival.arrivalId).map {
