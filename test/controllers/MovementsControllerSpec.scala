@@ -16,11 +16,6 @@
 
 package controllers
 
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
-
 import audit.AuditService
 import audit.AuditType
 import base.SpecBase
@@ -29,12 +24,9 @@ import connectors.MessageConnector
 import connectors.MessageConnector.EisSubmissionResult.ErrorInPayload
 import controllers.actions.AuthenticatedClientIdActionProvider
 import controllers.actions.AuthenticatedGetOptionalArrivalForWriteActionProvider
-import controllers.actions.FakeAuthenticatedGetOptionalArrivalForWriteActionProvider
 import controllers.actions.FakeAuthenticatedClientIdActionProvider
+import controllers.actions.FakeAuthenticatedGetOptionalArrivalForWriteActionProvider
 import generators.ModelGenerators
-import models.MessageStatus.SubmissionFailed
-import models.MessageStatus.SubmissionPending
-import models.MessageStatus.SubmissionSucceeded
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalStatus
@@ -42,20 +34,23 @@ import models.ChannelType.api
 import models.ChannelType.web
 import models.MessageId
 import models.MessageSender
+import models.MessageStatus.SubmissionFailed
+import models.MessageStatus.SubmissionPending
+import models.MessageStatus.SubmissionSucceeded
 import models.MessageType
 import models.MovementMessageWithStatus
 import models.MovementReferenceNumber
-import models.ResponseArrivals
 import models.SubmissionProcessingResult
 import models.response.ResponseArrival
+import models.response.ResponseArrivals
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.{eq => eqTo}
 import org.mockito.Mockito._
 import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalatest.concurrent.IntegrationPatience
 import org.scalatest.BeforeAndAfterEach
+import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.inject.bind
 import play.api.libs.json.Json
@@ -68,11 +63,15 @@ import services.PushPullNotificationService
 import services.SubmitMessageService
 import utils.Format
 
-import scala.concurrent.Future
-import scala.xml.Utility.trim
-import scala.xml.NodeSeq
-import java.time.ZoneOffset
 import java.time.Clock
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
+import scala.concurrent.Future
+import scala.xml.NodeSeq
+import scala.xml.Utility.trim
 
 class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks with ModelGenerators with BeforeAndAfterEach with IntegrationPatience {
 
@@ -1077,14 +1076,15 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         running(application) {
           forAll(listWithMaxLength[ResponseArrival](10)) {
             arrivals =>
-              when(mockArrivalMovementRepository.fetchAllArrivals(any(), any(), any())).thenReturn(Future.successful(arrivals))
+              val responseArrivals = ResponseArrivals(arrivals, arrivals.length, arrivals.length)
+              when(mockArrivalMovementRepository.fetchAllArrivals(any(), any(), any())).thenReturn(Future.successful(responseArrivals))
 
               val request = FakeRequest(GET, routes.MovementsController.getArrivals().url)
 
               val result = route(application, request).value
 
               status(result) mustEqual OK
-              contentAsJson(result) mustEqual Json.toJson(ResponseArrivals(arrivals))
+              contentAsJson(result) mustEqual Json.toJson(responseArrivals)
 
               reset(mockArrivalMovementRepository)
           }
@@ -1114,7 +1114,8 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
               createdAndUpdatedDate
             )
           )
-          when(mockArrivalMovementRepository.fetchAllArrivals(any(), any(), any())).thenReturn(Future.successful(arrivals))
+          val responseArrivals = ResponseArrivals(arrivals, 1, 1)
+          when(mockArrivalMovementRepository.fetchAllArrivals(any(), any(), any())).thenReturn(Future.successful(responseArrivals))
 
           val request = FakeRequest(GET, routes.MovementsController.getArrivals().url)
 
@@ -1134,7 +1135,9 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
                |      "created": "${dateFormat.format(createdAndUpdatedDate)}",
                |      "updated": "${dateFormat.format(createdAndUpdatedDate)}"
                |    }
-               |  ]
+               |  ],
+               |  "retrievedArrivals": 1,
+               |  "totalArrivals": 1
                |}""".stripMargin
 
           contentAsJson(result) mustBe Json.parse(expectedJson)

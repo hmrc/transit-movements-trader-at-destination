@@ -21,6 +21,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.Sink
 import akka.stream.scaladsl.Source
 import cats.data.NonEmptyList
+import cats.syntax.all._
 import com.google.inject.Inject
 import com.kenshoo.play.metrics.Metrics
 import config.AppConfig
@@ -33,7 +34,6 @@ import models.ArrivalModifier
 import models.ArrivalSelector
 import models.ArrivalStatus
 import models.ArrivalStatusUpdate
-import models.response.ResponseArrivals
 import models.ChannelType
 import models.CompoundStatusUpdate
 import models.MessageId
@@ -43,6 +43,7 @@ import models.MongoDateTimeFormats
 import models.MovementMessage
 import models.MovementReferenceNumber
 import models.response.ResponseArrival
+import models.response.ResponseArrivals
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
@@ -56,11 +57,11 @@ import reactivemongo.bson.BSONDocument
 import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 import reactivemongo.play.json.collection.JSONCollection
 import utils.IndexUtils
+
 import java.time.Clock
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
-
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.Failure
@@ -196,7 +197,7 @@ class ArrivalMovementRepository @Inject()(
             val fetchCount = coll.count(Some(countSelector))
 
             val fetchResults = coll
-              .find(selector, ResponseArrival.projection)
+              .find(selector, Some(ResponseArrival.projection))
               .sort(Json.obj("lastUpdated" -> -1))
               .cursor[ResponseArrival]()
               .collect[Seq](appConfig.maxRowsReturned(channelFilter), Cursor.FailOnError())
@@ -204,9 +205,9 @@ class ArrivalMovementRepository @Inject()(
             (fetchCount, fetchResults).mapN {
               case (count, results) =>
                 ResponseArrivals(
-                  departures = results.map(ResponseArrival.build),
-                  retrievedDepartures = results.length,
-                  totalDepartures = count
+                  arrivals = results,
+                  retrievedArrivals = results.length,
+                  totalArrivals = count
                 )
             }
         }

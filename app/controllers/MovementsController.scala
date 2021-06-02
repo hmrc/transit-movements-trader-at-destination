@@ -16,30 +16,24 @@
 
 package controllers
 
-import javax.inject.Inject
-import java.time.OffsetDateTime
-
 import audit.AuditService
 import audit.AuditType
 import cats.data.NonEmptyList
 import com.kenshoo.play.metrics.Metrics
 import controllers.actions._
 import logging.Logging
-import metrics.Monitors
 import metrics.HasActionMetrics
-import models.MessageStatus.SubmissionSucceeded
+import metrics.Monitors
 import models.ArrivalId
 import models.ArrivalStatus
 import models.Box
 import models.ChannelType
+import models.MessageStatus.SubmissionSucceeded
 import models.MessageType
 import models.MovementMessage
-import models.ResponseArrivals
 import models.SubmissionProcessingResult
 import models.SubmissionProcessingResult._
 import models.request.ArrivalRequest
-import models.request.AuthenticatedClientRequest
-import models.request.AuthenticatedOptionalArrivalRequest
 import models.response.ResponseArrival
 import play.api.Logger
 import play.api.libs.json.Json
@@ -53,6 +47,8 @@ import services.SubmitMessageService
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
+import java.time.OffsetDateTime
+import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.xml.NodeSeq
