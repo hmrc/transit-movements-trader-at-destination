@@ -20,6 +20,7 @@ import audit.AuditService
 import audit.AuditType
 import cats.data.NonEmptyList
 import com.kenshoo.play.metrics.Metrics
+import config.Constants
 import controllers.actions._
 import logging.Logging
 import metrics.HasActionMetrics
@@ -59,7 +60,6 @@ class MovementsController @Inject()(
   arrivalMovementService: ArrivalMovementMessageService,
   submitMessageService: SubmitMessageService,
   authenticate: AuthenticateActionProvider,
-  authenticateClientId: AuthenticatedClientIdActionProvider,
   authenticatedArrivalForRead: AuthenticatedGetArrivalForReadActionProvider,
   authenticatedOptionalArrival: AuthenticatedGetOptionalArrivalForWriteActionProvider,
   authenticateForWrite: AuthenticatedGetArrivalForWriteActionProvider,
@@ -83,24 +83,6 @@ class MovementsController @Inject()(
 
   lazy val countArrivals = histo("get-all-arrivals-count")
   lazy val messagesCount = histo("get-arrival-by-id-messages-count")
-
-  private def handleSubmissionResult(
-    result: SubmissionProcessingResult,
-    arrivalNotificationType: String,
-    message: MovementMessage,
-    requestChannel: ChannelType,
-    arrivalId: ArrivalId
-  )(implicit hc: HeaderCarrier) =
-    result match {
-      case SubmissionFailureInternal => InternalServerError
-      case SubmissionFailureExternal => BadGateway
-      case submissionFailureRejected: SubmissionFailureRejected =>
-        BadRequest(submissionFailureRejected.responseBody)
-      case SubmissionSuccess =>
-        auditService.auditEvent(arrivalNotificationType, message, requestChannel)
-        auditService.auditEvent(AuditType.MesSenMES3Added, message, requestChannel)
-        Accepted("Message Accepted").withHeaders("Location" -> routes.MovementsController.getArrival(arrivalId).url)
-    }
 
   private def handleSubmissionResult(
     result: SubmissionProcessingResult,
@@ -131,7 +113,7 @@ class MovementsController @Inject()(
 
   def post: Action[NodeSeq] =
     withMetricsTimerAction("post-create-arrival") {
-      (authenticateClientId() andThen authenticatedOptionalArrival() andThen validateMessageSenderNode.filter).async(parse.xml) {
+      (authenticate() andThen authenticatedOptionalArrival() andThen validateMessageSenderNode.filter).async(parse.xml) {
         implicit request =>
           request.arrival match {
             case Some(arrival) if allMessageUnsent(arrival.messages) =>
@@ -158,7 +140,7 @@ class MovementsController @Inject()(
                   Future.successful(BadRequest(s"Failed to create ArrivalMovementWithStatus with the following error: $error"))
               }
             case _ =>
-              getBox(request.clientIdOpt).flatMap {
+              getBox(request.headers.get(Constants.XClientIdHeader)).flatMap {
                 boxOpt =>
                   arrivalMovementService
                     .makeArrivalMovement(request.eoriNumber, request.body, request.channel, boxOpt)

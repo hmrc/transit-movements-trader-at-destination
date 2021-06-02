@@ -121,7 +121,6 @@ class AuthenticatedGetOptionalArrivalForWriteActionProviderSpec
 
         when(mockAuthConnector.authorise[Enrolments](any(), refEq(Retrievals.authorisedEnrolments))(any(), any()))
           .thenReturn(Future.successful(validEnrolments))
-        when(mockAuthConnector.authorise[Option[String]](any(), refEq(Retrievals.clientId))(any(), any())).thenReturn(Future.successful(Some("clientId")))
         when(mockArrivalMovementRepository.get(any(), any(), any())) thenReturn Future.successful(None)
 
         val application = new GuiceApplicationBuilder()
@@ -153,14 +152,13 @@ class AuthenticatedGetOptionalArrivalForWriteActionProviderSpec
 
         when(mockAuthConnector.authorise[Enrolments](any(), refEq(Retrievals.authorisedEnrolments))(any(), any()))
           .thenReturn(Future.successful(validEnrolments))
-        when(mockAuthConnector.authorise[Option[String]](any(), refEq(Retrievals.clientId))(any(), any())).thenReturn(Future.successful(Some("clientId")))
         when(mockArrivalMovementRepository.get(any(), any(), any())) thenReturn Future.successful(Some(arrival))
         when(mockLockRepository.lock(any())) thenReturn Future.successful(true)
         when(mockLockRepository.unlock(any())) thenReturn Future.successful(true)
 
         val application = new GuiceApplicationBuilder()
           .overrides(
-            bind[AuthenticatedClientIdActionProvider].toInstance(FakeAuthenticatedClientIdActionProvider()),
+            bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
             bind[AuthConnector].toInstance(mockAuthConnector),
             bind[LockRepository].toInstance(mockLockRepository)
@@ -191,7 +189,6 @@ class AuthenticatedGetOptionalArrivalForWriteActionProviderSpec
 
         when(mockAuthConnector.authorise[Enrolments](any(), refEq(Retrievals.authorisedEnrolments))(any(), any()))
           .thenReturn(Future.successful(validEnrolments))
-        when(mockAuthConnector.authorise[Option[String]](any(), refEq(Retrievals.clientId))(any(), any())).thenReturn(Future.successful(Some("clientId")))
         when(mockArrivalMovementRepository.get(any(), any(), any())) thenReturn Future.successful(Some(arrival))
         when(mockLockRepository.lock(any())) thenReturn Future.successful(true)
         when(mockLockRepository.unlock(any())) thenReturn Future.successful(true)
@@ -199,7 +196,7 @@ class AuthenticatedGetOptionalArrivalForWriteActionProviderSpec
         val application = new GuiceApplicationBuilder()
           .overrides(
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
-            bind[AuthenticatedClientIdActionProvider].toInstance(FakeAuthenticatedClientIdActionProvider()),
+            bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
             bind[AuthConnector].toInstance(mockAuthConnector),
             bind[LockRepository].toInstance(mockLockRepository)
           )
@@ -240,7 +237,6 @@ class AuthenticatedGetOptionalArrivalForWriteActionProviderSpec
 
         when(mockAuthConnector.authorise[Enrolments](any(), refEq(Retrievals.authorisedEnrolments))(any(), any()))
           .thenReturn(Future.successful(invalidEnrolments))
-        when(mockAuthConnector.authorise[Option[String]](any(), refEq(Retrievals.clientId))(any(), any())).thenReturn(Future.successful(Some("clientId")))
 
         val application = new GuiceApplicationBuilder()
           .overrides(
@@ -271,13 +267,12 @@ class AuthenticatedGetOptionalArrivalForWriteActionProviderSpec
 
         when(mockAuthConnector.authorise[Enrolments](any(), refEq(Retrievals.authorisedEnrolments))(any(), any()))
           .thenReturn(Future.successful(validEnrolments))
-        when(mockAuthConnector.authorise[Option[String]](any(), refEq(Retrievals.clientId))(any(), any())).thenReturn(Future.successful(Some("clientId")))
         when(mockArrivalMovementRepository.get(any(), any(), any())) thenReturn Future.successful(Some(arrival))
         when(mockLockRepository.lock(any())) thenReturn Future.successful(false)
 
         val application = new GuiceApplicationBuilder()
           .overrides(
-            bind[AuthenticatedClientIdActionProvider].toInstance(FakeAuthenticatedClientIdActionProvider()),
+            bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
             bind[LockRepository].toInstance(mockLockRepository),
             bind[AuthConnector].toInstance(mockAuthConnector),
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository)
@@ -302,11 +297,10 @@ class AuthenticatedGetOptionalArrivalForWriteActionProviderSpec
 
         when(mockAuthConnector.authorise[Enrolments](any(), refEq(Retrievals.authorisedEnrolments))(any(), any()))
           .thenReturn(Future.successful(validEnrolments))
-        when(mockAuthConnector.authorise[Option[String]](any(), refEq(Retrievals.clientId))(any(), any())).thenReturn(Future.successful(Some("clientId")))
 
         val application = new GuiceApplicationBuilder()
           .overrides(
-            bind[AuthenticatedClientIdActionProvider].toInstance(FakeAuthenticatedClientIdActionProvider()),
+            bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
             bind[AuthConnector].toInstance(mockAuthConnector)
           )
           .build()
@@ -333,11 +327,10 @@ class AuthenticatedGetOptionalArrivalForWriteActionProviderSpec
 
         when(mockAuthConnector.authorise[Enrolments](any(), refEq(Retrievals.authorisedEnrolments))(any(), any()))
           .thenReturn(Future.successful(validEnrolments))
-        when(mockAuthConnector.authorise[Option[String]](any(), refEq(Retrievals.clientId))(any(), any())).thenReturn(Future.successful(Some("clientId")))
 
         val application = new GuiceApplicationBuilder()
           .overrides(
-            bind[AuthenticatedClientIdActionProvider].toInstance(FakeAuthenticatedClientIdActionProvider()),
+            bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
             bind[AuthConnector].toInstance(mockAuthConnector)
           )
           .build()
@@ -363,7 +356,6 @@ class AuthenticatedGetOptionalArrivalForWriteActionProviderSpec
 
         when(mockAuthConnector.authorise[Enrolments](any(), refEq(Retrievals.authorisedEnrolments))(any(), any()))
           .thenReturn(Future.successful(validEnrolments))
-        when(mockAuthConnector.authorise[Option[String]](any(), refEq(Retrievals.clientId))(any(), any())).thenReturn(Future.successful(Some("clientId")))
 
         val application = new GuiceApplicationBuilder()
           .overrides(
@@ -390,7 +382,6 @@ class AuthenticatedGetOptionalArrivalForWriteActionProviderSpec
 
         when(mockAuthConnector.authorise[Enrolments](any(), refEq(Retrievals.authorisedEnrolments))(any(), any()))
           .thenReturn(Future.successful(validEnrolments))
-        when(mockAuthConnector.authorise[Option[String]](any(), refEq(Retrievals.clientId))(any(), any())).thenReturn(Future.successful(Some("clientId")))
 
         val application = new GuiceApplicationBuilder()
           .overrides(

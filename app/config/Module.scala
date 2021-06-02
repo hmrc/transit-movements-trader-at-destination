@@ -19,8 +19,6 @@ package config
 import com.google.inject.AbstractModule
 import controllers.actions.AuthenticateActionProvider
 import controllers.actions.AuthenticateActionProviderImpl
-import controllers.actions.AuthenticateClientIdActionProviderImpl
-import controllers.actions.AuthenticatedClientIdActionProvider
 import controllers.actions.AuthenticatedGetArrivalForReadActionProvider
 import controllers.actions.AuthenticatedGetArrivalForReadActionProviderImpl
 import controllers.actions.AuthenticatedGetOptionalArrivalForWriteActionProvider
@@ -35,7 +33,6 @@ class Module extends AbstractModule {
     bind(classOf[AppConfig]).asEagerSingleton()
     bind(classOf[ArrivalMovementRepository]).asEagerSingleton()
     bind(classOf[AuthenticateActionProvider]).to(classOf[AuthenticateActionProviderImpl]).asEagerSingleton()
-    bind(classOf[AuthenticatedClientIdActionProvider]).to(classOf[AuthenticateClientIdActionProviderImpl])
     bind(classOf[AuthenticatedGetOptionalArrivalForWriteActionProvider]).to(classOf[AuthenticatedGetOptionalArrivalForWriteActionProviderImpl])
     bind(classOf[AuthenticatedGetArrivalForReadActionProvider]).to(classOf[AuthenticatedGetArrivalForReadActionProviderImpl])
     bind(classOf[MessageTranslation]).asEagerSingleton()

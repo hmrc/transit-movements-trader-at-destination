@@ -20,16 +20,19 @@ import audit.AuditService
 import audit.AuditType
 import base.SpecBase
 import cats.data.NonEmptyList
+import config.Constants
 import connectors.MessageConnector
 import connectors.MessageConnector.EisSubmissionResult.ErrorInPayload
-import controllers.actions.AuthenticatedClientIdActionProvider
+import controllers.actions.AuthenticateActionProvider
 import controllers.actions.AuthenticatedGetOptionalArrivalForWriteActionProvider
-import controllers.actions.FakeAuthenticatedClientIdActionProvider
+import controllers.actions.FakeAuthenticateActionProvider
 import controllers.actions.FakeAuthenticatedGetOptionalArrivalForWriteActionProvider
 import generators.ModelGenerators
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalStatus
+import models.Box
+import models.BoxId
 import models.ChannelType.api
 import models.ChannelType.web
 import models.MessageId
@@ -132,7 +135,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
     "post" - {
       "when there are no previous failed attempts to submit" - {
-        "must return Accepted, create movement, send the message upstream and set the state to Submitted" in {
+        "must return Accepted, create movement, send the message upstream and set the state to Submitted when there is no notification box" in {
           val mockArrivalIdRepository  = mock[ArrivalIdRepository]
           val mockSubmitMessageService = mock[SubmitMessageService]
           val mockAuditService         = mock[AuditService]
@@ -152,7 +155,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
               bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
               bind[SubmitMessageService].toInstance(mockSubmitMessageService),
               bind[PushPullNotificationService].toInstance(mockNotificationService),
-              bind[AuthenticatedClientIdActionProvider].toInstance(FakeAuthenticatedClientIdActionProvider()),
+              bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
               bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider()),
               bind[AuditService].toInstance(mockAuditService),
               bind[Clock].toInstance(stubClock)
@@ -170,6 +173,63 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
             status(result) mustEqual ACCEPTED
             header("Location", result).value must be(routes.MovementsController.getArrival(newArrival.arrivalId).url)
+            contentAsJson(result).as[Option[Box]] must be(None)
+
+            verify(mockSubmitMessageService, times(1)).submitArrival(captor.capture())(any())
+
+            val arrivalMessage: MovementMessageWithStatus = captor.getValue.messages.head.asInstanceOf[MovementMessageWithStatus]
+            arrivalMessage.message.map(trim) mustEqual expectedMessage.message.map(trim)
+
+            verify(mockSubmitMessageService, times(1)).submitArrival(eqTo(newArrival))(any())
+            verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.ArrivalNotificationSubmitted), any(), any())(any())
+            verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.MesSenMES3Added), any(), any())(any())
+            verifyNoInteractions(mockNotificationService)
+          }
+        }
+
+        "must return Accepted, create movement, send the message upstream and set the state to Submitted when there is a notification box" in {
+          val mockArrivalIdRepository  = mock[ArrivalIdRepository]
+          val mockSubmitMessageService = mock[SubmitMessageService]
+          val mockAuditService         = mock[AuditService]
+          val mockNotificationService  = mock[PushPullNotificationService]
+
+          val testClientId = "X5ZasuQLH0xqKooV_IEw6yjQNfEa"
+          val testBoxId    = "1c5b9365-18a6-55a5-99c9-83a091ac7f26"
+          val testBox      = Box(BoxId(testBoxId), Constants.BoxName)
+
+          val expectedMessage: MovementMessageWithStatus = movementMessage(1).copy(messageCorrelationId = 1)
+          val newArrival =
+            initializedArrival.copy(messages = NonEmptyList.of[MovementMessageWithStatus](expectedMessage), channel = web, notificationBox = Some(testBox))
+          val captor: ArgumentCaptor[Arrival] = ArgumentCaptor.forClass(classOf[Arrival])
+
+          when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(newArrival.arrivalId))
+          when(mockSubmitMessageService.submitArrival(any())(any())).thenReturn(Future.successful(SubmissionProcessingResult.SubmissionSuccess))
+          when(mockNotificationService.getBox(any())(any(), any())).thenReturn(Future.successful(Some(testBox)))
+
+          val application = baseApplicationBuilder
+            .overrides(
+              bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
+              bind[SubmitMessageService].toInstance(mockSubmitMessageService),
+              bind[PushPullNotificationService].toInstance(mockNotificationService),
+              bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
+              bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider()),
+              bind[AuditService].toInstance(mockAuditService),
+              bind[Clock].toInstance(stubClock)
+            )
+            .build()
+
+          running(application) {
+
+            val request =
+              FakeRequest(POST, routes.MovementsController.post().url)
+                .withHeaders("channel" -> newArrival.channel.toString, Constants.XClientIdHeader -> testClientId)
+                .withXmlBody(requestXmlBody.map(trim))
+
+            val result = route(application, request).value
+
+            status(result) mustEqual ACCEPTED
+            header("Location", result).value must be(routes.MovementsController.getArrival(newArrival.arrivalId).url)
+            contentAsJson(result).as[Option[Box]] must be(Some(testBox))
 
             verify(mockSubmitMessageService, times(1)).submitArrival(captor.capture())(any())
 
@@ -193,7 +253,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
             .overrides(
               bind[PushPullNotificationService].toInstance(mockNotificationService),
               bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
-              bind[AuthenticatedClientIdActionProvider].toInstance(FakeAuthenticatedClientIdActionProvider()),
+              bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
               bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider())
             )
             .build()
@@ -225,7 +285,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
               bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
               bind[PushPullNotificationService].toInstance(mockNotificationService),
               bind[SubmitMessageService].toInstance(mockSubmitMessageService),
-              bind[AuthenticatedClientIdActionProvider].toInstance(FakeAuthenticatedClientIdActionProvider()),
+              bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
               bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider())
             )
             .build()
@@ -257,7 +317,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
               bind[PushPullNotificationService].toInstance(mockNotificationService),
               bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
               bind[SubmitMessageService].toInstance(mockSubmitMessageService),
-              bind[AuthenticatedClientIdActionProvider].toInstance(FakeAuthenticatedClientIdActionProvider()),
+              bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
               bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider())
             )
             .build()
@@ -286,7 +346,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
                 bind[PushPullNotificationService].toInstance(mockNotificationService),
                 bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
                 bind[SubmitMessageService].toInstance(mockSubmitMessageService),
-                bind[AuthenticatedClientIdActionProvider].toInstance(FakeAuthenticatedClientIdActionProvider()),
+                bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
                 bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider())
               )
               .build()
@@ -306,7 +366,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
             val result = route(application, request).value
 
             status(result) mustEqual BAD_REQUEST
-            header("Location", result) must not be (defined)
+            header("Location", result) must not be defined
           }
         }
 
@@ -324,7 +384,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
                 bind[PushPullNotificationService].toInstance(mockNotificationService),
                 bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
                 bind[SubmitMessageService].toInstance(mockSubmitMessageService),
-                bind[AuthenticatedClientIdActionProvider].toInstance(FakeAuthenticatedClientIdActionProvider()),
+                bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
                 bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider())
               )
               .build()
@@ -338,7 +398,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
             val result = route(application, request).value
 
             status(result) mustEqual BAD_REQUEST
-            header("Location", result) must not be (defined)
+            header("Location", result) must not be defined
           }
         }
 
@@ -354,7 +414,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
               .overrides(
                 bind[PushPullNotificationService].toInstance(mockNotificationService),
                 bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
-                bind[AuthenticatedClientIdActionProvider].toInstance(FakeAuthenticatedClientIdActionProvider()),
+                bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
                 bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider())
               )
               .build()
@@ -367,7 +427,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
             val result = route(application, request).value
 
             status(result) mustEqual BAD_REQUEST
-            header("Location", result) must not be (defined)
+            header("Location", result) must not be defined
           }
         }
 
@@ -388,7 +448,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
               bind[PushPullNotificationService].toInstance(mockNotificationService),
               bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
               bind[SubmitMessageService].toInstance(mockSubmitMessageService),
-              bind[AuthenticatedClientIdActionProvider].toInstance(FakeAuthenticatedClientIdActionProvider()),
+              bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
               bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider())
             )
             .build()
@@ -420,7 +480,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
               bind[PushPullNotificationService].toInstance(mockNotificationService),
               bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
               bind[SubmitMessageService].toInstance(mockSubmitMessageService),
-              bind[AuthenticatedClientIdActionProvider].toInstance(FakeAuthenticatedClientIdActionProvider()),
+              bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
               bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider())
             )
             .build()
@@ -456,9 +516,9 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
             .overrides(
               bind[PushPullNotificationService].toInstance(mockNotificationService),
               bind[SubmitMessageService].toInstance(mockSubmitMessageService),
-              bind[AuthenticatedClientIdActionProvider].toInstance(FakeAuthenticatedClientIdActionProvider()),
-              bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(
-                FakeAuthenticatedGetOptionalArrivalForWriteActionProvider(failedToSubmitArrival)),
+              bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
+              bind[AuthenticatedGetOptionalArrivalForWriteActionProvider]
+                .toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider(failedToSubmitArrival)),
               bind[AuditService].toInstance(mockAuditService)
             )
             .build()
@@ -474,11 +534,13 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
             status(result) mustEqual ACCEPTED
             header("Location", result).value must be(routes.MovementsController.getArrival(initializedArrival.arrivalId).url)
-            verify(mockSubmitMessageService, times(1)).submitMessage(eqTo(initializedArrival.arrivalId),
-                                                                     eqTo(MessageId.fromIndex(1)),
-                                                                     captor.capture(),
-                                                                     eqTo(ArrivalStatus.ArrivalSubmitted),
-                                                                     any())(any())
+            verify(mockSubmitMessageService, times(1)).submitMessage(
+              eqTo(initializedArrival.arrivalId),
+              eqTo(MessageId.fromIndex(1)),
+              captor.capture(),
+              eqTo(ArrivalStatus.ArrivalSubmitted),
+              any()
+            )(any())
 
             val movement: MovementMessageWithStatus = captor.getValue
             movement.messageCorrelationId mustEqual expectedMessage.messageCorrelationId
@@ -519,7 +581,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
               bind[PushPullNotificationService].toInstance(mockNotificationService),
               bind[SubmitMessageService].toInstance(mockSubmitMessageService),
               bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
-              bind[AuthenticatedClientIdActionProvider].toInstance(FakeAuthenticatedClientIdActionProvider()),
+              bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
               bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider(arrival))
             )
             .build()
@@ -552,9 +614,9 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
             .overrides(
               bind[PushPullNotificationService].toInstance(mockNotificationService),
               bind[SubmitMessageService].toInstance(mockSubmitMessageService),
-              bind[AuthenticatedClientIdActionProvider].toInstance(FakeAuthenticatedClientIdActionProvider()),
-              bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(
-                FakeAuthenticatedGetOptionalArrivalForWriteActionProvider(initializedArrival))
+              bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
+              bind[AuthenticatedGetOptionalArrivalForWriteActionProvider]
+                .toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider(initializedArrival))
             )
             .build()
 
@@ -583,9 +645,9 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
             .overrides(
               bind[PushPullNotificationService].toInstance(mockNotificationService),
               bind[SubmitMessageService].toInstance(mockSubmitMessageService),
-              bind[AuthenticatedClientIdActionProvider].toInstance(FakeAuthenticatedClientIdActionProvider()),
-              bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(
-                FakeAuthenticatedGetOptionalArrivalForWriteActionProvider(initializedArrival))
+              bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
+              bind[AuthenticatedGetOptionalArrivalForWriteActionProvider]
+                .toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider(initializedArrival))
             )
             .build()
 
@@ -610,7 +672,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
             baseApplicationBuilder
               .overrides(
                 bind[PushPullNotificationService].toInstance(mockNotificationService),
-                bind[AuthenticatedClientIdActionProvider].toInstance(FakeAuthenticatedClientIdActionProvider()),
+                bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
                 bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider(arrival))
               )
               .build()
@@ -635,9 +697,9 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
             baseApplicationBuilder
               .overrides(
                 bind[PushPullNotificationService].toInstance(mockNotificationService),
-                bind[AuthenticatedClientIdActionProvider].toInstance(FakeAuthenticatedClientIdActionProvider()),
-                bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(
-                  FakeAuthenticatedGetOptionalArrivalForWriteActionProvider(initializedArrival))
+                bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
+                bind[AuthenticatedGetOptionalArrivalForWriteActionProvider]
+                  .toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider(initializedArrival))
               )
               .build()
 
@@ -667,9 +729,9 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
             .overrides(
               bind[PushPullNotificationService].toInstance(mockNotificationService),
               bind[SubmitMessageService].toInstance(mockSubmitMessageService),
-              bind[AuthenticatedClientIdActionProvider].toInstance(FakeAuthenticatedClientIdActionProvider()),
-              bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(
-                FakeAuthenticatedGetOptionalArrivalForWriteActionProvider(initializedArrival))
+              bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
+              bind[AuthenticatedGetOptionalArrivalForWriteActionProvider]
+                .toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider(initializedArrival))
             )
             .build()
 
@@ -697,9 +759,9 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
             .overrides(
               bind[PushPullNotificationService].toInstance(mockNotificationService),
               bind[SubmitMessageService].toInstance(mockSubmitMessageService),
-              bind[AuthenticatedClientIdActionProvider].toInstance(FakeAuthenticatedClientIdActionProvider()),
-              bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(
-                FakeAuthenticatedGetOptionalArrivalForWriteActionProvider(initializedArrival))
+              bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
+              bind[AuthenticatedGetOptionalArrivalForWriteActionProvider]
+                .toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider(initializedArrival))
             )
             .build()
 
@@ -752,11 +814,13 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
           status(result) mustEqual ACCEPTED
           header("Location", result).value must be(routes.MovementsController.getArrival(initializedArrival.arrivalId).url)
-          verify(mockSubmitMessageService, times(1)).submitIe007Message(eqTo(initializedArrival.arrivalId),
-                                                                        eqTo(MessageId.fromIndex(1)),
-                                                                        captor.capture(),
-                                                                        eqTo(initializedArrival.movementReferenceNumber),
-                                                                        any())(any())
+          verify(mockSubmitMessageService, times(1)).submitIe007Message(
+            eqTo(initializedArrival.arrivalId),
+            eqTo(MessageId.fromIndex(1)),
+            captor.capture(),
+            eqTo(initializedArrival.movementReferenceNumber),
+            any()
+          )(any())
 
           val movement: MovementMessageWithStatus = captor.getValue
           movement.messageCorrelationId mustEqual expectedMessage.messageCorrelationId
