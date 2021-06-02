@@ -39,7 +39,7 @@ case class ResponseArrival(arrivalId: ArrivalId,
 
 object ResponseArrival {
 
-  def build(arrival: Arrival): ResponseArrival =
+  def build(arrival: Arrival)(retrievedArrivals: Int, totalArrivals: Int): ResponseArrival =
     ResponseArrival(
       arrival.arrivalId,
       routes.MovementsController.getArrival(arrival.arrivalId).url,

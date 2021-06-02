@@ -534,7 +534,7 @@ class ArrivalMovementRepositorySpec
               db.collection[JSONCollection](ArrivalMovementRepository.collectionName).insert(false).many(jsonArr)
           }.futureValue
 
-          val expectedApiFetchAll1 = ResponseArrival(
+          val expectedApiFetchAll1 = ResponseArrivals(Seq(ResponseArrival(
             arrivalMovement1.arrivalId,
             routes.MovementsController.getArrival(arrivalMovement1.arrivalId).url,
             routes.MessagesController.getMessages(arrivalMovement1.arrivalId).url,
@@ -542,9 +542,9 @@ class ArrivalMovementRepositorySpec
             arrivalMovement1.status,
             arrivalMovement1.created,
             arrivalMovement1.lastUpdated
-          )
+          )),1,1)
 
-          val expectedApiFetchAll3 = ResponseArrival(
+          val expectedApiFetchAll3 = ResponseArrivals(Seq(ResponseArrival(
             arrivalMovement3.arrivalId,
             routes.MovementsController.getArrival(arrivalMovement3.arrivalId).url,
             routes.MessagesController.getMessages(arrivalMovement3.arrivalId).url,
@@ -552,7 +552,7 @@ class ArrivalMovementRepositorySpec
             arrivalMovement3.status,
             arrivalMovement3.created,
             arrivalMovement3.lastUpdated
-          )
+          )),1,1)
 
           repository.fetchAllArrivals(eoriNumber, api, None).futureValue mustBe Seq(expectedApiFetchAll1)
           repository.fetchAllArrivals(eoriNumber, web, None).futureValue mustBe Seq(expectedApiFetchAll3)
@@ -580,7 +580,7 @@ class ArrivalMovementRepositorySpec
 
           val result = service.fetchAllArrivals(eoriNumber, api, None).futureValue
 
-          result mustBe Seq.empty[Arrival]
+          result mustBe ResponseArrivals(Seq.empty, 0, 0)
         }
       }
 
@@ -732,6 +732,7 @@ class ArrivalMovementRepositorySpec
         val result = repo.arrivalsWithoutJsonMessages(100).futureValue
 
         result.size mustEqual 3
+        result.retrievedArrivals mustBe maxRows
         result.exists(arrival => arrival.arrivalId == arrival1.arrivalId) mustEqual false
         result.exists(arrival => arrival.arrivalId == arrival2.arrivalId) mustEqual true
         result.exists(arrival => arrival.arrivalId == arrival3.arrivalId) mustEqual true
@@ -791,7 +792,8 @@ class ArrivalMovementRepositorySpec
 
           val movements = repository.fetchAllArrivals(eoriNumber, api, updatedSince = None).futureValue
 
-          movements.size mustBe maxRows
+          movements.arrivals.size mustBe maxRows
+          movements.retrievedArrivals mustBe maxRows
 
           val ids = movements.map(m => m.arrivalId.index)
 
@@ -827,7 +829,8 @@ class ArrivalMovementRepositorySpec
 
           val movements = repository.fetchAllArrivals(eoriNumber, web, updatedSince = None).futureValue
 
-          movements.size mustBe 3
+          movements.arrivals.size mustBe 3
+          movements.retrievedArrivals mustBe 3
 
           val ids = movements.map( m => m.arrivalId.index)
 

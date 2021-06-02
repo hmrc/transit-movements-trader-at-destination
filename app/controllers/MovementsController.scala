@@ -246,9 +246,9 @@ class MovementsController @Inject()(
           arrivalMovementRepository
             .fetchAllArrivals(request.eoriNumber, request.channel, updatedSince)
             .map {
-              allArrivals =>
-                countArrivals.update(allArrivals.length)
-                Ok(Json.toJsObject(ResponseArrivals(allArrivals)))
+              responseArrivals =>
+                countArrivals.update(responseArrivals.retrievedArrivals)
+                Ok(Json.toJsObject(responseArrivals))
             }
             .recover {
               case e =>

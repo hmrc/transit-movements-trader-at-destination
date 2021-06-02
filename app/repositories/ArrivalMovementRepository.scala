@@ -33,7 +33,7 @@ import models.ArrivalModifier
 import models.ArrivalSelector
 import models.ArrivalStatus
 import models.ArrivalStatusUpdate
-import models.BoxId
+import models.response.ResponseArrivals
 import models.ChannelType
 import models.CompoundStatusUpdate
 import models.MessageId
@@ -184,21 +184,30 @@ class ArrivalMovementRepository @Inject()(
     }
   }
 
-  def fetchAllArrivals(eoriNumber: String, channelFilter: ChannelType, updatedSince: Option[OffsetDateTime]): Future[Seq[ResponseArrival]] =
+  def fetchAllArrivals(eoriNumber: String, channelFilter: ChannelType, updatedSince: Option[OffsetDateTime]): Future[ResponseArrivals] =
     withMetricsTimerAsync("mongo-get-arrivals-for-eori") {
       _ =>
-        val dateFilter = updatedSince.map(dateTime => Json.obj("lastUpdated" -> Json.obj("$gte" -> dateTime))).getOrElse(Json.obj())
-        val selector   = Json.obj("eoriNumber" -> eoriNumber, "channel" -> channelFilter) ++ dateFilter
+        val dateFilter    = updatedSince.map(dateTime => Json.obj("lastUpdated" -> Json.obj("$gte" -> dateTime))).getOrElse(Json.obj())
+        val countSelector = Json.obj("eoriNumber" -> eoriNumber, "channel" -> channelFilter)
+        val selector      = countSelector ++ dateFilter
 
         collection.flatMap {
-          _.find(selector, Some(ResponseArrival.projection))
-            .sort(Json.obj("lastUpdated" -> -1))
-            .cursor[ResponseArrival]()
-            .collect[Seq](appConfig.maxRowsReturned(channelFilter), Cursor.FailOnError())
-            .map {
-              arrivals =>
-                arrivalsForEoriCount.update(arrivals.length)
-                arrivals
+          coll =>
+            val fetchCount = coll.count(Some(countSelector))
+
+            val fetchResults = coll
+              .find(selector, ResponseArrival.projection)
+              .sort(Json.obj("lastUpdated" -> -1))
+              .cursor[ResponseArrival]()
+              .collect[Seq](appConfig.maxRowsReturned(channelFilter), Cursor.FailOnError())
+
+            (fetchCount, fetchResults).mapN {
+              case (count, results) =>
+                ResponseArrivals(
+                  departures = results.map(ResponseArrival.build),
+                  retrievedDepartures = results.length,
+                  totalDepartures = count
+                )
             }
         }
     }
