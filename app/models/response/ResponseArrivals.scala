@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-package models
+package models.response
 
-import models.response.ResponseArrival
 import play.api.libs.json.Json
 import play.api.libs.json.OWrites
 
-case class ResponseArrivals(arrivals: Seq[ResponseArrival])
+case class ResponseArrivals(arrivals: Seq[ResponseArrival], retrievedArrivals: Int, totalArrivals: Int)
 
 object ResponseArrivals {
   implicit val writes: OWrites[ResponseArrivals] = Json.writes[ResponseArrivals]

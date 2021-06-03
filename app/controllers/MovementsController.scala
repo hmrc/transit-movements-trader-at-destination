@@ -32,7 +32,6 @@ import models.ChannelType
 import models.MessageStatus.SubmissionSucceeded
 import models.MessageType
 import models.MovementMessage
-import models.ResponseArrivals
 import models.SubmissionProcessingResult
 import models.SubmissionProcessingResult._
 import models.request.ArrivalRequest
@@ -225,9 +224,9 @@ class MovementsController @Inject()(
           arrivalMovementRepository
             .fetchAllArrivals(request.eoriNumber, request.channel, updatedSince)
             .map {
-              allArrivals =>
-                countArrivals.update(allArrivals.length)
-                Ok(Json.toJsObject(ResponseArrivals(allArrivals)))
+              responseArrivals =>
+                countArrivals.update(responseArrivals.retrievedArrivals)
+                Ok(Json.toJsObject(responseArrivals))
             }
             .recover {
               case e =>

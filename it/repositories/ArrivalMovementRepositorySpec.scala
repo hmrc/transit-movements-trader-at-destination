@@ -15,38 +15,60 @@
  */
 
 package repositories
+
 import akka.Done
 import akka.actor.ActorSystem
-import akka.stream.{ActorMaterializer, Materializer}
+import akka.stream.ActorMaterializer
+import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.stream.testkit.scaladsl.TestSink
 import base._
 import cats.data.NonEmptyList
+import config.AppConfig
 import controllers.routes
-import models.ArrivalStatus.{ArrivalSubmitted, GoodsReleased, Initialized, UnloadingRemarksSubmitted}
-import models.ChannelType.{api, web}
-import models.MessageStatus.{SubmissionPending, SubmissionSucceeded}
-import models.{Arrival, ArrivalId, ArrivalIdSelector, ArrivalStatus, ArrivalStatusUpdate, Box, BoxId, MessageId, MessageType, MongoDateTimeFormats, MovementMessageWithStatus, MovementMessageWithoutStatus, MovementReferenceNumber}
+import models.Arrival
+import models.ArrivalId
+import models.ArrivalIdSelector
+import models.ArrivalStatus
+import models.ArrivalStatus.ArrivalSubmitted
+import models.ArrivalStatus.GoodsReleased
+import models.ArrivalStatus.Initialized
+import models.ArrivalStatus.UnloadingRemarksSubmitted
+import models.ArrivalStatusUpdate
+import models.ChannelType.api
+import models.ChannelType.web
+import models.MessageId
+import models.MessageStatus.SubmissionPending
+import models.MessageStatus.SubmissionSucceeded
+import models.MessageType
+import models.MongoDateTimeFormats
+import models.MovementMessageWithStatus
+import models.MovementMessageWithoutStatus
+import models.MovementReferenceNumber
 import models.response.ResponseArrival
+import models.response.ResponseArrivals
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalactic.source
-import org.scalatest.{BeforeAndAfterEach, TestSuiteMixin}
+import org.scalatest.BeforeAndAfterEach
+import org.scalatest.TestSuiteMixin
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.exceptions.{StackDepthException, TestFailedException}
+import org.scalatest.exceptions.StackDepthException
+import org.scalatest.exceptions.TestFailedException
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.JsObject
+import play.api.libs.json.Json
 import play.api.test.Helpers.running
 import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 import reactivemongo.play.json.collection.JSONCollection
 import utils.Format
-import config.{AppConfig, Constants}
-import java.time._
 
+import java.time._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.reflect.ClassTag
-import scala.util.{Failure, Success}
+import scala.util.Failure
+import scala.util.Success
 
 class ArrivalMovementRepositorySpec
     extends ItSpecBase
@@ -534,7 +556,7 @@ class ArrivalMovementRepositorySpec
               db.collection[JSONCollection](ArrivalMovementRepository.collectionName).insert(false).many(jsonArr)
           }.futureValue
 
-          val expectedApiFetchAll1 = ResponseArrival(
+          val expectedApiFetchAll1 = ResponseArrivals(Seq(ResponseArrival(
             arrivalMovement1.arrivalId,
             routes.MovementsController.getArrival(arrivalMovement1.arrivalId).url,
             routes.MessagesController.getMessages(arrivalMovement1.arrivalId).url,
@@ -542,9 +564,9 @@ class ArrivalMovementRepositorySpec
             arrivalMovement1.status,
             arrivalMovement1.created,
             arrivalMovement1.lastUpdated
-          )
+          )),1,1)
 
-          val expectedApiFetchAll3 = ResponseArrival(
+          val expectedApiFetchAll3 = ResponseArrivals(Seq(ResponseArrival(
             arrivalMovement3.arrivalId,
             routes.MovementsController.getArrival(arrivalMovement3.arrivalId).url,
             routes.MessagesController.getMessages(arrivalMovement3.arrivalId).url,
@@ -552,10 +574,10 @@ class ArrivalMovementRepositorySpec
             arrivalMovement3.status,
             arrivalMovement3.created,
             arrivalMovement3.lastUpdated
-          )
+          )),1,1)
 
-          repository.fetchAllArrivals(eoriNumber, api, None).futureValue mustBe Seq(expectedApiFetchAll1)
-          repository.fetchAllArrivals(eoriNumber, web, None).futureValue mustBe Seq(expectedApiFetchAll3)
+          repository.fetchAllArrivals(eoriNumber, api, None).futureValue mustBe expectedApiFetchAll1
+          repository.fetchAllArrivals(eoriNumber, web, None).futureValue mustBe expectedApiFetchAll3
         }
       }
 
@@ -580,7 +602,7 @@ class ArrivalMovementRepositorySpec
 
           val result = service.fetchAllArrivals(eoriNumber, api, None).futureValue
 
-          result mustBe Seq.empty[Arrival]
+          result mustBe ResponseArrivals(Seq.empty, 0, 0)
         }
       }
 
@@ -607,8 +629,8 @@ class ArrivalMovementRepositorySpec
 
           // We must use the web channel for this test as the API max rows returned in integration test config is 2
           val dateTime = OffsetDateTime.of(LocalDateTime.of(2021, 4, 30, 10, 30, 32), ZoneOffset.ofHours(1))
-          val actual = service.fetchAllArrivals(eoriNumber, web, Some(dateTime)).futureValue.toSet
-          val expected = Set(arrivalMovement3, arrivalMovement4, arrivalMovement2).map(ResponseArrival.build)
+          val actual = service.fetchAllArrivals(eoriNumber, web, Some(dateTime)).futureValue
+          val expected = ResponseArrivals(Seq(arrivalMovement3, arrivalMovement4, arrivalMovement2).map(ResponseArrival.build), 3, 4)
 
           actual mustEqual expected
         }
@@ -791,9 +813,10 @@ class ArrivalMovementRepositorySpec
 
           val movements = repository.fetchAllArrivals(eoriNumber, api, updatedSince = None).futureValue
 
-          movements.size mustBe maxRows
+          movements.arrivals.size mustBe maxRows
+          movements.retrievedArrivals mustBe maxRows
 
-          val ids = movements.map(m => m.arrivalId.index)
+          val ids = movements.arrivals.map(m => m.arrivalId.index)
 
           ids mustBe Seq(movement3.arrivalId.index,movement2.arrivalId.index)
 
@@ -827,9 +850,10 @@ class ArrivalMovementRepositorySpec
 
           val movements = repository.fetchAllArrivals(eoriNumber, web, updatedSince = None).futureValue
 
-          movements.size mustBe 3
+          movements.arrivals.size mustBe 3
+          movements.retrievedArrivals mustBe 3
 
-          val ids = movements.map( m => m.arrivalId.index)
+          val ids = movements.arrivals.map( m => m.arrivalId.index)
 
           ids mustBe Seq(movement3.arrivalId.index, movement2.arrivalId.index, movement1.arrivalId.index)
 

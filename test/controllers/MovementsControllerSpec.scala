@@ -43,9 +43,9 @@ import models.MessageStatus.SubmissionSucceeded
 import models.MessageType
 import models.MovementMessageWithStatus
 import models.MovementReferenceNumber
-import models.ResponseArrivals
 import models.SubmissionProcessingResult
 import models.response.ResponseArrival
+import models.response.ResponseArrivals
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.{eq => eqTo}
@@ -1140,14 +1140,15 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         running(application) {
           forAll(listWithMaxLength[ResponseArrival](10)) {
             arrivals =>
-              when(mockArrivalMovementRepository.fetchAllArrivals(any(), any(), any())).thenReturn(Future.successful(arrivals))
+              val responseArrivals = ResponseArrivals(arrivals, arrivals.length, arrivals.length)
+              when(mockArrivalMovementRepository.fetchAllArrivals(any(), any(), any())).thenReturn(Future.successful(responseArrivals))
 
               val request = FakeRequest(GET, routes.MovementsController.getArrivals().url)
 
               val result = route(application, request).value
 
               status(result) mustEqual OK
-              contentAsJson(result) mustEqual Json.toJson(ResponseArrivals(arrivals))
+              contentAsJson(result) mustEqual Json.toJson(responseArrivals)
 
               reset(mockArrivalMovementRepository)
           }
@@ -1177,7 +1178,8 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
               createdAndUpdatedDate
             )
           )
-          when(mockArrivalMovementRepository.fetchAllArrivals(any(), any(), any())).thenReturn(Future.successful(arrivals))
+          val responseArrivals = ResponseArrivals(arrivals, 1, 1)
+          when(mockArrivalMovementRepository.fetchAllArrivals(any(), any(), any())).thenReturn(Future.successful(responseArrivals))
 
           val request = FakeRequest(GET, routes.MovementsController.getArrivals().url)
 
@@ -1197,7 +1199,9 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
                |      "created": "${dateFormat.format(createdAndUpdatedDate)}",
                |      "updated": "${dateFormat.format(createdAndUpdatedDate)}"
                |    }
-               |  ]
+               |  ],
+               |  "retrievedArrivals": 1,
+               |  "totalArrivals": 1
                |}""".stripMargin
 
           contentAsJson(result) mustBe Json.parse(expectedJson)
