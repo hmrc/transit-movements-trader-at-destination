@@ -23,13 +23,19 @@ import logging.Logging
 import metrics.HasActionMetrics
 import models.ArrivalId
 import models.WSError._
+import play.api.http.HttpEntity
+import play.api.http.HttpEntity.Strict
+import play.api.libs.iteratee.Enumerator
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
+import play.api.mvc.ResponseHeader
+import play.api.mvc.Result
 import services.UnloadingPermissionPDFService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 class PDFGenerationController @Inject()(
   cc: ControllerComponents,
@@ -46,8 +52,13 @@ class PDFGenerationController @Inject()(
       authenticateForRead(arrivalId).async {
         implicit request =>
           unloadingPermissionPDFService.getPDF(request.arrival).map {
-            case Right(pdf) =>
-              Ok(pdf)
+            case Right(response) =>
+              val headers: Seq[(String, String)] = response.headers map {
+                h =>
+                  (h._1, h._2.head)
+              } toSeq
+
+              Ok(response.bodyAsBytes.toArray).withHeaders(headers: _*)
             case Left(_: NotFoundError.type) =>
               logger.error(s"Failed to find UnloadingPermission of index: ${request.arrival.arrivalId} ")
               NotFound

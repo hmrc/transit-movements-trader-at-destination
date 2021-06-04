@@ -21,6 +21,7 @@ import javax.inject.Inject
 import models.WSError._
 import models.Arrival
 import models.WSError
+import play.api.libs.ws.WSResponse
 import play.api.mvc.Results
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -30,13 +31,13 @@ import scala.concurrent.Future
 class UnloadingPermissionPDFService @Inject()(messageRetrievalService: MessageRetrievalService, manageDocumentsConnector: ManageDocumentsConnector)
     extends Results {
 
-  def getPDF(arrival: Arrival)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Either[WSError, Array[Byte]]] =
+  def getPDF(arrival: Arrival)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Either[WSError, WSResponse]] =
     messageRetrievalService.getUnloadingPermission(arrival) match {
       case Some(unloadingPermission) =>
         manageDocumentsConnector.getUnloadingPermissionPdf(unloadingPermission).map {
           result =>
             result.status match {
-              case 200            => Right(result.bodyAsBytes.toArray)
+              case 200            => Right(result)
               case otherErrorCode => Left(OtherError(otherErrorCode, result.body))
             }
         }
