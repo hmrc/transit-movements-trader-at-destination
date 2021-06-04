@@ -31,13 +31,20 @@ import scala.concurrent.Future
 class UnloadingPermissionPDFService @Inject()(messageRetrievalService: MessageRetrievalService, manageDocumentsConnector: ManageDocumentsConnector)
     extends Results {
 
-  def getPDF(arrival: Arrival)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Either[WSError, WSResponse]] =
+  def getPDF(arrival: Arrival)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Either[WSError, (Array[Byte], Seq[(String, String)])]] =
     messageRetrievalService.getUnloadingPermission(arrival) match {
       case Some(unloadingPermission) =>
         manageDocumentsConnector.getUnloadingPermissionPdf(unloadingPermission).map {
           result =>
             result.status match {
-              case 200            => Right(result)
+              case 200 => {
+                val headers: Seq[(String, String)] = result.headers map {
+                  h =>
+                    (h._1, h._2.head)
+                } toSeq
+
+                Right((result.bodyAsBytes.toArray, headers))
+              }
               case otherErrorCode => Left(OtherError(otherErrorCode, result.body))
             }
         }
