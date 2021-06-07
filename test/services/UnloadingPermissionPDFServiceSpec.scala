@@ -85,7 +85,7 @@ class UnloadingPermissionPDFServiceSpec extends SpecBase with ModelGenerators wi
             when(mockMessageRetrievalService.getUnloadingPermission(any()))
               .thenReturn(Some(responseMovementMessage))
 
-            val headers = Map(CONTENT_TYPE -> Seq("application/pdf"), CONTENT_DISPOSITION -> Seq("unloading_permission_123"))
+            val headers = Map(CONTENT_TYPE -> Seq("application/pdf"), CONTENT_DISPOSITION -> Seq("unloading_permission_123"), "OtherHeader" -> Seq("value"))
 
             when(mockWSResponse.status) thenReturn 200
             when(mockWSResponse.bodyAsBytes) thenReturn ByteString(pdf)
@@ -100,7 +100,7 @@ class UnloadingPermissionPDFServiceSpec extends SpecBase with ModelGenerators wi
               val service = application.injector.instanceOf[UnloadingPermissionPDFService]
               val result  = service.getPDF(arrival).futureValue
 
-              val expectedHeaders: Seq[(String, String)] = Seq((CONTENT_TYPE, "application/pdf"), (CONTENT_DISPOSITION, "unloading_permission_123"))
+              val expectedHeaders: Seq[(String, String)] = Seq((CONTENT_DISPOSITION, "unloading_permission_123"), (CONTENT_TYPE, "application/pdf"))
 
               result.right.get._1 mustBe pdf
               result.right.get._2 mustBe expectedHeaders

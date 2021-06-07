@@ -17,6 +17,8 @@
 package services
 
 import connectors.ManageDocumentsConnector
+import controllers.Assets.CONTENT_DISPOSITION
+import controllers.Assets.CONTENT_TYPE
 import javax.inject.Inject
 import models.WSError._
 import models.Arrival
@@ -38,12 +40,11 @@ class UnloadingPermissionPDFService @Inject()(messageRetrievalService: MessageRe
           result =>
             result.status match {
               case 200 => {
-                val headers: Seq[(String, String)] = result.headers map {
-                  h =>
-                    (h._1, h._2.head)
-                } toSeq
 
-                Right((result.bodyAsBytes.toArray, headers))
+                val contentDisposition = result.headers.get(CONTENT_DISPOSITION).map(value => Seq((CONTENT_DISPOSITION, value.head))).getOrElse(Seq.empty)
+                val contentType        = result.headers.get(CONTENT_TYPE).map(value => Seq((CONTENT_TYPE, value.head))).getOrElse(Seq.empty)
+
+                Right((result.bodyAsBytes.toArray, contentDisposition ++ contentType))
               }
               case otherErrorCode => Left(OtherError(otherErrorCode, result.body))
             }
