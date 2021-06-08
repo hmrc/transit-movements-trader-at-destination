@@ -88,6 +88,9 @@ class ArrivalMovementRepository @Inject()(
             _   <- dropLastUpdatedIndex(jsonCollection)
             _   <- jsonCollection.indexesManager.ensure(lastUpdatedIndex)
             _   <- jsonCollection.indexesManager.ensure(eoriNumberIndex)
+            _   <- jsonCollection.indexesManager.ensure(channelIndex)
+            _   <- jsonCollection.indexesManager.ensure(fetchAllIndex)
+            _   <- jsonCollection.indexesManager.ensure(fetchAllWithDateFilterIndex)
             res <- jsonCollection.indexesManager.ensure(movementReferenceNumber)
           } yield res
       }
@@ -127,6 +130,18 @@ class ArrivalMovementRepository @Inject()(
     key = Seq("lastUpdated" -> IndexType.Ascending),
     name = Some("last-updated-index"),
     options = BSONDocument("expireAfterSeconds" -> appConfig.cacheTtl)
+  )
+  private lazy val channelIndex: Aux[BSONSerializationPack.type] = IndexUtils.index(
+    key = Seq("channel" -> IndexType.Ascending),
+    name = Some("channel-index")
+  )
+  private lazy val fetchAllIndex: Aux[BSONSerializationPack.type] = IndexUtils.index(
+    key = Seq("channel" -> IndexType.Ascending, "eoriNumber" -> IndexType.Ascending),
+    name = Some("fetch-all-index")
+  )
+  private lazy val fetchAllWithDateFilterIndex: Aux[BSONSerializationPack.type] = IndexUtils.index(
+    key = Seq("channel" -> IndexType.Ascending, "eoriNumber" -> IndexType.Ascending, "lastUpdated" -> IndexType.Descending),
+    name = Some("fetch-all-with-date-filter-index")
   )
   private lazy val oldLastUpdatedIndexName = "last-updated-index-6m"
   private lazy val collectionName          = ArrivalMovementRepository.collectionName
