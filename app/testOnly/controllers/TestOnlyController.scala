@@ -18,10 +18,12 @@ package testOnly.controllers
 
 import play.api.Configuration
 import play.api.i18n.MessagesApi
+import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import play.modules.reactivemongo.ReactiveMongoApi
+import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 import reactivemongo.play.json.collection.JSONCollection
 import repositories.ArrivalMovementRepository
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
@@ -30,7 +32,7 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class TestOnlyController @Inject() (
+class TestOnlyController @Inject()(
   override val messagesApi: MessagesApi,
   mongo: ReactiveMongoApi,
   cc: ControllerComponents,
