@@ -18,10 +18,12 @@ package testOnly.controllers
 
 import play.api.Configuration
 import play.api.i18n.MessagesApi
+import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import play.modules.reactivemongo.ReactiveMongoApi
+import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 import reactivemongo.play.json.collection.JSONCollection
 import repositories.ArrivalMovementRepository
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
@@ -46,9 +48,12 @@ class TestOnlyController @Inject()(
         mongo.database
           .map(_.collection[JSONCollection](ArrivalMovementRepository.collectionName))
           .flatMap(
-            _.drop(failIfNotFound = false) map {
-              case true  => Ok(s"Dropped  '${ArrivalMovementRepository.collectionName}' Mongo collection")
-              case false => Ok("collection does not exist or something gone wrong")
+            _.findAndRemove(Json.obj()).map {
+              result =>
+                result.lastError match {
+                  case None        => Ok(s"Cleared '${ArrivalMovementRepository.collectionName}' Mongo collection")
+                  case Some(error) => Ok(s"collection does not exist or something gone wrong: ${error.err.getOrElse("Unknown error")}")
+                }
             }
           )
       } else {
