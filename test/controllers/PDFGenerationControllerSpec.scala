@@ -53,10 +53,10 @@ class PDFGenerationControllerSpec extends SpecBase with ScalaCheckPropertyChecks
 
       "must return OK and a PDF" in {
 
-        forAll(genArrivalWithSuccessfulArrival, arbitrary[Array[Byte]]) {
-          (arrival, pdf) =>
+        forAll(genArrivalWithSuccessfulArrival, arbitrary[Array[Byte]], arbitrary[Seq[(String, String)]]) {
+          (arrival, pdf, headers) =>
             when(mockUnloadingPermissionPDFService.getPDF(any())(any(), any()))
-              .thenReturn(Future.successful(Right(pdf)))
+              .thenReturn(Future.successful(Right((pdf, headers))))
 
             val fakeGerArrivalReader = FakeAuthenticatedGetArrivalForReadActionProvider(arrival)
             val application = baseApplicationBuilder

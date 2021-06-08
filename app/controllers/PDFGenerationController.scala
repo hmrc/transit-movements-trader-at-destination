@@ -46,8 +46,8 @@ class PDFGenerationController @Inject()(
       authenticateForRead(arrivalId).async {
         implicit request =>
           unloadingPermissionPDFService.getPDF(request.arrival).map {
-            case Right(pdf) =>
-              Ok(pdf)
+            case Right((pdf, headers)) =>
+              Ok(pdf).withHeaders(headers: _*)
             case Left(_: NotFoundError.type) =>
               logger.error(s"Failed to find UnloadingPermission of index: ${request.arrival.arrivalId} ")
               NotFound
