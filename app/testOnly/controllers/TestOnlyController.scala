@@ -30,7 +30,7 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class TestOnlyController @Inject()(
+class TestOnlyController @Inject() (
   override val messagesApi: MessagesApi,
   mongo: ReactiveMongoApi,
   cc: ControllerComponents,
@@ -46,9 +46,12 @@ class TestOnlyController @Inject()(
         mongo.database
           .map(_.collection[JSONCollection](ArrivalMovementRepository.collectionName))
           .flatMap(
-            _.drop(failIfNotFound = false) map {
-              case true  => Ok(s"Dropped  '${ArrivalMovementRepository.collectionName}' Mongo collection")
-              case false => Ok("collection does not exist or something gone wrong")
+            _.findAndRemove(Json.obj()).map {
+              result =>
+                result.lastError match {
+                  case None        => Ok(s"Cleared '${ArrivalMovementRepository.collectionName}' Mongo collection")
+                  case Some(error) => Ok(s"collection does not exist or something gone wrong: ${error.err.getOrElse("Unknown error")}")
+                }
             }
           )
       } else {
