@@ -48,11 +48,14 @@ class TestOnlyController @Inject()(
         mongo.database
           .map(_.collection[JSONCollection](ArrivalMovementRepository.collectionName))
           .flatMap(
-            _.findAndRemove(Json.obj()).map {
+            _.delete(ordered = false).one(Json.obj()).map {
               result =>
-                result.lastError match {
-                  case None        => Ok(s"Cleared '${ArrivalMovementRepository.collectionName}' Mongo collection")
-                  case Some(error) => Ok(s"collection does not exist or something gone wrong: ${error.err.getOrElse("Unknown error")}")
+                if (result.ok) {
+                  Ok(s"Cleared '${ArrivalMovementRepository.collectionName}' Mongo collection")
+                } else {
+                  Ok(
+                    s"Collection '${ArrivalMovementRepository.collectionName}' does not exist or something gone wrong: ${result.writeErrors.map(_.errmsg).mkString("[", ", ", "]")}"
+                  )
                 }
             }
           )
