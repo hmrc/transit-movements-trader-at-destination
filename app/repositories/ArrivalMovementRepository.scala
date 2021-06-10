@@ -146,6 +146,13 @@ class ArrivalMovementRepository @Inject()(
   private lazy val oldLastUpdatedIndexName = "last-updated-index-6m"
   private lazy val collectionName          = ArrivalMovementRepository.collectionName
 
+  def bulkInsert(arrivals: Seq[Arrival]): Future[Unit] =
+    collection.flatMap {
+      _.insert(ordered = false)
+        .many(arrivals.map(Json.toJsObject[Arrival]))
+        .map(_ => ())
+    }
+
   def insert(arrival: Arrival): Future[Unit] =
     collection.flatMap {
       _.insert(false)
