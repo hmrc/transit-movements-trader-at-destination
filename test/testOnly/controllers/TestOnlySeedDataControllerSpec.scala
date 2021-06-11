@@ -18,8 +18,10 @@ package testOnly.controllers
 
 import base._
 import generators.ModelGenerators
+import models.ArrivalId
 import models.ChannelType
-import org.mockito.ArgumentMatchers._
+import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.{eq => eqTo}
 import org.mockito.Mockito
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
@@ -67,6 +69,7 @@ class TestOnlySeedDataControllerSpec extends SpecBase with ScalaCheckPropertyChe
 
       "when there no first Eori value specified" in {
         when(mockRepository.bulkInsert(any())).thenReturn(Future.successful(()))
+        when(mockRepository.getMaxArrivalId).thenReturn(Future.successful(Some(ArrivalId(104))))
         when(mockIdRepository.setNextId(any())).thenReturn(Future.successful(()))
 
         val request: FakeRequest[AnyContentAsJson] = FakeRequest(POST, testOnly.controllers.routes.TestOnlySeedDataController.seedData().url)
@@ -94,10 +97,12 @@ class TestOnlySeedDataControllerSpec extends SpecBase with ScalaCheckPropertyChe
         )
 
         verify(mockRepository, times(20)).bulkInsert(any())
+        verify(mockIdRepository, times(1)).setNextId(eqTo(105))
       }
 
       "when there is a first Eori value specified" in {
         when(mockRepository.bulkInsert(any())).thenReturn(Future.successful(()))
+        when(mockRepository.getMaxArrivalId).thenReturn(Future.successful(Some(ArrivalId(134))))
         when(mockIdRepository.setNextId(any())).thenReturn(Future.successful(()))
 
         val request: FakeRequest[AnyContentAsJson] = FakeRequest(POST, testOnly.controllers.routes.TestOnlySeedDataController.seedData().url)
@@ -126,6 +131,7 @@ class TestOnlySeedDataControllerSpec extends SpecBase with ScalaCheckPropertyChe
         )
 
         verify(mockRepository, times(20)).bulkInsert(any())
+        verify(mockIdRepository, times(1)).setNextId(eqTo(135))
       }
 
     }
