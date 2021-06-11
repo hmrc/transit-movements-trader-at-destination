@@ -49,6 +49,7 @@
 
     <logger name="application" level="WARN"/>
     <logger name="application.workers.AddJsonToMessagesWorker" level="INFO" />
+    <logger name="application.testOnly.controllers.TestOnlySeedDataController" level="INFO" />
 
     <logger name="connector" level="TRACE">
         <appender-ref ref="STDOUT"/>
