@@ -64,11 +64,15 @@ class TestOnlySeedDataController @Inject()(
           _ =>
             val response = SeedDataResponse(request.body)
             Ok(Json.toJson(response))
-
         }
       } else {
         Future.successful(NotImplemented("Feature disabled, could not seed data"))
       }
+  }
+
+  private def updateNextId(): Future[Unit] = repository.getMaxArrivalId.flatMap {
+    case Some(value) => idRepository.setNextId(value.index + 1)
+    case None        => Future.failed(new IllegalStateException("No Arrivals found when retrieving max arrival id"))
   }
 
   private def dataInsert(seedDataParameters: SeedDataParameters): Future[Unit] =
@@ -77,17 +81,11 @@ class TestOnlySeedDataController @Inject()(
         seedingService
           .seedArrivals(seedDataParameters, clock)
           .grouped(50)
-          .map {
-            arrivals =>
-              for {
-                _ <- repository.bulkInsert(arrivals)
-                maxId = arrivals.maxBy(_.arrivalId.index).arrivalId
-                _ <- idRepository.setNextId(maxId.index + 1)
-              } yield ()
-          }
+          .map(repository.bulkInsert)
       }
-      .map(
-        _ => ()
-      )
+      .flatMap(_ => updateNextId())
+      .recoverWith {
+        case _ => updateNextId()
+      }
 
 }

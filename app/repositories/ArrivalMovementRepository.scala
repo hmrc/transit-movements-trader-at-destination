@@ -44,6 +44,7 @@ import models.MovementMessage
 import models.MovementReferenceNumber
 import models.response.ResponseArrival
 import models.response.ResponseArrivals
+import play.api.Configuration
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
@@ -71,6 +72,7 @@ import scala.util.Try
 class ArrivalMovementRepository @Inject()(
   mongo: ReactiveMongoApi,
   appConfig: AppConfig,
+  config: Configuration,
   clock: Clock,
   val metrics: Metrics
 )(implicit ec: ExecutionContext, m: Materializer)
@@ -159,6 +161,18 @@ class ArrivalMovementRepository @Inject()(
         .one(Json.toJsObject(arrival))
         .map(_ => ())
     }
+
+  private val featureFlag: Boolean = config.get[Boolean]("feature-flags.testOnly.enabled")
+
+  def getMaxArrivalId: Future[Option[ArrivalId]] =
+    if (featureFlag) {
+      collection.flatMap(
+        _.find(Json.obj(), None)
+          .sort(Json.obj("_id" -> -1))
+          .one[Arrival]
+          .map(_.map(_.arrivalId))
+      )
+    } else Future.successful(None)
 
   def get(arrivalId: ArrivalId, channelFilter: ChannelType): Future[Option[Arrival]] = {
 

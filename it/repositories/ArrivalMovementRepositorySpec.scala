@@ -26,25 +26,15 @@ import base._
 import cats.data.NonEmptyList
 import config.AppConfig
 import controllers.routes
-import models.Arrival
-import models.ArrivalId
-import models.ArrivalIdSelector
-import models.ArrivalStatus
+import models.{Arrival, ArrivalId, ArrivalIdSelector, ArrivalStatus, ArrivalStatusUpdate, MessageId, MessageType, MongoDateTimeFormats, MovementMessageWithStatus, MovementMessageWithoutStatus, MovementReferenceNumber}
 import models.ArrivalStatus.ArrivalSubmitted
 import models.ArrivalStatus.GoodsReleased
 import models.ArrivalStatus.Initialized
 import models.ArrivalStatus.UnloadingRemarksSubmitted
-import models.ArrivalStatusUpdate
 import models.ChannelType.api
 import models.ChannelType.web
-import models.MessageId
 import models.MessageStatus.SubmissionPending
 import models.MessageStatus.SubmissionSucceeded
-import models.MessageType
-import models.MongoDateTimeFormats
-import models.MovementMessageWithStatus
-import models.MovementMessageWithoutStatus
-import models.MovementReferenceNumber
 import models.response.ResponseArrival
 import models.response.ResponseArrivals
 import org.scalacheck.Arbitrary.arbitrary
@@ -172,6 +162,23 @@ class ArrivalMovementRepositorySpec
 
           result mustBe a[Failure[_]]
           updatedArrival.status must not be (arrivalStatus.arrivalStatus)
+        }
+      }
+    }
+
+    "getMaxArrivalId" - {
+      "must return the highest arrival id in the database" in {
+        database.flatMap(_.drop()).futureValue
+        val app = appBuilder.configure("feature-flags.testOnly.enabled" -> true).build()
+        running(app) {
+
+          val repository = app.injector.instanceOf[ArrivalMovementRepository]
+
+          val arrivals = List.tabulate(5)(index => arbitrary[Arrival].sample.value.copy(arrivalId = ArrivalId(index + 1)))
+
+          repository.bulkInsert(arrivals).futureValue
+
+          repository.getMaxArrivalId.futureValue.value mustBe ArrivalId(5)
         }
       }
     }
