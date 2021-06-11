@@ -33,6 +33,8 @@ import java.time.Clock
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.util.Success
+import scala.util.Failure
 
 class TestOnlySeedDataController @Inject()(
   override val messagesApi: MessagesApi,
@@ -60,9 +62,17 @@ class TestOnlySeedDataController @Inject()(
   def seedData: Action[SeedDataParameters] = Action.async(parse.json[SeedDataParameters]) {
     implicit request =>
       if (featureFlag) {
+        repository.getMaxArrivalId.onComplete {
+          case Success(value) => logger.info(s"Started seeding Arrival data with id ${value.get.index}}")
+          case Failure(_)     => logger.error("Unable to retrieve the max arrival id")
+        }
         dataInsert(request.body).map {
           _ =>
             val response = SeedDataResponse(request.body)
+            repository.getMaxArrivalId.onComplete {
+              case Success(value) => logger.info(s"Finished seeding Arrival data with id ${value.get.index}}")
+              case Failure(_)     => logger.error("Unable to retrieve the max arrival id")
+            }
             Ok(Json.toJson(response))
         }
       } else {
