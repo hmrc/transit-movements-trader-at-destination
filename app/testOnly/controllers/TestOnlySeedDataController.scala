@@ -85,7 +85,7 @@ class TestOnlySeedDataController @Inject()(
       }
       .flatMap(_ => updateNextId())
       .recoverWith {
-        case _ => updateNextId()
+        case e => updateNextId().flatMap(_ => Future.failed(e))
       }
 
 }
