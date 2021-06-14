@@ -37,6 +37,7 @@ import play.twirl.api.HtmlFormat
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.xml.NodeSeq
+import models.StatusTransition
 
 class MessageTransformer @Inject()(implicit val executionContext: ExecutionContext) extends MessageTransformerInterface with Logging {
 
@@ -45,7 +46,7 @@ class MessageTransformer @Inject()(implicit val executionContext: ExecutionConte
       case x: NodeSeq =>
         x.headOption.flatMap(node => messageResponse(request.channel)(node.label)) match {
           case Some(response) =>
-            request.arrival.status.transition(response.messageReceived) match {
+            StatusTransition.transition(request.arrival.status, response.messageReceived) match {
               case Right(nextState) =>
                 Future.successful(Right(MessageTransformRequest(Message(response, nextState), request)))
               case Left(error) =>
