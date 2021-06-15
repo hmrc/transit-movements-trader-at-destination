@@ -23,8 +23,8 @@ import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.EitherValues
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
-class ArrivalStatusSpec extends SpecBase with ScalaCheckDrivenPropertyChecks with ModelGenerators with EitherValues {
-  "transition" - {
+class StatusTransitionSpec extends SpecBase with ScalaCheckDrivenPropertyChecks with ModelGenerators with EitherValues {
+  "StatusTransition.transition" - {
     "Initialized must" - {
 
       "transition to ArrivalSubmitted when receiving a ArrivalSubmitted event" in {
