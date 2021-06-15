@@ -25,6 +25,7 @@ import models.GoodsReleasedResponse
 import models.Message
 import models.MessageResponse
 import models.MessageType
+import models.StatusTransition
 import models.UnloadingPermissionResponse
 import models.UnloadingRemarksRejectedResponse
 import models.UnloadingRemarksResponse
@@ -37,7 +38,6 @@ import play.twirl.api.HtmlFormat
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.xml.NodeSeq
-import models.StatusTransition
 
 class MessageTransformer @Inject()(implicit val executionContext: ExecutionContext) extends MessageTransformerInterface with Logging {
 
