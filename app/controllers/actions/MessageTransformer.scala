@@ -25,6 +25,7 @@ import models.GoodsReleasedResponse
 import models.Message
 import models.MessageResponse
 import models.MessageType
+import models.StatusTransition
 import models.UnloadingPermissionResponse
 import models.UnloadingRemarksRejectedResponse
 import models.UnloadingRemarksResponse
@@ -45,7 +46,7 @@ class MessageTransformer @Inject()(implicit val executionContext: ExecutionConte
       case x: NodeSeq =>
         x.headOption.flatMap(node => messageResponse(request.channel)(node.label)) match {
           case Some(response) =>
-            request.arrival.status.transition(response.messageReceived) match {
+            StatusTransition.transition(request.arrival.status, response.messageReceived) match {
               case Right(nextState) =>
                 Future.successful(Right(MessageTransformRequest(Message(response, nextState), request)))
               case Left(error) =>
