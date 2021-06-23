@@ -16,7 +16,9 @@
 
 package models
 
-trait ParseError
+sealed abstract class ParseError {
+  def message: String
+}
 
 object ParseError {
   case class LocalDateParseFailure(message: String)        extends ParseError
@@ -24,5 +26,5 @@ object ParseError {
   case class InvalidRootNode(message: String)              extends ParseError
   case class EmptyMovementReferenceNumber(message: String) extends ParseError
   case class EmptyNodeSeq(message: String)                 extends ParseError
-
+  case class MesSenMES3Failure(message: String)            extends ParseError
 }

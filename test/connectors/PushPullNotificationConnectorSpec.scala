@@ -16,18 +16,23 @@
 
 package connectors
 
-import org.scalatest.freespec.AnyFreeSpec
-import uk.gov.hmrc.http.HeaderCarrier
 import com.github.tomakehurst.wiremock.client.WireMock._
-import play.api.test.Helpers._
-import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.concurrent.IntegrationPatience
-import org.scalatest.matchers.must.Matchers
 import config.Constants
+import models.ArrivalId
+import models.ArrivalMessageNotification
 import models.Box
 import models.BoxId
+import models.MessageType
 import org.scalacheck.Gen
+import org.scalatest.concurrent.IntegrationPatience
+import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks._
+import play.api.test.Helpers._
+import uk.gov.hmrc.http.HeaderCarrier
+
+import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.xml.NodeSeq
 
@@ -121,7 +126,11 @@ class PushPullNotificationConnectorSpec extends AnyFreeSpec with WiremockSuite w
 
       val testBody: NodeSeq = <test>some text</test>
       val testBoxId         = "1c5b9365-18a6-55a5-99c9-83a091ac7f26"
-      val testUrlPath       = s"/box/$testBoxId/notifications"
+
+      val testArrivalId    = ArrivalId(1)
+      val testNotification = ArrivalMessageNotification(testArrivalId, 1, LocalDateTime.now, MessageType.UnloadingPermission, testBody)
+
+      val testUrlPath = s"/box/$testBoxId/notifications"
 
       "should return a Right[Unit] when the notification is successfully POSTed" in {
 
@@ -133,7 +142,7 @@ class PushPullNotificationConnectorSpec extends AnyFreeSpec with WiremockSuite w
 
         running(app) {
           val connector = app.injector.instanceOf[PushPullNotificationConnector]
-          val result    = connector.postNotification(BoxId(testBoxId), testBody)
+          val result    = connector.postNotification(BoxId(testBoxId), testNotification)
 
           result.futureValue.right.get.mustEqual(())
         }
@@ -163,7 +172,7 @@ class PushPullNotificationConnectorSpec extends AnyFreeSpec with WiremockSuite w
               }
 
               val connector = app.injector.instanceOf[PushPullNotificationConnector]
-              val result    = connector.postNotification(BoxId(testBoxId), testBody)
+              val result    = connector.postNotification(BoxId(testBoxId), testNotification)
 
               result.futureValue.left.get.statusCode mustBe code
 

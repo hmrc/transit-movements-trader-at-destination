@@ -19,16 +19,18 @@ package connectors
 import com.google.inject.Inject
 import config.AppConfig
 import config.Constants
+import models.ArrivalMessageNotification
 import models.Box
 import models.BoxId
+import play.api.http.ContentTypes
+import play.api.http.HeaderNames
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HttpClient
-import uk.gov.hmrc.http.UpstreamErrorResponse
 import uk.gov.hmrc.http.HttpReads.Implicits._
+import uk.gov.hmrc.http.UpstreamErrorResponse
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.xml.NodeSeq
 
 class PushPullNotificationConnector @Inject()(config: AppConfig, http: HttpClient) {
 
@@ -42,12 +44,13 @@ class PushPullNotificationConnector @Inject()(config: AppConfig, http: HttpClien
     http.GET[Either[UpstreamErrorResponse, Box]](url, queryParams)
   }
 
-  def postNotification(boxId: BoxId, body: NodeSeq)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Either[UpstreamErrorResponse, Unit]] = {
+  def postNotification(boxId: BoxId, notification: ArrivalMessageNotification)(implicit ec: ExecutionContext,
+                                                                               hc: HeaderCarrier): Future[Either[UpstreamErrorResponse, Unit]] = {
     val url = s"${config.pushPullUrl}/box/${boxId.value}/notifications"
     val headers = Seq(
-      "Content-Type" -> "application/xml"
+      HeaderNames.CONTENT_TYPE -> ContentTypes.JSON
     )
 
-    http.POSTString[Either[UpstreamErrorResponse, Unit]](url, body.toString, headers)
+    http.POST[ArrivalMessageNotification, Either[UpstreamErrorResponse, Unit]](url, notification, headers)
   }
 }

@@ -20,7 +20,7 @@ import cats.data.ReaderT
 import logging.Logging
 import models.ArrivalId
 import models.MessageSender
-import models.ParseError
+import models.ParseError.MesSenMES3Failure
 import services.XmlMessageParser.ParseHandler
 
 import scala.xml._
@@ -28,8 +28,6 @@ import scala.xml.transform.RewriteRule
 import scala.xml.transform.RuleTransformer
 
 object XMLTransformer extends Logging {
-
-  case class MesSenMES3Failure(message: String) extends ParseError
 
   def addXmlNode(existingNode: String, key: String, value: String, inputXml: NodeSeq): NodeSeq =
     createRuleTransformer(existingNode, key, value).transform(inputXml.head)
