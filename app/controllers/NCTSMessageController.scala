@@ -22,8 +22,9 @@ import controllers.actions.InboundMessageRequest
 import controllers.actions.MessageTransformerInterface
 import controllers.actions.ValidateInboundMessageAction
 import logging.Logging
-import metrics.Monitors
 import metrics.HasActionMetrics
+import metrics.Monitors
+import models.ArrivalMessageNotification
 import models.InboundMessage
 import models.MessageSender
 import models.SubmissionProcessingResult._
@@ -33,11 +34,11 @@ import play.api.mvc.ControllerComponents
 import play.api.mvc.Result
 import services.PushPullNotificationService
 import services.SaveMessageService
-import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import javax.inject.Inject
-import models.request.ArrivalRequest
+import services.XmlMessageParser
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
+import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.xml.NodeSeq
@@ -58,11 +59,18 @@ class NCTSMessageController @Inject()(
   private val movementSummaryLogger: Logger =
     Logger(s"application.${this.getClass.getCanonicalName}.movementSummary")
 
-  private def sendPushNotification(request: ArrivalRequest[NodeSeq])(implicit hc: HeaderCarrier): Future[Unit] =
-    request.arrival.notificationBox
+  private def sendPushNotification(request: InboundMessageRequest[NodeSeq])(implicit hc: HeaderCarrier): Future[Unit] =
+    request.arrivalRequest.arrival.notificationBox
       .map {
         box =>
-          pushPullNotificationService.sendPushNotification(box.boxId, request.body)
+          XmlMessageParser.dateTimeOfPrepR(request.body) match {
+            case Left(error) =>
+              logger.error(s"Error while parsing message timestamp: ${error.message}")
+              Future.unit
+            case Right(timestamp) =>
+              val notification = ArrivalMessageNotification.fromRequest(request, timestamp)
+              pushPullNotificationService.sendPushNotification(box.boxId, notification)
+          }
       }
       .getOrElse(Future.unit)
 
@@ -96,7 +104,7 @@ class NCTSMessageController @Inject()(
 
               result match {
                 case SubmissionSuccess => {
-                  sendPushNotification(request.arrivalRequest)
+                  sendPushNotification(request)
                   Ok.withHeaders(
                     LOCATION -> routes.MessagesController
                       .getMessage(request.arrivalRequest.arrival.arrivalId, request.arrivalRequest.arrival.nextMessageId)

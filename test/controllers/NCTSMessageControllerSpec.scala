@@ -43,6 +43,8 @@ import services.PushPullNotificationService
 import services.SaveMessageService
 
 import scala.concurrent.Future
+import java.time.LocalDateTime
+import utils.Format
 
 class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks with ModelGenerators with BeforeAndAfterEach {
 
@@ -62,7 +64,15 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
 
   private val arrivalWithBox = arrivalWithoutBox.copy(notificationBox = Some(testBox))
 
-  private val xml = <test></test>
+  private val invalidXml = <test></test>
+
+  private val dateTime = LocalDateTime.now
+
+  private val xml =
+    <CC007A>
+      <DatOfPreMES9>{Format.dateFormatted(dateTime)}</DatOfPreMES9>
+      <TimOfPreMES10>{Format.timeFormatted(dateTime.toLocalTime)}</TimOfPreMES10>
+    </CC007A>
 
   override def beforeEach: Unit = {
     super.beforeEach()
@@ -246,7 +256,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
         }
       }
 
-      "must send push notification when there is a notificationBox present" in {
+      "must send push notification when there is a notificationBox and valid timestamp present" in {
         def boxIdMatcher = refEq(testBoxId).asInstanceOf[BoxId]
 
         when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrivalWithBox)))
@@ -275,6 +285,38 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
 
           status(result) mustEqual OK
           verify(mockPushPullNotificationService, times(1)).sendPushNotification(boxIdMatcher, any())(any(), any())
+        }
+      }
+
+      "must not send push notification when timestamp cannot be parsed" in {
+        def boxIdMatcher = refEq(testBoxId).asInstanceOf[BoxId]
+
+        when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(Some(arrivalWithBox)))
+        when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any(), any(), any())(any()))
+          .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionSuccess))
+        when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
+        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(true))
+        when(mockPushPullNotificationService.sendPushNotification(boxIdMatcher, any())(any(), any())).thenReturn(Future.unit)
+
+        val application = baseApplicationBuilder
+          .overrides(
+            bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
+            bind[LockRepository].toInstance(mockLockRepository),
+            bind[SaveMessageService].toInstance(mockSaveMessageService),
+            bind[PushPullNotificationService].toInstance(mockPushPullNotificationService),
+            bind[MessageTransformerInterface].to[FakeMessageTransformer]
+          )
+          .build()
+
+        running(application) {
+          val request = FakeRequest(POST, routes.NCTSMessageController.post(messageSender).url)
+            .withHeaders("channel" -> arrivalWithoutBox.channel.toString)
+            .withXmlBody(invalidXml)
+
+          val result = route(application, request).value
+
+          status(result) mustEqual OK
+          verifyNoInteractions(mockPushPullNotificationService)
         }
       }
 

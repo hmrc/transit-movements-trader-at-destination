@@ -17,10 +17,10 @@
 package utils
 
 import models.ArrivalId
+import models.ParseError.MesSenMES3Failure
 import org.scalatest.StreamlinedXmlEquality
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
-import utils.XMLTransformer.MesSenMES3Failure
 
 import scala.xml.NodeSeq
 
