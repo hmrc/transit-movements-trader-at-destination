@@ -25,11 +25,12 @@ import java.time.LocalDateTime
 import scala.xml.NodeSeq
 
 case class ArrivalMessageNotification(
+  messageUri: String,
+  requestId: String,
   arrivalId: ArrivalId,
-  messageId: Int,
+  messageId: MessageId,
   received: LocalDateTime,
-  messageType: MessageType,
-  body: NodeSeq
+  messageType: MessageType
 )
 
 object ArrivalMessageNotification {
@@ -40,11 +41,12 @@ object ArrivalMessageNotification {
 
   private val writesArrivalMessageNotification: OWrites[ArrivalMessageNotification] =
     (
-      (__ \ "arrivalId").write[ArrivalId] and
-        (__ \ "messageId").write[String].contramap[Int](_.toString) and
+      (__ \ "messageUri").write[String] and
+        (__ \ "requestId").write[String] and
+        (__ \ "arrivalId").write[ArrivalId] and
+        (__ \ "messageId").write[String].contramap[MessageId](_.index.toString) and
         (__ \ "received").write[LocalDateTime] and
-        (__ \ "messageType").write[MessageType] and
-        (__ \ "body").write[NodeSeq]
+        (__ \ "messageType").write[MessageType]
     )(unlift(ArrivalMessageNotification.unapply))
 
   implicit val writesArrivalMessageNotificationWithRequestId: OWrites[ArrivalMessageNotification] =
@@ -53,12 +55,16 @@ object ArrivalMessageNotification {
         obj ++ Json.obj("requestId" -> requestId(arrival.arrivalId))
     }
 
-  def fromRequest(request: InboundMessageRequest[NodeSeq], timestamp: LocalDateTime): ArrivalMessageNotification =
+  def fromRequest(request: InboundMessageRequest[NodeSeq], timestamp: LocalDateTime): ArrivalMessageNotification = {
+    val messageId  = MessageId.fromIndex(request.arrivalRequest.arrival.messages.length)
+    val arrivalUrl = requestId(request.arrivalRequest.arrival.arrivalId)
     ArrivalMessageNotification(
+      s"$arrivalUrl/messages/${messageId.index}",
+      arrivalUrl,
       request.arrivalRequest.arrival.arrivalId,
-      request.arrivalRequest.arrival.messages.length,
+      messageId,
       timestamp,
-      request.message.messageType.messageType,
-      request.body
+      request.message.messageType.messageType
     )
+  }
 }
