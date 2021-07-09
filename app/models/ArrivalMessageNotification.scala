@@ -19,7 +19,6 @@ package models
 import controllers.actions.InboundMessageRequest
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
-import utils.NodeSeqFormat._
 
 import java.time.LocalDateTime
 import scala.xml.NodeSeq
@@ -44,7 +43,7 @@ object ArrivalMessageNotification {
       (__ \ "messageUri").write[String] and
         (__ \ "requestId").write[String] and
         (__ \ "arrivalId").write[ArrivalId] and
-        (__ \ "messageId").write[String].contramap[MessageId](_.index.toString) and
+        (__ \ "messageId").write[String].contramap[MessageId](_.publicValue.toString) and
         (__ \ "received").write[LocalDateTime] and
         (__ \ "messageType").write[MessageType]
     )(unlift(ArrivalMessageNotification.unapply))
@@ -59,7 +58,7 @@ object ArrivalMessageNotification {
     val messageId  = MessageId.fromIndex(request.arrivalRequest.arrival.messages.length)
     val arrivalUrl = requestId(request.arrivalRequest.arrival.arrivalId)
     ArrivalMessageNotification(
-      s"$arrivalUrl/messages/${messageId.index}",
+      s"$arrivalUrl/messages/${messageId.publicValue}",
       arrivalUrl,
       request.arrivalRequest.arrival.arrivalId,
       messageId,

@@ -36,6 +36,7 @@ sealed trait MovementMessage {
   def message: NodeSeq
   def optStatus: Option[MessageStatus]
   def messageJson: JsObject
+  def messageCorrelationId: Int
 
   def receivedBefore(requestedDate: OffsetDateTime): Boolean =
     dateTime.atOffset(ZoneOffset.UTC).isBefore(requestedDate)
