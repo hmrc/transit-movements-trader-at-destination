@@ -23,6 +23,7 @@ import models.ArrivalId
 import models.ArrivalMessageNotification
 import models.Box
 import models.BoxId
+import models.MessageId
 import models.MessageType
 import org.mockito.ArgumentMatchers._
 import org.mockito.BDDMockito._
@@ -33,8 +34,8 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.test.Helpers._
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.UpstreamErrorResponse
-
 import java.time.LocalDateTime
+
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -45,6 +46,9 @@ import scala.xml.NodeSeq
 class PushPullNotificationServiceSpec extends SpecBase with BeforeAndAfterEach with ScalaCheckPropertyChecks {
   val mockConnector = mock[PushPullNotificationConnector]
   val service       = new PushPullNotificationService(mockConnector)
+
+  private def requestId(arrivalId: ArrivalId): String =
+    s"/customs/transits/movements/arrivals/${arrivalId.index}"
 
   override protected def beforeEach(): Unit = reset(mockConnector)
 
@@ -94,10 +98,14 @@ class PushPullNotificationServiceSpec extends SpecBase with BeforeAndAfterEach w
 
     "sendPushNotification" - {
       "should return a unit value when connector call succeeds" in {
-        val testBody: NodeSeq = <test>test content</test>
-
-        val testArrivalId    = ArrivalId(1)
-        val testNotification = ArrivalMessageNotification(testArrivalId, 1, LocalDateTime.now, MessageType.UnloadingPermission, testBody)
+        val testArrivalId  = ArrivalId(1)
+        val testMessageUri = requestId(testArrivalId) + "/messages" + ""
+        val testNotification = ArrivalMessageNotification(testMessageUri,
+                                                          requestId(testArrivalId),
+                                                          testArrivalId,
+                                                          MessageId.fromIndex(1),
+                                                          LocalDateTime.now,
+                                                          MessageType.UnloadingPermission)
 
         val boxIdMatcher = refEq(testBoxId).asInstanceOf[BoxId]
 
@@ -110,10 +118,14 @@ class PushPullNotificationServiceSpec extends SpecBase with BeforeAndAfterEach w
       }
 
       "should not return anything when call fails" in {
-        val testBody: NodeSeq = <test>test content</test>
-
-        val testArrivalId    = ArrivalId(1)
-        val testNotification = ArrivalMessageNotification(testArrivalId, 1, LocalDateTime.now, MessageType.UnloadingPermission, testBody)
+        val testArrivalId  = ArrivalId(1)
+        val testMessageUri = requestId(testArrivalId) + "/messages" + ""
+        val testNotification = ArrivalMessageNotification(testMessageUri,
+                                                          requestId(testArrivalId),
+                                                          testArrivalId,
+                                                          MessageId.fromIndex(1),
+                                                          LocalDateTime.now,
+                                                          MessageType.UnloadingPermission)
 
         val boxIdMatcher = refEq(testBoxId).asInstanceOf[BoxId]
 

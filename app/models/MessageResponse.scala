@@ -23,6 +23,17 @@ sealed trait MessageResponse {
   val messageType: MessageType
 }
 
+object MessageResponse {
+
+  val inboundMessages = Seq(
+    GoodsReleasedResponse,
+    ArrivalRejectedResponse,
+    UnloadingPermissionResponse,
+    UnloadingRemarksRejectedResponse,
+    XMLSubmissionNegativeAcknowledgementResponse
+  )
+}
+
 sealed trait OutboundMessageResponse extends MessageResponse
 
 sealed trait InboundMessageResponse extends MessageResponse {

@@ -22,6 +22,7 @@ import models.ArrivalId
 import models.ArrivalMessageNotification
 import models.Box
 import models.BoxId
+import models.MessageId
 import models.MessageType
 import org.scalacheck.Gen
 import org.scalatest.concurrent.IntegrationPatience
@@ -31,15 +32,17 @@ import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks._
 import play.api.test.Helpers._
 import uk.gov.hmrc.http.HeaderCarrier
-
 import java.time.LocalDateTime
+
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.xml.NodeSeq
 
 class PushPullNotificationConnectorSpec extends AnyFreeSpec with WiremockSuite with ScalaFutures with Matchers with IntegrationPatience {
   override protected def portConfigKey: String = "microservice.services.push-pull-notifications-api.port"
 
   implicit val headerCarrier: HeaderCarrier = HeaderCarrier()
+
+  private def requestId(arrivalId: ArrivalId): String =
+    s"/customs/transits/movements/arrivals/${arrivalId.index}"
 
   "PushPullNotificationConnector" - {
 
@@ -124,11 +127,15 @@ class PushPullNotificationConnectorSpec extends AnyFreeSpec with WiremockSuite w
 
     "postNotification" - {
 
-      val testBody: NodeSeq = <test>some text</test>
-      val testBoxId         = "1c5b9365-18a6-55a5-99c9-83a091ac7f26"
-
-      val testArrivalId    = ArrivalId(1)
-      val testNotification = ArrivalMessageNotification(testArrivalId, 1, LocalDateTime.now, MessageType.UnloadingPermission, testBody)
+      val testBoxId      = "1c5b9365-18a6-55a5-99c9-83a091ac7f26"
+      val testArrivalId  = ArrivalId(1)
+      val testMessageUri = requestId(testArrivalId) + "/messages" + ""
+      val testNotification = ArrivalMessageNotification(testMessageUri,
+                                                        requestId(testArrivalId),
+                                                        testArrivalId,
+                                                        MessageId.fromIndex(1),
+                                                        LocalDateTime.now,
+                                                        MessageType.UnloadingPermission)
 
       val testUrlPath = s"/box/$testBoxId/notifications"
 
