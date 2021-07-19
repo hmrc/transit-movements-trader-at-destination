@@ -57,7 +57,7 @@ class MovementsChangeLogSpec extends SpecBase with IntegrationPatience with Befo
 
     val mongo = app.injector.instanceOf[ReactiveMongoApi]
 
-    val insertDepartures = for {
+    val insertArrivals = for {
       db <- mongo.database
 
       _ <- db.drop()
@@ -102,7 +102,7 @@ class MovementsChangeLogSpec extends SpecBase with IntegrationPatience with Befo
       }
     } yield ()
 
-    insertDepartures.futureValue
+    insertArrivals.futureValue
   }
 
   "MovementsChangeLog" - {
