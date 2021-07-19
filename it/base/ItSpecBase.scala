@@ -31,6 +31,7 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 import play.api.inject.guice.GuiceApplicationBuilder
+import models.MessageId
 
 class ItSpecBase
     extends AnyFreeSpec
@@ -45,6 +46,6 @@ class ItSpecBase
   val arrivalWithOneMessage: Gen[Arrival] = for {
     arrival         <- arbitrary[Arrival]
     movementMessage <- arbitrary[MovementMessageWithStatus]
-  } yield arrival.copy(messages = NonEmptyList.one(movementMessage.copy(status = SubmissionPending)))
+  } yield arrival.copy(messages = NonEmptyList.one(movementMessage.copy(messageId = MessageId(1), status = SubmissionPending)))
 
 }

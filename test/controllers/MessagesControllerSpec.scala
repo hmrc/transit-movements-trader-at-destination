@@ -85,7 +85,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
 
   val mrn = arbitrary[MovementReferenceNumber].sample.value
 
-  val messageId = MessageId.fromIndex(0)
+  val messageId = MessageId(1)
 
   val arrivalId = arbitrary[ArrivalId].sample.value
 
@@ -111,6 +111,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
     </CC044A>
 
   val movementMessage = MovementMessageWithStatus(
+    messageId,
     localDateTime,
     MessageType.UnloadingRemarks,
     savedXmlMessage.map(trim),
@@ -120,7 +121,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
 
   val arrivalWithOneMessage: Gen[Arrival] = for {
     arrival <- arbitrary[Arrival]
-  } yield {
+  } yield
     arrival.copy(
       arrivalId = arrivalId,
       movementReferenceNumber = mrn,
@@ -131,7 +132,6 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
       created = localDateTime,
       updated = localDateTime
     )
-  }
 
   val arrival = arrivalWithOneMessage.sample.value
 
@@ -183,15 +183,15 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           val result = route(application, request).value
 
           status(result) mustEqual ACCEPTED
-          header("Location", result).value must be(routes.MessagesController.getMessage(arrival.arrivalId, MessageId.fromIndex(1)).url)
+          header("Location", result).value must be(routes.MessagesController.getMessage(arrival.arrivalId, MessageId(2)).url)
           verify(mockSubmitMessageService, times(1)).submitMessage(eqTo(arrival.arrivalId),
-                                                                   eqTo(MessageId.fromIndex(1)),
+                                                                   eqTo(MessageId(2)),
                                                                    captor.capture(),
                                                                    eqTo(ArrivalStatus.UnloadingRemarksSubmitted),
                                                                    any())(any())
 
           val arrivalMessage: MovementMessageWithStatus = captor.getValue
-          arrivalMessage mustEqual movementMessage
+          arrivalMessage mustEqual movementMessage.copy(messageId = MessageId(2))
 
           verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.UnloadingRemarksSubmitted), any(), any())(any())
         }
@@ -548,12 +548,12 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
             .build()
 
         running(application) {
-          val request = FakeRequest(GET, routes.MessagesController.getMessage(arrival.arrivalId, MessageId.fromIndex(0)).url)
+          val request = FakeRequest(GET, routes.MessagesController.getMessage(arrival.arrivalId, MessageId(1)).url)
             .withHeaders("channel" -> arrival.channel.toString)
           val result = route(application, request).value
 
           status(result) mustEqual OK
-          contentAsJson(result) mustEqual Json.toJson(ResponseMovementMessage.build(arrival.arrivalId, MessageId.fromIndex(0), message))
+          contentAsJson(result) mustEqual Json.toJson(ResponseMovementMessage.build(arrival.arrivalId, MessageId(1), message))
         }
       }
 
@@ -571,12 +571,12 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
             .build()
 
         running(application) {
-          val request = FakeRequest(GET, routes.MessagesController.getMessage(arrival.arrivalId, MessageId.fromIndex(0)).url)
+          val request = FakeRequest(GET, routes.MessagesController.getMessage(arrival.arrivalId, MessageId(1)).url)
             .withHeaders("channel" -> arrival.channel.toString)
           val result = route(application, request).value
 
           status(result) mustEqual OK
-          contentAsJson(result) mustEqual Json.toJson(ResponseMovementMessage.build(arrival.arrivalId, MessageId.fromIndex(0), message))
+          contentAsJson(result) mustEqual Json.toJson(ResponseMovementMessage.build(arrival.arrivalId, MessageId(1), message))
         }
       }
 
@@ -593,7 +593,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
 
           running(application) {
             val request =
-              FakeRequest(GET, routes.MessagesController.getMessage(ArrivalId(1), MessageId.fromIndex(0)).url).withHeaders("channel" -> web.toString)
+              FakeRequest(GET, routes.MessagesController.getMessage(ArrivalId(1), MessageId(1)).url).withHeaders("channel" -> web.toString)
             val result = route(application, request).value
 
             status(result) mustEqual NOT_FOUND
@@ -614,7 +614,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
               .build()
 
           running(application) {
-            val request = FakeRequest(GET, routes.MessagesController.getMessage(arrival.arrivalId, MessageId.fromIndex(5)).url)
+            val request = FakeRequest(GET, routes.MessagesController.getMessage(arrival.arrivalId, MessageId(6)).url)
               .withHeaders("channel" -> arrival.channel.toString)
             val result = route(application, request).value
 
@@ -636,7 +636,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
               .build()
 
           running(application) {
-            val request = FakeRequest(GET, routes.MessagesController.getMessage(arrival.arrivalId, MessageId.fromIndex(0)).url)
+            val request = FakeRequest(GET, routes.MessagesController.getMessage(arrival.arrivalId, MessageId(1)).url)
               .withHeaders("channel" -> arrival.channel.toString)
             val result = route(application, request).value
 
@@ -658,7 +658,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
               .build()
 
           running(application) {
-            val request = FakeRequest(GET, routes.MessagesController.getMessage(arrival.arrivalId, MessageId.fromIndex(0)).url)
+            val request = FakeRequest(GET, routes.MessagesController.getMessage(arrival.arrivalId, MessageId(1)).url)
               .withHeaders("channel" -> arrival.channel.toString)
             val result = route(application, request).value
 
@@ -674,7 +674,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
       "must return OK" - {
         "with the retrieved messages" in {
 
-          val message = Arbitrary.arbitrary[MovementMessageWithStatus].sample.value.copy(status = SubmissionSucceeded)
+          val message = Arbitrary.arbitrary[MovementMessageWithStatus].sample.value.copy(messageId = MessageId(1), status = SubmissionSucceeded)
           val arrival = Arbitrary.arbitrary[Arrival].sample.value.copy(messages = NonEmptyList.one(message), eoriNumber = "eori")
 
           val expectedMessages = ResponseMovementMessage.build(arrival.arrivalId, MessageId.fromMessageIdValue(1).value, message)
@@ -699,8 +699,8 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
         }
 
         "with only messages that are successful" in {
-          val message1 = Arbitrary.arbitrary[MovementMessageWithStatus].sample.value.copy(status = SubmissionSucceeded)
-          val message2 = Arbitrary.arbitrary[MovementMessageWithStatus].sample.value.copy(status = SubmissionFailed)
+          val message1 = Arbitrary.arbitrary[MovementMessageWithStatus].sample.value.copy(messageId = MessageId(1), status = SubmissionSucceeded)
+          val message2 = Arbitrary.arbitrary[MovementMessageWithStatus].sample.value.copy(messageId = MessageId(2), status = SubmissionFailed)
           val arrival  = Arbitrary.arbitrary[Arrival].sample.value.copy(messages = NonEmptyList.of(message1, message2), eoriNumber = "eori")
 
           val expectedMessages = ResponseMovementMessage.build(arrival.arrivalId, MessageId.fromMessageIdValue(1).value, message1)
@@ -726,9 +726,9 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
         }
 
         "with only messages that are successful and stateless" in {
-          val message1 = Arbitrary.arbitrary[MovementMessageWithStatus].sample.value.copy(status = SubmissionSucceeded)
-          val message2 = Arbitrary.arbitrary[MovementMessageWithStatus].sample.value.copy(status = SubmissionFailed)
-          val message3 = Arbitrary.arbitrary[MovementMessageWithoutStatus].sample.value
+          val message1 = Arbitrary.arbitrary[MovementMessageWithStatus].sample.value.copy(messageId = MessageId(1), status = SubmissionSucceeded)
+          val message2 = Arbitrary.arbitrary[MovementMessageWithStatus].sample.value.copy(messageId = MessageId(2), status = SubmissionFailed)
+          val message3 = Arbitrary.arbitrary[MovementMessageWithoutStatus].sample.value.copy(messageId = MessageId(3))
 
           val arrival = Arbitrary.arbitrary[Arrival].sample.value.copy(messages = NonEmptyList.of(message1, message2, message3), eoriNumber = "eori")
 
@@ -755,8 +755,8 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
         }
 
         "with no messages if they are all failures" in {
-          val message1 = Arbitrary.arbitrary[MovementMessageWithStatus].sample.value.copy(status = SubmissionFailed)
-          val message2 = Arbitrary.arbitrary[MovementMessageWithStatus].sample.value.copy(status = SubmissionFailed)
+          val message1 = Arbitrary.arbitrary[MovementMessageWithStatus].sample.value.copy(messageId = MessageId(1), status = SubmissionFailed)
+          val message2 = Arbitrary.arbitrary[MovementMessageWithStatus].sample.value.copy(messageId = MessageId(2), status = SubmissionFailed)
 
           val arrival = Arbitrary.arbitrary[Arrival].sample.value.copy(messages = NonEmptyList.of(message1, message2), eoriNumber = "eori")
 
@@ -784,10 +784,22 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           val requestedDateTime       = LocalDateTime.of(2021, 5, 11, 16, 42, 12)
           val requestedOffsetDateTime = requestedDateTime.atOffset(ZoneOffset.UTC)
           val message1 =
-            Arbitrary.arbitrary[MovementMessageWithStatus].sample.value.copy(status = SubmissionSucceeded, dateTime = LocalDateTime.of(2021, 5, 11, 15, 10, 32))
-          val message2 = Arbitrary.arbitrary[MovementMessageWithStatus].sample.value.copy(status = SubmissionSucceeded, dateTime = requestedDateTime)
+            Arbitrary
+              .arbitrary[MovementMessageWithStatus]
+              .sample
+              .value
+              .copy(messageId = MessageId(1), status = SubmissionSucceeded, dateTime = LocalDateTime.of(2021, 5, 11, 15, 10, 32))
+          val message2 = Arbitrary
+            .arbitrary[MovementMessageWithStatus]
+            .sample
+            .value
+            .copy(messageId = MessageId(2), status = SubmissionSucceeded, dateTime = requestedDateTime)
           val message3 =
-            Arbitrary.arbitrary[MovementMessageWithStatus].sample.value.copy(status = SubmissionSucceeded, dateTime = LocalDateTime.of(2021, 5, 12, 17, 5, 24))
+            Arbitrary
+              .arbitrary[MovementMessageWithStatus]
+              .sample
+              .value
+              .copy(messageId = MessageId(3), status = SubmissionSucceeded, dateTime = LocalDateTime.of(2021, 5, 12, 17, 5, 24))
 
           val arrival = Arbitrary.arbitrary[Arrival].sample.value.copy(messages = NonEmptyList.of(message1, message2, message3), eoriNumber = "eori")
 

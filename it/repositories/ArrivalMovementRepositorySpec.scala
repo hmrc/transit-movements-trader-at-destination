@@ -26,7 +26,17 @@ import base._
 import cats.data.NonEmptyList
 import config.AppConfig
 import controllers.routes
-import models.{Arrival, ArrivalId, ArrivalIdSelector, ArrivalStatus, ArrivalStatusUpdate, MessageId, MessageType, MongoDateTimeFormats, MovementMessageWithStatus, MovementMessageWithoutStatus, MovementReferenceNumber}
+import models.Arrival
+import models.ArrivalId
+import models.ArrivalIdSelector
+import models.ArrivalStatus
+import models.ArrivalStatusUpdate
+import models.MessageId
+import models.MessageType
+import models.MongoDateTimeFormats
+import models.MovementMessageWithStatus
+import models.MovementMessageWithoutStatus
+import models.MovementReferenceNumber
 import models.ArrivalStatus.ArrivalSubmitted
 import models.ArrivalStatus.GoodsReleased
 import models.ArrivalStatus.Initialized
@@ -60,16 +70,11 @@ import scala.reflect.ClassTag
 import scala.util.Failure
 import scala.util.Success
 
-class ArrivalMovementRepositorySpec
-    extends ItSpecBase
-    with MongoSuite
-    with ScalaFutures
-    with TestSuiteMixin
-    with MongoDateTimeFormats
-    with BeforeAndAfterEach {
+class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with ScalaFutures with TestSuiteMixin with MongoDateTimeFormats with BeforeAndAfterEach {
 
-  private val instant = Instant.now
+  private val instant                   = Instant.now
   implicit private val stubClock: Clock = Clock.fixed(instant, ZoneId.systemDefault)
+
   private val appBuilder: GuiceApplicationBuilder =
     new GuiceApplicationBuilder()
       .overrides(bind[Clock].toInstance(stubClock))
@@ -85,9 +90,11 @@ class ArrivalMovementRepositorySpec
   def typeMatchOnTestValue[A, B](testValue: A)(test: B => Unit)(implicit bClassTag: ClassTag[B]) = testValue match {
     case result: B => test(result)
     case failedResult =>
-      throw new TestFailedException((_: StackDepthException) => Some(s"Test for ${bClassTag.runtimeClass}, but got a ${failedResult.getClass}"),
-                                    None,
-                                    implicitly[source.Position])
+      throw new TestFailedException(
+        (_: StackDepthException) => Some(s"Test for ${bClassTag.runtimeClass}, but got a ${failedResult.getClass}"),
+        None,
+        implicitly[source.Position]
+      )
   }
 
   private val eoriNumber: String = arbitrary[String].sample.value
@@ -123,9 +130,9 @@ class ArrivalMovementRepositorySpec
         running(app) {
 
           val arrivalStatus = ArrivalStatusUpdate(Initialized)
-          val arrival = arrivalWithOneMessage.sample.value.copy(status = GoodsReleased)
-          val lastUpdated = LocalDateTime.now(stubClock).withSecond(0).withNano(0)
-          val selector = ArrivalIdSelector(arrival.arrivalId)
+          val arrival       = arrivalWithOneMessage.sample.value.copy(status = GoodsReleased)
+          val lastUpdated   = LocalDateTime.now(stubClock).withSecond(0).withNano(0)
+          val selector      = ArrivalIdSelector(arrival.arrivalId)
 
           started(app).futureValue
 
@@ -147,8 +154,8 @@ class ArrivalMovementRepositorySpec
         running(app) {
 
           val arrivalStatus = ArrivalStatusUpdate(Initialized)
-          val arrival = arrivalWithOneMessage.sample.value copy(arrivalId = ArrivalId(1), status = UnloadingRemarksSubmitted)
-          val selector = ArrivalIdSelector(ArrivalId(2))
+          val arrival       = arrivalWithOneMessage.sample.value copy (arrivalId = ArrivalId(1), status = UnloadingRemarksSubmitted)
+          val selector      = ArrivalIdSelector(ArrivalId(2))
 
           started(app).futureValue
 
@@ -174,7 +181,9 @@ class ArrivalMovementRepositorySpec
 
           val repository = app.injector.instanceOf[ArrivalMovementRepository]
 
-          val arrivals = List.tabulate(5)(index => arbitrary[Arrival].sample.value.copy(arrivalId = ArrivalId(index + 1)))
+          val arrivals = List.tabulate(5)(
+            index => arbitrary[Arrival].sample.value.copy(arrivalId = ArrivalId(index + 1))
+          )
 
           repository.bulkInsert(arrivals).futureValue
 
@@ -186,8 +195,8 @@ class ArrivalMovementRepositorySpec
     "setArrivalStateAndMessageState" - {
       "must update the status of the arrival and the message in an arrival" in {
 
-        val arrival = arrivalWithOneMessage.sample.value.copy(status = ArrivalStatus.Initialized)
-        val messageId = MessageId.fromIndex(0)
+        val arrival   = arrivalWithOneMessage.sample.value.copy(status = ArrivalStatus.Initialized)
+        val messageId = MessageId(1)
 
         val app = appBuilder.build()
         running(app) {
@@ -211,7 +220,7 @@ class ArrivalMovementRepositorySpec
       "must fail if the arrival cannot be found" in {
 
         val arrival   = arrivalWithOneMessage.sample.value.copy(arrivalId = ArrivalId(1), status = Initialized)
-        val messageId = MessageId.fromIndex(0)
+        val messageId = MessageId(1)
 
         val app = appBuilder.build()
         running(app) {
@@ -220,7 +229,7 @@ class ArrivalMovementRepositorySpec
           repository.insert(arrival).futureValue
 
           val setResult = repository.setArrivalStateAndMessageState(ArrivalId(2), messageId, ArrivalSubmitted, SubmissionSucceeded)
-          setResult.futureValue must not be (defined)
+          setResult.futureValue must not be defined
 
           val result = repository.get(arrival.arrivalId, arrival.channel).futureValue.value
           result.status mustEqual Initialized
@@ -251,7 +260,13 @@ class ArrivalMovementRepositorySpec
           </CC025A>
 
         val goodsReleasedMessage =
-          MovementMessageWithoutStatus(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.GoodsReleased, messageBody, arrival.nextMessageCorrelationId)
+          MovementMessageWithoutStatus(
+            arrival.nextMessageId,
+            LocalDateTime.of(dateOfPrep, timeOfPrep),
+            MessageType.GoodsReleased,
+            messageBody,
+            arrival.nextMessageCorrelationId
+          )
         val newState = ArrivalStatus.GoodsReleased
 
         val app = appBuilder.build()
@@ -285,8 +300,8 @@ class ArrivalMovementRepositorySpec
 
         val arrival = arbitrary[Arrival].sample.value copy (status = ArrivalStatus.ArrivalSubmitted, arrivalId = ArrivalId(1))
 
-        val dateOfPrep  = LocalDate.now(stubClock)
-        val timeOfPrep  = LocalTime.now(stubClock).withHour(1).withMinute(1)
+        val dateOfPrep = LocalDate.now(stubClock)
+        val timeOfPrep = LocalTime.now(stubClock).withHour(1).withMinute(1)
         val messageBody =
           <CC025A>
             <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
@@ -297,7 +312,13 @@ class ArrivalMovementRepositorySpec
           </CC025A>
 
         val goodsReleasedMessage =
-          MovementMessageWithoutStatus(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.GoodsReleased, messageBody, messageCorrelationId = 1)
+          MovementMessageWithoutStatus(
+            arrival.nextMessageId,
+            LocalDateTime.of(dateOfPrep, timeOfPrep),
+            MessageType.GoodsReleased,
+            messageBody,
+            messageCorrelationId = 1
+          )
         val newState = ArrivalStatus.GoodsReleased
 
         val app = appBuilder.build()
@@ -331,7 +352,13 @@ class ArrivalMovementRepositorySpec
           </CC025A>
 
         val goodsReleasedMessage =
-          MovementMessageWithoutStatus(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.GoodsReleased, messageBody, arrival.nextMessageCorrelationId)
+          MovementMessageWithoutStatus(
+            arrival.nextMessageId,
+            LocalDateTime.of(dateOfPrep, timeOfPrep),
+            MessageType.GoodsReleased,
+            messageBody,
+            arrival.nextMessageCorrelationId
+          )
 
         val app = appBuilder.build()
         running(app) {
@@ -361,10 +388,10 @@ class ArrivalMovementRepositorySpec
 
       "must fail if the arrival cannot be found" in {
 
-        val arrival = arbitrary[Arrival].sample.value copy(status = ArrivalStatus.ArrivalSubmitted, arrivalId = ArrivalId(1))
+        val arrival = arbitrary[Arrival].sample.value copy (status = ArrivalStatus.ArrivalSubmitted, arrivalId = ArrivalId(1))
 
-        val dateOfPrep  = LocalDate.now(stubClock)
-        val timeOfPrep  = LocalTime.now(stubClock).withHour(1).withMinute(1)
+        val dateOfPrep = LocalDate.now(stubClock)
+        val timeOfPrep = LocalTime.now(stubClock).withHour(1).withMinute(1)
         val messageBody =
           <CC025A>
             <DatOfPreMES9>
@@ -379,7 +406,13 @@ class ArrivalMovementRepositorySpec
           </CC025A>
 
         val goodsReleasedMessage =
-          MovementMessageWithoutStatus(LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.GoodsReleased, messageBody, messageCorrelationId = 1)
+          MovementMessageWithoutStatus(
+            arrival.nextMessageId,
+            LocalDateTime.of(dateOfPrep, timeOfPrep),
+            MessageType.GoodsReleased,
+            messageBody,
+            messageCorrelationId = 1
+          )
 
         val app = appBuilder.build()
         running(app) {
@@ -450,8 +483,8 @@ class ArrivalMovementRepositorySpec
           val repository = app.injector.instanceOf[ArrivalMovementRepository]
 
           val movementReferenceNumber = arbitrary[MovementReferenceNumber].sample.value
-          val eori = "eori"
-          val arrival = arbitrary[Arrival].sample.value copy(eoriNumber = eori, movementReferenceNumber = movementReferenceNumber)
+          val eori                    = "eori"
+          val arrival                 = arbitrary[Arrival].sample.value copy (eoriNumber = eori, movementReferenceNumber = movementReferenceNumber)
 
           repository.insert(arrival).futureValue
 
@@ -467,11 +500,11 @@ class ArrivalMovementRepositorySpec
 
           val repository = app.injector.instanceOf[ArrivalMovementRepository]
 
-          val movementReferenceNumber = arbitrary[MovementReferenceNumber].sample.value
+          val movementReferenceNumber      = arbitrary[MovementReferenceNumber].sample.value
           val otherMovementReferenceNumber = arbitrary[MovementReferenceNumber].sample.value
 
-          val eori = "eori"
-          val arrival = arbitrary[Arrival].sample.value copy(eoriNumber = eori, movementReferenceNumber = otherMovementReferenceNumber)
+          val eori    = "eori"
+          val arrival = arbitrary[Arrival].sample.value copy (eoriNumber = eori, movementReferenceNumber = otherMovementReferenceNumber)
 
           repository.insert(arrival).futureValue
 
@@ -489,9 +522,9 @@ class ArrivalMovementRepositorySpec
 
           val movementReferenceNumber = arbitrary[MovementReferenceNumber].sample.value
 
-          val eori = "eori"
+          val eori      = "eori"
           val otherEori = "otherEori"
-          val arrival = arbitrary[Arrival].sample.value copy(eoriNumber = otherEori, movementReferenceNumber = movementReferenceNumber)
+          val arrival   = arbitrary[Arrival].sample.value copy (eoriNumber = otherEori, movementReferenceNumber = movementReferenceNumber)
 
           repository.insert(arrival).futureValue
 
@@ -509,8 +542,8 @@ class ArrivalMovementRepositorySpec
 
           val movementReferenceNumber = arbitrary[MovementReferenceNumber].sample.value
 
-          val eori = "eori"
-          val arrival = arbitrary[Arrival].sample.value copy(eoriNumber = eori, movementReferenceNumber = movementReferenceNumber, channel = api)
+          val eori    = "eori"
+          val arrival = arbitrary[Arrival].sample.value copy (eoriNumber = eori, movementReferenceNumber = movementReferenceNumber, channel = api)
 
           repository.insert(arrival).futureValue
 
@@ -526,12 +559,12 @@ class ArrivalMovementRepositorySpec
 
           val repository = app.injector.instanceOf[ArrivalMovementRepository]
 
-          val movementReferenceNumber = arbitrary[MovementReferenceNumber].sample.value
+          val movementReferenceNumber      = arbitrary[MovementReferenceNumber].sample.value
           val otherMovementReferenceNumber = arbitrary[MovementReferenceNumber].sample.value
 
-          val eori = "eori"
+          val eori      = "eori"
           val otherEori = "otherEori"
-          val arrival = arbitrary[Arrival].sample.value copy(eoriNumber = otherEori, movementReferenceNumber = otherMovementReferenceNumber, channel = api)
+          val arrival   = arbitrary[Arrival].sample.value copy (eoriNumber = otherEori, movementReferenceNumber = otherMovementReferenceNumber, channel = api)
 
           repository.insert(arrival).futureValue
 
@@ -563,25 +596,37 @@ class ArrivalMovementRepositorySpec
               db.collection[JSONCollection](ArrivalMovementRepository.collectionName).insert(false).many(jsonArr)
           }.futureValue
 
-          val expectedApiFetchAll1 = ResponseArrivals(Seq(ResponseArrival(
-            arrivalMovement1.arrivalId,
-            routes.MovementsController.getArrival(arrivalMovement1.arrivalId).url,
-            routes.MessagesController.getMessages(arrivalMovement1.arrivalId).url,
-            arrivalMovement1.movementReferenceNumber,
-            arrivalMovement1.status,
-            arrivalMovement1.created,
-            arrivalMovement1.lastUpdated
-          )),1,1)
+          val expectedApiFetchAll1 = ResponseArrivals(
+            Seq(
+              ResponseArrival(
+                arrivalMovement1.arrivalId,
+                routes.MovementsController.getArrival(arrivalMovement1.arrivalId).url,
+                routes.MessagesController.getMessages(arrivalMovement1.arrivalId).url,
+                arrivalMovement1.movementReferenceNumber,
+                arrivalMovement1.status,
+                arrivalMovement1.created,
+                arrivalMovement1.lastUpdated
+              )
+            ),
+            1,
+            1
+          )
 
-          val expectedApiFetchAll3 = ResponseArrivals(Seq(ResponseArrival(
-            arrivalMovement3.arrivalId,
-            routes.MovementsController.getArrival(arrivalMovement3.arrivalId).url,
-            routes.MessagesController.getMessages(arrivalMovement3.arrivalId).url,
-            arrivalMovement3.movementReferenceNumber,
-            arrivalMovement3.status,
-            arrivalMovement3.created,
-            arrivalMovement3.lastUpdated
-          )),1,1)
+          val expectedApiFetchAll3 = ResponseArrivals(
+            Seq(
+              ResponseArrival(
+                arrivalMovement3.arrivalId,
+                routes.MovementsController.getArrival(arrivalMovement3.arrivalId).url,
+                routes.MessagesController.getMessages(arrivalMovement3.arrivalId).url,
+                arrivalMovement3.movementReferenceNumber,
+                arrivalMovement3.status,
+                arrivalMovement3.created,
+                arrivalMovement3.lastUpdated
+              )
+            ),
+            1,
+            1
+          )
 
           repository.fetchAllArrivals(eoriNumber, api, None).futureValue mustBe expectedApiFetchAll1
           repository.fetchAllArrivals(eoriNumber, web, None).futureValue mustBe expectedApiFetchAll3
@@ -615,10 +660,14 @@ class ArrivalMovementRepositorySpec
 
       "must filter results by lastUpdated when updatedSince parameter is provided" in {
 
-        val arrivalMovement1 = arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = web, lastUpdated = LocalDateTime.of(2021, 4, 30, 9, 30, 31))
-        val arrivalMovement2 = arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = web, lastUpdated = LocalDateTime.of(2021, 4, 30, 9, 35, 32))
-        val arrivalMovement3 = arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = web, lastUpdated = LocalDateTime.of(2021, 4, 30, 12, 30, 21))
-        val arrivalMovement4 = arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = web, lastUpdated = LocalDateTime.of(2021, 4, 30, 10, 15, 16))
+        val arrivalMovement1 =
+          arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = web, lastUpdated = LocalDateTime.of(2021, 4, 30, 9, 30, 31))
+        val arrivalMovement2 =
+          arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = web, lastUpdated = LocalDateTime.of(2021, 4, 30, 9, 35, 32))
+        val arrivalMovement3 =
+          arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = web, lastUpdated = LocalDateTime.of(2021, 4, 30, 12, 30, 21))
+        val arrivalMovement4 =
+          arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = web, lastUpdated = LocalDateTime.of(2021, 4, 30, 10, 15, 16))
 
         val app = appBuilder.build()
         running(app) {
@@ -636,7 +685,7 @@ class ArrivalMovementRepositorySpec
 
           // We must use the web channel for this test as the API max rows returned in integration test config is 2
           val dateTime = OffsetDateTime.of(LocalDateTime.of(2021, 4, 30, 10, 30, 32), ZoneOffset.ofHours(1))
-          val actual = service.fetchAllArrivals(eoriNumber, web, Some(dateTime)).futureValue
+          val actual   = service.fetchAllArrivals(eoriNumber, web, Some(dateTime)).futureValue
           val expected = ResponseArrivals(Seq(arrivalMovement3, arrivalMovement4, arrivalMovement2).map(ResponseArrival.build), 3, 4)
 
           actual mustEqual expected
@@ -648,20 +697,20 @@ class ArrivalMovementRepositorySpec
   "arrivalsWithoutJsonMessagesSource" - {
     "must return arrivals with any messages that don't have a JSON representation, or whose JSON representation is an empty JSON object" in {
       implicit val actorSystem: ActorSystem = ActorSystem()
-      implicit val mat: Materializer = ActorMaterializer()
+      implicit val mat: Materializer        = ActorMaterializer()
 
       val arrival1 = arbitrary[Arrival].map(_.copy(ArrivalId(1))).sample.value
       val arrival2 = arbitrary[Arrival].map(_.copy(ArrivalId(2))).sample.value
       val arrival3 = arbitrary[Arrival].map(_.copy(ArrivalId(3))).sample.value
       val arrival4 = arbitrary[Arrival].map(_.copy(ArrivalId(4))).sample.value
 
-      val messageWithJson = Json.toJson(arbitrary[MovementMessageWithStatus].sample.value).as[JsObject] ++ Json.obj("messageJson" -> Json.obj("foo" -> "bar"))
-      val messageWithoutJson = Json.toJson(arbitrary[MovementMessageWithStatus].sample.value).as[JsObject] - "messageJson"
+      val messageWithJson      = Json.toJson(arbitrary[MovementMessageWithStatus].sample.value).as[JsObject] ++ Json.obj("messageJson" -> Json.obj("foo" -> "bar"))
+      val messageWithoutJson   = Json.toJson(arbitrary[MovementMessageWithStatus].sample.value).as[JsObject] - "messageJson"
       val messageWithEmptyJson = Json.toJson(arbitrary[MovementMessageWithStatus].sample.value).as[JsObject] ++ Json.obj("messageJson" -> Json.obj())
 
-      val arrivalWithJson = Json.toJson(arrival1).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithJson))
-      val arrivalWithoutJson = Json.toJson(arrival2).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithoutJson))
-      val arrivalWithSomeJson = Json.toJson(arrival3).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithJson, messageWithoutJson))
+      val arrivalWithJson      = Json.toJson(arrival1).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithJson))
+      val arrivalWithoutJson   = Json.toJson(arrival2).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithoutJson))
+      val arrivalWithSomeJson  = Json.toJson(arrival3).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithJson, messageWithoutJson))
       val arrivalWithEmptyJson = Json.toJson(arrival4).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithEmptyJson))
 
       val app = appBuilder.build()
@@ -688,20 +737,20 @@ class ArrivalMovementRepositorySpec
 
     "must return a stream that only returns the requested number of results" in {
       implicit val actorSystem: ActorSystem = ActorSystem()
-      implicit val mat: Materializer = ActorMaterializer()
+      implicit val mat: Materializer        = ActorMaterializer()
 
       val arrival1 = arbitrary[Arrival].map(_.copy(ArrivalId(1))).sample.value
       val arrival2 = arbitrary[Arrival].map(_.copy(ArrivalId(2))).sample.value
       val arrival3 = arbitrary[Arrival].map(_.copy(ArrivalId(3))).sample.value
       val arrival4 = arbitrary[Arrival].map(_.copy(ArrivalId(4))).sample.value
 
-      val messageWithJson = Json.toJson(arbitrary[MovementMessageWithStatus].sample.value).as[JsObject] ++ Json.obj("messageJson" -> Json.obj("foo" -> "bar"))
-      val messageWithoutJson = Json.toJson(arbitrary[MovementMessageWithStatus].sample.value).as[JsObject] - "messageJson"
+      val messageWithJson      = Json.toJson(arbitrary[MovementMessageWithStatus].sample.value).as[JsObject] ++ Json.obj("messageJson" -> Json.obj("foo" -> "bar"))
+      val messageWithoutJson   = Json.toJson(arbitrary[MovementMessageWithStatus].sample.value).as[JsObject] - "messageJson"
       val messageWithEmptyJson = Json.toJson(arbitrary[MovementMessageWithStatus].sample.value).as[JsObject] ++ Json.obj("messageJson" -> Json.obj())
 
-      val arrivalWithJson = Json.toJson(arrival1).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithJson))
-      val arrivalWithoutJson = Json.toJson(arrival2).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithoutJson))
-      val arrivalWithSomeJson = Json.toJson(arrival3).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithJson, messageWithoutJson))
+      val arrivalWithJson      = Json.toJson(arrival1).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithJson))
+      val arrivalWithoutJson   = Json.toJson(arrival2).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithoutJson))
+      val arrivalWithSomeJson  = Json.toJson(arrival3).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithJson, messageWithoutJson))
       val arrivalWithEmptyJson = Json.toJson(arrival4).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithEmptyJson))
 
       val app = appBuilder.build()
@@ -737,13 +786,13 @@ class ArrivalMovementRepositorySpec
       val arrival3 = arbitrary[Arrival].map(_.copy(ArrivalId(3))).sample.value
       val arrival4 = arbitrary[Arrival].map(_.copy(ArrivalId(4))).sample.value
 
-      val messageWithJson = Json.toJson(arbitrary[MovementMessageWithStatus].sample.value).as[JsObject] ++ Json.obj("messageJson" -> Json.obj("foo" -> "bar"))
-      val messageWithoutJson = Json.toJson(arbitrary[MovementMessageWithStatus].sample.value).as[JsObject] - "messageJson"
+      val messageWithJson      = Json.toJson(arbitrary[MovementMessageWithStatus].sample.value).as[JsObject] ++ Json.obj("messageJson" -> Json.obj("foo" -> "bar"))
+      val messageWithoutJson   = Json.toJson(arbitrary[MovementMessageWithStatus].sample.value).as[JsObject] - "messageJson"
       val messageWithEmptyJson = Json.toJson(arbitrary[MovementMessageWithStatus].sample.value).as[JsObject] ++ Json.obj("messageJson" -> Json.obj())
 
-      val arrivalWithJson = Json.toJson(arrival1).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithJson))
-      val arrivalWithoutJson = Json.toJson(arrival2).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithoutJson))
-      val arrivalWithSomeJson = Json.toJson(arrival3).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithJson, messageWithoutJson))
+      val arrivalWithJson      = Json.toJson(arrival1).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithJson))
+      val arrivalWithoutJson   = Json.toJson(arrival2).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithoutJson))
+      val arrivalWithSomeJson  = Json.toJson(arrival3).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithJson, messageWithoutJson))
       val arrivalWithEmptyJson = Json.toJson(arrival4).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithEmptyJson))
 
       val app = appBuilder.build()
@@ -761,10 +810,18 @@ class ArrivalMovementRepositorySpec
         val result = repo.arrivalsWithoutJsonMessages(100).futureValue
 
         result.size mustEqual 3
-        result.exists(arrival => arrival.arrivalId == arrival1.arrivalId) mustEqual false
-        result.exists(arrival => arrival.arrivalId == arrival2.arrivalId) mustEqual true
-        result.exists(arrival => arrival.arrivalId == arrival3.arrivalId) mustEqual true
-        result.exists(arrival => arrival.arrivalId == arrival4.arrivalId) mustEqual true
+        result.exists(
+          arrival => arrival.arrivalId == arrival1.arrivalId
+        ) mustEqual false
+        result.exists(
+          arrival => arrival.arrivalId == arrival2.arrivalId
+        ) mustEqual true
+        result.exists(
+          arrival => arrival.arrivalId == arrival3.arrivalId
+        ) mustEqual true
+        result.exists(
+          arrival => arrival.arrivalId == arrival4.arrivalId
+        ) mustEqual true
       }
     }
   }
@@ -773,9 +830,9 @@ class ArrivalMovementRepositorySpec
 
     "must replace the messages of an arrival with the newly-supplied ones" in {
 
-      val arrival = arbitrary[Arrival].sample.value
-      val message1 = arbitrary[MovementMessageWithStatus].sample.value
-      val message2 = arbitrary[MovementMessageWithStatus].sample.value
+      val arrival     = arbitrary[Arrival].sample.value
+      val message1    = arbitrary[MovementMessageWithStatus].sample.value
+      val message2    = arbitrary[MovementMessageWithStatus].sample.value
       val newMessages = NonEmptyList(message1, List(message2))
 
       val app = appBuilder.build()
@@ -784,7 +841,7 @@ class ArrivalMovementRepositorySpec
 
         repo.insert(arrival).futureValue
 
-        val resetResult = repo.resetMessages(arrival.arrivalId, newMessages).futureValue
+        val resetResult    = repo.resetMessages(arrival.arrivalId, newMessages).futureValue
         val updatedArrival = repo.get(arrival.arrivalId).futureValue
 
         resetResult mustEqual true
@@ -793,78 +850,81 @@ class ArrivalMovementRepositorySpec
     }
 
     "Must return max 2 arrivals when the API maxRowsReturned = 2" in {
-        database.flatMap(_.drop()).futureValue
+      database.flatMap(_.drop()).futureValue
 
-        val app = new GuiceApplicationBuilder().build()
-        val eoriNumber: String = arbitrary[String].sample.value
-        val appConfig = app.injector.instanceOf[AppConfig]
+      val app                = new GuiceApplicationBuilder().build()
+      val eoriNumber: String = arbitrary[String].sample.value
+      val appConfig          = app.injector.instanceOf[AppConfig]
 
+      val lastUpdated = LocalDateTime.now(stubClock).withSecond(0).withNano(0)
+      val id1         = ArrivalId(1)
+      val id2         = ArrivalId(2)
+      val id3         = ArrivalId(3)
+      val movement1   = arbitrary[Arrival].sample.value.copy(arrivalId = id1, eoriNumber = eoriNumber, channel = api, lastUpdated = lastUpdated.withSecond(10))
+      val movement2   = arbitrary[Arrival].sample.value.copy(arrivalId = id2, eoriNumber = eoriNumber, channel = api, lastUpdated = lastUpdated.withSecond(20))
+      val movement3   = arbitrary[Arrival].sample.value.copy(arrivalId = id3, eoriNumber = eoriNumber, channel = api, lastUpdated = lastUpdated.withSecond(30))
 
-        val lastUpdated = LocalDateTime.now(stubClock).withSecond(0).withNano(0)
-        val id1 = ArrivalId(1)
-        val id2 = ArrivalId(2)
-        val id3 = ArrivalId(3)
-        val movement1 = arbitrary[Arrival].sample.value.copy(arrivalId = id1, eoriNumber = eoriNumber, channel = api, lastUpdated = lastUpdated.withSecond(10))
-        val movement2 = arbitrary[Arrival].sample.value.copy(arrivalId = id2, eoriNumber = eoriNumber, channel = api, lastUpdated = lastUpdated.withSecond(20))
-        val movement3 = arbitrary[Arrival].sample.value.copy(arrivalId = id3, eoriNumber = eoriNumber, channel = api, lastUpdated = lastUpdated.withSecond(30))
+      running(app) {
+        started(app).futureValue
+        val repository = app.injector.instanceOf[ArrivalMovementRepository]
+        repository.insert(movement1).futureValue
+        repository.insert(movement2).futureValue
+        repository.insert(movement3).futureValue
 
-        running(app) {
-          started(app).futureValue
-          val repository = app.injector.instanceOf[ArrivalMovementRepository]
-          repository.insert(movement1).futureValue
-          repository.insert(movement2).futureValue
-          repository.insert(movement3).futureValue
+        val maxRows = appConfig.maxRowsReturned(api)
+        maxRows mustBe 2
 
-          val maxRows = appConfig.maxRowsReturned(api)
-          maxRows mustBe 2
+        val movements = repository.fetchAllArrivals(eoriNumber, api, updatedSince = None).futureValue
 
-          val movements = repository.fetchAllArrivals(eoriNumber, api, updatedSince = None).futureValue
+        movements.arrivals.size mustBe maxRows
+        movements.retrievedArrivals mustBe maxRows
 
-          movements.arrivals.size mustBe maxRows
-          movements.retrievedArrivals mustBe maxRows
+        val ids = movements.arrivals.map(
+          m => m.arrivalId.index
+        )
 
-          val ids = movements.arrivals.map(m => m.arrivalId.index)
+        ids mustBe Seq(movement3.arrivalId.index, movement2.arrivalId.index)
 
-          ids mustBe Seq(movement3.arrivalId.index,movement2.arrivalId.index)
-
-        }
       }
+    }
 
     "Must return max 1 arrivals when the WEB maxRowsReturned = 2" in {
-        database.flatMap(_.drop()).futureValue
+      database.flatMap(_.drop()).futureValue
 
-        val app = new GuiceApplicationBuilder().build()
-        val eoriNumber: String = arbitrary[String].sample.value
-        val appConfig = app.injector.instanceOf[AppConfig]
+      val app                = new GuiceApplicationBuilder().build()
+      val eoriNumber: String = arbitrary[String].sample.value
+      val appConfig          = app.injector.instanceOf[AppConfig]
 
-        val lastUpdated = LocalDateTime.now(stubClock).withSecond(0).withNano(0)
-        val id1 = ArrivalId(11)
-        val id2 = ArrivalId(12)
-        val id3 = ArrivalId(13)
-        val movement1 = arbitrary[Arrival].sample.value.copy(arrivalId = id1, eoriNumber = eoriNumber, channel = web, lastUpdated = lastUpdated.withSecond(1))
-        val movement2 = arbitrary[Arrival].sample.value.copy(arrivalId = id2, eoriNumber = eoriNumber, channel = web, lastUpdated = lastUpdated.withSecond(2))
-        val movement3 = arbitrary[Arrival].sample.value.copy(arrivalId = id3, eoriNumber = eoriNumber, channel = web, lastUpdated = lastUpdated.withSecond(3))
+      val lastUpdated = LocalDateTime.now(stubClock).withSecond(0).withNano(0)
+      val id1         = ArrivalId(11)
+      val id2         = ArrivalId(12)
+      val id3         = ArrivalId(13)
+      val movement1   = arbitrary[Arrival].sample.value.copy(arrivalId = id1, eoriNumber = eoriNumber, channel = web, lastUpdated = lastUpdated.withSecond(1))
+      val movement2   = arbitrary[Arrival].sample.value.copy(arrivalId = id2, eoriNumber = eoriNumber, channel = web, lastUpdated = lastUpdated.withSecond(2))
+      val movement3   = arbitrary[Arrival].sample.value.copy(arrivalId = id3, eoriNumber = eoriNumber, channel = web, lastUpdated = lastUpdated.withSecond(3))
 
-        running(app) {
-          started(app).futureValue
-          val repository = app.injector.instanceOf[ArrivalMovementRepository]
-          repository.insert(movement1).futureValue
-          repository.insert(movement2).futureValue
-          repository.insert(movement3).futureValue
+      running(app) {
+        started(app).futureValue
+        val repository = app.injector.instanceOf[ArrivalMovementRepository]
+        repository.insert(movement1).futureValue
+        repository.insert(movement2).futureValue
+        repository.insert(movement3).futureValue
 
-          val maxRows = appConfig.maxRowsReturned(web)
-          maxRows mustBe 100
+        val maxRows = appConfig.maxRowsReturned(web)
+        maxRows mustBe 100
 
-          val movements = repository.fetchAllArrivals(eoriNumber, web, updatedSince = None).futureValue
+        val movements = repository.fetchAllArrivals(eoriNumber, web, updatedSince = None).futureValue
 
-          movements.arrivals.size mustBe 3
-          movements.retrievedArrivals mustBe 3
+        movements.arrivals.size mustBe 3
+        movements.retrievedArrivals mustBe 3
 
-          val ids = movements.arrivals.map( m => m.arrivalId.index)
+        val ids = movements.arrivals.map(
+          m => m.arrivalId.index
+        )
 
-          ids mustBe Seq(movement3.arrivalId.index, movement2.arrivalId.index, movement1.arrivalId.index)
+        ids mustBe Seq(movement3.arrivalId.index, movement2.arrivalId.index, movement1.arrivalId.index)
 
-        }
       }
+    }
   }
 }

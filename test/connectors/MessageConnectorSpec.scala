@@ -41,6 +41,7 @@ import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.test.Helpers.running
 import uk.gov.hmrc.http.HeaderCarrier
+import models.MessageId
 
 class MessageConnectorSpec
     extends AnyFreeSpec
@@ -85,7 +86,7 @@ class MessageConnectorSpec
             )
         )
 
-        val postValue = MovementMessageWithStatus(LocalDateTime.now(), messageType, <CC007A>test</CC007A>, MessageStatus.SubmissionPending, 1)
+        val postValue = MovementMessageWithStatus(MessageId(1), LocalDateTime.now(), messageType, <CC007A>test</CC007A>, MessageStatus.SubmissionPending, 1)
         val arrivalId = ArrivalId(123)
 
         val app = appBuilder.build()
@@ -114,7 +115,7 @@ class MessageConnectorSpec
             )
         )
 
-        val postValue = MovementMessageWithStatus(LocalDateTime.now(), messageType, <CC007A>test</CC007A>, MessageStatus.SubmissionPending, 1)
+        val postValue = MovementMessageWithStatus(MessageId(1), LocalDateTime.now(), messageType, <CC007A>test</CC007A>, MessageStatus.SubmissionPending, 1)
         val arrivalId = ArrivalId(123)
 
         val app = appBuilder.build()
@@ -143,7 +144,7 @@ class MessageConnectorSpec
             )
         )
 
-        val postValue = MovementMessageWithStatus(LocalDateTime.now(), messageType, <CC007A>test</CC007A>, MessageStatus.SubmissionPending, 1)
+        val postValue = MovementMessageWithStatus(MessageId(1), LocalDateTime.now(), messageType, <CC007A>test</CC007A>, MessageStatus.SubmissionPending, 1)
         val arrivalId = ArrivalId(123)
 
         val app = appBuilder.build()
@@ -172,7 +173,7 @@ class MessageConnectorSpec
             )
         )
 
-        val postValue = MovementMessageWithStatus(LocalDateTime.now(), messageType, <CC007A>test</CC007A>, MessageStatus.SubmissionPending, 1)
+        val postValue = MovementMessageWithStatus(MessageId(1), LocalDateTime.now(), messageType, <CC007A>test</CC007A>, MessageStatus.SubmissionPending, 1)
         val arrivalId = ArrivalId(123)
 
         val app = appBuilder.build()
@@ -201,7 +202,7 @@ class MessageConnectorSpec
             )
         )
 
-        val postValue = MovementMessageWithStatus(LocalDateTime.now(), messageType, <CC007A>test</CC007A>, MessageStatus.SubmissionPending, 1)
+        val postValue = MovementMessageWithStatus(MessageId(1), LocalDateTime.now(), messageType, <CC007A>test</CC007A>, MessageStatus.SubmissionPending, 1)
         val arrivalId = ArrivalId(123)
 
         val app = appBuilder.build()
@@ -230,7 +231,7 @@ class MessageConnectorSpec
             )
         )
 
-        val postValue = MovementMessageWithStatus(LocalDateTime.now(), messageType, <CC007A>test</CC007A>, MessageStatus.SubmissionPending, 1)
+        val postValue = MovementMessageWithStatus(MessageId(1), LocalDateTime.now(), messageType, <CC007A>test</CC007A>, MessageStatus.SubmissionPending, 1)
         val arrivalId = ArrivalId(123)
 
         val app = appBuilder.build()

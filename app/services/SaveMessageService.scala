@@ -33,43 +33,45 @@ import scala.concurrent.Future
 import scala.util.Failure
 import scala.util.Success
 import scala.xml.NodeSeq
+import models.MessageId
 
-class SaveMessageService @Inject()(arrivalMovementRepository: ArrivalMovementRepository,
-                                   arrivalMovementService: ArrivalMovementMessageService,
-                                   xmlValidationService: XmlValidationService,
-                                   auditService: AuditService)(implicit ec: ExecutionContext)
+class SaveMessageService @Inject()(
+  arrivalMovementRepository: ArrivalMovementRepository,
+  arrivalMovementService: ArrivalMovementMessageService,
+  xmlValidationService: XmlValidationService,
+  auditService: AuditService
+)(implicit ec: ExecutionContext)
     extends Logging {
 
-  def validateXmlAndSaveMessage(messageXml: NodeSeq,
-                                messageSender: MessageSender,
-                                messageResponse: InboundMessageResponse,
-                                arrivalStatus: ArrivalStatus,
-                                channel: ChannelType)(implicit hc: HeaderCarrier): Future[SubmissionProcessingResult] =
+  def validateXmlAndSaveMessage(
+    nextMessageId: MessageId,
+    messageXml: NodeSeq,
+    messageSender: MessageSender,
+    messageResponse: InboundMessageResponse,
+    arrivalStatus: ArrivalStatus,
+    channel: ChannelType
+  )(implicit hc: HeaderCarrier): Future[SubmissionProcessingResult] =
     xmlValidationService.validate(messageXml.toString(), messageResponse.xsdFile) match {
       case Success(_) =>
-        arrivalMovementService.makeInboundMessage(messageSender.messageCorrelationId, messageResponse.messageType)(messageXml) match {
+        arrivalMovementService.makeInboundMessage(nextMessageId, messageSender.messageCorrelationId, messageResponse.messageType)(messageXml) match {
           case Right(message) =>
             arrivalMovementRepository
               .addResponseMessage(messageSender.arrivalId, message, arrivalStatus)
               .map {
-                case Success(_) => {
+                case Success(_) =>
                   logger.debug(s"Saved message successfully")
                   auditService.auditNCTSMessages(channel, messageResponse, message)
                   SubmissionSuccess
-                }
-                case Failure(error) => {
+                case Failure(error) =>
                   logger.warn(s"Failed to save message with error: $error")
                   SubmissionFailureInternal
-                }
               }
-          case Left(error) => {
+          case Left(error) =>
             logger.warn(s"Failed to create message with error: $error")
             Future.successful(SubmissionFailureExternal)
-          }
         }
-      case Failure(e) => {
+      case Failure(e) =>
         logger.warn(s"Failure to validate against XSD. Exception: ${e.getMessage}")
         Future.successful(SubmissionFailureExternal)
-      }
     }
 }

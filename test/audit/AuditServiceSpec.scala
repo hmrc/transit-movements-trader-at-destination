@@ -47,7 +47,8 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
       val requestXml         = <xml>test</xml>
       val requestedXmlToJson = Json.parse("{\"channel\":\"api\",\"xml\":\"test\"}")
 
-      val movementMessage = MovementMessageWithStatus(LocalDateTime.now, MessageType.ArrivalNotification, requestXml, MessageStatus.SubmissionSucceeded, 1)
+      val movementMessage =
+        MovementMessageWithStatus(MessageId(1), LocalDateTime.now, MessageType.ArrivalNotification, requestXml, MessageStatus.SubmissionSucceeded, 1)
 
       val auditType = "Some AuditEvent"
 
@@ -66,7 +67,7 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
       val requestXml         = <xml>test</xml>
       val requestedXmlToJson = Json.parse("{\"channel\":\"api\",\"xml\":\"test\"}")
 
-      val movementMessage = MovementMessageWithoutStatus(LocalDateTime.now, MessageType.GoodsReleased, requestXml, 1)
+      val movementMessage = MovementMessageWithoutStatus(MessageId(1), LocalDateTime.now, MessageType.GoodsReleased, requestXml, 1)
 
       val application = baseApplicationBuilder
         .overrides(bind[AuditConnector].toInstance(mockAuditConnector))
@@ -85,7 +86,7 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
       val requestXml         = <xml>test</xml>
       val requestedXmlToJson = Json.parse("{\"channel\":\"api\",\"xml\":\"test\"}")
 
-      val movementMessage = MovementMessageWithoutStatus(LocalDateTime.now, MessageType.ArrivalRejection, requestXml, 1)
+      val movementMessage = MovementMessageWithoutStatus(MessageId(1), LocalDateTime.now, MessageType.ArrivalRejection, requestXml, 1)
 
       val application = baseApplicationBuilder
         .overrides(bind[AuditConnector].toInstance(mockAuditConnector))
@@ -104,7 +105,7 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
       val requestXml         = <xml>test</xml>
       val requestedXmlToJson = Json.parse("{\"channel\":\"api\",\"xml\":\"test\"}")
 
-      val movementMessage = MovementMessageWithoutStatus(LocalDateTime.now, MessageType.UnloadingPermission, requestXml, 1)
+      val movementMessage = MovementMessageWithoutStatus(MessageId(1), LocalDateTime.now, MessageType.UnloadingPermission, requestXml, 1)
 
       val application = baseApplicationBuilder
         .overrides(bind[AuditConnector].toInstance(mockAuditConnector))
@@ -124,7 +125,7 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
       val requestXml         = <xml>test</xml>
       val requestedXmlToJson = Json.parse("{\"channel\":\"api\",\"xml\":\"test\"}")
 
-      val movementMessage = MovementMessageWithoutStatus(LocalDateTime.now, MessageType.UnloadingRemarksRejection, requestXml, 1)
+      val movementMessage = MovementMessageWithoutStatus(MessageId(1), LocalDateTime.now, MessageType.UnloadingRemarksRejection, requestXml, 1)
 
       val application = baseApplicationBuilder
         .overrides(bind[AuditConnector].toInstance(mockAuditConnector))

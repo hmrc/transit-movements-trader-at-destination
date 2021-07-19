@@ -66,6 +66,7 @@ class ResponseArrivalSpec extends SpecBase with ScalaCheckPropertyChecks with Mo
     </CC007A>
 
   def movementMessage(messageCorrelationId: Int): MovementMessageWithStatus = MovementMessageWithStatus(
+    MessageId(1),
     localDateTime,
     MessageType.ArrivalNotification,
     savedXmlMessage(messageCorrelationId).map(trim),

@@ -17,12 +17,16 @@
 package api
 
 import com.github.tomakehurst.wiremock.WireMockServer
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Suite}
-import play.api.inject.guice.{GuiceApplicationBuilder, GuiceableModule}
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.BeforeAndAfterEach
+import org.scalatest.Suite
+import org.scalatestplus.play.ServerProvider
+import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.inject.guice.GuiceableModule
+import play.api.Application
 
 trait WiremockSuite extends BeforeAndAfterAll with BeforeAndAfterEach {
-  this: Suite =>
+  this: Suite with ServerProvider =>
 
   protected val server: WireMockServer = new WireMockServer(11111)
 
@@ -31,10 +35,13 @@ trait WiremockSuite extends BeforeAndAfterAll with BeforeAndAfterEach {
   protected lazy val appBuilder: GuiceApplicationBuilder =
     new GuiceApplicationBuilder()
       .configure(
-        portConfigKeys.map(key => key -> server.port().toString): _*
-
-     )
+        portConfigKeys.map(
+          key => key -> server.port().toString
+        ): _*
+      )
       .overrides(bindings: _*)
+
+  override lazy val app: Application = appBuilder.build()
 
   protected def bindings: Seq[GuiceableModule] = Seq.empty
 

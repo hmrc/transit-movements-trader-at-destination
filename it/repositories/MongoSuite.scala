@@ -24,6 +24,7 @@ import reactivemongo.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import migrations.MigrationRunner
 
 object MongoSuite {
 
@@ -31,7 +32,9 @@ object MongoSuite {
     ConfigFactory.load(
       System.getProperty(
         "config.resource"
-      )))
+      )
+    )
+  )
 
   private lazy val parsedUri = MongoConnection.fromString(config.get[String]("mongodb.uri"))
 
@@ -48,10 +51,15 @@ trait MongoSuite {
 
     val arrivalMovementRepository = app.injector.instanceOf[ArrivalMovementRepository]
     val lockRepository            = app.injector.instanceOf[LockRepository]
+    val migrationRunner           = app.injector.instanceOf[MigrationRunner]
 
-    val services = Seq(arrivalMovementRepository.started, lockRepository.started)
+    val services = Seq(arrivalMovementRepository.started, lockRepository.started, migrationRunner.migrationsCompleted)
 
-    Future.sequence(services).map(_ => ())
+    Future
+      .sequence(services)
+      .map(
+        _ => ()
+      )
   }
 
   def database: Future[DefaultDB] =

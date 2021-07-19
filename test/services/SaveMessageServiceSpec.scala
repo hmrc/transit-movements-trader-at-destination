@@ -16,15 +16,13 @@
 
 package services
 
-import java.time.LocalDate
-import java.time.LocalTime
-
 import audit.AuditService
 import base.SpecBase
-import models.ArrivalStatus._
 import models.ArrivalId
+import models.ArrivalStatus._
 import models.ChannelType
 import models.GoodsReleasedResponse
+import models.MessageId
 import models.MessageSender
 import models.SubmissionProcessingResult
 import org.mockito.ArgumentMatchers.{eq => eqTo, _}
@@ -35,6 +33,8 @@ import play.api.test.Helpers.running
 import repositories.ArrivalMovementRepository
 import utils.Format
 
+import java.time.LocalDate
+import java.time.LocalTime
 import scala.concurrent.Future
 import scala.util.Failure
 import scala.util.Success
@@ -84,7 +84,9 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach {
           </CC025A>
 
         val result =
-          saveMessageService.validateXmlAndSaveMessage(requestGoodsReleasedXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased, channel).futureValue
+          saveMessageService
+            .validateXmlAndSaveMessage(MessageId(2), requestGoodsReleasedXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased, channel)
+            .futureValue
 
         result mustBe SubmissionProcessingResult.SubmissionSuccess
         verify(mockArrivalMovementRepository, times(1)).addResponseMessage(eqTo(arrivalId), any(), eqTo(GoodsReleased))
@@ -122,7 +124,9 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach {
           </CC025A>
 
         val result =
-          saveMessageService.validateXmlAndSaveMessage(requestGoodsReleasedXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased, channel).futureValue
+          saveMessageService
+            .validateXmlAndSaveMessage(MessageId(2), requestGoodsReleasedXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased, channel)
+            .futureValue
 
         result mustBe SubmissionProcessingResult.SubmissionFailureInternal
         verify(mockArrivalMovementRepository, times(1)).addResponseMessage(any(), any(), any())
@@ -151,7 +155,9 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach {
         val requestInvalidXmlBody = <Invalid>invalid</Invalid>
 
         val result =
-          saveMessageService.validateXmlAndSaveMessage(requestInvalidXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased, channel).futureValue
+          saveMessageService
+            .validateXmlAndSaveMessage(MessageId(2), requestInvalidXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased, channel)
+            .futureValue
 
         result mustBe SubmissionProcessingResult.SubmissionFailureExternal
         verify(mockArrivalMovementRepository, never()).addResponseMessage(any(), any(), any())
@@ -186,7 +192,9 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach {
           </CC025A>
 
         val result =
-          saveMessageService.validateXmlAndSaveMessage(requestInvalidXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased, channel).futureValue
+          saveMessageService
+            .validateXmlAndSaveMessage(MessageId(2), requestInvalidXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased, channel)
+            .futureValue
 
         result mustBe SubmissionProcessingResult.SubmissionFailureExternal
         verify(mockArrivalMovementRepository, never()).addResponseMessage(any(), any(), any())

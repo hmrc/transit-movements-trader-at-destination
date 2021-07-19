@@ -84,6 +84,7 @@ class NCTSMessageController @Inject()(
 
           val processingResult =
             saveMessageService.validateXmlAndSaveMessage(
+              request.arrivalRequest.arrival.nextMessageId,
               xml,
               messageSender,
               messageInbound.messageType,

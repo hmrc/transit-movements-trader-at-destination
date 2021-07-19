@@ -28,8 +28,8 @@ class MessageRetrievalService @Inject()(arrivalMessageSummaryService: ArrivalMes
         {
           val messages = arrival.messages.toList
 
-          if (messages.isDefinedAt(messageId.index)) {
-            Some(ResponseMovementMessage.build(arrival.arrivalId, messageId, messages(messageId.index)))
+          if (messages.isDefinedAt(messageId.index - 1)) {
+            Some(ResponseMovementMessage.build(arrival.arrivalId, messageId, messages(messageId.index - 1)))
           } else {
             None
           }

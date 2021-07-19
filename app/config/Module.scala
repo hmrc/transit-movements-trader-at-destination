@@ -26,6 +26,7 @@ import controllers.actions.AuthenticatedGetOptionalArrivalForWriteActionProvider
 import repositories.ArrivalMovementRepository
 import utils.MessageTranslation
 import java.time.Clock
+import migrations.MigrationRunner
 
 class Module extends AbstractModule {
 
@@ -38,5 +39,6 @@ class Module extends AbstractModule {
     bind(classOf[MessageTranslation]).asEagerSingleton()
     bind(classOf[StreamLoggingConfig]).to(classOf[StreamLoggingConfigImpl]).asEagerSingleton()
     bind(classOf[Clock]).toInstance(Clock.systemUTC)
+    bind(classOf[MigrationRunner]).asEagerSingleton()
   }
 }

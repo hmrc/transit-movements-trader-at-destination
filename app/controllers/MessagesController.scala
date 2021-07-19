@@ -78,7 +78,7 @@ class MessagesController @Inject()(
             val messageType = request.message.messageType.messageType
 
             arrivalMovementService
-              .makeOutboundMessage(arrivalId, arrival.nextMessageCorrelationId, messageType)(request.arrivalRequest.request.body) match {
+              .makeOutboundMessage(arrivalId, arrival.nextMessageId, arrival.nextMessageCorrelationId, messageType)(request.arrivalRequest.request.body) match {
               case Right(message) =>
                 submitMessageService
                   .submitMessage(arrivalId, arrival.nextMessageId, message, request.message.nextState, arrival.channel)
@@ -115,8 +115,8 @@ class MessagesController @Inject()(
         implicit request =>
           val messages = request.arrival.messages.toList
 
-          if (messages.isDefinedAt(messageId.index) && !messages(messageId.index).optStatus.contains(SubmissionFailed))
-            Ok(Json.toJsObject(ResponseMovementMessage.build(arrivalId, messageId, messages(messageId.index))))
+          if (messages.isDefinedAt(messageId.index - 1) && !messages(messageId.index - 1).optStatus.contains(SubmissionFailed))
+            Ok(Json.toJsObject(ResponseMovementMessage.build(arrivalId, messageId, messages(messageId.index - 1))))
           else NotFound
       }
     }

@@ -33,6 +33,7 @@ import java.time.LocalDateTime
 import javax.inject.Inject
 import scala.xml.Elem
 import scala.xml.XML
+import models.MessageId
 
 private[services] class TestDataGenerator @Inject()(clock: Clock) {
 
@@ -42,7 +43,7 @@ private[services] class TestDataGenerator @Inject()(clock: Clock) {
 
     val xml = TestDataXMLGenerator.arrivalNotification(mrn.format, eori.format)
 
-    val movementMessage = MovementMessageWithStatus(dateTime, ArrivalNotification, xml, MessageStatus.SubmissionSucceeded, 1)
+    val movementMessage = MovementMessageWithStatus(MessageId(1), dateTime, ArrivalNotification, xml, MessageStatus.SubmissionSucceeded, 1)
 
     Arrival(
       arrivalId,

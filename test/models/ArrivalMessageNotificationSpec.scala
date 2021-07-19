@@ -53,7 +53,7 @@ class ArrivalMessageNotificationSpec extends SpecBase with ScalaCheckDrivenPrope
           s"/customs/transits/movements/arrivals/${arrival.arrivalId.index}/messages/${arrival.messages.length + 1}",
           s"/customs/transits/movements/arrivals/${arrival.arrivalId.index}",
           arrival.arrivalId,
-          MessageId.fromIndex(arrival.messages.length),
+          MessageId(arrival.messages.length + 1),
           now,
           response.messageType
         )

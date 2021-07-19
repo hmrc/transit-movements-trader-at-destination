@@ -31,6 +31,7 @@ import scala.util.Try
 import scala.xml.NodeSeq
 
 sealed trait MovementMessage {
+  def messageId: MessageId
   def dateTime: LocalDateTime
   def messageType: MessageType
   def message: NodeSeq
@@ -43,6 +44,7 @@ sealed trait MovementMessage {
 }
 
 sealed trait XmlToJson extends Logging {
+
   protected def toJson(xml: NodeSeq): JsObject =
     Try(Json.parse(XML.toJSONObject(xml.toString).toString).as[JsObject]) match {
       case Success(data) => data
@@ -52,24 +54,29 @@ sealed trait XmlToJson extends Logging {
     }
 }
 
-final case class MovementMessageWithStatus private (dateTime: LocalDateTime,
-                                                    messageType: MessageType,
-                                                    message: NodeSeq,
-                                                    status: MessageStatus,
-                                                    messageCorrelationId: Int,
-                                                    messageJson: JsObject)
-    extends MovementMessage { def optStatus: Option[MessageStatus] = Some(status) }
+final case class MovementMessageWithStatus private (
+  messageId: MessageId,
+  dateTime: LocalDateTime,
+  messageType: MessageType,
+  message: NodeSeq,
+  status: MessageStatus,
+  messageCorrelationId: Int,
+  messageJson: JsObject
+) extends MovementMessage { def optStatus: Option[MessageStatus] = Some(status) }
 
-final case class MovementMessageWithoutStatus private (dateTime: LocalDateTime,
-                                                       messageType: MessageType,
-                                                       message: NodeSeq,
-                                                       messageCorrelationId: Int,
-                                                       messageJson: JsObject)
-    extends MovementMessage { def optStatus: Option[MessageStatus] = None }
+final case class MovementMessageWithoutStatus private (
+  messageId: MessageId,
+  dateTime: LocalDateTime,
+  messageType: MessageType,
+  message: NodeSeq,
+  messageCorrelationId: Int,
+  messageJson: JsObject
+) extends MovementMessage { def optStatus: Option[MessageStatus] = None }
 
 object MovementMessage extends NodeSeqFormat with MongoDateTimeFormats {
 
   implicit lazy val reads: Reads[MovementMessage] = new Reads[MovementMessage] {
+
     override def reads(json: JsValue): JsResult[MovementMessage] = (json \ "status").toOption match {
       case Some(_) =>
         json.validate[MovementMessageWithStatus]
@@ -94,20 +101,28 @@ object MovementMessageWithStatus extends NodeSeqFormat with MongoDateTimeFormats
     import play.api.libs.functional.syntax._
 
     (
-      (__ \ "dateTime").read[LocalDateTime] and
+      (__ \ "messageId").read[MessageId] and
+        (__ \ "dateTime").read[LocalDateTime] and
         (__ \ "messageType").read[MessageType] and
         (__ \ "message").read[NodeSeq] and
         (__ \ "status").read[MessageStatus] and
         (__ \ "messageCorrelationId").read[Int] and
         (__ \ "messageJson").read[JsObject].orElse(Reads.pure(Json.obj()))
-    )(MovementMessageWithStatus(_, _, _, _, _, _))
+    )(MovementMessageWithStatus(_, _, _, _, _, _, _))
   }
 
   implicit val formatsMovementMessage: OFormat[MovementMessageWithStatus] =
     OFormat(readsMovementMessage, writesMovementMessage)
 
-  def apply(dateTime: LocalDateTime, messageType: MessageType, message: NodeSeq, status: MessageStatus, messageCorrelationId: Int): MovementMessageWithStatus =
-    MovementMessageWithStatus(dateTime, messageType, message, status, messageCorrelationId, toJson(message))
+  def apply(
+    messageId: MessageId,
+    dateTime: LocalDateTime,
+    messageType: MessageType,
+    message: NodeSeq,
+    status: MessageStatus,
+    messageCorrelationId: Int
+  ): MovementMessageWithStatus =
+    MovementMessageWithStatus(messageId, dateTime, messageType, message, status, messageCorrelationId, toJson(message))
 }
 
 object MovementMessageWithoutStatus extends NodeSeqFormat with MongoDateTimeFormats with XmlToJson {
@@ -120,17 +135,24 @@ object MovementMessageWithoutStatus extends NodeSeqFormat with MongoDateTimeForm
     import play.api.libs.functional.syntax._
 
     (
-      (__ \ "dateTime").read[LocalDateTime] and
+      (__ \ "messageId").read[MessageId] and
+        (__ \ "dateTime").read[LocalDateTime] and
         (__ \ "messageType").read[MessageType] and
         (__ \ "message").read[NodeSeq] and
         (__ \ "messageCorrelationId").read[Int] and
         (__ \ "messageJson").read[JsObject].orElse(Reads.pure(Json.obj()))
-    )(MovementMessageWithoutStatus(_, _, _, _, _))
+    )(MovementMessageWithoutStatus(_, _, _, _, _, _))
   }
 
   implicit val formatsMovementMessage: OFormat[MovementMessageWithoutStatus] =
     OFormat(readsMovementMessage, writesMovementMessage)
 
-  def apply(dateTime: LocalDateTime, messageType: MessageType, message: NodeSeq, messageCorrelationId: Int): MovementMessageWithoutStatus =
-    MovementMessageWithoutStatus(dateTime, messageType, message, messageCorrelationId, toJson(message))
+  def apply(
+    messageId: MessageId,
+    dateTime: LocalDateTime,
+    messageType: MessageType,
+    message: NodeSeq,
+    messageCorrelationId: Int
+  ): MovementMessageWithoutStatus =
+    MovementMessageWithoutStatus(messageId, dateTime, messageType, message, messageCorrelationId, toJson(message))
 }
