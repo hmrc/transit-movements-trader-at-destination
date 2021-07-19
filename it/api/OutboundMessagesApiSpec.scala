@@ -16,63 +16,50 @@
 
 package api
 
-import cats.syntax.all._
 import cats.data.NonEmptyList
-
-import play.api.test.Helpers._
+import cats.syntax.all._
 import generators.ModelGenerators
-import models.ArrivalStatus.UnloadingPermission
 import models.Arrival
+import models.ArrivalStatus.UnloadingPermission
+import models.MessageId
 import models.MessageStatus
 import models.MessageType
 import models.MovementMessageWithStatus
 import models.MovementMessageWithoutStatus
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalatest.BeforeAndAfterEach
-import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.OptionValues
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
-import org.scalatest.EitherValues
-import org.scalatest.OptionValues
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
-import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import play.api.Application
 import play.api.libs.json.JsNumber
 import play.api.libs.ws.WSClient
 import play.api.test.DefaultAwaitTimeout
 import play.api.test.FutureAwaits
+import play.api.test.Helpers._
 import repositories.ArrivalMovementRepository
 import utils.Format
 
 import java.net.URLEncoder
-import java.time.ZoneOffset
-import java.time.OffsetDateTime
 import java.time.LocalDateTime
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
-
 import scala.concurrent.ExecutionContext.Implicits.global
-import models.MessageId
 
 class OutboundMessagesApiSpec
     extends AnyFreeSpec
     with GuiceOneServerPerSuite
     with Matchers
-    with ScalaCheckPropertyChecks
     with ModelGenerators
     with OptionValues
-    with EitherValues
     with FutureAwaits
     with DefaultAwaitTimeout
-    with ScalaFutures
-    with WiremockSuite
-    with BeforeAndAfterEach {
+    with WiremockSuite {
 
   override protected def portConfigKeys: Seq[String] = Seq(
     "microservice.services.auth.port",
     "microservice.services.eis.port"
   )
-
-  implicit override lazy val app: Application = appBuilder.build()
 
   lazy val ws: WSClient                    = app.injector.instanceOf[WSClient]
   lazy val repo: ArrivalMovementRepository = app.injector.instanceOf[ArrivalMovementRepository]
