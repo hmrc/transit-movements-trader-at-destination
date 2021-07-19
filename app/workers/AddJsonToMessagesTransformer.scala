@@ -18,8 +18,6 @@ package workers
 
 import akka.NotUsed
 import akka.stream.ActorAttributes
-import akka.stream.Attributes
-import akka.stream.Supervision
 import akka.stream.scaladsl.Flow
 import cats.data.NonEmptyList
 import logging.Logging
@@ -29,13 +27,13 @@ import models.MovementMessageWithStatus
 import models.MovementMessageWithoutStatus
 import repositories.ArrivalMovementRepository
 import repositories.LockRepository
-import WorkerProcessingException._
-import play.api.Logger
 
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.control.NonFatal
+
+import WorkerProcessingException._
 
 private[workers] class AddJsonToMessagesTransformer @Inject()(
   workerConfig: WorkerConfig,
@@ -63,9 +61,9 @@ private[workers] class AddJsonToMessagesTransformer @Inject()(
 
         val updatedMessages: NonEmptyList[MovementMessage] = arrival.messages.map {
           case m: MovementMessageWithoutStatus =>
-            MovementMessageWithoutStatus(m.dateTime, m.messageType, m.message, m.messageCorrelationId)
+            MovementMessageWithoutStatus(m.messageId, m.dateTime, m.messageType, m.message, m.messageCorrelationId)
           case m: MovementMessageWithStatus =>
-            MovementMessageWithStatus(m.dateTime, m.messageType, m.message, m.status, m.messageCorrelationId)
+            MovementMessageWithStatus(m.messageId, m.dateTime, m.messageType, m.message, m.status, m.messageCorrelationId)
         }
 
         arrivalMovementRepository.resetMessages(arrival.arrivalId, updatedMessages).flatMap {
@@ -74,7 +72,7 @@ private[workers] class AddJsonToMessagesTransformer @Inject()(
               _ =>
                 (arrival, NotUsed)
             } recover {
-              case e: Throwable =>
+              case NonFatal(e) =>
                 (arrival, NotUsed)
             }
         } recoverWith {

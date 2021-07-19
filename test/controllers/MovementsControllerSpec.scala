@@ -110,6 +110,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
     </CC007A>
 
   def movementMessage(messageCorrelationId: Int): MovementMessageWithStatus = MovementMessageWithStatus(
+    MessageId(1),
     localDateTime,
     MessageType.ArrivalNotification,
     savedXmlMessage(messageCorrelationId).map(trim),
@@ -536,7 +537,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
             header("Location", result).value must be(routes.MovementsController.getArrival(initializedArrival.arrivalId).url)
             verify(mockSubmitMessageService, times(1)).submitMessage(
               eqTo(initializedArrival.arrivalId),
-              eqTo(MessageId.fromIndex(1)),
+              eqTo(MessageId(2)),
               captor.capture(),
               eqTo(ArrivalStatus.ArrivalSubmitted),
               any()
@@ -816,7 +817,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           header("Location", result).value must be(routes.MovementsController.getArrival(initializedArrival.arrivalId).url)
           verify(mockSubmitMessageService, times(1)).submitIe007Message(
             eqTo(initializedArrival.arrivalId),
-            eqTo(MessageId.fromIndex(1)),
+            eqTo(MessageId(2)),
             captor.capture(),
             eqTo(initializedArrival.movementReferenceNumber),
             any()

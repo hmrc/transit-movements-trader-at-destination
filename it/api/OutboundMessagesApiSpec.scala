@@ -51,6 +51,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import models.MessageId
 
 class OutboundMessagesApiSpec
     extends AnyFreeSpec
@@ -80,8 +81,8 @@ class OutboundMessagesApiSpec
     "return a Bad request if a second request comes in for the same unloading remarks" in {
 
       val movements = NonEmptyList(
-        MovementMessageWithStatus(LocalDateTime.now(), MessageType.ArrivalNotification, <CC007A></CC007A>, MessageStatus.SubmissionSucceeded, 1),
-        MovementMessageWithoutStatus(LocalDateTime.now(), MessageType.UnloadingPermission, <CC043A></CC043A>, 1) :: Nil
+        MovementMessageWithStatus(MessageId(1), LocalDateTime.now(), MessageType.ArrivalNotification, <CC007A></CC007A>, MessageStatus.SubmissionSucceeded, 1),
+        MovementMessageWithoutStatus(MessageId(2), LocalDateTime.now(), MessageType.UnloadingPermission, <CC043A></CC043A>, 1) :: Nil
       )
 
       val arrival =
