@@ -34,14 +34,13 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.test.Helpers._
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.UpstreamErrorResponse
-import java.time.LocalDateTime
 
+import java.time.LocalDateTime
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.xml.NodeSeq
 
 class PushPullNotificationServiceSpec extends SpecBase with BeforeAndAfterEach with ScalaCheckPropertyChecks {
   val mockConnector = mock[PushPullNotificationConnector]
@@ -100,12 +99,16 @@ class PushPullNotificationServiceSpec extends SpecBase with BeforeAndAfterEach w
       "should return a unit value when connector call succeeds" in {
         val testArrivalId  = ArrivalId(1)
         val testMessageUri = requestId(testArrivalId) + "/messages" + ""
-        val testNotification = ArrivalMessageNotification(testMessageUri,
-                                                          requestId(testArrivalId),
-                                                          testArrivalId,
-                                                          MessageId.fromIndex(1),
-                                                          LocalDateTime.now,
-                                                          MessageType.UnloadingPermission)
+        val testBody       = <test>test content</test>
+        val testNotification = ArrivalMessageNotification(
+          testMessageUri,
+          requestId(testArrivalId),
+          testArrivalId,
+          MessageId.fromIndex(1),
+          LocalDateTime.now,
+          MessageType.UnloadingPermission,
+          Some(testBody)
+        )
 
         val boxIdMatcher = refEq(testBoxId).asInstanceOf[BoxId]
 
@@ -120,12 +123,16 @@ class PushPullNotificationServiceSpec extends SpecBase with BeforeAndAfterEach w
       "should not return anything when call fails" in {
         val testArrivalId  = ArrivalId(1)
         val testMessageUri = requestId(testArrivalId) + "/messages" + ""
-        val testNotification = ArrivalMessageNotification(testMessageUri,
-                                                          requestId(testArrivalId),
-                                                          testArrivalId,
-                                                          MessageId.fromIndex(1),
-                                                          LocalDateTime.now,
-                                                          MessageType.UnloadingPermission)
+        val testBody       = <test>test content</test>
+        val testNotification = ArrivalMessageNotification(
+          testMessageUri,
+          requestId(testArrivalId),
+          testArrivalId,
+          MessageId.fromIndex(1),
+          LocalDateTime.now,
+          MessageType.UnloadingPermission,
+          Some(testBody)
+        )
 
         val boxIdMatcher = refEq(testBoxId).asInstanceOf[BoxId]
 
