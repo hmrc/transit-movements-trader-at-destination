@@ -71,7 +71,7 @@ object ArrivalMessageNotification {
       messageId,
       timestamp,
       request.message.messageType.messageType,
-      if (bodySize.exists(_ <= oneHundredKilobytes)) Some(request.body) else None
+      if (bodySize.exists(_ < oneHundredKilobytes)) Some(request.body) else None
     )
   }
 }
