@@ -14,6 +14,7 @@
     <logger name="controllers.actions.MessageTransformer" level="${logger.MessageTransformer:-ERROR}"/>
     <logger name="controllers.actions.ValidateInboundMessageAction" level="${logger.ValidateInboundMessageAction:-WARN}"/>
     <logger name="controllers.actions.ValidateOutboundMessageAction" level="${logger.ValidateOutboundMessageAction:-WARN}"/>
+    <logger name="migrations.MigrationRunner" level="${logger.MigrationRunner:-INFO}"/>
 
     <logger name="application.workers.AddJsonToMessagesWorker" level="${logger.application.workers.AddJsonToMessagesWorker:-INFO}"/>
 
