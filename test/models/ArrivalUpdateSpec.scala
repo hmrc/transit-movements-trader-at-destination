@@ -122,8 +122,8 @@ class ArrivalUpdateSpec
         messageStatusUpdate =>
           val expectedUpdateJson = Json.obj(
             "$set" -> Json.obj(
-              s"messages.${messageStatusUpdate.messageId.index - 1}.status" -> messageStatusUpdate.messageStatus,
-              "lastUpdated"                                                 -> LocalDateTime.now(clock).withSecond(0).withNano(0)
+              s"messages.${messageStatusUpdate.messageId.index}.status" -> messageStatusUpdate.messageStatus,
+              "lastUpdated"                                             -> LocalDateTime.now(clock).withSecond(0).withNano(0)
             )
           )
 
@@ -154,9 +154,9 @@ class ArrivalUpdateSpec
         compoundStatusUpdate =>
           val expectedUpdateJson = Json.obj(
             "$set" -> Json.obj(
-              "status"                                                                           -> compoundStatusUpdate.arrivalStatusUpdate.arrivalStatus,
-              s"messages.${compoundStatusUpdate.messageStatusUpdate.messageId.index - 1}.status" -> compoundStatusUpdate.messageStatusUpdate.messageStatus,
-              "lastUpdated"                                                                      -> LocalDateTime.now(clock).withSecond(0).withNano(0)
+              "status"                                                                       -> compoundStatusUpdate.arrivalStatusUpdate.arrivalStatus,
+              s"messages.${compoundStatusUpdate.messageStatusUpdate.messageId.index}.status" -> compoundStatusUpdate.messageStatusUpdate.messageStatus,
+              "lastUpdated"                                                                  -> LocalDateTime.now(clock).withSecond(0).withNano(0)
             )
           )
 
@@ -169,7 +169,7 @@ class ArrivalUpdateSpec
     " ArrivalModifier returns modify object that would set the MRN, status and the message status" in {
       forAll(arbitrary[ArrivalPutUpdate]) {
         arrivalPutUpdate =>
-          val expectedMessageId = arrivalPutUpdate.arrivalUpdate.messageStatusUpdate.messageId.index - 1
+          val expectedMessageId = arrivalPutUpdate.arrivalUpdate.messageStatusUpdate.messageId.index
           val expectedJson = Json.obj(
             "$set" -> Json.obj(
               "movementReferenceNumber"             -> arrivalPutUpdate.movementReferenceNumber,

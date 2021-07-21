@@ -58,7 +58,7 @@ object ArrivalMessageNotification {
     val messageId  = request.arrivalRequest.arrival.nextMessageId
     val arrivalUrl = requestId(request.arrivalRequest.arrival.arrivalId)
     ArrivalMessageNotification(
-      s"$arrivalUrl/messages/${messageId.index}",
+      s"$arrivalUrl/messages/${messageId.value}",
       arrivalUrl,
       request.arrivalRequest.arrival.arrivalId,
       messageId,
