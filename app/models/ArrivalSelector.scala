@@ -35,16 +35,19 @@ object ArrivalSelector {
 final case class ArrivalIdSelector(arrivalId: ArrivalId) extends ArrivalSelector
 
 object ArrivalIdSelector {
+
   implicit val writes: OWrites[ArrivalIdSelector] = OWrites(
     arrivalIdSelector =>
       Json.obj(
         "_id" -> arrivalIdSelector.arrivalId
-    ))
+    )
+  )
 }
 
 final case class MessageSelector(arrivalId: ArrivalId, messageId: MessageId) extends ArrivalSelector
 
 object MessageSelector {
+
   implicit val writes: OWrites[MessageSelector] = OWrites(
     messageSelector =>
       Json.obj(

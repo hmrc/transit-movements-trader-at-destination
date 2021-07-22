@@ -37,13 +37,13 @@ class ArrivalSpec extends SpecBase with ScalaCheckDrivenPropertyChecks with Mode
     }
   }
 
-  "messageWithId returns a list with the message and the MessageId whose value is one more than the index" in {
+  "messageWithId returns a list with the message and its corresponding message ID" in {
     forAll(arrivaGenerator) {
       arrival =>
         arrival.messagesWithId.zipWithIndex.toList.foreach {
           case ((message, messageId), index) =>
             message mustEqual arrival.messages.toList(index)
-            (MessageId.unapply(messageId).value - index) mustEqual 1
+            messageId mustEqual message.messageId
         }
     }
   }

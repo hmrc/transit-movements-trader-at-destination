@@ -78,7 +78,7 @@ class MessagesController @Inject()(
             val messageType = request.message.messageType.messageType
 
             arrivalMovementService
-              .makeOutboundMessage(arrivalId, arrival.nextMessageCorrelationId, messageType)(request.arrivalRequest.request.body) match {
+              .makeOutboundMessage(arrivalId, arrival.nextMessageId, arrival.nextMessageCorrelationId, messageType)(request.arrivalRequest.request.body) match {
               case Right(message) =>
                 submitMessageService
                   .submitMessage(arrivalId, arrival.nextMessageId, message, request.message.nextState, arrival.channel)

@@ -43,7 +43,7 @@ object ArrivalMessageNotification {
       (__ \ "messageUri").write[String] and
         (__ \ "requestId").write[String] and
         (__ \ "arrivalId").write[ArrivalId] and
-        (__ \ "messageId").write[String].contramap[MessageId](_.publicValue.toString) and
+        (__ \ "messageId").write[MessageId] and
         (__ \ "received").write[LocalDateTime] and
         (__ \ "messageType").write[MessageType]
     )(unlift(ArrivalMessageNotification.unapply))
@@ -55,10 +55,10 @@ object ArrivalMessageNotification {
     }
 
   def fromRequest(request: InboundMessageRequest[NodeSeq], timestamp: LocalDateTime): ArrivalMessageNotification = {
-    val messageId  = MessageId.fromIndex(request.arrivalRequest.arrival.messages.length)
+    val messageId  = request.arrivalRequest.arrival.nextMessageId
     val arrivalUrl = requestId(request.arrivalRequest.arrival.arrivalId)
     ArrivalMessageNotification(
-      s"$arrivalUrl/messages/${messageId.publicValue}",
+      s"$arrivalUrl/messages/${messageId.value}",
       arrivalUrl,
       request.arrivalRequest.arrival.arrivalId,
       messageId,

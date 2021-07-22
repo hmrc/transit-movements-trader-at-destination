@@ -118,7 +118,9 @@ class MovementsController @Inject()(
           request.arrival match {
             case Some(arrival) if allMessageUnsent(arrival.messages) =>
               arrivalMovementService
-                .makeOutboundMessage(arrival.arrivalId, arrival.nextMessageCorrelationId, MessageType.ArrivalNotification)(request.body) match {
+                .makeOutboundMessage(arrival.arrivalId, arrival.nextMessageId, arrival.nextMessageCorrelationId, MessageType.ArrivalNotification)(
+                  request.body
+                ) match {
                 case Right(message) =>
                   submitMessageService
                     .submitMessage(arrival.arrivalId, arrival.nextMessageId, message, ArrivalStatus.ArrivalSubmitted, request.channel)
@@ -185,7 +187,7 @@ class MovementsController @Inject()(
       authenticateForWrite(arrivalId).async(parse.xml) {
         implicit request: ArrivalRequest[NodeSeq] =>
           arrivalMovementService
-            .messageAndMrn(arrivalId, request.arrival.nextMessageCorrelationId)(request.body) match {
+            .messageAndMrn(arrivalId, request.arrival.nextMessageId, request.arrival.nextMessageCorrelationId)(request.body) match {
             case Right((message, mrn)) =>
               submitMessageService
                 .submitIe007Message(arrivalId, request.arrival.nextMessageId, message, mrn, request.channel)

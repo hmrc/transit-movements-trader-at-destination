@@ -23,7 +23,6 @@ import models.MessageStatus._
 import models.MessageType._
 import models.Arrival
 import models.ArrivalStatus
-import models.MessageId
 import models.MessageType
 import models.MessagesSummary
 import models.MovementMessage
@@ -72,7 +71,7 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
                 val (message, messageId) = service.arrivalNotificationR(arrival)
 
                 message mustEqual ie007
-                messageId mustEqual MessageId.fromMessageIdValue(1).value
+                messageId mustEqual ie007.messageId
 
             }
         }
@@ -90,7 +89,7 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
                 val (message, messageId) = service.arrivalNotificationR(arrival)
 
                 message mustEqual ie007
-                messageId mustEqual MessageId.fromMessageIdValue(1).value
+                messageId mustEqual ie007.messageId
             }
         }
 
@@ -108,7 +107,7 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
                 val (message, messageId) = service.arrivalNotificationR(arrival)
 
                 message mustEqual ie007
-                messageId mustEqual MessageId.fromMessageIdValue(3).value
+                messageId mustEqual ie007.messageId
             }
         }
 
@@ -126,7 +125,7 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
                 val (message, messageId) = service.arrivalNotificationR(arrival)
 
                 message mustEqual ie007
-                messageId mustEqual MessageId.fromMessageIdValue(3).value
+                messageId mustEqual ie007.messageId
             }
         }
 
@@ -145,7 +144,7 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
           ie007 =>
             forAll(arrivalMovement(NonEmptyList.one(ie007))) {
               arrival =>
-                service.arrivalRejectionR(arrival) must not be (defined)
+                service.arrivalRejectionR(arrival) must not be defined
 
             }
         }
@@ -163,7 +162,7 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
                 val (message, messageId) = service.arrivalRejectionR(arrival).value
 
                 message mustEqual ie008
-                messageId mustEqual MessageId.fromMessageIdValue(2).value
+                messageId mustEqual ie008.messageId
             }
         }
 
@@ -178,7 +177,7 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
 
             forAll(arrivalMovement(messages)) {
               arrival =>
-                service.arrivalRejectionR(arrival) must not be (defined)
+                service.arrivalRejectionR(arrival) must not be defined
             }
         }
 
@@ -196,7 +195,7 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
                 val (message, messageId) = service.arrivalRejectionR(arrival).value
 
                 message mustEqual ie008
-                messageId mustEqual MessageId.fromMessageIdValue(4).value
+                messageId mustEqual ie008.messageId
             }
         }
 
@@ -215,7 +214,7 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
           ie007 =>
             forAll(arrivalMovement(NonEmptyList.one(ie007))) {
               arrival =>
-                service.xmlSubmissionNegativeAcknowledgementR(arrival) must not be (defined)
+                service.xmlSubmissionNegativeAcknowledgementR(arrival) must not be defined
 
             }
         }
@@ -233,7 +232,7 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
                 val (message, messageId) = service.xmlSubmissionNegativeAcknowledgementR(arrival).value
 
                 message mustEqual ie917
-                messageId mustEqual MessageId.fromMessageIdValue(2).value
+                messageId mustEqual ie917.messageId
             }
         }
 
@@ -251,7 +250,7 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
                 val (message, messageId) = service.xmlSubmissionNegativeAcknowledgementR(arrival).value
 
                 message mustEqual ie917
-                messageId mustEqual MessageId.fromMessageIdValue(3).value
+                messageId mustEqual ie917.messageId
             }
         }
 
@@ -269,7 +268,7 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
                 val (message, messageId) = service.xmlSubmissionNegativeAcknowledgementR(arrival).value
 
                 message mustEqual ie917
-                messageId mustEqual MessageId.fromMessageIdValue(4).value
+                messageId mustEqual ie917.messageId
             }
         }
 
@@ -289,7 +288,7 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
           ie007 =>
             forAll(arrivalMovement(NonEmptyList.one(ie007))) {
               arrival =>
-                service.unloadingPermissionR(arrival) must not be (defined)
+                service.unloadingPermissionR(arrival) must not be defined
 
             }
         }
@@ -302,7 +301,7 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
           ie043 =>
             forAll(arrivalMovement(NonEmptyList.one(ie043))) {
               arrival =>
-                service.unloadingPermissionR(arrival) must not be (defined)
+                service.unloadingPermissionR(arrival) must not be defined
 
             }
         }
@@ -320,7 +319,7 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
                 val (message, messageId) = service.unloadingPermissionR(arrival).value
 
                 message mustEqual ie043
-                messageId mustEqual MessageId.fromMessageIdValue(2).value
+                messageId mustEqual ie043.messageId
             }
         }
 
@@ -338,7 +337,7 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
                 val (message, messageId) = service.unloadingPermissionR(arrival).value
 
                 message mustEqual ie043a
-                messageId mustEqual MessageId.fromMessageIdValue(2).value
+                messageId mustEqual ie043a.messageId
             }
         }
 
@@ -356,7 +355,7 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
                 val (message, messageId) = service.unloadingPermissionR(arrival).value
 
                 message mustEqual ie043
-                messageId mustEqual MessageId.fromMessageIdValue(2).value
+                messageId mustEqual ie043.messageId
             }
         }
 
@@ -374,7 +373,7 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
                 val (message, messageId) = service.unloadingPermissionR(arrival).value
 
                 message mustEqual ie043
-                messageId mustEqual MessageId.fromMessageIdValue(2).value
+                messageId mustEqual ie043.messageId
             }
         }
 
@@ -395,7 +394,7 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
           ie007 =>
             forAll(arrivalMovement(NonEmptyList.one(ie007))) {
               arrival =>
-                service.unloadingRemarksR(arrival) must not be (defined)
+                service.unloadingRemarksR(arrival) must not be defined
 
             }
         }
@@ -413,6 +412,7 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
                 val (message, messageId) = service.unloadingRemarksR(arrival).value
 
                 message mustEqual ie044
+                messageId mustEqual ie044.messageId
             }
         }
 
@@ -430,7 +430,7 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
                 val (message, messageId) = service.unloadingRemarksR(arrival).value
 
                 message mustEqual ie044
-                messageId mustEqual MessageId.fromMessageIdValue(5).value
+                messageId mustEqual ie044.messageId
             }
         }
 
@@ -448,7 +448,7 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
                 val (message, messageId) = service.unloadingRemarksR(arrival).value
 
                 message mustEqual ie044
-                messageId mustEqual MessageId.fromMessageIdValue(3).value
+                messageId mustEqual ie044.messageId
             }
         }
 
@@ -457,12 +457,14 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
       "latest IE044 when multiple IE058 messages exist" in {
         val service = new ArrivalMessageSummaryService
 
-        forAll(ie007Gen.submitted.msgCorrId(1),
-               ie043Gen.msgCorrId(2),
-               ie044Gen.msgCorrId(3),
-               ie058Gen.msgCorrId(4),
-               ie044Gen.msgCorrId(5),
-               ie058Gen.msgCorrId(6)) {
+        forAll(
+          ie007Gen.submitted.msgCorrId(1),
+          ie043Gen.msgCorrId(2),
+          ie044Gen.msgCorrId(3),
+          ie058Gen.msgCorrId(4),
+          ie044Gen.msgCorrId(5),
+          ie058Gen.msgCorrId(6)
+        ) {
           case (ie007, ie043, ie044Old, ie058Old, ie044, ie058) =>
             val messages = NonEmptyList.of(ie007, ie043, ie044Old, ie058Old, ie044, ie058)
 
@@ -471,7 +473,7 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
                 val (message, messageId) = service.unloadingRemarksR(arrival).value
 
                 message mustEqual ie044
-                messageId mustEqual MessageId.fromMessageIdValue(5).value
+                messageId mustEqual ie044.messageId
             }
         }
 
@@ -492,7 +494,7 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
           ie007 =>
             forAll(arrivalMovement(NonEmptyList.one(ie007))) {
               arrival =>
-                service.unloadingRemarksRejectionsR(arrival) must not be (defined)
+                service.unloadingRemarksRejectionsR(arrival) must not be defined
 
             }
         }
@@ -511,7 +513,7 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
                 val (message, messageId) = service.unloadingRemarksRejectionsR(arrival).value
 
                 message mustEqual ie058
-                messageId mustEqual MessageId.fromMessageIdValue(4).value
+                messageId mustEqual ie058.messageId
             }
         }
 
@@ -520,12 +522,14 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
       "latest IE058 when multiple IE058 messages exist" in {
         val service = new ArrivalMessageSummaryService
 
-        forAll(ie007Gen.submitted.msgCorrId(1),
-               ie043Gen.msgCorrId(2),
-               ie044Gen.msgCorrId(3),
-               ie058Gen.msgCorrId(4),
-               ie044Gen.msgCorrId(5),
-               ie058Gen.msgCorrId(6)) {
+        forAll(
+          ie007Gen.submitted.msgCorrId(1),
+          ie043Gen.msgCorrId(2),
+          ie044Gen.msgCorrId(3),
+          ie058Gen.msgCorrId(4),
+          ie044Gen.msgCorrId(5),
+          ie058Gen.msgCorrId(6)
+        ) {
           case (ie007, ie043, ie044Old, ie058Old, ie044, ie058) =>
             val messages = NonEmptyList.of(ie007, ie043, ie044Old, ie058Old, ie044, ie058)
 
@@ -535,7 +539,7 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
                 val (message, messageId) = service.unloadingRemarksRejectionsR(arrival).value
 
                 message mustEqual ie058
-                messageId mustEqual MessageId.fromMessageIdValue(6).value
+                messageId mustEqual ie058.messageId
             }
         }
 
@@ -555,7 +559,7 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
           ie007 =>
             forAll(arrivalMovement(NonEmptyList.one(ie007))) {
               arrival =>
-                service.arrivalMessagesSummary(arrival) mustEqual MessagesSummary(arrival, MessageId.fromMessageIdValue(1).value, None)
+                service.arrivalMessagesSummary(arrival) mustEqual MessagesSummary(arrival, ie007.messageId, None)
 
             }
         }
@@ -570,7 +574,7 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
 
             forAll(arrivalMovement(messages)) {
               arrival =>
-                val expectedMessageSummary = MessagesSummary(arrival, MessageId.fromMessageIdValue(1).value, MessageId.fromMessageIdValue(2))
+                val expectedMessageSummary = MessagesSummary(arrival, ie007.messageId, Some(ie008.messageId))
 
                 service.arrivalMessagesSummary(arrival) mustEqual expectedMessageSummary
             }
@@ -587,7 +591,7 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
 
             forAll(arrivalMovement(messages)) {
               arrival =>
-                val expectedMessageSummary = MessagesSummary(arrival, MessageId.fromMessageIdValue(3).value, None)
+                val expectedMessageSummary = MessagesSummary(arrival, ie007.messageId, None)
 
                 service.arrivalMessagesSummary(arrival) mustEqual expectedMessageSummary
             }
@@ -604,7 +608,7 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
 
             forAll(arrivalMovement(messages)) {
               arrival =>
-                val expectedMessageSummary = MessagesSummary(arrival, MessageId.fromMessageIdValue(3).value, MessageId.fromMessageIdValue(4))
+                val expectedMessageSummary = MessagesSummary(arrival, ie007.messageId, Some(ie008.messageId))
 
                 service.arrivalMessagesSummary(arrival) mustEqual expectedMessageSummary
             }
@@ -616,13 +620,13 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
         val service = new ArrivalMessageSummaryService
 
         forAll(ie007Gen.submitted.msgCorrId(1), ie043Gen.msgCorrId(2)) {
-          case (ie007, ie0043) =>
-            val messages = NonEmptyList.of(ie007, ie0043)
+          case (ie007, ie043) =>
+            val messages = NonEmptyList.of(ie007, ie043)
 
             forAll(arrivalMovement(messages)) {
               arrival =>
                 val expectedMessageSummary =
-                  MessagesSummary(arrival, MessageId.fromMessageIdValue(1).value, None, MessageId.fromMessageIdValue(2), None, None)
+                  MessagesSummary(arrival, ie007.messageId, None, Some(ie043.messageId), None, None)
 
                 service.arrivalMessagesSummary(arrival) mustEqual expectedMessageSummary
             }
@@ -634,13 +638,13 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
         val service = new ArrivalMessageSummaryService
 
         forAll(ie007Gen.submitted.msgCorrId(1), ie043Gen.msgCorrId(2), ie044Gen.msgCorrId(3)) {
-          case (ie007, ie0043, ie044) =>
-            val messages = NonEmptyList.of(ie007, ie0043, ie044)
+          case (ie007, ie043, ie044) =>
+            val messages = NonEmptyList.of(ie007, ie043, ie044)
 
             forAll(arrivalMovement(messages)) {
               arrival =>
                 val expectedMessageSummary =
-                  MessagesSummary(arrival, MessageId.fromMessageIdValue(1).value, None, MessageId.fromMessageIdValue(2), MessageId.fromMessageIdValue(3), None)
+                  MessagesSummary(arrival, ie007.messageId, None, Some(ie043.messageId), Some(ie044.messageId), None)
 
                 service.arrivalMessagesSummary(arrival) mustEqual expectedMessageSummary
             }
@@ -652,14 +656,14 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
         val service = new ArrivalMessageSummaryService
 
         forAll(ie007Gen.submitted.msgCorrId(1), ie043Gen.msgCorrId(2), ie044Gen.msgCorrId(3), ie058Gen.msgCorrId(4), ie044Gen.msgCorrId(5)) {
-          case (ie007, ie0043, ie044Old, ie058, ie044) =>
-            val messages = NonEmptyList.of(ie007, ie0043, ie044Old, ie058, ie044)
+          case (ie007, ie043, ie044Old, ie058, ie044) =>
+            val messages = NonEmptyList.of(ie007, ie043, ie044Old, ie058, ie044)
 
             forAll(arrivalMovement(messages)) {
               arr =>
                 val arrival = arr.copy(status = ArrivalStatus.UnloadingRemarksSubmitted)
                 val expectedMessageSummary =
-                  MessagesSummary(arrival, MessageId.fromMessageIdValue(1).value, None, MessageId.fromMessageIdValue(2), MessageId.fromMessageIdValue(5), None)
+                  MessagesSummary(arrival, ie007.messageId, None, Some(ie043.messageId), Some(ie044.messageId), None)
 
                 service.arrivalMessagesSummary(arrival) mustEqual expectedMessageSummary
             }
@@ -670,26 +674,23 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
       "latest IE044 and IE058 when there has been multiple corrections without a successful IE044 correction and state is UnloadingRemarksRejected" in {
         val service = new ArrivalMessageSummaryService
 
-        forAll(ie007Gen.submitted.msgCorrId(1),
-               ie043Gen.msgCorrId(2),
-               ie044Gen.msgCorrId(3),
-               ie058Gen.msgCorrId(4),
-               ie044Gen.msgCorrId(5),
-               ie058Gen.msgCorrId(6)) {
-          case (ie007, ie0043, ie044Old, ie058Old, ie044, ie058) =>
-            val messages = NonEmptyList.of(ie007, ie0043, ie044Old, ie058Old, ie044, ie058)
+        forAll(
+          ie007Gen.submitted.msgCorrId(1),
+          ie043Gen.msgCorrId(2),
+          ie044Gen.msgCorrId(3),
+          ie058Gen.msgCorrId(4),
+          ie044Gen.msgCorrId(5),
+          ie058Gen.msgCorrId(6)
+        ) {
+          case (ie007, ie043, ie044Old, ie058Old, ie044, ie058) =>
+            val messages = NonEmptyList.of(ie007, ie043, ie044Old, ie058Old, ie044, ie058)
 
             forAll(arrivalMovement(messages)) {
               arr =>
                 val arrival = arr.copy(status = ArrivalStatus.UnloadingRemarksRejected)
 
                 val expectedMessageSummary =
-                  MessagesSummary(arrival,
-                                  MessageId.fromMessageIdValue(1).value,
-                                  None,
-                                  MessageId.fromMessageIdValue(2),
-                                  MessageId.fromMessageIdValue(5),
-                                  MessageId.fromMessageIdValue(6))
+                  MessagesSummary(arrival, ie007.messageId, None, Some(ie043.messageId), Some(ie044.messageId), Some(ie058.messageId))
 
                 service.arrivalMessagesSummary(arrival) mustEqual expectedMessageSummary
             }
