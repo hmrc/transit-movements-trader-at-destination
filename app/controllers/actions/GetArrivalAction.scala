@@ -27,6 +27,7 @@ import play.api.mvc.Result
 import play.api.mvc.Results.InternalServerError
 import play.api.mvc.Results.NotFound
 import play.api.mvc.Results.BadRequest
+import play.api.mvc.Results.Ok
 import repositories.ArrivalMovementRepository
 
 import scala.concurrent.ExecutionContext
@@ -44,14 +45,16 @@ private[actions] class GetArrivalAction(
   arrivalId: ArrivalId,
   repository: ArrivalMovementRepository
 )(implicit val executionContext: ExecutionContext)
-    extends ActionRefiner[Request, ArrivalRequest] {
+    extends ActionRefiner[Request, ArrivalRequest]
+    with Logging {
 
   override protected def refine[A](request: Request[A]): Future[Either[Result, ArrivalRequest[A]]] =
     repository.get(arrivalId).map {
       case Some(arrival) =>
         Right(ArrivalRequest(request, arrival, arrival.channel))
       case None =>
-        Left(NotFound)
+        logger.info(s"[GetArrivalAction] Unable to retrieve arrival message for arrival id: ${arrivalId.index}")
+        Left(Ok)
     }
 }
 

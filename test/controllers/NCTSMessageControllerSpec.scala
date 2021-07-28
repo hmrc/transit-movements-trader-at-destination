@@ -114,7 +114,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
         }
       }
 
-      "must lock, return NotFound and unlock when given a message for an arrivalWithoutBox that does not exist" in {
+      "must lock, return oK and unlock when given a message for an arrivalWithoutBox that does not exist" in {
         when(mockArrivalMovementRepository.get(any())).thenReturn(Future.successful(None))
         when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
         when(mockLockRepository.unlock(any())).thenReturn(Future.successful(true))
@@ -133,7 +133,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
 
           val result = route(application, request).value
 
-          status(result) mustEqual NOT_FOUND
+          status(result) mustEqual OK
           verify(mockArrivalMovementRepository, never).addResponseMessage(any(), any(), any())
           verify(mockLockRepository, times(1)).lock(arrivalId)
           verify(mockLockRepository, times(1)).unlock(arrivalId)
