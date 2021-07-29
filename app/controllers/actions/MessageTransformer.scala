@@ -44,14 +44,14 @@ class MessageTransformer @Inject()(implicit val executionContext: ExecutionConte
   override def refine[A](request: ArrivalRequest[A]): Future[Either[Result, MessageTransformRequest[A]]] =
     request.body match {
       case x: NodeSeq =>
-        x.headOption.flatMap(node => messageResponse(request.channel)(node.label)) match {
+        x.headOption.flatMap(node => messageResponse(request.channel)(node.label)) match { //Moved
           case Some(response) =>
             StatusTransition.transition(request.arrival.status, response.messageReceived) match {
               case Right(nextState) =>
                 Future.successful(Right(MessageTransformRequest(Message(response, nextState), request)))
               case Left(error) =>
-                logger.error(s"Unable to transition movement state ${error.reason} for arrival movement ${request.arrival.arrivalId.index}")
-                Future.successful(Left(badRequestError(error.reason)))
+                logger.error(s"Unable to transition movement state ${error.message} for arrival movement ${request.arrival.arrivalId.index}")
+                Future.successful(Left(badRequestError(error.message)))
             }
           case None =>
             logger.warn(s"Unsupported root node ${x.headOption.map(_.label)} and message type ${request.headers.get("X-Message-Type")}")
