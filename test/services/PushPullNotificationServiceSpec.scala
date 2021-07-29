@@ -100,8 +100,17 @@ class PushPullNotificationServiceSpec extends SpecBase with BeforeAndAfterEach w
       "should return a unit value when connector call succeeds" in {
         val testArrivalId  = ArrivalId(1)
         val testMessageUri = requestId(testArrivalId) + "/messages" + ""
+        val testEoriNumber = "1234567800"
         val testNotification =
-          ArrivalMessageNotification(testMessageUri, requestId(testArrivalId), testArrivalId, MessageId(2), LocalDateTime.now, MessageType.UnloadingPermission)
+          ArrivalMessageNotification(
+            testMessageUri,
+            requestId(testArrivalId),
+            testEoriNumber,
+            testArrivalId,
+            MessageId(2),
+            LocalDateTime.now,
+            MessageType.UnloadingPermission
+          )
 
         val boxIdMatcher = refEq(testBoxId).asInstanceOf[BoxId]
 
@@ -116,8 +125,17 @@ class PushPullNotificationServiceSpec extends SpecBase with BeforeAndAfterEach w
       "should not return anything when call fails" in {
         val testArrivalId  = ArrivalId(1)
         val testMessageUri = requestId(testArrivalId) + "/messages" + ""
+        val testEoriNumber = "1234567800"
         val testNotification =
-          ArrivalMessageNotification(testMessageUri, requestId(testArrivalId), testArrivalId, MessageId(2), LocalDateTime.now, MessageType.UnloadingPermission)
+          ArrivalMessageNotification(
+            testMessageUri,
+            requestId(testArrivalId),
+            testEoriNumber,
+            testArrivalId,
+            MessageId(2),
+            LocalDateTime.now,
+            MessageType.UnloadingPermission
+          )
 
         val boxIdMatcher = refEq(testBoxId).asInstanceOf[BoxId]
 

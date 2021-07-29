@@ -26,6 +26,7 @@ import scala.xml.NodeSeq
 case class ArrivalMessageNotification(
   messageUri: String,
   requestId: String,
+  customerId: String,
   arrivalId: ArrivalId,
   messageId: MessageId,
   received: LocalDateTime,
@@ -42,6 +43,7 @@ object ArrivalMessageNotification {
     (
       (__ \ "messageUri").write[String] and
         (__ \ "requestId").write[String] and
+        (__ \ "customerId").write[String] and
         (__ \ "arrivalId").write[ArrivalId] and
         (__ \ "messageId").write[MessageId] and
         (__ \ "received").write[LocalDateTime] and
@@ -55,11 +57,13 @@ object ArrivalMessageNotification {
     }
 
   def fromRequest(request: InboundMessageRequest[NodeSeq], timestamp: LocalDateTime): ArrivalMessageNotification = {
+    val eoriNumber = request.arrivalRequest.arrival.eoriNumber
     val messageId  = request.arrivalRequest.arrival.nextMessageId
     val arrivalUrl = requestId(request.arrivalRequest.arrival.arrivalId)
     ArrivalMessageNotification(
       s"$arrivalUrl/messages/${messageId.value}",
       arrivalUrl,
+      eoriNumber,
       request.arrivalRequest.arrival.arrivalId,
       messageId,
       timestamp,
