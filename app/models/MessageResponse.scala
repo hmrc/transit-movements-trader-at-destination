@@ -16,6 +16,7 @@
 
 package models
 
+import logging.Logging
 import models.XSDFile._
 
 sealed trait MessageResponse {
@@ -23,7 +24,7 @@ sealed trait MessageResponse {
   val messageType: MessageType
 }
 
-object MessageResponse {
+object MessageResponse extends Logging {
 
   val inboundMessages = Seq(
     GoodsReleasedResponse,
@@ -32,6 +33,19 @@ object MessageResponse {
     UnloadingRemarksRejectedResponse,
     XMLSubmissionNegativeAcknowledgementResponse
   )
+
+  def getMessageResponseFromCode(code: String, channelType: ChannelType): Either[RequestError, MessageResponse] =
+    code match {
+      case MessageType.GoodsReleased.rootNode             => Right(GoodsReleasedResponse)
+      case MessageType.ArrivalRejection.rootNode          => Right(ArrivalRejectedResponse)
+      case MessageType.UnloadingPermission.rootNode       => Right(UnloadingPermissionResponse)
+      case MessageType.UnloadingRemarks.rootNode          => Right(UnloadingRemarksResponse)
+      case MessageType.UnloadingRemarksRejection.rootNode => Right(UnloadingRemarksRejectedResponse)
+      case MessageType.XMLSubmissionNegativeAcknowledgement.rootNode =>
+        logger.error(s"Received the message ${MessageType.XMLSubmissionNegativeAcknowledgement.code} for the $channelType channel")
+        Right(XMLSubmissionNegativeAcknowledgementResponse)
+      case _ => Left(InvalidArrivalRootNode(s"[MessageResponse][getMessageResponseFromCode] Unrecognised code: $code"))
+    }
 }
 
 sealed trait OutboundMessageResponse extends MessageResponse
