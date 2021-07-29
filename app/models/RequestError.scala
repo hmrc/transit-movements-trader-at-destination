@@ -23,3 +23,5 @@ trait RequestError {
 case class ArrivalNotFoundError(message: String)   extends RequestError
 case class InvalidArrivalRootNode(message: String) extends RequestError
 case class TransitionError(message: String)        extends RequestError
+case class OutboundMessageError(message: String)   extends RequestError
+case class InboundMessageError(message: String)    extends RequestError

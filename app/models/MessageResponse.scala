@@ -34,6 +34,10 @@ object MessageResponse extends Logging {
     XMLSubmissionNegativeAcknowledgementResponse
   )
 
+  val outboundMessages = Seq(
+    UnloadingRemarksResponse
+  )
+
   def getMessageResponseFromCode(code: String, channelType: ChannelType): Either[RequestError, MessageResponse] =
     code match {
       case MessageType.GoodsReleased.rootNode             => Right(GoodsReleasedResponse)
@@ -54,6 +58,11 @@ sealed trait InboundMessageResponse extends MessageResponse {
   val xsdFile: XSDFile
 }
 
+case object UnloadingRemarksResponse extends OutboundMessageResponse {
+  override val messageReceived: MessageReceivedEvent = MessageReceivedEvent.UnloadingRemarksSubmitted
+  override val messageType: MessageType              = MessageType.UnloadingRemarks
+}
+
 case object GoodsReleasedResponse extends InboundMessageResponse {
   override val messageReceived          = MessageReceivedEvent.GoodsReleased
   override val messageType: MessageType = MessageType.GoodsReleased
@@ -70,11 +79,6 @@ case object UnloadingPermissionResponse extends InboundMessageResponse {
   override val messageReceived          = MessageReceivedEvent.UnloadingPermission
   override val messageType: MessageType = MessageType.UnloadingPermission
   override val xsdFile: XSDFile         = UnloadingPermissionXSD
-}
-
-case object UnloadingRemarksResponse extends OutboundMessageResponse {
-  override val messageReceived: MessageReceivedEvent = MessageReceivedEvent.UnloadingRemarksSubmitted
-  override val messageType: MessageType              = MessageType.UnloadingRemarks
 }
 
 case object UnloadingRemarksRejectedResponse extends InboundMessageResponse {
