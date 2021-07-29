@@ -15,6 +15,7 @@
  */
 
 package models
+
 import generators.ModelGenerators
 import org.scalacheck.Arbitrary
 import org.scalatest.OptionValues
@@ -34,7 +35,7 @@ class MessagesSummarySpec extends AnyFreeSpec with Matchers with ModelGenerators
       val messageId = 1
 
       Json.toJson(
-        MessagesSummary(arrival, MessageId.fromIndex(0), None, None)
+        MessagesSummary(arrival, MessageId(messageId), None, None)
       ) mustBe Json.obj(
         "arrivalId" -> arrival.arrivalId,
         "messages" ->
@@ -51,7 +52,7 @@ class MessagesSummarySpec extends AnyFreeSpec with Matchers with ModelGenerators
       val xmlNegativeMessageId = 2
 
       Json.toJson(
-        MessagesSummary(arrival, MessageId.fromIndex(0), Some(MessageId.fromIndex(1)), None)
+        MessagesSummary(arrival, MessageId(messageId), Some(MessageId(xmlNegativeMessageId)), None)
       ) mustBe Json.obj(
         "arrivalId" -> arrival.arrivalId,
         "messages" ->
@@ -68,7 +69,7 @@ class MessagesSummarySpec extends AnyFreeSpec with Matchers with ModelGenerators
       val rejectionId = 2
 
       Json.toJson(
-        MessagesSummary(arrival = arrival, arrivalNotification = MessageId.fromIndex(0), xmlSubmissionNegativeAcknowledgement = Some(MessageId.fromIndex(1)))
+        MessagesSummary(arrival = arrival, arrivalNotification = MessageId(messageId), xmlSubmissionNegativeAcknowledgement = Some(MessageId(rejectionId)))
       ) mustBe Json.obj(
         "arrivalId" -> arrival.arrivalId,
         "messages" ->
@@ -86,7 +87,7 @@ class MessagesSummarySpec extends AnyFreeSpec with Matchers with ModelGenerators
       val unloadingPermissionId = 3
 
       Json.toJson(
-        MessagesSummary(arrival, MessageId.fromIndex(0), Some(MessageId.fromIndex(1)), Some(MessageId.fromIndex(2)))
+        MessagesSummary(arrival, MessageId(messageId), Some(MessageId(rejectionId)), Some(MessageId(unloadingPermissionId)))
       ) mustBe Json.obj(
         "arrivalId" -> arrival.arrivalId,
         "messages" ->
@@ -107,7 +108,13 @@ class MessagesSummarySpec extends AnyFreeSpec with Matchers with ModelGenerators
       val unloadingRemarksId    = 4
 
       Json.toJson(
-        MessagesSummary(arrival, MessageId.fromIndex(0), Some(MessageId.fromIndex(1)), Some(MessageId.fromIndex(2)), Some(MessageId.fromIndex(3)))
+        MessagesSummary(
+          arrival,
+          MessageId(messageId),
+          Some(MessageId(rejectionId)),
+          Some(MessageId(unloadingPermissionId)),
+          Some(MessageId(unloadingRemarksId))
+        )
       ) mustBe Json.obj(
         "arrivalId" -> arrival.arrivalId,
         "messages" ->
@@ -130,12 +137,14 @@ class MessagesSummarySpec extends AnyFreeSpec with Matchers with ModelGenerators
       val unloadingRemarksRejectionId = 5
 
       Json.toJson(
-        MessagesSummary(arrival,
-                        MessageId.fromIndex(0),
-                        Some(MessageId.fromIndex(1)),
-                        Some(MessageId.fromIndex(2)),
-                        Some(MessageId.fromIndex(3)),
-                        Some(MessageId.fromIndex(4)))
+        MessagesSummary(
+          arrival,
+          MessageId(messageId),
+          Some(MessageId(rejectionId)),
+          Some(MessageId(unloadingPermissionId)),
+          Some(MessageId(unloadingRemarksId)),
+          Some(MessageId(unloadingRemarksRejectionId))
+        )
       ) mustBe Json.obj(
         "arrivalId" -> arrival.arrivalId,
         "messages" ->

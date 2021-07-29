@@ -29,7 +29,7 @@ import reactivemongo.play.json.collection.JSONCollection
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class LockRepositorySpec extends ItSpecBase with FailOnUnindexedQueries with ScalaCheckPropertyChecks {
+class LockRepositorySpec extends ItSpecBase with MongoSuite with ScalaCheckPropertyChecks {
 
   "lock" - {
     "must lock an arrivalId when it is not already locked" in {

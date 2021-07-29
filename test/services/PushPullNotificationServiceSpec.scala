@@ -100,15 +100,18 @@ class PushPullNotificationServiceSpec extends SpecBase with BeforeAndAfterEach w
         val testArrivalId  = ArrivalId(1)
         val testMessageUri = requestId(testArrivalId) + "/messages" + ""
         val testBody       = <test>test content</test>
-        val testNotification = ArrivalMessageNotification(
-          testMessageUri,
-          requestId(testArrivalId),
-          testArrivalId,
-          MessageId.fromIndex(1),
-          LocalDateTime.now,
-          MessageType.UnloadingPermission,
-          Some(testBody)
-        )
+        val testEoriNumber = "1234567800"
+        val testNotification =
+          ArrivalMessageNotification(
+            testMessageUri,
+            requestId(testArrivalId),
+            testEoriNumber,
+            testArrivalId,
+            MessageId(2),
+            LocalDateTime.now,
+            MessageType.UnloadingPermission,
+            Some(testBody)
+          )
 
         val boxIdMatcher = refEq(testBoxId).asInstanceOf[BoxId]
 
@@ -124,15 +127,18 @@ class PushPullNotificationServiceSpec extends SpecBase with BeforeAndAfterEach w
         val testArrivalId  = ArrivalId(1)
         val testMessageUri = requestId(testArrivalId) + "/messages" + ""
         val testBody       = <test>test content</test>
-        val testNotification = ArrivalMessageNotification(
-          testMessageUri,
-          requestId(testArrivalId),
-          testArrivalId,
-          MessageId.fromIndex(1),
-          LocalDateTime.now,
-          MessageType.UnloadingPermission,
-          Some(testBody)
-        )
+        val testEoriNumber = "1234567800"
+        val testNotification =
+          ArrivalMessageNotification(
+            testMessageUri,
+            requestId(testArrivalId),
+            testEoriNumber,
+            testArrivalId,
+            MessageId(2),
+            LocalDateTime.now,
+            MessageType.UnloadingPermission,
+            Some(testBody)
+          )
 
         val boxIdMatcher = refEq(testBoxId).asInstanceOf[BoxId]
 

@@ -28,6 +28,7 @@ import play.api.http.HeaderNames
 case class ArrivalMessageNotification(
   messageUri: String,
   requestId: String,
+  customerId: String,
   arrivalId: ArrivalId,
   messageId: MessageId,
   received: LocalDateTime,
@@ -46,8 +47,9 @@ object ArrivalMessageNotification {
     (
       (__ \ "messageUri").write[String] and
         (__ \ "requestId").write[String] and
+        (__ \ "customerId").write[String] and
         (__ \ "arrivalId").write[ArrivalId] and
-        (__ \ "messageId").write[String].contramap[MessageId](_.publicValue.toString) and
+        (__ \ "messageId").write[MessageId] and
         (__ \ "received").write[LocalDateTime] and
         (__ \ "messageType").write[MessageType] and
         (__ \ "messageBody").writeNullable[NodeSeq]
@@ -61,12 +63,14 @@ object ArrivalMessageNotification {
 
   def fromRequest(request: InboundMessageRequest[NodeSeq], timestamp: LocalDateTime): ArrivalMessageNotification = {
     val oneHundredKilobytes = 100000
-    val messageId           = MessageId.fromIndex(request.arrivalRequest.arrival.messages.length)
+    val eoriNumber          = request.arrivalRequest.arrival.eoriNumber
+    val messageId           = request.arrivalRequest.arrival.nextMessageId
     val arrivalUrl          = requestId(request.arrivalRequest.arrival.arrivalId)
     val bodySize            = request.headers.get(HeaderNames.CONTENT_LENGTH).map(_.toInt)
     ArrivalMessageNotification(
-      s"$arrivalUrl/messages/${messageId.publicValue}",
+      s"$arrivalUrl/messages/${messageId.value}",
       arrivalUrl,
+      eoriNumber,
       request.arrivalRequest.arrival.arrivalId,
       messageId,
       timestamp,

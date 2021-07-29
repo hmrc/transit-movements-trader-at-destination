@@ -44,9 +44,8 @@ class MessageRetrievalServiceSpec extends SpecBase with ModelGenerators with Sca
             val unloadingPermissionMessage     = movementMessageWithStatus.copy(messageType = UnloadingPermission)
             val arrivalWithUnloadingPermission = arrival.copy(messages = NonEmptyList(movementMessageWithStatus, List(unloadingPermissionMessage)))
 
-            val arrivalSummary = MessagesSummary(arrivalNotification = MessageId.fromIndex(0),
-                                                 unloadingPermission = Some(MessageId.fromIndex(1)),
-                                                 arrival = arrivalWithUnloadingPermission)
+            val arrivalSummary =
+              MessagesSummary(arrivalNotification = MessageId(1), unloadingPermission = Some(MessageId(2)), arrival = arrivalWithUnloadingPermission)
 
             when(mockArrivalMessageSummaryService.arrivalMessagesSummary(any())).thenReturn(arrivalSummary)
 
@@ -55,7 +54,7 @@ class MessageRetrievalServiceSpec extends SpecBase with ModelGenerators with Sca
             running(application) {
               val service = application.injector.instanceOf[MessageRetrievalService]
 
-              val expectedResult = ResponseMovementMessage.build(arrivalWithUnloadingPermission.arrivalId, MessageId.fromIndex(1), unloadingPermissionMessage)
+              val expectedResult = ResponseMovementMessage.build(arrivalWithUnloadingPermission.arrivalId, MessageId(2), unloadingPermissionMessage)
 
               service.getUnloadingPermission(arrivalWithUnloadingPermission).value mustBe expectedResult
             }
@@ -65,7 +64,7 @@ class MessageRetrievalServiceSpec extends SpecBase with ModelGenerators with Sca
       "must return None when UnloadingPermission MessageId cannot be found" in {
         forAll(arbitrary[Arrival]) {
           arrival =>
-            val arrivalSummary = MessagesSummary(arrivalNotification = MessageId.fromIndex(0), unloadingPermission = None, arrival = arrival)
+            val arrivalSummary = MessagesSummary(arrivalNotification = MessageId(1), unloadingPermission = None, arrival = arrival)
 
             when(mockArrivalMessageSummaryService.arrivalMessagesSummary(any())).thenReturn(arrivalSummary)
 
@@ -84,9 +83,8 @@ class MessageRetrievalServiceSpec extends SpecBase with ModelGenerators with Sca
           (arrival, movementMessageWithStatus) =>
             val arrivalWithoutUnloadingPermission = arrival.copy(messages = NonEmptyList(movementMessageWithStatus, List.empty))
 
-            val arrivalSummary = MessagesSummary(arrivalNotification = MessageId.fromIndex(0),
-                                                 unloadingPermission = Some(MessageId.fromIndex(1)),
-                                                 arrival = arrivalWithoutUnloadingPermission)
+            val arrivalSummary =
+              MessagesSummary(arrivalNotification = MessageId(1), unloadingPermission = Some(MessageId(2)), arrival = arrivalWithoutUnloadingPermission)
 
             when(mockArrivalMessageSummaryService.arrivalMessagesSummary(any())).thenReturn(arrivalSummary)
 

@@ -16,12 +16,11 @@
 
 package models
 
-import java.time.LocalDateTime
-import play.api.libs.json._
-import play.api.libs.functional.syntax._
 import cats.data._
-import cats.implicits._
+import play.api.libs.functional.syntax._
+import play.api.libs.json._
 
+import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 case class Arrival(
@@ -38,10 +37,10 @@ case class Arrival(
   notificationBox: Option[Box]
 ) {
 
-  lazy val nextMessageId: MessageId = MessageId.fromIndex(messages.length)
+  lazy val nextMessageId: MessageId = MessageId(messages.length + 1)
 
   lazy val messagesWithId: NonEmptyList[(MovementMessage, MessageId)] =
-    messages.mapWithIndex(_ -> MessageId.fromIndex(_))
+    messages.map(msg => msg -> msg.messageId)
 
   private val obfuscatedEori: String          = s"ending ${eoriNumber.takeRight(7)}"
   private val isoFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
@@ -97,4 +96,6 @@ object Arrival {
         (__ \ "notificationBox").writeNullable[Box]
     )(unlift(Arrival.unapply))
 
+  implicit def formatsArrival(implicit write: Writes[LocalDateTime]): OFormat[Arrival] =
+    OFormat(readsArrival, writesArrival)
 }

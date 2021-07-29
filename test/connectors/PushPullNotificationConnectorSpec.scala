@@ -130,16 +130,20 @@ class PushPullNotificationConnectorSpec extends AnyFreeSpec with WiremockSuite w
       val testBoxId      = "1c5b9365-18a6-55a5-99c9-83a091ac7f26"
       val testBody       = <test>some text</test>
       val testArrivalId  = ArrivalId(1)
+      val testEoriNumber = "1234567800"
       val testMessageUri = requestId(testArrivalId) + "/messages" + ""
-      val testNotification = ArrivalMessageNotification(
-        testMessageUri,
-        requestId(testArrivalId),
-        testArrivalId,
-        MessageId.fromIndex(1),
-        LocalDateTime.now,
-        MessageType.UnloadingPermission,
-        Some(testBody)
-      )
+
+      val testNotification =
+        ArrivalMessageNotification(
+          testMessageUri,
+          requestId(testArrivalId),
+          testEoriNumber,
+          testArrivalId,
+          MessageId(1),
+          LocalDateTime.now,
+          MessageType.UnloadingPermission,
+          Some(testBody)
+        )
 
       val testUrlPath = s"/box/$testBoxId/notifications"
 

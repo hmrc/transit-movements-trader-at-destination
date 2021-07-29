@@ -106,40 +106,39 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
       Gen.oneOf(MessageStatus.values)
     }
 
-  implicit lazy val arbitraryMessageWithStateXml: Arbitrary[MovementMessageWithStatus] = {
+  implicit lazy val arbitraryMessageWithStateXml: Arbitrary[MovementMessageWithStatus] =
     Arbitrary {
       for {
+        messageId   <- arbitrary[MessageId]
         dateTime    <- arbitrary[LocalDateTime]
         xml         <- Gen.const(<blankXml>message</blankXml>)
         messageType <- Gen.oneOf(MessageType.values)
         status = MessageStatus.SubmissionPending
-      } yield MovementMessageWithStatus(dateTime, messageType, xml, status, 1)
+      } yield MovementMessageWithStatus(messageId, dateTime, messageType, xml, status, 1)
     }
-  }
 
-  implicit lazy val arbitraryMessageWithoutStateXml: Arbitrary[MovementMessageWithoutStatus] = {
+  implicit lazy val arbitraryMessageWithoutStateXml: Arbitrary[MovementMessageWithoutStatus] =
     Arbitrary {
       for {
+        messageId   <- arbitrary[MessageId]
         date        <- datesBetween(pastDate, dateNow)
         time        <- timesBetween(pastDate, dateNow)
         xml         <- Gen.const(<blankXml>message</blankXml>)
         messageType <- Gen.oneOf(MessageType.values)
-      } yield MovementMessageWithoutStatus(LocalDateTime.of(date, time), messageType, xml, 1)
+      } yield MovementMessageWithoutStatus(messageId, LocalDateTime.of(date, time), messageType, xml, 1)
     }
-  }
 
   implicit lazy val arbitraryMovementMessage: Arbitrary[MovementMessage] =
     Arbitrary {
       Gen.oneOf(arbitrary[MovementMessageWithoutStatus], arbitrary[MovementMessageWithStatus])
     }
 
-  implicit lazy val arbitraryArrivalId: Arbitrary[ArrivalId] = {
+  implicit lazy val arbitraryArrivalId: Arbitrary[ArrivalId] =
     Arbitrary {
       for {
         id <- intWithMaxLength(9)
       } yield ArrivalId(id)
     }
-  }
 
   implicit lazy val arbitraryState: Arbitrary[ArrivalStatus] =
     Arbitrary {
@@ -151,7 +150,7 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
       Gen.oneOf(ChannelType.values)
     }
 
-  implicit lazy val arbitraryArrival: Arbitrary[Arrival] = {
+  implicit lazy val arbitraryArrival: Arbitrary[Arrival] =
     Arbitrary {
       for {
         arrivalId               <- arbitrary[ArrivalId]
@@ -177,9 +176,8 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
           notificationBox = None
         )
     }
-  }
 
-  val genArrivalWithSuccessfulArrival: Gen[Arrival] = {
+  val genArrivalWithSuccessfulArrival: Gen[Arrival] =
     Arbitrary {
       for {
         message <- Arbitrary.arbitrary[MovementMessageWithStatus]
@@ -189,12 +187,15 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
         arrival.copy(messages = NonEmptyList.one(successfulMessage), eoriNumber = "eori")
       }
     }.arbitrary
-  }
 
   implicit lazy val arbitraryMovementReferenceNumber: Arbitrary[MovementReferenceNumber] =
     Arbitrary {
       for {
-        year    <- Gen.choose(0, 99).map(y => f"$y%02d")
+        year <- Gen
+          .choose(0, 99)
+          .map(
+            y => f"$y%02d"
+          )
         country <- Gen.pick(2, 'A' to 'Z')
         serial  <- Gen.pick(13, ('A' to 'Z') ++ ('0' to '9'))
       } yield MovementReferenceNumber(year ++ country.mkString ++ serial.mkString)
@@ -222,7 +223,7 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
 
   implicit lazy val arbitraryMessageId: Arbitrary[MessageId] =
     Arbitrary {
-      intsAboveValue(0).map(MessageId.fromIndex)
+      intsAboveValue(0).map(MessageId.apply)
     }
 
   implicit lazy val arbitraryFailure: Arbitrary[SubmissionProcessingResult.SubmissionFailure] =
@@ -233,7 +234,7 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
       )
     )
 
-  implicit lazy val arbitraryResponseMovementMessage: Arbitrary[ResponseMovementMessage] = {
+  implicit lazy val arbitraryResponseMovementMessage: Arbitrary[ResponseMovementMessage] =
     Arbitrary {
       for {
         location    <- arbitrary[String]
@@ -242,7 +243,6 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
         message     <- Gen.const(<blankXml>message</blankXml>)
       } yield ResponseMovementMessage(location, dateTime, messageType, message)
     }
-  }
 
   implicit lazy val arbitrarySubmissionFailure: Arbitrary[EisSubmissionFailure] =
     Arbitrary(Gen.oneOf(arbitrary[EisSubmissionRejected], arbitrary[EisSubmissionFailureDownstream]))
