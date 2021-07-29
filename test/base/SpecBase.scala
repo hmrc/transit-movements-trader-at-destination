@@ -20,6 +20,7 @@ import controllers.actions.AuthenticateActionProvider
 import controllers.actions.FakeAuthenticateActionProvider
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
+import org.scalatest.EitherValues
 import org.scalatest.OptionValues
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatest.concurrent.ScalaFutures
@@ -30,7 +31,7 @@ import play.api.mvc.AnyContentAsEmpty
 import play.api.test.FakeRequest
 import uk.gov.hmrc.http.HeaderCarrier
 
-trait SpecBase extends AnyFreeSpec with Matchers with MockitoSugar with ScalaFutures with IntegrationPatience with OptionValues {
+trait SpecBase extends AnyFreeSpec with Matchers with MockitoSugar with ScalaFutures with IntegrationPatience with OptionValues with EitherValues {
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 

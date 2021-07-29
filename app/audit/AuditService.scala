@@ -38,6 +38,7 @@ class AuditService @Inject()(auditConnector: AuditConnector, messageTranslation:
   }
 
   def auditNCTSMessages(channel: ChannelType, messageResponse: MessageResponse, message: MovementMessage)(implicit hc: HeaderCarrier): Unit = {
+    // TODO remove this and add val's to MessageResponse for name
     val auditType: String = messageResponse match {
       case GoodsReleasedResponse                        => GoodsReleased
       case ArrivalRejectedResponse                      => ArrivalNotificationRejected
