@@ -32,51 +32,89 @@ class LockServiceSpec extends SpecBase with ModelGenerators with ScalaCheckDrive
 
   private val mockLockRepository = mock[LockRepository]
 
-  "GetArrivalService" - {
+  "LockService" - {
 
-    "must return an Arrival" in {
+    "lock" - {
 
-      when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
+      "must add a lock when given an arrival Id" in {
 
-      val application = baseApplicationBuilder.overrides(bind[LockRepository].toInstance(mockLockRepository)).build()
+        when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
 
-      running(application) {
-        val service = application.injector.instanceOf[LockService]
+        val application = baseApplicationBuilder.overrides(bind[LockRepository].toInstance(mockLockRepository)).build()
 
-        val result = service.lock(ArrivalId(0)).futureValue.right.value
+        running(application) {
+          val service = application.injector.instanceOf[LockService]
 
-        result mustBe (())
+          val result = service.lock(ArrivalId(0)).futureValue.value
+
+          result mustBe (())
+        }
+      }
+
+      "must return a DocumentExistsError if the lock is already there" in {
+
+        when(mockLockRepository.lock(any())).thenReturn(Future.successful(false))
+
+        val application = baseApplicationBuilder.overrides(bind[LockRepository].toInstance(mockLockRepository)).build()
+
+        running(application) {
+          val service = application.injector.instanceOf[LockService]
+
+          val result = service.lock(ArrivalId(0)).futureValue.left.value
+
+          result mustBe an[DocumentExistsError]
+        }
+      }
+
+      "must return a FailedToLockService if the lock fails and attempt to unlock" in {
+
+        when(mockLockRepository.lock(any())).thenReturn(Future.failed(new Exception))
+        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(true))
+
+        val application = baseApplicationBuilder.overrides(bind[LockRepository].toInstance(mockLockRepository)).build()
+
+        running(application) {
+          val service = application.injector.instanceOf[LockService]
+
+          val result = service.lock(ArrivalId(0)).futureValue.left.value
+
+          result mustBe an[FailedToLock]
+        }
       }
     }
 
-    "must return a DocumentExistsError if the lock is already there" in {
+    "unlock" - {
 
-      when(mockLockRepository.lock(any())).thenReturn(Future.successful(false))
+      "must add an unlock when given an Arrival Id" in {
 
-      val application = baseApplicationBuilder.overrides(bind[LockRepository].toInstance(mockLockRepository)).build()
+        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(true))
 
-      running(application) {
-        val service = application.injector.instanceOf[LockService]
+        val application = baseApplicationBuilder.overrides(bind[LockRepository].toInstance(mockLockRepository)).build()
 
-        val result = service.lock(ArrivalId(0)).futureValue.left.value
+        running(application) {
+          val service = application.injector.instanceOf[LockService]
 
-        result mustBe an[DocumentExistsError]
+          val result = service.unlock(ArrivalId(0)).futureValue.value
+
+          result mustBe (())
+        }
+      }
+
+      "must return a FailedToUnlockService if the unlock fails" in {
+
+        when(mockLockRepository.unlock(any())).thenReturn(Future.failed(new Exception))
+
+        val application = baseApplicationBuilder.overrides(bind[LockRepository].toInstance(mockLockRepository)).build()
+
+        running(application) {
+          val service = application.injector.instanceOf[LockService]
+
+          val result = service.unlock(ArrivalId(0)).futureValue.left.value
+
+          result mustBe an[FailedToUnlock]
+        }
       }
     }
 
-    "must return a FailedToLockService if the lock fails" in {
-
-      when(mockLockRepository.lock(any())).thenReturn(Future.failed(new Exception))
-
-      val application = baseApplicationBuilder.overrides(bind[LockRepository].toInstance(mockLockRepository)).build()
-
-      running(application) {
-        val service = application.injector.instanceOf[LockService]
-
-        val result = service.lock(ArrivalId(0)).futureValue.left.value
-
-        result mustBe an[FailedToLockService]
-      }
-    }
   }
 }

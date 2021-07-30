@@ -26,6 +26,6 @@ case class TransitionError(message: String)         extends RequestError
 case class OutboundMessageError(message: String)    extends RequestError
 case class InboundMessageError(message: String)     extends RequestError
 case class DocumentExistsError(message: String)     extends RequestError
-case class FailedToLockService(message: String)     extends RequestError
-case class FailedToUnlockService(message: String)   extends RequestError
+case class FailedToLock(message: String)            extends RequestError
+case class FailedToUnlock(message: String)          extends RequestError
 case class CannotFindRootNodeError(message: String) extends RequestError

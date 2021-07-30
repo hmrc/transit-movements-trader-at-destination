@@ -16,19 +16,19 @@
 
 package services
 
-import akka.actor.TypedActor.dispatcher
 import logging.Logging
 import models.ArrivalId
 import models.DocumentExistsError
-import models.FailedToLockService
-import models.FailedToUnlockService
+import models.FailedToLock
+import models.FailedToUnlock
 import models.RequestError
 import repositories.LockRepository
 
 import javax.inject.Inject
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class LockService @Inject()(lockRepository: LockRepository) extends Logging {
+class LockService @Inject()(lockRepository: LockRepository)(implicit ec: ExecutionContext) extends Logging {
 
   def lock(arrivalId: ArrivalId): Future[Either[RequestError, Unit]] =
     lockRepository
@@ -46,7 +46,7 @@ class LockService @Inject()(lockRepository: LockRepository) extends Logging {
             _ =>
               {
                 logger.error(s"Failed to lock record", e)
-                Left(FailedToLockService(s"[LockService][lock] Could not lock for arrival id $arrivalId"))
+                Left(FailedToLock(s"[LockService][lock] Could not lock for arrival id $arrivalId"))
               }
           }
       }
@@ -61,7 +61,7 @@ class LockService @Inject()(lockRepository: LockRepository) extends Logging {
       .recoverWith {
         case e: Exception =>
           logger.error(s"Failed to unlock record", e)
-          Future(Left(FailedToUnlockService(s"[LockService][unlock] Could not unlock for arrival id $arrivalId")))
+          Future(Left(FailedToUnlock(s"[LockService][unlock] Could not unlock for arrival id $arrivalId")))
       }
 
 }
