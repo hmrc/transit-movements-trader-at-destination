@@ -25,6 +25,7 @@ import org.bson.Document
 import repositories.ArrivalMovementRepository
 
 import scala.collection.JavaConverters._
+import org.bson.BsonNull
 
 @ChangeLog(order = "001")
 class MovementsChangeLog {
@@ -34,7 +35,7 @@ class MovementsChangeLog {
     val collection = mongo.getCollection(ArrivalMovementRepository.collectionName)
 
     collection
-      .find()
+      .find(Filters.eq("messages.messageId", BsonNull.VALUE))
       .asScala
       .foreach {
         doc =>
