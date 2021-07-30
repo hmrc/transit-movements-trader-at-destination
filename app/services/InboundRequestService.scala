@@ -16,7 +16,6 @@
 
 package services
 
-import akka.actor.TypedActor.dispatcher
 import cats.data.EitherT
 import cats.implicits.catsStdInstancesForFuture
 import models.ArrivalId
@@ -28,21 +27,22 @@ import models.RequestError
 import models.StatusTransition
 
 import javax.inject.Inject
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.xml.NodeSeq
 
 case class InboundMessageRequest(nextStatus: ArrivalStatus, inboundMessageResponse: InboundMessageResponse)
 
-class InboundRequestService @Inject()(lockService: LockService, getArrivalService: GetArrivalService) {
+class InboundRequestService @Inject()(lockService: LockService, getArrivalService: GetArrivalService)(implicit ec: ExecutionContext) {
 
   def inboundRequest(arrivalId: ArrivalId, xml: NodeSeq): EitherT[Future, RequestError, InboundMessageRequest] =
     for {
-      _                      <- EitherT(lockService.lock(arrivalId))
+      lock                   <- EitherT(lockService.lock(arrivalId))
       arrival                <- EitherT(getArrivalService.getArrivalById(arrivalId))
-      headNode               <- EitherT.fromOption[Future](xml.headOption, CannotFindRootNodeError(s"[InboundRequest][inboundRequest] Could not find root node"))
-      messageResponse        <- EitherT.fromEither[Future](MessageResponse.getMessageResponseFromCode(headNode.label, arrival.channel))
-      nextStatus             <- EitherT.fromEither[Future](StatusTransition.transition(arrival.status, messageResponse.messageReceived))
-      inboundMessageResponse <- EitherT.fromEither[Future](MessageValidationService.validateInboundMessage(messageResponse))
-      _                      <- EitherT(lockService.unlock(arrivalId))
+      headNode               <- EitherT.fromOption(xml.headOption, CannotFindRootNodeError(s"[InboundRequest][inboundRequest] Could not find root node"))
+      messageResponse        <- EitherT.fromEither(MessageResponse.getMessageResponseFromCode(headNode.label, arrival.channel))
+      nextStatus             <- EitherT.fromEither(StatusTransition.transition(arrival.status, messageResponse.messageReceived))
+      inboundMessageResponse <- EitherT.fromEither(MessageValidationService.validateInboundMessage(messageResponse))
+      unlock                 <- EitherT(lockService.unlock(arrivalId))
     } yield InboundMessageRequest(nextStatus, inboundMessageResponse)
 }

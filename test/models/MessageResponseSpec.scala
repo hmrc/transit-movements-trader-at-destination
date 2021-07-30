@@ -75,7 +75,7 @@ class MessageResponseSpec extends SpecBase with ModelGenerators {
 
         val result = MessageResponse.getMessageResponseFromCode("InvalidCode", ChannelType.web)
 
-        result.left.value mustBe an[InvalidArrivalRootNode]
+        result.left.value mustBe an[InvalidArrivalRootNodeError]
       }
     }
   }

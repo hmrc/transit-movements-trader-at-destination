@@ -48,7 +48,7 @@ object MessageResponse extends Logging {
       case MessageType.XMLSubmissionNegativeAcknowledgement.rootNode =>
         logger.error(s"Received the message ${MessageType.XMLSubmissionNegativeAcknowledgement.code} for the $channelType channel")
         Right(XMLSubmissionNegativeAcknowledgementResponse)
-      case _ => Left(InvalidArrivalRootNode(s"[MessageResponse][getMessageResponseFromCode] Unrecognised code: $code"))
+      case _ => Left(InvalidArrivalRootNodeError(s"[MessageResponse][getMessageResponseFromCode] Unrecognised code: $code"))
     }
 }
 
