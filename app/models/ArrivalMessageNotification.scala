@@ -16,12 +16,10 @@
 
 package models
 
-import controllers.actions.InboundMessageRequest
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 
 import java.time.LocalDateTime
-import scala.xml.NodeSeq
 
 case class ArrivalMessageNotification(
   messageUri: String,
@@ -54,16 +52,16 @@ object ArrivalMessageNotification {
         obj ++ Json.obj("requestId" -> requestId(arrival.arrivalId))
     }
 
-  def fromRequest(request: InboundMessageRequest[NodeSeq], timestamp: LocalDateTime): ArrivalMessageNotification = {
-    val messageId  = request.arrivalRequest.arrival.nextMessageId
-    val arrivalUrl = requestId(request.arrivalRequest.arrival.arrivalId)
+  def fromArrival(arrival: Arrival, timestamp: LocalDateTime, messageType: MessageType): ArrivalMessageNotification = {
+    val messageId  = arrival.nextMessageId
+    val arrivalUrl = requestId(arrival.arrivalId)
     ArrivalMessageNotification(
       s"$arrivalUrl/messages/${messageId.value}",
       arrivalUrl,
-      request.arrivalRequest.arrival.arrivalId,
+      arrival.arrivalId,
       messageId,
       timestamp,
-      request.message.messageType.messageType
+      messageType
     )
   }
 }

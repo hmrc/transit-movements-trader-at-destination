@@ -18,6 +18,7 @@ package services
 
 import cats.data.EitherT
 import cats.implicits.catsStdInstancesForFuture
+import models.Arrival
 import models.ArrivalId
 import models.ArrivalStatus
 import models.CannotFindRootNodeError
@@ -31,18 +32,20 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.xml.NodeSeq
 
-case class InboundMessageRequest(nextStatus: ArrivalStatus, inboundMessageResponse: InboundMessageResponse)
+case class InboundMessageRequest(arrival: Arrival, nextStatus: ArrivalStatus, inboundMessageResponse: InboundMessageResponse)
 
 class InboundRequestService @Inject()(lockService: LockService, getArrivalService: GetArrivalService)(implicit ec: ExecutionContext) {
 
-  def inboundRequest(arrivalId: ArrivalId, xml: NodeSeq): EitherT[Future, RequestError, InboundMessageRequest] =
-    for {
-      lock                   <- EitherT(lockService.lock(arrivalId))
-      arrival                <- EitherT(getArrivalService.getArrivalById(arrivalId))
-      headNode               <- EitherT.fromOption(xml.headOption, CannotFindRootNodeError(s"[InboundRequest][inboundRequest] Could not find root node"))
-      messageResponse        <- EitherT.fromEither(MessageResponse.getMessageResponseFromCode(headNode.label, arrival.channel))
-      nextStatus             <- EitherT.fromEither(StatusTransition.transition(arrival.status, messageResponse.messageReceived))
-      inboundMessageResponse <- EitherT.fromEither(MessageValidationService.validateInboundMessage(messageResponse))
-      unlock                 <- EitherT(lockService.unlock(arrivalId))
-    } yield InboundMessageRequest(nextStatus, inboundMessageResponse)
+  def inboundRequest(arrivalId: ArrivalId, xml: NodeSeq): Future[Either[RequestError, InboundMessageRequest]] =
+    (
+      for {
+        lock                   <- EitherT(lockService.lock(arrivalId))
+        arrival                <- EitherT(getArrivalService.getArrivalById(arrivalId))
+        headNode               <- EitherT.fromOption(xml.headOption, CannotFindRootNodeError(s"[InboundRequest][inboundRequest] Could not find root node"))
+        messageResponse        <- EitherT.fromEither(MessageResponse.getMessageResponseFromCode(headNode.label, arrival.channel))
+        nextStatus             <- EitherT.fromEither(StatusTransition.transition(arrival.status, messageResponse.messageReceived))
+        inboundMessageResponse <- EitherT.fromEither(MessageValidationService.validateInboundMessage(messageResponse))
+        unlock                 <- EitherT(lockService.unlock(arrivalId))
+      } yield InboundMessageRequest(arrival, nextStatus, inboundMessageResponse)
+    ).value
 }

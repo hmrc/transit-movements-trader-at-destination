@@ -31,6 +31,6 @@ class GetArrivalService @Inject()(repository: ArrivalMovementRepository)(implici
   def getArrivalById(arrivalId: ArrivalId): Future[Either[RequestError, Arrival]] =
     repository.get(arrivalId).map {
       case Some(arrival) => Right(arrival)
-      case None          => Left(ArrivalNotFoundError(s"[GetArrivalService] Unable to retrieve arrival message for arrival id: ${arrivalId.index}"))
+      case None          => Left(ArrivalNotFoundError(s"[GetArrivalService][getArrivalById] Unable to retrieve arrival message for arrival id: ${arrivalId.index}"))
     }
 }

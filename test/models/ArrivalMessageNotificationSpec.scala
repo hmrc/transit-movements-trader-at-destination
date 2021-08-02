@@ -44,7 +44,7 @@ class ArrivalMessageNotificationSpec extends SpecBase with ScalaCheckDrivenPrope
       val request = FakeRequest(POST, routes.NCTSMessageController.post(messageSender).url)
         .withBody[NodeSeq](<text></text>)
       val arrivalRequest = ArrivalRequest(request, arrival, api)
-      val inboundRequest = InboundMessageRequest(InboundMessage(response, arbitrary[ArrivalStatus].sample.value), arrivalRequest)
+      val inboundRequest = InboundMessageRequest(InboundMessage(response, arbitrary[ArrivalStatus].sample.value), arrivalRequest) // TODO Remove this
 
       val now = LocalDateTime.now()
 
@@ -58,7 +58,7 @@ class ArrivalMessageNotificationSpec extends SpecBase with ScalaCheckDrivenPrope
           response.messageType
         )
 
-      val testNotification = ArrivalMessageNotification.fromRequest(inboundRequest, now)
+      val testNotification = ArrivalMessageNotification.fromArrival(arrival, now, inboundRequest.message.messageType.messageType)
 
       testNotification mustEqual expectedNotification
     }
