@@ -17,6 +17,7 @@
 package controllers
 
 import base.SpecBase
+import cats.laws.discipline.arbitrary
 import config.Constants
 import generators.ModelGenerators
 import models.ArrivalStatus.ArrivalSubmitted
@@ -33,6 +34,8 @@ import models.FailedToValidateMessage
 import models.GoodsReleasedResponse
 import models.InboundMessageRequest
 import models.MessageSender
+import models.MovementMessage
+import models.MovementMessageWithoutStatus
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
 import org.scalacheck.Arbitrary
@@ -98,10 +101,12 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
 
     "must return OK, when the service validates and save the message" in {
 
-      when(mockInboundRequestService.inboundRequest(any(), any()))
-        .thenReturn(Future.successful(Right(InboundMessageRequest(arrivalWithoutBox, GoodsReleased, GoodsReleasedResponse))))
+      val message = Arbitrary.arbitrary[MovementMessageWithoutStatus].sample.value
 
-      when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any())(any()))
+      when(mockInboundRequestService.makeInboundRequest(any(), any(), any()))
+        .thenReturn(Future.successful(Right(InboundMessageRequest(arrivalWithoutBox, GoodsReleased, GoodsReleasedResponse, message))))
+
+      when(mockSaveMessageService.saveInboundMessage(any(), any())(any()))
         .thenReturn(Future.successful(Right(())))
 
       val application = baseApplicationBuilder
@@ -123,7 +128,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
 
     "must return Ok for an arrivalWithoutBox that does not exist" in {
 
-      when(mockInboundRequestService.inboundRequest(any(), any()))
+      when(mockInboundRequestService.makeInboundRequest(any(), any(), any()))
         .thenReturn(Future.successful(Left(ArrivalNotFoundError("error"))))
 
       val application = baseApplicationBuilder.overrides(bind[InboundRequestService].toInstance(mockInboundRequestService)).build()
@@ -142,10 +147,12 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
 
     "must return Internal Server Error if adding the message to the movement fails" in {
 
-      when(mockInboundRequestService.inboundRequest(any(), any()))
-        .thenReturn(Future.successful(Right(InboundMessageRequest(arrivalWithoutBox, GoodsReleased, GoodsReleasedResponse))))
+      val message = Arbitrary.arbitrary[MovementMessageWithoutStatus].sample.value
 
-      when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any())(any()))
+      when(mockInboundRequestService.makeInboundRequest(any(), any(), any()))
+        .thenReturn(Future.successful(Right(InboundMessageRequest(arrivalWithoutBox, GoodsReleased, GoodsReleasedResponse, message))))
+
+      when(mockSaveMessageService.saveInboundMessage(any(), any())(any()))
         .thenReturn(Future.successful(Left(FailedToSaveMessage("ERROR"))))
 
       val application = baseApplicationBuilder
@@ -166,10 +173,12 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
 
     "must return BadRequest error when failure to validate message" in {
 
-      when(mockInboundRequestService.inboundRequest(any(), any()))
-        .thenReturn(Future.successful(Right(InboundMessageRequest(arrivalWithoutBox, GoodsReleased, GoodsReleasedResponse))))
+      val message = Arbitrary.arbitrary[MovementMessageWithoutStatus].sample.value
 
-      when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any())(any()))
+      when(mockInboundRequestService.makeInboundRequest(any(), any(), any()))
+        .thenReturn(Future.successful(Right(InboundMessageRequest(arrivalWithoutBox, GoodsReleased, GoodsReleasedResponse, message))))
+
+      when(mockSaveMessageService.saveInboundMessage(any(), any())(any()))
         .thenReturn(Future.successful(Left(FailedToValidateMessage("error"))))
 
       val application = baseApplicationBuilder
@@ -187,16 +196,18 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
         val result = route(application, request).value
 
         status(result) mustEqual BAD_REQUEST
-        verify(mockSaveMessageService, times(1)).validateXmlAndSaveMessage(any(), any(), any())(any())
+        verify(mockSaveMessageService, times(1)).saveInboundMessage(any(), any())(any())
       }
     }
 
     "must not send push notification when there is no notificationBox present" in {
 
-      when(mockInboundRequestService.inboundRequest(any(), any()))
-        .thenReturn(Future.successful(Right(InboundMessageRequest(arrivalWithoutBox, GoodsReleased, GoodsReleasedResponse))))
+      val message = Arbitrary.arbitrary[MovementMessageWithoutStatus].sample.value
 
-      when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any())(any()))
+      when(mockInboundRequestService.makeInboundRequest(any(), any(), any()))
+        .thenReturn(Future.successful(Right(InboundMessageRequest(arrivalWithoutBox, GoodsReleased, GoodsReleasedResponse, message))))
+
+      when(mockSaveMessageService.saveInboundMessage(any(), any())(any()))
         .thenReturn(Future.successful(Right(())))
 
       val application = baseApplicationBuilder
@@ -222,10 +233,12 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
     "must send push notification when there is a notificationBox and valid timestamp present" in {
       def boxIdMatcher = refEq(testBoxId).asInstanceOf[BoxId]
 
-      when(mockInboundRequestService.inboundRequest(any(), any()))
-        .thenReturn(Future.successful(Right(InboundMessageRequest(arrivalWithBox, GoodsReleased, GoodsReleasedResponse))))
+      val message = Arbitrary.arbitrary[MovementMessageWithoutStatus].sample.value
 
-      when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any())(any()))
+      when(mockInboundRequestService.makeInboundRequest(any(), any(), any()))
+        .thenReturn(Future.successful(Right(InboundMessageRequest(arrivalWithBox, GoodsReleased, GoodsReleasedResponse, message))))
+
+      when(mockSaveMessageService.saveInboundMessage(any(), any())(any()))
         .thenReturn(Future.successful(Right(())))
 
       when(mockPushPullNotificationService.sendPushNotification(boxIdMatcher, any())(any(), any())).thenReturn(Future.unit)
@@ -253,10 +266,12 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
     "must not send push notification when timestamp cannot be parsed" in {
       def boxIdMatcher = refEq(testBoxId).asInstanceOf[BoxId]
 
-      when(mockInboundRequestService.inboundRequest(any(), any()))
-        .thenReturn(Future.successful(Right(InboundMessageRequest(arrivalWithBox, GoodsReleased, GoodsReleasedResponse))))
+      val message = Arbitrary.arbitrary[MovementMessageWithoutStatus].sample.value
 
-      when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any())(any()))
+      when(mockInboundRequestService.makeInboundRequest(any(), any(), any()))
+        .thenReturn(Future.successful(Right(InboundMessageRequest(arrivalWithBox, GoodsReleased, GoodsReleasedResponse, message))))
+
+      when(mockSaveMessageService.saveInboundMessage(any(), any())(any()))
         .thenReturn(Future.successful(Right(())))
 
       when(mockPushPullNotificationService.sendPushNotification(boxIdMatcher, any())(any(), any())).thenReturn(Future.unit)
@@ -282,10 +297,11 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
     }
 
     "must return Locked" in {
-      when(mockInboundRequestService.inboundRequest(any(), any()))
+
+      when(mockInboundRequestService.makeInboundRequest(any(), any(), any()))
         .thenReturn(Future.successful(Left(DocumentExistsError("error"))))
 
-      when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any())(any()))
+      when(mockSaveMessageService.saveInboundMessage(any(), any())(any()))
         .thenReturn(Future.successful(Right(())))
 
       val application = baseApplicationBuilder

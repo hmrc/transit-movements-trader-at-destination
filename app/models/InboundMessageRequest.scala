@@ -16,4 +16,9 @@
 
 package models
 
-case class InboundMessageRequest(arrival: Arrival, nextStatus: ArrivalStatus, inboundMessageResponse: InboundMessageResponse)
+case class InboundMessageRequest(
+  arrival: Arrival,
+  nextStatus: ArrivalStatus,
+  inboundMessageResponse: InboundMessageResponse,
+  movementMessage: MovementMessage
+)

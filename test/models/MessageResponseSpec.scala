@@ -30,42 +30,42 @@ class MessageResponseSpec extends SpecBase with ModelGenerators {
 
         "for GoodsReleased code" in {
 
-          val result = MessageResponse.getMessageResponseFromCode(GoodsReleased.rootNode, ChannelType.web)
+          val result = MessageResponse.getMessageResponseFromCode(GoodsReleased.rootNode)
 
           result.right.value mustBe GoodsReleasedResponse
         }
 
         "for ArrivalRejection code" in {
 
-          val result = MessageResponse.getMessageResponseFromCode(ArrivalRejection.rootNode, ChannelType.web)
+          val result = MessageResponse.getMessageResponseFromCode(ArrivalRejection.rootNode)
 
           result.right.value mustBe ArrivalRejectedResponse
         }
 
         "for UnloadingPermission code" in {
 
-          val result = MessageResponse.getMessageResponseFromCode(UnloadingPermission.rootNode, ChannelType.web)
+          val result = MessageResponse.getMessageResponseFromCode(UnloadingPermission.rootNode)
 
           result.right.value mustBe UnloadingPermissionResponse
         }
 
         "for UnloadingRemarks code" in {
 
-          val result = MessageResponse.getMessageResponseFromCode(UnloadingRemarks.rootNode, ChannelType.web)
+          val result = MessageResponse.getMessageResponseFromCode(UnloadingRemarks.rootNode)
 
           result.right.value mustBe UnloadingRemarksResponse
         }
 
         "for UnloadingRemarksRejection code" in {
 
-          val result = MessageResponse.getMessageResponseFromCode(UnloadingRemarksRejection.rootNode, ChannelType.web)
+          val result = MessageResponse.getMessageResponseFromCode(UnloadingRemarksRejection.rootNode)
 
           result.right.value mustBe UnloadingRemarksRejectedResponse
         }
 
         "for XMLSubmissionNegativeAcknowledgement code" in {
 
-          val result = MessageResponse.getMessageResponseFromCode(XMLSubmissionNegativeAcknowledgement.rootNode, ChannelType.web)
+          val result = MessageResponse.getMessageResponseFromCode(XMLSubmissionNegativeAcknowledgement.rootNode)
 
           result.right.value mustBe XMLSubmissionNegativeAcknowledgementResponse
         }
@@ -73,7 +73,7 @@ class MessageResponseSpec extends SpecBase with ModelGenerators {
 
       "must return InvalidArrivalRootNode for an unrecognised code" in {
 
-        val result = MessageResponse.getMessageResponseFromCode("InvalidCode", ChannelType.web)
+        val result = MessageResponse.getMessageResponseFromCode("InvalidCode")
 
         result.left.value mustBe an[InvalidArrivalRootNodeError]
       }

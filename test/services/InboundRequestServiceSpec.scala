@@ -29,6 +29,8 @@ import models.GoodsReleasedResponse
 import models.InboundMessageError
 import models.InboundMessageRequest
 import models.InvalidArrivalRootNodeError
+import models.MessageSender
+import models.MovementMessageWithStatus
 import models.TransitionError
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
@@ -50,6 +52,9 @@ class InboundRequestServiceSpec extends SpecBase with ModelGenerators with Scala
 
       val inboundXml = <CC025A></CC025A>
 
+      val messageSender = MessageSender(ArrivalId(0), 0)
+      val message       = arbitrary[MovementMessageWithStatus].sample.value
+
       val sampleArrival = arbitrary[Arrival].sample.value.copy(
         status = ArrivalSubmitted
       )
@@ -66,9 +71,9 @@ class InboundRequestServiceSpec extends SpecBase with ModelGenerators with Scala
       running(application) {
         val service = application.injector.instanceOf[InboundRequestService]
 
-        val result = service.inboundRequest(ArrivalId(0), inboundXml)
+        val result = service.makeInboundRequest(ArrivalId(0), inboundXml, messageSender)
 
-        val expectedResult = InboundMessageRequest(sampleArrival, GoodsReleased, GoodsReleasedResponse)
+        val expectedResult = InboundMessageRequest(sampleArrival, GoodsReleased, GoodsReleasedResponse, message)
 
         result.futureValue.value mustBe expectedResult
       }
@@ -78,6 +83,8 @@ class InboundRequestServiceSpec extends SpecBase with ModelGenerators with Scala
 
       val inboundXml = <CC044A></CC044A>
 
+      val messageSender = MessageSender(ArrivalId(0), 0)
+
       val sampleArrival = arbitrary[Arrival].sample.value.copy(
         status = ArrivalSubmitted
       )
@@ -94,7 +101,7 @@ class InboundRequestServiceSpec extends SpecBase with ModelGenerators with Scala
       running(application) {
         val service = application.injector.instanceOf[InboundRequestService]
 
-        val result = service.inboundRequest(ArrivalId(0), inboundXml)
+        val result = service.makeInboundRequest(ArrivalId(0), inboundXml, messageSender)
 
         result.futureValue.left.value mustBe an[TransitionError]
       }
@@ -103,6 +110,8 @@ class InboundRequestServiceSpec extends SpecBase with ModelGenerators with Scala
     "must return an ArrivalNotFoundError when no arrival can be found by arrival Id" in {
 
       val inboundXml = <CC025A></CC025A>
+
+      val messageSender = MessageSender(ArrivalId(0), 0)
 
       when(mockLockService.lock(any())).thenReturn(Future.successful(Right(())))
       when(mockGetArrivalService.getArrivalById(any())).thenReturn(Future.successful(Left(ArrivalNotFoundError("error"))))
@@ -115,7 +124,7 @@ class InboundRequestServiceSpec extends SpecBase with ModelGenerators with Scala
       running(application) {
         val service = application.injector.instanceOf[InboundRequestService]
 
-        val result = service.inboundRequest(ArrivalId(0), inboundXml)
+        val result = service.makeInboundRequest(ArrivalId(0), inboundXml, messageSender)
 
         result.futureValue.left.value mustBe ArrivalNotFoundError("error")
       }
@@ -124,6 +133,8 @@ class InboundRequestServiceSpec extends SpecBase with ModelGenerators with Scala
     "must return a TransitionError for a request with an invalid transition" in {
 
       val inboundXml = <CC044A></CC044A>
+
+      val messageSender = MessageSender(ArrivalId(0), 0)
 
       val sampleArrival = arbitrary[Arrival].sample.value.copy(
         status = ArrivalSubmitted
@@ -141,7 +152,7 @@ class InboundRequestServiceSpec extends SpecBase with ModelGenerators with Scala
       running(application) {
         val service = application.injector.instanceOf[InboundRequestService]
 
-        val result = service.inboundRequest(ArrivalId(0), inboundXml)
+        val result = service.makeInboundRequest(ArrivalId(0), inboundXml, messageSender)
 
         result.futureValue.left.value mustBe an[TransitionError]
       }
@@ -150,6 +161,8 @@ class InboundRequestServiceSpec extends SpecBase with ModelGenerators with Scala
     "must return an InvalidArrivalRootNode for an unrecognised root node code" in {
 
       val inboundXml = <InvalidRootCode></InvalidRootCode>
+
+      val messageSender = MessageSender(ArrivalId(0), 0)
 
       val sampleArrival = arbitrary[Arrival].sample.value.copy(
         status = ArrivalSubmitted
@@ -166,7 +179,7 @@ class InboundRequestServiceSpec extends SpecBase with ModelGenerators with Scala
       running(application) {
         val service = application.injector.instanceOf[InboundRequestService]
 
-        val result = service.inboundRequest(ArrivalId(0), inboundXml)
+        val result = service.makeInboundRequest(ArrivalId(0), inboundXml, messageSender)
 
         result.futureValue.left.value mustBe an[InvalidArrivalRootNodeError]
       }
@@ -175,6 +188,8 @@ class InboundRequestServiceSpec extends SpecBase with ModelGenerators with Scala
     "must return an InboundMessageError when given an OutboundMessage" in {
 
       val unloadingRemarksXml = <CC044A></CC044A>
+
+      val messageSender = MessageSender(ArrivalId(0), 0)
 
       val sampleArrival = arbitrary[Arrival].sample.value.copy(
         status = UnloadingPermission
@@ -191,7 +206,7 @@ class InboundRequestServiceSpec extends SpecBase with ModelGenerators with Scala
       running(application) {
         val service = application.injector.instanceOf[InboundRequestService]
 
-        val result = service.inboundRequest(ArrivalId(0), unloadingRemarksXml)
+        val result = service.makeInboundRequest(ArrivalId(0), unloadingRemarksXml, messageSender)
 
         result.futureValue.left.value mustBe an[InboundMessageError]
       }
@@ -200,6 +215,8 @@ class InboundRequestServiceSpec extends SpecBase with ModelGenerators with Scala
     "must return a FailedToUnlock when unlocking fails" in {
 
       val inboundXml = <CC025A></CC025A>
+
+      val messageSender = MessageSender(ArrivalId(0), 0)
 
       val sampleArrival = arbitrary[Arrival].sample.value.copy(
         status = ArrivalSubmitted
@@ -217,7 +234,7 @@ class InboundRequestServiceSpec extends SpecBase with ModelGenerators with Scala
       running(application) {
         val service = application.injector.instanceOf[InboundRequestService]
 
-        val result = service.inboundRequest(ArrivalId(0), inboundXml)
+        val result = service.makeInboundRequest(ArrivalId(0), inboundXml, messageSender)
 
         result.futureValue.left.value mustBe FailedToUnlock("error")
       }

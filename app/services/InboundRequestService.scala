@@ -20,8 +20,14 @@ import cats.data.EitherT
 import cats.implicits.catsStdInstancesForFuture
 import models.ArrivalId
 import models.CannotFindRootNodeError
+import models.FailedToValidateMessage
 import models.InboundMessageRequest
+import models.InboundMessageResponse
+import models.MessageId
 import models.MessageResponse
+import models.MessageSender
+import models.MessageType
+import models.MovementMessageWithoutStatus
 import models.StatusTransition
 import models.SubmissionState
 
@@ -30,20 +36,46 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.xml.NodeSeq
 
-class InboundRequestService @Inject()(lockService: LockService, getArrivalService: GetArrivalService)(implicit ec: ExecutionContext) {
+class InboundRequestService @Inject()(
+  lockService: LockService,
+  getArrivalService: GetArrivalService,
+  xmlValidationService: XmlValidationService,
+  arrivalMovementMessageService: ArrivalMovementMessageService,
+)(implicit ec: ExecutionContext) {
 
-  def inboundRequest(arrivalId: ArrivalId, xml: NodeSeq): Future[Either[SubmissionState, InboundMessageRequest]] =
+  def makeInboundRequest(arrivalId: ArrivalId, xml: NodeSeq, messageSender: MessageSender): Future[Either[SubmissionState, InboundMessageRequest]] =
     (
       for {
         lock                   <- EitherT(lockService.lock(arrivalId))
-        arrival                <- EitherT(getArrivalService.getArrivalById(arrivalId))
-        headNode               <- EitherT.fromOption(xml.headOption, CannotFindRootNodeError(s"[InboundRequest][inboundRequest] Could not find root node"))
-        messageResponse        <- EitherT.fromEither(MessageResponse.getMessageResponseFromCode(headNode.label, arrival.channel))
-        nextStatus             <- EitherT.fromEither(StatusTransition.transition(arrival.status, messageResponse.messageReceived))
-        inboundMessageResponse <- EitherT.fromEither(MessageValidationService.validateInboundMessage(messageResponse))
-        unlock                 <- EitherT(lockService.unlock(arrivalId))
-      } yield InboundMessageRequest(arrival, nextStatus, inboundMessageResponse)
+        inboundMessageResponse <- makeInboundMessageResponse(xml)
+        inboundMessage         <- makeMovementMessage(messageSender.messageCorrelationId, inboundMessageResponse.messageType, xml)
+        arrival                <- EitherT(getArrivalService.getArrivalAndAudit(arrivalId, inboundMessageResponse, inboundMessage))
+        updatedInboundMessage  = inboundMessage.copy(messageCorrelationId = arrival.nextMessageCorrelationId)
+        nextStatus <- EitherT.fromEither(StatusTransition.transition(arrival.status, inboundMessageResponse.messageReceived))
+        unlock     <- EitherT(lockService.unlock(arrivalId))
+      } yield InboundMessageRequest(arrival, nextStatus, inboundMessageResponse, updatedInboundMessage)
     ).value
-}
 
-//auditService.auditNCTSMessages(arrival.channel, inboundRequest.inboundMessageResponse, message)
+  // TODO move to service
+  private def makeMovementMessage(messageCorrelationId: Int,
+                                  messageType: MessageType,
+                                  xml: NodeSeq): EitherT[Future, SubmissionState, MovementMessageWithoutStatus] =
+    EitherT.fromEither(
+      arrivalMovementMessageService
+        .makeInboundMessage(MessageId(0), messageCorrelationId, messageType)(xml) // TODO what to do with this message id
+        .toOption
+        .toRight[SubmissionState](FailedToValidateMessage("error")))
+
+  // TODO move to service
+  private def makeInboundMessageResponse(xml: NodeSeq): EitherT[Future, SubmissionState, InboundMessageResponse] =
+    for {
+      headNode                <- EitherT.fromOption(xml.headOption, CannotFindRootNodeError(s"[InboundRequest][inboundRequest] Could not find root node"))
+      messageResponse         <- EitherT.fromEither(MessageResponse.getMessageResponseFromCode(headNode.label))
+      validateInboundResponse <- EitherT.fromEither(MessageValidationService.validateInboundMessage(messageResponse))
+      validateXml <- EitherT.fromEither(
+        xmlValidationService
+          .validate(xml.toString, validateInboundResponse.xsdFile)
+          .toOption
+          .toRight[SubmissionState](FailedToValidateMessage(s"[InboundRequest][makeInboundMessageResponse] XML failed to validate against XSD file")))
+    } yield validateInboundResponse
+}

@@ -38,7 +38,7 @@ object MessageResponse extends Logging {
     UnloadingRemarksResponse
   )
 
-  def getMessageResponseFromCode(code: String, channelType: ChannelType): Either[SubmissionState, MessageResponse] =
+  def getMessageResponseFromCode(code: String): Either[SubmissionState, MessageResponse] =
     code match {
       case MessageType.GoodsReleased.rootNode             => Right(GoodsReleasedResponse)
       case MessageType.ArrivalRejection.rootNode          => Right(ArrivalRejectedResponse)
@@ -46,7 +46,7 @@ object MessageResponse extends Logging {
       case MessageType.UnloadingRemarks.rootNode          => Right(UnloadingRemarksResponse)
       case MessageType.UnloadingRemarksRejection.rootNode => Right(UnloadingRemarksRejectedResponse)
       case MessageType.XMLSubmissionNegativeAcknowledgement.rootNode =>
-        logger.error(s"Received the message ${MessageType.XMLSubmissionNegativeAcknowledgement.code} for the $channelType channel")
+        logger.error(s"Received the message ${MessageType.XMLSubmissionNegativeAcknowledgement.code}")
         Right(XMLSubmissionNegativeAcknowledgementResponse)
       case _ => Left(InvalidArrivalRootNodeError(s"[MessageResponse][getMessageResponseFromCode] Unrecognised code: $code"))
     }

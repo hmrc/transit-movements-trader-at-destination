@@ -16,21 +16,35 @@
 
 package services
 
+import audit.AuditService
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalNotFoundError
+import models.MessageResponse
+import models.MovementMessage
 import models.SubmissionState
+import models.ChannelType.deleted
 import repositories.ArrivalMovementRepository
+import uk.gov.hmrc.http.HeaderCarrier
 
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class GetArrivalService @Inject()(repository: ArrivalMovementRepository)(implicit ec: ExecutionContext) {
+class GetArrivalService @Inject()(repository: ArrivalMovementRepository, auditService: AuditService)(implicit ec: ExecutionContext, hc: HeaderCarrier) {
 
   def getArrivalById(arrivalId: ArrivalId): Future[Either[SubmissionState, Arrival]] =
     repository.get(arrivalId).map {
       case Some(arrival) => Right(arrival)
       case None          => Left(ArrivalNotFoundError(s"[GetArrivalService][getArrivalById] Unable to retrieve arrival message for arrival id: ${arrivalId.index}"))
+    }
+
+  def getArrivalAndAudit(arrivalId: ArrivalId, messageResponse: MessageResponse, movementMessage: MovementMessage): Future[Either[SubmissionState, Arrival]] =
+    getArrivalById(arrivalId).map {
+      _.left.map {
+        submissionState =>
+          auditService.auditNCTSMessages(deleted, messageResponse, movementMessage)
+          submissionState
+      }
     }
 }

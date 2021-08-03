@@ -78,8 +78,8 @@ class NCTSMessageController @Inject()(
         withMetricsTimerResult("post-receive-ncts-message") {
           (
             for {
-              inboundRequest            <- EitherT(inboundRequestService.inboundRequest(messageSender.arrivalId, request.body))
-              validateXmlAndSaveMessage <- EitherT(saveMessageService.validateXmlAndSaveMessage(inboundRequest, request.body, messageSender))
+              inboundRequest     <- EitherT(inboundRequestService.makeInboundRequest(messageSender.arrivalId, request.body, messageSender))
+              saveInboundRequest <- EitherT(saveMessageService.saveInboundMessage(inboundRequest, messageSender))
               sendPushNotification <- EitherT.right[SubmissionState](
                 sendPushNotification(request.body, inboundRequest.arrival, inboundRequest.inboundMessageResponse.messageType))
             } yield inboundRequest
@@ -100,7 +100,7 @@ class NCTSMessageController @Inject()(
                     }
                   }
               }
-            case Right(InboundMessageRequest(arrival, _, inboundMessageResponse)) =>
+            case Right(InboundMessageRequest(arrival, _, inboundMessageResponse, _)) =>
               val summaryInfo: Map[String, String] = Map(
                 "X-Correlation-Id" -> request.headers.get("X-Correlation-ID").getOrElse("undefined"),
                 "X-Request-Id"     -> request.headers.get("X-Request-ID").getOrElse("undefined")

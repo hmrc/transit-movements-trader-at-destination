@@ -20,12 +20,7 @@ import audit.AuditService
 import com.google.inject.Inject
 import com.kenshoo.play.metrics.Metrics
 import logging.Logging
-import metrics.HasActionMetrics
-import metrics.Monitors
-import models.SubmissionProcessingResult._
-import models.FailedToCreateMessage
 import models.FailedToSaveMessage
-import models.FailedToValidateMessage
 import models.InboundMessageRequest
 import models.MessageSender
 import models.SubmissionState
@@ -36,44 +31,30 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.Failure
 import scala.util.Success
-import scala.xml.NodeSeq
 
 class SaveMessageService @Inject()(
   arrivalMovementRepository: ArrivalMovementRepository,
-  arrivalMovementService: ArrivalMovementMessageService,
-  xmlValidationService: XmlValidationService,
   auditService: AuditService,
   val metrics: Metrics
 )(implicit ec: ExecutionContext)
     extends Logging {
 
-  def validateXmlAndSaveMessage(
+  def saveInboundMessage(
     inboundRequest: InboundMessageRequest,
-    xml: NodeSeq,
     messageSender: MessageSender
   )(implicit hc: HeaderCarrier): Future[Either[SubmissionState, Unit]] =
     inboundRequest match {
-      case InboundMessageRequest(arrival, nextStatus, inboundMessageResponse) =>
-        xmlValidationService.validate(xml.toString(), inboundMessageResponse.xsdFile) match {
-          case Success(_) =>
-            arrivalMovementService.makeInboundMessage(arrival.nextMessageId, messageSender.messageCorrelationId, inboundMessageResponse.messageType)(xml) match {
-              case Right(message) =>
-                arrivalMovementRepository
-                  .addResponseMessage(messageSender.arrivalId, message, nextStatus)
-                  .map {
-                    case Success(_) =>
-                      logger.debug(s"Saved message successfully")
-                      auditService.auditNCTSMessages(arrival.channel, inboundRequest.inboundMessageResponse, message)
-                      Right(())
-                    case Failure(error) =>
-                      Left(FailedToSaveMessage(s"[SaveMessageService][validateXmlAndSaveMessage] Failed to save message with error: $error"))
-                  }
-              case Left(error) =>
-                Future.successful(Left(FailedToCreateMessage(s"[SaveMessageService][validateXmlAndSaveMessage] Failed to create message with error: $error")))
-            }
-          case Failure(e) =>
-            Future.successful(
-              Left(FailedToValidateMessage(s"[SaveMessageService][validateXmlAndSaveMessage] Failure to validate against XSD. Exception: ${e.getMessage}")))
-        }
+      case InboundMessageRequest(arrival, nextStatus, inboundMessageResponse, movementMessage) =>
+        arrivalMovementRepository
+          .addResponseMessage(messageSender.arrivalId, movementMessage, nextStatus)
+          .map {
+            case Success(_) =>
+              logger.debug(s"Saved message successfully")
+              auditService.auditNCTSMessages(arrival.channel, inboundMessageResponse, movementMessage)
+              Right(())
+            case Failure(error) =>
+              Left(FailedToSaveMessage(s"[SaveMessageService][validateXmlAndSaveMessage] Failed to save message with error: $error"))
+          }
     }
+
 }

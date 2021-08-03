@@ -28,6 +28,7 @@ import models.FailedToValidateMessage
 import models.GoodsReleasedResponse
 import models.InboundMessageRequest
 import models.MessageSender
+import models.MovementMessageWithoutStatus
 import org.mockito.ArgumentMatchers.{eq => eqTo, _}
 import org.mockito.Mockito._
 import org.scalacheck.Arbitrary.arbitrary
@@ -63,6 +64,7 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach with Model
       when(mockXmlValidationService.validate(any(), any())).thenReturn(Success(()))
 
       val arrival = arbitrary[Arrival].sample.value
+      val message = arbitrary[MovementMessageWithoutStatus].sample.value
 
       val application = baseApplicationBuilder
         .overrides(
@@ -82,15 +84,9 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach with Model
         val messageCorrelationId = 1
         val messageSender        = MessageSender(arrivalId, messageCorrelationId)
 
-        val requestGoodsReleasedXmlBody =
-          <CC025A>
-            <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
-            <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
-          </CC025A>
-
         val result =
           saveMessageService
-            .validateXmlAndSaveMessage(InboundMessageRequest(arrival, GoodsReleased, GoodsReleasedResponse), requestGoodsReleasedXmlBody, messageSender)
+            .saveInboundMessage(InboundMessageRequest(arrival, GoodsReleased, GoodsReleasedResponse, message), messageSender)
             .futureValue
             .right
             .value
@@ -103,9 +99,11 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach with Model
     }
 
     "return Failure when we cannot save the message" in {
+
       when(mockArrivalMovementRepository.addResponseMessage(any(), any(), any())).thenReturn(Future.successful(Failure(new Exception)))
       when(mockXmlValidationService.validate(any(), any())).thenReturn(Success(()))
 
+      val message = arbitrary[MovementMessageWithoutStatus].sample.value
       val arrival = arbitrary[Arrival].sample.value
 
       val application = baseApplicationBuilder
@@ -125,15 +123,9 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach with Model
         val messageCorrelationId = 1
         val messageSender        = MessageSender(arrivalId, messageCorrelationId)
 
-        val requestGoodsReleasedXmlBody =
-          <CC025A>
-            <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
-            <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
-          </CC025A>
-
         val result =
           saveMessageService
-            .validateXmlAndSaveMessage(InboundMessageRequest(arrival, GoodsReleased, GoodsReleasedResponse), requestGoodsReleasedXmlBody, messageSender)
+            .saveInboundMessage(InboundMessageRequest(arrival, GoodsReleased, GoodsReleasedResponse, message), messageSender)
             .futureValue
             .left
             .value
@@ -147,6 +139,7 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach with Model
     "return Failure when we cannot parse the message" in {
       when(mockXmlValidationService.validate(any(), any())).thenReturn(Failure(new Exception))
 
+      val message = arbitrary[MovementMessageWithoutStatus].sample.value
       val arrival = arbitrary[Arrival].sample.value
 
       val application = baseApplicationBuilder
@@ -163,11 +156,9 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach with Model
         val messageCorrelationId = 1
         val messageSender        = MessageSender(arrivalId, messageCorrelationId)
 
-        val requestInvalidXmlBody = <Invalid>invalid</Invalid>
-
         val result =
           saveMessageService
-            .validateXmlAndSaveMessage(InboundMessageRequest(arrival, GoodsReleased, GoodsReleasedResponse), requestInvalidXmlBody, messageSender)
+            .saveInboundMessage(InboundMessageRequest(arrival, GoodsReleased, GoodsReleasedResponse, message), messageSender)
             .futureValue
             .left
             .value
@@ -181,6 +172,7 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach with Model
     "return Failure when we cannot parse the message due malformed time" in {
       when(mockXmlValidationService.validate(any(), any())).thenReturn(Success(()))
 
+      val message = arbitrary[MovementMessageWithoutStatus].sample.value
       val arrival = arbitrary[Arrival].sample.value
 
       val application = baseApplicationBuilder
@@ -199,15 +191,9 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach with Model
         val dateOfPrep           = LocalDate.now()
         val timeOfPrep           = LocalTime.of(1, 1)
 
-        val requestInvalidXmlBody =
-          <CC025A>
-            <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
-            <TimOfPreMES10>{Format.timeFormatted(timeOfPrep) + "/"}</TimOfPreMES10>
-          </CC025A>
-
         val result =
           saveMessageService
-            .validateXmlAndSaveMessage(InboundMessageRequest(arrival, GoodsReleased, GoodsReleasedResponse), requestInvalidXmlBody, messageSender)
+            .saveInboundMessage(InboundMessageRequest(arrival, GoodsReleased, GoodsReleasedResponse, message), messageSender)
             .futureValue
             .left
             .value

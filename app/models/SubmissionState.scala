@@ -48,6 +48,7 @@ case class InboundMessageError(message: String)         extends ExternalError
 case class DocumentExistsError(message: String)         extends ExternalError
 case class CannotFindRootNodeError(message: String)     extends ExternalError
 case class FailedToValidateMessage(message: String)     extends ExternalError
+case class FailedToRetrieveMessage(message: String)     extends ExternalError
 
 sealed trait RejectionState extends SubmissionState {
   override val monitorMessage: String = "rejected"
