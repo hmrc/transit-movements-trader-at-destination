@@ -38,7 +38,7 @@ object MessageResponse extends Logging {
     UnloadingRemarksResponse
   )
 
-  def getMessageResponseFromCode(code: String, channelType: ChannelType): Either[RequestError, MessageResponse] =
+  def getMessageResponseFromCode(code: String, channelType: ChannelType): Either[SubmissionState, MessageResponse] =
     code match {
       case MessageType.GoodsReleased.rootNode             => Right(GoodsReleasedResponse)
       case MessageType.ArrivalRejection.rootNode          => Right(ArrivalRejectedResponse)

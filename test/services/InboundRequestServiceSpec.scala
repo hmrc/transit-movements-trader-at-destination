@@ -27,6 +27,7 @@ import models.ArrivalNotFoundError
 import models.FailedToUnlock
 import models.GoodsReleasedResponse
 import models.InboundMessageError
+import models.InboundMessageRequest
 import models.InvalidArrivalRootNodeError
 import models.TransitionError
 import org.mockito.ArgumentMatchers._

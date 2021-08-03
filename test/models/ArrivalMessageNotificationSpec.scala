@@ -16,19 +16,18 @@
 
 package models
 
-import java.time.LocalDateTime
-
 import base.SpecBase
-import controllers.actions.InboundMessageRequest
 import controllers.routes
 import generators.ModelGenerators
 import models.ChannelType.api
 import models.request.ArrivalRequest
+import org.scalacheck.Arbitrary._
 import org.scalacheck.Gen
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.http.HttpVerbs
 import play.api.test.FakeRequest
-import org.scalacheck.Arbitrary._
+
+import java.time.LocalDateTime
 import scala.xml.NodeSeq
 
 class ArrivalMessageNotificationSpec extends SpecBase with ScalaCheckDrivenPropertyChecks with ModelGenerators with HttpVerbs {
@@ -37,16 +36,10 @@ class ArrivalMessageNotificationSpec extends SpecBase with ScalaCheckDrivenPrope
 
   "fromRequest" - {
     "produces the expected model" in {
-      val response      = responseGenerator.sample.value
-      val arrival       = arbitraryArrival.arbitrary.sample.value
-      val messageSender = MessageSender(arrival.arrivalId, arrival.messages.last.messageCorrelationId)
 
-      val request = FakeRequest(POST, routes.NCTSMessageController.post(messageSender).url)
-        .withBody[NodeSeq](<text></text>)
-      val arrivalRequest = ArrivalRequest(request, arrival, api)
-      val inboundRequest = InboundMessageRequest(InboundMessage(response, arbitrary[ArrivalStatus].sample.value), arrivalRequest) // TODO Remove this
-
-      val now = LocalDateTime.now()
+      val arrival     = arbitraryArrival.arbitrary.sample.value
+      val messageType = Gen.oneOf(MessageType.values).sample.value
+      val dateTimeNow = LocalDateTime.now()
 
       val expectedNotification =
         ArrivalMessageNotification(
@@ -54,11 +47,11 @@ class ArrivalMessageNotificationSpec extends SpecBase with ScalaCheckDrivenPrope
           s"/customs/transits/movements/arrivals/${arrival.arrivalId.index}",
           arrival.arrivalId,
           MessageId(arrival.messages.length + 1),
-          now,
-          response.messageType
+          dateTimeNow,
+          messageType
         )
 
-      val testNotification = ArrivalMessageNotification.fromArrival(arrival, now, inboundRequest.message.messageType.messageType)
+      val testNotification = ArrivalMessageNotification.fromArrival(arrival, dateTimeNow, messageType)
 
       testNotification mustEqual expectedNotification
     }

@@ -21,7 +21,7 @@ import models.ArrivalId
 import models.DocumentExistsError
 import models.FailedToLock
 import models.FailedToUnlock
-import models.RequestError
+import models.SubmissionState
 import repositories.LockRepository
 
 import javax.inject.Inject
@@ -30,7 +30,7 @@ import scala.concurrent.Future
 
 class LockService @Inject()(lockRepository: LockRepository)(implicit ec: ExecutionContext) extends Logging {
 
-  def lock(arrivalId: ArrivalId): Future[Either[RequestError, Unit]] =
+  def lock(arrivalId: ArrivalId): Future[Either[SubmissionState, Unit]] =
     lockRepository
       .lock(arrivalId)
       .flatMap {
@@ -51,7 +51,7 @@ class LockService @Inject()(lockRepository: LockRepository)(implicit ec: Executi
           }
       }
 
-  def unlock(arrivalId: ArrivalId): Future[Either[RequestError, Unit]] =
+  def unlock(arrivalId: ArrivalId): Future[Either[SubmissionState, Unit]] =
     lockRepository
       .unlock(arrivalId)
       .map {

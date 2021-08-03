@@ -18,13 +18,17 @@ package services
 
 import audit.AuditService
 import com.google.inject.Inject
+import com.kenshoo.play.metrics.Metrics
 import logging.Logging
-import models.ArrivalStatus
-import models.ChannelType
-import models.InboundMessageResponse
-import models.MessageSender
-import models.SubmissionProcessingResult
+import metrics.HasActionMetrics
+import metrics.Monitors
 import models.SubmissionProcessingResult._
+import models.FailedToCreateMessage
+import models.FailedToSaveMessage
+import models.FailedToValidateMessage
+import models.InboundMessageRequest
+import models.MessageSender
+import models.SubmissionState
 import repositories.ArrivalMovementRepository
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -33,45 +37,43 @@ import scala.concurrent.Future
 import scala.util.Failure
 import scala.util.Success
 import scala.xml.NodeSeq
-import models.MessageId
 
 class SaveMessageService @Inject()(
   arrivalMovementRepository: ArrivalMovementRepository,
   arrivalMovementService: ArrivalMovementMessageService,
   xmlValidationService: XmlValidationService,
-  auditService: AuditService
+  auditService: AuditService,
+  val metrics: Metrics
 )(implicit ec: ExecutionContext)
     extends Logging {
 
   def validateXmlAndSaveMessage(
-    nextMessageId: MessageId,
-    messageXml: NodeSeq,
-    messageSender: MessageSender,
-    messageResponse: InboundMessageResponse,
-    arrivalStatus: ArrivalStatus,
-    channel: ChannelType
-  )(implicit hc: HeaderCarrier): Future[SubmissionProcessingResult] =
-    xmlValidationService.validate(messageXml.toString(), messageResponse.xsdFile) match {
-      case Success(_) =>
-        arrivalMovementService.makeInboundMessage(nextMessageId, messageSender.messageCorrelationId, messageResponse.messageType)(messageXml) match {
-          case Right(message) =>
-            arrivalMovementRepository
-              .addResponseMessage(messageSender.arrivalId, message, arrivalStatus)
-              .map {
-                case Success(_) =>
-                  logger.debug(s"Saved message successfully")
-                  auditService.auditNCTSMessages(channel, messageResponse, message)
-                  SubmissionSuccess
-                case Failure(error) =>
-                  logger.warn(s"Failed to save message with error: $error")
-                  SubmissionFailureInternal
-              }
-          case Left(error) =>
-            logger.warn(s"Failed to create message with error: $error")
-            Future.successful(SubmissionFailureExternal)
+    inboundRequest: InboundMessageRequest,
+    xml: NodeSeq,
+    messageSender: MessageSender
+  )(implicit hc: HeaderCarrier): Future[Either[SubmissionState, Unit]] =
+    inboundRequest match {
+      case InboundMessageRequest(arrival, nextStatus, inboundMessageResponse) =>
+        xmlValidationService.validate(xml.toString(), inboundMessageResponse.xsdFile) match {
+          case Success(_) =>
+            arrivalMovementService.makeInboundMessage(arrival.nextMessageId, messageSender.messageCorrelationId, inboundMessageResponse.messageType)(xml) match {
+              case Right(message) =>
+                arrivalMovementRepository
+                  .addResponseMessage(messageSender.arrivalId, message, nextStatus)
+                  .map {
+                    case Success(_) =>
+                      logger.debug(s"Saved message successfully")
+                      auditService.auditNCTSMessages(arrival.channel, inboundRequest.inboundMessageResponse, message)
+                      Right(())
+                    case Failure(error) =>
+                      Left(FailedToSaveMessage(s"[SaveMessageService][validateXmlAndSaveMessage] Failed to save message with error: $error"))
+                  }
+              case Left(error) =>
+                Future.successful(Left(FailedToCreateMessage(s"[SaveMessageService][validateXmlAndSaveMessage] Failed to create message with error: $error")))
+            }
+          case Failure(e) =>
+            Future.successful(
+              Left(FailedToValidateMessage(s"[SaveMessageService][validateXmlAndSaveMessage] Failure to validate against XSD. Exception: ${e.getMessage}")))
         }
-      case Failure(e) =>
-        logger.warn(s"Failure to validate against XSD. Exception: ${e.getMessage}")
-        Future.successful(SubmissionFailureExternal)
     }
 }

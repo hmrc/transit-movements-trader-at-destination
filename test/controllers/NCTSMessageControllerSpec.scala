@@ -28,9 +28,11 @@ import models.ArrivalNotFoundError
 import models.Box
 import models.BoxId
 import models.DocumentExistsError
+import models.FailedToSaveMessage
+import models.FailedToValidateMessage
 import models.GoodsReleasedResponse
+import models.InboundMessageRequest
 import models.MessageSender
-import models.SubmissionProcessingResult
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
 import org.scalacheck.Arbitrary
@@ -39,15 +41,14 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import services.InboundMessageRequest
 import services.InboundRequestService
 import services.PushPullNotificationService
 import services.SaveMessageService
 import utils.Format
-import scala.xml.Utility.trim
 
 import java.time.LocalDateTime
 import scala.concurrent.Future
+import scala.xml.Utility.trim
 
 class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks with ModelGenerators with BeforeAndAfterEach {
 
@@ -100,8 +101,8 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
       when(mockInboundRequestService.inboundRequest(any(), any()))
         .thenReturn(Future.successful(Right(InboundMessageRequest(arrivalWithoutBox, GoodsReleased, GoodsReleasedResponse))))
 
-      when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any(), any(), any(), any())(any()))
-        .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionSuccess))
+      when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any())(any()))
+        .thenReturn(Future.successful(Right(())))
 
       val application = baseApplicationBuilder
         .overrides(bind[SaveMessageService].toInstance(mockSaveMessageService))
@@ -144,8 +145,8 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
       when(mockInboundRequestService.inboundRequest(any(), any()))
         .thenReturn(Future.successful(Right(InboundMessageRequest(arrivalWithoutBox, GoodsReleased, GoodsReleasedResponse))))
 
-      when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any(), any(), any(), any())(any()))
-        .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureInternal))
+      when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any())(any()))
+        .thenReturn(Future.successful(Left(FailedToSaveMessage("ERROR"))))
 
       val application = baseApplicationBuilder
         .overrides(bind[SaveMessageService].toInstance(mockSaveMessageService))
@@ -168,8 +169,8 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
       when(mockInboundRequestService.inboundRequest(any(), any()))
         .thenReturn(Future.successful(Right(InboundMessageRequest(arrivalWithoutBox, GoodsReleased, GoodsReleasedResponse))))
 
-      when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any(), any(), any(), any())(any()))
-        .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureExternal))
+      when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any())(any()))
+        .thenReturn(Future.successful(Left(FailedToValidateMessage("error"))))
 
       val application = baseApplicationBuilder
         .overrides(
@@ -186,7 +187,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
         val result = route(application, request).value
 
         status(result) mustEqual BAD_REQUEST
-        verify(mockSaveMessageService, times(1)).validateXmlAndSaveMessage(any(), any(), any(), any(), any(), any())(any())
+        verify(mockSaveMessageService, times(1)).validateXmlAndSaveMessage(any(), any(), any())(any())
       }
     }
 
@@ -195,8 +196,8 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
       when(mockInboundRequestService.inboundRequest(any(), any()))
         .thenReturn(Future.successful(Right(InboundMessageRequest(arrivalWithoutBox, GoodsReleased, GoodsReleasedResponse))))
 
-      when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any(), any(), any(), any())(any()))
-        .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionSuccess))
+      when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any())(any()))
+        .thenReturn(Future.successful(Right(())))
 
       val application = baseApplicationBuilder
         .overrides(
@@ -224,8 +225,8 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
       when(mockInboundRequestService.inboundRequest(any(), any()))
         .thenReturn(Future.successful(Right(InboundMessageRequest(arrivalWithBox, GoodsReleased, GoodsReleasedResponse))))
 
-      when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any(), any(), any(), any())(any()))
-        .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionSuccess))
+      when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any())(any()))
+        .thenReturn(Future.successful(Right(())))
 
       when(mockPushPullNotificationService.sendPushNotification(boxIdMatcher, any())(any(), any())).thenReturn(Future.unit)
 
@@ -255,8 +256,8 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
       when(mockInboundRequestService.inboundRequest(any(), any()))
         .thenReturn(Future.successful(Right(InboundMessageRequest(arrivalWithBox, GoodsReleased, GoodsReleasedResponse))))
 
-      when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any(), any(), any(), any())(any()))
-        .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionSuccess))
+      when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any())(any()))
+        .thenReturn(Future.successful(Right(())))
 
       when(mockPushPullNotificationService.sendPushNotification(boxIdMatcher, any())(any(), any())).thenReturn(Future.unit)
 
@@ -284,8 +285,8 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
       when(mockInboundRequestService.inboundRequest(any(), any()))
         .thenReturn(Future.successful(Left(DocumentExistsError("error"))))
 
-      when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any(), any(), any(), any())(any()))
-        .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionSuccess))
+      when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any())(any()))
+        .thenReturn(Future.successful(Right(())))
 
       val application = baseApplicationBuilder
         .overrides(bind[SaveMessageService].toInstance(mockSaveMessageService))

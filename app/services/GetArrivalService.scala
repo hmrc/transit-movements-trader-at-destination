@@ -19,7 +19,7 @@ package services
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalNotFoundError
-import models.RequestError
+import models.SubmissionState
 import repositories.ArrivalMovementRepository
 
 import javax.inject.Inject
@@ -28,7 +28,7 @@ import scala.concurrent.Future
 
 class GetArrivalService @Inject()(repository: ArrivalMovementRepository)(implicit ec: ExecutionContext) {
 
-  def getArrivalById(arrivalId: ArrivalId): Future[Either[RequestError, Arrival]] =
+  def getArrivalById(arrivalId: ArrivalId): Future[Either[SubmissionState, Arrival]] =
     repository.get(arrivalId).map {
       case Some(arrival) => Right(arrival)
       case None          => Left(ArrivalNotFoundError(s"[GetArrivalService][getArrivalById] Unable to retrieve arrival message for arrival id: ${arrivalId.index}"))

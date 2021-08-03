@@ -18,25 +18,21 @@ package services
 
 import cats.data.EitherT
 import cats.implicits.catsStdInstancesForFuture
-import models.Arrival
 import models.ArrivalId
-import models.ArrivalStatus
 import models.CannotFindRootNodeError
-import models.InboundMessageResponse
+import models.InboundMessageRequest
 import models.MessageResponse
-import models.RequestError
 import models.StatusTransition
+import models.SubmissionState
 
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.xml.NodeSeq
 
-case class InboundMessageRequest(arrival: Arrival, nextStatus: ArrivalStatus, inboundMessageResponse: InboundMessageResponse)
-
 class InboundRequestService @Inject()(lockService: LockService, getArrivalService: GetArrivalService)(implicit ec: ExecutionContext) {
 
-  def inboundRequest(arrivalId: ArrivalId, xml: NodeSeq): Future[Either[RequestError, InboundMessageRequest]] =
+  def inboundRequest(arrivalId: ArrivalId, xml: NodeSeq): Future[Either[SubmissionState, InboundMessageRequest]] =
     (
       for {
         lock                   <- EitherT(lockService.lock(arrivalId))
@@ -49,3 +45,5 @@ class InboundRequestService @Inject()(lockService: LockService, getArrivalServic
       } yield InboundMessageRequest(arrival, nextStatus, inboundMessageResponse)
     ).value
 }
+
+//auditService.auditNCTSMessages(arrival.channel, inboundRequest.inboundMessageResponse, message)

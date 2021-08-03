@@ -21,18 +21,18 @@ import models.InboundMessageResponse
 import models.MessageResponse
 import models.OutboundMessageError
 import models.OutboundMessageResponse
-import models.RequestError
+import models.SubmissionState
 
 object MessageValidationService {
 
-  def validateInboundMessage(messageResponse: MessageResponse): Either[RequestError, InboundMessageResponse] =
+  def validateInboundMessage(messageResponse: MessageResponse): Either[SubmissionState, InboundMessageResponse] =
     messageResponse match {
       case response: InboundMessageResponse => Right(response)
       case response: OutboundMessageResponse =>
         Left(InboundMessageError(s"[MessageValidationService][validateInboundMessage] ${response.messageType.code} is not an inbound message type"))
     }
 
-  def validateOutboundMessage(messageResponse: MessageResponse): Either[RequestError, OutboundMessageResponse] =
+  def validateOutboundMessage(messageResponse: MessageResponse): Either[SubmissionState, OutboundMessageResponse] =
     messageResponse match {
       case response: OutboundMessageResponse => Right(response)
       case response: InboundMessageResponse =>

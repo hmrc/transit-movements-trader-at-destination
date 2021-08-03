@@ -18,15 +18,19 @@ package services
 
 import audit.AuditService
 import base.SpecBase
-import models.ArrivalId
+import generators.ModelGenerators
 import models.ArrivalStatus._
-import models.ChannelType
+import models.Arrival
+import models.ArrivalId
+import models.FailedToCreateMessage
+import models.FailedToSaveMessage
+import models.FailedToValidateMessage
 import models.GoodsReleasedResponse
-import models.MessageId
+import models.InboundMessageRequest
 import models.MessageSender
-import models.SubmissionProcessingResult
 import org.mockito.ArgumentMatchers.{eq => eqTo, _}
 import org.mockito.Mockito._
+import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.BeforeAndAfterEach
 import play.api.inject.bind
 import play.api.test.Helpers.running
@@ -39,7 +43,7 @@ import scala.concurrent.Future
 import scala.util.Failure
 import scala.util.Success
 
-class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach {
+class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach with ModelGenerators {
 
   private val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
   private val mockXmlValidationService      = mock[XmlValidationService]
@@ -58,6 +62,8 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach {
       when(mockArrivalMovementRepository.addResponseMessage(any(), any(), any())).thenReturn(Future.successful(Success(())))
       when(mockXmlValidationService.validate(any(), any())).thenReturn(Success(()))
 
+      val arrival = arbitrary[Arrival].sample.value
+
       val application = baseApplicationBuilder
         .overrides(
           bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
@@ -75,7 +81,6 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach {
         val arrivalId            = ArrivalId(1)
         val messageCorrelationId = 1
         val messageSender        = MessageSender(arrivalId, messageCorrelationId)
-        val channel              = ChannelType.web
 
         val requestGoodsReleasedXmlBody =
           <CC025A>
@@ -85,10 +90,12 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach {
 
         val result =
           saveMessageService
-            .validateXmlAndSaveMessage(MessageId(2), requestGoodsReleasedXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased, channel)
+            .validateXmlAndSaveMessage(InboundMessageRequest(arrival, GoodsReleased, GoodsReleasedResponse), requestGoodsReleasedXmlBody, messageSender)
             .futureValue
+            .right
+            .value
 
-        result mustBe SubmissionProcessingResult.SubmissionSuccess
+        result mustBe (())
         verify(mockArrivalMovementRepository, times(1)).addResponseMessage(eqTo(arrivalId), any(), eqTo(GoodsReleased))
         verify(mockXmlValidationService, times(1)).validate(any(), any())
         verify(mockAuditService, times(1)).auditNCTSMessages(any(), any(), any())(any())
@@ -98,6 +105,8 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach {
     "return Failure when we cannot save the message" in {
       when(mockArrivalMovementRepository.addResponseMessage(any(), any(), any())).thenReturn(Future.successful(Failure(new Exception)))
       when(mockXmlValidationService.validate(any(), any())).thenReturn(Success(()))
+
+      val arrival = arbitrary[Arrival].sample.value
 
       val application = baseApplicationBuilder
         .overrides(
@@ -115,7 +124,6 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach {
         val arrivalId            = ArrivalId(1)
         val messageCorrelationId = 1
         val messageSender        = MessageSender(arrivalId, messageCorrelationId)
-        val channel              = ChannelType.api
 
         val requestGoodsReleasedXmlBody =
           <CC025A>
@@ -125,10 +133,12 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach {
 
         val result =
           saveMessageService
-            .validateXmlAndSaveMessage(MessageId(2), requestGoodsReleasedXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased, channel)
+            .validateXmlAndSaveMessage(InboundMessageRequest(arrival, GoodsReleased, GoodsReleasedResponse), requestGoodsReleasedXmlBody, messageSender)
             .futureValue
+            .left
+            .value
 
-        result mustBe SubmissionProcessingResult.SubmissionFailureInternal
+        result mustBe an[FailedToSaveMessage]
         verify(mockArrivalMovementRepository, times(1)).addResponseMessage(any(), any(), any())
         verify(mockXmlValidationService, times(1)).validate(any(), any())
       }
@@ -136,6 +146,8 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach {
 
     "return Failure when we cannot parse the message" in {
       when(mockXmlValidationService.validate(any(), any())).thenReturn(Failure(new Exception))
+
+      val arrival = arbitrary[Arrival].sample.value
 
       val application = baseApplicationBuilder
         .overrides(
@@ -150,16 +162,17 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach {
         val arrivalId            = ArrivalId(1)
         val messageCorrelationId = 1
         val messageSender        = MessageSender(arrivalId, messageCorrelationId)
-        val channel              = ChannelType.web
 
         val requestInvalidXmlBody = <Invalid>invalid</Invalid>
 
         val result =
           saveMessageService
-            .validateXmlAndSaveMessage(MessageId(2), requestInvalidXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased, channel)
+            .validateXmlAndSaveMessage(InboundMessageRequest(arrival, GoodsReleased, GoodsReleasedResponse), requestInvalidXmlBody, messageSender)
             .futureValue
+            .left
+            .value
 
-        result mustBe SubmissionProcessingResult.SubmissionFailureExternal
+        result mustBe an[FailedToValidateMessage]
         verify(mockArrivalMovementRepository, never()).addResponseMessage(any(), any(), any())
         verify(mockXmlValidationService, times(1)).validate(any(), any())
       }
@@ -167,6 +180,8 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach {
 
     "return Failure when we cannot parse the message due malformed time" in {
       when(mockXmlValidationService.validate(any(), any())).thenReturn(Success(()))
+
+      val arrival = arbitrary[Arrival].sample.value
 
       val application = baseApplicationBuilder
         .overrides(
@@ -183,7 +198,6 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach {
         val messageSender        = MessageSender(arrivalId, messageCorrelationId)
         val dateOfPrep           = LocalDate.now()
         val timeOfPrep           = LocalTime.of(1, 1)
-        val channel              = ChannelType.api
 
         val requestInvalidXmlBody =
           <CC025A>
@@ -193,10 +207,12 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach {
 
         val result =
           saveMessageService
-            .validateXmlAndSaveMessage(MessageId(2), requestInvalidXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased, channel)
+            .validateXmlAndSaveMessage(InboundMessageRequest(arrival, GoodsReleased, GoodsReleasedResponse), requestInvalidXmlBody, messageSender)
             .futureValue
+            .left
+            .value
 
-        result mustBe SubmissionProcessingResult.SubmissionFailureExternal
+        result mustBe an[FailedToCreateMessage]
         verify(mockArrivalMovementRepository, never()).addResponseMessage(any(), any(), any())
         verify(mockXmlValidationService, times(1)).validate(any(), any())
       }
