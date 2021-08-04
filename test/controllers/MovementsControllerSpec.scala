@@ -182,8 +182,8 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
             arrivalMessage.message.map(trim) mustEqual expectedMessage.message.map(trim)
 
             verify(mockSubmitMessageService, times(1)).submitArrival(eqTo(newArrival))(any())
-            verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.ArrivalNotificationSubmitted), any(), any())(any())
-            verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.MesSenMES3Added), any(), any())(any())
+            verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.ArrivalNotificationSubmitted), eqTo(newArrival.eoriNumber), any(), any())(any())
+            verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.MesSenMES3Added), eqTo(newArrival.eoriNumber), any(), any())(any())
             verifyNoInteractions(mockNotificationService)
           }
         }
@@ -238,8 +238,8 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
             arrivalMessage.message.map(trim) mustEqual expectedMessage.message.map(trim)
 
             verify(mockSubmitMessageService, times(1)).submitArrival(eqTo(newArrival))(any())
-            verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.ArrivalNotificationSubmitted), any(), any())(any())
-            verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.MesSenMES3Added), any(), any())(any())
+            verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.ArrivalNotificationSubmitted), eqTo(newArrival.eoriNumber), any(), any())(any())
+            verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.MesSenMES3Added), eqTo(newArrival.eoriNumber), any(), any())(any())
           }
         }
 
@@ -550,8 +550,9 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
             movement.dateTime mustEqual expectedMessage.dateTime
             movement.message.map(trim) mustEqual expectedMessage.message.map(trim)
 
-            verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.ArrivalNotificationSubmitted), any(), any())(any())
-            verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.MesSenMES3Added), any(), any())(any())
+            verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.ArrivalNotificationSubmitted), eqTo(failedToSubmitArrival.eoriNumber), any(), any())(
+              any())
+            verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.MesSenMES3Added), eqTo(failedToSubmitArrival.eoriNumber), any(), any())(any())
 
           }
         }
@@ -830,7 +831,8 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           movement.dateTime mustEqual expectedMessage.dateTime
           movement.message.map(trim) mustEqual expectedMessage.message.map(trim)
 
-          verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.ArrivalNotificationReSubmitted), any(), any())(any())
+          verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.ArrivalNotificationReSubmitted), eqTo(initializedArrival.eoriNumber), any(), any())(
+            any())
         }
 
       }

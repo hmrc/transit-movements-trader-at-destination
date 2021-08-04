@@ -89,6 +89,7 @@ class NCTSMessageController @Inject()(
               messageSender,
               messageInbound.messageType,
               messageInbound.nextState,
+              request.arrivalRequest.arrival.eoriNumber,
               request.arrivalRequest.channel
             )
 

@@ -72,6 +72,7 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach {
         val dateOfPrep = LocalDate.now()
         val timeOfPrep = LocalTime.of(1, 1)
 
+        val eori                 = "eori"
         val arrivalId            = ArrivalId(1)
         val messageCorrelationId = 1
         val messageSender        = MessageSender(arrivalId, messageCorrelationId)
@@ -85,13 +86,13 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach {
 
         val result =
           saveMessageService
-            .validateXmlAndSaveMessage(MessageId(2), requestGoodsReleasedXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased, channel)
+            .validateXmlAndSaveMessage(MessageId(2), requestGoodsReleasedXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased, eori, channel)
             .futureValue
 
         result mustBe SubmissionProcessingResult.SubmissionSuccess
         verify(mockArrivalMovementRepository, times(1)).addResponseMessage(eqTo(arrivalId), any(), eqTo(GoodsReleased))
         verify(mockXmlValidationService, times(1)).validate(any(), any())
-        verify(mockAuditService, times(1)).auditNCTSMessages(any(), any(), any())(any())
+        verify(mockAuditService, times(1)).auditNCTSMessages(any(), eqTo(eori), any(), any())(any())
       }
     }
 
@@ -112,6 +113,7 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach {
         val dateOfPrep = LocalDate.now()
         val timeOfPrep = LocalTime.of(1, 1)
 
+        val eori                 = "eori"
         val arrivalId            = ArrivalId(1)
         val messageCorrelationId = 1
         val messageSender        = MessageSender(arrivalId, messageCorrelationId)
@@ -125,7 +127,7 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach {
 
         val result =
           saveMessageService
-            .validateXmlAndSaveMessage(MessageId(2), requestGoodsReleasedXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased, channel)
+            .validateXmlAndSaveMessage(MessageId(2), requestGoodsReleasedXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased, eori, channel)
             .futureValue
 
         result mustBe SubmissionProcessingResult.SubmissionFailureInternal
@@ -147,6 +149,7 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach {
       running(application) {
         val saveMessageService = application.injector.instanceOf[SaveMessageService]
 
+        val eori                 = "eori"
         val arrivalId            = ArrivalId(1)
         val messageCorrelationId = 1
         val messageSender        = MessageSender(arrivalId, messageCorrelationId)
@@ -156,7 +159,7 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach {
 
         val result =
           saveMessageService
-            .validateXmlAndSaveMessage(MessageId(2), requestInvalidXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased, channel)
+            .validateXmlAndSaveMessage(MessageId(2), requestInvalidXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased, eori, channel)
             .futureValue
 
         result mustBe SubmissionProcessingResult.SubmissionFailureExternal
@@ -178,6 +181,7 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach {
       running(application) {
         val saveMessageService = application.injector.instanceOf[SaveMessageService]
 
+        val eori                 = "eori"
         val arrivalId            = ArrivalId(1)
         val messageCorrelationId = 1
         val messageSender        = MessageSender(arrivalId, messageCorrelationId)
@@ -193,7 +197,7 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach {
 
         val result =
           saveMessageService
-            .validateXmlAndSaveMessage(MessageId(2), requestInvalidXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased, channel)
+            .validateXmlAndSaveMessage(MessageId(2), requestInvalidXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased, eori, channel)
             .futureValue
 
         result mustBe SubmissionProcessingResult.SubmissionFailureExternal
