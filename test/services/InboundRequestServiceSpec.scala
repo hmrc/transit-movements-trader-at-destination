@@ -58,7 +58,7 @@ class InboundRequestServiceSpec extends SpecBase with ModelGenerators with Scala
         status = ArrivalSubmitted
       )
 
-      val message = arbitrary[MovementMessageWithoutStatus].sample.value.copy(messageCorrelationId = sampleArrival.nextMessageCorrelationId)
+      val message = arbitrary[MovementMessageWithoutStatus].sample.value.copy(messageId = sampleArrival.nextMessageId)
 
       val movementMessage: EitherT[Future, SubmissionState, MovementMessageWithoutStatus] = {
         EitherT[Future, SubmissionState, MovementMessageWithoutStatus](
@@ -136,7 +136,7 @@ class InboundRequestServiceSpec extends SpecBase with ModelGenerators with Scala
         status = ArrivalSubmitted
       )
 
-      val message = arbitrary[MovementMessageWithoutStatus].sample.value.copy(messageCorrelationId = sampleArrival.nextMessageCorrelationId)
+      val message = arbitrary[MovementMessageWithoutStatus].sample.value.copy(messageId = sampleArrival.nextMessageId)
 
       val movementMessage: EitherT[Future, SubmissionState, MovementMessageWithoutStatus] = {
         EitherT[Future, SubmissionState, MovementMessageWithoutStatus](

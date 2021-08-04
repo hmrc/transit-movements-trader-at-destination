@@ -52,7 +52,7 @@ class InboundRequestService @Inject()(
         inboundMessageResponse <- inboundMessageResponseService.makeInboundMessageResponse(xml)
         inboundMessage         <- movementMessageService.makeMovementMessage(messageSender.messageCorrelationId, inboundMessageResponse.messageType, xml)
         arrival                <- getArrivalService.getArrivalAndAudit(arrivalId, inboundMessageResponse, inboundMessage)
-        updatedInboundMessage = inboundMessage.copy(messageCorrelationId = arrival.nextMessageCorrelationId)
+        updatedInboundMessage = inboundMessage.copy(messageId = arrival.nextMessageId)
         nextStatus <- EitherT.fromEither(StatusTransition.transition(arrival.status, inboundMessageResponse.messageReceived))
         unlock     <- EitherT(lockService.unlock(arrivalId))
       } yield InboundMessageRequest(arrival, nextStatus, inboundMessageResponse, updatedInboundMessage)

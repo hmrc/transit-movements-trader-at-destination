@@ -17,10 +17,15 @@
 package services
 
 import cats.data.EitherT
-import models.{FailedToMakeMovementMessage, MessageId, MessageType, MovementMessageWithoutStatus, SubmissionState}
+import models.FailedToMakeMovementMessage
+import models.MessageId
+import models.MessageType
+import models.MovementMessageWithoutStatus
+import models.SubmissionState
 
 import javax.inject.Inject
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.xml.NodeSeq
 
 class MovementMessageService @Inject()(arrivalMovementMessageService: ArrivalMovementMessageService)(implicit ec: ExecutionContext) {
