@@ -17,6 +17,7 @@
 package services
 
 import audit.AuditService
+import cats.data.EitherT
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalNotFoundError
@@ -31,7 +32,7 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class GetArrivalService @Inject()(repository: ArrivalMovementRepository, auditService: AuditService)(implicit ec: ExecutionContext, hc: HeaderCarrier) {
+class GetArrivalService @Inject()(repository: ArrivalMovementRepository, auditService: AuditService)(implicit ec: ExecutionContext) {
 
   def getArrivalById(arrivalId: ArrivalId): Future[Either[SubmissionState, Arrival]] =
     repository.get(arrivalId).map {
@@ -39,12 +40,15 @@ class GetArrivalService @Inject()(repository: ArrivalMovementRepository, auditSe
       case None          => Left(ArrivalNotFoundError(s"[GetArrivalService][getArrivalById] Unable to retrieve arrival message for arrival id: ${arrivalId.index}"))
     }
 
-  def getArrivalAndAudit(arrivalId: ArrivalId, messageResponse: MessageResponse, movementMessage: MovementMessage): Future[Either[SubmissionState, Arrival]] =
-    getArrivalById(arrivalId).map {
-      _.left.map {
-        submissionState =>
-          auditService.auditNCTSMessages(deleted, messageResponse, movementMessage)
-          submissionState
+  def getArrivalAndAudit(arrivalId: ArrivalId, messageResponse: MessageResponse, movementMessage: MovementMessage)(
+    implicit hc: HeaderCarrier): EitherT[Future, SubmissionState, Arrival] =
+    EitherT(
+      getArrivalById(arrivalId).map {
+        _.left.map {
+          submissionState =>
+            auditService.auditNCTSMessages(deleted, messageResponse, movementMessage)
+            submissionState
+        }
       }
-    }
+    )
 }

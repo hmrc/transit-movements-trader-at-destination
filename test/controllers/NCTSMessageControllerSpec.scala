@@ -17,7 +17,6 @@
 package controllers
 
 import base.SpecBase
-import cats.laws.discipline.arbitrary
 import config.Constants
 import generators.ModelGenerators
 import models.ArrivalStatus.ArrivalSubmitted
@@ -34,7 +33,6 @@ import models.FailedToValidateMessage
 import models.GoodsReleasedResponse
 import models.InboundMessageRequest
 import models.MessageSender
-import models.MovementMessage
 import models.MovementMessageWithoutStatus
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
@@ -103,7 +101,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
 
       val message = Arbitrary.arbitrary[MovementMessageWithoutStatus].sample.value
 
-      when(mockInboundRequestService.makeInboundRequest(any(), any(), any()))
+      when(mockInboundRequestService.makeInboundRequest(any(), any(), any())(any()))
         .thenReturn(Future.successful(Right(InboundMessageRequest(arrivalWithoutBox, GoodsReleased, GoodsReleasedResponse, message))))
 
       when(mockSaveMessageService.saveInboundMessage(any(), any())(any()))
@@ -128,7 +126,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
 
     "must return Ok for an arrivalWithoutBox that does not exist" in {
 
-      when(mockInboundRequestService.makeInboundRequest(any(), any(), any()))
+      when(mockInboundRequestService.makeInboundRequest(any(), any(), any())(any()))
         .thenReturn(Future.successful(Left(ArrivalNotFoundError("error"))))
 
       val application = baseApplicationBuilder.overrides(bind[InboundRequestService].toInstance(mockInboundRequestService)).build()
@@ -149,7 +147,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
 
       val message = Arbitrary.arbitrary[MovementMessageWithoutStatus].sample.value
 
-      when(mockInboundRequestService.makeInboundRequest(any(), any(), any()))
+      when(mockInboundRequestService.makeInboundRequest(any(), any(), any())(any()))
         .thenReturn(Future.successful(Right(InboundMessageRequest(arrivalWithoutBox, GoodsReleased, GoodsReleasedResponse, message))))
 
       when(mockSaveMessageService.saveInboundMessage(any(), any())(any()))
@@ -175,7 +173,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
 
       val message = Arbitrary.arbitrary[MovementMessageWithoutStatus].sample.value
 
-      when(mockInboundRequestService.makeInboundRequest(any(), any(), any()))
+      when(mockInboundRequestService.makeInboundRequest(any(), any(), any())(any()))
         .thenReturn(Future.successful(Right(InboundMessageRequest(arrivalWithoutBox, GoodsReleased, GoodsReleasedResponse, message))))
 
       when(mockSaveMessageService.saveInboundMessage(any(), any())(any()))
@@ -204,7 +202,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
 
       val message = Arbitrary.arbitrary[MovementMessageWithoutStatus].sample.value
 
-      when(mockInboundRequestService.makeInboundRequest(any(), any(), any()))
+      when(mockInboundRequestService.makeInboundRequest(any(), any(), any())(any()))
         .thenReturn(Future.successful(Right(InboundMessageRequest(arrivalWithoutBox, GoodsReleased, GoodsReleasedResponse, message))))
 
       when(mockSaveMessageService.saveInboundMessage(any(), any())(any()))
@@ -235,7 +233,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
 
       val message = Arbitrary.arbitrary[MovementMessageWithoutStatus].sample.value
 
-      when(mockInboundRequestService.makeInboundRequest(any(), any(), any()))
+      when(mockInboundRequestService.makeInboundRequest(any(), any(), any())(any()))
         .thenReturn(Future.successful(Right(InboundMessageRequest(arrivalWithBox, GoodsReleased, GoodsReleasedResponse, message))))
 
       when(mockSaveMessageService.saveInboundMessage(any(), any())(any()))
@@ -268,7 +266,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
 
       val message = Arbitrary.arbitrary[MovementMessageWithoutStatus].sample.value
 
-      when(mockInboundRequestService.makeInboundRequest(any(), any(), any()))
+      when(mockInboundRequestService.makeInboundRequest(any(), any(), any())(any()))
         .thenReturn(Future.successful(Right(InboundMessageRequest(arrivalWithBox, GoodsReleased, GoodsReleasedResponse, message))))
 
       when(mockSaveMessageService.saveInboundMessage(any(), any())(any()))
@@ -298,7 +296,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
 
     "must return Locked" in {
 
-      when(mockInboundRequestService.makeInboundRequest(any(), any(), any()))
+      when(mockInboundRequestService.makeInboundRequest(any(), any(), any())(any()))
         .thenReturn(Future.successful(Left(DocumentExistsError("error"))))
 
       when(mockSaveMessageService.saveInboundMessage(any(), any())(any()))

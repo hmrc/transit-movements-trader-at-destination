@@ -30,6 +30,7 @@ import models.MessageType
 import models.MovementMessageWithoutStatus
 import models.StatusTransition
 import models.SubmissionState
+import uk.gov.hmrc.http.HeaderCarrier
 
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
@@ -39,43 +40,21 @@ import scala.xml.NodeSeq
 class InboundRequestService @Inject()(
   lockService: LockService,
   getArrivalService: GetArrivalService,
-  xmlValidationService: XmlValidationService,
-  arrivalMovementMessageService: ArrivalMovementMessageService,
+  inboundMessageResponseService: InboundMessageResponseService,
+  movementMessageService: MovementMessageService
 )(implicit ec: ExecutionContext) {
 
-  def makeInboundRequest(arrivalId: ArrivalId, xml: NodeSeq, messageSender: MessageSender): Future[Either[SubmissionState, InboundMessageRequest]] =
+  def makeInboundRequest(arrivalId: ArrivalId, xml: NodeSeq, messageSender: MessageSender)(
+    implicit hc: HeaderCarrier): Future[Either[SubmissionState, InboundMessageRequest]] =
     (
       for {
         lock                   <- EitherT(lockService.lock(arrivalId))
-        inboundMessageResponse <- makeInboundMessageResponse(xml)
-        inboundMessage         <- makeMovementMessage(messageSender.messageCorrelationId, inboundMessageResponse.messageType, xml)
-        arrival                <- EitherT(getArrivalService.getArrivalAndAudit(arrivalId, inboundMessageResponse, inboundMessage))
-        updatedInboundMessage  = inboundMessage.copy(messageCorrelationId = arrival.nextMessageCorrelationId)
+        inboundMessageResponse <- inboundMessageResponseService.makeInboundMessageResponse(xml)
+        inboundMessage         <- movementMessageService.makeMovementMessage(messageSender.messageCorrelationId, inboundMessageResponse.messageType, xml)
+        arrival                <- getArrivalService.getArrivalAndAudit(arrivalId, inboundMessageResponse, inboundMessage)
+        updatedInboundMessage = inboundMessage.copy(messageCorrelationId = arrival.nextMessageCorrelationId)
         nextStatus <- EitherT.fromEither(StatusTransition.transition(arrival.status, inboundMessageResponse.messageReceived))
         unlock     <- EitherT(lockService.unlock(arrivalId))
       } yield InboundMessageRequest(arrival, nextStatus, inboundMessageResponse, updatedInboundMessage)
     ).value
-
-  // TODO move to service
-  private def makeMovementMessage(messageCorrelationId: Int,
-                                  messageType: MessageType,
-                                  xml: NodeSeq): EitherT[Future, SubmissionState, MovementMessageWithoutStatus] =
-    EitherT.fromEither(
-      arrivalMovementMessageService
-        .makeInboundMessage(MessageId(0), messageCorrelationId, messageType)(xml) // TODO what to do with this message id
-        .toOption
-        .toRight[SubmissionState](FailedToValidateMessage("error")))
-
-  // TODO move to service
-  private def makeInboundMessageResponse(xml: NodeSeq): EitherT[Future, SubmissionState, InboundMessageResponse] =
-    for {
-      headNode                <- EitherT.fromOption(xml.headOption, CannotFindRootNodeError(s"[InboundRequest][inboundRequest] Could not find root node"))
-      messageResponse         <- EitherT.fromEither(MessageResponse.getMessageResponseFromCode(headNode.label))
-      validateInboundResponse <- EitherT.fromEither(MessageValidationService.validateInboundMessage(messageResponse))
-      validateXml <- EitherT.fromEither(
-        xmlValidationService
-          .validate(xml.toString, validateInboundResponse.xsdFile)
-          .toOption
-          .toRight[SubmissionState](FailedToValidateMessage(s"[InboundRequest][makeInboundMessageResponse] XML failed to validate against XSD file")))
-    } yield validateInboundResponse
 }

@@ -17,23 +17,22 @@
 package services
 
 import base.SpecBase
+import cats.data.EitherT
 import generators.ModelGenerators
 import models.ArrivalStatus.ArrivalSubmitted
 import models.ArrivalStatus.GoodsReleased
-import models.ArrivalStatus.UnloadingPermission
 import models.Arrival
 import models.ArrivalId
-import models.ArrivalNotFoundError
+import models.DocumentExistsError
 import models.FailedToUnlock
 import models.GoodsReleasedResponse
-import models.InboundMessageError
 import models.InboundMessageRequest
-import models.InvalidArrivalRootNodeError
+import models.InboundMessageResponse
 import models.MessageSender
-import models.MovementMessageWithStatus
-import models.TransitionError
+import models.MovementMessageWithoutStatus
+import models.SubmissionState
 import org.mockito.ArgumentMatchers._
-import org.mockito.Mockito._
+import org.mockito.Mockito.when
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.inject.bind
@@ -43,8 +42,10 @@ import scala.concurrent.Future
 
 class InboundRequestServiceSpec extends SpecBase with ModelGenerators with ScalaCheckDrivenPropertyChecks {
 
-  val mockLockService       = mock[LockService]
-  val mockGetArrivalService = mock[GetArrivalService]
+  val mockLockService                   = mock[LockService]
+  val mockGetArrivalService             = mock[GetArrivalService]
+  val mockInboundMessageResponseService = mock[InboundMessageResponseService]
+  val mockMovementMessage               = mock[MovementMessageService]
 
   "InboundRequestService" - {
 
@@ -53,18 +54,40 @@ class InboundRequestServiceSpec extends SpecBase with ModelGenerators with Scala
       val inboundXml = <CC025A></CC025A>
 
       val messageSender = MessageSender(ArrivalId(0), 0)
-      val message       = arbitrary[MovementMessageWithStatus].sample.value
-
       val sampleArrival = arbitrary[Arrival].sample.value.copy(
         status = ArrivalSubmitted
       )
 
+      val message = arbitrary[MovementMessageWithoutStatus].sample.value.copy(messageCorrelationId = sampleArrival.nextMessageCorrelationId)
+
+      val movementMessage: EitherT[Future, SubmissionState, MovementMessageWithoutStatus] = {
+        EitherT[Future, SubmissionState, MovementMessageWithoutStatus](
+          Future.successful(Right(message))
+        )
+      }
+
+      val inboundMessageResponse: EitherT[Future, SubmissionState, InboundMessageResponse] = {
+        EitherT[Future, SubmissionState, InboundMessageResponse](
+          Future.successful(Right(GoodsReleasedResponse))
+        )
+      }
+
+      val getArrival: EitherT[Future, SubmissionState, Arrival] = {
+        EitherT[Future, SubmissionState, Arrival](
+          Future.successful(Right(sampleArrival))
+        )
+      }
+
       when(mockLockService.lock(any())).thenReturn(Future.successful(Right(())))
-      when(mockGetArrivalService.getArrivalById(any())).thenReturn(Future.successful(Right(sampleArrival)))
+      when(mockGetArrivalService.getArrivalAndAudit(any(), any(), any())(any())).thenReturn(getArrival)
+      when(mockMovementMessage.makeMovementMessage(any(), any(), any())).thenReturn(movementMessage)
+      when(mockInboundMessageResponseService.makeInboundMessageResponse(any())).thenReturn(inboundMessageResponse)
       when(mockLockService.unlock(any())).thenReturn(Future.successful(Right(())))
 
       val application = baseApplicationBuilder
         .overrides(bind[LockService].toInstance(mockLockService))
+        .overrides(bind[MovementMessageService].toInstance(mockMovementMessage))
+        .overrides(bind[InboundMessageResponseService].toInstance(mockInboundMessageResponseService))
         .overrides(bind[GetArrivalService].toInstance(mockGetArrivalService))
         .build()
 
@@ -79,22 +102,69 @@ class InboundRequestServiceSpec extends SpecBase with ModelGenerators with Scala
       }
     }
 
-    "must return a DocumentExistsError for an existing lock" in {
+    "must return a DocumentExists error for an existing lock" in {
 
       val inboundXml = <CC044A></CC044A>
 
       val messageSender = MessageSender(ArrivalId(0), 0)
 
+      when(mockLockService.lock(any())).thenReturn(Future.successful(Left(DocumentExistsError("error"))))
+
+      val application = baseApplicationBuilder
+        .overrides(bind[LockService].toInstance(mockLockService))
+        .build()
+
+      running(application) {
+        val service = application.injector.instanceOf[InboundRequestService]
+
+        val result = service.makeInboundRequest(ArrivalId(0), inboundXml, messageSender)
+
+        result.futureValue.left.value mustBe an[DocumentExistsError]
+      }
+    }
+
+    "must return a submission state when there is a failure to retrieve a arrival" in {
+
+      case class GetArrivalFailure(message: String) extends SubmissionState {
+        override val monitorMessage: String = "monitorMessage"
+      }
+
+      val inboundXml = <CC025A></CC025A>
+
+      val messageSender = MessageSender(ArrivalId(0), 0)
       val sampleArrival = arbitrary[Arrival].sample.value.copy(
         status = ArrivalSubmitted
       )
 
+      val message = arbitrary[MovementMessageWithoutStatus].sample.value.copy(messageCorrelationId = sampleArrival.nextMessageCorrelationId)
+
+      val movementMessage: EitherT[Future, SubmissionState, MovementMessageWithoutStatus] = {
+        EitherT[Future, SubmissionState, MovementMessageWithoutStatus](
+          Future.successful(Right(message))
+        )
+      }
+
+      val inboundMessageResponse: EitherT[Future, SubmissionState, InboundMessageResponse] = {
+        EitherT[Future, SubmissionState, InboundMessageResponse](
+          Future.successful(Right(GoodsReleasedResponse))
+        )
+      }
+
+      val getArrival: EitherT[Future, SubmissionState, Arrival] = {
+        EitherT[Future, SubmissionState, Arrival](
+          Future.successful(Left(GetArrivalFailure("error")))
+        )
+      }
+
       when(mockLockService.lock(any())).thenReturn(Future.successful(Right(())))
-      when(mockGetArrivalService.getArrivalById(any())).thenReturn(Future.successful(Right(sampleArrival)))
-      when(mockLockService.unlock(any())).thenReturn(Future.successful(Right(())))
+      when(mockMovementMessage.makeMovementMessage(any(), any(), any())).thenReturn(movementMessage)
+      when(mockInboundMessageResponseService.makeInboundMessageResponse(any())).thenReturn(inboundMessageResponse)
+      when(mockGetArrivalService.getArrivalAndAudit(any(), any(), any())(any())).thenReturn(getArrival)
 
       val application = baseApplicationBuilder
         .overrides(bind[LockService].toInstance(mockLockService))
+        .overrides(bind[MovementMessageService].toInstance(mockMovementMessage))
+        .overrides(bind[InboundMessageResponseService].toInstance(mockInboundMessageResponseService))
         .overrides(bind[GetArrivalService].toInstance(mockGetArrivalService))
         .build()
 
@@ -103,21 +173,81 @@ class InboundRequestServiceSpec extends SpecBase with ModelGenerators with Scala
 
         val result = service.makeInboundRequest(ArrivalId(0), inboundXml, messageSender)
 
-        result.futureValue.left.value mustBe an[TransitionError]
+        result.futureValue.left.value mustBe GetArrivalFailure("error")
       }
     }
 
-    "must return an ArrivalNotFoundError when no arrival can be found by arrival Id" in {
+    "must return a submission state when an inbound message response cannot be made" in {
+
+      case class InboundMessageFailure(message: String) extends SubmissionState {
+        override val monitorMessage: String = "monitorMessage"
+      }
 
       val inboundXml = <CC025A></CC025A>
 
       val messageSender = MessageSender(ArrivalId(0), 0)
 
+      val inboundMessageResponse: EitherT[Future, SubmissionState, InboundMessageResponse] = {
+        EitherT[Future, SubmissionState, InboundMessageResponse](
+          Future.successful(Left(InboundMessageFailure("error")))
+        )
+      }
+
       when(mockLockService.lock(any())).thenReturn(Future.successful(Right(())))
-      when(mockGetArrivalService.getArrivalById(any())).thenReturn(Future.successful(Left(ArrivalNotFoundError("error"))))
+      when(mockInboundMessageResponseService.makeInboundMessageResponse(any())).thenReturn(inboundMessageResponse)
 
       val application = baseApplicationBuilder
         .overrides(bind[LockService].toInstance(mockLockService))
+        .overrides(bind[InboundMessageResponseService].toInstance(mockInboundMessageResponseService))
+        .build()
+
+      running(application) {
+        val service = application.injector.instanceOf[InboundRequestService]
+
+        val result = service.makeInboundRequest(ArrivalId(0), inboundXml, messageSender)
+
+        result.futureValue.left.value mustBe InboundMessageFailure("error")
+      }
+    }
+
+    "must return a submission state when a movement message cannot be made" in {
+
+      case class MovementMessageFailure(message: String) extends SubmissionState {
+        override val monitorMessage: String = "monitorMessage"
+      }
+
+      val inboundXml = <CC025A></CC025A>
+
+      val messageSender = MessageSender(ArrivalId(0), 0)
+      val sampleArrival = arbitrary[Arrival].sample.value
+
+      val inboundMessageResponse: EitherT[Future, SubmissionState, InboundMessageResponse] = {
+        EitherT[Future, SubmissionState, InboundMessageResponse](
+          Future.successful(Right(GoodsReleasedResponse))
+        )
+      }
+
+      val movementMessage: EitherT[Future, SubmissionState, MovementMessageWithoutStatus] = {
+        EitherT[Future, SubmissionState, MovementMessageWithoutStatus](
+          Future.successful(Left(MovementMessageFailure("error")))
+        )
+      }
+
+      val getArrival: EitherT[Future, SubmissionState, Arrival] = {
+        EitherT[Future, SubmissionState, Arrival](
+          Future.successful(Right(sampleArrival))
+        )
+      }
+
+      when(mockLockService.lock(any())).thenReturn(Future.successful(Right(())))
+      when(mockGetArrivalService.getArrivalAndAudit(any(), any(), any())(any())).thenReturn(getArrival)
+      when(mockInboundMessageResponseService.makeInboundMessageResponse(any())).thenReturn(inboundMessageResponse)
+      when(mockMovementMessage.makeMovementMessage(any(), any(), any())).thenReturn(movementMessage)
+
+      val application = baseApplicationBuilder
+        .overrides(bind[LockService].toInstance(mockLockService))
+        .overrides(bind[MovementMessageService].toInstance(mockMovementMessage))
+        .overrides(bind[InboundMessageResponseService].toInstance(mockInboundMessageResponseService))
         .overrides(bind[GetArrivalService].toInstance(mockGetArrivalService))
         .build()
 
@@ -126,89 +256,7 @@ class InboundRequestServiceSpec extends SpecBase with ModelGenerators with Scala
 
         val result = service.makeInboundRequest(ArrivalId(0), inboundXml, messageSender)
 
-        result.futureValue.left.value mustBe ArrivalNotFoundError("error")
-      }
-    }
-
-    "must return a TransitionError for a request with an invalid transition" in {
-
-      val inboundXml = <CC044A></CC044A>
-
-      val messageSender = MessageSender(ArrivalId(0), 0)
-
-      val sampleArrival = arbitrary[Arrival].sample.value.copy(
-        status = ArrivalSubmitted
-      )
-
-      when(mockLockService.lock(any())).thenReturn(Future.successful(Right(())))
-      when(mockGetArrivalService.getArrivalById(any())).thenReturn(Future.successful(Right(sampleArrival)))
-      when(mockLockService.unlock(any())).thenReturn(Future.successful(Right(())))
-
-      val application = baseApplicationBuilder
-        .overrides(bind[LockService].toInstance(mockLockService))
-        .overrides(bind[GetArrivalService].toInstance(mockGetArrivalService))
-        .build()
-
-      running(application) {
-        val service = application.injector.instanceOf[InboundRequestService]
-
-        val result = service.makeInboundRequest(ArrivalId(0), inboundXml, messageSender)
-
-        result.futureValue.left.value mustBe an[TransitionError]
-      }
-    }
-
-    "must return an InvalidArrivalRootNode for an unrecognised root node code" in {
-
-      val inboundXml = <InvalidRootCode></InvalidRootCode>
-
-      val messageSender = MessageSender(ArrivalId(0), 0)
-
-      val sampleArrival = arbitrary[Arrival].sample.value.copy(
-        status = ArrivalSubmitted
-      )
-
-      when(mockLockService.lock(any())).thenReturn(Future.successful(Right(())))
-      when(mockGetArrivalService.getArrivalById(any())).thenReturn(Future.successful(Right(sampleArrival)))
-
-      val application = baseApplicationBuilder
-        .overrides(bind[LockService].toInstance(mockLockService))
-        .overrides(bind[GetArrivalService].toInstance(mockGetArrivalService))
-        .build()
-
-      running(application) {
-        val service = application.injector.instanceOf[InboundRequestService]
-
-        val result = service.makeInboundRequest(ArrivalId(0), inboundXml, messageSender)
-
-        result.futureValue.left.value mustBe an[InvalidArrivalRootNodeError]
-      }
-    }
-
-    "must return an InboundMessageError when given an OutboundMessage" in {
-
-      val unloadingRemarksXml = <CC044A></CC044A>
-
-      val messageSender = MessageSender(ArrivalId(0), 0)
-
-      val sampleArrival = arbitrary[Arrival].sample.value.copy(
-        status = UnloadingPermission
-      )
-
-      when(mockLockService.lock(any())).thenReturn(Future.successful(Right(())))
-      when(mockGetArrivalService.getArrivalById(any())).thenReturn(Future.successful(Right(sampleArrival)))
-
-      val application = baseApplicationBuilder
-        .overrides(bind[LockService].toInstance(mockLockService))
-        .overrides(bind[GetArrivalService].toInstance(mockGetArrivalService))
-        .build()
-
-      running(application) {
-        val service = application.injector.instanceOf[InboundRequestService]
-
-        val result = service.makeInboundRequest(ArrivalId(0), unloadingRemarksXml, messageSender)
-
-        result.futureValue.left.value mustBe an[InboundMessageError]
+        result.futureValue.left.value mustBe MovementMessageFailure("error")
       }
     }
 
@@ -222,12 +270,36 @@ class InboundRequestServiceSpec extends SpecBase with ModelGenerators with Scala
         status = ArrivalSubmitted
       )
 
+      val message = arbitrary[MovementMessageWithoutStatus].sample.value.copy(messageCorrelationId = sampleArrival.nextMessageCorrelationId)
+
+      val movementMessage: EitherT[Future, SubmissionState, MovementMessageWithoutStatus] = {
+        EitherT[Future, SubmissionState, MovementMessageWithoutStatus](
+          Future.successful(Right(message))
+        )
+      }
+
+      val inboundMessageResponse: EitherT[Future, SubmissionState, InboundMessageResponse] = {
+        EitherT[Future, SubmissionState, InboundMessageResponse](
+          Future.successful(Right(GoodsReleasedResponse))
+        )
+      }
+
+      val getArrival: EitherT[Future, SubmissionState, Arrival] = {
+        EitherT[Future, SubmissionState, Arrival](
+          Future.successful(Right(sampleArrival))
+        )
+      }
+
       when(mockLockService.lock(any())).thenReturn(Future.successful(Right(())))
-      when(mockGetArrivalService.getArrivalById(any())).thenReturn(Future.successful(Right(sampleArrival)))
+      when(mockGetArrivalService.getArrivalAndAudit(any(), any(), any())(any())).thenReturn(getArrival)
+      when(mockMovementMessage.makeMovementMessage(any(), any(), any())).thenReturn(movementMessage)
+      when(mockInboundMessageResponseService.makeInboundMessageResponse(any())).thenReturn(inboundMessageResponse)
       when(mockLockService.unlock(any())).thenReturn(Future.successful(Left(FailedToUnlock("error"))))
 
       val application = baseApplicationBuilder
         .overrides(bind[LockService].toInstance(mockLockService))
+        .overrides(bind[MovementMessageService].toInstance(mockMovementMessage))
+        .overrides(bind[InboundMessageResponseService].toInstance(mockInboundMessageResponseService))
         .overrides(bind[GetArrivalService].toInstance(mockGetArrivalService))
         .build()
 
