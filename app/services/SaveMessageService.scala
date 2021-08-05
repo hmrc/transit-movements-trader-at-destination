@@ -49,6 +49,7 @@ class SaveMessageService @Inject()(
     messageSender: MessageSender,
     messageResponse: InboundMessageResponse,
     arrivalStatus: ArrivalStatus,
+    customerId: String,
     channel: ChannelType
   )(implicit hc: HeaderCarrier): Future[SubmissionProcessingResult] =
     xmlValidationService.validate(messageXml.toString(), messageResponse.xsdFile) match {
@@ -60,7 +61,7 @@ class SaveMessageService @Inject()(
               .map {
                 case Success(_) =>
                   logger.debug(s"Saved message successfully")
-                  auditService.auditNCTSMessages(channel, messageResponse, message)
+                  auditService.auditNCTSMessages(channel, customerId, messageResponse, message)
                   SubmissionSuccess
                 case Failure(error) =>
                   logger.warn(s"Failed to save message with error: $error")

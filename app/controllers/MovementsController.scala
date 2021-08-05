@@ -90,6 +90,7 @@ class MovementsController @Inject()(
     message: MovementMessage,
     requestChannel: ChannelType,
     arrivalId: ArrivalId,
+    customerId: String,
     boxOpt: Option[Box]
   )(implicit hc: HeaderCarrier) =
     result match {
@@ -98,8 +99,8 @@ class MovementsController @Inject()(
       case submissionFailureRejected: SubmissionFailureRejected =>
         BadRequest(submissionFailureRejected.responseBody)
       case SubmissionSuccess =>
-        auditService.auditEvent(arrivalNotificationType, message, requestChannel)
-        auditService.auditEvent(AuditType.MesSenMES3Added, message, requestChannel)
+        auditService.auditEvent(arrivalNotificationType, customerId, message, requestChannel)
+        auditService.auditEvent(AuditType.MesSenMES3Added, customerId, message, requestChannel)
         Accepted(Json.toJson(boxOpt)).withHeaders("Location" -> routes.MovementsController.getArrival(arrivalId).url)
     }
 
@@ -134,6 +135,7 @@ class MovementsController @Inject()(
                           message,
                           request.channel,
                           arrival.arrivalId,
+                          arrival.eoriNumber,
                           arrival.notificationBox
                         )
                     }
@@ -160,6 +162,7 @@ class MovementsController @Inject()(
                                 arrival.messages.head,
                                 request.channel,
                                 arrival.arrivalId,
+                                arrival.eoriNumber,
                                 boxOpt
                               )
                           }
@@ -200,6 +203,7 @@ class MovementsController @Inject()(
                       message,
                       request.channel,
                       request.arrival.arrivalId,
+                      request.arrival.eoriNumber,
                       request.arrival.notificationBox
                     )
                 }
