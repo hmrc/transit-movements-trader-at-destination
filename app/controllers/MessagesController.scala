@@ -41,17 +41,22 @@ import play.api.mvc.ControllerComponents
 import services.ArrivalMovementMessageService
 import services.SubmitMessageService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-
 import java.time.OffsetDateTime
+
+import cats.data.OptionT
 import javax.inject.Inject
+import repositories.ArrivalMovementRepository
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.xml.NodeSeq
 
 class MessagesController @Inject()(
   cc: ControllerComponents,
+  arrivalMovementRepository: ArrivalMovementRepository,
   arrivalMovementService: ArrivalMovementMessageService,
   submitMessageService: SubmitMessageService,
+  authenticate: AuthenticateActionProvider,
   authenticateForRead: AuthenticatedGetArrivalForReadActionProvider,
   authenticateForWrite: AuthenticatedGetArrivalForWriteActionProvider,
   validateMessageSenderNode: ValidateMessageSenderNodeFilter,
@@ -111,14 +116,20 @@ class MessagesController @Inject()(
 
   def getMessage(arrivalId: ArrivalId, messageId: MessageId): Action[AnyContent] =
     withMetricsTimerAction("get-arrival-message") {
-      authenticateForRead(arrivalId) {
+      authenticate().async {
         implicit request =>
-          val messages = request.arrival.messages.toList
+          val result = for {
+            arrival <- OptionT(arrivalMovementRepository.getWithoutMessages(arrivalId, request.channel))
+            if arrival.eoriNumber == request.eoriNumber
+            message <- OptionT(arrivalMovementRepository.getMessage(arrivalId, request.channel, messageId))
+            if message.optStatus != Some(SubmissionFailed)
+          } yield {
+            Ok(Json.toJsObject(ResponseMovementMessage.build(arrivalId, messageId, message)))
+          }
 
-          if (messages.isDefinedAt(messageId.index) && !messages(messageId.index).optStatus.contains(SubmissionFailed))
-            Ok(Json.toJsObject(ResponseMovementMessage.build(arrivalId, messageId, messages(messageId.index))))
-          else NotFound
+          result.getOrElse(NotFound)
       }
+
     }
 
   def getMessages(arrivalId: ArrivalId, receivedSince: Option[OffsetDateTime]): Action[AnyContent] =
