@@ -19,6 +19,7 @@ package controllers
 import audit.AuditService
 import audit.AuditType
 import com.kenshoo.play.metrics.Metrics
+import controllers.actions.AuthenticateActionProvider
 import controllers.actions.AuthenticatedGetArrivalForReadActionProvider
 import controllers.actions.AuthenticatedGetArrivalForWriteActionProvider
 import controllers.actions.MessageTransformerInterface
@@ -38,6 +39,7 @@ import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
+import repositories.ArrivalMovementRepository
 import services.ArrivalMovementMessageService
 import services.SubmitMessageService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
@@ -51,18 +53,18 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.xml.NodeSeq
 
-class MessagesController @Inject()(
-  cc: ControllerComponents,
+class MessagesController @Inject() (
   arrivalMovementRepository: ArrivalMovementRepository,
   arrivalMovementService: ArrivalMovementMessageService,
-  submitMessageService: SubmitMessageService,
+  auditService: AuditService,
   authenticate: AuthenticateActionProvider,
   authenticateForRead: AuthenticatedGetArrivalForReadActionProvider,
   authenticateForWrite: AuthenticatedGetArrivalForWriteActionProvider,
+  cc: ControllerComponents,
+  submitMessageService: SubmitMessageService,
   validateMessageSenderNode: ValidateMessageSenderNodeFilter,
-  auditService: AuditService,
-  validateTransitionState: MessageTransformerInterface,
   validateOutboundMessage: ValidateOutboundMessageAction,
+  validateTransitionState: MessageTransformerInterface,
   val metrics: Metrics
 )(implicit ec: ExecutionContext)
     extends BackendController(cc)
@@ -123,15 +125,14 @@ class MessagesController @Inject()(
             if arrival.eoriNumber == request.eoriNumber
             message <- OptionT(arrivalMovementRepository.getMessage(arrivalId, request.channel, messageId))
             if message.optStatus != Some(SubmissionFailed)
-          } yield {
-            Ok(Json.toJsObject(ResponseMovementMessage.build(arrivalId, messageId, message)))
-          }
+          } yield Ok(Json.toJsObject(ResponseMovementMessage.build(arrivalId, messageId, message)))
 
           result.getOrElse(NotFound)
       }
 
     }
 
+  // TODO Change authenticateForRead to authenticateForReadWithMessages
   def getMessages(arrivalId: ArrivalId, receivedSince: Option[OffsetDateTime]): Action[AnyContent] =
     withMetricsTimerAction("get-all-arrival-messages") {
       authenticateForRead(arrivalId) {

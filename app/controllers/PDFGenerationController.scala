@@ -41,6 +41,8 @@ class PDFGenerationController @Inject()(
     with Logging
     with HasActionMetrics {
 
+
+  // TODO write ticket to improve PDF endpoint by only retrieving required messages in both services
   def getPDF(arrivalId: ArrivalId): Action[AnyContent] =
     withMetricsTimerAction("get-unloading-permission-pdf") {
       authenticateForRead(arrivalId).async {

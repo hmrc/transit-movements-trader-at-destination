@@ -70,7 +70,7 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 
-class ArrivalMovementRepository @Inject()(
+class ArrivalMovementRepository @Inject() (
   mongo: ReactiveMongoApi,
   appConfig: AppConfig,
   config: Configuration,
@@ -83,7 +83,7 @@ class ArrivalMovementRepository @Inject()(
 
   val arrivalsForEoriCount = histo("arrivals-for-eori-count")
 
-  val started: Future[Unit] = {
+  val started: Future[Unit] =
     collection
       .flatMap {
         jsonCollection =>
@@ -97,12 +97,13 @@ class ArrivalMovementRepository @Inject()(
             res <- jsonCollection.indexesManager.ensure(movementReferenceNumber)
           } yield res
       }
-      .map(_ => ())
-  }
+      .map(
+        _ => ()
+      )
 
   val logSubmittedArrivals: Future[Boolean] = {
 
-    val byId     = Json.obj("_id"    -> -1)
+    val byId     = Json.obj("_id" -> -1)
     val selector = Json.obj("status" -> ArrivalStatus.ArrivalSubmitted.toString)
 
     collection
@@ -116,32 +117,40 @@ class ArrivalMovementRepository @Inject()(
         results =>
           results
             .filter(_.lastUpdated.isBefore(LocalDateTime.now(clock).minusDays(1)))
-            .foreach(result => logger.warn(result.logMessage))
+            .foreach(
+              result => logger.warn(result.logMessage)
+            )
 
           true
       }
   }
+
   private lazy val eoriNumberIndex: Aux[BSONSerializationPack.type] = IndexUtils.index(
     key = Seq("eoriNumber" -> IndexType.Ascending),
     name = Some("eori-number-index")
   )
+
   private lazy val movementReferenceNumber: Aux[BSONSerializationPack.type] = IndexUtils.index(
     key = Seq("movementReferenceNumber" -> IndexType.Ascending),
     name = Some("movement-reference-number-index")
   )
+
   private lazy val lastUpdatedIndex: Aux[BSONSerializationPack.type] = IndexUtils.index(
     key = Seq("lastUpdated" -> IndexType.Ascending),
     name = Some("last-updated-index"),
     options = BSONDocument("expireAfterSeconds" -> appConfig.cacheTtl)
   )
+
   private lazy val channelIndex: Aux[BSONSerializationPack.type] = IndexUtils.index(
     key = Seq("channel" -> IndexType.Ascending),
     name = Some("channel-index")
   )
+
   private lazy val fetchAllIndex: Aux[BSONSerializationPack.type] = IndexUtils.index(
     key = Seq("channel" -> IndexType.Ascending, "eoriNumber" -> IndexType.Ascending),
     name = Some("fetch-all-index")
   )
+
   private lazy val fetchAllWithDateFilterIndex: Aux[BSONSerializationPack.type] = IndexUtils.index(
     key = Seq("channel" -> IndexType.Ascending, "eoriNumber" -> IndexType.Ascending, "lastUpdated" -> IndexType.Descending),
     name = Some("fetch-all-with-date-filter-index")
@@ -153,14 +162,18 @@ class ArrivalMovementRepository @Inject()(
     collection.flatMap {
       _.insert(ordered = false)
         .many(arrivals.map(Json.toJsObject[Arrival]))
-        .map(_ => ())
+        .map(
+          _ => ()
+        )
     }
 
   def insert(arrival: Arrival): Future[Unit] =
     collection.flatMap {
       _.insert(false)
         .one(Json.toJsObject(arrival))
-        .map(_ => ())
+        .map(
+          _ => ()
+        )
     }
 
   private val featureFlag: Boolean = config.get[Boolean]("feature-flags.testOnly.enabled")
@@ -234,42 +247,56 @@ class ArrivalMovementRepository @Inject()(
     }
   }
 
+  def getWithoutMessages(arrivalId: ArrivalId): Future[Option[ArrivalWithoutMessages]] = {
+    val selector = Json.obj(
+      "_id" -> arrivalId
+    )
+
+    collection.flatMap {
+      _.find(selector, None)
+        .one[ArrivalWithoutMessages]
+    }
+  }
+
   def getMessage(arrivalId: ArrivalId, channelFilter: ChannelType, messageId: MessageId): Future[Option[MovementMessage]] =
     collection.flatMap {
       c =>
         c.aggregateWith[MovementMessage](allowDiskUse = true) {
-            _ =>
-              import c.aggregationFramework._
+          _ =>
+            import c.aggregationFramework._
 
-              val initialFilter: PipelineOperator =
-                Match(
-                  Json.obj("_id" -> arrivalId, "channel" -> channelFilter, "messages" -> Json.obj("$elemMatch" -> Json.obj("messageId" -> messageId.value))))
+            val initialFilter: PipelineOperator =
+              Match(Json.obj("_id" -> arrivalId, "channel" -> channelFilter, "messages" -> Json.obj("$elemMatch" -> Json.obj("messageId" -> messageId.value))))
 
-              val unwindMessages = List[PipelineOperator](
-                Unwind(
-                  path = "messages",
-                  includeArrayIndex = None,
-                  preserveNullAndEmptyArrays = None
-                ))
+            val unwindMessages = List[PipelineOperator](
+              Unwind(
+                path = "messages",
+                includeArrayIndex = None,
+                preserveNullAndEmptyArrays = None
+              )
+            )
 
-              val secondaryFilter = List[PipelineOperator](Match(Json.obj("messages.messageId" -> messageId.value)))
+            val secondaryFilter = List[PipelineOperator](Match(Json.obj("messages.messageId" -> messageId.value)))
 
-              val groupById = List[PipelineOperator](GroupField("_id")("messages" -> FirstField("messages")))
+            val groupById = List[PipelineOperator](GroupField("_id")("messages" -> FirstField("messages")))
 
-              val replaceRoot = List[PipelineOperator](ReplaceRootField("messages"))
+            val replaceRoot = List[PipelineOperator](ReplaceRootField("messages"))
 
-              val transformations = unwindMessages ++ secondaryFilter ++ groupById ++ replaceRoot
+            val transformations = unwindMessages ++ secondaryFilter ++ groupById ++ replaceRoot
 
-              (initialFilter, transformations)
+            (initialFilter, transformations)
 
-          }
-          .headOption
+        }.headOption
     }
 
   def fetchAllArrivals(eoriNumber: String, channelFilter: ChannelType, updatedSince: Option[OffsetDateTime]): Future[ResponseArrivals] =
     withMetricsTimerAsync("mongo-get-arrivals-for-eori") {
       _ =>
-        val dateFilter    = updatedSince.map(dateTime => Json.obj("lastUpdated" -> Json.obj("$gte" -> dateTime))).getOrElse(Json.obj())
+        val dateFilter = updatedSince
+          .map(
+            dateTime => Json.obj("lastUpdated" -> Json.obj("$gte" -> dateTime))
+          )
+          .getOrElse(Json.obj())
         val countSelector = Json.obj("eoriNumber" -> eoriNumber, "channel" -> channelFilter)
         val selector      = countSelector ++ dateFilter
 
@@ -295,10 +322,12 @@ class ArrivalMovementRepository @Inject()(
     }
 
   @deprecated("Use updateArrival since this will be removed in the next version", "next")
-  def setArrivalStateAndMessageState(arrivalId: ArrivalId,
-                                     messageId: MessageId,
-                                     arrivalState: ArrivalStatus,
-                                     messageState: MessageStatus): Future[Option[Unit]] = {
+  def setArrivalStateAndMessageState(
+    arrivalId: ArrivalId,
+    messageId: MessageId,
+    arrivalState: ArrivalStatus,
+    messageState: MessageStatus
+  ): Future[Option[Unit]] = {
     implicit val modifierClock: Clock = clock
 
     val selector = ArrivalIdSelector(arrivalId)
@@ -321,7 +350,9 @@ class ArrivalMovementRepository @Inject()(
               Success(())
             else
               writeResult.errmsg
-                .map(x => Failure(new Exception(x)))
+                .map(
+                  x => Failure(new Exception(x))
+                )
                 .getOrElse(Failure(new Exception("Unable to update message status")))
         }
     }
@@ -419,14 +450,20 @@ class ArrivalMovementRepository @Inject()(
         _.find[JsObject, Arrival](query, None)
           .cursor[Arrival]()
           .documentSource(maxDocs = limit)
-          .mapMaterializedValue(_.map(_ => Done))
+          .mapMaterializedValue(
+            _.map(
+              _ => Done
+            )
+          )
       }
   }
 
   def arrivalsWithoutJsonMessages(limit: Int): Future[Seq[Arrival]] =
     arrivalsWithoutJsonMessagesSource(limit).flatMap(
       _.runWith(Sink.seq[Arrival])
-        .map(x => { logger.info(s"Found ${x.size} arrivals without JSON to process"); x })
+        .map {
+          x => logger.info(s"Found ${x.size} arrivals without JSON to process"); x
+        }
     )
 
   private def collection: Future[JSONCollection] =
@@ -462,7 +499,9 @@ class ArrivalMovementRepository @Inject()(
 
           collection.indexesManager
             .drop(oldLastUpdatedIndexName)
-            .map(_ => true)
+            .map(
+              _ => true
+            )
         } else {
           logger.info(s"$oldLastUpdatedIndexName does not exist or has already been dropped")
           Future.successful(true)
@@ -487,7 +526,7 @@ case class SubmittedArrivalSummary(
   val obfuscatedEori: String               = s"ending ${eoriNumber.takeRight(4)}"
   val dateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
 
-  val logMessage: String = {
+  val logMessage: String =
     s"""Movement in ArrivalSubmitted status
        |  Arrival Id: ${_id.index}
        |  MRN: ${movementReferenceNumber.value}
@@ -496,7 +535,6 @@ case class SubmittedArrivalSummary(
        |  Created: ${dateTimeFormatter.format(created)}
        |  Next message correlation Id: $nextMessageCorrelationId
        |""".stripMargin
-  }
 }
 
 object SubmittedArrivalSummary extends MongoDateTimeFormats {

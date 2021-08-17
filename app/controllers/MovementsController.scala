@@ -214,6 +214,7 @@ class MovementsController @Inject()(
       }
     }
 
+    // TODO change authenticatedArrivalForRead to authenticatedArrivalForReadWithoutMessages
   def getArrival(arrivalId: ArrivalId): Action[AnyContent] =
     withMetricsTimerAction("get-arrival-by-id") {
       authenticatedArrivalForRead(arrivalId) {

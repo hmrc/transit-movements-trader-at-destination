@@ -74,6 +74,8 @@ class NCTSMessageController @Inject()(
       }
       .getOrElse(Future.unit)
 
+
+  // TODO change getArrival to getArrivalWithoutMessages
   def post(messageSender: MessageSender): Action[NodeSeq] =
     Action(parse.xml).async {
       implicit request =>

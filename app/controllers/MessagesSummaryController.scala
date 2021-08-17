@@ -39,6 +39,7 @@ class MessagesSummaryController @Inject()(
     extends BackendController(cc)
     with HasActionMetrics {
 
+  // TODO change authenticateForRead to authenticateForReadWithMessages
   def messagesSummary(arrivalId: ArrivalId): Action[AnyContent] =
     withMetricsTimerAction("get-arrival-messages-summary") {
       authenticateForRead(arrivalId) {
