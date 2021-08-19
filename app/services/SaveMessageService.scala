@@ -50,7 +50,7 @@ class SaveMessageService @Inject()(
           .map {
             case Success(_) =>
               logger.debug(s"Saved message successfully")
-              auditService.auditNCTSMessages(arrival.channel, inboundMessageResponse, movementMessage)
+              auditService.auditNCTSMessages(arrival.channel, arrival.eoriNumber, inboundMessageResponse, movementMessage)
               Right(())
             case Failure(error) =>
               Left(FailedToSaveMessage(s"[SaveMessageService][validateXmlAndSaveMessage] Failed to save message with error: $error"))

@@ -46,7 +46,7 @@ class GetArrivalService @Inject()(repository: ArrivalMovementRepository, auditSe
       getArrivalById(arrivalId).map {
         _.left.map {
           submissionState =>
-            auditService.auditNCTSMessages(deleted, messageResponse, movementMessage)
+            auditService.auditNCTSMessages(deleted, "deleted", messageResponse, movementMessage)
             submissionState
         }
       }

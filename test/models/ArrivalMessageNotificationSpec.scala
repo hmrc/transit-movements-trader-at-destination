@@ -39,14 +39,14 @@ class ArrivalMessageNotificationSpec extends SpecBase with ScalaCheckDrivenPrope
   val responseGenerator = Gen.oneOf(MessageResponse.inboundMessages)
 
   "fromRequest" - {
-    val testBody   = <text></text>
-    val bodyLength = testBody.toString.getBytes(StandardCharsets.UTF_8).length
 
     "produces the expected model" in {
 
       val arrival     = arbitraryArrival.arbitrary.sample.value
       val messageType = Gen.oneOf(MessageType.values).sample.value
       val dateTimeNow = LocalDateTime.now()
+
+      val requestXml = <text></text>
 
       val expectedNotification =
         ArrivalMessageNotification(
@@ -57,26 +57,21 @@ class ArrivalMessageNotificationSpec extends SpecBase with ScalaCheckDrivenPrope
           MessageId(arrival.messages.length + 1),
           dateTimeNow,
           messageType,
-          Some(<text></text>)
+          Some(requestXml)
         )
 
-      val testNotification = ArrivalMessageNotification.fromArrival(arrival, dateTimeNow, messageType)
+      val testNotification = ArrivalMessageNotification.fromArrival(arrival, dateTimeNow, messageType, requestXml, Some(123))
 
       testNotification mustEqual expectedNotification
     }
 
     "does not include the message body when it is over 100kb" in {
-      val response      = responseGenerator.sample.value
-      val arrival       = arbitraryArrival.arbitrary.sample.value
-      val messageSender = MessageSender(arrival.arrivalId, arrival.messages.last.messageCorrelationId)
 
-      val request = FakeRequest(POST, routes.NCTSMessageController.post(messageSender).url)
-        .withBody[NodeSeq](<text></text>)
-        .withHeaders(HeaderNames.CONTENT_LENGTH -> "100001")
-      val arrivalRequest = ArrivalRequest(request, arrival, api)
-      val inboundRequest = InboundMessageRequest(InboundMessage(response, arbitrary[ArrivalStatus].sample.value), arrivalRequest)
+      val arrival     = arbitraryArrival.arbitrary.sample.value
+      val messageType = Gen.oneOf(MessageType.values).sample.value
+      val dateTimeNow = LocalDateTime.now()
 
-      val now = LocalDateTime.now()
+      val requestXml = <text></text>
 
       val expectedNotification =
         ArrivalMessageNotification(
@@ -85,12 +80,12 @@ class ArrivalMessageNotificationSpec extends SpecBase with ScalaCheckDrivenPrope
           arrival.eoriNumber,
           arrival.arrivalId,
           MessageId(arrival.messages.length + 1),
-          now,
-          response.messageType,
+          dateTimeNow,
+          messageType,
           None
         )
 
-      val testNotification = ArrivalMessageNotification.fromArrival(arrival, dateTimeNow, messageType)
+      val testNotification = ArrivalMessageNotification.fromArrival(arrival, dateTimeNow, messageType, requestXml, Some(100001))
 
       testNotification mustEqual expectedNotification
     }

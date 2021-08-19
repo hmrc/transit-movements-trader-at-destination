@@ -60,12 +60,16 @@ object ArrivalMessageNotification {
         obj ++ Json.obj("requestId" -> requestId(arrival.arrivalId))
     }
 
-  def fromArrival(arrival: Arrival, timestamp: LocalDateTime, messageType: MessageType): ArrivalMessageNotification = {
+  def fromArrival(arrival: Arrival,
+                  timestamp: LocalDateTime,
+                  messageType: MessageType,
+                  requestXml: NodeSeq,
+                  bodySize: Option[Int]): ArrivalMessageNotification = {
     val oneHundredKilobytes = 100000
     val eoriNumber          = arrival.eoriNumber
     val messageId           = arrival.nextMessageId
     val arrivalUrl          = requestId(arrival.arrivalId)
-    val bodySize            = request.headers.get(HeaderNames.CONTENT_LENGTH).map(_.toInt)
+
     ArrivalMessageNotification(
       s"$arrivalUrl/messages/${messageId.value}",
       arrivalUrl,
@@ -74,7 +78,7 @@ object ArrivalMessageNotification {
       messageId,
       timestamp,
       messageType,
-      if (bodySize.exists(_ < oneHundredKilobytes)) Some(request.body) else None
+      if (bodySize.exists(_ < oneHundredKilobytes)) Some(requestXml) else None
     )
   }
 }

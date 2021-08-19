@@ -20,7 +20,13 @@ import audit.AuditService
 import base.SpecBase
 import generators.ModelGenerators
 import models.ArrivalStatus._
-import models.{Arrival, ArrivalId, FailedToSaveMessage, GoodsReleasedResponse, InboundMessageRequest, MessageSender, MovementMessageWithoutStatus}
+import models.Arrival
+import models.ArrivalId
+import models.FailedToSaveMessage
+import models.GoodsReleasedResponse
+import models.InboundMessageRequest
+import models.MessageSender
+import models.MovementMessageWithoutStatus
 import org.mockito.ArgumentMatchers.{eq => eqTo, _}
 import org.mockito.Mockito._
 import org.scalacheck.Arbitrary.arbitrary
@@ -30,9 +36,11 @@ import play.api.test.Helpers.running
 import repositories.ArrivalMovementRepository
 import utils.Format
 
-import java.time.{LocalDate, LocalTime}
+import java.time.LocalDate
+import java.time.LocalTime
 import scala.concurrent.Future
-import scala.util.{Failure, Success}
+import scala.util.Failure
+import scala.util.Success
 
 class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach with ModelGenerators {
 
@@ -71,7 +79,7 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach with Model
         val messageCorrelationId = 1
         val messageSender        = MessageSender(arrivalId, messageCorrelationId)
 
-        val result =
+        val result: Unit =
           saveMessageService
             .saveInboundMessage(InboundMessageRequest(arrival, GoodsReleased, GoodsReleasedResponse, message), messageSender)
             .futureValue
@@ -80,7 +88,7 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach with Model
 
         result mustBe (())
         verify(mockArrivalMovementRepository, times(1)).addResponseMessage(eqTo(arrivalId), any(), eqTo(GoodsReleased))
-        verify(mockAuditService, times(1)).auditNCTSMessages(any(), eqTo(eori), any(), any())(any())
+        verify(mockAuditService, times(1)).auditNCTSMessages(any(), eqTo(arrival.eoriNumber), any(), any())(any())
       }
     }
 
@@ -109,77 +117,6 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach with Model
 
         result mustBe an[FailedToSaveMessage]
         verify(mockArrivalMovementRepository, times(1)).addResponseMessage(any(), any(), any())
-        verify(mockXmlValidationService, times(1)).validate(any(), any())
-      }
-    }
-
-    "return Failure when we cannot parse the message" in {
-      when(mockXmlValidationService.validate(any(), any())).thenReturn(Failure(new Exception))
-
-      val application = baseApplicationBuilder
-        .overrides(
-          bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
-          bind[XmlValidationService].toInstance(mockXmlValidationService)
-        )
-        .build()
-
-      running(application) {
-        val saveMessageService = application.injector.instanceOf[SaveMessageService]
-
-        val eori                 = "eori"
-        val arrivalId            = ArrivalId(1)
-        val messageCorrelationId = 1
-        val messageSender        = MessageSender(arrivalId, messageCorrelationId)
-        val channel              = ChannelType.web
-
-        val requestInvalidXmlBody = <Invalid>invalid</Invalid>
-
-        val result =
-          saveMessageService
-            .validateXmlAndSaveMessage(MessageId(2), requestInvalidXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased, eori, channel)
-            .futureValue
-
-        result mustBe SubmissionProcessingResult.SubmissionFailureExternal
-        verify(mockArrivalMovementRepository, never()).addResponseMessage(any(), any(), any())
-        verify(mockXmlValidationService, times(1)).validate(any(), any())
-      }
-    }
-
-    "return Failure when we cannot parse the message due malformed time" in {
-      when(mockXmlValidationService.validate(any(), any())).thenReturn(Success(()))
-
-      val application = baseApplicationBuilder
-        .overrides(
-          bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
-          bind[XmlValidationService].toInstance(mockXmlValidationService)
-        )
-        .build()
-
-      running(application) {
-        val saveMessageService = application.injector.instanceOf[SaveMessageService]
-
-        val eori                 = "eori"
-        val arrivalId            = ArrivalId(1)
-        val messageCorrelationId = 1
-        val messageSender        = MessageSender(arrivalId, messageCorrelationId)
-        val dateOfPrep           = LocalDate.now()
-        val timeOfPrep           = LocalTime.of(1, 1)
-        val channel              = ChannelType.api
-
-        val requestInvalidXmlBody =
-          <CC025A>
-            <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
-            <TimOfPreMES10>{Format.timeFormatted(timeOfPrep) + "/"}</TimOfPreMES10>
-          </CC025A>
-
-        val result =
-          saveMessageService
-            .validateXmlAndSaveMessage(MessageId(2), requestInvalidXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased, eori, channel)
-            .futureValue
-
-        result mustBe SubmissionProcessingResult.SubmissionFailureExternal
-        verify(mockArrivalMovementRepository, never()).addResponseMessage(any(), any(), any())
-        verify(mockXmlValidationService, times(1)).validate(any(), any())
       }
     }
   }
