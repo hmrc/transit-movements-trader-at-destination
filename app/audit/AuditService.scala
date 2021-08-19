@@ -16,8 +16,6 @@
 
 package audit
 
-import audit.AuditType._
-import javax.inject.Inject
 import models._
 import play.api.libs.json.Format.GenericFormat
 import play.api.libs.json.Json
@@ -25,6 +23,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import utils.MessageTranslation
 
+import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 
 class AuditService @Inject()(auditConnector: AuditConnector, messageTranslation: MessageTranslation)(implicit ec: ExecutionContext) {
@@ -38,16 +37,7 @@ class AuditService @Inject()(auditConnector: AuditConnector, messageTranslation:
   }
 
   def auditNCTSMessages(channel: ChannelType, customerId: String, messageResponse: MessageResponse, message: MovementMessage)(
-    implicit hc: HeaderCarrier): Unit = {
-    // TODO remove this and add val's to MessageResponse for name
-    val auditType: String = messageResponse match {
-      case GoodsReleasedResponse                        => GoodsReleased
-      case ArrivalRejectedResponse                      => ArrivalNotificationRejected
-      case UnloadingPermissionResponse                  => UnloadingPermissionReceived
-      case UnloadingRemarksRejectedResponse             => UnloadingPermissionRejected
-      case XMLSubmissionNegativeAcknowledgementResponse => XMLSubmissionNegativeAcknowledgement
-    }
-    auditEvent(auditType, customerId, message, channel)
-  }
+    implicit hc: HeaderCarrier): Unit =
+    auditEvent(messageResponse.auditType, customerId, message, channel)
 
 }

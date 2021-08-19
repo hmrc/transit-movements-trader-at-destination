@@ -44,7 +44,7 @@ class MessageTransformer @Inject()(implicit val executionContext: ExecutionConte
   override def refine[A](request: ArrivalRequest[A]): Future[Either[Result, MessageTransformRequest[A]]] =
     request.body match {
       case x: NodeSeq =>
-        x.headOption.flatMap(node => messageResponse(request.channel)(node.label)) match { //Moved
+        x.headOption.flatMap(node => messageResponse(request.channel)(node.label)) match {
           case Some(response) =>
             StatusTransition.transition(request.arrival.status, response.messageReceived) match {
               case Right(nextState) =>

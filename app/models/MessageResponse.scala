@@ -22,6 +22,7 @@ import models.XSDFile._
 sealed trait MessageResponse {
   val messageReceived: MessageReceivedEvent
   val messageType: MessageType
+  val auditType: String
 }
 
 object MessageResponse extends Logging {
@@ -61,34 +62,40 @@ sealed trait InboundMessageResponse extends MessageResponse {
 case object UnloadingRemarksResponse extends OutboundMessageResponse {
   override val messageReceived: MessageReceivedEvent = MessageReceivedEvent.UnloadingRemarksSubmitted
   override val messageType: MessageType              = MessageType.UnloadingRemarks
+  override val auditType: String                     = "UnloadingRemarksSubmitted"
 }
 
 case object GoodsReleasedResponse extends InboundMessageResponse {
   override val messageReceived          = MessageReceivedEvent.GoodsReleased
   override val messageType: MessageType = MessageType.GoodsReleased
   override val xsdFile: XSDFile         = GoodsReleasedXSD
+  override val auditType: String        = "GoodsReleased"
 }
 
 case object ArrivalRejectedResponse extends InboundMessageResponse {
   override val messageReceived          = MessageReceivedEvent.ArrivalRejected
   override val messageType: MessageType = MessageType.ArrivalRejection
   override val xsdFile: XSDFile         = ArrivalRejectedXSD
+  override val auditType: String        = "ArrivalNotificationRejected"
 }
 
 case object UnloadingPermissionResponse extends InboundMessageResponse {
   override val messageReceived          = MessageReceivedEvent.UnloadingPermission
   override val messageType: MessageType = MessageType.UnloadingPermission
   override val xsdFile: XSDFile         = UnloadingPermissionXSD
+  override val auditType: String        = "UnloadingPermissionReceived"
 }
 
 case object UnloadingRemarksRejectedResponse extends InboundMessageResponse {
   override val messageReceived          = MessageReceivedEvent.UnloadingRemarksRejected
   override val messageType: MessageType = MessageType.UnloadingRemarksRejection
   override val xsdFile: XSDFile         = UnloadingRemarksRejectedXSD
+  override val auditType: String        = "UnloadingPermissionRejected"
 }
 
 case object XMLSubmissionNegativeAcknowledgementResponse extends InboundMessageResponse {
   override val messageReceived          = MessageReceivedEvent.XMLSubmissionNegativeAcknowledgement
   override val messageType: MessageType = MessageType.XMLSubmissionNegativeAcknowledgement
   override val xsdFile: XSDFile         = InvalidXmlXSD
+  override val auditType: String        = "XMLSubmissionNegativeAcknowledgement"
 }
