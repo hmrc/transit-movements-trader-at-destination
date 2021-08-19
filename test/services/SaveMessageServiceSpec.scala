@@ -18,15 +18,18 @@ package services
 
 import audit.AuditService
 import base.SpecBase
-import models.ArrivalId
+import generators.ModelGenerators
 import models.ArrivalStatus._
-import models.ChannelType
+import models.Arrival
+import models.ArrivalId
+import models.FailedToSaveMessage
 import models.GoodsReleasedResponse
-import models.MessageId
+import models.InboundMessageRequest
 import models.MessageSender
-import models.SubmissionProcessingResult
+import models.MovementMessageWithoutStatus
 import org.mockito.ArgumentMatchers.{eq => eqTo, _}
 import org.mockito.Mockito._
+import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.BeforeAndAfterEach
 import play.api.inject.bind
 import play.api.test.Helpers.running
@@ -39,7 +42,7 @@ import scala.concurrent.Future
 import scala.util.Failure
 import scala.util.Success
 
-class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach {
+class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach with ModelGenerators {
 
   private val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
   private val mockXmlValidationService      = mock[XmlValidationService]
@@ -58,6 +61,9 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach {
       when(mockArrivalMovementRepository.addResponseMessage(any(), any(), any())).thenReturn(Future.successful(Success(())))
       when(mockXmlValidationService.validate(any(), any())).thenReturn(Success(()))
 
+      val arrival = arbitrary[Arrival].sample.value
+      val message = arbitrary[MovementMessageWithoutStatus].sample.value
+
       val application = baseApplicationBuilder
         .overrides(
           bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
@@ -69,140 +75,48 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach {
       running(application) {
         val saveMessageService = application.injector.instanceOf[SaveMessageService]
 
-        val dateOfPrep = LocalDate.now()
-        val timeOfPrep = LocalTime.of(1, 1)
-
-        val eori                 = "eori"
         val arrivalId            = ArrivalId(1)
         val messageCorrelationId = 1
         val messageSender        = MessageSender(arrivalId, messageCorrelationId)
-        val channel              = ChannelType.web
 
-        val requestGoodsReleasedXmlBody =
-          <CC025A>
-            <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
-            <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
-          </CC025A>
-
-        val result =
+        val result: Unit =
           saveMessageService
-            .validateXmlAndSaveMessage(MessageId(2), requestGoodsReleasedXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased, eori, channel)
+            .saveInboundMessage(InboundMessageRequest(arrival, GoodsReleased, GoodsReleasedResponse, message), messageSender)
             .futureValue
+            .right
+            .value
 
-        result mustBe SubmissionProcessingResult.SubmissionSuccess
+        result mustBe (())
         verify(mockArrivalMovementRepository, times(1)).addResponseMessage(eqTo(arrivalId), any(), eqTo(GoodsReleased))
-        verify(mockXmlValidationService, times(1)).validate(any(), any())
-        verify(mockAuditService, times(1)).auditNCTSMessages(any(), eqTo(eori), any(), any())(any())
+        verify(mockAuditService, times(1)).auditNCTSMessages(any(), eqTo(arrival.eoriNumber), any(), any())(any())
       }
     }
 
     "return Failure when we cannot save the message" in {
+
       when(mockArrivalMovementRepository.addResponseMessage(any(), any(), any())).thenReturn(Future.successful(Failure(new Exception)))
-      when(mockXmlValidationService.validate(any(), any())).thenReturn(Success(()))
 
-      val application = baseApplicationBuilder
-        .overrides(
-          bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
-          bind[XmlValidationService].toInstance(mockXmlValidationService)
-        )
-        .build()
+      val message = arbitrary[MovementMessageWithoutStatus].sample.value
+      val arrival = arbitrary[Arrival].sample.value
+
+      val application = baseApplicationBuilder.overrides(bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository)).build()
 
       running(application) {
         val saveMessageService = application.injector.instanceOf[SaveMessageService]
 
-        val dateOfPrep = LocalDate.now()
-        val timeOfPrep = LocalTime.of(1, 1)
-
-        val eori                 = "eori"
         val arrivalId            = ArrivalId(1)
         val messageCorrelationId = 1
         val messageSender        = MessageSender(arrivalId, messageCorrelationId)
-        val channel              = ChannelType.api
-
-        val requestGoodsReleasedXmlBody =
-          <CC025A>
-            <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
-            <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
-          </CC025A>
 
         val result =
           saveMessageService
-            .validateXmlAndSaveMessage(MessageId(2), requestGoodsReleasedXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased, eori, channel)
+            .saveInboundMessage(InboundMessageRequest(arrival, GoodsReleased, GoodsReleasedResponse, message), messageSender)
             .futureValue
+            .left
+            .value
 
-        result mustBe SubmissionProcessingResult.SubmissionFailureInternal
+        result mustBe an[FailedToSaveMessage]
         verify(mockArrivalMovementRepository, times(1)).addResponseMessage(any(), any(), any())
-        verify(mockXmlValidationService, times(1)).validate(any(), any())
-      }
-    }
-
-    "return Failure when we cannot parse the message" in {
-      when(mockXmlValidationService.validate(any(), any())).thenReturn(Failure(new Exception))
-
-      val application = baseApplicationBuilder
-        .overrides(
-          bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
-          bind[XmlValidationService].toInstance(mockXmlValidationService)
-        )
-        .build()
-
-      running(application) {
-        val saveMessageService = application.injector.instanceOf[SaveMessageService]
-
-        val eori                 = "eori"
-        val arrivalId            = ArrivalId(1)
-        val messageCorrelationId = 1
-        val messageSender        = MessageSender(arrivalId, messageCorrelationId)
-        val channel              = ChannelType.web
-
-        val requestInvalidXmlBody = <Invalid>invalid</Invalid>
-
-        val result =
-          saveMessageService
-            .validateXmlAndSaveMessage(MessageId(2), requestInvalidXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased, eori, channel)
-            .futureValue
-
-        result mustBe SubmissionProcessingResult.SubmissionFailureExternal
-        verify(mockArrivalMovementRepository, never()).addResponseMessage(any(), any(), any())
-        verify(mockXmlValidationService, times(1)).validate(any(), any())
-      }
-    }
-
-    "return Failure when we cannot parse the message due malformed time" in {
-      when(mockXmlValidationService.validate(any(), any())).thenReturn(Success(()))
-
-      val application = baseApplicationBuilder
-        .overrides(
-          bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
-          bind[XmlValidationService].toInstance(mockXmlValidationService)
-        )
-        .build()
-
-      running(application) {
-        val saveMessageService = application.injector.instanceOf[SaveMessageService]
-
-        val eori                 = "eori"
-        val arrivalId            = ArrivalId(1)
-        val messageCorrelationId = 1
-        val messageSender        = MessageSender(arrivalId, messageCorrelationId)
-        val dateOfPrep           = LocalDate.now()
-        val timeOfPrep           = LocalTime.of(1, 1)
-        val channel              = ChannelType.api
-
-        val requestInvalidXmlBody =
-          <CC025A>
-            <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
-            <TimOfPreMES10>{Format.timeFormatted(timeOfPrep) + "/"}</TimOfPreMES10>
-          </CC025A>
-
-        val result =
-          saveMessageService
-            .validateXmlAndSaveMessage(MessageId(2), requestInvalidXmlBody, messageSender, GoodsReleasedResponse, GoodsReleased, eori, channel)
-            .futureValue
-
-        result mustBe SubmissionProcessingResult.SubmissionFailureExternal
-        verify(mockArrivalMovementRepository, never()).addResponseMessage(any(), any(), any())
-        verify(mockXmlValidationService, times(1)).validate(any(), any())
       }
     }
   }

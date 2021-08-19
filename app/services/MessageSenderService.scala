@@ -14,18 +14,19 @@
  * limitations under the License.
  */
 
-package models
+package services
 
-sealed trait ChannelType
+import models.MessageSenderError
+import models.SubmissionState
 
-object ChannelType extends Enumerable.Implicits {
-  case object web     extends ChannelType
-  case object api     extends ChannelType
-  case object deleted extends ChannelType
+import scala.xml.NodeSeq
 
-  val values: Seq[ChannelType] = Seq(web, api)
+object MessageSenderService {
 
-  implicit val enumerable: Enumerable[ChannelType] =
-    Enumerable(values.map(v => v.toString -> v): _*)
-
+  def validateMessageSenderIsEmpty(nodeSeq: NodeSeq): Either[SubmissionState, Unit] =
+    if ((nodeSeq \\ "MesSenMES3").isEmpty) {
+      Right(())
+    } else {
+      Left(MessageSenderError("[MessageSenderService][validateMessageSenderIsEmpty] MesSenMES3 should be empty"))
+    }
 }

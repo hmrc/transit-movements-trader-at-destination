@@ -16,25 +16,26 @@
 
 package controllers
 
+import cats.data.EitherT
 import com.kenshoo.play.metrics.Metrics
-import controllers.actions.GetArrivalForWriteActionProvider
-import controllers.actions.InboundMessageRequest
-import controllers.actions.MessageTransformerInterface
-import controllers.actions.ValidateInboundMessageAction
 import logging.Logging
 import metrics.HasActionMetrics
-import metrics.Monitors
+import models.Arrival
 import models.ArrivalMessageNotification
-import models.InboundMessage
+import models.ArrivalNotFoundError
+import models.DocumentExistsError
+import models.InboundMessageRequest
+import models.InternalError
 import models.MessageSender
-import models.SubmissionProcessingResult._
+import models.MessageType
+import models.SubmissionState
+import models.request
 import play.api.Logger
+import play.api.http.HeaderNames
 import play.api.mvc.Action
 import play.api.mvc.ControllerComponents
-import play.api.mvc.Result
-import services.PushPullNotificationService
-import services.SaveMessageService
-import services.XmlMessageParser
+import play.api.mvc.Headers
+import services._
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
@@ -45,89 +46,70 @@ import scala.xml.NodeSeq
 
 class NCTSMessageController @Inject()(
   cc: ControllerComponents,
-  getArrival: GetArrivalForWriteActionProvider,
-  validateTransitionState: MessageTransformerInterface,
-  validateInboundMessage: ValidateInboundMessageAction,
   saveMessageService: SaveMessageService,
   pushPullNotificationService: PushPullNotificationService,
+  inboundRequestService: InboundRequestService,
+  lockService: LockService,
   val metrics: Metrics
 )(implicit ec: ExecutionContext)
     extends BackendController(cc)
     with Logging
     with HasActionMetrics {
 
-  private val movementSummaryLogger: Logger =
-    Logger(s"application.${this.getClass.getCanonicalName}.movementSummary")
+  private val movementSummaryLogger: Logger = Logger(s"application.${this.getClass.getCanonicalName}.movementSummary")
 
-  private def sendPushNotification(request: InboundMessageRequest[NodeSeq])(implicit hc: HeaderCarrier): Future[Unit] =
-    request.arrivalRequest.arrival.notificationBox
+  private def sendPushNotification(xml: NodeSeq, arrival: Arrival, messageType: MessageType, headers: Headers)(implicit hc: HeaderCarrier): Future[Unit] =
+    arrival.notificationBox
       .map {
         box =>
-          XmlMessageParser.dateTimeOfPrepR(request.body) match {
+          XmlMessageParser.dateTimeOfPrepR(xml) match {
             case Left(error) =>
               logger.error(s"Error while parsing message timestamp: ${error.message}")
               Future.unit
             case Right(timestamp) =>
-              val notification = ArrivalMessageNotification.fromRequest(request, timestamp)
+              val bodySize     = headers.get(HeaderNames.CONTENT_LENGTH).map(_.toInt)
+              val notification = ArrivalMessageNotification.fromArrival(arrival, timestamp, messageType, xml, bodySize)
               pushPullNotificationService.sendPushNotification(box.boxId, notification)
           }
       }
       .getOrElse(Future.unit)
 
   def post(messageSender: MessageSender): Action[NodeSeq] =
-    withMetricsTimerAction("post-receive-ncts-message") {
-      (getArrival(messageSender.arrivalId)(parse.xml) andThen validateTransitionState andThen validateInboundMessage).async {
-        implicit request =>
-          val messageInbound: InboundMessage = request.message
-
-          val xml: NodeSeq = request.arrivalRequest.request.body
-
-          val processingResult =
-            saveMessageService.validateXmlAndSaveMessage(
-              request.arrivalRequest.arrival.nextMessageId,
-              xml,
-              messageSender,
-              messageInbound.messageType,
-              messageInbound.nextState,
-              request.arrivalRequest.arrival.eoriNumber,
-              request.arrivalRequest.channel
-            )
-
-          processingResult map {
-            result =>
+    Action(parse.xml).async {
+      implicit request =>
+        withMetricsTimerResult("post-receive-ncts-message") {
+          (
+            for {
+              inboundRequest     <- EitherT(inboundRequestService.makeInboundRequest(messageSender.arrivalId, request.body, messageSender))
+              saveInboundRequest <- EitherT(saveMessageService.saveInboundMessage(inboundRequest, messageSender))
+              sendPushNotification <- EitherT.right[SubmissionState](
+                sendPushNotification(request.body, inboundRequest.arrival, inboundRequest.inboundMessageResponse.messageType, request.headers))
+            } yield inboundRequest
+          ).value.flatMap {
+            case Left(submissionState) =>
+              lockService.unlock(messageSender.arrivalId).map {
+                _ =>
+                  submissionState match {
+                    case _: ArrivalNotFoundError => NotFound
+                    case _: DocumentExistsError  => Locked
+                    case state: InternalError =>
+                      logger.error(state.message)
+                      InternalServerError
+                    case state =>
+                      logger.warn(state.message)
+                      BadRequest
+                  }
+              }
+            case Right(InboundMessageRequest(arrival, _, inboundMessageResponse, _)) =>
               val summaryInfo: Map[String, String] = Map(
                 "X-Correlation-Id" -> request.headers.get("X-Correlation-ID").getOrElse("undefined"),
                 "X-Request-Id"     -> request.headers.get("X-Request-ID").getOrElse("undefined")
-              ) ++ request.arrivalRequest.arrival.summaryInformation
+              ) ++ arrival.summaryInformation
 
-              movementSummaryLogger.info(s"Received message ${messageInbound.messageType.messageType.toString} for this arrival\n${summaryInfo.mkString("\n")}")
+              movementSummaryLogger.info(s"Received message ${inboundMessageResponse.messageType.toString} for this arrival\n${summaryInfo.mkString("\n")}")
 
-              Monitors.messageReceived(registry, messageInbound.messageType.messageType, request.arrivalRequest.channel, result)
-
-              result match {
-                case SubmissionSuccess => {
-                  sendPushNotification(request)
-                  Ok.withHeaders(
-                    LOCATION -> routes.MessagesController
-                      .getMessage(request.arrivalRequest.arrival.arrivalId, request.arrivalRequest.arrival.nextMessageId)
-                      .url)
-                }
-
-                case SubmissionFailureInternal => internalServerError("Internal Submission Failure " + processingResult)
-                case SubmissionFailureExternal => badRequestError("External Submission Failure " + processingResult)
-              }
+              Future.successful(Ok.withHeaders(LOCATION -> routes.MessagesController.getMessage(arrival.arrivalId, arrival.nextMessageId).url))
           }
-      }
+        }
     }
-
-  private def internalServerError(message: String): Result = {
-    logger.error(message)
-    InternalServerError(message)
-  }
-
-  private def badRequestError(message: String): Result = {
-    logger.warn(message)
-    BadRequest(message)
-  }
-
 }

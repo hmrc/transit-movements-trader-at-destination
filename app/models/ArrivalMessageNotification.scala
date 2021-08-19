@@ -16,7 +16,6 @@
 
 package models
 
-import controllers.actions.InboundMessageRequest
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import utils.NodeSeqFormat._
@@ -61,21 +60,25 @@ object ArrivalMessageNotification {
         obj ++ Json.obj("requestId" -> requestId(arrival.arrivalId))
     }
 
-  def fromRequest(request: InboundMessageRequest[NodeSeq], timestamp: LocalDateTime): ArrivalMessageNotification = {
+  def fromArrival(arrival: Arrival,
+                  timestamp: LocalDateTime,
+                  messageType: MessageType,
+                  requestXml: NodeSeq,
+                  bodySize: Option[Int]): ArrivalMessageNotification = {
     val oneHundredKilobytes = 100000
-    val eoriNumber          = request.arrivalRequest.arrival.eoriNumber
-    val messageId           = request.arrivalRequest.arrival.nextMessageId
-    val arrivalUrl          = requestId(request.arrivalRequest.arrival.arrivalId)
-    val bodySize            = request.headers.get(HeaderNames.CONTENT_LENGTH).map(_.toInt)
+    val eoriNumber          = arrival.eoriNumber
+    val messageId           = arrival.nextMessageId
+    val arrivalUrl          = requestId(arrival.arrivalId)
+
     ArrivalMessageNotification(
       s"$arrivalUrl/messages/${messageId.value}",
       arrivalUrl,
       eoriNumber,
-      request.arrivalRequest.arrival.arrivalId,
+      arrival.arrivalId,
       messageId,
       timestamp,
-      request.message.messageType.messageType,
-      if (bodySize.exists(_ < oneHundredKilobytes)) Some(request.body) else None
+      messageType,
+      if (bodySize.exists(_ < oneHundredKilobytes)) Some(requestXml) else None
     )
   }
 }

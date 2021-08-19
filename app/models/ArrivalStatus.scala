@@ -16,8 +16,6 @@
 
 package models
 
-sealed case class TransitionError(reason: String)
-
 sealed abstract class ArrivalStatus extends Product with Serializable
 
 object ArrivalStatus extends Enumerable.Implicits with MongoDateTimeFormats {

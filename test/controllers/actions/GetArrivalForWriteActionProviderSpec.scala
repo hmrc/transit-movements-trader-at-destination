@@ -96,7 +96,7 @@ class GetArrivalForWriteActionProviderSpec
       }
     }
 
-    "must lock an arrival, unlock it, and return Not Found when the arrival cannot be found" in {
+    "must lock an arrival, unlock it, and return Ok when the arrival cannot be found" in {
 
       val arrival = arbitrary[Arrival].sample.value
 
@@ -120,7 +120,7 @@ class GetArrivalForWriteActionProviderSpec
         val controller = new Harness(actionProvider)
         val result     = controller.get(arrival.arrivalId)(fakeRequest.withHeaders("channel" -> arrival.channel.toString))
 
-        status(result) mustEqual NOT_FOUND
+        status(result) mustEqual OK
         verify(mockLockRepository, times(1)).lock(eqTo(arrival.arrivalId))
         verify(mockLockRepository, times(1)).unlock(eqTo(arrival.arrivalId))
       }

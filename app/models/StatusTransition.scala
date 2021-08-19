@@ -130,11 +130,11 @@ object StatusTransition {
         }
     }
 
-  def transition(currentStatus: ArrivalStatus, messageReceived: MessageReceivedEvent): Either[TransitionError, ArrivalStatus] =
+  def transition(currentStatus: ArrivalStatus, messageReceived: MessageReceivedEvent): Either[SubmissionState, ArrivalStatus] =
     targetStatus(currentStatus, messageReceived).flatMap {
       transitionToStatus =>
-        val allowedFromThisStatus   = allowedStatusForTransition.get(currentStatus).getOrElse(Set.empty)
-        val requiredForTargetStatus = requiredStatusForTransition.get(transitionToStatus).getOrElse(Set.empty)
+        val allowedFromThisStatus   = allowedStatusForTransition.getOrElse(currentStatus, Set.empty)
+        val requiredForTargetStatus = requiredStatusForTransition.getOrElse(transitionToStatus, Set.empty)
         if (allowedFromThisStatus.contains(transitionToStatus))
           Right(transitionToStatus)
         else
