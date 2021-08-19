@@ -34,6 +34,7 @@ import models.ArrivalModifier
 import models.ArrivalSelector
 import models.ArrivalStatus
 import models.ArrivalStatusUpdate
+import models.ArrivalWithoutMessages
 import models.ChannelType
 import models.CompoundStatusUpdate
 import models.MessageId
@@ -58,11 +59,11 @@ import reactivemongo.bson.BSONDocument
 import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 import reactivemongo.play.json.collection.JSONCollection
 import utils.IndexUtils
-
 import java.time.Clock
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.Failure
@@ -220,6 +221,50 @@ class ArrivalMovementRepository @Inject()(
         }
     }
   }
+
+  def getWithoutMessages(arrivalId: ArrivalId, channelFilter: ChannelType): Future[Option[ArrivalWithoutMessages]] = {
+    val selector = Json.obj(
+      "_id"     -> arrivalId,
+      "channel" -> channelFilter
+    )
+
+    collection.flatMap {
+      _.find(selector, None)
+        .one[ArrivalWithoutMessages]
+    }
+  }
+
+  def getMessage(arrivalId: ArrivalId, channelFilter: ChannelType, messageId: MessageId): Future[Option[MovementMessage]] =
+    collection.flatMap {
+      c =>
+        c.aggregateWith[MovementMessage](allowDiskUse = true) {
+            _ =>
+              import c.aggregationFramework._
+
+              val initialFilter: PipelineOperator =
+                Match(
+                  Json.obj("_id" -> arrivalId, "channel" -> channelFilter, "messages" -> Json.obj("$elemMatch" -> Json.obj("messageId" -> messageId.value))))
+
+              val unwindMessages = List[PipelineOperator](
+                Unwind(
+                  path = "messages",
+                  includeArrayIndex = None,
+                  preserveNullAndEmptyArrays = None
+                ))
+
+              val secondaryFilter = List[PipelineOperator](Match(Json.obj("messages.messageId" -> messageId.value)))
+
+              val groupById = List[PipelineOperator](GroupField("_id")("messages" -> FirstField("messages")))
+
+              val replaceRoot = List[PipelineOperator](ReplaceRootField("messages"))
+
+              val transformations = unwindMessages ++ secondaryFilter ++ groupById ++ replaceRoot
+
+              (initialFilter, transformations)
+
+          }
+          .headOption
+    }
 
   def fetchAllArrivals(eoriNumber: String, channelFilter: ChannelType, updatedSince: Option[OffsetDateTime]): Future[ResponseArrivals] =
     withMetricsTimerAsync("mongo-get-arrivals-for-eori") {

@@ -427,6 +427,47 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
       }
     }
 
+    "get(arrivalId: ArrivalId)" - {
+      "must get an departure when it exists and has the right channel type" in {
+        database.flatMap(_.drop()).futureValue
+
+        val app = appBuilder.build()
+        running(app) {
+          val arrival = arbitrary[Arrival].sample.value
+
+          val repository = app.injector.instanceOf[ArrivalMovementRepository]
+
+          repository.insert(arrival).futureValue
+          val result = repository.get(arrival.arrivalId)
+
+          whenReady(result) {
+            r =>
+              r.value mustEqual arrival
+          }
+        }
+
+      }
+
+      "must return None when an departure does not exist" in {
+        database.flatMap(_.drop()).futureValue
+
+        val app = appBuilder.build()
+        running(app) {
+          val arrival = arbitrary[Arrival].sample.value.copy(arrivalId = ArrivalId(2))
+
+          val repository = app.injector.instanceOf[ArrivalMovementRepository]
+
+          repository.insert(arrival).futureValue
+          val result = repository.get(ArrivalId(1))
+
+          whenReady(result) {
+            r =>
+              r.isDefined mustBe false
+          }
+        }
+      }
+    }
+
     "get(arrivalId: ArrivalId, channelFilter: ChannelType)" - {
       "must get an arrival when it exists and has the right channel type" in {
 
@@ -924,6 +965,72 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
 
         ids mustBe Seq(movement3.arrivalId.index, movement2.arrivalId.index, movement1.arrivalId.index)
 
+      }
+    }
+  }
+
+  "getMessage" - {
+    "must return Some(message) if arrival and message exists" in {
+      database.flatMap(_.drop()).futureValue
+
+      val app = appBuilder.build()
+
+      running(app) {
+        started(app).futureValue
+        val repository = app.injector.instanceOf[ArrivalMovementRepository]
+
+        val message = arbitrary[models.MovementMessageWithStatus].sample.value.copy(messageId = MessageId(1))
+        val messages = new NonEmptyList(message, Nil)
+        val arrival = arbitrary[Arrival].sample.value.copy(channel = api, messages = messages)
+
+        repository.insert(arrival).futureValue
+        val result = repository.getMessage(arrival.arrivalId, arrival.channel, MessageId(1))
+
+        whenReady(result) {
+          r =>
+            r.isDefined mustBe true
+            r.value mustEqual message
+        }
+      }
+    }
+
+    "must return None if departure does not exist" in {
+      database.flatMap(_.drop()).futureValue
+
+      val app = appBuilder.build()
+
+      running(app) {
+        started(app).futureValue
+        val repository = app.injector.instanceOf[ArrivalMovementRepository]
+
+        val result = repository.getMessage(ArrivalId(1), api, MessageId(1))
+
+        whenReady(result) {
+          r =>
+            r.isDefined mustBe false
+        }
+      }
+    }
+
+    "must return None if message does not exist" in {
+      database.flatMap(_.drop()).futureValue
+      val app = appBuilder.build()
+
+      running(app) {
+        started(app).futureValue
+        val repository = app.injector.instanceOf[ArrivalMovementRepository]
+
+        val message = arbitrary[models.MovementMessageWithStatus].sample.value.copy(messageId = MessageId(1))
+        val messages = new NonEmptyList(message, Nil)
+        val arrival = arbitrary[Arrival].sample.value.copy(channel = api, messages = messages)
+
+        repository.insert(arrival).futureValue
+        val result = repository.getMessage(arrival.arrivalId, arrival.channel, MessageId(5))
+
+        whenReady(result) {
+          r =>
+            r.isDefined mustBe false
+        }
       }
     }
   }

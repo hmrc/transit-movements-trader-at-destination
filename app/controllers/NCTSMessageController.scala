@@ -20,26 +20,15 @@ import cats.data.EitherT
 import com.kenshoo.play.metrics.Metrics
 import logging.Logging
 import metrics.HasActionMetrics
-import models.Arrival
-import models.ArrivalMessageNotification
-import models.ArrivalNotFoundError
-import models.DocumentExistsError
-import models.ExternalError
-import models.InternalError
-import models.InboundMessageRequest
-import models.MessageSender
-import models.MessageType
-import models.SubmissionState
+import models.{Arrival, ArrivalMessageNotification, ArrivalNotFoundError, DocumentExistsError, InboundMessageRequest, InternalError, MessageSender, MessageType, SubmissionState}
 import play.api.Logger
-import play.api.mvc.Action
-import play.api.mvc.ControllerComponents
+import play.api.mvc.{Action, ControllerComponents}
 import services._
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import javax.inject.Inject
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.xml.NodeSeq
 
 class NCTSMessageController @Inject()(

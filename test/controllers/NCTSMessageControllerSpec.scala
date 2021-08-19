@@ -101,7 +101,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
 
       val message = Arbitrary.arbitrary[MovementMessageWithoutStatus].sample.value
 
-      when(mockInboundRequestService.makeInboundRequest(any(), any(), any())(any()))
+      when(mockInboundRequestService.makeInboundRequest(any(), any(), any(), any())(any()))
         .thenReturn(Future.successful(Right(InboundMessageRequest(arrivalWithoutBox, GoodsReleased, GoodsReleasedResponse, message))))
 
       when(mockSaveMessageService.saveInboundMessage(any(), any())(any()))
@@ -147,7 +147,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
 
       val message = Arbitrary.arbitrary[MovementMessageWithoutStatus].sample.value
 
-      when(mockInboundRequestService.makeInboundRequest(any(), any(), any())(any()))
+      when(mockInboundRequestService.makeInboundRequest(any(), any(), any(), any())(any()))
         .thenReturn(Future.successful(Right(InboundMessageRequest(arrivalWithoutBox, GoodsReleased, GoodsReleasedResponse, message))))
 
       when(mockSaveMessageService.saveInboundMessage(any(), any())(any()))
@@ -202,7 +202,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
 
       val message = Arbitrary.arbitrary[MovementMessageWithoutStatus].sample.value
 
-      when(mockInboundRequestService.makeInboundRequest(any(), any(), any())(any()))
+      when(mockInboundRequestService.makeInboundRequest(any(), any(), any(), any())(any()))
         .thenReturn(Future.successful(Right(InboundMessageRequest(arrivalWithoutBox, GoodsReleased, GoodsReleasedResponse, message))))
 
       when(mockSaveMessageService.saveInboundMessage(any(), any())(any()))
@@ -233,7 +233,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
 
       val message = Arbitrary.arbitrary[MovementMessageWithoutStatus].sample.value
 
-      when(mockInboundRequestService.makeInboundRequest(any(), any(), any())(any()))
+      when(mockInboundRequestService.makeInboundRequest(any(), any(), any(), any())(any()))
         .thenReturn(Future.successful(Right(InboundMessageRequest(arrivalWithBox, GoodsReleased, GoodsReleasedResponse, message))))
 
       when(mockSaveMessageService.saveInboundMessage(any(), any())(any()))
@@ -266,7 +266,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
 
       val message = Arbitrary.arbitrary[MovementMessageWithoutStatus].sample.value
 
-      when(mockInboundRequestService.makeInboundRequest(any(), any(), any())(any()))
+      when(mockInboundRequestService.makeInboundRequest(any(), any(), any(), any())(any()))
         .thenReturn(Future.successful(Right(InboundMessageRequest(arrivalWithBox, GoodsReleased, GoodsReleasedResponse, message))))
 
       when(mockSaveMessageService.saveInboundMessage(any(), any())(any()))

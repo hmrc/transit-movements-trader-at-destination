@@ -24,9 +24,13 @@ import models.request.ArrivalRequest
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Gen
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
+import play.api.http.HeaderNames
 import play.api.http.HttpVerbs
 import play.api.test.FakeRequest
 
+import java.time.LocalDateTime
+
+import java.nio.charset.StandardCharsets
 import java.time.LocalDateTime
 import scala.xml.NodeSeq
 
@@ -35,6 +39,9 @@ class ArrivalMessageNotificationSpec extends SpecBase with ScalaCheckDrivenPrope
   val responseGenerator = Gen.oneOf(MessageResponse.inboundMessages)
 
   "fromRequest" - {
+    val testBody   = <text></text>
+    val bodyLength = testBody.toString.getBytes(StandardCharsets.UTF_8).length
+
     "produces the expected model" in {
 
       val arrival     = arbitraryArrival.arbitrary.sample.value
@@ -45,10 +52,42 @@ class ArrivalMessageNotificationSpec extends SpecBase with ScalaCheckDrivenPrope
         ArrivalMessageNotification(
           s"/customs/transits/movements/arrivals/${arrival.arrivalId.index}/messages/${arrival.messages.length + 1}",
           s"/customs/transits/movements/arrivals/${arrival.arrivalId.index}",
+          arrival.eoriNumber,
           arrival.arrivalId,
           MessageId(arrival.messages.length + 1),
           dateTimeNow,
-          messageType
+          messageType,
+          Some(<text></text>)
+        )
+
+      val testNotification = ArrivalMessageNotification.fromArrival(arrival, dateTimeNow, messageType)
+
+      testNotification mustEqual expectedNotification
+    }
+
+    "does not include the message body when it is over 100kb" in {
+      val response      = responseGenerator.sample.value
+      val arrival       = arbitraryArrival.arbitrary.sample.value
+      val messageSender = MessageSender(arrival.arrivalId, arrival.messages.last.messageCorrelationId)
+
+      val request = FakeRequest(POST, routes.NCTSMessageController.post(messageSender).url)
+        .withBody[NodeSeq](<text></text>)
+        .withHeaders(HeaderNames.CONTENT_LENGTH -> "100001")
+      val arrivalRequest = ArrivalRequest(request, arrival, api)
+      val inboundRequest = InboundMessageRequest(InboundMessage(response, arbitrary[ArrivalStatus].sample.value), arrivalRequest)
+
+      val now = LocalDateTime.now()
+
+      val expectedNotification =
+        ArrivalMessageNotification(
+          s"/customs/transits/movements/arrivals/${arrival.arrivalId.index}/messages/${arrival.messages.length + 1}",
+          s"/customs/transits/movements/arrivals/${arrival.arrivalId.index}",
+          arrival.eoriNumber,
+          arrival.arrivalId,
+          MessageId(arrival.messages.length + 1),
+          now,
+          response.messageType,
+          None
         )
 
       val testNotification = ArrivalMessageNotification.fromArrival(arrival, dateTimeNow, messageType)

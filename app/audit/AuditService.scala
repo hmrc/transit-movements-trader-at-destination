@@ -29,15 +29,16 @@ import scala.concurrent.ExecutionContext
 
 class AuditService @Inject()(auditConnector: AuditConnector, messageTranslation: MessageTranslation)(implicit ec: ExecutionContext) {
 
-  def auditEvent(auditType: String, message: MovementMessage, channel: ChannelType)(implicit hc: HeaderCarrier): Unit = {
+  def auditEvent(auditType: String, customerId: String, message: MovementMessage, channel: ChannelType)(implicit hc: HeaderCarrier): Unit = {
 
     val json    = messageTranslation.translate(message.messageJson)
-    val details = AuditDetails(channel, json)
+    val details = AuditDetails(channel, customerId, json)
 
     auditConnector.sendExplicitAudit(auditType, Json.toJson(details))
   }
 
-  def auditNCTSMessages(channel: ChannelType, messageResponse: MessageResponse, message: MovementMessage)(implicit hc: HeaderCarrier): Unit = {
+  def auditNCTSMessages(channel: ChannelType, customerId: String, messageResponse: MessageResponse, message: MovementMessage)(
+    implicit hc: HeaderCarrier): Unit = {
     // TODO remove this and add val's to MessageResponse for name
     val auditType: String = messageResponse match {
       case GoodsReleasedResponse                        => GoodsReleased
@@ -46,7 +47,7 @@ class AuditService @Inject()(auditConnector: AuditConnector, messageTranslation:
       case UnloadingRemarksRejectedResponse             => UnloadingPermissionRejected
       case XMLSubmissionNegativeAcknowledgementResponse => XMLSubmissionNegativeAcknowledgement
     }
-    auditEvent(auditType, message, channel)
+    auditEvent(auditType, customerId, message, channel)
   }
 
 }

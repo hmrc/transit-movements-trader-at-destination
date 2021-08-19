@@ -32,8 +32,8 @@ import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks._
 import play.api.test.Helpers._
 import uk.gov.hmrc.http.HeaderCarrier
-import java.time.LocalDateTime
 
+import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class PushPullNotificationConnectorSpec extends AnyFreeSpec with WiremockSuite with ScalaFutures with Matchers with IntegrationPatience {
@@ -128,10 +128,22 @@ class PushPullNotificationConnectorSpec extends AnyFreeSpec with WiremockSuite w
     "postNotification" - {
 
       val testBoxId      = "1c5b9365-18a6-55a5-99c9-83a091ac7f26"
+      val testBody       = <test>some text</test>
       val testArrivalId  = ArrivalId(1)
+      val testEoriNumber = "1234567800"
       val testMessageUri = requestId(testArrivalId) + "/messages" + ""
+
       val testNotification =
-        ArrivalMessageNotification(testMessageUri, requestId(testArrivalId), testArrivalId, MessageId(1), LocalDateTime.now, MessageType.UnloadingPermission)
+        ArrivalMessageNotification(
+          testMessageUri,
+          requestId(testArrivalId),
+          testEoriNumber,
+          testArrivalId,
+          MessageId(1),
+          LocalDateTime.now,
+          MessageType.UnloadingPermission,
+          Some(testBody)
+        )
 
       val testUrlPath = s"/box/$testBoxId/notifications"
 

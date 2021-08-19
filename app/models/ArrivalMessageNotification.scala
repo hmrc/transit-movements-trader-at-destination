@@ -18,19 +18,25 @@ package models
 
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
+import utils.NodeSeqFormat._
 
 import java.time.LocalDateTime
+import scala.xml.NodeSeq
+import play.api.http.HeaderNames
 
 case class ArrivalMessageNotification(
   messageUri: String,
   requestId: String,
+  customerId: String,
   arrivalId: ArrivalId,
   messageId: MessageId,
   received: LocalDateTime,
-  messageType: MessageType
+  messageType: MessageType,
+  messageBody: Option[NodeSeq]
 )
 
 object ArrivalMessageNotification {
+
   private def requestId(arrivalId: ArrivalId): String =
     s"/customs/transits/movements/arrivals/${arrivalId.index}"
 
@@ -40,10 +46,12 @@ object ArrivalMessageNotification {
     (
       (__ \ "messageUri").write[String] and
         (__ \ "requestId").write[String] and
+        (__ \ "customerId").write[String] and
         (__ \ "arrivalId").write[ArrivalId] and
         (__ \ "messageId").write[MessageId] and
         (__ \ "received").write[LocalDateTime] and
-        (__ \ "messageType").write[MessageType]
+        (__ \ "messageType").write[MessageType] and
+        (__ \ "messageBody").writeNullable[NodeSeq]
     )(unlift(ArrivalMessageNotification.unapply))
 
   implicit val writesArrivalMessageNotificationWithRequestId: OWrites[ArrivalMessageNotification] =
@@ -53,15 +61,20 @@ object ArrivalMessageNotification {
     }
 
   def fromArrival(arrival: Arrival, timestamp: LocalDateTime, messageType: MessageType): ArrivalMessageNotification = {
-    val messageId  = arrival.nextMessageId
-    val arrivalUrl = requestId(arrival.arrivalId)
+    val oneHundredKilobytes = 100000
+    val eoriNumber          = arrival.eoriNumber
+    val messageId           = arrival.nextMessageId
+    val arrivalUrl          = requestId(arrival.arrivalId)
+    val bodySize            = request.headers.get(HeaderNames.CONTENT_LENGTH).map(_.toInt)
     ArrivalMessageNotification(
       s"$arrivalUrl/messages/${messageId.value}",
       arrivalUrl,
+      eoriNumber,
       arrival.arrivalId,
       messageId,
       timestamp,
-      messageType
+      messageType,
+      if (bodySize.exists(_ < oneHundredKilobytes)) Some(request.body) else None
     )
   }
 }
