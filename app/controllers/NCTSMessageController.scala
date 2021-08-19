@@ -56,7 +56,6 @@ class NCTSMessageController @Inject()(
 
   private val movementSummaryLogger: Logger = Logger(s"application.${this.getClass.getCanonicalName}.movementSummary")
 
-  // TODO move this to service layer
   private def sendPushNotification(xml: NodeSeq, arrival: Arrival, messageType: MessageType)(implicit hc: HeaderCarrier): Future[Unit] =
     arrival.notificationBox
       .map {
@@ -90,14 +89,12 @@ class NCTSMessageController @Inject()(
                   submissionState match {
                     case _: ArrivalNotFoundError => Ok
                     case _: DocumentExistsError  => Locked
-                    case state: InternalError => {
+                    case state: InternalError =>
                       logger.error(state.message)
                       InternalServerError
-                    }
-                    case state => {
+                    case state =>
                       logger.warn(state.message)
                       BadRequest
-                    }
                   }
               }
             case Right(InboundMessageRequest(arrival, _, inboundMessageResponse, _)) =>

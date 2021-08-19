@@ -50,6 +50,7 @@ case class CannotFindRootNodeError(message: String)     extends ExternalError
 case class FailedToValidateMessage(message: String)     extends ExternalError
 case class FailedToRetrieveMessage(message: String)     extends ExternalError
 case class FailedToMakeMovementMessage(message: String) extends ExternalError
+case class MessageSenderError(message: String)          extends ExternalError
 
 sealed trait RejectionState extends SubmissionState {
   override val monitorMessage: String = "rejected"
