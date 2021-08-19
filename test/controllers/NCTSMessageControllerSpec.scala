@@ -124,7 +124,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
       }
     }
 
-    "must return Ok for an arrivalWithoutBox that does not exist" in {
+    "must return NotFound for an arrivalWithoutBox that does not exist" in {
 
       when(mockInboundRequestService.makeInboundRequest(any(), any(), any())(any()))
         .thenReturn(Future.successful(Left(ArrivalNotFoundError("error"))))
@@ -138,7 +138,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
 
         val result = route(application, request).value
 
-        status(result) mustEqual OK
+        status(result) mustEqual NOT_FOUND
         verifyNoInteractions(mockSaveMessageService)
       }
     }

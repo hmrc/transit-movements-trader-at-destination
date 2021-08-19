@@ -87,7 +87,7 @@ class NCTSMessageController @Inject()(
               lockService.unlock(messageSender.arrivalId).map {
                 _ =>
                   submissionState match {
-                    case _: ArrivalNotFoundError => Ok
+                    case _: ArrivalNotFoundError => NotFound
                     case _: DocumentExistsError  => Locked
                     case state: InternalError =>
                       logger.error(state.message)
