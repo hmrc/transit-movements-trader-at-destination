@@ -21,18 +21,12 @@ import models.ArrivalId
 import models.request.ArrivalWithoutMessagesRequest
 import play.api.mvc.ActionBuilder
 import play.api.mvc.AnyContent
-import play.api.mvc.BodyParsers
 
-import scala.concurrent.ExecutionContext
-
-class AuthenticatedGetArrivalWithoutMessagesForWriteActionProvider @Inject()(
+class GetArrivalWithoutMessagesForWriteActionProvider @Inject()(
   lock: LockActionProvider,
-  authenticate: AuthenticateActionProvider,
-  getArrivalWithoutMessages: AuthenticatedGetArrivalWithoutMessagesActionProvider,
-  ec: ExecutionContext,
-  parser: BodyParsers.Default
+  getArrival: GetArrivalWithoutMessagesActionProvider
 ) {
 
   def apply(arrivalId: ArrivalId): ActionBuilder[ArrivalWithoutMessagesRequest, AnyContent] =
-    lock(arrivalId) andThen authenticate() andThen getArrivalWithoutMessages(arrivalId)
+    lock(arrivalId) andThen getArrival(arrivalId)
 }

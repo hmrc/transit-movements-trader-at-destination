@@ -26,17 +26,7 @@ import base._
 import cats.data.NonEmptyList
 import config.AppConfig
 import controllers.routes
-import models.Arrival
-import models.ArrivalId
-import models.ArrivalIdSelector
-import models.ArrivalStatus
-import models.ArrivalStatusUpdate
-import models.MessageId
-import models.MessageType
-import models.MongoDateTimeFormats
-import models.MovementMessageWithStatus
-import models.MovementMessageWithoutStatus
-import models.MovementReferenceNumber
+import models.{Arrival, ArrivalId, ArrivalIdSelector, ArrivalStatus, ArrivalStatusUpdate, ArrivalWithoutMessages, MessageId, MessageType, MongoDateTimeFormats, MovementMessageWithStatus, MovementMessageWithoutStatus, MovementReferenceNumber}
 import models.ArrivalStatus.ArrivalSubmitted
 import models.ArrivalStatus.GoodsReleased
 import models.ArrivalStatus.Initialized
@@ -62,8 +52,8 @@ import play.api.test.Helpers.running
 import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 import reactivemongo.play.json.collection.JSONCollection
 import utils.Format
-
 import java.time._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.reflect.ClassTag
@@ -612,6 +602,121 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
           val result = repository.get(eori, movementReferenceNumber, web).futureValue
 
           result mustEqual None
+        }
+      }
+    }
+
+    "getWithoutMessages(arrivalId: ArrivalId)" - {
+      "must get an arrival when it exists" in {
+
+        val app = appBuilder.build()
+        running(app) {
+          val service = app.injector.instanceOf[ArrivalMovementRepository]
+          database.flatMap(_.drop()).futureValue
+
+          val arrival = arbitrary[Arrival].sample.value
+          val arrivalWithoutMessages = ArrivalWithoutMessages.fromArrival(arrival)
+          service.insert(arrival).futureValue
+          val result = service.getWithoutMessages(arrival.arrivalId)
+
+          whenReady(result) {
+            r =>
+              r.value mustEqual arrivalWithoutMessages
+          }
+        }
+      }
+
+      "must return None when an arrival does not exist" in {
+        val app = appBuilder.build()
+        running(app) {
+          val service = app.injector.instanceOf[ArrivalMovementRepository]
+
+          database.flatMap(_.drop()).futureValue
+
+          val arrival = arbitrary[Arrival].sample.value copy (arrivalId = ArrivalId(1))
+
+          service.insert(arrival).futureValue
+          val result = service.getWithoutMessages(ArrivalId(2), web)
+
+          whenReady(result) {
+            r =>
+              r.isDefined mustBe false
+          }
+        }
+      }
+
+      "must return None when a arrival exists, but with a different channel type" in {
+        val app = appBuilder.build()
+        running(app) {
+          val service = app.injector.instanceOf[ArrivalMovementRepository]
+
+          database.flatMap(_.drop()).futureValue
+
+          val arrival = arbitrary[Arrival].sample.value copy(arrivalId = ArrivalId(1), api)
+
+          service.insert(arrival).futureValue
+          val result = service.get(ArrivalId(1), web)
+
+          whenReady(result) {
+            r =>
+              r.isDefined mustBe false
+          }
+        }
+      }
+    }
+
+    "getWithoutMessages(arrivalId: ArrivalId, channelFilter: ChannelType)" - {
+      "must get an arrival when it exists and has the right channel type" in {
+        val app = appBuilder.build()
+        running(app) {
+          val service = app.injector.instanceOf[ArrivalMovementRepository]
+          database.flatMap(_.drop()).futureValue
+
+          val arrival = arbitrary[Arrival].sample.value.copy(channel = api)
+          val arrivalWithoutMessages = ArrivalWithoutMessages.fromArrival(arrival)
+          service.insert(arrival).futureValue
+          val result = service.getWithoutMessages(arrival.arrivalId, arrival.channel)
+
+          whenReady(result) {
+            r =>
+              r.value mustEqual arrivalWithoutMessages
+          }
+        }
+      }
+
+      "must return None when an arrival does not exist" in {
+        val app = appBuilder.build()
+        running(app) {
+          val service = app.injector.instanceOf[ArrivalMovementRepository]
+          database.flatMap(_.drop()).futureValue
+
+          val arrival = arbitrary[Arrival].sample.value copy(arrivalId = ArrivalId(1), channel = api)
+
+          service.insert(arrival).futureValue
+          val result = service.getWithoutMessages(ArrivalId(2), web)
+
+          whenReady(result) {
+            r =>
+              r.isDefined mustBe false
+          }
+        }
+      }
+
+      "must return None when an arrival exists, but with a different channel type" in {
+        val app = appBuilder.build()
+        running(app) {
+          val service = app.injector.instanceOf[ArrivalMovementRepository]
+          database.flatMap(_.drop()).futureValue
+
+          val arrival = arbitrary[Arrival].sample.value copy(arrivalId = ArrivalId(1), api)
+
+          service.insert(arrival).futureValue
+          val result = service.get(ArrivalId(1), web)
+
+          whenReady(result) {
+            r =>
+              r.isDefined mustBe false
+          }
         }
       }
     }

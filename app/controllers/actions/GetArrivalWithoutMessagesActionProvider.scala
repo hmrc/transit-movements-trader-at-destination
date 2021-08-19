@@ -32,7 +32,7 @@ import repositories.ArrivalMovementRepository
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-private[actions] class GetArrivalWithoutMessagesActionProvider @Inject() (
+private[actions] class GetArrivalWithoutMessagesActionProvider @Inject()(
   repository: ArrivalMovementRepository
 )(implicit ec: ExecutionContext) {
 
@@ -55,7 +55,7 @@ private[actions] class GetArrivalWithoutMessagesAction(
     }
 }
 
-private[actions] class AuthenticatedGetArrivalWithoutMessagesActionProvider @Inject() (
+private[actions] class AuthenticatedGetArrivalWithoutMessagesActionProvider @Inject()(
   repository: ArrivalMovementRepository
 )(implicit ec: ExecutionContext) {
 

@@ -21,18 +21,18 @@ import models.ArrivalId
 import models.request.ArrivalWithoutMessagesRequest
 import play.api.mvc.ActionBuilder
 import play.api.mvc.AnyContent
-import play.api.mvc.BodyParsers
+import play.api.mvc.DefaultActionBuilder
 
-import scala.concurrent.ExecutionContext
+trait AuthenticatedGetArrivalWithoutMessagesForReadActionProvider {
+  def apply(arrivalId: ArrivalId): ActionBuilder[ArrivalWithoutMessagesRequest, AnyContent]
+}
 
-class AuthenticatedGetArrivalWithoutMessagesForWriteActionProvider @Inject()(
-  lock: LockActionProvider,
+class AuthenticatedGetArrivalWithoutMessagesForReadActionProviderImpl @Inject()(
   authenticate: AuthenticateActionProvider,
   getArrivalWithoutMessages: AuthenticatedGetArrivalWithoutMessagesActionProvider,
-  ec: ExecutionContext,
-  parser: BodyParsers.Default
-) {
+  buildDefault: DefaultActionBuilder
+) extends AuthenticatedGetArrivalWithoutMessagesForReadActionProvider {
 
   def apply(arrivalId: ArrivalId): ActionBuilder[ArrivalWithoutMessagesRequest, AnyContent] =
-    lock(arrivalId) andThen authenticate() andThen getArrivalWithoutMessages(arrivalId)
+    buildDefault andThen authenticate() andThen getArrivalWithoutMessages(arrivalId)
 }

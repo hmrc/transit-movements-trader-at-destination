@@ -31,7 +31,7 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import scala.concurrent.ExecutionContext
 
 class MessagesSummaryController @Inject()(
-  authenticateForRead: AuthenticatedGetArrivalForReadActionProvider,
+  authenticateForReadWithMessages: AuthenticatedGetArrivalForReadActionProvider,
   arrivalMessageSummaryService: ArrivalMessageSummaryService,
   cc: ControllerComponents,
   val metrics: Metrics
@@ -39,10 +39,9 @@ class MessagesSummaryController @Inject()(
     extends BackendController(cc)
     with HasActionMetrics {
 
-  // TODO change authenticateForRead to authenticateForReadWithMessages
   def messagesSummary(arrivalId: ArrivalId): Action[AnyContent] =
     withMetricsTimerAction("get-arrival-messages-summary") {
-      authenticateForRead(arrivalId) {
+      authenticateForReadWithMessages(arrivalId) {
         implicit request =>
           val messageSummary = arrivalMessageSummaryService.arrivalMessagesSummary(request.arrival)
           Ok(Json.toJsObject(messageSummary))

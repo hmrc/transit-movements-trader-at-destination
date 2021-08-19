@@ -70,7 +70,7 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 
-class ArrivalMovementRepository @Inject() (
+class ArrivalMovementRepository @Inject()(
   mongo: ReactiveMongoApi,
   appConfig: AppConfig,
   config: Configuration,
@@ -103,7 +103,7 @@ class ArrivalMovementRepository @Inject() (
 
   val logSubmittedArrivals: Future[Boolean] = {
 
-    val byId     = Json.obj("_id" -> -1)
+    val byId     = Json.obj("_id"    -> -1)
     val selector = Json.obj("status" -> ArrivalStatus.ArrivalSubmitted.toString)
 
     collection
@@ -236,90 +236,128 @@ class ArrivalMovementRepository @Inject() (
   }
 
   def getWithoutMessages(arrivalId: ArrivalId, channelFilter: ChannelType): Future[Option[ArrivalWithoutMessages]] = {
-    val selector = Json.obj(
-      "_id"     -> arrivalId,
-      "channel" -> channelFilter
-    )
+    val nextMessageId = Json.obj("nextMessageId" -> Json.obj("$size" -> "$messages"))
 
-    collection.flatMap {
-      _.find(selector, None)
-        .one[ArrivalWithoutMessages]
-    }
+    val projection = ArrivalWithoutMessages.projection ++ nextMessageId
+
+    collection
+      .flatMap {
+        c =>
+          c.aggregateWith[ArrivalWithoutMessages](allowDiskUse = true) {
+              _ =>
+                import c.aggregationFramework._
+
+                val initialFilter: PipelineOperator =
+                  Match(Json.obj("_id" -> arrivalId, "channel" -> channelFilter))
+
+                val transformations = List[PipelineOperator](Project(projection))
+                (initialFilter, transformations)
+
+            }
+            .headOption
+
+      }
+      .map(opt => opt.map(a => a.copy(nextMessageId = MessageId(a.nextMessageId.value + 1))))
   }
 
   def getWithoutMessages(arrivalId: ArrivalId): Future[Option[ArrivalWithoutMessages]] = {
-    val selector = Json.obj(
-      "_id" -> arrivalId
-    )
+    val nextMessageId = Json.obj("nextMessageId" -> Json.obj("$size" -> "$messages"))
 
-    collection.flatMap {
-      _.find(selector, None)
-        .one[ArrivalWithoutMessages]
-    }
+    val projection = ArrivalWithoutMessages.projection ++ nextMessageId
+
+    collection
+      .flatMap {
+        c =>
+          c.aggregateWith[ArrivalWithoutMessages](allowDiskUse = true) {
+              _ =>
+                import c.aggregationFramework._
+
+                val initialFilter: PipelineOperator =
+                  Match(Json.obj("_id" -> arrivalId))
+
+                val transformations = List[PipelineOperator](Project(projection))
+                (initialFilter, transformations)
+
+            }
+            .headOption
+
+      }
+      .map(opt => opt.map(a => a.copy(nextMessageId = MessageId(a.nextMessageId.value + 1))))
   }
 
   def getMessage(arrivalId: ArrivalId, channelFilter: ChannelType, messageId: MessageId): Future[Option[MovementMessage]] =
     collection.flatMap {
       c =>
         c.aggregateWith[MovementMessage](allowDiskUse = true) {
+            _ =>
+              import c.aggregationFramework._
+
+              val initialFilter: PipelineOperator =
+                Match(
+                  Json.obj("_id" -> arrivalId, "channel" -> channelFilter, "messages" -> Json.obj("$elemMatch" -> Json.obj("messageId" -> messageId.value))))
+
+              val unwindMessages = List[PipelineOperator](
+                Unwind(
+                  path = "messages",
+                  includeArrayIndex = None,
+                  preserveNullAndEmptyArrays = None
+                )
+              )
+
+              val secondaryFilter = List[PipelineOperator](Match(Json.obj("messages.messageId" -> messageId.value)))
+
+              val groupById = List[PipelineOperator](GroupField("_id")("messages" -> FirstField("messages")))
+
+              val replaceRoot = List[PipelineOperator](ReplaceRootField("messages"))
+
+              val transformations = unwindMessages ++ secondaryFilter ++ groupById ++ replaceRoot
+
+              (initialFilter, transformations)
+
+          }
+          .headOption
+    }
+
+  def fetchAllArrivals(eoriNumber: String, channelFilter: ChannelType, updatedSince: Option[OffsetDateTime]): Future[ResponseArrivals] = {
+    val dateFilter = updatedSince
+      .map(
+        dateTime => Json.obj("lastUpdated" -> Json.obj("$gte" -> dateTime))
+      )
+      .getOrElse(Json.obj())
+
+    val countSelector = Json.obj("eoriNumber" -> eoriNumber, "channel" -> channelFilter)
+    val selector      = countSelector ++ dateFilter
+
+    val nextMessageId = Json.obj("nextMessageId" -> Json.obj("$size" -> "$messages"))
+
+    val projection = ArrivalWithoutMessages.projection ++ nextMessageId
+
+    collection.flatMap {
+      c =>
+        val fetchCount = c.count(Some(countSelector))
+
+        val fetchResults = c.aggregateWith[ArrivalWithoutMessages](allowDiskUse = true) {
           _ =>
             import c.aggregationFramework._
 
             val initialFilter: PipelineOperator =
-              Match(Json.obj("_id" -> arrivalId, "channel" -> channelFilter, "messages" -> Json.obj("$elemMatch" -> Json.obj("messageId" -> messageId.value))))
+              Match(selector)
 
-            val unwindMessages = List[PipelineOperator](
-              Unwind(
-                path = "messages",
-                includeArrayIndex = None,
-                preserveNullAndEmptyArrays = None
-              )
-            )
-
-            val secondaryFilter = List[PipelineOperator](Match(Json.obj("messages.messageId" -> messageId.value)))
-
-            val groupById = List[PipelineOperator](GroupField("_id")("messages" -> FirstField("messages")))
-
-            val replaceRoot = List[PipelineOperator](ReplaceRootField("messages"))
-
-            val transformations = unwindMessages ++ secondaryFilter ++ groupById ++ replaceRoot
+            val projected       = List[PipelineOperator](Project(projection))
+            val sort            = List[PipelineOperator](Sort(Descending("lastUpdated")))
+            val limited         = List[PipelineOperator](Limit(appConfig.maxRowsReturned(channelFilter)))
+            val transformations = projected ++ sort ++ limited
 
             (initialFilter, transformations)
-
-        }.headOption
-    }
-
-  def fetchAllArrivals(eoriNumber: String, channelFilter: ChannelType, updatedSince: Option[OffsetDateTime]): Future[ResponseArrivals] =
-    withMetricsTimerAsync("mongo-get-arrivals-for-eori") {
-      _ =>
-        val dateFilter = updatedSince
-          .map(
-            dateTime => Json.obj("lastUpdated" -> Json.obj("$gte" -> dateTime))
-          )
-          .getOrElse(Json.obj())
-        val countSelector = Json.obj("eoriNumber" -> eoriNumber, "channel" -> channelFilter)
-        val selector      = countSelector ++ dateFilter
-
-        collection.flatMap {
-          coll =>
-            val fetchCount = coll.count(Some(countSelector))
-
-            val fetchResults = coll
-              .find(selector, Some(ResponseArrival.projection))
-              .sort(Json.obj("lastUpdated" -> -1))
-              .cursor[ResponseArrival]()
-              .collect[Seq](appConfig.maxRowsReturned(channelFilter), Cursor.FailOnError())
-
-            (fetchCount, fetchResults).mapN {
-              case (count, results) =>
-                ResponseArrivals(
-                  arrivals = results,
-                  retrievedArrivals = results.length,
-                  totalArrivals = count
-                )
-            }
+        }
+        for {
+          results <- fetchResults.collect[Seq](appConfig.maxRowsReturned(channelFilter), Cursor.FailOnError())
+          count   <- fetchCount
+        } yield {
+          ResponseArrivals(results.map(ResponseArrival.build), results.length, count)
         }
     }
+  }
 
   @deprecated("Use updateArrival since this will be removed in the next version", "next")
   def setArrivalStateAndMessageState(
@@ -462,7 +500,8 @@ class ArrivalMovementRepository @Inject() (
     arrivalsWithoutJsonMessagesSource(limit).flatMap(
       _.runWith(Sink.seq[Arrival])
         .map {
-          x => logger.info(s"Found ${x.size} arrivals without JSON to process"); x
+          x =>
+            logger.info(s"Found ${x.size} arrivals without JSON to process"); x
         }
     )
 

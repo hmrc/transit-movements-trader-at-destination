@@ -109,7 +109,7 @@ class AuthenticatedGetArrivalForReadActionProviderSpec
         val application = new GuiceApplicationBuilder()
           .overrides(
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
-            bind[AuthConnector].toInstance(mockAuthConnector)
+            bind[AuthConnector].toInstance(mockAuthConnector),
           )
           .build()
 

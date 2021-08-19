@@ -20,6 +20,7 @@ import generators.ModelGenerators
 import models.Arrival
 import models.ArrivalRejectedResponse
 import models.ArrivalStatus
+import models.ArrivalWithoutMessages
 import models.ChannelType
 import models.GoodsReleasedResponse
 import models.Message
@@ -29,6 +30,7 @@ import models.UnloadingRemarksRejectedResponse
 import models.UnloadingRemarksResponse
 import models.XMLSubmissionNegativeAcknowledgementResponse
 import models.request.ArrivalRequest
+import models.request.ArrivalWithoutMessagesRequest
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.EitherValues
 import org.scalatest.OptionValues
@@ -55,10 +57,12 @@ class ValidateOutboundMessageActionSpec
     with EitherValues
     with DefaultAwaitTimeout {
 
-  private val arrival: Arrival                                   = arbitrary[Arrival].sample.value
-  val actionRefiner: ValidateOutboundMessageAction               = new ValidateOutboundMessageAction()
-  val fakeRequest: FakeRequest[AnyContentAsEmpty.type]           = FakeRequest("", "")
-  val fakeArrivalRequest: ArrivalRequest[AnyContentAsEmpty.type] = ArrivalRequest(fakeRequest, arrival, ChannelType.web)
+  private val arrivalWithoutMessages: ArrivalWithoutMessages = arbitrary[ArrivalWithoutMessages].sample.value
+  val actionRefiner: ValidateOutboundMessageAction           = new ValidateOutboundMessageAction()
+  val fakeRequest: FakeRequest[AnyContentAsEmpty.type]       = FakeRequest("", "")
+
+  val fakeArrivalWithoutMessagesRequest: ArrivalWithoutMessagesRequest[AnyContentAsEmpty.type] =
+    ArrivalWithoutMessagesRequest(fakeRequest, arrivalWithoutMessages, ChannelType.web)
 
   "refine" - {
     Seq(
@@ -76,7 +80,7 @@ class ValidateOutboundMessageActionSpec
 
           status(
             actionRefiner
-              .refine(MessageTransformRequest(Message(response, st), fakeArrivalRequest))
+              .refine(MessageTransformRequest(Message(response, st), fakeArrivalWithoutMessagesRequest))
               .map(_.left.value)) mustBe BAD_REQUEST
         }
     }
@@ -87,8 +91,8 @@ class ValidateOutboundMessageActionSpec
         s"return internal server error if an outbound response ($response) is found" in {
 
           actionRefiner
-            .refine(MessageTransformRequest(Message(response, status), fakeArrivalRequest))
-            .value mustBe Some(Success(Right(OutboundMessageRequest(OutboundMessage(response, status), fakeArrivalRequest))))
+            .refine(MessageTransformRequest(Message(response, status), fakeArrivalWithoutMessagesRequest))
+            .value mustBe Some(Success(Right(OutboundMessageRequest(OutboundMessage(response, status), fakeArrivalWithoutMessagesRequest))))
         }
     }
   }

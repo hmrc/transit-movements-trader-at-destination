@@ -25,6 +25,7 @@ import models.ChannelType.web
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalNotFoundError
+import models.ArrivalWithoutMessages
 import models.Box
 import models.BoxId
 import models.DocumentExistsError
@@ -50,6 +51,8 @@ import utils.Format
 import java.time.LocalDateTime
 import scala.concurrent.Future
 import scala.xml.Utility.trim
+
+import utils.Format
 
 class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks with ModelGenerators with BeforeAndAfterEach {
 
@@ -100,6 +103,11 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
     "must return OK, when the service validates and save the message" in {
 
       val message = Arbitrary.arbitrary[MovementMessageWithoutStatus].sample.value
+        when(mockArrivalMovementRepository.getWithoutMessages(any())).thenReturn(Future.successful(Some(ArrivalWithoutMessages.fromArrival(arrivalWithoutBox))))
+        when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any(), any(), any(), any(), any())(any()))
+          .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionSuccess))
+        when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
+        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(true))
 
       when(mockInboundRequestService.makeInboundRequest(any(), any(), any())(any()))
         .thenReturn(Future.successful(Right(InboundMessageRequest(arrivalWithoutBox, GoodsReleased, GoodsReleasedResponse, message))))
@@ -125,6 +133,9 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
     }
 
     "must return NotFound for an arrivalWithoutBox that does not exist" in {
+        when(mockArrivalMovementRepository.getWithoutMessages(any())).thenReturn(Future.successful(None))
+        when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
+        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(true))
 
       when(mockInboundRequestService.makeInboundRequest(any(), any(), any())(any()))
         .thenReturn(Future.successful(Left(ArrivalNotFoundError("error"))))
@@ -144,6 +155,11 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
     }
 
     "must return Internal Server Error if adding the message to the movement fails" in {
+        when(mockArrivalMovementRepository.getWithoutMessages(any())).thenReturn(Future.successful(Some(ArrivalWithoutMessages.fromArrival(arrivalWithoutBox))))
+        when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any(), any(), any(), any(), any())(any()))
+          .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureInternal))
+        when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
+        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(true))
 
       val message = Arbitrary.arbitrary[MovementMessageWithoutStatus].sample.value
 
@@ -198,7 +214,12 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
       }
     }
 
-    "must not send push notification when there is no notificationBox present" in {
+      "must not send push notification when there is no notificationBox present" in {
+        when(mockArrivalMovementRepository.getWithoutMessages(any())).thenReturn(Future.successful(Some(ArrivalWithoutMessages.fromArrival(arrivalWithoutBox))))
+        when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any(), any(), any(), any(), any())(any()))
+          .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionSuccess))
+        when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
+        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(true))
 
       val message = Arbitrary.arbitrary[MovementMessageWithoutStatus].sample.value
 
@@ -232,6 +253,12 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
       def boxIdMatcher = refEq(testBoxId).asInstanceOf[BoxId]
 
       val message = Arbitrary.arbitrary[MovementMessageWithoutStatus].sample.value
+        when(mockArrivalMovementRepository.getWithoutMessages(any())).thenReturn(Future.successful(Some(ArrivalWithoutMessages.fromArrival(arrivalWithBox))))
+        when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any(), any(), any(), any(), any())(any()))
+          .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionSuccess))
+        when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
+        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(true))
+        when(mockPushPullNotificationService.sendPushNotification(boxIdMatcher, any())(any(), any())).thenReturn(Future.unit)
 
       when(mockInboundRequestService.makeInboundRequest(any(), any(), any())(any()))
         .thenReturn(Future.successful(Right(InboundMessageRequest(arrivalWithBox, GoodsReleased, GoodsReleasedResponse, message))))
@@ -265,6 +292,12 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
       def boxIdMatcher = refEq(testBoxId).asInstanceOf[BoxId]
 
       val message = Arbitrary.arbitrary[MovementMessageWithoutStatus].sample.value
+        when(mockArrivalMovementRepository.getWithoutMessages(any())).thenReturn(Future.successful(Some(ArrivalWithoutMessages.fromArrival(arrivalWithBox))))
+        when(mockSaveMessageService.validateXmlAndSaveMessage(any(), any(), any(), any(), any(), any(), any())(any()))
+          .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionSuccess))
+        when(mockLockRepository.lock(any())).thenReturn(Future.successful(true))
+        when(mockLockRepository.unlock(any())).thenReturn(Future.successful(true))
+        when(mockPushPullNotificationService.sendPushNotification(boxIdMatcher, any())(any(), any())).thenReturn(Future.unit)
 
       when(mockInboundRequestService.makeInboundRequest(any(), any(), any())(any()))
         .thenReturn(Future.successful(Right(InboundMessageRequest(arrivalWithBox, GoodsReleased, GoodsReleasedResponse, message))))

@@ -18,6 +18,11 @@ package controllers
 
 import cats.data.EitherT
 import com.kenshoo.play.metrics.Metrics
+import controllers.actions.GetArrivalForWriteActionProvider
+import controllers.actions.GetArrivalWithoutMessagesForWriteActionProvider
+import controllers.actions.InboundMessageRequest
+import controllers.actions.MessageTransformerInterface
+import controllers.actions.ValidateInboundMessageAction
 import logging.Logging
 import metrics.HasActionMetrics
 import models.Arrival
@@ -38,14 +43,18 @@ import play.api.mvc.Headers
 import services._
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-
 import javax.inject.Inject
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.xml.NodeSeq
 
 class NCTSMessageController @Inject()(
   cc: ControllerComponents,
+  getArrival: GetArrivalForWriteActionProvider,
+  getArrivalWithoutMessages: GetArrivalWithoutMessagesForWriteActionProvider,
+  validateTransitionState: MessageTransformerInterface,
+  validateInboundMessage: ValidateInboundMessageAction,
   saveMessageService: SaveMessageService,
   pushPullNotificationService: PushPullNotificationService,
   inboundRequestService: InboundRequestService,
@@ -74,8 +83,6 @@ class NCTSMessageController @Inject()(
       }
       .getOrElse(Future.unit)
 
-
-  // TODO change getArrival to getArrivalWithoutMessages
   def post(messageSender: MessageSender): Action[NodeSeq] =
     Action(parse.xml).async {
       implicit request =>
