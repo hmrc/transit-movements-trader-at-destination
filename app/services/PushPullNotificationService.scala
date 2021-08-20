@@ -66,7 +66,8 @@ class PushPullNotificationService @Inject()(connector: PushPullNotificationConne
           logger.error(s"Error while sending push notification", e)
       }
 
-  def sendPushNotificationIfBoxExists(xml: NodeSeq, arrival: Arrival, messageType: MessageType, headers: Headers)(implicit hc: HeaderCarrier): Future[Unit] =
+  private[services] def sendPushNotificationIfBoxExists(xml: NodeSeq, arrival: Arrival, messageType: MessageType, headers: Headers)(
+    implicit hc: HeaderCarrier): Future[Unit] =
     arrival.notificationBox
       .map {
         box =>
