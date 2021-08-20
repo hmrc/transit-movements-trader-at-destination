@@ -20,11 +20,16 @@ import base.SpecBase
 import config.Constants
 import connectors.PushPullNotificationConnector
 import generators.ModelGenerators
+import models.MessageType.GoodsReleased
 import models.Arrival
 import models.ArrivalMessageNotification
+import models.ArrivalStatus
 import models.Box
 import models.BoxId
-import models.MessageType.GoodsReleased
+import models.GoodsReleasedResponse
+import models.InboundMessageRequest
+import models.MessageId
+import models.MovementMessageWithoutStatus
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers._
 import org.mockito.BDDMockito._
@@ -36,6 +41,7 @@ import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
 import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
+import play.api.libs.json.JsObject
 import play.api.mvc.Headers
 import play.api.mvc.Request
 import play.api.test.FakeRequest
@@ -45,6 +51,7 @@ import uk.gov.hmrc.http.UpstreamErrorResponse
 import utils.Format
 
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Await
@@ -127,7 +134,18 @@ class PushPullNotificationServiceSpec extends SpecBase with BeforeAndAfterEach w
           mockConnector.postNotification(BoxId(ArgumentMatchers.eq(testBoxId)), any[ArrivalMessageNotification])(any[ExecutionContext], any[HeaderCarrier])
         ).thenReturn(successfulResult)
 
-        Await.result(service.sendPushNotification(requestXmlBody, arrival, GoodsReleased, Headers(("key", "value"))), 30.seconds).mustEqual(())
+        val movementMessage = MovementMessageWithoutStatus(
+          MessageId(0),
+          LocalDateTime.now(),
+          GoodsReleased,
+          requestXmlBody,
+          0,
+          JsObject.empty
+        )
+
+        val inboundMessageRequest = InboundMessageRequest(arrival, ArrivalStatus.GoodsReleased, GoodsReleasedResponse, movementMessage)
+
+        Await.result(service.sendPushNotification(inboundMessageRequest, Headers(("key", "value"))), 30.seconds).mustEqual(())
 
         verify(mockConnector).postNotification(BoxId(ArgumentMatchers.eq(testBoxId)), any[ArrivalMessageNotification])(any[ExecutionContext],
                                                                                                                        any[HeaderCarrier])
@@ -147,27 +165,18 @@ class PushPullNotificationServiceSpec extends SpecBase with BeforeAndAfterEach w
           mockConnector.postNotification(BoxId(ArgumentMatchers.eq(testBoxId)), any[ArrivalMessageNotification])(any[ExecutionContext], any[HeaderCarrier])
         ).thenReturn(successfulResult)
 
-        Await
-          .result(service.sendPushNotification(requestXmlBody, arrivalWithoutBox, GoodsReleased, Headers(("key", "value"))), 30.seconds)
-          .mustEqual(())
+        val movementMessage = MovementMessageWithoutStatus(
+          MessageId(0),
+          LocalDateTime.now(),
+          GoodsReleased,
+          requestXmlBody,
+          0,
+          JsObject.empty
+        )
 
-        verifyNoInteractions(mockConnector)
-      }
+        val inboundMessageRequest = InboundMessageRequest(arrivalWithoutBox, ArrivalStatus.GoodsReleased, GoodsReleasedResponse, movementMessage)
 
-      // TODO we can remove this if we use the arrival or MovementMessageWithoutStatus
-      "should not post if missing date or time field in" in {
-
-        val requestXmlBody = <CC025A></CC025A>
-
-        implicit val request: Request[NodeSeq] = FakeRequest().withBody(requestXmlBody)
-
-        val successfulResult: Future[Either[UpstreamErrorResponse, Unit]] = Future.successful(Right(()))
-
-        when(
-          mockConnector.postNotification(BoxId(ArgumentMatchers.eq(testBoxId)), any[ArrivalMessageNotification])(any[ExecutionContext], any[HeaderCarrier])
-        ).thenReturn(successfulResult)
-
-        Await.result(service.sendPushNotification(requestXmlBody, arrival, GoodsReleased, Headers(("key", "value"))), 30.seconds).mustEqual(())
+        Await.result(service.sendPushNotification(inboundMessageRequest, Headers(("key", "value"))), 30.seconds).mustEqual(())
 
         verifyNoInteractions(mockConnector)
       }
@@ -189,7 +198,18 @@ class PushPullNotificationServiceSpec extends SpecBase with BeforeAndAfterEach w
 
         given(mockedPostNotification).willReturn(Future.failed(new RuntimeException))
 
-        Await.result(service.sendPushNotification(requestXmlBody, arrival, GoodsReleased, Headers(("key", "value"))), 30.seconds).mustEqual(())
+        val movementMessage = MovementMessageWithoutStatus(
+          MessageId(0),
+          LocalDateTime.now(),
+          GoodsReleased,
+          requestXmlBody,
+          0,
+          JsObject.empty
+        )
+
+        val inboundMessageRequest = InboundMessageRequest(arrival, ArrivalStatus.GoodsReleased, GoodsReleasedResponse, movementMessage)
+
+        Await.result(service.sendPushNotification(inboundMessageRequest, Headers(("key", "value"))), 30.seconds).mustEqual(())
       }
     }
   }

@@ -44,11 +44,9 @@ class MovementMessageOrchestratorService @Inject()(
     implicit hc: HeaderCarrier): Future[Either[SubmissionState, InboundMessageRequest]] =
     (
       for {
-        inboundRequest     <- EitherT(inboundRequestService.makeInboundRequest(messageSender.arrivalId, requestXml, messageSender))
-        saveInboundRequest <- EitherT(saveMessageService.saveInboundMessage(inboundRequest, messageSender))
-        sendPushNotification <- EitherT.right[SubmissionState](
-          pushPullNotificationService
-            .sendPushNotification(requestXml, inboundRequest.arrival, inboundRequest.inboundMessageResponse.messageType, headers))
+        inboundRequest       <- EitherT(inboundRequestService.makeInboundRequest(messageSender.arrivalId, requestXml, messageSender))
+        saveInboundRequest   <- EitherT(saveMessageService.saveInboundMessage(inboundRequest, messageSender))
+        sendPushNotification <- EitherT.right[SubmissionState](pushPullNotificationService.sendPushNotification(inboundRequest, headers))
       } yield inboundRequest
     ).value
 
