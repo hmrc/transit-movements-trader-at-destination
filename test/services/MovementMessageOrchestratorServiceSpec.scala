@@ -59,7 +59,7 @@ class MovementMessageOrchestratorServiceSpec extends SpecBase with ModelGenerato
 
         when(mockInboundRequestService.makeInboundRequest(any(), any(), any())(any())).thenReturn(Future.successful(Right(expectedResult)))
         when(mockSaveMessageService.saveInboundMessage(any(), any())(any())).thenReturn(Future.successful(Right(())))
-        when(mockPushPullNotificationService.sendPushNotification(any(), any(), any(), any())(any())).thenReturn(Future.unit)
+        when(mockPushPullNotificationService.sendPushNotification(any(), any())(any())).thenReturn(Future.unit)
 
         val application = baseApplicationBuilder
           .overrides(bind[InboundRequestService].toInstance(mockInboundRequestService))

@@ -65,6 +65,7 @@ object ArrivalMessageNotification {
                   messageType: MessageType,
                   requestXml: NodeSeq,
                   bodySize: Option[Int]): ArrivalMessageNotification = {
+
     val oneHundredKilobytes = 100000
     val eoriNumber          = arrival.eoriNumber
     val messageId           = arrival.nextMessageId
@@ -82,25 +83,23 @@ object ArrivalMessageNotification {
     )
   }
 
-  def fromArrivalWithoutMessages(arrival: ArrivalWithoutMessages,
-                                 timestamp: LocalDateTime,
-                                 messageType: MessageType,
-                                 requestXml: NodeSeq,
-                                 bodySize: Option[Int]): ArrivalMessageNotification = {
-    val oneHundredKilobytes = 100000
-    val eoriNumber          = arrival.eoriNumber
-    val messageId           = arrival.nextMessageId
-    val arrivalUrl          = requestId(arrival.arrivalId)
+  def fromInboundRequest(inboundMessageRequest: InboundMessageRequest, contentLength: Option[Int]): ArrivalMessageNotification =
+    inboundMessageRequest match {
+      case InboundMessageRequest(arrival, _, inboundMessageResponse, movementMessage) =>
+        val oneHundredKilobytes = 100000
+        val eoriNumber          = arrival.eoriNumber
+        val messageId           = arrival.nextMessageId
+        val arrivalUrl          = requestId(arrival.arrivalId)
 
-    ArrivalMessageNotification(
-      s"$arrivalUrl/messages/${messageId.value}",
-      arrivalUrl,
-      eoriNumber,
-      arrival.arrivalId,
-      messageId,
-      timestamp,
-      messageType,
-      if (bodySize.exists(_ < oneHundredKilobytes)) Some(requestXml) else None
-    )
-  }
+        ArrivalMessageNotification(
+          s"$arrivalUrl/messages/${messageId.value}",
+          arrivalUrl,
+          eoriNumber,
+          arrival.arrivalId,
+          messageId,
+          movementMessage.dateTime,
+          inboundMessageResponse.messageType,
+          if (contentLength.exists(_ < oneHundredKilobytes)) Some(movementMessage.message) else None
+        )
+    }
 }
