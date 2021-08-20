@@ -49,7 +49,6 @@ class MovementMessageOrchestratorServiceSpec extends SpecBase with ModelGenerato
     "saveNCTSMessage" - {
 
       "must return a InboundMessageRequest when successfully processing a request xml" in {
-        def boxIdMatcher = refEq("123").asInstanceOf[BoxId]
 
         val arrival       = arbitrary[Arrival].sample.value
         val message       = arbitrary[MovementMessageWithoutStatus].sample.value
@@ -60,7 +59,7 @@ class MovementMessageOrchestratorServiceSpec extends SpecBase with ModelGenerato
 
         when(mockInboundRequestService.makeInboundRequest(any(), any(), any())(any())).thenReturn(Future.successful(Right(expectedResult)))
         when(mockSaveMessageService.saveInboundMessage(any(), any())(any())).thenReturn(Future.successful(Right(())))
-        when(mockPushPullNotificationService.sendPushNotificationIfBoxExists(any(), any(), any(), any())(any())).thenReturn(Future.unit)
+        when(mockPushPullNotificationService.sendPushNotification(any(), any(), any(), any())(any())).thenReturn(Future.unit)
 
         val application = baseApplicationBuilder
           .overrides(bind[InboundRequestService].toInstance(mockInboundRequestService))
