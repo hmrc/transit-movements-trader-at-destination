@@ -40,18 +40,13 @@ class ArrivalMessageNotificationSpec extends SpecBase with ScalaCheckDrivenPrope
 
   val responseGenerator = Gen.oneOf(MessageResponse.inboundMessages)
 
-  "fromRequest" - {
+  "fromArrival" - {
 
     "produces the expected model" in {
 
       val arrival     = arbitraryArrival.arbitrary.sample.value
       val messageType = Gen.oneOf(MessageType.values).sample.value
       val dateTimeNow = LocalDateTime.now()
-      val request = FakeRequest(POST, routes.NCTSMessageController.post(messageSender).url)
-        .withBody[NodeSeq](<text></text>)
-        .withHeaders(HeaderNames.CONTENT_LENGTH -> bodyLength.toString)
-      val arrivalRequest = ArrivalWithoutMessagesRequest(request, ArrivalWithoutMessages.fromArrival(arrival), api)
-      val inboundRequest = InboundMessageRequest(InboundMessage(response, arbitrary[ArrivalStatus].sample.value), arrivalRequest)
 
       val requestXml = <text></text>
 
@@ -77,11 +72,6 @@ class ArrivalMessageNotificationSpec extends SpecBase with ScalaCheckDrivenPrope
       val arrival     = arbitraryArrival.arbitrary.sample.value
       val messageType = Gen.oneOf(MessageType.values).sample.value
       val dateTimeNow = LocalDateTime.now()
-      val request = FakeRequest(POST, routes.NCTSMessageController.post(messageSender).url)
-        .withBody[NodeSeq](<text></text>)
-        .withHeaders(HeaderNames.CONTENT_LENGTH -> "100001")
-      val arrivalRequest = ArrivalWithoutMessagesRequest(request, ArrivalWithoutMessages.fromArrival(arrival), api)
-      val inboundRequest = InboundMessageRequest(InboundMessage(response, arbitrary[ArrivalStatus].sample.value), arrivalRequest)
 
       val requestXml = <text></text>
 

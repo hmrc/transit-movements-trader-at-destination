@@ -22,6 +22,7 @@ import generators.ModelGenerators
 import models.ArrivalStatus._
 import models.Arrival
 import models.ArrivalId
+import models.ArrivalWithoutMessages
 import models.FailedToSaveMessage
 import models.GoodsReleasedResponse
 import models.InboundMessageRequest
@@ -35,9 +36,9 @@ import play.api.inject.bind
 import play.api.test.Helpers.running
 import repositories.ArrivalMovementRepository
 import utils.Format
-
 import java.time.LocalDate
 import java.time.LocalTime
+
 import scala.concurrent.Future
 import scala.util.Failure
 import scala.util.Success
@@ -61,7 +62,7 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach with Model
       when(mockArrivalMovementRepository.addResponseMessage(any(), any(), any())).thenReturn(Future.successful(Success(())))
       when(mockXmlValidationService.validate(any(), any())).thenReturn(Success(()))
 
-      val arrival = arbitrary[Arrival].sample.value
+      val arrival = arbitrary[ArrivalWithoutMessages].sample.value
       val message = arbitrary[MovementMessageWithoutStatus].sample.value
 
       val application = baseApplicationBuilder
@@ -97,7 +98,7 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach with Model
       when(mockArrivalMovementRepository.addResponseMessage(any(), any(), any())).thenReturn(Future.successful(Failure(new Exception)))
 
       val message = arbitrary[MovementMessageWithoutStatus].sample.value
-      val arrival = arbitrary[Arrival].sample.value
+      val arrival = arbitrary[ArrivalWithoutMessages].sample.value
 
       val application = baseApplicationBuilder.overrides(bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository)).build()
 

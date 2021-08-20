@@ -52,8 +52,8 @@ class MessageTransformer @Inject()(implicit val executionContext: ExecutionConte
               case Right(nextState) =>
                 Future.successful(Right(MessageTransformRequest(Message(response, nextState), request)))
               case Left(error) =>
-                logger.error(s"Unable to transition movement state ${error.reason} for arrival movement ${request.arrivalWithoutMessages.arrivalId.index}")
-                Future.successful(Left(badRequestError(error.reason)))
+                logger.error(s"Unable to transition movement state ${error.message} for arrival movement ${request.arrivalWithoutMessages.arrivalId.index}")
+                Future.successful(Left(badRequestError(error.message)))
             }
           case None =>
             logger.warn(s"Unsupported root node ${x.headOption.map(_.label)} and message type ${request.headers.get("X-Message-Type")}")

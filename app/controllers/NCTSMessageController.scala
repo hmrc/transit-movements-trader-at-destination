@@ -20,21 +20,19 @@ import cats.data.EitherT
 import com.kenshoo.play.metrics.Metrics
 import controllers.actions.GetArrivalForWriteActionProvider
 import controllers.actions.GetArrivalWithoutMessagesForWriteActionProvider
-import controllers.actions.InboundMessageRequest
 import controllers.actions.MessageTransformerInterface
-import controllers.actions.ValidateInboundMessageAction
 import logging.Logging
 import metrics.HasActionMetrics
 import models.Arrival
 import models.ArrivalMessageNotification
 import models.ArrivalNotFoundError
+import models.ArrivalWithoutMessages
 import models.DocumentExistsError
 import models.InboundMessageRequest
 import models.InternalError
 import models.MessageSender
 import models.MessageType
 import models.SubmissionState
-import models.request
 import play.api.Logger
 import play.api.http.HeaderNames
 import play.api.mvc.Action
@@ -54,7 +52,6 @@ class NCTSMessageController @Inject()(
   getArrival: GetArrivalForWriteActionProvider,
   getArrivalWithoutMessages: GetArrivalWithoutMessagesForWriteActionProvider,
   validateTransitionState: MessageTransformerInterface,
-  validateInboundMessage: ValidateInboundMessageAction,
   saveMessageService: SaveMessageService,
   pushPullNotificationService: PushPullNotificationService,
   inboundRequestService: InboundRequestService,
@@ -67,7 +64,8 @@ class NCTSMessageController @Inject()(
 
   private val movementSummaryLogger: Logger = Logger(s"application.${this.getClass.getCanonicalName}.movementSummary")
 
-  private def sendPushNotification(xml: NodeSeq, arrival: Arrival, messageType: MessageType, headers: Headers)(implicit hc: HeaderCarrier): Future[Unit] =
+  private def sendPushNotification(xml: NodeSeq, arrival: ArrivalWithoutMessages, messageType: MessageType, headers: Headers)(
+    implicit hc: HeaderCarrier): Future[Unit] =
     arrival.notificationBox
       .map {
         box =>
@@ -77,7 +75,7 @@ class NCTSMessageController @Inject()(
               Future.unit
             case Right(timestamp) =>
               val bodySize     = headers.get(HeaderNames.CONTENT_LENGTH).map(_.toInt)
-              val notification = ArrivalMessageNotification.fromArrival(arrival, timestamp, messageType, xml, bodySize)
+              val notification = ArrivalMessageNotification.fromArrivalWithoutMessages(arrival, timestamp, messageType, xml, bodySize)
               pushPullNotificationService.sendPushNotification(box.boxId, notification)
           }
       }
@@ -89,9 +87,9 @@ class NCTSMessageController @Inject()(
         withMetricsTimerResult("post-receive-ncts-message") {
           (
             for {
-              inboundRequest     <- EitherT(inboundRequestService.makeInboundRequest(messageSender.arrivalId, request.body, messageSender))
-              saveInboundRequest <- EitherT(saveMessageService.saveInboundMessage(inboundRequest, messageSender))
-              sendPushNotification <- EitherT.right[SubmissionState](
+              inboundRequest <- EitherT(inboundRequestService.makeInboundRequest(messageSender.arrivalId, request.body, messageSender))
+              _              <- EitherT(saveMessageService.saveInboundMessage(inboundRequest, messageSender))
+              _ <- EitherT.right[SubmissionState](
                 sendPushNotification(request.body, inboundRequest.arrival, inboundRequest.inboundMessageResponse.messageType, request.headers))
             } yield inboundRequest
           ).value.flatMap {
