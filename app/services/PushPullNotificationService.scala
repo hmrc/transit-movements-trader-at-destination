@@ -52,21 +52,7 @@ class PushPullNotificationService @Inject()(connector: PushPullNotificationConne
           None
       }
 
-  private def sendPushNotification(boxId: BoxId, notification: ArrivalMessageNotification)(implicit hc: HeaderCarrier): Future[Unit] =
-    connector
-      .postNotification(boxId, notification)
-      .map {
-        case Left(UpstreamErrorResponse(message, statusCode, _, _)) =>
-          logger.warn(s"Error $statusCode received while sending notification for boxId $boxId: $message")
-        case Right(_) => ()
-
-      }
-      .recover {
-        case NonFatal(e) =>
-          logger.error(s"Error while sending push notification", e)
-      }
-
-  private[services] def sendPushNotificationIfBoxExists(xml: NodeSeq, arrival: Arrival, messageType: MessageType, headers: Headers)(
+  private[services] def sendPushNotification(xml: NodeSeq, arrival: Arrival, messageType: MessageType, headers: Headers)(
     implicit hc: HeaderCarrier): Future[Unit] =
     arrival.notificationBox
       .map {
@@ -78,7 +64,19 @@ class PushPullNotificationService @Inject()(connector: PushPullNotificationConne
             case Right(timestamp) =>
               val bodySize     = headers.get(HeaderNames.CONTENT_LENGTH).map(_.toInt)
               val notification = ArrivalMessageNotification.fromArrival(arrival, timestamp, messageType, xml, bodySize)
-              sendPushNotification(box.boxId, notification)
+
+              connector
+                .postNotification(box.boxId, notification)
+                .map {
+                  case Left(UpstreamErrorResponse(message, statusCode, _, _)) =>
+                    logger.warn(s"Error $statusCode received while sending notification for boxId ${box.boxId}: $message")
+                  case Right(_) => ()
+
+                }
+                .recover {
+                  case NonFatal(e) =>
+                    logger.error(s"Error while sending push notification", e)
+                }
           }
       }
       .getOrElse(Future.unit)

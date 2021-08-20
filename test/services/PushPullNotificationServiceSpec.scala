@@ -104,7 +104,7 @@ class PushPullNotificationServiceSpec extends SpecBase with BeforeAndAfterEach w
       }
     }
 
-    "sendPushNotificationIfBoxExists" - {
+    "sendPushNotification" - {
 
       val arrival = arbitrary[Arrival].sample.value.copy(notificationBox = Some(testBox))
 
@@ -127,7 +127,7 @@ class PushPullNotificationServiceSpec extends SpecBase with BeforeAndAfterEach w
           mockConnector.postNotification(BoxId(ArgumentMatchers.eq(testBoxId)), any[ArrivalMessageNotification])(any[ExecutionContext], any[HeaderCarrier])
         ).thenReturn(successfulResult)
 
-        Await.result(service.sendPushNotificationIfBoxExists(requestXmlBody, arrival, GoodsReleased, Headers(("key", "value"))), 30.seconds).mustEqual(())
+        Await.result(service.sendPushNotification(requestXmlBody, arrival, GoodsReleased, Headers(("key", "value"))), 30.seconds).mustEqual(())
 
         verify(mockConnector).postNotification(BoxId(ArgumentMatchers.eq(testBoxId)), any[ArrivalMessageNotification])(any[ExecutionContext],
                                                                                                                        any[HeaderCarrier])
@@ -148,7 +148,7 @@ class PushPullNotificationServiceSpec extends SpecBase with BeforeAndAfterEach w
         ).thenReturn(successfulResult)
 
         Await
-          .result(service.sendPushNotificationIfBoxExists(requestXmlBody, arrivalWithoutBox, GoodsReleased, Headers(("key", "value"))), 30.seconds)
+          .result(service.sendPushNotification(requestXmlBody, arrivalWithoutBox, GoodsReleased, Headers(("key", "value"))), 30.seconds)
           .mustEqual(())
 
         verifyNoInteractions(mockConnector)
@@ -167,7 +167,7 @@ class PushPullNotificationServiceSpec extends SpecBase with BeforeAndAfterEach w
           mockConnector.postNotification(BoxId(ArgumentMatchers.eq(testBoxId)), any[ArrivalMessageNotification])(any[ExecutionContext], any[HeaderCarrier])
         ).thenReturn(successfulResult)
 
-        Await.result(service.sendPushNotificationIfBoxExists(requestXmlBody, arrival, GoodsReleased, Headers(("key", "value"))), 30.seconds).mustEqual(())
+        Await.result(service.sendPushNotification(requestXmlBody, arrival, GoodsReleased, Headers(("key", "value"))), 30.seconds).mustEqual(())
 
         verifyNoInteractions(mockConnector)
       }
@@ -189,7 +189,7 @@ class PushPullNotificationServiceSpec extends SpecBase with BeforeAndAfterEach w
 
         given(mockedPostNotification).willReturn(Future.failed(new RuntimeException))
 
-        Await.result(service.sendPushNotificationIfBoxExists(requestXmlBody, arrival, GoodsReleased, Headers(("key", "value"))), 30.seconds).mustEqual(())
+        Await.result(service.sendPushNotification(requestXmlBody, arrival, GoodsReleased, Headers(("key", "value"))), 30.seconds).mustEqual(())
       }
     }
   }

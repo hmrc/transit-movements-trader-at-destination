@@ -48,7 +48,7 @@ class MovementMessageOrchestratorService @Inject()(
         saveInboundRequest <- EitherT(saveMessageService.saveInboundMessage(inboundRequest, messageSender))
         sendPushNotification <- EitherT.right[SubmissionState](
           pushPullNotificationService
-            .sendPushNotificationIfBoxExists(requestXml, inboundRequest.arrival, inboundRequest.inboundMessageResponse.messageType, headers))
+            .sendPushNotification(requestXml, inboundRequest.arrival, inboundRequest.inboundMessageResponse.messageType, headers))
       } yield inboundRequest
     ).value
 
