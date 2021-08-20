@@ -33,37 +33,22 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.xml.NodeSeq
 
-class InboundRequestSubmissionService @Inject()(
+class MovementMessageOrchestratorService @Inject()(
   inboundRequestService: InboundRequestService,
   saveMessageService: SaveMessageService,
   pushPullNotificationService: PushPullNotificationService
 )(implicit ec: ExecutionContext)
     extends Logging {
 
-  private def sendPushNotification(xml: NodeSeq, arrival: Arrival, messageType: MessageType, headers: Headers)(implicit hc: HeaderCarrier): Future[Unit] =
-    arrival.notificationBox
-      .map {
-        box =>
-          XmlMessageParser.dateTimeOfPrepR(xml) match {
-            case Left(error) =>
-              logger.error(s"Error while parsing message timestamp: ${error.message}")
-              Future.unit
-            case Right(timestamp) =>
-              val bodySize     = headers.get(HeaderNames.CONTENT_LENGTH).map(_.toInt)
-              val notification = ArrivalMessageNotification.fromArrival(arrival, timestamp, messageType, xml, bodySize)
-              pushPullNotificationService.sendPushNotification(box.boxId, notification)
-          }
-      }
-      .getOrElse(Future.unit)
-
-  def submitInboundRequest(messageSender: MessageSender, requestXml: NodeSeq, headers: Headers)(
+  def saveNCTSMessage(messageSender: MessageSender, requestXml: NodeSeq, headers: Headers)(
     implicit hc: HeaderCarrier): Future[Either[SubmissionState, InboundMessageRequest]] =
     (
       for {
         inboundRequest     <- EitherT(inboundRequestService.makeInboundRequest(messageSender.arrivalId, requestXml, messageSender))
         saveInboundRequest <- EitherT(saveMessageService.saveInboundMessage(inboundRequest, messageSender))
         sendPushNotification <- EitherT.right[SubmissionState](
-          sendPushNotification(requestXml, inboundRequest.arrival, inboundRequest.inboundMessageResponse.messageType, headers))
+          pushPullNotificationService
+            .sendPushNotificationIfBoxExists(requestXml, inboundRequest.arrival, inboundRequest.inboundMessageResponse.messageType, headers))
       } yield inboundRequest
     ).value
 

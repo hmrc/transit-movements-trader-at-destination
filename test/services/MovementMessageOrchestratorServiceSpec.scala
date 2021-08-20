@@ -38,15 +38,15 @@ import play.api.test.Helpers.running
 
 import scala.concurrent.Future
 
-class InboundRequestSubmissionServiceSpec extends SpecBase with ModelGenerators with ScalaCheckDrivenPropertyChecks {
+class MovementMessageOrchestratorServiceSpec extends SpecBase with ModelGenerators with ScalaCheckDrivenPropertyChecks {
 
   val mockInboundRequestService       = mock[InboundRequestService]
   val mockSaveMessageService          = mock[SaveMessageService]
   val mockPushPullNotificationService = mock[PushPullNotificationService]
 
-  "InboundRequestSubmissionService" - {
+  "MovementMessageOrchestratorService" - {
 
-    "submitInboundRequest" - {
+    "saveNCTSMessage" - {
 
       "must return a InboundMessageRequest when successfully processing a request xml" in {
         def boxIdMatcher = refEq("123").asInstanceOf[BoxId]
@@ -60,7 +60,7 @@ class InboundRequestSubmissionServiceSpec extends SpecBase with ModelGenerators 
 
         when(mockInboundRequestService.makeInboundRequest(any(), any(), any())(any())).thenReturn(Future.successful(Right(expectedResult)))
         when(mockSaveMessageService.saveInboundMessage(any(), any())(any())).thenReturn(Future.successful(Right(())))
-        when(mockPushPullNotificationService.sendPushNotification(boxIdMatcher, any())(any(), any())).thenReturn(Future.unit)
+        when(mockPushPullNotificationService.sendPushNotificationIfBoxExists(any(), any(), any(), any())(any())).thenReturn(Future.unit)
 
         val application = baseApplicationBuilder
           .overrides(bind[InboundRequestService].toInstance(mockInboundRequestService))
@@ -70,9 +70,9 @@ class InboundRequestSubmissionServiceSpec extends SpecBase with ModelGenerators 
 
         running(application) {
 
-          val service = application.injector.instanceOf[InboundRequestSubmissionService]
+          val service = application.injector.instanceOf[MovementMessageOrchestratorService]
 
-          val result = service.submitInboundRequest(messageSender, xml, Headers(("key", "value")))
+          val result = service.saveNCTSMessage(messageSender, xml, Headers(("key", "value")))
 
           val expectedResult = InboundMessageRequest(arrival, GoodsReleased, GoodsReleasedResponse, message)
 
@@ -98,9 +98,9 @@ class InboundRequestSubmissionServiceSpec extends SpecBase with ModelGenerators 
 
         running(application) {
 
-          val service = application.injector.instanceOf[InboundRequestSubmissionService]
+          val service = application.injector.instanceOf[MovementMessageOrchestratorService]
 
-          val result = service.submitInboundRequest(messageSender, xml, Headers(("key", "value")))
+          val result = service.saveNCTSMessage(messageSender, xml, Headers(("key", "value")))
 
           result.futureValue.left.value mustBe ExampleInboundRequestFailure("message")
         }
@@ -129,9 +129,9 @@ class InboundRequestSubmissionServiceSpec extends SpecBase with ModelGenerators 
 
         running(application) {
 
-          val service = application.injector.instanceOf[InboundRequestSubmissionService]
+          val service = application.injector.instanceOf[MovementMessageOrchestratorService]
 
-          val result = service.submitInboundRequest(messageSender, xml, Headers(("key", "value")))
+          val result = service.saveNCTSMessage(messageSender, xml, Headers(("key", "value")))
 
           result.futureValue.left.value mustBe ExampleSaveMessageFailure("message")
         }

@@ -19,35 +19,44 @@ package services
 import base.SpecBase
 import config.Constants
 import connectors.PushPullNotificationConnector
-import models.ArrivalId
+import generators.ModelGenerators
+import models.Arrival
 import models.ArrivalMessageNotification
 import models.Box
 import models.BoxId
-import models.MessageId
-import models.MessageType
+import models.MessageType.GoodsReleased
+import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers._
 import org.mockito.BDDMockito._
 import org.mockito.Mockito.reset
+import org.mockito.Mockito.verify
+import org.mockito.Mockito.verifyNoInteractions
+import org.mockito.Mockito.when
+import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
 import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
+import play.api.mvc.Headers
+import play.api.mvc.Request
+import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.UpstreamErrorResponse
+import utils.Format
 
-import java.time.LocalDateTime
+import java.time.LocalDate
+import java.time.LocalTime
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.xml.NodeSeq
 
-class PushPullNotificationServiceSpec extends SpecBase with BeforeAndAfterEach with ScalaCheckPropertyChecks {
+class PushPullNotificationServiceSpec extends SpecBase with BeforeAndAfterEach with ScalaCheckPropertyChecks with ModelGenerators {
+
   val mockConnector = mock[PushPullNotificationConnector]
   val service       = new PushPullNotificationService(mockConnector)
-
-  private def requestId(arrivalId: ArrivalId): String =
-    s"/customs/transits/movements/arrivals/${arrivalId.index}"
 
   override protected def beforeEach(): Unit = reset(mockConnector)
 
@@ -95,50 +104,84 @@ class PushPullNotificationServiceSpec extends SpecBase with BeforeAndAfterEach w
       }
     }
 
-    "sendPushNotification" - {
+    "sendPushNotificationIfBoxExists" - {
+
+      val arrival = arbitrary[Arrival].sample.value.copy(notificationBox = Some(testBox))
+
       "should return a unit value when connector call succeeds" in {
-        val testArrivalId  = ArrivalId(1)
-        val testMessageUri = requestId(testArrivalId) + "/messages" + ""
-        val testBody       = <test>test content</test>
-        val testEoriNumber = "1234567800"
-        val testNotification =
-          ArrivalMessageNotification(
-            testMessageUri,
-            requestId(testArrivalId),
-            testEoriNumber,
-            testArrivalId,
-            MessageId(2),
-            LocalDateTime.now,
-            MessageType.UnloadingPermission,
-            Some(testBody)
-          )
 
-        val boxIdMatcher = refEq(testBoxId).asInstanceOf[BoxId]
+        val dateOfPrep: LocalDate = LocalDate.now()
+        val timeOfPrep: LocalTime = LocalTime.of(1, 1)
 
-        val mockedPostNotification = mockConnector.postNotification(boxIdMatcher, any[ArrivalMessageNotification])(any[ExecutionContext], any[HeaderCarrier])
-        val successfulResult       = Future.successful(Right(()))
+        val requestXmlBody =
+          <CC025A>
+            <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+            <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+          </CC025A>
 
-        given(mockedPostNotification).willReturn(successfulResult)
+        implicit val request: Request[NodeSeq] = FakeRequest().withBody(requestXmlBody)
 
-        Await.result(service.sendPushNotification(testBox.boxId, testNotification), 30.seconds).mustEqual(())
+        val successfulResult: Future[Either[UpstreamErrorResponse, Unit]] = Future.successful(Right(()))
+
+        when(
+          mockConnector.postNotification(BoxId(ArgumentMatchers.eq(testBoxId)), any[ArrivalMessageNotification])(any[ExecutionContext], any[HeaderCarrier])
+        ).thenReturn(successfulResult)
+
+        Await.result(service.sendPushNotificationIfBoxExists(requestXmlBody, arrival, GoodsReleased, Headers(("key", "value"))), 30.seconds).mustEqual(())
+
+        verify(mockConnector).postNotification(BoxId(ArgumentMatchers.eq(testBoxId)), any[ArrivalMessageNotification])(any[ExecutionContext],
+                                                                                                                       any[HeaderCarrier])
       }
 
-      "should not return anything when call fails" in {
-        val testArrivalId  = ArrivalId(1)
-        val testMessageUri = requestId(testArrivalId) + "/messages" + ""
-        val testBody       = <test>test content</test>
-        val testEoriNumber = "1234567800"
-        val testNotification =
-          ArrivalMessageNotification(
-            testMessageUri,
-            requestId(testArrivalId),
-            testEoriNumber,
-            testArrivalId,
-            MessageId(2),
-            LocalDateTime.now,
-            MessageType.UnloadingPermission,
-            Some(testBody)
-          )
+      "should not post if no box exists" in {
+
+        val arrivalWithoutBox = arrival.copy(notificationBox = None)
+
+        val requestXmlBody = <CC025A></CC025A>
+
+        implicit val request: Request[NodeSeq] = FakeRequest().withBody(requestXmlBody)
+
+        val successfulResult: Future[Either[UpstreamErrorResponse, Unit]] = Future.successful(Right(()))
+
+        when(
+          mockConnector.postNotification(BoxId(ArgumentMatchers.eq(testBoxId)), any[ArrivalMessageNotification])(any[ExecutionContext], any[HeaderCarrier])
+        ).thenReturn(successfulResult)
+
+        Await
+          .result(service.sendPushNotificationIfBoxExists(requestXmlBody, arrivalWithoutBox, GoodsReleased, Headers(("key", "value"))), 30.seconds)
+          .mustEqual(())
+
+        verifyNoInteractions(mockConnector)
+      }
+
+      // TODO we can remove this if we use the arrival or MovementMessageWithoutStatus
+      "should not post if missing date or time field in" in {
+
+        val requestXmlBody = <CC025A></CC025A>
+
+        implicit val request: Request[NodeSeq] = FakeRequest().withBody(requestXmlBody)
+
+        val successfulResult: Future[Either[UpstreamErrorResponse, Unit]] = Future.successful(Right(()))
+
+        when(
+          mockConnector.postNotification(BoxId(ArgumentMatchers.eq(testBoxId)), any[ArrivalMessageNotification])(any[ExecutionContext], any[HeaderCarrier])
+        ).thenReturn(successfulResult)
+
+        Await.result(service.sendPushNotificationIfBoxExists(requestXmlBody, arrival, GoodsReleased, Headers(("key", "value"))), 30.seconds).mustEqual(())
+
+        verifyNoInteractions(mockConnector)
+      }
+
+      "should return a unit value when connector call fails" in {
+
+        val dateOfPrep: LocalDate = LocalDate.now()
+        val timeOfPrep: LocalTime = LocalTime.of(1, 1)
+
+        val requestXmlBody =
+          <CC025A>
+            <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+            <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+          </CC025A>
 
         val boxIdMatcher = refEq(testBoxId).asInstanceOf[BoxId]
 
@@ -146,8 +189,7 @@ class PushPullNotificationServiceSpec extends SpecBase with BeforeAndAfterEach w
 
         given(mockedPostNotification).willReturn(Future.failed(new RuntimeException))
 
-        Await.result(service.sendPushNotification(testBox.boxId, testNotification), 30.seconds).mustEqual(())
-
+        Await.result(service.sendPushNotificationIfBoxExists(requestXmlBody, arrival, GoodsReleased, Headers(("key", "value"))), 30.seconds).mustEqual(())
       }
     }
   }
