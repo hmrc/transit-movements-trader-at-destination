@@ -17,81 +17,17 @@
 package models
 
 import base.SpecBase
-import controllers.routes
 import generators.ModelGenerators
-import models.ChannelType.api
 import models.MessageType.GoodsReleased
-import models.request.ArrivalRequest
-import org.scalacheck.Arbitrary._
 import org.scalacheck.Gen
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import play.api.http.HeaderNames
-import play.api.http.HttpVerbs
+import java.time.LocalDateTime
+import java.time.LocalDateTime
 import play.api.libs.json.JsObject
-import play.api.test.FakeRequest
-
-import java.time.LocalDateTime
-import java.nio.charset.StandardCharsets
-import java.time.LocalDateTime
-import scala.xml.NodeSeq
-import scala.xml.XML
 
 class ArrivalMessageNotificationSpec extends SpecBase with ScalaCheckDrivenPropertyChecks with ModelGenerators {
 
   val responseGenerator = Gen.oneOf(MessageResponse.inboundMessages)
-
-  "fromArrival" - {
-
-    "produces the expected model" in {
-
-      val arrival     = arbitraryArrival.arbitrary.sample.value
-      val messageType = Gen.oneOf(MessageType.values).sample.value
-      val dateTimeNow = LocalDateTime.now()
-
-      val requestXml = <text></text>
-
-      val expectedNotification =
-        ArrivalMessageNotification(
-          s"/customs/transits/movements/arrivals/${arrival.arrivalId.index}/messages/${arrival.messages.length + 1}",
-          s"/customs/transits/movements/arrivals/${arrival.arrivalId.index}",
-          arrival.eoriNumber,
-          arrival.arrivalId,
-          MessageId(arrival.messages.length + 1),
-          dateTimeNow,
-          messageType,
-          Some(requestXml)
-        )
-
-      val testNotification = ArrivalMessageNotification.fromArrival(arrival, dateTimeNow, messageType, requestXml, Some(123))
-
-      testNotification mustEqual expectedNotification
-    }
-
-    "does not include the message body when it is over 100kb" in {
-
-      val arrival     = arbitraryArrival.arbitrary.sample.value
-      val messageType = Gen.oneOf(MessageType.values).sample.value
-      val dateTimeNow = LocalDateTime.now()
-
-      val requestXml = <text></text>
-
-      val expectedNotification =
-        ArrivalMessageNotification(
-          s"/customs/transits/movements/arrivals/${arrival.arrivalId.index}/messages/${arrival.messages.length + 1}",
-          s"/customs/transits/movements/arrivals/${arrival.arrivalId.index}",
-          arrival.eoriNumber,
-          arrival.arrivalId,
-          MessageId(arrival.messages.length + 1),
-          dateTimeNow,
-          messageType,
-          None
-        )
-
-      val testNotification = ArrivalMessageNotification.fromArrival(arrival, dateTimeNow, messageType, requestXml, Some(100001))
-
-      testNotification mustEqual expectedNotification
-    }
-  }
 
   "fromArrivalNotification" - {
 

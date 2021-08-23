@@ -21,22 +21,19 @@ import generators.ModelGenerators
 import models.ArrivalStatus.GoodsReleased
 import models.Arrival
 import models.ArrivalId
-import models.BoxId
 import models.GoodsReleasedResponse
 import models.InboundMessageRequest
 import models.MessageSender
 import models.MovementMessageWithoutStatus
 import models.SubmissionState
 import org.mockito.ArgumentMatchers.any
-import org.mockito.ArgumentMatchers.refEq
 import org.mockito.Mockito.when
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import play.api.inject.bind
-import play.api.mvc.Headers
-import play.api.test.Helpers.running
 
 import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
+import play.api.mvc.Headers
 
 class MovementMessageOrchestratorServiceSpec extends SpecBase with ModelGenerators with ScalaCheckDrivenPropertyChecks {
 
@@ -61,22 +58,15 @@ class MovementMessageOrchestratorServiceSpec extends SpecBase with ModelGenerato
         when(mockSaveMessageService.saveInboundMessage(any(), any())(any())).thenReturn(Future.successful(Right(())))
         when(mockPushPullNotificationService.sendPushNotification(any(), any())(any())).thenReturn(Future.unit)
 
-        val application = baseApplicationBuilder
-          .overrides(bind[InboundRequestService].toInstance(mockInboundRequestService))
-          .overrides(bind[SaveMessageService].toInstance(mockSaveMessageService))
-          .overrides(bind[PushPullNotificationService].toInstance(mockPushPullNotificationService))
-          .build()
+        val service = new MovementMessageOrchestratorService(
+          mockInboundRequestService,
+          mockSaveMessageService,
+          mockPushPullNotificationService
+        )
 
-        running(application) {
+        val result = service.saveNCTSMessage(messageSender, xml, Headers(("key", "value")))
 
-          val service = application.injector.instanceOf[MovementMessageOrchestratorService]
-
-          val result = service.saveNCTSMessage(messageSender, xml, Headers(("key", "value")))
-
-          val expectedResult = InboundMessageRequest(arrival, GoodsReleased, GoodsReleasedResponse, message)
-
-          result.futureValue.value mustBe expectedResult
-        }
+        result.futureValue.value mustBe expectedResult
       }
 
       "must return a SubmissionState when the InboundRequestService fails" in {
@@ -91,18 +81,16 @@ class MovementMessageOrchestratorServiceSpec extends SpecBase with ModelGenerato
         when(mockInboundRequestService.makeInboundRequest(any(), any(), any())(any()))
           .thenReturn(Future.successful(Left(ExampleInboundRequestFailure("message"))))
 
-        val application = baseApplicationBuilder
-          .overrides(bind[InboundRequestService].toInstance(mockInboundRequestService))
-          .build()
+        val service = new MovementMessageOrchestratorService(
+          mockInboundRequestService,
+          mockSaveMessageService,
+          mockPushPullNotificationService
+        )
 
-        running(application) {
+        val result = service.saveNCTSMessage(messageSender, xml, Headers(("key", "value")))
 
-          val service = application.injector.instanceOf[MovementMessageOrchestratorService]
+        result.futureValue.left.value mustBe ExampleInboundRequestFailure("message")
 
-          val result = service.saveNCTSMessage(messageSender, xml, Headers(("key", "value")))
-
-          result.futureValue.left.value mustBe ExampleInboundRequestFailure("message")
-        }
       }
 
       "must return a SubmissionState when the SaveMessageService fails" in {
@@ -121,19 +109,15 @@ class MovementMessageOrchestratorServiceSpec extends SpecBase with ModelGenerato
         when(mockInboundRequestService.makeInboundRequest(any(), any(), any())(any())).thenReturn(Future.successful(Right(inboundMessageRequest)))
         when(mockSaveMessageService.saveInboundMessage(any(), any())(any())).thenReturn(Future.successful(Left(ExampleSaveMessageFailure("message"))))
 
-        val application = baseApplicationBuilder
-          .overrides(bind[InboundRequestService].toInstance(mockInboundRequestService))
-          .overrides(bind[SaveMessageService].toInstance(mockSaveMessageService))
-          .build()
+        val service = new MovementMessageOrchestratorService(
+          mockInboundRequestService,
+          mockSaveMessageService,
+          mockPushPullNotificationService
+        )
 
-        running(application) {
+        val result = service.saveNCTSMessage(messageSender, xml, Headers(("key", "value")))
 
-          val service = application.injector.instanceOf[MovementMessageOrchestratorService]
-
-          val result = service.saveNCTSMessage(messageSender, xml, Headers(("key", "value")))
-
-          result.futureValue.left.value mustBe ExampleSaveMessageFailure("message")
-        }
+        result.futureValue.left.value mustBe ExampleSaveMessageFailure("message")
       }
     }
   }
