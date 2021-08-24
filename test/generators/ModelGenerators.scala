@@ -16,7 +16,6 @@
 
 package generators
 
-import java.time._
 import cats.data.NonEmptyList
 import connectors.MessageConnector.EisSubmissionResult
 import connectors.MessageConnector.EisSubmissionResult.DownstreamBadGateway
@@ -49,10 +48,12 @@ import models.RejectionError
 import models.SubmissionProcessingResult
 import models.response.ResponseArrival
 import models.response.ResponseMovementMessage
-import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Arbitrary
+import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
-import uk.gov.hmrc.http.HttpResponse
+import uk.gov.hmrc.http.UpstreamErrorResponse
+
+import java.time._
 
 trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
 
@@ -260,7 +261,7 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
       Gen.oneOf(
         DownstreamInternalServerError,
         DownstreamBadGateway,
-        UnexpectedHttpResponse(HttpResponse(418, ""))
+        UnexpectedHttpResponse(UpstreamErrorResponse("", 418))
       )
     }
 
