@@ -26,7 +26,6 @@ import base._
 import cats.data.NonEmptyList
 import config.AppConfig
 import controllers.routes
-import models.{Arrival, ArrivalId, ArrivalIdSelector, ArrivalStatus, ArrivalStatusUpdate, ArrivalWithoutMessages, MessageId, MessageType, MongoDateTimeFormats, MovementMessageWithStatus, MovementMessageWithoutStatus, MovementReferenceNumber}
 import models.ArrivalStatus.ArrivalSubmitted
 import models.ArrivalStatus.GoodsReleased
 import models.ArrivalStatus.Initialized
@@ -35,10 +34,20 @@ import models.ChannelType.api
 import models.ChannelType.web
 import models.MessageStatus.SubmissionPending
 import models.MessageStatus.SubmissionSucceeded
+import models.Arrival
+import models.ArrivalId
+import models.ArrivalIdSelector
+import models.ArrivalStatus
+import models.ArrivalStatusUpdate
+import models.MessageId
+import models.MessageType
+import models.MongoDateTimeFormats
+import models.MovementMessageWithStatus
+import models.MovementMessageWithoutStatus
+import models.MovementReferenceNumber
 import models.response.ResponseArrival
 import models.response.ResponseArrivals
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
 import org.scalactic.source
 import org.scalatest.BeforeAndAfterEach
@@ -61,7 +70,6 @@ import scala.concurrent.Future
 import scala.reflect.ClassTag
 import scala.util.Failure
 import scala.util.Success
-import scala.util.matching.Regex
 
 class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with ScalaFutures with TestSuiteMixin with MongoDateTimeFormats with BeforeAndAfterEach {
 
@@ -916,8 +924,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
       }
 
       "must filter results by mrn when mrn search parameter provided matches return match count" in {
-
-        val arrivals = nonEmptyListWithMaxSize[Arrival](100, arbitrary[Arrival])
+        val arrivals = nonEmptyListWithMaxSize[Arrival](5, arbitrary[Arrival])
           .map(_.toList)
           .sample
           .value
@@ -943,7 +950,10 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
               db.collection[JSONCollection](ArrivalMovementRepository.collectionName).insert(false).many(aJsonArr)
           }.futureValue
 
-          val actual   = service.fetchAllArrivals(eoriNumber, web, None, Some(mrn.value.substring(4, 9))).futureValue
+          val actual = service.fetchAllArrivals(eoriNumber, web, None, Some(mrn.value.substring(4, 9))).futureValue
+          println(s"**actual**=${actual.retrievedArrivals}_**")
+          println(s"**actual**=${arrivals.size}_**")
+
           val expected = ResponseArrivals(expectedAllMovements, arrivals.size, allArrivals.size, Some(arrivals.size))
 
           actual mustEqual expected
