@@ -17,17 +17,18 @@
 package connectors
 
 import base.SpecBase
-import com.github.tomakehurst.wiremock.client.WireMock.aResponse
-import com.github.tomakehurst.wiremock.client.WireMock.post
-import com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo
+import com.github.tomakehurst.wiremock.client.WireMock._
 import generators.ModelGenerators
 import models.response.ResponseMovementMessage
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
+import play.api.http.ContentTypes
+import play.api.http.HeaderNames
 import play.api.libs.ws.WSResponse
 import play.api.test.Helpers.running
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.RequestId
 
 import scala.concurrent.Future
 
@@ -35,7 +36,7 @@ class ManageDocumentsConnectorSpec extends SpecBase with WiremockSuite with Scal
 
   override protected def portConfigKey: String = "microservice.services.manage-documents.port"
 
-  implicit val headerCarrier: HeaderCarrier = HeaderCarrier()
+  implicit val headerCarrier: HeaderCarrier = HeaderCarrier().copy(requestId = Some(RequestId("bar")), otherHeaders = Seq("X-Client-Id" -> "foo"))
 
   "ManageDocumentsConnector" - {
 
@@ -45,6 +46,9 @@ class ManageDocumentsConnectorSpec extends SpecBase with WiremockSuite with Scal
 
         server.stubFor(
           post(urlEqualTo("/transit-movements-trader-manage-documents/unloading-permission"))
+            .withHeader(HeaderNames.CONTENT_TYPE, equalTo(ContentTypes.XML))
+            .withHeader("X-Client-Id", equalTo("foo"))
+            .withHeader("X-Request-Id", equalTo("bar"))
             .willReturn(
               aResponse()
                 .withStatus(200)
@@ -70,6 +74,9 @@ class ManageDocumentsConnectorSpec extends SpecBase with WiremockSuite with Scal
 
         server.stubFor(
           post(urlEqualTo("/transit-movements-trader-manage-documents/unloading-permission"))
+            .withHeader(HeaderNames.CONTENT_TYPE, equalTo(ContentTypes.XML))
+            .withHeader("X-Client-Id", equalTo("foo"))
+            .withHeader("X-Request-Id", equalTo("bar"))
             .willReturn(
               aResponse()
                 .withStatus(genErrorResponse)

@@ -16,9 +16,6 @@
 
 package connectors
 
-import java.time.LocalDateTime
-import java.time.OffsetDateTime
-
 import com.github.tomakehurst.wiremock.client.WireMock._
 import connectors.MessageConnector.EisSubmissionResult.DownstreamBadGateway
 import connectors.MessageConnector.EisSubmissionResult.DownstreamInternalServerError
@@ -28,6 +25,7 @@ import connectors.MessageConnector.EisSubmissionResult.VirusFoundOrInvalidToken
 import generators.ModelGenerators
 import models.ArrivalId
 import models.ChannelType.web
+import models.MessageId
 import models.MessageStatus
 import models.MessageType
 import models.MovementMessageWithStatus
@@ -39,9 +37,14 @@ import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
+import play.api.http.ContentTypes
+import play.api.http.HeaderNames
 import play.api.test.Helpers.running
 import uk.gov.hmrc.http.HeaderCarrier
-import models.MessageId
+
+import java.time.LocalDateTime
+import java.time.OffsetDateTime
+import uk.gov.hmrc.http.RequestId
 
 class MessageConnectorSpec
     extends AnyFreeSpec
@@ -58,7 +61,7 @@ class MessageConnectorSpec
 
   override protected def portConfigKey: String = "microservice.services.eis.port"
 
-  implicit val headerCarrier: HeaderCarrier = HeaderCarrier()
+  implicit val headerCarrier: HeaderCarrier = HeaderCarrier().copy(requestId = Some(RequestId("bar")), otherHeaders = Seq("X-Client-Id" -> "foo"))
 
   private val messageType: MessageType = Gen.oneOf(MessageType.values).sample.value
 
@@ -74,8 +77,9 @@ class MessageConnectorSpec
 
         server.stubFor(
           post(urlEqualTo(postUrl))
-            .withHeader("Content-Type", equalTo("application/xml"))
-            .withHeader("Accept", equalTo("application/xml"))
+            .withHeader(HeaderNames.CONTENT_TYPE, equalTo(ContentTypes.XML))
+            .withHeader("X-Client-Id", equalTo("foo"))
+            .withHeader("X-Request-Id", equalTo("bar"))
             .withHeader("X-Message-Type", equalTo(messageType.toString))
             .withHeader("X-Message-Sender", equalTo(messageSender))
             .withHeader("channel", equalTo(web.toString))
@@ -104,8 +108,9 @@ class MessageConnectorSpec
 
         server.stubFor(
           post(urlEqualTo(postUrl))
-            .withHeader("Content-Type", equalTo("application/xml"))
-            .withHeader("Accept", equalTo("application/xml"))
+            .withHeader(HeaderNames.CONTENT_TYPE, equalTo(ContentTypes.XML))
+            .withHeader("X-Client-Id", equalTo("foo"))
+            .withHeader("X-Request-Id", equalTo("bar"))
             .withHeader("X-Message-Type", equalTo(messageType.toString))
             .withHeader("X-Message-Sender", equalTo(messageSender))
             .withHeader("channel", equalTo(web.toString))
@@ -133,8 +138,9 @@ class MessageConnectorSpec
 
         server.stubFor(
           post(urlEqualTo(postUrl))
-            .withHeader("Content-Type", equalTo("application/xml"))
-            .withHeader("Accept", equalTo("application/xml"))
+            .withHeader(HeaderNames.CONTENT_TYPE, equalTo(ContentTypes.XML))
+            .withHeader("X-Client-Id", equalTo("foo"))
+            .withHeader("X-Request-Id", equalTo("bar"))
             .withHeader("X-Message-Type", equalTo(messageType.toString))
             .withHeader("X-Message-Sender", equalTo(messageSender))
             .withHeader("channel", equalTo(web.toString))
@@ -162,8 +168,9 @@ class MessageConnectorSpec
 
         server.stubFor(
           post(urlEqualTo(postUrl))
-            .withHeader("Content-Type", equalTo("application/xml"))
-            .withHeader("Accept", equalTo("application/xml"))
+            .withHeader(HeaderNames.CONTENT_TYPE, equalTo(ContentTypes.XML))
+            .withHeader("X-Client-Id", equalTo("foo"))
+            .withHeader("X-Request-Id", equalTo("bar"))
             .withHeader("X-Message-Type", equalTo(messageType.toString))
             .withHeader("X-Message-Sender", equalTo(messageSender))
             .withHeader("channel", equalTo(web.toString))
@@ -191,8 +198,9 @@ class MessageConnectorSpec
 
         server.stubFor(
           post(urlEqualTo(postUrl))
-            .withHeader("Content-Type", equalTo("application/xml"))
-            .withHeader("Accept", equalTo("application/xml"))
+            .withHeader(HeaderNames.CONTENT_TYPE, equalTo(ContentTypes.XML))
+            .withHeader("X-Client-Id", equalTo("foo"))
+            .withHeader("X-Request-Id", equalTo("bar"))
             .withHeader("X-Message-Type", equalTo(messageType.toString))
             .withHeader("X-Message-Sender", equalTo(messageSender))
             .withHeader("channel", equalTo(web.toString))
@@ -220,8 +228,9 @@ class MessageConnectorSpec
 
         server.stubFor(
           post(urlEqualTo(postUrl))
-            .withHeader("Content-Type", equalTo("application/xml"))
-            .withHeader("Accept", equalTo("application/xml"))
+            .withHeader(HeaderNames.CONTENT_TYPE, equalTo(ContentTypes.XML))
+            .withHeader("X-Client-Id", equalTo("foo"))
+            .withHeader("X-Request-Id", equalTo("bar"))
             .withHeader("X-Message-Type", equalTo(messageType.toString))
             .withHeader("X-Message-Sender", equalTo(messageSender))
             .withHeader("channel", equalTo(web.toString))
