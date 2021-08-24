@@ -318,43 +318,82 @@ class ArrivalMovementRepository @Inject()(
           .headOption
     }
 
-  def fetchAllArrivals(eoriNumber: String, channelFilter: ChannelType, updatedSince: Option[OffsetDateTime]): Future[ResponseArrivals] = {
-    val dateFilter = updatedSince
-      .map(
-        dateTime => Json.obj("lastUpdated" -> Json.obj("$gte" -> dateTime))
-      )
-      .getOrElse(Json.obj())
+  def fetchAllArrivals(
+    eoriNumber: String,
+    channelFilter: ChannelType,
+    updatedSince: Option[OffsetDateTime],
+    mrn: Option[String] = None,
+    pageSize: Option[Int] = None
+  ): Future[ResponseArrivals] =
+    withMetricsTimerAsync("mongo-get-arrivals-for-eori") {
+      _ =>
+        val dateFilter = updatedSince
+          .map(
+            dateTime => Json.obj("lastUpdated" -> Json.obj("$gte" -> dateTime))
+          )
+          .getOrElse(Json.obj())
+        val countSelector = Json.obj("eoriNumber" -> eoriNumber, "channel" -> channelFilter)
 
-    val countSelector = Json.obj("eoriNumber" -> eoriNumber, "channel" -> channelFilter)
-    val selector      = countSelector ++ dateFilter
+        val selector = countSelector ++ dateFilter
+        mrn
+          .map {
+            mrnSearch =>
+              withMRNSearchQuery(mrnSearch, pageSize, channelFilter, selector, countSelector)
+          }
+          .getOrElse {
+            withQuery(channelFilter, selector, countSelector)
+          }
+    }
 
-    val nextMessageId = Json.obj("nextMessageId" -> Json.obj("$size" -> "$messages"))
-
-    val projection = ArrivalWithoutMessages.projection ++ nextMessageId
-
+  private def withQuery(channelFilter: ChannelType, selector: JsObject, countSelector: JsObject) =
     collection.flatMap {
-      c =>
-        val fetchCount = c.count(Some(countSelector))
+      coll =>
+        val fetchCount = coll.count(Some(countSelector))
+        val fetchResults = coll
+          .find(selector, Some(ResponseArrival.projection))
+          .sort(Json.obj("lastUpdated" -> -1))
+          .cursor[ResponseArrival]()
+          .collect[Seq](appConfig.maxRowsReturned(channelFilter), Cursor.FailOnError())
 
-        val fetchResults = c.aggregateWith[ArrivalWithoutMessages](allowDiskUse = true) {
-          _ =>
-            import c.aggregationFramework._
-
-            val initialFilter: PipelineOperator =
-              Match(selector)
-
-            val projected       = List[PipelineOperator](Project(projection))
-            val sort            = List[PipelineOperator](Sort(Descending("lastUpdated")))
-            val limited         = List[PipelineOperator](Limit(appConfig.maxRowsReturned(channelFilter)))
-            val transformations = projected ++ sort ++ limited
-
-            (initialFilter, transformations)
+        (fetchCount, fetchResults).mapN {
+          case (count, results) =>
+            ResponseArrivals(
+              arrivals = results,
+              retrievedArrivals = results.length,
+              totalArrivals = count
+            )
         }
         for {
           results <- fetchResults.collect[Seq](appConfig.maxRowsReturned(channelFilter), Cursor.FailOnError())
           count   <- fetchCount
         } yield {
           ResponseArrivals(results.map(ResponseArrival.build), results.length, count)
+        }
+    }
+  }
+
+  private def withMRNSearchQuery(mrn: String, pageSize: Option[Int], channelFilter: ChannelType, selector: JsObject, countSelector: JsObject) = {
+    val mrnSelector = Json.obj("movementReferenceNumber" -> Json.obj("$regex" -> mrn))
+    collection.flatMap {
+      coll =>
+        val fetchCount      = coll.count(Some(countSelector))
+        val totalMatchCount = coll.count(Some(countSelector ++ mrnSelector))
+        val mrnFilter       = selector ++ mrnSelector
+        val fetchResults = coll
+          .find(mrnFilter, Some(ResponseArrival.projection))
+          .sort(Json.obj("lastUpdated" -> -1))
+          .batchSize(pageSize.getOrElse(100))
+          .cursor[ResponseArrival]()
+          .collect[Seq](appConfig.maxRowsReturned(channelFilter), Cursor.FailOnError())
+
+        (fetchCount, fetchResults, totalMatchCount).mapN {
+          case (count, results, matchCount) =>
+            ResponseArrivals(
+              arrivals = results,
+              retrievedArrivals = results.length,
+              totalArrivals = count,
+              totalMatched = Some(matchCount)
+            )
         }
     }
   }
