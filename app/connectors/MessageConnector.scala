@@ -39,12 +39,13 @@ import utils.Format
 import java.time.OffsetDateTime
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import config.Constants
 
-class MessageConnector @Inject()(config: AppConfig, http: HttpClient, val metrics: Metrics)(implicit ec: ExecutionContext) extends HasMetrics {
+class MessageConnector @Inject() (config: AppConfig, http: HttpClient, val metrics: Metrics)(implicit ec: ExecutionContext) extends HasMetrics {
 
-  def post(arrivalId: ArrivalId, message: MovementMessageWithStatus, dateTime: OffsetDateTime, channelType: ChannelType)(
-    implicit
-    hc: HeaderCarrier): Future[EisSubmissionResult] = {
+  def post(arrivalId: ArrivalId, message: MovementMessageWithStatus, dateTime: OffsetDateTime, channelType: ChannelType)(implicit
+    hc: HeaderCarrier
+  ): Future[EisSubmissionResult] = {
 
     val url = config.eisUrl
 
@@ -52,7 +53,8 @@ class MessageConnector @Inject()(config: AppConfig, http: HttpClient, val metric
 
     val messageSender = MessageSender(arrivalId, message.messageCorrelationId)
 
-    val requestHeaders = hc.headers(Seq("X-Request-Id", "X-Client-Id")) ++ messageHeaders(message.messageType, dateTime, messageSender, channelType)
+    val requestHeaders =
+      hc.headers(Seq(Constants.XClientIdHeader, Constants.XRequestIdHeader)) ++ messageHeaders(message.messageType, dateTime, messageSender, channelType)
 
     withMetricsTimerAsync("submit-eis-message") {
       timer =>
