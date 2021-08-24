@@ -47,6 +47,7 @@ case class Stubs(server: WireMockServer, private val stubs: Seq[() => StubMappin
     def successfulSubmission(): Stubs = copy(stubs = stubs :+ (() => server.stubFor(
       post(urlEqualTo("/movements/messages"))
         .withHeader(HeaderNames.CONTENT_TYPE, equalTo(ContentTypes.XML))
+        .withHeader(HeaderNames.USER_AGENT, equalTo("transit-movements-trader-at-destination"))
         .withHeader("X-Message-Sender", matching("MDTP-ARR-\\d{23}-\\d{2}"))
         .withHeader("X-Message-Type", matching(MessageType.values.map(_.code).mkString("(", "|", ")")))
         .withHeader("channel", matching(ChannelType.values.map(_.toString).mkString("(", "|", ")")))

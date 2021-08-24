@@ -47,6 +47,7 @@ class ManageDocumentsConnectorSpec extends SpecBase with WiremockSuite with Scal
         server.stubFor(
           post(urlEqualTo("/transit-movements-trader-manage-documents/unloading-permission"))
             .withHeader(HeaderNames.CONTENT_TYPE, equalTo(ContentTypes.XML))
+            .withHeader(HeaderNames.USER_AGENT, equalTo("transit-movements-trader-at-destination"))
             .withHeader("X-Client-Id", equalTo("foo"))
             .withHeader("X-Request-Id", equalTo("bar"))
             .willReturn(
@@ -75,6 +76,7 @@ class ManageDocumentsConnectorSpec extends SpecBase with WiremockSuite with Scal
         server.stubFor(
           post(urlEqualTo("/transit-movements-trader-manage-documents/unloading-permission"))
             .withHeader(HeaderNames.CONTENT_TYPE, equalTo(ContentTypes.XML))
+            .withHeader(HeaderNames.USER_AGENT, equalTo("transit-movements-trader-at-destination"))
             .withHeader("X-Client-Id", equalTo("foo"))
             .withHeader("X-Request-Id", equalTo("bar"))
             .willReturn(
