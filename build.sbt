@@ -5,7 +5,7 @@ import uk.gov.hmrc.DefaultBuildSettings
 val appName = "transit-movements-trader-at-destination"
 
 lazy val microservice = Project(appName, file("."))
-  .enablePlugins(play.sbt.PlayScala, SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin, SbtArtifactory)
+  .enablePlugins(play.sbt.PlayScala, SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin)
   .disablePlugins(JUnitXmlReportPlugin) //Required to prevent https://github.com/scalatest/scalatest/issues/1427
   .configs(IntegrationTest)
   .settings(DefaultBuildSettings.integrationTestSettings())
@@ -14,13 +14,12 @@ lazy val microservice = Project(appName, file("."))
   .settings(inConfig(IntegrationTest)(scalafmtSettings))
   .settings(inConfig(Test)(testSettings): _*)
   .settings(inConfig(Test)(testSettings))
-  .settings(scalaVersion := "2.12.13")
   .settings(inThisBuild(buildSettings))
   .settings(scoverageSettings)
   .settings(scalacSettings)
   .settings(
     majorVersion := 0,
-    scalaVersion := "2.12.13",
+    scalaVersion := "2.12.14",
     resolvers += Resolver.jcenterRepo,
     PlayKeys.playDefaultPort := 9480,
     libraryDependencies ++= AppDependencies.compile ++ AppDependencies.test,
@@ -58,8 +57,8 @@ lazy val scalacSettings = Def.settings(
 )
 
 lazy val scoverageSettings = Def.settings(
-  parallelExecution in Test := false,
-  ScoverageKeys.coverageMinimum := 82.00,
+  Test / parallelExecution := false,
+  ScoverageKeys.coverageMinimumStmtTotal := 82,
   ScoverageKeys.coverageExcludedFiles := "<empty>;.*javascript.*;.*Routes.*;",
   ScoverageKeys.coverageFailOnMinimum := true,
   ScoverageKeys.coverageHighlighting := true,
