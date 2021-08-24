@@ -31,13 +31,14 @@ import uk.gov.hmrc.http.HeaderCarrier
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class ManageDocumentsConnector @Inject()(config: AppConfig, ws: WSClient, val metrics: Metrics)(implicit ec: ExecutionContext) extends HasMetrics {
+class ManageDocumentsConnector @Inject() (config: AppConfig, ws: WSClient, val metrics: Metrics)(implicit ec: ExecutionContext) extends HasMetrics {
 
   def getUnloadingPermissionPdf(movementMessage: ResponseMovementMessage)(implicit hc: HeaderCarrier): Future[WSResponse] = {
     val serviceUrl = s"${config.manageDocumentsUrl}/unloading-permission"
 
     val headers = hc.headers(Seq(Constants.XClientIdHeader, Constants.XRequestIdHeader)) ++ Seq(
-      HeaderNames.CONTENT_TYPE -> ContentTypes.XML
+      HeaderNames.CONTENT_TYPE -> ContentTypes.XML,
+      HeaderNames.USER_AGENT   -> config.appName
     )
 
     withMetricsTimerResponse("manage-documents-get-unloading-permission-pdf") {
