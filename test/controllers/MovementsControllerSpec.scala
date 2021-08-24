@@ -149,7 +149,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
           when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(newArrival.arrivalId))
           when(mockSubmitMessageService.submitArrival(any())(any())).thenReturn(Future.successful(SubmissionProcessingResult.SubmissionSuccess))
-          when(mockNotificationService.getBox(any())(any(), any())).thenReturn(Future.successful(None))
+          when(mockNotificationService.getBox(any())(any())).thenReturn(Future.successful(None))
 
           val application = baseApplicationBuilder
             .overrides(
@@ -205,7 +205,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
           when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(newArrival.arrivalId))
           when(mockSubmitMessageService.submitArrival(any())(any())).thenReturn(Future.successful(SubmissionProcessingResult.SubmissionSuccess))
-          when(mockNotificationService.getBox(any())(any(), any())).thenReturn(Future.successful(Some(testBox)))
+          when(mockNotificationService.getBox(any())(any())).thenReturn(Future.successful(Some(testBox)))
 
           val application = baseApplicationBuilder
             .overrides(
@@ -248,7 +248,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           val mockNotificationService = mock[PushPullNotificationService]
 
           when(mockArrivalIdRepository.nextId()).thenReturn(Future.failed(new Exception))
-          when(mockNotificationService.getBox(any())(any(), any())).thenReturn(Future.successful(None))
+          when(mockNotificationService.getBox(any())(any())).thenReturn(Future.successful(None))
 
           val application = baseApplicationBuilder
             .overrides(
@@ -279,7 +279,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
           when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
           when(mockSubmitMessageService.submitArrival(any())(any())).thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureInternal))
-          when(mockNotificationService.getBox(any())(any(), any())).thenReturn(Future.successful(None))
+          when(mockNotificationService.getBox(any())(any())).thenReturn(Future.successful(None))
 
           val application = baseApplicationBuilder
             .overrides(
@@ -311,7 +311,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
           when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
           when(mockSubmitMessageService.submitArrival(any())(any())).thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureExternal))
-          when(mockNotificationService.getBox(any())(any(), any())).thenReturn(Future.successful(None))
+          when(mockNotificationService.getBox(any())(any())).thenReturn(Future.successful(None))
 
           val application = baseApplicationBuilder
             .overrides(
@@ -339,7 +339,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           val mockNotificationService  = mock[PushPullNotificationService]
 
           when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
-          when(mockNotificationService.getBox(any())(any(), any())).thenReturn(Future.successful(None))
+          when(mockNotificationService.getBox(any())(any())).thenReturn(Future.successful(None))
 
           val application =
             baseApplicationBuilder
@@ -377,7 +377,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           val mockNotificationService  = mock[PushPullNotificationService]
 
           when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
-          when(mockNotificationService.getBox(any())(any(), any())).thenReturn(Future.successful(None))
+          when(mockNotificationService.getBox(any())(any())).thenReturn(Future.successful(None))
 
           val application =
             baseApplicationBuilder
@@ -408,7 +408,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           val mockNotificationService = mock[PushPullNotificationService]
 
           when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
-          when(mockNotificationService.getBox(any())(any(), any())).thenReturn(Future.successful(None))
+          when(mockNotificationService.getBox(any())(any())).thenReturn(Future.successful(None))
 
           val application =
             baseApplicationBuilder
@@ -442,7 +442,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
           when(mockSubmitMessageService.submitArrival(any())(any()))
             .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureRejected(ErrorInPayload.responseBody)))
-          when(mockNotificationService.getBox(any())(any(), any())).thenReturn(Future.successful(None))
+          when(mockNotificationService.getBox(any())(any())).thenReturn(Future.successful(None))
 
           val application = baseApplicationBuilder
             .overrides(
@@ -474,7 +474,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
           when(mockSubmitMessageService.submitArrival(any())(any()))
             .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureInternal))
-          when(mockNotificationService.getBox(any())(any(), any())).thenReturn(Future.successful(None))
+          when(mockNotificationService.getBox(any())(any())).thenReturn(Future.successful(None))
 
           val application = baseApplicationBuilder
             .overrides(
@@ -511,7 +511,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
           when(mockSubmitMessageService.submitMessage(any(), any(), any(), any(), any())(any()))
             .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionSuccess))
-          when(mockNotificationService.getBox(any())(any(), any())).thenReturn(Future.successful(None))
+          when(mockNotificationService.getBox(any())(any())).thenReturn(Future.successful(None))
 
           val application = baseApplicationBuilder
             .overrides(
@@ -576,7 +576,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
             .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionSuccess))
 
           when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(expectedArrival.arrivalId))
-          when(mockNotificationService.getBox(any())(any(), any())).thenReturn(Future.successful(None))
+          when(mockNotificationService.getBox(any())(any())).thenReturn(Future.successful(None))
 
           val application = baseApplicationBuilder
             .overrides(
@@ -610,7 +610,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
           when(mockSubmitMessageService.submitMessage(any(), any(), any(), any(), any())(any()))
             .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureInternal))
-          when(mockNotificationService.getBox(any())(any(), any())).thenReturn(Future.successful(None))
+          when(mockNotificationService.getBox(any())(any())).thenReturn(Future.successful(None))
 
           val application = baseApplicationBuilder
             .overrides(
@@ -641,7 +641,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
           when(mockSubmitMessageService.submitMessage(any(), any(), any(), any(), any())(any()))
             .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureExternal))
-          when(mockNotificationService.getBox(any())(any(), any())).thenReturn(Future.successful(None))
+          when(mockNotificationService.getBox(any())(any())).thenReturn(Future.successful(None))
 
           val app = baseApplicationBuilder
             .overrides(
@@ -668,7 +668,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         "must return BadRequest if the payload is malformed" in {
           val arrival                 = Arbitrary.arbitrary[Arrival].sample.value.copy(eoriNumber = "eori")
           val mockNotificationService = mock[PushPullNotificationService]
-          when(mockNotificationService.getBox(any())(any(), any())).thenReturn(Future.successful(None))
+          when(mockNotificationService.getBox(any())(any())).thenReturn(Future.successful(None))
 
           val application =
             baseApplicationBuilder
@@ -693,7 +693,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
         "must return BadRequest if the message is not an arrival notification" in {
           val mockNotificationService = mock[PushPullNotificationService]
-          when(mockNotificationService.getBox(any())(any(), any())).thenReturn(Future.successful(None))
+          when(mockNotificationService.getBox(any())(any())).thenReturn(Future.successful(None))
 
           val application =
             baseApplicationBuilder
@@ -725,7 +725,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
           when(mockSubmitMessageService.submitMessage(any(), any(), any(), any(), any())(any()))
             .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureRejected(ErrorInPayload.responseBody)))
-          when(mockNotificationService.getBox(any())(any(), any())).thenReturn(Future.successful(None))
+          when(mockNotificationService.getBox(any())(any())).thenReturn(Future.successful(None))
 
           val app = baseApplicationBuilder
             .overrides(
@@ -755,7 +755,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
           when(mockSubmitMessageService.submitMessage(any(), any(), any(), any(), any())(any()))
             .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureInternal))
-          when(mockNotificationService.getBox(any())(any(), any())).thenReturn(Future.successful(None))
+          when(mockNotificationService.getBox(any())(any())).thenReturn(Future.successful(None))
 
           val app = baseApplicationBuilder
             .overrides(

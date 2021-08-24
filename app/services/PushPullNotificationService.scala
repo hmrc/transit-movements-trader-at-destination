@@ -17,22 +17,29 @@
 package services
 
 import connectors.PushPullNotificationConnector
+import models.Arrival
 import models.ArrivalMessageNotification
 import models.Box
 import models.BoxId
+import models.InboundMessageRequest
+import models.MessageType
 import play.api.Logging
+import play.api.http.HeaderNames
 import play.api.http.Status._
+import play.api.mvc.Headers
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.UpstreamErrorResponse
 
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.util.Try
 import scala.util.control.NonFatal
+import scala.xml.NodeSeq
 
-class PushPullNotificationService @Inject()(connector: PushPullNotificationConnector) extends Logging {
+class PushPullNotificationService @Inject()(connector: PushPullNotificationConnector)(implicit ec: ExecutionContext) extends Logging {
 
-  def getBox(clientId: String)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Option[Box]] =
+  def getBox(clientId: String)(implicit hc: HeaderCarrier): Future[Option[Box]] =
     connector
       .getBox(clientId)
       .map {
@@ -47,17 +54,30 @@ class PushPullNotificationService @Inject()(connector: PushPullNotificationConne
           None
       }
 
-  def sendPushNotification(boxId: BoxId, notification: ArrivalMessageNotification)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Unit] =
-    connector
-      .postNotification(boxId, notification)
+  private[services] def sendPushNotification(inboundRequest: InboundMessageRequest, headers: Headers)(implicit hc: HeaderCarrier): Future[Unit] =
+    inboundRequest.arrival.notificationBox
       .map {
-        case Left(UpstreamErrorResponse(message, statusCode, _, _)) =>
-          logger.warn(s"Error $statusCode received while sending notification for boxId $boxId: $message")
-        case Right(_) => ()
+        box =>
+          val contentLength = headers
+            .get(HeaderNames.CONTENT_LENGTH)
+            .flatMap(
+              x => Try(x.toInt).toOption
+            )
 
+          val arrivalMessageNotification = ArrivalMessageNotification.fromInboundRequest(inboundRequest, contentLength)
+
+          connector
+            .postNotification(box.boxId, arrivalMessageNotification)
+            .map {
+              case Left(UpstreamErrorResponse(message, statusCode, _, _)) =>
+                logger.warn(s"Error $statusCode received while sending notification for boxId ${box.boxId}: $message")
+              case Right(_) => ()
+
+            }
+            .recover {
+              case NonFatal(e) =>
+                logger.error(s"Error while sending push notification", e)
+            }
       }
-      .recover {
-        case NonFatal(e) =>
-          logger.error(s"Error while sending push notification", e)
-      }
+      .getOrElse(Future.unit)
 }

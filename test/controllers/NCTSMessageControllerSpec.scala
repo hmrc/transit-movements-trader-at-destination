@@ -17,21 +17,17 @@
 package controllers
 
 import base.SpecBase
-import config.Constants
 import generators.ModelGenerators
-import models.ArrivalStatus.ArrivalSubmitted
 import models.ArrivalStatus.GoodsReleased
 import models.ChannelType.web
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalNotFoundError
-import models.Box
-import models.BoxId
 import models.DocumentExistsError
-import models.FailedToSaveMessage
-import models.FailedToValidateMessage
+import models.FailedToLock
 import models.GoodsReleasedResponse
 import models.InboundMessageRequest
+import models.InvalidArrivalRootNodeError
 import models.MessageSender
 import models.MovementMessageWithoutStatus
 import org.mockito.ArgumentMatchers._
@@ -42,126 +38,81 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import services.InboundRequestService
-import services.PushPullNotificationService
-import services.SaveMessageService
-import utils.Format
+import services.MovementMessageOrchestratorService
 
-import java.time.LocalDateTime
 import scala.concurrent.Future
-import scala.xml.Utility.trim
 
 class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks with ModelGenerators with BeforeAndAfterEach {
 
-  private val mockSaveMessageService: SaveMessageService                   = mock[SaveMessageService]
-  private val mockPushPullNotificationService: PushPullNotificationService = mock[PushPullNotificationService]
-  private val mockInboundRequestService: InboundRequestService             = mock[InboundRequestService]
+  private val mockMovementMessageOrchestratorService: MovementMessageOrchestratorService = mock[MovementMessageOrchestratorService]
 
-  private val arrivalId     = ArrivalId(1)
-  private val version       = 1
-  private val messageSender = MessageSender(arrivalId, version)
-
-  private val arrivalWithoutBox = Arbitrary
-    .arbitrary[Arrival]
-    .sample
-    .value
-    .copy(
-      status = ArrivalSubmitted
-    )
-
-  private val testBoxId = "1c5b9365-18a6-55a5-99c9-83a091ac7f26"
-  private val testBox   = Box(BoxId(testBoxId), Constants.BoxName)
-
-  private val arrivalWithBox = arrivalWithoutBox.copy(notificationBox = Some(testBox))
-
-  private val invalidXml = <test></test>
-
-  private val dateTime = LocalDateTime.now
-
-  private val xml =
-    (<CC007A>
-      <DatOfPreMES9>
-        {Format.dateFormatted(dateTime)}
-      </DatOfPreMES9>
-      <TimOfPreMES10>
-        {Format.timeFormatted(dateTime.toLocalTime)}
-      </TimOfPreMES10>
-    </CC007A>).map(trim)
+  private val messageSender = MessageSender(ArrivalId(1), 1)
 
   override def beforeEach: Unit = {
     super.beforeEach()
-    reset(mockSaveMessageService)
-    reset(mockPushPullNotificationService)
-    reset(mockInboundRequestService)
+    reset(mockMovementMessageOrchestratorService)
   }
 
   "post" - {
 
-    "must return OK, when the service validates and save the message" in {
+    "must return OK" in {
+
+      val arrival = Arbitrary.arbitrary[Arrival].sample.value
 
       val message = Arbitrary.arbitrary[MovementMessageWithoutStatus].sample.value
 
-      when(mockInboundRequestService.makeInboundRequest(any(), any(), any())(any()))
-        .thenReturn(Future.successful(Right(InboundMessageRequest(arrivalWithoutBox, GoodsReleased, GoodsReleasedResponse, message))))
-
-      when(mockSaveMessageService.saveInboundMessage(any(), any())(any()))
-        .thenReturn(Future.successful(Right(())))
+      when(mockMovementMessageOrchestratorService.saveNCTSMessage(any(), any(), any())(any()))
+        .thenReturn(Future.successful(Right(InboundMessageRequest(arrival, GoodsReleased, GoodsReleasedResponse, message))))
 
       val application = baseApplicationBuilder
-        .overrides(bind[SaveMessageService].toInstance(mockSaveMessageService))
-        .overrides(bind[InboundRequestService].toInstance(mockInboundRequestService))
+        .overrides(bind[MovementMessageOrchestratorService].toInstance(mockMovementMessageOrchestratorService))
         .build()
 
       running(application) {
         val request = FakeRequest(POST, routes.NCTSMessageController.post(messageSender).url)
-          .withHeaders("channel" -> arrivalWithoutBox.channel.toString)
-          .withXmlBody(xml)
+          .withHeaders("channel" -> arrival.channel.toString)
+          .withXmlBody(<test></test>)
 
         val result = route(application, request).value
 
         status(result) mustEqual OK
-        header(LOCATION, result) mustBe Some(routes.MessagesController.getMessage(arrivalWithoutBox.arrivalId, arrivalWithoutBox.nextMessageId).url)
+        header(LOCATION, result) mustBe Some(routes.MessagesController.getMessage(arrival.arrivalId, arrival.nextMessageId).url)
       }
     }
 
-    "must return NotFound for an arrivalWithoutBox that does not exist" in {
+    "must return NotFound when the MovementMessageOrchestratorService returns an ArrivalNotFoundError" in {
 
-      when(mockInboundRequestService.makeInboundRequest(any(), any(), any())(any()))
+      when(mockMovementMessageOrchestratorService.saveNCTSMessage(any(), any(), any())(any()))
         .thenReturn(Future.successful(Left(ArrivalNotFoundError("error"))))
 
-      val application = baseApplicationBuilder.overrides(bind[InboundRequestService].toInstance(mockInboundRequestService)).build()
+      val application = baseApplicationBuilder
+        .overrides(bind[MovementMessageOrchestratorService].toInstance(mockMovementMessageOrchestratorService))
+        .build()
 
       running(application) {
         val request = FakeRequest(POST, routes.NCTSMessageController.post(messageSender).url)
-          .withXmlBody(xml)
+          .withXmlBody(<test></test>)
           .withHeaders("channel" -> web.toString)
 
         val result = route(application, request).value
 
         status(result) mustEqual NOT_FOUND
-        verifyNoInteractions(mockSaveMessageService)
       }
     }
 
-    "must return Internal Server Error if adding the message to the movement fails" in {
+    "must return an Internal Server Error when the MovementMessageOrchestratorService returns a Submission state of type InternalError" in {
 
-      val message = Arbitrary.arbitrary[MovementMessageWithoutStatus].sample.value
-
-      when(mockInboundRequestService.makeInboundRequest(any(), any(), any())(any()))
-        .thenReturn(Future.successful(Right(InboundMessageRequest(arrivalWithoutBox, GoodsReleased, GoodsReleasedResponse, message))))
-
-      when(mockSaveMessageService.saveInboundMessage(any(), any())(any()))
-        .thenReturn(Future.successful(Left(FailedToSaveMessage("ERROR"))))
+      when(mockMovementMessageOrchestratorService.saveNCTSMessage(any(), any(), any())(any()))
+        .thenReturn(Future.successful(Left(FailedToLock("error"))))
 
       val application = baseApplicationBuilder
-        .overrides(bind[SaveMessageService].toInstance(mockSaveMessageService))
-        .overrides(bind[InboundRequestService].toInstance(mockInboundRequestService))
+        .overrides(bind[MovementMessageOrchestratorService].toInstance(mockMovementMessageOrchestratorService))
         .build()
 
       running(application) {
         val request = FakeRequest(POST, routes.NCTSMessageController.post(messageSender).url)
-          .withXmlBody(xml)
-          .withHeaders("channel" -> arrivalWithoutBox.channel.toString)
+          .withXmlBody(<test></test>)
+          .withHeaders("channel" -> web.toString)
 
         val result = route(application, request).value
 
@@ -169,148 +120,40 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
       }
     }
 
-    "must return BadRequest error when failure to validate message" in {
+    "must return a Bad Request when the MovementMessageOrchestratorService returns a Submission state of type ExternalError" in {
 
-      val message = Arbitrary.arbitrary[MovementMessageWithoutStatus].sample.value
-
-      when(mockInboundRequestService.makeInboundRequest(any(), any(), any())(any()))
-        .thenReturn(Future.successful(Right(InboundMessageRequest(arrivalWithoutBox, GoodsReleased, GoodsReleasedResponse, message))))
-
-      when(mockSaveMessageService.saveInboundMessage(any(), any())(any()))
-        .thenReturn(Future.successful(Left(FailedToValidateMessage("error"))))
+      when(mockMovementMessageOrchestratorService.saveNCTSMessage(any(), any(), any())(any()))
+        .thenReturn(Future.successful(Left(InvalidArrivalRootNodeError("error"))))
 
       val application = baseApplicationBuilder
-        .overrides(
-          bind[SaveMessageService].toInstance(mockSaveMessageService),
-          bind[InboundRequestService].toInstance(mockInboundRequestService)
-        )
+        .overrides(bind[MovementMessageOrchestratorService].toInstance(mockMovementMessageOrchestratorService))
         .build()
 
       running(application) {
         val request = FakeRequest(POST, routes.NCTSMessageController.post(messageSender).url)
-          .withHeaders("channel" -> arrivalWithoutBox.channel.toString)
-          .withXmlBody(xml)
+          .withXmlBody(<test></test>)
+          .withHeaders("channel" -> web.toString)
 
         val result = route(application, request).value
 
         status(result) mustEqual BAD_REQUEST
-        verify(mockSaveMessageService, times(1)).saveInboundMessage(any(), any())(any())
       }
     }
 
-    "must not send push notification when there is no notificationBox present" in {
+    "must return Locked when the MovementMessageOrchestratorService returns a DocumentExistsError" in {
 
-      val message = Arbitrary.arbitrary[MovementMessageWithoutStatus].sample.value
-
-      when(mockInboundRequestService.makeInboundRequest(any(), any(), any())(any()))
-        .thenReturn(Future.successful(Right(InboundMessageRequest(arrivalWithoutBox, GoodsReleased, GoodsReleasedResponse, message))))
-
-      when(mockSaveMessageService.saveInboundMessage(any(), any())(any()))
-        .thenReturn(Future.successful(Right(())))
-
-      val application = baseApplicationBuilder
-        .overrides(
-          bind[SaveMessageService].toInstance(mockSaveMessageService),
-          bind[PushPullNotificationService].toInstance(mockPushPullNotificationService),
-          bind[InboundRequestService].toInstance(mockInboundRequestService)
-        )
-        .build()
-
-      running(application) {
-        val request = FakeRequest(POST, routes.NCTSMessageController.post(messageSender).url)
-          .withHeaders("channel" -> arrivalWithoutBox.channel.toString)
-          .withXmlBody(xml)
-
-        val result = route(application, request).value
-
-        status(result) mustEqual OK
-        verifyNoInteractions(mockPushPullNotificationService)
-      }
-    }
-
-    "must send push notification when there is a notificationBox and valid timestamp present" in {
-      def boxIdMatcher = refEq(testBoxId).asInstanceOf[BoxId]
-
-      val message = Arbitrary.arbitrary[MovementMessageWithoutStatus].sample.value
-
-      when(mockInboundRequestService.makeInboundRequest(any(), any(), any())(any()))
-        .thenReturn(Future.successful(Right(InboundMessageRequest(arrivalWithBox, GoodsReleased, GoodsReleasedResponse, message))))
-
-      when(mockSaveMessageService.saveInboundMessage(any(), any())(any()))
-        .thenReturn(Future.successful(Right(())))
-
-      when(mockPushPullNotificationService.sendPushNotification(boxIdMatcher, any())(any(), any())).thenReturn(Future.unit)
-
-      val application = baseApplicationBuilder
-        .overrides(
-          bind[SaveMessageService].toInstance(mockSaveMessageService),
-          bind[PushPullNotificationService].toInstance(mockPushPullNotificationService),
-          bind[InboundRequestService].toInstance(mockInboundRequestService)
-        )
-        .build()
-
-      running(application) {
-        val request = FakeRequest(POST, routes.NCTSMessageController.post(messageSender).url)
-          .withHeaders("channel" -> arrivalWithBox.channel.toString)
-          .withXmlBody(xml)
-
-        val result = route(application, request).value
-
-        status(result) mustEqual OK
-        verify(mockPushPullNotificationService, times(1)).sendPushNotification(boxIdMatcher, any())(any(), any())
-      }
-    }
-
-    "must not send push notification when timestamp cannot be parsed" in {
-      def boxIdMatcher = refEq(testBoxId).asInstanceOf[BoxId]
-
-      val message = Arbitrary.arbitrary[MovementMessageWithoutStatus].sample.value
-
-      when(mockInboundRequestService.makeInboundRequest(any(), any(), any())(any()))
-        .thenReturn(Future.successful(Right(InboundMessageRequest(arrivalWithBox, GoodsReleased, GoodsReleasedResponse, message))))
-
-      when(mockSaveMessageService.saveInboundMessage(any(), any())(any()))
-        .thenReturn(Future.successful(Right(())))
-
-      when(mockPushPullNotificationService.sendPushNotification(boxIdMatcher, any())(any(), any())).thenReturn(Future.unit)
-
-      val application = baseApplicationBuilder
-        .overrides(
-          bind[SaveMessageService].toInstance(mockSaveMessageService),
-          bind[PushPullNotificationService].toInstance(mockPushPullNotificationService),
-          bind[InboundRequestService].toInstance(mockInboundRequestService)
-        )
-        .build()
-
-      running(application) {
-        val request = FakeRequest(POST, routes.NCTSMessageController.post(messageSender).url)
-          .withHeaders("channel" -> arrivalWithoutBox.channel.toString)
-          .withXmlBody(invalidXml)
-
-        val result = route(application, request).value
-
-        status(result) mustEqual OK
-        verifyNoInteractions(mockPushPullNotificationService)
-      }
-    }
-
-    "must return Locked" in {
-
-      when(mockInboundRequestService.makeInboundRequest(any(), any(), any())(any()))
+      when(mockMovementMessageOrchestratorService.saveNCTSMessage(any(), any(), any())(any()))
         .thenReturn(Future.successful(Left(DocumentExistsError("error"))))
 
-      when(mockSaveMessageService.saveInboundMessage(any(), any())(any()))
-        .thenReturn(Future.successful(Right(())))
-
       val application = baseApplicationBuilder
-        .overrides(bind[SaveMessageService].toInstance(mockSaveMessageService))
-        .overrides(bind[InboundRequestService].toInstance(mockInboundRequestService))
+        .overrides(bind[MovementMessageOrchestratorService].toInstance(mockMovementMessageOrchestratorService))
         .build()
 
       running(application) {
+
         val request = FakeRequest(POST, routes.NCTSMessageController.post(messageSender).url)
-          .withHeaders("channel" -> arrivalWithoutBox.channel.toString)
-          .withXmlBody(xml)
+          .withXmlBody(<test></test>)
+          .withHeaders("channel" -> web.toString)
 
         val result = route(application, request).value
 
