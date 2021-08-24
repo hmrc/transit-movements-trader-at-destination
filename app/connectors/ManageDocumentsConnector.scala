@@ -31,7 +31,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class ManageDocumentsConnector @Inject() (config: AppConfig, ws: WSClient, val metrics: Metrics)(implicit ec: ExecutionContext) extends HasMetrics {
+class ManageDocumentsConnector @Inject()(config: AppConfig, ws: WSClient, val metrics: Metrics)(implicit ec: ExecutionContext) extends HasMetrics {
 
   def getUnloadingPermissionPdf(movementMessage: ResponseMovementMessage)(implicit hc: HeaderCarrier): Future[WSResponse] = {
     val serviceUrl = s"${config.manageDocumentsUrl}/unloading-permission"
