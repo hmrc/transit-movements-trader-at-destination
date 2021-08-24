@@ -17,6 +17,8 @@
 package connectors
 
 import com.github.tomakehurst.wiremock.WireMockServer
+import com.github.tomakehurst.wiremock.common.ConsoleNotifier
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.BeforeAndAfterEach
@@ -27,7 +29,9 @@ import play.api.inject.guice.GuiceableModule
 trait WiremockSuite extends BeforeAndAfterAll with BeforeAndAfterEach {
   this: Suite =>
 
-  protected val server: WireMockServer = new WireMockServer(wireMockConfig().dynamicPort())
+  protected val wiremockConfig: WireMockConfiguration = wireMockConfig().dynamicPort().notifier(new ConsoleNotifier(false))
+
+  protected val server: WireMockServer = new WireMockServer(wiremockConfig)
 
   protected def portConfigKey: String
 
