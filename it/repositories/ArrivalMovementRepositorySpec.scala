@@ -26,6 +26,14 @@ import base._
 import cats.data.NonEmptyList
 import config.AppConfig
 import controllers.routes
+import models.ArrivalStatus.ArrivalSubmitted
+import models.ArrivalStatus.GoodsReleased
+import models.ArrivalStatus.Initialized
+import models.ArrivalStatus.UnloadingRemarksSubmitted
+import models.ChannelType.api
+import models.ChannelType.web
+import models.MessageStatus.SubmissionPending
+import models.MessageStatus.SubmissionSucceeded
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalIdSelector
@@ -37,17 +45,10 @@ import models.MongoDateTimeFormats
 import models.MovementMessageWithStatus
 import models.MovementMessageWithoutStatus
 import models.MovementReferenceNumber
-import models.ArrivalStatus.ArrivalSubmitted
-import models.ArrivalStatus.GoodsReleased
-import models.ArrivalStatus.Initialized
-import models.ArrivalStatus.UnloadingRemarksSubmitted
-import models.ChannelType.api
-import models.ChannelType.web
-import models.MessageStatus.SubmissionPending
-import models.MessageStatus.SubmissionSucceeded
 import models.response.ResponseArrival
 import models.response.ResponseArrivals
 import org.scalacheck.Arbitrary.arbitrary
+import org.scalacheck.Gen
 import org.scalactic.source
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.TestSuiteMixin
@@ -97,7 +98,15 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
       )
   }
 
+  def nonEmptyListWithMaxSize[T](maxSize: Int, gen: Gen[T]): Gen[NonEmptyList[T]] =
+    for {
+      head     <- gen
+      tailSize <- Gen.choose(1, maxSize - 1)
+      tail     <- Gen.listOfN(tailSize, gen)
+    } yield NonEmptyList(head, tail)
+
   private val eoriNumber: String = arbitrary[String].sample.value
+  private val mrn                = arbitrary[MovementReferenceNumber].sample.value
 
   "ArrivalMovementRepository" - {
     "insert" - {
@@ -611,7 +620,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
 
           val result = repository.get(eori, movementReferenceNumber, web).futureValue
 
-          result mustEqual None
+          result mustBe None
         }
       }
     }
@@ -728,6 +737,107 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
           val dateTime = OffsetDateTime.of(LocalDateTime.of(2021, 4, 30, 10, 30, 32), ZoneOffset.ofHours(1))
           val actual   = service.fetchAllArrivals(eoriNumber, web, Some(dateTime)).futureValue
           val expected = ResponseArrivals(Seq(arrivalMovement3, arrivalMovement4, arrivalMovement2).map(ResponseArrival.build), 3, 4)
+
+          actual mustEqual expected
+        }
+      }
+
+      "must filter results by mrn when mrn search parameter provided matches" in {
+        val arrivalMovement1 =
+          arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = web, movementReferenceNumber = mrn)
+        val arrivalMovement2 =
+          arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = web, movementReferenceNumber = mrn)
+        val arrivalMovement3 =
+          arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = web, movementReferenceNumber = mrn)
+        val arrivalMovement4 =
+          arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = web, movementReferenceNumber = mrn)
+
+        val app = appBuilder.build()
+        running(app) {
+
+          val service: ArrivalMovementRepository = app.injector.instanceOf[ArrivalMovementRepository]
+
+          val allMovements = Seq(arrivalMovement1, arrivalMovement2, arrivalMovement3, arrivalMovement4)
+
+          val expectedAllMovements = allMovements.map(ResponseArrival.build).sortBy(_.updated)(_ compareTo _).reverse
+          val jsonArr              = allMovements.map(Json.toJsObject(_))
+
+          database.flatMap {
+            db =>
+              db.collection[JSONCollection](ArrivalMovementRepository.collectionName).insert(false).many(jsonArr)
+          }.futureValue
+
+          val actual   = service.fetchAllArrivals(eoriNumber, web, None, Some(mrn.value)).futureValue
+          val expected = ResponseArrivals(expectedAllMovements, 4, 4, Some(4))
+
+          actual mustEqual expected
+        }
+      }
+
+      "must filter results by mrn when substring of a mrn search parameter provided matches" in {
+        val arrivalMovement1 =
+          arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = web, movementReferenceNumber = mrn)
+        val arrivalMovement2 =
+          arbitrary[Arrival].suchThat(_.movementReferenceNumber != mrn).sample.value.copy(eoriNumber = eoriNumber, channel = web)
+        val arrivalMovement3 =
+          arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = web, movementReferenceNumber = mrn)
+        val arrivalMovement4 =
+          arbitrary[Arrival].suchThat(_.movementReferenceNumber != mrn).sample.value.copy(eoriNumber = eoriNumber, channel = web)
+
+        val app = appBuilder.build()
+        running(app) {
+
+          val service: ArrivalMovementRepository = app.injector.instanceOf[ArrivalMovementRepository]
+
+          val allMovements        = Seq(arrivalMovement1, arrivalMovement2, arrivalMovement3, arrivalMovement4)
+          val allMovementsMatched = Seq(arrivalMovement1, arrivalMovement3)
+
+          val expectedAllMovements = allMovementsMatched.map(ResponseArrival.build).sortBy(_.updated)(_ compareTo _).reverse
+          val jsonArr              = allMovements.map(Json.toJsObject(_))
+
+          database.flatMap {
+            db =>
+              db.collection[JSONCollection](ArrivalMovementRepository.collectionName).insert(false).many(jsonArr)
+          }.futureValue
+
+          val actual = service.fetchAllArrivals(eoriNumber, web, None, Some(mrn.value.substring(3, 9))).futureValue
+
+          val expected = ResponseArrivals(expectedAllMovements, 2, 4, Some(2))
+
+          actual mustEqual expected
+        }
+      }
+
+      "must filter results by mrn when mrn search parameter provided matches return match count" in {
+        val arrivals = nonEmptyListWithMaxSize[Arrival](10, arbitrary[Arrival])
+          .map(_.toList)
+          .sample
+          .value
+          .map(_.copy(eoriNumber = eoriNumber, movementReferenceNumber = mrn, channel = web))
+
+        val arrivalMovement1 =
+          arbitrary[Arrival].suchThat(_.movementReferenceNumber != mrn).sample.value.copy(eoriNumber = eoriNumber, channel = web)
+
+        val allArrivals = arrivalMovement1 :: arrivals
+
+        val aJsonArr = allArrivals.map(Json.toJsObject(_))
+        val app      = appBuilder.build()
+        running(app) {
+
+          val service: ArrivalMovementRepository = app.injector.instanceOf[ArrivalMovementRepository]
+
+          val allMovementsMatched = arrivals
+
+          val expectedAllMovements = allMovementsMatched.map(ResponseArrival.build).sortBy(_.updated)(_ compareTo _).reverse
+
+          database.flatMap {
+            db =>
+              db.collection[JSONCollection](ArrivalMovementRepository.collectionName).insert(false).many(aJsonArr)
+          }.futureValue
+
+          val actual = service.fetchAllArrivals(eoriNumber, web, None, Some(mrn.value.substring(4, 9))).futureValue
+
+          val expected = ResponseArrivals(expectedAllMovements, arrivals.size, allArrivals.size, Some(arrivals.size))
 
           actual mustEqual expected
         }
@@ -979,9 +1089,9 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
         started(app).futureValue
         val repository = app.injector.instanceOf[ArrivalMovementRepository]
 
-        val message = arbitrary[models.MovementMessageWithStatus].sample.value.copy(messageId = MessageId(1))
+        val message  = arbitrary[models.MovementMessageWithStatus].sample.value.copy(messageId = MessageId(1))
         val messages = new NonEmptyList(message, Nil)
-        val arrival = arbitrary[Arrival].sample.value.copy(channel = api, messages = messages)
+        val arrival  = arbitrary[Arrival].sample.value.copy(channel = api, messages = messages)
 
         repository.insert(arrival).futureValue
         val result = repository.getMessage(arrival.arrivalId, arrival.channel, MessageId(1))
@@ -1020,9 +1130,9 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
         started(app).futureValue
         val repository = app.injector.instanceOf[ArrivalMovementRepository]
 
-        val message = arbitrary[models.MovementMessageWithStatus].sample.value.copy(messageId = MessageId(1))
+        val message  = arbitrary[models.MovementMessageWithStatus].sample.value.copy(messageId = MessageId(1))
         val messages = new NonEmptyList(message, Nil)
-        val arrival = arbitrary[Arrival].sample.value.copy(channel = api, messages = messages)
+        val arrival  = arbitrary[Arrival].sample.value.copy(channel = api, messages = messages)
 
         repository.insert(arrival).futureValue
         val result = repository.getMessage(arrival.arrivalId, arrival.channel, MessageId(5))
