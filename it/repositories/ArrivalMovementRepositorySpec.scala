@@ -924,7 +924,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
       }
 
       "must filter results by mrn when mrn search parameter provided matches return match count" in {
-        val arrivals = nonEmptyListWithMaxSize[Arrival](5, arbitrary[Arrival])
+        val arrivals = nonEmptyListWithMaxSize[Arrival](10, arbitrary[Arrival])
           .map(_.toList)
           .sample
           .value
@@ -951,8 +951,6 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
           }.futureValue
 
           val actual = service.fetchAllArrivals(eoriNumber, web, None, Some(mrn.value.substring(4, 9))).futureValue
-          println(s"**actual**=${actual.retrievedArrivals}_**")
-          println(s"**actual**=${arrivals.size}_**")
 
           val expected = ResponseArrivals(expectedAllMovements, arrivals.size, allArrivals.size, Some(arrivals.size))
 
