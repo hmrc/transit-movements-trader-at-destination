@@ -97,13 +97,6 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
         implicitly[source.Position]
       )
   }
-//
-//  def nonEmptyListOfSize[T](size: Int, gen: Gen[T]): Gen[NonEmptyList[T]] =
-//    for {
-//      head     <- gen
-//      tailSize <- Gen.choose(size, size)
-//      tail     <- Gen.listOfN(tailSize, gen)
-//    } yield NonEmptyList(head, tail)
 
   def nonEmptyListOfFixSize[T](size: Int, gen: Gen[T]): Gen[NonEmptyList[T]] =
     for {
