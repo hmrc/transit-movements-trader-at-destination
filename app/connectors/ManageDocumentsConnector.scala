@@ -19,8 +19,11 @@ package connectors
 import com.google.inject.Inject
 import com.kenshoo.play.metrics.Metrics
 import config.AppConfig
+import config.Constants
 import metrics.HasMetrics
 import models.response.ResponseMovementMessage
+import play.api.http.ContentTypes
+import play.api.http.HeaderNames
 import play.api.libs.ws.WSClient
 import play.api.libs.ws.WSResponse
 import uk.gov.hmrc.http.HeaderCarrier
@@ -32,11 +35,15 @@ class ManageDocumentsConnector @Inject()(config: AppConfig, ws: WSClient, val me
 
   def getUnloadingPermissionPdf(movementMessage: ResponseMovementMessage)(implicit hc: HeaderCarrier): Future[WSResponse] = {
     val serviceUrl = s"${config.manageDocumentsUrl}/unloading-permission"
-    val headers    = ("Content-Type", "application/xml")
+
+    val headers = hc.headers(Seq(Constants.XClientIdHeader, Constants.XRequestIdHeader)) ++ Seq(
+      HeaderNames.CONTENT_TYPE -> ContentTypes.XML,
+      HeaderNames.USER_AGENT   -> config.appName
+    )
 
     withMetricsTimerResponse("manage-documents-get-unloading-permission-pdf") {
       ws.url(serviceUrl)
-        .withHttpHeaders(headers)
+        .withHttpHeaders(headers: _*)
         .post(movementMessage.message.toString)
     }
   }

@@ -17,9 +17,12 @@
 package api
 
 import com.github.tomakehurst.wiremock.WireMockServer
+import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
-import com.github.tomakehurst.wiremock.stubbing.StubMapping
-import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, post, urlEqualTo}
+import models.ChannelType
+import models.MessageType
+import play.api.http.ContentTypes
+import play.api.http.HeaderNames
 import play.api.libs.json.Json
 
 case class Stubs(server: WireMockServer, private val stubs: Seq[() => StubMapping] = Nil){
@@ -43,6 +46,11 @@ case class Stubs(server: WireMockServer, private val stubs: Seq[() => StubMappin
 
     def successfulSubmission(): Stubs = copy(stubs = stubs :+ (() => server.stubFor(
       post(urlEqualTo("/movements/messages"))
+        .withHeader(HeaderNames.CONTENT_TYPE, equalTo(ContentTypes.XML))
+        .withHeader(HeaderNames.USER_AGENT, equalTo("transit-movements-trader-at-destination"))
+        .withHeader("X-Message-Sender", matching("MDTP-ARR-\\d{23}-\\d{2}"))
+        .withHeader("X-Message-Type", matching(MessageType.values.map(_.code).mkString("(", "|", ")")))
+        .withHeader("channel", matching(ChannelType.values.map(_.toString).mkString("(", "|", ")")))
         .willReturn(
           aResponse()
             .withStatus(202)
