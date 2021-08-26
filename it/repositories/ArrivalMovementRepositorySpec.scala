@@ -97,12 +97,18 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
         implicitly[source.Position]
       )
   }
+//
+//  def nonEmptyListOfSize[T](size: Int, gen: Gen[T]): Gen[NonEmptyList[T]] =
+//    for {
+//      head     <- gen
+//      tailSize <- Gen.choose(size, size)
+//      tail     <- Gen.listOfN(tailSize, gen)
+//    } yield NonEmptyList(head, tail)
 
-  def nonEmptyListWithMaxSize[T](maxSize: Int, gen: Gen[T]): Gen[NonEmptyList[T]] =
+  def nonEmptyListOfFixSize[T](size: Int, gen: Gen[T]): Gen[NonEmptyList[T]] =
     for {
-      head     <- gen
-      tailSize <- Gen.choose(1, maxSize - 1)
-      tail     <- Gen.listOfN(tailSize, gen)
+      head <- gen
+      tail <- Gen.listOfN(size - 1, gen)
     } yield NonEmptyList(head, tail)
 
   private val eoriNumber: String = arbitrary[String].sample.value
@@ -560,7 +566,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
 
           val result = repository.get(eori, movementReferenceNumber, arrival.channel).futureValue
 
-          result mustEqual None
+          result mustBe None
         }
       }
 
@@ -580,7 +586,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
 
           val result = repository.get(eori, movementReferenceNumber, arrival.channel).futureValue
 
-          result mustEqual None
+          result mustBe None
         }
       }
 
@@ -599,7 +605,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
 
           val result = repository.get(eori, movementReferenceNumber, web).futureValue
 
-          result mustEqual None
+          result mustBe None
         }
       }
 
@@ -809,7 +815,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
       }
 
       "must filter results by mrn when mrn search parameter provided matches return match count" in {
-        val arrivals = nonEmptyListWithMaxSize[Arrival](10, arbitrary[Arrival])
+        val arrivals = nonEmptyListOfFixSize[Arrival](10, arbitrary[Arrival])
           .map(_.toList)
           .sample
           .value
@@ -843,6 +849,41 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
         }
       }
     }
+
+    "must fetch all results based on pageSize 5 for page number 2" in {
+      val arrivals = nonEmptyListOfFixSize[Arrival](20, arbitrary[Arrival])
+        .map(_.toList)
+        .sample
+        .value
+        .map(_.copy(eoriNumber = eoriNumber, movementReferenceNumber = mrn, channel = web))
+
+      val pageSize    = 5
+      val page        = 2
+      val allArrivals = arrivals
+
+      val aJsonArr = allArrivals.map(Json.toJsObject(_))
+      val app      = appBuilder.build()
+      running(app) {
+
+        val service: ArrivalMovementRepository = app.injector.instanceOf[ArrivalMovementRepository]
+
+        val allMovementsMatched = arrivals
+
+        val expectedAllMovements = allMovementsMatched.map(ResponseArrival.build).sortBy(_.updated)(_ compareTo _).reverse.slice(5, 10)
+
+        database.flatMap {
+          db =>
+            db.collection[JSONCollection](ArrivalMovementRepository.collectionName).insert(false).many(aJsonArr)
+        }.futureValue
+
+        val actual = service.fetchAllArrivals(eoriNumber, web, None, None, Some(pageSize), Some(page)).futureValue
+
+        val expected = ResponseArrivals(expectedAllMovements, pageSize, allArrivals.size, None)
+
+        actual mustEqual expected
+      }
+    }
+
   }
 
   "arrivalsWithoutJsonMessagesSource" - {
