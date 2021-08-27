@@ -86,7 +86,8 @@ class MessageConnector @Inject()(config: AppConfig, http: HttpClient, val metric
       HeaderNames.CONTENT_TYPE -> ContentTypes.XML,
       "X-Message-Type"         -> messageType.toString,
       "X-Message-Sender"       -> messageSender.toString,
-      "channel"                -> channelType.toString
+      "channel"                -> channelType.toString,
+      "Accept"                 -> ContentTypes.XML
     )
 }
 
