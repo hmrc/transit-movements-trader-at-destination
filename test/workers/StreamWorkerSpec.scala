@@ -20,7 +20,6 @@ import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.Materializer
-import akka.stream.Supervision
 import akka.stream.scaladsl.Flow
 import base.SpecBase
 import models.LockResult
