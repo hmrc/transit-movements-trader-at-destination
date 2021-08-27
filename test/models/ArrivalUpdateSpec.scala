@@ -16,10 +16,6 @@
 
 package models
 
-import java.time.LocalDateTime
-import java.time.Clock
-import java.time.ZoneOffset
-
 import base.FreeSpecDiscipline
 import base.SpecBase
 import cats._
@@ -31,9 +27,10 @@ import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
+
 import java.time.Clock
+import java.time.LocalDateTime
 import java.time.ZoneOffset
-import java.time.Instant
 
 class ArrivalUpdateSpec
     extends SpecBase
