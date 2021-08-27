@@ -83,7 +83,7 @@ class MessageConnectorSpec
             .withHeader("X-Message-Type", equalTo(messageType.toString))
             .withHeader("X-Message-Sender", equalTo(messageSender))
             .withHeader("channel", equalTo(web.toString))
-            .withHeader(HeaderNames.ACCEPT, equalTo(ContentTypes.XML))
+            .withHeader(HeaderNames.ACCEPT, equalTo("application/xml"))
             .withRequestBody(matchingXPath("/transitRequest"))
             .willReturn(
               aResponse()
@@ -115,7 +115,7 @@ class MessageConnectorSpec
             .withHeader("X-Message-Type", equalTo(messageType.toString))
             .withHeader("X-Message-Sender", equalTo(messageSender))
             .withHeader("channel", equalTo(web.toString))
-            .withHeader(HeaderNames.ACCEPT, equalTo(ContentTypes.XML))
+            .withHeader(HeaderNames.ACCEPT, equalTo("application/xml"))
             .willReturn(
               aResponse()
                 .withStatus(400)
@@ -146,7 +146,7 @@ class MessageConnectorSpec
             .withHeader("X-Message-Type", equalTo(messageType.toString))
             .withHeader("X-Message-Sender", equalTo(messageSender))
             .withHeader("channel", equalTo(web.toString))
-            .withHeader(HeaderNames.ACCEPT, equalTo(ContentTypes.XML))
+            .withHeader(HeaderNames.ACCEPT, equalTo("application/xml"))
             .willReturn(
               aResponse()
                 .withStatus(403)
@@ -177,7 +177,7 @@ class MessageConnectorSpec
             .withHeader("X-Message-Type", equalTo(messageType.toString))
             .withHeader("X-Message-Sender", equalTo(messageSender))
             .withHeader("channel", equalTo(web.toString))
-            .withHeader(HeaderNames.ACCEPT, equalTo(ContentTypes.XML))
+            .withHeader(HeaderNames.ACCEPT, equalTo("application/xml"))
             .willReturn(
               aResponse()
                 .withStatus(500)
@@ -208,7 +208,7 @@ class MessageConnectorSpec
             .withHeader("X-Message-Type", equalTo(messageType.toString))
             .withHeader("X-Message-Sender", equalTo(messageSender))
             .withHeader("channel", equalTo(web.toString))
-            .withHeader(HeaderNames.ACCEPT, equalTo(ContentTypes.XML))
+            .withHeader(HeaderNames.ACCEPT, equalTo("application/xml"))
             .willReturn(
               aResponse()
                 .withStatus(502)
@@ -239,7 +239,7 @@ class MessageConnectorSpec
             .withHeader("X-Message-Type", equalTo(messageType.toString))
             .withHeader("X-Message-Sender", equalTo(messageSender))
             .withHeader("channel", equalTo(web.toString))
-            .withHeader(HeaderNames.ACCEPT, equalTo(ContentTypes.XML))
+            .withHeader(HeaderNames.ACCEPT, equalTo("application/xml"))
             .willReturn(
               aResponse()
                 .withStatus(418)
