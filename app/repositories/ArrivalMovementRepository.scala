@@ -285,7 +285,8 @@ class ArrivalMovementRepository @Inject()(
     channelFilter: ChannelType,
     updatedSince: Option[OffsetDateTime],
     mrn: Option[String] = None,
-    pageSize: Option[Int] = None
+    pageSize: Option[Int] = None,
+    page: Option[Int] = None
   ): Future[ResponseArrivals] =
     withMetricsTimerAsync("mongo-get-arrivals-for-eori") {
       _ =>
@@ -303,32 +304,14 @@ class ArrivalMovementRepository @Inject()(
               withMRNSearchQuery(mrnSearch, pageSize, channelFilter, selector, countSelector)
           }
           .getOrElse {
-            withQuery(channelFilter, selector, countSelector)
+            withPaginationSearchQuery(page, pageSize, channelFilter, selector, countSelector)
           }
-    }
-
-  private def withQuery(channelFilter: ChannelType, selector: JsObject, countSelector: JsObject) =
-    collection.flatMap {
-      coll =>
-        val fetchCount = coll.count(Some(countSelector))
-        val fetchResults = coll
-          .find(selector, Some(ResponseArrival.projection))
-          .sort(Json.obj("lastUpdated" -> -1))
-          .cursor[ResponseArrival]()
-          .collect[Seq](appConfig.maxRowsReturned(channelFilter), Cursor.FailOnError())
-
-        (fetchCount, fetchResults).mapN {
-          case (count, results) =>
-            ResponseArrivals(
-              arrivals = results,
-              retrievedArrivals = results.length,
-              totalArrivals = count
-            )
-        }
     }
 
   private def withMRNSearchQuery(mrn: String, pageSize: Option[Int], channelFilter: ChannelType, selector: JsObject, countSelector: JsObject) = {
     val mrnSelector = Json.obj("movementReferenceNumber" -> Json.obj("$regex" -> mrn))
+    val limit       = pageSize.map(Math.max(1, _)).getOrElse(appConfig.maxRowsReturned(channelFilter))
+
     collection.flatMap {
       coll =>
         val fetchCount      = coll.count(Some(countSelector))
@@ -337,9 +320,8 @@ class ArrivalMovementRepository @Inject()(
         val fetchResults = coll
           .find(mrnFilter, Some(ResponseArrival.projection))
           .sort(Json.obj("lastUpdated" -> -1))
-          .batchSize(pageSize.getOrElse(100))
           .cursor[ResponseArrival]()
-          .collect[Seq](appConfig.maxRowsReturned(channelFilter), Cursor.FailOnError())
+          .collect[Seq](limit, Cursor.FailOnError())
 
         (fetchCount, fetchResults, totalMatchCount).mapN {
           case (count, results, matchCount) =>
@@ -348,6 +330,33 @@ class ArrivalMovementRepository @Inject()(
               retrievedArrivals = results.length,
               totalArrivals = count,
               totalMatched = Some(matchCount)
+            )
+        }
+    }
+  }
+
+  private def withPaginationSearchQuery(page: Option[Int], pageSize: Option[Int], channelFilter: ChannelType, selector: JsObject, countSelector: JsObject) = {
+
+    val limit = pageSize.map(Math.max(1, _)).getOrElse(appConfig.maxRowsReturned(channelFilter))
+    val skip  = Math.abs(page.getOrElse(1) - 1) * limit
+
+    collection.flatMap {
+      coll =>
+        val fetchCount = coll.count(Some(countSelector))
+        val mrnFilter  = selector
+        val fetchResults = coll
+          .find(mrnFilter, Some(ResponseArrival.projection))
+          .sort(Json.obj("lastUpdated" -> -1))
+          .skip(skip)
+          .cursor[ResponseArrival]()
+          .collect[Seq](limit, Cursor.FailOnError())
+
+        (fetchCount, fetchResults).mapN {
+          case (count, results) =>
+            ResponseArrivals(
+              arrivals = results,
+              retrievedArrivals = results.length,
+              totalArrivals = count
             )
         }
     }

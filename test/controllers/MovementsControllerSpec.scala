@@ -551,7 +551,8 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
             movement.message.map(trim) mustEqual expectedMessage.message.map(trim)
 
             verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.ArrivalNotificationSubmitted), eqTo(failedToSubmitArrival.eoriNumber), any(), any())(
-              any())
+              any()
+            )
             verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.MesSenMES3Added), eqTo(failedToSubmitArrival.eoriNumber), any(), any())(any())
 
           }
@@ -832,7 +833,8 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           movement.message.map(trim) mustEqual expectedMessage.message.map(trim)
 
           verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.ArrivalNotificationReSubmitted), eqTo(initializedArrival.eoriNumber), any(), any())(
-            any())
+            any()
+          )
         }
 
       }
@@ -1144,7 +1146,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           forAll(listWithMaxLength[ResponseArrival](10)) {
             arrivals =>
               val responseArrivals = ResponseArrivals(arrivals, arrivals.length, arrivals.length)
-              when(mockArrivalMovementRepository.fetchAllArrivals(any(), any(), any(), any(), any())).thenReturn(Future.successful(responseArrivals))
+              when(mockArrivalMovementRepository.fetchAllArrivals(any(), any(), any(), any(), any(), any())).thenReturn(Future.successful(responseArrivals))
 
               val request = FakeRequest(GET, routes.MovementsController.getArrivals().url)
 
@@ -1182,7 +1184,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
             )
           )
           val responseArrivals = ResponseArrivals(arrivals, 1, 1)
-          when(mockArrivalMovementRepository.fetchAllArrivals(any(), any(), any(), any(), any())).thenReturn(Future.successful(responseArrivals))
+          when(mockArrivalMovementRepository.fetchAllArrivals(any(), any(), any(), any(), any(), any())).thenReturn(Future.successful(responseArrivals))
 
           val request = FakeRequest(GET, routes.MovementsController.getArrivals().url)
 
@@ -1215,7 +1217,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
       "must return an INTERNAL_SERVER_ERROR when we cannot retrieve the Arrival Movements" in {
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
-        when(mockArrivalMovementRepository.fetchAllArrivals(any(), any(), any(), any(), any()))
+        when(mockArrivalMovementRepository.fetchAllArrivals(any(), any(), any(), any(), any(), any()))
           .thenReturn(Future.failed(new Exception))
 
         val application =
