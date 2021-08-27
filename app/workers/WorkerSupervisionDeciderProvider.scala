@@ -16,8 +16,6 @@
 
 package workers
 
-import akka.stream.ActorAttributes
-import akka.stream.Attributes
 import akka.stream.Supervision
 import akka.stream.Supervision.Directive
 import play.api.Logger

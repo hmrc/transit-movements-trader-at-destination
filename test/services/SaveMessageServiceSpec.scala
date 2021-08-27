@@ -19,10 +19,9 @@ package services
 import audit.AuditService
 import base.SpecBase
 import generators.ModelGenerators
-import models.ArrivalStatus._
 import models.Arrival
 import models.ArrivalId
-import models.ArrivalWithoutMessages
+import models.ArrivalStatus._
 import models.FailedToSaveMessage
 import models.GoodsReleasedResponse
 import models.InboundMessageRequest
@@ -35,9 +34,6 @@ import org.scalatest.BeforeAndAfterEach
 import play.api.inject.bind
 import play.api.test.Helpers.running
 import repositories.ArrivalMovementRepository
-import utils.Format
-import java.time.LocalDate
-import java.time.LocalTime
 
 import scala.concurrent.Future
 import scala.util.Failure

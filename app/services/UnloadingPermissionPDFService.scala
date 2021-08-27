@@ -19,14 +19,13 @@ package services
 import connectors.ManageDocumentsConnector
 import controllers.Assets.CONTENT_DISPOSITION
 import controllers.Assets.CONTENT_TYPE
-import javax.inject.Inject
-import models.WSError._
 import models.Arrival
 import models.WSError
-import play.api.libs.ws.WSResponse
+import models.WSError._
 import play.api.mvc.Results
 import uk.gov.hmrc.http.HeaderCarrier
 
+import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 

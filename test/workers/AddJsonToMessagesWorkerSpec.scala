@@ -17,7 +17,6 @@
 package workers
 
 import akka.Done
-import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.Materializer
@@ -28,7 +27,6 @@ import models.LockResult
 import models.LockResult.AlreadyLocked
 import models.LockResult.LockAcquired
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.atLeastOnce
 import org.mockito.Mockito.never
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify

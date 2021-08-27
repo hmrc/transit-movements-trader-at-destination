@@ -18,8 +18,9 @@ package base
 
 import cats.data.NonEmptyList
 import generators.ModelGenerators
-import models.MessageStatus.SubmissionPending
 import models.Arrival
+import models.MessageId
+import models.MessageStatus.SubmissionPending
 import models.MovementMessageWithStatus
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
@@ -30,8 +31,6 @@ import org.scalatest.concurrent.IntegrationPatience
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
-import play.api.inject.guice.GuiceApplicationBuilder
-import models.MessageId
 
 class ItSpecBase
     extends AnyFreeSpec

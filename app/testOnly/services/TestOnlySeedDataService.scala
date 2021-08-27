@@ -16,21 +16,11 @@
 
 package testOnly.services
 
-import cats.data.NonEmptyList
-import models.ArrivalStatus.Initialized
-import models.MessageType.ArrivalNotification
 import models.Arrival
-import models.ArrivalId
-import models.ChannelType
-import models.MessageStatus
-import models.MovementMessageWithStatus
-import models.MovementReferenceNumber
 import testOnly.models.SeedDataParameters
 
 import java.time.Clock
-import java.time.LocalDateTime
 import javax.inject.Inject
-import scala.xml.Elem
 
 private[testOnly] class TestOnlySeedDataService @Inject()(testDataGenerator: TestDataGenerator) {
 
