@@ -40,6 +40,7 @@ import java.time.OffsetDateTime
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import config.Constants
+import play.api.http.MimeTypes
 
 class MessageConnector @Inject()(config: AppConfig, http: HttpClient, val metrics: Metrics)(implicit ec: ExecutionContext) extends HasMetrics {
 
@@ -87,7 +88,7 @@ class MessageConnector @Inject()(config: AppConfig, http: HttpClient, val metric
       "X-Message-Type"         -> messageType.toString,
       "X-Message-Sender"       -> messageSender.toString,
       "channel"                -> channelType.toString,
-      "Accept"                 -> "application/xml" // can't use ContentTypes.XML because EIS will not accept "application/xml; charset=utf-8"
+      "Accept"                 -> MimeTypes.XML // can't use ContentTypes.XML because EIS will not accept "application/xml; charset=utf-8"
     )
 }
 
