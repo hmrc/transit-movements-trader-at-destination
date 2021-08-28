@@ -17,11 +17,11 @@
 package controllers.actions
 
 import generators.ModelGenerators
-import models.ArrivalStatus.ArrivalSubmitted
-import models.ArrivalStatus.UnloadingPermission
 import models.Arrival
 import models.ArrivalRejectedResponse
 import models.ArrivalStatus
+import models.ArrivalStatus.ArrivalSubmitted
+import models.ArrivalStatus.UnloadingPermission
 import models.ChannelType
 import models.GoodsReleasedResponse
 import models.MessageType
@@ -31,7 +31,6 @@ import models.UnloadingRemarksResponse
 import models.XMLSubmissionNegativeAcknowledgementResponse
 import models.request.ArrivalRequest
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalacheck.Gen
 import org.scalatest.EitherValues
 import org.scalatest.OptionValues
 import org.scalatest.concurrent.ScalaFutures
@@ -48,8 +47,6 @@ import play.twirl.api.HtmlFormat
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.xml.Elem
-import scala.xml.Node
 import scala.xml.NodeSeq
 
 class MessageTransformerSpec

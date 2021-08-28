@@ -18,7 +18,6 @@ package audit
 
 import models.ChannelType
 import play.api.libs.json.JsObject
-import play.api.libs.json.JsString
 import play.api.libs.json.OWrites
 import play.api.libs.json.Json
 

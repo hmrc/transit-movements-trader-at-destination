@@ -17,12 +17,9 @@
 package services
 
 import connectors.PushPullNotificationConnector
-import models.Arrival
 import models.ArrivalMessageNotification
 import models.Box
-import models.BoxId
 import models.InboundMessageRequest
-import models.MessageType
 import play.api.Logging
 import play.api.http.HeaderNames
 import play.api.http.Status._
@@ -35,7 +32,6 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.Try
 import scala.util.control.NonFatal
-import scala.xml.NodeSeq
 
 class PushPullNotificationService @Inject()(connector: PushPullNotificationConnector)(implicit ec: ExecutionContext) extends Logging {
 
