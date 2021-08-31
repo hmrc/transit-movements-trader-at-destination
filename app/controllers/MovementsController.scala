@@ -224,12 +224,12 @@ class MovementsController @Inject()(
       }
     }
 
-  def getArrivals(updatedSince: Option[OffsetDateTime], mrn: Option[String], pageSize: Option[Int] = None): Action[AnyContent] =
+  def getArrivals(updatedSince: Option[OffsetDateTime], mrn: Option[String], pageSize: Option[Int] = None, page: Option[Int] = None): Action[AnyContent] =
     withMetricsTimerAction("get-all-arrivals") {
       authenticate().async {
         implicit request =>
           arrivalMovementRepository
-            .fetchAllArrivals(request.eoriNumber, request.channel, updatedSince, mrn, pageSize)
+            .fetchAllArrivals(request.eoriNumber, request.channel, updatedSince, mrn, pageSize, page)
             .map {
               responseArrivals =>
                 countArrivals.update(responseArrivals.retrievedArrivals)
