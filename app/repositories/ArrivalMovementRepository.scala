@@ -70,7 +70,7 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 
-class ArrivalMovementRepository @Inject()(
+class ArrivalMovementRepository @Inject() (
   mongo: ReactiveMongoApi,
   appConfig: AppConfig,
   config: Configuration,
@@ -103,7 +103,7 @@ class ArrivalMovementRepository @Inject()(
 
   val logSubmittedArrivals: Future[Boolean] = {
 
-    val byId     = Json.obj("_id"    -> -1)
+    val byId     = Json.obj("_id" -> -1)
     val selector = Json.obj("status" -> ArrivalStatus.ArrivalSubmitted.toString)
 
     collection
@@ -244,24 +244,23 @@ class ArrivalMovementRepository @Inject()(
       .flatMap {
         c =>
           c.aggregateWith[ArrivalWithoutMessages](allowDiskUse = true) {
-              _ =>
-                import c.aggregationFramework._
+            _ =>
+              import c.aggregationFramework._
 
-                val initialFilter: PipelineOperator =
-                  Match(Json.obj("_id" -> arrivalId, "channel" -> channelFilter))
+              val initialFilter: PipelineOperator =
+                Match(Json.obj("_id" -> arrivalId, "channel" -> channelFilter))
 
-                val transformations = List[PipelineOperator](Project(projection))
-                (initialFilter, transformations)
+              val transformations = List[PipelineOperator](Project(projection))
+              (initialFilter, transformations)
 
-            }
-            .headOption
+          }.headOption
 
       }
       .map(
         opt =>
           opt.map(
             a => a.copy(nextMessageId = MessageId(a.nextMessageId.value + 1))
-        )
+          )
       )
   }
 
@@ -274,24 +273,23 @@ class ArrivalMovementRepository @Inject()(
       .flatMap {
         c =>
           c.aggregateWith[ArrivalWithoutMessages](allowDiskUse = true) {
-              _ =>
-                import c.aggregationFramework._
+            _ =>
+              import c.aggregationFramework._
 
-                val initialFilter: PipelineOperator =
-                  Match(Json.obj("_id" -> arrivalId))
+              val initialFilter: PipelineOperator =
+                Match(Json.obj("_id" -> arrivalId))
 
-                val transformations = List[PipelineOperator](Project(projection))
-                (initialFilter, transformations)
+              val transformations = List[PipelineOperator](Project(projection))
+              (initialFilter, transformations)
 
-            }
-            .headOption
+          }.headOption
 
       }
       .map(
         opt =>
           opt.map(
             a => a.copy(nextMessageId = MessageId(a.nextMessageId.value + 1))
-        )
+          )
       )
   }
 
@@ -299,33 +297,31 @@ class ArrivalMovementRepository @Inject()(
     collection.flatMap {
       c =>
         c.aggregateWith[MovementMessage](allowDiskUse = true) {
-            _ =>
-              import c.aggregationFramework._
+          _ =>
+            import c.aggregationFramework._
 
-              val initialFilter: PipelineOperator =
-                Match(
-                  Json.obj("_id" -> arrivalId, "channel" -> channelFilter, "messages" -> Json.obj("$elemMatch" -> Json.obj("messageId" -> messageId.value))))
+            val initialFilter: PipelineOperator =
+              Match(Json.obj("_id" -> arrivalId, "channel" -> channelFilter, "messages" -> Json.obj("$elemMatch" -> Json.obj("messageId" -> messageId.value))))
 
-              val unwindMessages = List[PipelineOperator](
-                Unwind(
-                  path = "messages",
-                  includeArrayIndex = None,
-                  preserveNullAndEmptyArrays = None
-                )
+            val unwindMessages = List[PipelineOperator](
+              Unwind(
+                path = "messages",
+                includeArrayIndex = None,
+                preserveNullAndEmptyArrays = None
               )
+            )
 
-              val secondaryFilter = List[PipelineOperator](Match(Json.obj("messages.messageId" -> messageId.value)))
+            val secondaryFilter = List[PipelineOperator](Match(Json.obj("messages.messageId" -> messageId.value)))
 
-              val groupById = List[PipelineOperator](GroupField("_id")("messages" -> FirstField("messages")))
+            val groupById = List[PipelineOperator](GroupField("_id")("messages" -> FirstField("messages")))
 
-              val replaceRoot = List[PipelineOperator](ReplaceRootField("messages"))
+            val replaceRoot = List[PipelineOperator](ReplaceRootField("messages"))
 
-              val transformations = unwindMessages ++ secondaryFilter ++ groupById ++ replaceRoot
+            val transformations = unwindMessages ++ secondaryFilter ++ groupById ++ replaceRoot
 
-              (initialFilter, transformations)
+            (initialFilter, transformations)
 
-          }
-          .headOption
+        }.headOption
     }
 
   def fetchAllArrivals(
@@ -380,14 +376,14 @@ class ArrivalMovementRepository @Inject()(
                   import coll.aggregationFramework._
 
                   val matchStage   = Match(fullSelector)
-                  val skipStage    = Skip(skip)
                   val projectStage = Project(projection)
                   val sortStage    = Sort(Descending("lastUpdated"))
+                  val skipStage    = Skip(skip)
                   val limitStage   = Limit(limit)
 
                   val restStages =
                     if (skip > 0)
-                      List[PipelineOperator](skipStage, projectStage, sortStage, limitStage)
+                      List[PipelineOperator](projectStage, sortStage, skipStage, limitStage)
                     else
                       List[PipelineOperator](projectStage, sortStage, limitStage)
 
@@ -401,7 +397,7 @@ class ArrivalMovementRepository @Inject()(
                   results.map(ResponseArrival.build),
                   results.length,
                   totalArrivals = count,
-                  totalMatched = Some(matchCount)
+                  totalMatched = matchCount
                 )
             }
         }
