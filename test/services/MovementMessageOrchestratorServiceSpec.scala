@@ -19,8 +19,7 @@ package services
 import base.SpecBase
 import generators.ModelGenerators
 import models.ArrivalStatus.GoodsReleased
-import models.Arrival
-import models.ArrivalId
+import models.ArrivalWithoutMessages
 import models.GoodsReleasedResponse
 import models.InboundMessageRequest
 import models.MessageSender
@@ -30,10 +29,10 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.mvc.Headers
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 class MovementMessageOrchestratorServiceSpec extends SpecBase with ModelGenerators with ScalaCheckDrivenPropertyChecks {
 

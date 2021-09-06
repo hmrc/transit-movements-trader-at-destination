@@ -59,11 +59,11 @@ import reactivemongo.bson.BSONDocument
 import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 import reactivemongo.play.json.collection.JSONCollection
 import utils.IndexUtils
+
 import java.time.Clock
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
-
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.Failure
@@ -257,7 +257,12 @@ class ArrivalMovementRepository @Inject()(
             .headOption
 
       }
-      .map(opt => opt.map(a => a.copy(nextMessageId = MessageId(a.nextMessageId.value + 1))))
+      .map(
+        opt =>
+          opt.map(
+            a => a.copy(nextMessageId = MessageId(a.nextMessageId.value + 1))
+        )
+      )
   }
 
   def getWithoutMessages(arrivalId: ArrivalId): Future[Option[ArrivalWithoutMessages]] = {
@@ -282,7 +287,12 @@ class ArrivalMovementRepository @Inject()(
             .headOption
 
       }
-      .map(opt => opt.map(a => a.copy(nextMessageId = MessageId(a.nextMessageId.value + 1))))
+      .map(
+        opt =>
+          opt.map(
+            a => a.copy(nextMessageId = MessageId(a.nextMessageId.value + 1))
+        )
+      )
   }
 
   def getMessage(arrivalId: ArrivalId, channelFilter: ChannelType, messageId: MessageId): Future[Option[MovementMessage]] =
@@ -322,53 +332,78 @@ class ArrivalMovementRepository @Inject()(
     eoriNumber: String,
     channelFilter: ChannelType,
     updatedSince: Option[OffsetDateTime],
-    mrn: Option[String] = None,
+    movementReference: Option[String] = None,
     pageSize: Option[Int] = None,
     page: Option[Int] = None
   ): Future[ResponseArrivals] =
     withMetricsTimerAsync("mongo-get-arrivals-for-eori") {
       _ =>
-        val dateFilter = updatedSince
-          .map(
-            dateTime => Json.obj("lastUpdated" -> Json.obj("$gte" -> dateTime))
-          )
-          .getOrElse(Json.obj())
-        val countSelector = Json.obj("eoriNumber" -> eoriNumber, "channel" -> channelFilter)
+        val baseSelector = Json.obj("eoriNumber" -> eoriNumber, "channel" -> channelFilter)
 
-        val selector = countSelector ++ dateFilter
-        mrn
+        val dateSelector = updatedSince
           .map {
-            mrnSearch =>
-              withMRNSearchQuery(mrnSearch, pageSize, channelFilter, selector, countSelector)
+            dateTime =>
+              Json.obj("lastUpdated" -> Json.obj("$gte" -> dateTime))
           }
           .getOrElse {
-            withPaginationSearchQuery(page, pageSize, channelFilter, selector, countSelector)
+            Json.obj()
           }
-    }
 
-  private def withMRNSearchQuery(mrn: String, pageSize: Option[Int], channelFilter: ChannelType, selector: JsObject, countSelector: JsObject) = {
-    val mrnSelector = Json.obj("movementReferenceNumber" -> Json.obj("$regex" -> mrn))
-    val limit       = pageSize.map(Math.max(1, _)).getOrElse(appConfig.maxRowsReturned(channelFilter))
+        val mrnSelector = movementReference
+          .map {
+            mrn =>
+              Json.obj("movementReferenceNumber" -> Json.obj("$regex" -> mrn))
+          }
+          .getOrElse {
+            Json.obj()
+          }
 
-    collection.flatMap {
-      coll =>
-        val fetchCount      = coll.count(Some(countSelector))
-        val totalMatchCount = coll.count(Some(countSelector ++ mrnSelector))
-        val mrnFilter       = selector ++ mrnSelector
-        val fetchResults = coll
-          .find(mrnFilter, Some(ResponseArrival.projection))
-          .sort(Json.obj("lastUpdated" -> -1))
-          .cursor[ResponseArrival]()
-          .collect[Seq](limit, Cursor.FailOnError())
+        val fullSelector =
+          baseSelector ++ dateSelector ++ mrnSelector
 
-        (fetchCount, fetchResults, totalMatchCount).mapN {
-          case (count, results, matchCount) =>
-            ResponseArrivals(
-              arrivals = results,
-              retrievedArrivals = results.length,
-              totalArrivals = count,
-              totalMatched = Some(matchCount)
-            )
+        val nextMessageId = Json.obj("nextMessageId" -> Json.obj("$size" -> "$messages"))
+
+        val projection = ArrivalWithoutMessages.projection ++ nextMessageId
+
+        val limit = pageSize.map(Math.max(1, _)).getOrElse(appConfig.maxRowsReturned(channelFilter))
+
+        val skip = Math.abs(page.getOrElse(1) - 1) * limit
+
+        collection.flatMap {
+          coll =>
+            val fetchCount      = coll.count(Some(baseSelector))
+            val fetchMatchCount = coll.count(Some(fullSelector))
+
+            val fetchResults = coll
+              .aggregateWith[ArrivalWithoutMessages](allowDiskUse = true) {
+                _ =>
+                  import coll.aggregationFramework._
+
+                  val matchStage   = Match(fullSelector)
+                  val skipStage    = Skip(skip)
+                  val projectStage = Project(projection)
+                  val sortStage    = Sort(Descending("lastUpdated"))
+                  val limitStage   = Limit(limit)
+
+                  val restStages =
+                    if (skip > 0)
+                      List[PipelineOperator](skipStage, projectStage, sortStage, limitStage)
+                    else
+                      List[PipelineOperator](projectStage, sortStage, limitStage)
+
+                  (matchStage, restStages)
+              }
+              .collect[Seq](limit, Cursor.FailOnError())
+
+            (fetchResults, fetchCount, fetchMatchCount).mapN {
+              case (results, count, matchCount) =>
+                ResponseArrivals(
+                  results.map(ResponseArrival.build),
+                  results.length,
+                  totalArrivals = count,
+                  totalMatched = Some(matchCount)
+                )
+            }
         }
         for {
           results <- fetchResults.collect[Seq](appConfig.maxRowsReturned(channelFilter), Cursor.FailOnError())
@@ -377,34 +412,6 @@ class ArrivalMovementRepository @Inject()(
           ResponseArrivals(results.map(ResponseArrival.build), results.length, count)
         }
     }
-  }
-
-  private def withPaginationSearchQuery(page: Option[Int], pageSize: Option[Int], channelFilter: ChannelType, selector: JsObject, countSelector: JsObject) = {
-
-    val limit = pageSize.map(Math.max(1, _)).getOrElse(appConfig.maxRowsReturned(channelFilter))
-    val skip  = Math.abs(page.getOrElse(1) - 1) * limit
-
-    collection.flatMap {
-      coll =>
-        val fetchCount = coll.count(Some(countSelector))
-        val mrnFilter  = selector
-        val fetchResults = coll
-          .find(mrnFilter, Some(ResponseArrival.projection))
-          .sort(Json.obj("lastUpdated" -> -1))
-          .skip(skip)
-          .cursor[ResponseArrival]()
-          .collect[Seq](limit, Cursor.FailOnError())
-
-        (fetchCount, fetchResults).mapN {
-          case (count, results) =>
-            ResponseArrivals(
-              arrivals = results,
-              retrievedArrivals = results.length,
-              totalArrivals = count
-            )
-        }
-    }
-  }
 
   @deprecated("Use updateArrival since this will be removed in the next version", "next")
   def setArrivalStateAndMessageState(
