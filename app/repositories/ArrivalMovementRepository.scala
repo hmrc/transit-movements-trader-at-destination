@@ -70,7 +70,7 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 
-class ArrivalMovementRepository @Inject()(
+class ArrivalMovementRepository @Inject() (
   mongo: ReactiveMongoApi,
   appConfig: AppConfig,
   config: Configuration,
@@ -103,7 +103,7 @@ class ArrivalMovementRepository @Inject()(
 
   val logSubmittedArrivals: Future[Boolean] = {
 
-    val byId     = Json.obj("_id"    -> -1)
+    val byId     = Json.obj("_id" -> -1)
     val selector = Json.obj("status" -> ArrivalStatus.ArrivalSubmitted.toString)
 
     collection
@@ -251,33 +251,31 @@ class ArrivalMovementRepository @Inject()(
     collection.flatMap {
       c =>
         c.aggregateWith[MovementMessage](allowDiskUse = true) {
-            _ =>
-              import c.aggregationFramework._
+          _ =>
+            import c.aggregationFramework._
 
-              val initialFilter: PipelineOperator =
-                Match(
-                  Json.obj("_id" -> arrivalId, "channel" -> channelFilter, "messages" -> Json.obj("$elemMatch" -> Json.obj("messageId" -> messageId.value))))
+            val initialFilter: PipelineOperator =
+              Match(Json.obj("_id" -> arrivalId, "channel" -> channelFilter, "messages" -> Json.obj("$elemMatch" -> Json.obj("messageId" -> messageId.value))))
 
-              val unwindMessages = List[PipelineOperator](
-                Unwind(
-                  path = "messages",
-                  includeArrayIndex = None,
-                  preserveNullAndEmptyArrays = None
-                )
+            val unwindMessages = List[PipelineOperator](
+              Unwind(
+                path = "messages",
+                includeArrayIndex = None,
+                preserveNullAndEmptyArrays = None
               )
+            )
 
-              val secondaryFilter = List[PipelineOperator](Match(Json.obj("messages.messageId" -> messageId.value)))
+            val secondaryFilter = List[PipelineOperator](Match(Json.obj("messages.messageId" -> messageId.value)))
 
-              val groupById = List[PipelineOperator](GroupField("_id")("messages" -> FirstField("messages")))
+            val groupById = List[PipelineOperator](GroupField("_id")("messages" -> FirstField("messages")))
 
-              val replaceRoot = List[PipelineOperator](ReplaceRootField("messages"))
+            val replaceRoot = List[PipelineOperator](ReplaceRootField("messages"))
 
-              val transformations = unwindMessages ++ secondaryFilter ++ groupById ++ replaceRoot
+            val transformations = unwindMessages ++ secondaryFilter ++ groupById ++ replaceRoot
 
-              (initialFilter, transformations)
+            (initialFilter, transformations)
 
-          }
-          .headOption
+        }.headOption
     }
 
   def fetchAllArrivals(
@@ -309,7 +307,7 @@ class ArrivalMovementRepository @Inject()(
     }
 
   private def withMRNSearchQuery(mrn: String, pageSize: Option[Int], channelFilter: ChannelType, selector: JsObject, countSelector: JsObject) = {
-    val mrnSelector = Json.obj("movementReferenceNumber" -> Json.obj("$regex" -> mrn))
+    val mrnSelector = Json.obj("movementReferenceNumber" -> Json.obj("$regex" -> mrn, "$options" -> "i"))
     val limit       = pageSize.map(Math.max(1, _)).getOrElse(appConfig.maxRowsReturned(channelFilter))
 
     collection.flatMap {
