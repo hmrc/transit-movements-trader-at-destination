@@ -309,7 +309,7 @@ class ArrivalMovementRepository @Inject()(
     }
 
   private def withMRNSearchQuery(mrn: String, pageSize: Option[Int], channelFilter: ChannelType, selector: JsObject, countSelector: JsObject) = {
-    val mrnSelector = Json.obj("movementReferenceNumber" -> Json.obj("$regex" -> mrn))
+    val mrnSelector = Json.obj("movementReferenceNumber" -> Json.obj("$regex" -> mrn, "$options" -> "i"))
     val limit       = pageSize.map(Math.max(1, _)).getOrElse(appConfig.maxRowsReturned(channelFilter))
 
     collection.flatMap {

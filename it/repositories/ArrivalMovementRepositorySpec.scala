@@ -843,6 +843,41 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
       }
     }
 
+    "must filter results by mrn when mrn search parameter  with case insenitive provided matches return match count" in {
+      val arrivals = nonEmptyListOfFixSize[Arrival](10, arbitrary[Arrival])
+        .map(_.toList)
+        .sample
+        .value
+        .map(_.copy(eoriNumber = eoriNumber, movementReferenceNumber = mrn, channel = web))
+
+      val arrivalMovement1 =
+        arbitrary[Arrival].suchThat(_.movementReferenceNumber != mrn).sample.value.copy(eoriNumber = eoriNumber, channel = web)
+
+      val allArrivals = arrivalMovement1 :: arrivals
+
+      val aJsonArr = allArrivals.map(Json.toJsObject(_))
+      val app      = appBuilder.build()
+      running(app) {
+
+        val service: ArrivalMovementRepository = app.injector.instanceOf[ArrivalMovementRepository]
+
+        val allMovementsMatched = arrivals
+
+        val expectedAllMovements = allMovementsMatched.map(ResponseArrival.build).sortBy(_.updated)(_ compareTo _).reverse
+
+        database.flatMap {
+          db =>
+            db.collection[JSONCollection](ArrivalMovementRepository.collectionName).insert(false).many(aJsonArr)
+        }.futureValue
+
+        val actual = service.fetchAllArrivals(eoriNumber, web, None, Some(mrn.value.substring(4, 9).toLowerCase())).futureValue
+
+        val expected = ResponseArrivals(expectedAllMovements, arrivals.size, allArrivals.size, Some(arrivals.size))
+
+        actual mustEqual expected
+      }
+    }
+
     "must fetch all results based on pageSize 5 for page number 2" in {
       val arrivals = nonEmptyListOfFixSize[Arrival](20, arbitrary[Arrival])
         .map(_.toList)
