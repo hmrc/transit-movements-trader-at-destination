@@ -1001,7 +1001,6 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
         actual mustEqual expected
       }
     }
-  }
 
     "must fetch all results based on pageSize 5 for page number 2" in {
       val arrivals = nonEmptyListOfFixSize[Arrival](20, arbitrary[Arrival])
