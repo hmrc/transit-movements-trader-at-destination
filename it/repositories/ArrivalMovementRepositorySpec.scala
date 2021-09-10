@@ -27,6 +27,14 @@ import cats.data.NonEmptyList
 import cats.syntax.all._
 import config.AppConfig
 import controllers.routes
+import models.ArrivalStatus.ArrivalSubmitted
+import models.ArrivalStatus.GoodsReleased
+import models.ArrivalStatus.Initialized
+import models.ArrivalStatus.UnloadingRemarksSubmitted
+import models.ChannelType.api
+import models.ChannelType.web
+import models.MessageStatus.SubmissionPending
+import models.MessageStatus.SubmissionSucceeded
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalIdSelector

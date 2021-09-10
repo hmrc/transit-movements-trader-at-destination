@@ -32,13 +32,13 @@ class ArrivalMessageNotificationSpec extends SpecBase with ScalaCheckDrivenPrope
 
   "fromArrival" - {
 
-    "produces the expected model" in {
+    "must convert InboundMessageRequest to ArrivalNotification and includes message body" in {
 
       val arrival     = arbitrary[Arrival].sample.value
       val messageType = Gen.oneOf(MessageType.values).sample.value
       val dateTimeNow = LocalDateTime.now()
 
-      val requestXml = <text></text>
+      val requestXml = <CC024A></CC024A>
 
       val expectedNotification =
         ArrivalMessageNotification(
@@ -48,23 +48,37 @@ class ArrivalMessageNotificationSpec extends SpecBase with ScalaCheckDrivenPrope
           arrival.arrivalId,
           MessageId(arrival.messages.length + 1),
           dateTimeNow,
-          messageType,
+          GoodsReleased,
           Some(requestXml)
         )
 
-      val testNotification = ArrivalMessageNotification.fromArrival(arrival, dateTimeNow, messageType, requestXml, Some(123))
+      val inboundMessageRequest = InboundMessageRequest(
+        arrival = arrival,
+        nextStatus = ArrivalStatus.GoodsReleased,
+        inboundMessageResponse = GoodsReleasedResponse,
+        movementMessage = MovementMessageWithoutStatus(
+          MessageId(0),
+          dateTimeNow,
+          GoodsReleased,
+          requestXml,
+          0,
+          JsObject.empty
+        )
+      )
 
-      testNotification mustEqual expectedNotification
+      val result = ArrivalMessageNotification.fromInboundRequest(inboundMessageRequest, Some(1))
+
+      result mustEqual expectedNotification
     }
 
-    "does not include the message body when it is over 100kb" in {
+    "must convert InboundMessageRequest to ArrivalNotification and does not include message body over 100kb" in {
 
       val arrival     = arbitrary[ArrivalWithoutMessages].sample.value
       val messageId   = arrival.nextMessageId
       val messageType = Gen.oneOf(MessageType.values).sample.value
       val dateTimeNow = LocalDateTime.now()
 
-      val requestXml = <text></text>
+      val requestXml = <CC024A></CC024A>
 
       val expectedNotification =
         ArrivalMessageNotification(
@@ -74,13 +88,15 @@ class ArrivalMessageNotificationSpec extends SpecBase with ScalaCheckDrivenPrope
           arrival.arrivalId,
           messageId,
           dateTimeNow,
-          messageType,
+          GoodsReleased,
           None
         )
 
       val testNotification = ArrivalMessageNotification.fromArrivalWithoutMessages(arrival, dateTimeNow, messageType, requestXml, Some(100001))
 
-      testNotification mustEqual expectedNotification
+      val result = ArrivalMessageNotification.fromInboundRequest(inboundMessageRequest, Some(100001))
+
+      result mustEqual expectedNotification
     }
   }
 
