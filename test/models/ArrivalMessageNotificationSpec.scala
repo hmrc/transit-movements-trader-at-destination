@@ -30,77 +30,7 @@ class ArrivalMessageNotificationSpec extends SpecBase with ScalaCheckDrivenPrope
 
   val responseGenerator = Gen.oneOf(MessageResponse.inboundMessages)
 
-  "fromArrival" - {
-
-    "must convert InboundMessageRequest to ArrivalNotification and includes message body" in {
-
-      val arrival     = arbitrary[Arrival].sample.value
-      val messageType = Gen.oneOf(MessageType.values).sample.value
-      val dateTimeNow = LocalDateTime.now()
-
-      val requestXml = <CC024A></CC024A>
-
-      val expectedNotification =
-        ArrivalMessageNotification(
-          s"/customs/transits/movements/arrivals/${arrival.arrivalId.index}/messages/${arrival.messages.length + 1}",
-          s"/customs/transits/movements/arrivals/${arrival.arrivalId.index}",
-          arrival.eoriNumber,
-          arrival.arrivalId,
-          MessageId(arrival.messages.length + 1),
-          dateTimeNow,
-          GoodsReleased,
-          Some(requestXml)
-        )
-
-      val inboundMessageRequest = InboundMessageRequest(
-        arrival = arrival,
-        nextStatus = ArrivalStatus.GoodsReleased,
-        inboundMessageResponse = GoodsReleasedResponse,
-        movementMessage = MovementMessageWithoutStatus(
-          MessageId(0),
-          dateTimeNow,
-          GoodsReleased,
-          requestXml,
-          0,
-          JsObject.empty
-        )
-      )
-
-      val result = ArrivalMessageNotification.fromInboundRequest(inboundMessageRequest, Some(1))
-
-      result mustEqual expectedNotification
-    }
-
-    "must convert InboundMessageRequest to ArrivalNotification and does not include message body over 100kb" in {
-
-      val arrival     = arbitrary[ArrivalWithoutMessages].sample.value
-      val messageId   = arrival.nextMessageId
-      val messageType = Gen.oneOf(MessageType.values).sample.value
-      val dateTimeNow = LocalDateTime.now()
-
-      val requestXml = <CC024A></CC024A>
-
-      val expectedNotification =
-        ArrivalMessageNotification(
-          s"/customs/transits/movements/arrivals/${arrival.arrivalId.index}/messages/${messageId.value}",
-          s"/customs/transits/movements/arrivals/${arrival.arrivalId.index}",
-          arrival.eoriNumber,
-          arrival.arrivalId,
-          messageId,
-          dateTimeNow,
-          GoodsReleased,
-          None
-        )
-
-      val testNotification = ArrivalMessageNotification.fromArrivalWithoutMessages(arrival, dateTimeNow, messageType, requestXml, Some(100001))
-
-      val result = ArrivalMessageNotification.fromInboundRequest(inboundMessageRequest, Some(100001))
-
-      result mustEqual expectedNotification
-    }
-  }
-
-  "fromArrivalNotification" - {
+  "fromInboundMessageRequest" - {
 
     "must convert InboundMessageRequest to ArrivalNotification and includes message body" in {
 

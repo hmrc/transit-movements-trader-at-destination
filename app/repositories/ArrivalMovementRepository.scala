@@ -352,7 +352,7 @@ class ArrivalMovementRepository @Inject()(
         val mrnSelector = movementReference
           .map {
             mrn =>
-              Json.obj("movementReferenceNumber" -> Json.obj("$regex" -> mrn))
+              Json.obj("movementReferenceNumber" -> Json.obj("$regex" -> mrn, "$options" -> "i"))
           }
           .getOrElse {
             Json.obj()
@@ -406,34 +406,6 @@ class ArrivalMovementRepository @Inject()(
             }
         }
     }
-  }
-
-  private def withPaginationSearchQuery(page: Option[Int], pageSize: Option[Int], channelFilter: ChannelType, selector: JsObject, countSelector: JsObject) = {
-
-    val limit = pageSize.map(Math.max(1, _)).getOrElse(appConfig.maxRowsReturned(channelFilter))
-    val skip  = Math.abs(page.getOrElse(1) - 1) * limit
-
-    collection.flatMap {
-      coll =>
-        val fetchCount = coll.count(Some(countSelector))
-        val mrnFilter  = selector
-        val fetchResults = coll
-          .find(mrnFilter, Some(ResponseArrival.projection))
-          .sort(Json.obj("lastUpdated" -> -1))
-          .skip(skip)
-          .cursor[ResponseArrival]()
-          .collect[Seq](limit, Cursor.FailOnError())
-
-        (fetchCount, fetchResults).mapN {
-          case (count, results) =>
-            ResponseArrivals(
-              arrivals = results,
-              retrievedArrivals = results.length,
-              totalArrivals = count
-            )
-        }
-    }
-  }
 
   @deprecated("Use updateArrival since this will be removed in the next version", "next")
   def setArrivalStateAndMessageState(

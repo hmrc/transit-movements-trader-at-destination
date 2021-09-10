@@ -975,7 +975,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
         }
       }
 
-    "must filter results by mrn when mrn search parameter  with case insenitive provided matches return match count" in {
+    "must filter results by mrn when mrn search parameter  with case insensitive provided matches return match count" in {
       val arrivals = nonEmptyListOfNArrivals(20)
         .map(_.toList)
         .sample
