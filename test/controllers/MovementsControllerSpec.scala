@@ -1146,7 +1146,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         running(application) {
           forAll(listWithMaxLength[ResponseArrival](10)) {
             arrivals =>
-              val responseArrivals = ResponseArrivals(arrivals, arrivals.length, arrivals.length)
+              val responseArrivals = ResponseArrivals(arrivals, arrivals.length, arrivals.length, arrivals.length)
               when(mockArrivalMovementRepository.fetchAllArrivals(any(), any(), any(), any(), any(), any())).thenReturn(Future.successful(responseArrivals))
 
               val request = FakeRequest(GET, routes.MovementsController.getArrivals().url)
@@ -1184,7 +1184,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
               createdAndUpdatedDate
             )
           )
-          val responseArrivals = ResponseArrivals(arrivals, 1, 1)
+          val responseArrivals = ResponseArrivals(arrivals, 1, 1, 1)
           when(mockArrivalMovementRepository.fetchAllArrivals(any(), any(), any(), any(), any(), any())).thenReturn(Future.successful(responseArrivals))
 
           val request = FakeRequest(GET, routes.MovementsController.getArrivals().url)
@@ -1207,7 +1207,8 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
                |    }
                |  ],
                |  "retrievedArrivals": 1,
-               |  "totalArrivals": 1
+               |  "totalArrivals": 1,
+               |  "totalMatched": 1
                |}""".stripMargin
 
           contentAsJson(result) mustBe Json.parse(expectedJson)

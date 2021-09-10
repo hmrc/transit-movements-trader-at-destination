@@ -20,8 +20,7 @@ import generators.ModelGenerators
 import models.Arrival
 import models.ArrivalRejectedResponse
 import models.ArrivalStatus
-import models.ArrivalStatus.ArrivalSubmitted
-import models.ArrivalStatus.UnloadingPermission
+import models.ArrivalWithoutMessages
 import models.ChannelType
 import models.GoodsReleasedResponse
 import models.MessageType
@@ -29,6 +28,8 @@ import models.UnloadingPermissionResponse
 import models.UnloadingRemarksRejectedResponse
 import models.UnloadingRemarksResponse
 import models.XMLSubmissionNegativeAcknowledgementResponse
+import models.ArrivalStatus.ArrivalSubmitted
+import models.ArrivalStatus.UnloadingPermission
 import models.request.ArrivalRequest
 import models.request.ArrivalWithoutMessagesRequest
 import org.scalacheck.Arbitrary.arbitrary

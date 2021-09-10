@@ -968,7 +968,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
       }
 
     "must filter results by mrn when mrn search parameter  with case insenitive provided matches return match count" in {
-      val arrivals = nonEmptyListOfFixSize[Arrival](10, arbitrary[Arrival])
+      val arrivals = nonEmptyListOfNArrivals(20)
         .map(_.toList)
         .sample
         .value
@@ -996,14 +996,14 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
 
         val actual = service.fetchAllArrivals(eoriNumber, web, None, Some(mrn.value.substring(4, 9).toLowerCase())).futureValue
 
-        val expected = ResponseArrivals(expectedAllMovements, arrivals.size, allArrivals.size, Some(arrivals.size))
+        val expected = ResponseArrivals(expectedAllMovements, arrivals.size, allArrivals.size, arrivals.size)
 
         actual mustEqual expected
       }
     }
 
     "must fetch all results based on pageSize 5 for page number 2" in {
-      val arrivals = nonEmptyListOfFixSize[Arrival](20, arbitrary[Arrival])
+      val arrivals = nonEmptyListOfNArrivals(20)
         .map(_.toList)
         .sample
         .value

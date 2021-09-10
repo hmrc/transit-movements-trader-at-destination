@@ -244,23 +244,24 @@ class ArrivalMovementRepository @Inject()(
       .flatMap {
         c =>
           c.aggregateWith[ArrivalWithoutMessages](allowDiskUse = true) {
-            _ =>
-              import c.aggregationFramework._
+              _ =>
+                import c.aggregationFramework._
 
-              val initialFilter: PipelineOperator =
-                Match(Json.obj("_id" -> arrivalId, "channel" -> channelFilter))
+                val initialFilter: PipelineOperator =
+                  Match(Json.obj("_id" -> arrivalId, "channel" -> channelFilter))
 
-              val transformations = List[PipelineOperator](Project(projection))
-              (initialFilter, transformations)
+                val transformations = List[PipelineOperator](Project(projection))
+                (initialFilter, transformations)
 
-          }.headOption
+            }
+            .headOption
 
       }
       .map(
         opt =>
           opt.map(
             a => a.copy(nextMessageId = MessageId(a.nextMessageId.value + 1))
-          )
+        )
       )
   }
 
@@ -273,23 +274,24 @@ class ArrivalMovementRepository @Inject()(
       .flatMap {
         c =>
           c.aggregateWith[ArrivalWithoutMessages](allowDiskUse = true) {
-            _ =>
-              import c.aggregationFramework._
+              _ =>
+                import c.aggregationFramework._
 
-              val initialFilter: PipelineOperator =
-                Match(Json.obj("_id" -> arrivalId))
+                val initialFilter: PipelineOperator =
+                  Match(Json.obj("_id" -> arrivalId))
 
-              val transformations = List[PipelineOperator](Project(projection))
-              (initialFilter, transformations)
+                val transformations = List[PipelineOperator](Project(projection))
+                (initialFilter, transformations)
 
-          }.headOption
+            }
+            .headOption
 
       }
       .map(
         opt =>
           opt.map(
             a => a.copy(nextMessageId = MessageId(a.nextMessageId.value + 1))
-          )
+        )
       )
   }
 
@@ -402,12 +404,6 @@ class ArrivalMovementRepository @Inject()(
                   totalMatched = matchCount
                 )
             }
-        }
-        for {
-          results <- fetchResults.collect[Seq](appConfig.maxRowsReturned(channelFilter), Cursor.FailOnError())
-          count   <- fetchCount
-        } yield {
-          ResponseArrivals(results.map(ResponseArrival.build), results.length, count)
         }
     }
 

@@ -19,6 +19,7 @@ package services
 import base.SpecBase
 import generators.ModelGenerators
 import models.ArrivalStatus.GoodsReleased
+import models.ArrivalId
 import models.ArrivalWithoutMessages
 import models.GoodsReleasedResponse
 import models.InboundMessageRequest
@@ -46,7 +47,7 @@ class MovementMessageOrchestratorServiceSpec extends SpecBase with ModelGenerato
 
       "must return a InboundMessageRequest when successfully processing a request xml" in {
 
-        val arrival       = arbitrary[Arrival].sample.value
+        val arrival       = arbitrary[ArrivalWithoutMessages].sample.value
         val message       = arbitrary[MovementMessageWithoutStatus].sample.value
         val messageSender = MessageSender(arrival.arrivalId, arrival.nextMessageCorrelationId)
         val xml           = <test>TestXml</test>
@@ -98,7 +99,7 @@ class MovementMessageOrchestratorServiceSpec extends SpecBase with ModelGenerato
           override val monitorMessage: String = "exampleMessage"
         }
 
-        val arrival       = arbitrary[Arrival].sample.value
+        val arrival       = arbitrary[ArrivalWithoutMessages].sample.value
         val message       = arbitrary[MovementMessageWithoutStatus].sample.value
         val messageSender = MessageSender(arrival.arrivalId, arrival.nextMessageCorrelationId)
         val xml           = <test>TestXml</test>

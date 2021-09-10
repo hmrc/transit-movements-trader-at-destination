@@ -59,6 +59,51 @@ object ArrivalMessageNotification {
         obj ++ Json.obj("requestId" -> requestId(arrival.arrivalId))
     }
 
+  def fromArrival(arrival: Arrival,
+                  timestamp: LocalDateTime,
+                  messageType: MessageType,
+                  requestXml: NodeSeq,
+                  bodySize: Option[Int]): ArrivalMessageNotification = {
+
+    val oneHundredKilobytes = 100000
+    val eoriNumber          = arrival.eoriNumber
+    val messageId           = arrival.nextMessageId
+    val arrivalUrl          = requestId(arrival.arrivalId)
+
+    ArrivalMessageNotification(
+      s"$arrivalUrl/messages/${messageId.value}",
+      arrivalUrl,
+      eoriNumber,
+      arrival.arrivalId,
+      messageId,
+      timestamp,
+      messageType,
+      if (bodySize.exists(_ < oneHundredKilobytes)) Some(requestXml) else None
+    )
+  }
+
+  def fromArrivalWithoutMessages(arrival: ArrivalWithoutMessages,
+                                 timestamp: LocalDateTime,
+                                 messageType: MessageType,
+                                 requestXml: NodeSeq,
+                                 bodySize: Option[Int]): ArrivalMessageNotification = {
+    val oneHundredKilobytes = 100000
+    val eoriNumber          = arrival.eoriNumber
+    val messageId           = arrival.nextMessageId
+    val arrivalUrl          = requestId(arrival.arrivalId)
+
+    ArrivalMessageNotification(
+      s"$arrivalUrl/messages/${messageId.value}",
+      arrivalUrl,
+      eoriNumber,
+      arrival.arrivalId,
+      messageId,
+      timestamp,
+      messageType,
+      if (bodySize.exists(_ < oneHundredKilobytes)) Some(requestXml) else None
+    )
+  }
+
   def fromInboundRequest(inboundMessageRequest: InboundMessageRequest, contentLength: Option[Int]): ArrivalMessageNotification =
     inboundMessageRequest match {
       case InboundMessageRequest(arrival, _, inboundMessageResponse, movementMessage) =>
