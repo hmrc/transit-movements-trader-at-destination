@@ -866,12 +866,9 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
           .map(_.copy(eoriNumber = eoriNumber, movementReferenceNumber = mrn, channel = web))
 
         val arrivalMovement1 =
-          arbitrary[Arrival].suchThat(_.movementReferenceNumber != mrn).sample.value.copy(eoriNumber = eoriNumber, channel = web)
-
-        // TODO - remove
-        println("***")
-        println(arrivalMovement1.arrivalId.index)
-        println(arrivals.map(_.arrivalId.index).contains(arrivalMovement1.arrivalId.index))
+          arbitrary[Arrival].suchThat(x =>
+            x.movementReferenceNumber != mrn && !arrivals.map(_.arrivalId).contains(x.arrivalId)
+          ).sample.value.copy(eoriNumber = eoriNumber, channel = web)
 
         val allArrivals = arrivalMovement1 :: arrivals
 
@@ -906,12 +903,9 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
           .map(_.copy(eoriNumber = eoriNumber, movementReferenceNumber = mrn, channel = web))
 
         val arrivalMovement1 =
-          arbitrary[Arrival].suchThat(_.movementReferenceNumber != mrn).sample.value.copy(eoriNumber = eoriNumber, channel = web)
-
-        // TODO - remove
-        println("***")
-        println(arrivalMovement1.arrivalId.index)
-        println(arrivals.map(_.arrivalId.index).contains(arrivalMovement1.arrivalId.index))
+          arbitrary[Arrival].suchThat(x =>
+            x.movementReferenceNumber != mrn && !arrivals.map(_.arrivalId).contains(x.arrivalId)
+          ).sample.value.copy(eoriNumber = eoriNumber, channel = web)
 
         val allArrivals = arrivalMovement1 :: arrivals
 
