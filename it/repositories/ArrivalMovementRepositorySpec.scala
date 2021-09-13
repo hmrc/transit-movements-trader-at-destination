@@ -866,7 +866,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
           .map(_.copy(eoriNumber = eoriNumber, movementReferenceNumber = mrn, channel = web))
 
         val arrivalMovement1 =
-          arbitrary[Arrival].suchThat(x =>
+          arbitrary[Arrival].retryUntil(x =>
             x.movementReferenceNumber != mrn && !arrivals.map(_.arrivalId).contains(x.arrivalId)
           ).sample.value.copy(eoriNumber = eoriNumber, channel = web)
 
@@ -903,7 +903,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
           .map(_.copy(eoriNumber = eoriNumber, movementReferenceNumber = mrn, channel = web))
 
         val arrivalMovement1 =
-          arbitrary[Arrival].suchThat(x =>
+          arbitrary[Arrival].retryUntil(x =>
             x.movementReferenceNumber != mrn && !arrivals.map(_.arrivalId).contains(x.arrivalId)
           ).sample.value.copy(eoriNumber = eoriNumber, channel = web)
 
