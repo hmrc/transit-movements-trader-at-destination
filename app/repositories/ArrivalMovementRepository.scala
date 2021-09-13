@@ -346,22 +346,6 @@ class ArrivalMovementRepository @Inject()(
     }
   }
 
-  @deprecated("Use updateArrival since this will be removed in the next version", "next")
-  def setArrivalStateAndMessageState(
-    arrivalId: ArrivalId,
-    messageId: MessageId,
-    arrivalState: ArrivalStatus,
-    messageState: MessageStatus
-  ): Future[Option[Unit]] = {
-    implicit val modifierClock: Clock = clock
-
-    val selector = ArrivalIdSelector(arrivalId)
-
-    val modifier = CompoundStatusUpdate(ArrivalStatusUpdate(arrivalState), MessageStatusUpdate(messageId, messageState))
-
-    updateArrival(selector, modifier).map(_.toOption)
-  }
-
   def updateArrival[A](selector: ArrivalSelector, modifier: A)(implicit ev: ArrivalModifier[A]): Future[Try[Unit]] = {
 
     import models.ArrivalModifier.toJson

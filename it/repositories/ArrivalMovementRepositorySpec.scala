@@ -25,9 +25,8 @@ import base._
 import cats.data.NonEmptyList
 import config.AppConfig
 import controllers.routes
-import models.ArrivalStatus.{ArrivalSubmitted, GoodsReleased, Initialized, UnloadingRemarksSubmitted}
+import models.ArrivalStatus.{GoodsReleased, Initialized, UnloadingRemarksSubmitted}
 import models.ChannelType.{api, web}
-import models.MessageStatus.{SubmissionPending, SubmissionSucceeded}
 import models._
 import models.response.{ResponseArrival, ResponseArrivals}
 import org.scalacheck.Arbitrary.arbitrary
@@ -175,55 +174,6 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
           repository.bulkInsert(arrivals).futureValue
 
           repository.getMaxArrivalId.futureValue.value mustBe ArrivalId(5)
-        }
-      }
-    }
-
-    "setArrivalStateAndMessageState" - {
-      "must update the status of the arrival and the message in an arrival" in {
-
-        val arrival   = arrivalWithOneMessage.sample.value.copy(status = ArrivalStatus.Initialized)
-        val messageId = MessageId(1)
-
-        val app = appBuilder.build()
-        running(app) {
-
-          val repository = app.injector.instanceOf[ArrivalMovementRepository]
-
-          repository.insert(arrival).futureValue
-          repository.setArrivalStateAndMessageState(arrival.arrivalId, messageId, ArrivalSubmitted, SubmissionSucceeded).futureValue
-
-          val updatedArrival = repository.get(arrival.arrivalId, arrival.channel).futureValue
-
-          updatedArrival.value.status mustEqual ArrivalSubmitted
-
-          typeMatchOnTestValue(updatedArrival.value.messages.head) {
-            result: MovementMessageWithStatus =>
-              result.status mustEqual SubmissionSucceeded
-          }
-        }
-      }
-
-      "must fail if the arrival cannot be found" in {
-
-        val arrival   = arrivalWithOneMessage.sample.value.copy(arrivalId = ArrivalId(1), status = Initialized)
-        val messageId = MessageId(1)
-
-        val app = appBuilder.build()
-        running(app) {
-
-          val repository = app.injector.instanceOf[ArrivalMovementRepository]
-          repository.insert(arrival).futureValue
-
-          val setResult = repository.setArrivalStateAndMessageState(ArrivalId(2), messageId, ArrivalSubmitted, SubmissionSucceeded)
-          setResult.futureValue must not be defined
-
-          val result = repository.get(arrival.arrivalId, arrival.channel).futureValue.value
-          result.status mustEqual Initialized
-          typeMatchOnTestValue(result.messages.head) {
-            result: MovementMessageWithStatus =>
-              result.status mustEqual SubmissionPending
-          }
         }
       }
     }
