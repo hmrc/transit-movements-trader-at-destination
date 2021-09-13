@@ -59,7 +59,7 @@ class TestOnlySeedDataServiceSpec extends SpecBase with ScalaCheckDrivenProperty
 
       val result =
         testOnlySeedDataService
-          .seedArrivals(seedDataParameters, testClock)
+          .seedArrivals(seedDataParameters)
           .toSeq
           .map(x => (x.arrivalId, x.eoriNumber, x.movementReferenceNumber))
 
@@ -77,7 +77,7 @@ class TestOnlySeedDataServiceSpec extends SpecBase with ScalaCheckDrivenProperty
 
       val result: Seq[NonEmptyList[MovementMessage]] =
         testOnlySeedDataService
-          .seedArrivals(seedDataParameters, testClock)
+          .seedArrivals(seedDataParameters)
           .toSeq
           .map(_.messages)
 
@@ -103,7 +103,7 @@ class TestOnlySeedDataServiceSpec extends SpecBase with ScalaCheckDrivenProperty
         (eoriCount, mrnCount) =>
           val seedDataParameters = SeedDataParameters(eoriCount, mrnCount, ArrivalId(0), None, None)
 
-          val iterator = testOnlySeedDataService.seedArrivals(seedDataParameters, testClock)
+          val iterator = testOnlySeedDataService.seedArrivals(seedDataParameters)
 
           iterator.length mustEqual (eoriCount * mrnCount)
       }

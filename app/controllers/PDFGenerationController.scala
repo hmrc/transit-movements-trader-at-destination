@@ -18,7 +18,6 @@ package controllers
 
 import com.kenshoo.play.metrics.Metrics
 import controllers.actions.AuthenticatedGetArrivalForReadActionProvider
-import javax.inject.Inject
 import logging.Logging
 import metrics.HasActionMetrics
 import models.ArrivalId
@@ -29,6 +28,8 @@ import play.api.mvc.ControllerComponents
 import services.UnloadingPermissionPDFService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
+import javax.inject.Inject
+import scala.annotation.nowarn
 import scala.concurrent.ExecutionContext
 
 class PDFGenerationController @Inject()(
@@ -41,6 +42,7 @@ class PDFGenerationController @Inject()(
     with Logging
     with HasActionMetrics {
 
+  @nowarn("msg=match may not be exhaustive.")
   def getPDF(arrivalId: ArrivalId): Action[AnyContent] =
     withMetricsTimerAction("get-unloading-permission-pdf") {
       authenticateForRead(arrivalId).async {
@@ -48,7 +50,7 @@ class PDFGenerationController @Inject()(
           unloadingPermissionPDFService.getPDF(request.arrival).map {
             case Right((pdf, headers)) =>
               Ok(pdf).withHeaders(headers: _*)
-            case Left(_: NotFoundError.type) =>
+            case Left(NotFoundError) =>
               logger.error(s"Failed to find UnloadingPermission of index: ${request.arrival.arrivalId} ")
               NotFound
             case Left(otherError: OtherError) =>

@@ -16,28 +16,27 @@
 
 package repositories
 
-import java.time.Clock
-import java.time.LocalDateTime
 import config.AppConfig
-
-import javax.inject.Inject
 import models.LockResult
+import models.MongoDateTimeFormats._
 import play.api.libs.json.Json
 import play.modules.reactivemongo.ReactiveMongoApi
+import reactivemongo.api.bson.BSONDocument
+import reactivemongo.api.bson.collection.BSONSerializationPack
 import reactivemongo.api.commands.LastError
 import reactivemongo.api.indexes.Index.Aux
 import reactivemongo.api.indexes.IndexType
-import reactivemongo.bson.BSONDocument
-import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
+import reactivemongo.play.json.collection.Helpers.idWrites
 import reactivemongo.play.json.collection.JSONCollection
-
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import models.MongoDateTimeFormats._
-import reactivemongo.api.bson.collection.BSONSerializationPack
 import utils.IndexUtils
 
-class WorkerLockRepository @Inject()(mongo: ReactiveMongoApi, appConfig: AppConfig, clock: Clock)(implicit ec: ExecutionContext) {
+import java.time.Clock
+import java.time.LocalDateTime
+import javax.inject.Inject
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
+class WorkerLockRepository @Inject()(mongo: ReactiveMongoApi, appConfig: AppConfig, clock: Clock)(implicit ec: ExecutionContext) extends Repository {
 
   private val documentExistsErrorCodeValue = 11000
 
@@ -78,8 +77,9 @@ class WorkerLockRepository @Inject()(mongo: ReactiveMongoApi, appConfig: AppConf
 
   def unlock(id: String): Future[Boolean] =
     collection.flatMap {
-      _.findAndRemove(Json.obj("_id" -> id))
-        .map(_ => true)
+      _.`find+Remove`(
+        selector = Json.obj("_id" -> id)
+      ).map(_ => true)
     }
 }
 

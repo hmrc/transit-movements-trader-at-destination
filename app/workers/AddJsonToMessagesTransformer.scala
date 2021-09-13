@@ -27,13 +27,12 @@ import models.MovementMessageWithStatus
 import models.MovementMessageWithoutStatus
 import repositories.ArrivalMovementRepository
 import repositories.LockRepository
+import workers.WorkerProcessingException._
 
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.control.NonFatal
-
-import WorkerProcessingException._
 
 private[workers] class AddJsonToMessagesTransformer @Inject()(
   workerConfig: WorkerConfig,
@@ -72,18 +71,18 @@ private[workers] class AddJsonToMessagesTransformer @Inject()(
               _ =>
                 (arrival, NotUsed)
             } recover {
-              case NonFatal(e) =>
+              case NonFatal(_) =>
                 (arrival, NotUsed)
             }
         } recoverWith {
           case e: Throwable =>
             arrivalLockRepository
               .unlock(arrival.arrivalId)
-              .map(_ => throw new WorkerResumeableException(s"Received an error trying to reset messages for arrival s${arrival.arrivalId.index}", e))
+              .map(_ => throw WorkerResumeableException(s"Received an error trying to reset messages for arrival s${arrival.arrivalId.index}", e))
         }
 
       case false =>
-        throw new WorkerResumeable(s"Arrival ${arrival.arrivalId} is locked, so messages will not be updated")
+        throw WorkerResumeable(s"Arrival ${arrival.arrivalId} is locked, so messages will not be updated")
     }
 
 }

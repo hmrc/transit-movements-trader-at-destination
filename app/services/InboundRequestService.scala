@@ -41,13 +41,13 @@ class InboundRequestService @Inject()(
     implicit hc: HeaderCarrier): Future[Either[SubmissionState, InboundMessageRequest]] =
     (
       for {
-        lock                   <- EitherT(lockService.lock(arrivalId))
+        _                      <- EitherT(lockService.lock(arrivalId))
         inboundMessageResponse <- inboundMessageResponseService.makeInboundMessageResponse(xml)
         inboundMessage         <- movementMessageService.makeMovementMessage(messageSender.messageCorrelationId, inboundMessageResponse.messageType, xml)
         arrival                <- getArrivalService.getArrivalAndAudit(arrivalId, inboundMessageResponse, inboundMessage)
         updatedInboundMessage = inboundMessage.copy(messageId = arrival.nextMessageId)
         nextStatus <- EitherT.fromEither(StatusTransition.transition(arrival.status, inboundMessageResponse.messageReceived))
-        unlock     <- EitherT(lockService.unlock(arrivalId))
+        _          <- EitherT(lockService.unlock(arrivalId))
       } yield InboundMessageRequest(arrival, nextStatus, inboundMessageResponse, updatedInboundMessage)
     ).value
 }

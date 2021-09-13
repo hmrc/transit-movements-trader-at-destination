@@ -17,25 +17,20 @@
 package controllers.actions
 
 import config.AppConfig
-
-import javax.inject.Inject
 import logging.Logging
 import models.request.AuthenticatedRequest
 import play.api.mvc.ActionRefiner
 import play.api.mvc.Request
 import play.api.mvc.Result
 import play.api.mvc.Results.BadRequest
-import play.api.mvc.Results.Unauthorized
 import play.api.mvc.Results.Forbidden
+import play.api.mvc.Results.Unauthorized
+import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
-import uk.gov.hmrc.auth.core.AuthConnector
-import uk.gov.hmrc.auth.core.AuthorisationException
-import uk.gov.hmrc.auth.core.AuthorisedFunctions
-import uk.gov.hmrc.auth.core.Enrolment
-import uk.gov.hmrc.auth.core.InsufficientEnrolments
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.HeaderCarrierConverter
+import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
+import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
@@ -53,7 +48,7 @@ private[actions] class AuthenticateAction @Inject()(override val authConnector: 
         logger.warn(s"Missing channel header for request id ${request.headers.get("http_x_request_id")}")
         Future.successful(Left(BadRequest("Missing channel header or incorrect value specified in channel header")))
       case Some(channel) =>
-        implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
+        implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
         authorised(Enrolment(config.enrolmentKey))
           .retrieve(Retrievals.authorisedEnrolments) {
             enrolments =>

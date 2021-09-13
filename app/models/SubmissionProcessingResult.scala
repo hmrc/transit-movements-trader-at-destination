@@ -20,14 +20,14 @@ sealed trait SubmissionProcessingResult
 
 object SubmissionProcessingResult {
 
-  def format(result: SubmissionProcessingResult) = result match {
+  def format(result: SubmissionProcessingResult): String = result match {
     case SubmissionSuccess =>
       "success"
     case SubmissionFailureInternal =>
       "failure-internal"
     case SubmissionFailureExternal =>
       "failure-external"
-    case SubmissionFailureRejected(responseBody) =>
+    case _: SubmissionFailureRejected =>
       "rejected"
   }
 

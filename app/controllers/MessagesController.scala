@@ -18,35 +18,32 @@ package controllers
 
 import audit.AuditService
 import audit.AuditType
+import cats.data.OptionT
 import com.kenshoo.play.metrics.Metrics
-import controllers.actions.AuthenticatedGetArrivalForReadActionProvider
-import controllers.actions.AuthenticatedGetArrivalForWriteActionProvider
-import controllers.actions.MessageTransformerInterface
 import controllers.actions._
 import logging.Logging
 import metrics.HasActionMetrics
 import metrics.Monitors
-import models.ArrivalId
-import models.MessageId
 import models.MessageStatus.SubmissionFailed
-import models.MessageType
 import models.SubmissionProcessingResult._
 import models.response.ResponseArrivalWithMessages
 import models.response.ResponseMovementMessage
+import models.ArrivalId
+import models.MessageId
+import models.MessageType
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
+import repositories.ArrivalMovementRepository
 import services.ArrivalMovementMessageService
 import services.SubmitMessageService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+
 import java.time.OffsetDateTime
-
-import cats.data.OptionT
 import javax.inject.Inject
-import repositories.ArrivalMovementRepository
-
+import scala.annotation.nowarn
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.xml.NodeSeq
@@ -72,7 +69,7 @@ class MessagesController @Inject()(
   private val movementSummaryLogger: Logger =
     Logger(s"application.${this.getClass.getCanonicalName}.movementSummary")
 
-  lazy val countMessages = histo("get-all-arrival-messages-count")
+  private lazy val countMessages = histo("get-all-arrival-messages-count")
 
   def post(arrivalId: ArrivalId): Action[NodeSeq] =
     withMetricsTimerAction("post-submit-message") {
@@ -114,6 +111,7 @@ class MessagesController @Inject()(
         }
     }
 
+  @nowarn("msg=parameter value arrival in anonymous function is never used")
   def getMessage(arrivalId: ArrivalId, messageId: MessageId): Action[AnyContent] =
     withMetricsTimerAction("get-arrival-message") {
       authenticate().async {
@@ -122,7 +120,7 @@ class MessagesController @Inject()(
             arrival <- OptionT(arrivalMovementRepository.getWithoutMessages(arrivalId, request.channel))
             if arrival.eoriNumber == request.eoriNumber
             message <- OptionT(arrivalMovementRepository.getMessage(arrivalId, request.channel, messageId))
-            if message.optStatus != Some(SubmissionFailed)
+            if !message.optStatus.contains(SubmissionFailed)
           } yield {
             Ok(Json.toJsObject(ResponseMovementMessage.build(arrivalId, messageId, message)))
           }

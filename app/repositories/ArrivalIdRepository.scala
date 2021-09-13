@@ -18,17 +18,17 @@ package repositories
 
 import com.google.inject.Inject
 import models.ArrivalId
+import play.api.Configuration
 import play.api.libs.json.Json
 import play.api.libs.json.Reads
 import play.modules.reactivemongo.ReactiveMongoApi
+import reactivemongo.play.json.collection.Helpers.idWrites
 import reactivemongo.play.json.collection.JSONCollection
-import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 
-import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits._
-import play.api.Configuration
+import scala.concurrent.Future
 
-class ArrivalIdRepository @Inject()(mongo: ReactiveMongoApi, config: Configuration) {
+class ArrivalIdRepository @Inject()(mongo: ReactiveMongoApi, config: Configuration) extends Repository {
 
   private val lastIndexKey = "last-index"
   private val primaryValue = "record_id"
@@ -81,11 +81,15 @@ class ArrivalIdRepository @Inject()(mongo: ReactiveMongoApi, config: Configurati
     val selector = Json.obj("_id" -> primaryValue)
 
     collection.flatMap(
-      _.findAndUpdate(selector, update, upsert = true, fetchNewObject = true)
-        .map(
-          x =>
-            x.result(indexKeyReads)
-              .getOrElse(throw new Exception(s"Unable to generate ArrivalId")))
+      _.`find+Update`(
+        selector = selector,
+        update = update,
+        fetchNewObject = true,
+        upsert = true
+      ).map(
+        x =>
+          x.result(indexKeyReads)
+            .getOrElse(throw new Exception(s"Unable to generate ArrivalId")))
     )
   }
 }
