@@ -868,6 +868,11 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
         val arrivalMovement1 =
           arbitrary[Arrival].suchThat(_.movementReferenceNumber != mrn).sample.value.copy(eoriNumber = eoriNumber, channel = web)
 
+        // TODO - remove
+        println("***")
+        println(arrivalMovement1.arrivalId.index)
+        println(arrivals.map(_.arrivalId.index).contains(arrivalMovement1.arrivalId.index))
+
         val allArrivals = arrivalMovement1 :: arrivals
 
         val aJsonArr = allArrivals.map(Json.toJsObject(_))
@@ -902,6 +907,11 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
 
         val arrivalMovement1 =
           arbitrary[Arrival].suchThat(_.movementReferenceNumber != mrn).sample.value.copy(eoriNumber = eoriNumber, channel = web)
+
+        // TODO - remove
+        println("***")
+        println(arrivalMovement1.arrivalId.index)
+        println(arrivals.map(_.arrivalId.index).contains(arrivalMovement1.arrivalId.index))
 
         val allArrivals = arrivalMovement1 :: arrivals
 
