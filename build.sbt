@@ -12,6 +12,7 @@ lazy val microservice = Project(appName, file("."))
   .settings(SbtDistributablesPlugin.publishingSettings)
   .settings(inConfig(IntegrationTest)(itSettings))
   .settings(inConfig(IntegrationTest)(scalafmtSettings))
+  .settings(inConfig(IntegrationTest)(scalafixConfigSettings(IntegrationTest)))
   .settings(inConfig(Test)(testSettings): _*)
   .settings(inConfig(Test)(testSettings))
   .settings(inThisBuild(buildSettings))
@@ -22,6 +23,8 @@ lazy val microservice = Project(appName, file("."))
     scalaVersion := "2.12.14",
     resolvers += Resolver.jcenterRepo,
     PlayKeys.playDefaultPort := 9480,
+    semanticdbEnabled := true,
+    semanticdbVersion := scalafixSemanticdb.revision,
     libraryDependencies ++= AppDependencies.compile ++ AppDependencies.test,
     javaOptions ++= Seq(
       "-Djdk.xml.maxOccurLimit=10000"
@@ -37,7 +40,10 @@ lazy val microservice = Project(appName, file("."))
 // Settings for the whole build
 lazy val buildSettings = Def.settings(
   scalafmtOnCompile := true,
-  useSuperShell := false
+  useSuperShell := false,
+  scalafixDependencies ++= Seq(
+    "com.github.liancheng" %% "organize-imports" % "0.5.0"
+  )
 )
 
 // Scalac options

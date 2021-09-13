@@ -17,25 +17,21 @@
 package controllers.actions
 
 import generators.ModelGenerators
-import models.Arrival
-import models.ArrivalId
 import models.ChannelType.api
 import models.ChannelType.web
+import models.ArrivalId
+import models.ArrivalWithoutMessages
 import org.mockito.ArgumentMatchers.{eq => eqTo, _}
 import org.mockito.Mockito.when
 import org.scalacheck.Arbitrary.arbitrary
+import org.scalatest.OptionValues
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
-import org.scalatest.OptionValues
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.mvc.Action
-import play.api.mvc.AnyContent
-import play.api.mvc.AnyContentAsEmpty
-import play.api.mvc.Headers
-import play.api.mvc.Results
+import play.api.mvc._
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import repositories.ArrivalMovementRepository
@@ -46,7 +42,7 @@ import uk.gov.hmrc.auth.core.Enrolments
 
 import scala.concurrent.Future
 
-class AuthenticatedGetArrivalForReadActionProviderSpec
+class AuthenticatedGetArrivalWithoutMessagesForReadActionProviderSpec
     extends AnyFreeSpec
     with Matchers
     with MockitoSugar
@@ -56,15 +52,15 @@ class AuthenticatedGetArrivalForReadActionProviderSpec
 
   def fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest("", "").withHeaders("channel" -> web.toString())
 
-  class Harness(authAndGet: AuthenticatedGetArrivalForReadActionProvider) {
+  class Harness(authAndGet: AuthenticatedGetArrivalWithoutMessagesForReadActionProvider) {
 
     def get(arrivalId: ArrivalId): Action[AnyContent] = authAndGet(arrivalId) {
       request =>
-        Results.Ok(request.arrival.arrivalId.toString)
+        Results.Ok(request.arrivalWithoutMessages.arrivalId.toString)
     }
   }
 
-  "authenticated get arrival for read" - {
+  "authenticated get arrivalWithoutMessages for read" - {
 
     "when given valid enrolments" - {
 
@@ -95,16 +91,16 @@ class AuthenticatedGetArrivalForReadActionProviderSpec
         )
       )
 
-      "must get an arrival when it exists and its EORI matches the user's" in {
+      "must get an arrivalWithoutMessages when it exists and its EORI matches the user's" in {
 
-        val arrival = arbitrary[Arrival].sample.value copy (eoriNumber = eoriNumber)
+        val arrival = arbitrary[ArrivalWithoutMessages].sample.value copy (eoriNumber = eoriNumber)
 
         val mockAuthConnector: AuthConnector = mock[AuthConnector]
         val mockArrivalMovementRepository    = mock[ArrivalMovementRepository]
 
         when(mockAuthConnector.authorise[Enrolments](any(), any())(any(), any()))
           .thenReturn(Future.successful(validEnrolments))
-        when(mockArrivalMovementRepository.get(any(), any())) thenReturn Future.successful(Some(arrival))
+        when(mockArrivalMovementRepository.getWithoutMessages(any(), any())) thenReturn Future.successful(Some(arrival))
 
         val application = new GuiceApplicationBuilder()
           .overrides(
@@ -114,7 +110,7 @@ class AuthenticatedGetArrivalForReadActionProviderSpec
           .build()
 
         running(application) {
-          val actionProvider = application.injector.instanceOf[AuthenticatedGetArrivalForReadActionProvider]
+          val actionProvider = application.injector.instanceOf[AuthenticatedGetArrivalWithoutMessagesForReadActionProvider]
 
           val controller = new Harness(actionProvider)
           val result     = controller.get(arrival.arrivalId)(fakeRequest)
@@ -126,14 +122,14 @@ class AuthenticatedGetArrivalForReadActionProviderSpec
 
       "must return Not Found when the arrival exists and its EORI does not match the user's" in {
 
-        val arrival = arbitrary[Arrival].sample.value copy (eoriNumber = "invalid EORI number")
+        val arrival = arbitrary[ArrivalWithoutMessages].sample.value copy (eoriNumber = "invalid EORI number")
 
         val mockAuthConnector: AuthConnector = mock[AuthConnector]
         val mockArrivalMovementRepository    = mock[ArrivalMovementRepository]
 
         when(mockAuthConnector.authorise[Enrolments](any(), any())(any(), any()))
           .thenReturn(Future.successful(validEnrolments))
-        when(mockArrivalMovementRepository.get(any(), any())) thenReturn Future.successful(Some(arrival))
+        when(mockArrivalMovementRepository.getWithoutMessages(any(), any())) thenReturn Future.successful(Some(arrival))
 
         val application = new GuiceApplicationBuilder()
           .overrides(
@@ -143,7 +139,7 @@ class AuthenticatedGetArrivalForReadActionProviderSpec
           .build()
 
         running(application) {
-          val actionProvider = application.injector.instanceOf[AuthenticatedGetArrivalForReadActionProvider]
+          val actionProvider = application.injector.instanceOf[AuthenticatedGetArrivalWithoutMessagesForReadActionProvider]
 
           val controller = new Harness(actionProvider)
           val result     = controller.get(arrival.arrivalId)(fakeRequest)
@@ -161,7 +157,7 @@ class AuthenticatedGetArrivalForReadActionProviderSpec
 
         when(mockAuthConnector.authorise[Enrolments](any(), any())(any(), any()))
           .thenReturn(Future.successful(validEnrolments))
-        when(mockArrivalMovementRepository.get(any(), any())) thenReturn Future.successful(None)
+        when(mockArrivalMovementRepository.getWithoutMessages(any(), any())) thenReturn Future.successful(None)
 
         val application = new GuiceApplicationBuilder()
           .overrides(
@@ -171,7 +167,7 @@ class AuthenticatedGetArrivalForReadActionProviderSpec
           .build()
 
         running(application) {
-          val actionProvider = application.injector.instanceOf[AuthenticatedGetArrivalForReadActionProvider]
+          val actionProvider = application.injector.instanceOf[AuthenticatedGetArrivalWithoutMessagesForReadActionProvider]
 
           val controller = new Harness(actionProvider)
           val result     = controller.get(arrivalId)(fakeRequest)
@@ -189,7 +185,7 @@ class AuthenticatedGetArrivalForReadActionProviderSpec
 
         when(mockAuthConnector.authorise[Enrolments](any(), any())(any(), any()))
           .thenReturn(Future.successful(validEnrolments))
-        when(mockArrivalMovementRepository.get(any(), eqTo(api))).thenReturn(Future.successful(None))
+        when(mockArrivalMovementRepository.getWithoutMessages(any(), eqTo(api))).thenReturn(Future.successful(None))
 
         val application = new GuiceApplicationBuilder()
           .overrides(
@@ -199,7 +195,7 @@ class AuthenticatedGetArrivalForReadActionProviderSpec
           .build()
 
         running(application) {
-          val actionProvider = application.injector.instanceOf[AuthenticatedGetArrivalForReadActionProvider]
+          val actionProvider = application.injector.instanceOf[AuthenticatedGetArrivalWithoutMessagesForReadActionProvider]
 
           val fakeAPIRequest = fakeRequest.withHeaders("channel" -> api.toString())
 
@@ -212,7 +208,7 @@ class AuthenticatedGetArrivalForReadActionProviderSpec
 
       "must return Ok when the arrival exists and shares the same channel" in {
 
-        val arrival = arbitrary[Arrival].sample.value copy (eoriNumber = eoriNumber, channel = api)
+        val arrival = arbitrary[ArrivalWithoutMessages].sample.value copy (eoriNumber = eoriNumber, channel = api)
 
         val arrivalId = arbitrary[ArrivalId].sample.value
 
@@ -221,7 +217,7 @@ class AuthenticatedGetArrivalForReadActionProviderSpec
 
         when(mockAuthConnector.authorise[Enrolments](any(), any())(any(), any()))
           .thenReturn(Future.successful(validEnrolments))
-        when(mockArrivalMovementRepository.get(any(), eqTo(api))).thenReturn(Future.successful(Some(arrival)))
+        when(mockArrivalMovementRepository.getWithoutMessages(any(), eqTo(api))).thenReturn(Future.successful(Some(arrival)))
 
         val application = new GuiceApplicationBuilder()
           .overrides(
@@ -231,7 +227,7 @@ class AuthenticatedGetArrivalForReadActionProviderSpec
           .build()
 
         running(application) {
-          val actionProvider = application.injector.instanceOf[AuthenticatedGetArrivalForReadActionProvider]
+          val actionProvider = application.injector.instanceOf[AuthenticatedGetArrivalWithoutMessagesForReadActionProvider]
 
           val fakeAPIRequest = fakeRequest.withHeaders("channel" -> arrival.channel.toString())
 
@@ -250,7 +246,7 @@ class AuthenticatedGetArrivalForReadActionProviderSpec
 
         when(mockAuthConnector.authorise[Enrolments](any(), any())(any(), any()))
           .thenReturn(Future.successful(validEnrolments))
-        when(mockArrivalMovementRepository.get(any(), any())) thenReturn Future.failed(new Exception)
+        when(mockArrivalMovementRepository.getWithoutMessages(any(), any())) thenReturn Future.failed(new Exception)
 
         val application = new GuiceApplicationBuilder()
           .overrides(
@@ -260,7 +256,7 @@ class AuthenticatedGetArrivalForReadActionProviderSpec
           .build()
 
         running(application) {
-          val actionProvider = application.injector.instanceOf[AuthenticatedGetArrivalForReadActionProvider]
+          val actionProvider = application.injector.instanceOf[AuthenticatedGetArrivalWithoutMessagesForReadActionProvider]
 
           val controller = new Harness(actionProvider)
           val result     = controller.get(arrivalId)(fakeRequest)
@@ -303,7 +299,7 @@ class AuthenticatedGetArrivalForReadActionProviderSpec
           .build()
 
         running(application) {
-          val actionProvider = application.injector.instanceOf[AuthenticatedGetArrivalForReadActionProvider]
+          val actionProvider = application.injector.instanceOf[AuthenticatedGetArrivalWithoutMessagesForReadActionProvider]
 
           val controller = new Harness(actionProvider)
           val result     = controller.get(arrivalId)(fakeRequest)
@@ -358,7 +354,7 @@ class AuthenticatedGetArrivalForReadActionProviderSpec
           .build()
 
         running(application) {
-          val actionProvider = application.injector.instanceOf[AuthenticatedGetArrivalForReadActionProvider]
+          val actionProvider = application.injector.instanceOf[AuthenticatedGetArrivalWithoutMessagesForReadActionProvider]
 
           val controller = new Harness(actionProvider)
           val result     = controller.get(arrivalId)(fakeRequest.withHeaders(Headers.create()))
@@ -414,7 +410,7 @@ class AuthenticatedGetArrivalForReadActionProviderSpec
           .build()
 
         running(application) {
-          val actionProvider = application.injector.instanceOf[AuthenticatedGetArrivalForReadActionProvider]
+          val actionProvider = application.injector.instanceOf[AuthenticatedGetArrivalWithoutMessagesForReadActionProvider]
 
           val controller = new Harness(actionProvider)
           val result     = controller.get(arrivalId)(fakeRequest.withHeaders("channel" -> "web2"))

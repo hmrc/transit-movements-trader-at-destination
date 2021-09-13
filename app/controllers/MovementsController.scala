@@ -25,11 +25,11 @@ import controllers.actions._
 import logging.Logging
 import metrics.HasActionMetrics
 import metrics.Monitors
+import models.MessageStatus.SubmissionSucceeded
 import models.ArrivalId
 import models.ArrivalStatus
 import models.Box
 import models.ChannelType
-import models.MessageStatus.SubmissionSucceeded
 import models.MessageType
 import models.MovementMessage
 import models.SubmissionProcessingResult
@@ -60,7 +60,7 @@ class MovementsController @Inject()(
   arrivalMovementService: ArrivalMovementMessageService,
   submitMessageService: SubmitMessageService,
   authenticate: AuthenticateActionProvider,
-  authenticatedArrivalForRead: AuthenticatedGetArrivalForReadActionProvider,
+  authenticatedArrivalForReadWithoutMessages: AuthenticatedGetArrivalWithoutMessagesForReadActionProvider,
   authenticatedOptionalArrival: AuthenticatedGetOptionalArrivalForWriteActionProvider,
   authenticateForWrite: AuthenticatedGetArrivalForWriteActionProvider,
   auditService: AuditService,
@@ -216,10 +216,9 @@ class MovementsController @Inject()(
 
   def getArrival(arrivalId: ArrivalId): Action[AnyContent] =
     withMetricsTimerAction("get-arrival-by-id") {
-      authenticatedArrivalForRead(arrivalId) {
+      authenticatedArrivalForReadWithoutMessages(arrivalId) {
         implicit request =>
-          messagesCount.update(request.arrival.messages.length)
-          Ok(Json.toJsObject(ResponseArrival.build(request.arrival)))
+          Ok(Json.toJsObject(ResponseArrival.build(request.arrivalWithoutMessages)))
       }
     }
 

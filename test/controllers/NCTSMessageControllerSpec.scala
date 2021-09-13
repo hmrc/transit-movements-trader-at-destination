@@ -20,16 +20,7 @@ import base.SpecBase
 import generators.ModelGenerators
 import models.ArrivalStatus.GoodsReleased
 import models.ChannelType.web
-import models.Arrival
-import models.ArrivalId
-import models.ArrivalNotFoundError
-import models.DocumentExistsError
-import models.FailedToLock
-import models.GoodsReleasedResponse
-import models.InboundMessageRequest
-import models.InvalidArrivalRootNodeError
-import models.MessageSender
-import models.MovementMessageWithoutStatus
+import models._
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
 import org.scalacheck.Arbitrary
@@ -57,7 +48,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
 
     "must return OK" in {
 
-      val arrival = Arbitrary.arbitrary[Arrival].sample.value
+      val arrival = Arbitrary.arbitrary[ArrivalWithoutMessages].sample.value
 
       val message = Arbitrary.arbitrary[MovementMessageWithoutStatus].sample.value
 

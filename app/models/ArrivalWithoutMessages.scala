@@ -17,7 +17,10 @@
 package models
 
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
+import play.api.libs.json.JsObject
+import play.api.libs.json.Json
 import play.api.libs.json.Reads
 import play.api.libs.json.__
 import play.api.libs.functional.syntax._
@@ -31,8 +34,23 @@ case class ArrivalWithoutMessages(
   created: LocalDateTime,
   updated: LocalDateTime,
   lastUpdated: LocalDateTime = LocalDateTime.now,
-  notificationBox: Option[Box]
-)
+  notificationBox: Option[Box],
+  nextMessageId: MessageId,
+  nextMessageCorrelationId: Int
+) {
+  private val obfuscatedEori: String          = s"ending ${eoriNumber.takeRight(7)}"
+  private val isoFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+
+  val summaryInformation: Map[String, String] = Map(
+    "Arrival id"                  -> arrivalId.index.toString,
+    "Channel"                     -> channel.toString,
+    "EORI"                        -> obfuscatedEori,
+    "MRN"                         -> movementReferenceNumber.value,
+    "Created"                     -> isoFormatter.format(created),
+    "Last updated"                -> isoFormatter.format(lastUpdated),
+    "Next message correlation id" -> nextMessageCorrelationId.toString
+  )
+}
 
 object ArrivalWithoutMessages {
 
@@ -46,7 +64,9 @@ object ArrivalWithoutMessages {
       arrival.created,
       arrival.updated,
       arrival.lastUpdated,
-      arrival.notificationBox
+      arrival.notificationBox,
+      arrival.nextMessageId,
+      arrival.nextMessageCorrelationId
     )
 
   implicit val readsArrival: Reads[ArrivalWithoutMessages] =
@@ -59,6 +79,21 @@ object ArrivalWithoutMessages {
         (__ \ "created").read(MongoDateTimeFormats.localDateTimeRead) and
         (__ \ "updated").read(MongoDateTimeFormats.localDateTimeRead) and
         (__ \ "lastUpdated").read(MongoDateTimeFormats.localDateTimeRead) and
-        (__ \ "notificationBox").readNullable[Box]
+        (__ \ "notificationBox").readNullable[Box] and
+        (__ \ "nextMessageId").read[MessageId] and
+        (__ \ "nextMessageCorrelationId").read[Int]
     )(ArrivalWithoutMessages.apply _)
+
+  val projection: JsObject = Json.obj(
+    "_id"                      -> 1,
+    "channel"                  -> 1,
+    "eoriNumber"               -> 1,
+    "movementReferenceNumber"  -> 1,
+    "status"                   -> 1,
+    "created"                  -> 1,
+    "updated"                  -> 1,
+    "lastUpdated"              -> 1,
+    "notificationBox"          -> 1,
+    "nextMessageCorrelationId" -> 1
+  )
 }

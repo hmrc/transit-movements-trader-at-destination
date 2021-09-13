@@ -21,15 +21,7 @@ import config.Constants
 import connectors.PushPullNotificationConnector
 import generators.ModelGenerators
 import models.MessageType.GoodsReleased
-import models.Arrival
-import models.ArrivalMessageNotification
-import models.ArrivalStatus
-import models.Box
-import models.BoxId
-import models.GoodsReleasedResponse
-import models.InboundMessageRequest
-import models.MessageId
-import models.MovementMessageWithoutStatus
+import models._
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers._
 import org.mockito.BDDMockito._
@@ -110,7 +102,7 @@ class PushPullNotificationServiceSpec extends SpecBase with BeforeAndAfterEach w
 
     "sendPushNotification" - {
 
-      val arrival = arbitrary[Arrival].sample.value.copy(notificationBox = Some(testBox))
+      val arrival = arbitrary[ArrivalWithoutMessages].sample.value.copy(notificationBox = Some(testBox))
 
       "should return a unit value when connector call succeeds" in {
 

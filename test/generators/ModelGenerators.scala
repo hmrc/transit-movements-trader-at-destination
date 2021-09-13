@@ -33,6 +33,7 @@ import models.ArrivalPutUpdate
 import models.ArrivalStatus
 import models.ArrivalStatusUpdate
 import models.ArrivalUpdate
+import models.ArrivalWithoutMessages
 import models.ChannelType
 import models.CompoundStatusUpdate
 import models.MessageId
@@ -177,6 +178,9 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
           notificationBox = None
         )
     }
+
+  implicit lazy val arbitraryArrivalWithoutMessages: Arbitrary[ArrivalWithoutMessages] =
+    Arbitrary { ArrivalWithoutMessages.fromArrival(arbitraryArrival.arbitrary.sample.get) }
 
   val genArrivalWithSuccessfulArrival: Gen[Arrival] =
     Arbitrary {

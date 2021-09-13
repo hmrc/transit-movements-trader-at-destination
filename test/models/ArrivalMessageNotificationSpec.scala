@@ -22,29 +22,31 @@ import models.MessageType.GoodsReleased
 import org.scalacheck.Gen
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import java.time.LocalDateTime
-import java.time.LocalDateTime
+
+import org.scalacheck.Arbitrary.arbitrary
 import play.api.libs.json.JsObject
 
 class ArrivalMessageNotificationSpec extends SpecBase with ScalaCheckDrivenPropertyChecks with ModelGenerators {
 
   val responseGenerator = Gen.oneOf(MessageResponse.inboundMessages)
 
-  "fromArrivalNotification" - {
+  "fromInboundMessageRequest" - {
 
     "must convert InboundMessageRequest to ArrivalNotification and includes message body" in {
 
-      val arrival     = arbitraryArrival.arbitrary.sample.value
+      val arrival     = arbitrary[ArrivalWithoutMessages].sample.value
+      val messageId   = arrival.nextMessageId
       val dateTimeNow = LocalDateTime.now()
 
       val requestXml = <CC024A></CC024A>
 
       val expectedNotification =
         ArrivalMessageNotification(
-          s"/customs/transits/movements/arrivals/${arrival.arrivalId.index}/messages/${arrival.messages.length + 1}",
+          s"/customs/transits/movements/arrivals/${arrival.arrivalId.index}/messages/${messageId.value}",
           s"/customs/transits/movements/arrivals/${arrival.arrivalId.index}",
           arrival.eoriNumber,
           arrival.arrivalId,
-          MessageId(arrival.messages.length + 1),
+          messageId,
           dateTimeNow,
           GoodsReleased,
           Some(requestXml)
@@ -71,18 +73,19 @@ class ArrivalMessageNotificationSpec extends SpecBase with ScalaCheckDrivenPrope
 
     "must convert InboundMessageRequest to ArrivalNotification and does not include message body over 100kb" in {
 
-      val arrival     = arbitraryArrival.arbitrary.sample.value
+      val arrival     = arbitrary[ArrivalWithoutMessages].sample.value
+      val messageId   = arrival.nextMessageId
       val dateTimeNow = LocalDateTime.now()
 
       val requestXml = <CC024A></CC024A>
 
       val expectedNotification =
         ArrivalMessageNotification(
-          s"/customs/transits/movements/arrivals/${arrival.arrivalId.index}/messages/${arrival.messages.length + 1}",
+          s"/customs/transits/movements/arrivals/${arrival.arrivalId.index}/messages/${messageId.value}",
           s"/customs/transits/movements/arrivals/${arrival.arrivalId.index}",
           arrival.eoriNumber,
           arrival.arrivalId,
-          MessageId(arrival.messages.length + 1),
+          messageId,
           dateTimeNow,
           GoodsReleased,
           None

@@ -14,13 +14,19 @@
  * limitations under the License.
  */
 
-package models.response
+package controllers.actions
 
-import play.api.libs.json.Json
-import play.api.libs.json.OWrites
+import javax.inject.Inject
+import models.ArrivalId
+import models.request.ArrivalWithoutMessagesRequest
+import play.api.mvc.ActionBuilder
+import play.api.mvc.AnyContent
 
-case class ResponseArrivals(arrivals: Seq[ResponseArrival], retrievedArrivals: Int, totalArrivals: Int, totalMatched: Int)
+class GetArrivalWithoutMessagesForWriteActionProvider @Inject()(
+  lock: LockActionProvider,
+  getArrival: GetArrivalWithoutMessagesActionProvider
+) {
 
-object ResponseArrivals {
-  implicit val writes: OWrites[ResponseArrivals] = Json.writes[ResponseArrivals]
+  def apply(arrivalId: ArrivalId): ActionBuilder[ArrivalWithoutMessagesRequest, AnyContent] =
+    lock(arrivalId) andThen getArrival(arrivalId)
 }

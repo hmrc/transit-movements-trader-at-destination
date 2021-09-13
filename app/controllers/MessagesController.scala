@@ -49,17 +49,17 @@ import scala.concurrent.Future
 import scala.xml.NodeSeq
 
 class MessagesController @Inject()(
-  cc: ControllerComponents,
   arrivalMovementRepository: ArrivalMovementRepository,
   arrivalMovementService: ArrivalMovementMessageService,
-  submitMessageService: SubmitMessageService,
-  authenticate: AuthenticateActionProvider,
-  authenticateForRead: AuthenticatedGetArrivalForReadActionProvider,
-  authenticateForWrite: AuthenticatedGetArrivalForWriteActionProvider,
-  validateMessageSenderNode: ValidateMessageSenderNodeFilter,
   auditService: AuditService,
-  validateTransitionState: MessageTransformerInterface,
+  authenticate: AuthenticateActionProvider,
+  authenticateForReadWithMessages: AuthenticatedGetArrivalForReadActionProvider,
+  authenticateForWriteWithoutMessages: AuthenticatedGetArrivalWithoutMessagesForWriteActionProvider,
+  cc: ControllerComponents,
+  submitMessageService: SubmitMessageService,
+  validateMessageSenderNode: ValidateMessageSenderNodeFilter,
   validateOutboundMessage: ValidateOutboundMessageAction,
+  validateTransitionState: MessageTransformerInterface,
   val metrics: Metrics
 )(implicit ec: ExecutionContext)
     extends BackendController(cc)
@@ -73,14 +73,15 @@ class MessagesController @Inject()(
 
   def post(arrivalId: ArrivalId): Action[NodeSeq] =
     withMetricsTimerAction("post-submit-message") {
-      (authenticateForWrite(arrivalId)(parse.xml) andThen validateMessageSenderNode.filter andThen validateTransitionState andThen validateOutboundMessage)
+      (authenticateForWriteWithoutMessages(arrivalId)(parse.xml) andThen validateMessageSenderNode.filter andThen validateTransitionState andThen validateOutboundMessage)
         .async {
           implicit request: OutboundMessageRequest[NodeSeq] =>
-            val arrival     = request.arrivalRequest.arrival
+            val arrival     = request.arrivalWithoutMessageRequest.arrivalWithoutMessages
             val messageType = request.message.messageType.messageType
-
             arrivalMovementService
-              .makeOutboundMessage(arrivalId, arrival.nextMessageId, arrival.nextMessageCorrelationId, messageType)(request.arrivalRequest.request.body) match {
+              .makeOutboundMessage(arrivalId, arrival.nextMessageId, arrival.nextMessageCorrelationId, messageType)(
+                request.arrivalWithoutMessageRequest.request.body
+              ) match {
               case Right(message) =>
                 submitMessageService
                   .submitMessage(arrivalId, arrival.nextMessageId, message, request.message.nextState, arrival.channel)
@@ -121,9 +122,7 @@ class MessagesController @Inject()(
             if arrival.eoriNumber == request.eoriNumber
             message <- OptionT(arrivalMovementRepository.getMessage(arrivalId, request.channel, messageId))
             if !message.optStatus.contains(SubmissionFailed)
-          } yield {
-            Ok(Json.toJsObject(ResponseMovementMessage.build(arrivalId, messageId, message)))
-          }
+          } yield Ok(Json.toJsObject(ResponseMovementMessage.build(arrivalId, messageId, message)))
 
           result.getOrElse(NotFound)
       }
@@ -132,7 +131,7 @@ class MessagesController @Inject()(
 
   def getMessages(arrivalId: ArrivalId, receivedSince: Option[OffsetDateTime]): Action[AnyContent] =
     withMetricsTimerAction("get-all-arrival-messages") {
-      authenticateForRead(arrivalId) {
+      authenticateForReadWithMessages(arrivalId) {
         implicit request =>
           val response = ResponseArrivalWithMessages.build(request.arrival, receivedSince)
           countMessages.update(response.messages.length)
