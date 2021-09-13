@@ -24,10 +24,13 @@ import models._
 import repositories.ArrivalMovementRepository
 import uk.gov.hmrc.http.HeaderCarrier
 
-import java.time.{Clock, OffsetDateTime}
+import java.time.Clock
+import java.time.OffsetDateTime
 import javax.inject.Inject
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.util.Failure
+import scala.util.Success
 
 class SubmitMessageService @Inject()(
   arrivalMovementRepository: ArrivalMovementRepository,

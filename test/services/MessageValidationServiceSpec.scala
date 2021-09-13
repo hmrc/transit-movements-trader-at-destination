@@ -35,7 +35,7 @@ class MessageValidationServiceSpec extends SpecBase with ModelGenerators with Sc
 
         forAll(Gen.oneOf(inboundMessages)) {
           inboundMessage =>
-            val result = MessageValidationService.validateInboundMessage(inboundMessage).right.value
+            val result = MessageValidationService.validateInboundMessage(inboundMessage).value
 
             result mustBe inboundMessage
         }
@@ -59,7 +59,7 @@ class MessageValidationServiceSpec extends SpecBase with ModelGenerators with Sc
 
         forAll(Gen.oneOf(outboundMessages)) {
           outboundMessage =>
-            val result = MessageValidationService.validateOutboundMessage(outboundMessage).right.value
+            val result = MessageValidationService.validateOutboundMessage(outboundMessage).value
 
             result mustBe outboundMessage
         }

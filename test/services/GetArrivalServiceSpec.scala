@@ -48,7 +48,7 @@ class GetArrivalServiceSpec extends SpecBase with ModelGenerators with ScalaChec
             running(application) {
               val service = application.injector.instanceOf[GetArrivalService]
 
-              val result = service.getArrivalById(ArrivalId(0)).futureValue.right.value
+              val result = service.getArrivalById(ArrivalId(0)).futureValue.value
 
               result mustBe arrival
             }

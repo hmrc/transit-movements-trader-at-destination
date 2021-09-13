@@ -18,49 +18,29 @@ package repositories
 
 import akka.Done
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
-import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.stream.testkit.scaladsl.TestSink
+import akka.stream.{ActorMaterializer, Materializer}
 import base._
 import cats.data.NonEmptyList
 import config.AppConfig
 import controllers.routes
-import models.ArrivalStatus.ArrivalSubmitted
-import models.ArrivalStatus.GoodsReleased
-import models.ArrivalStatus.Initialized
-import models.ArrivalStatus.UnloadingRemarksSubmitted
-import models.ChannelType.api
-import models.ChannelType.web
-import models.MessageStatus.SubmissionPending
-import models.MessageStatus.SubmissionSucceeded
-import models.Arrival
-import models.ArrivalId
-import models.ArrivalIdSelector
-import models.ArrivalStatus
-import models.ArrivalStatusUpdate
-import models.MessageId
-import models.MessageType
-import models.MongoDateTimeFormats
-import models.MovementMessageWithStatus
-import models.MovementMessageWithoutStatus
-import models.MovementReferenceNumber
-import models.response.ResponseArrival
-import models.response.ResponseArrivals
+import models.ArrivalStatus.{ArrivalSubmitted, GoodsReleased, Initialized, UnloadingRemarksSubmitted}
+import models.ChannelType.{api, web}
+import models.MessageStatus.{SubmissionPending, SubmissionSucceeded}
+import models._
+import models.response.{ResponseArrival, ResponseArrivals}
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
 import org.scalactic.source
-import org.scalatest.BeforeAndAfterEach
-import org.scalatest.TestSuiteMixin
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.exceptions.StackDepthException
-import org.scalatest.exceptions.TestFailedException
+import org.scalatest.exceptions.{StackDepthException, TestFailedException}
+import org.scalatest.{BeforeAndAfterEach, TestSuiteMixin}
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.JsObject
-import play.api.libs.json.Json
+import play.api.libs.json.{JsObject, Json}
 import play.api.test.Helpers.running
-import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
+import reactivemongo.play.json.collection.Helpers.idWrites
 import reactivemongo.play.json.collection.JSONCollection
 import utils.Format
 
@@ -68,8 +48,7 @@ import java.time._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.reflect.ClassTag
-import scala.util.Failure
-import scala.util.Success
+import scala.util.{Failure, Success}
 
 class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with ScalaFutures with TestSuiteMixin with MongoDateTimeFormats with BeforeAndAfterEach {
 

@@ -19,9 +19,9 @@ package services
 import audit.AuditService
 import base.SpecBase
 import generators.ModelGenerators
+import models.ArrivalStatus._
 import models.Arrival
 import models.ArrivalId
-import models.ArrivalStatus._
 import models.FailedToSaveMessage
 import models.GoodsReleasedResponse
 import models.InboundMessageRequest
@@ -80,7 +80,6 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach with Model
           saveMessageService
             .saveInboundMessage(InboundMessageRequest(arrival, GoodsReleased, GoodsReleasedResponse, message), messageSender)
             .futureValue
-            .right
             .value
 
         result mustBe (())
