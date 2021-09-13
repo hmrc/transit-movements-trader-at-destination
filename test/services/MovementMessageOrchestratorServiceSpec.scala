@@ -19,8 +19,8 @@ package services
 import base.SpecBase
 import generators.ModelGenerators
 import models.ArrivalStatus.GoodsReleased
-import models.Arrival
 import models.ArrivalId
+import models.ArrivalWithoutMessages
 import models.GoodsReleasedResponse
 import models.InboundMessageRequest
 import models.MessageSender
@@ -30,10 +30,10 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.mvc.Headers
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 class MovementMessageOrchestratorServiceSpec extends SpecBase with ModelGenerators with ScalaCheckDrivenPropertyChecks {
 
@@ -47,7 +47,7 @@ class MovementMessageOrchestratorServiceSpec extends SpecBase with ModelGenerato
 
       "must return a InboundMessageRequest when successfully processing a request xml" in {
 
-        val arrival       = arbitrary[Arrival].sample.value
+        val arrival       = arbitrary[ArrivalWithoutMessages].sample.value
         val message       = arbitrary[MovementMessageWithoutStatus].sample.value
         val messageSender = MessageSender(arrival.arrivalId, arrival.nextMessageCorrelationId)
         val xml           = <test>TestXml</test>
@@ -99,7 +99,7 @@ class MovementMessageOrchestratorServiceSpec extends SpecBase with ModelGenerato
           override val monitorMessage: String = "exampleMessage"
         }
 
-        val arrival       = arbitrary[Arrival].sample.value
+        val arrival       = arbitrary[ArrivalWithoutMessages].sample.value
         val message       = arbitrary[MovementMessageWithoutStatus].sample.value
         val messageSender = MessageSender(arrival.arrivalId, arrival.nextMessageCorrelationId)
         val xml           = <test>TestXml</test>

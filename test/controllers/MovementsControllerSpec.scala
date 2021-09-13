@@ -31,19 +31,20 @@ import generators.ModelGenerators
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalStatus
+import models.ArrivalWithoutMessages
 import models.Box
 import models.BoxId
-import models.ChannelType.api
-import models.ChannelType.web
 import models.MessageId
 import models.MessageSender
-import models.MessageStatus.SubmissionFailed
-import models.MessageStatus.SubmissionPending
-import models.MessageStatus.SubmissionSucceeded
 import models.MessageType
 import models.MovementMessageWithStatus
 import models.MovementReferenceNumber
 import models.SubmissionProcessingResult
+import models.ChannelType.api
+import models.ChannelType.web
+import models.MessageStatus.SubmissionFailed
+import models.MessageStatus.SubmissionPending
+import models.MessageStatus.SubmissionSucceeded
 import models.response.ResponseArrival
 import models.response.ResponseArrivals
 import org.mockito.ArgumentCaptor
@@ -65,13 +66,13 @@ import repositories.LockRepository
 import services.PushPullNotificationService
 import services.SubmitMessageService
 import utils.Format
-
 import java.time.Clock
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+
 import scala.concurrent.Future
 import scala.xml.NodeSeq
 import scala.xml.Utility.trim
@@ -1145,7 +1146,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         running(application) {
           forAll(listWithMaxLength[ResponseArrival](10)) {
             arrivals =>
-              val responseArrivals = ResponseArrivals(arrivals, arrivals.length, arrivals.length)
+              val responseArrivals = ResponseArrivals(arrivals, arrivals.length, arrivals.length, arrivals.length)
               when(mockArrivalMovementRepository.fetchAllArrivals(any(), any(), any(), any(), any(), any())).thenReturn(Future.successful(responseArrivals))
 
               val request = FakeRequest(GET, routes.MovementsController.getArrivals().url)
@@ -1183,7 +1184,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
               createdAndUpdatedDate
             )
           )
-          val responseArrivals = ResponseArrivals(arrivals, 1, 1)
+          val responseArrivals = ResponseArrivals(arrivals, 1, 1, 1)
           when(mockArrivalMovementRepository.fetchAllArrivals(any(), any(), any(), any(), any(), any())).thenReturn(Future.successful(responseArrivals))
 
           val request = FakeRequest(GET, routes.MovementsController.getArrivals().url)
@@ -1206,7 +1207,8 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
                |    }
                |  ],
                |  "retrievedArrivals": 1,
-               |  "totalArrivals": 1
+               |  "totalArrivals": 1,
+               |  "totalMatched": 1
                |}""".stripMargin
 
           contentAsJson(result) mustBe Json.parse(expectedJson)
@@ -1246,7 +1248,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           .build()
 
         val arrival = Arbitrary.arbitrary[Arrival].sample.value.copy(eoriNumber = "eori")
-        when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(arrival)))
+        when(mockArrivalMovementRepository.getWithoutMessages(any(), any())).thenReturn(Future.successful(Some(ArrivalWithoutMessages.fromArrival(arrival))))
 
         running(application) {
           val request = FakeRequest(GET, routes.MovementsController.getArrival(ArrivalId(1)).url).withHeaders("channel" -> arrival.channel.toString)
@@ -1265,7 +1267,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           .overrides(bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository))
           .build()
 
-        when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(None))
+        when(mockArrivalMovementRepository.getWithoutMessages(any(), any())).thenReturn(Future.successful(None))
 
         running(application) {
           val request = FakeRequest(GET, routes.MovementsController.getArrival(ArrivalId(1)).url).withHeaders("channel" -> web.toString)
@@ -1283,7 +1285,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           .build()
 
         val arrival = Arbitrary.arbitrary[Arrival].sample.value.copy(eoriNumber = "eori2")
-        when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(arrival)))
+        when(mockArrivalMovementRepository.getWithoutMessages(any(), any())).thenReturn(Future.successful(Some(ArrivalWithoutMessages.fromArrival(arrival))))
 
         running(application) {
           val request = FakeRequest(GET, routes.MovementsController.getArrival(ArrivalId(1)).url).withHeaders("channel" -> arrival.channel.toString)
@@ -1296,7 +1298,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
       "must return an INTERNAL_SERVER_ERROR when we cannot retrieve the arrival movement" in {
         val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
 
-        when(mockArrivalMovementRepository.get(any(), any()))
+        when(mockArrivalMovementRepository.getWithoutMessages(any(), any()))
           .thenReturn(Future.failed(new Exception))
 
         val application = baseApplicationBuilder

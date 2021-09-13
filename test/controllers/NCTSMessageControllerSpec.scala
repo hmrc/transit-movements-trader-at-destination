@@ -23,6 +23,7 @@ import models.ChannelType.web
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalNotFoundError
+import models.ArrivalWithoutMessages
 import models.DocumentExistsError
 import models.FailedToLock
 import models.GoodsReleasedResponse
@@ -41,6 +42,7 @@ import play.api.test.Helpers._
 import services.MovementMessageOrchestratorService
 
 import scala.concurrent.Future
+import utils.Format
 
 class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks with ModelGenerators with BeforeAndAfterEach {
 
@@ -57,7 +59,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
 
     "must return OK" in {
 
-      val arrival = Arbitrary.arbitrary[Arrival].sample.value
+      val arrival = Arbitrary.arbitrary[ArrivalWithoutMessages].sample.value
 
       val message = Arbitrary.arbitrary[MovementMessageWithoutStatus].sample.value
 

@@ -61,8 +61,10 @@ class MovementsController @Inject()(
   submitMessageService: SubmitMessageService,
   authenticate: AuthenticateActionProvider,
   authenticatedArrivalForRead: AuthenticatedGetArrivalForReadActionProvider,
+  authenticatedArrivalForReadWithoutMessages: AuthenticatedGetArrivalWithoutMessagesForReadActionProvider,
   authenticatedOptionalArrival: AuthenticatedGetOptionalArrivalForWriteActionProvider,
   authenticateForWrite: AuthenticatedGetArrivalForWriteActionProvider,
+  authenticateForWriteWithoutMessages: AuthenticatedGetArrivalWithoutMessagesForWriteActionProvider,
   auditService: AuditService,
   validateMessageSenderNode: ValidateMessageSenderNodeFilter,
   pushPullNotificationService: PushPullNotificationService,
@@ -216,10 +218,9 @@ class MovementsController @Inject()(
 
   def getArrival(arrivalId: ArrivalId): Action[AnyContent] =
     withMetricsTimerAction("get-arrival-by-id") {
-      authenticatedArrivalForRead(arrivalId) {
+      authenticatedArrivalForReadWithoutMessages(arrivalId) {
         implicit request =>
-          messagesCount.update(request.arrival.messages.length)
-          Ok(Json.toJsObject(ResponseArrival.build(request.arrival)))
+          Ok(Json.toJsObject(ResponseArrival.build(request.arrivalWithoutMessages)))
       }
     }
 

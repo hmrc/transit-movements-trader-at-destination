@@ -31,7 +31,9 @@ import models.UnloadingRemarksRejectedResponse
 import models.UnloadingRemarksResponse
 import models.XMLSubmissionNegativeAcknowledgementResponse
 import models.request.ArrivalRequest
+import models.request.ArrivalWithoutMessagesRequest
 import play.api.mvc.Results.BadRequest
+import play.api.mvc.request
 import play.api.mvc._
 import play.twirl.api.HtmlFormat
 
@@ -41,16 +43,16 @@ import scala.xml.NodeSeq
 
 class MessageTransformer @Inject()(implicit val executionContext: ExecutionContext) extends MessageTransformerInterface with Logging {
 
-  override def refine[A](request: ArrivalRequest[A]): Future[Either[Result, MessageTransformRequest[A]]] =
+  override def refine[A](request: ArrivalWithoutMessagesRequest[A]): Future[Either[Result, MessageTransformRequest[A]]] =
     request.body match {
       case x: NodeSeq =>
         x.headOption.flatMap(node => messageResponse(request.channel)(node.label)) match {
           case Some(response) =>
-            StatusTransition.transition(request.arrival.status, response.messageReceived) match {
+            StatusTransition.transition(request.arrivalWithoutMessages.status, response.messageReceived) match {
               case Right(nextState) =>
                 Future.successful(Right(MessageTransformRequest(Message(response, nextState), request)))
               case Left(error) =>
-                logger.error(s"Unable to transition movement state ${error.message} for arrival movement ${request.arrival.arrivalId.index}")
+                logger.error(s"Unable to transition movement state ${error.message} for arrival movement ${request.arrivalWithoutMessages.arrivalId.index}")
                 Future.successful(Left(badRequestError(error.message)))
             }
           case None =>
@@ -84,6 +86,6 @@ class MessageTransformer @Inject()(implicit val executionContext: ExecutionConte
 }
 
 @ImplementedBy(classOf[MessageTransformer])
-trait MessageTransformerInterface extends ActionRefiner[ArrivalRequest, MessageTransformRequest]
+trait MessageTransformerInterface extends ActionRefiner[ArrivalWithoutMessagesRequest, MessageTransformRequest]
 
-case class MessageTransformRequest[A](message: Message, arrivalRequest: ArrivalRequest[A]) extends WrappedRequest[A](arrivalRequest)
+case class MessageTransformRequest[A](message: Message, arrivalRequest: ArrivalWithoutMessagesRequest[A]) extends WrappedRequest[A](arrivalRequest)

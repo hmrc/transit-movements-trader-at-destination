@@ -24,6 +24,7 @@ import models.MessageType.GoodsReleased
 import models.Arrival
 import models.ArrivalMessageNotification
 import models.ArrivalStatus
+import models.ArrivalWithoutMessages
 import models.Box
 import models.BoxId
 import models.GoodsReleasedResponse
@@ -49,10 +50,10 @@ import play.api.test.Helpers._
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.UpstreamErrorResponse
 import utils.Format
-
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext
@@ -113,7 +114,7 @@ class PushPullNotificationServiceSpec extends SpecBase with BeforeAndAfterEach w
 
     "sendPushNotification" - {
 
-      val arrival = arbitrary[Arrival].sample.value.copy(notificationBox = Some(testBox))
+      val arrival = arbitrary[ArrivalWithoutMessages].sample.value.copy(notificationBox = Some(testBox))
 
       "should return a unit value when connector call succeeds" in {
 

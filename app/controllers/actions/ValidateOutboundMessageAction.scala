@@ -20,12 +20,13 @@ import logging.Logging
 import models.OutboundMessage
 import models.OutboundMessageResponse
 import models.request.ArrivalRequest
+import models.request.ArrivalWithoutMessagesRequest
 import play.api.mvc.Results.BadRequest
 import play.api.mvc.ActionRefiner
 import play.api.mvc.Result
 import play.api.mvc.WrappedRequest
-
 import javax.inject.Inject
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
@@ -35,12 +36,14 @@ class ValidateOutboundMessageAction @Inject()(implicit val executionContext: Exe
   override def refine[A](request: MessageTransformRequest[A]): Future[Either[Result, OutboundMessageRequest[A]]] =
     request.message.messageType match {
       case message: OutboundMessageResponse =>
-        Future.successful(Right(OutboundMessageRequest(message = OutboundMessage(message, request.message.nextState), arrivalRequest = request.arrivalRequest)))
+        Future.successful(Right(OutboundMessageRequest(OutboundMessage(message, request.message.nextState), request.arrivalRequest)))
       case message =>
         logger.warn(
-          s"Found an inbound message (${message.messageType}) when expecting an outbound message for arrivalId: ${request.arrivalRequest.arrival.arrivalId.index} ( INBOUND_MESSAGE_FOUND_FOR_OUTBOUND_MESSAGE )")
+          s"Found an inbound message (${message.messageType}) when expecting an outbound message for arrivalId: ${request.arrivalRequest.arrivalWithoutMessages.arrivalId.index} ( INBOUND_MESSAGE_FOUND_FOR_OUTBOUND_MESSAGE )")
         Future.successful(Left(BadRequest(s"Unsupported X-Message-Type ${request.headers.get("X-Message-Type")}")))
     }
+
 }
 
-case class OutboundMessageRequest[A](message: OutboundMessage, arrivalRequest: ArrivalRequest[A]) extends WrappedRequest[A](arrivalRequest)
+case class OutboundMessageRequest[A](message: OutboundMessage, arrivalWithoutMessageRequest: ArrivalWithoutMessagesRequest[A])
+    extends WrappedRequest[A](arrivalWithoutMessageRequest)

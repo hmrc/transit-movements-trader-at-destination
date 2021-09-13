@@ -20,8 +20,7 @@ import generators.ModelGenerators
 import models.Arrival
 import models.ArrivalRejectedResponse
 import models.ArrivalStatus
-import models.ArrivalStatus.ArrivalSubmitted
-import models.ArrivalStatus.UnloadingPermission
+import models.ArrivalWithoutMessages
 import models.ChannelType
 import models.GoodsReleasedResponse
 import models.MessageType
@@ -29,7 +28,10 @@ import models.UnloadingPermissionResponse
 import models.UnloadingRemarksRejectedResponse
 import models.UnloadingRemarksResponse
 import models.XMLSubmissionNegativeAcknowledgementResponse
+import models.ArrivalStatus.ArrivalSubmitted
+import models.ArrivalStatus.UnloadingPermission
 import models.request.ArrivalRequest
+import models.request.ArrivalWithoutMessagesRequest
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.EitherValues
 import org.scalatest.OptionValues
@@ -60,7 +62,8 @@ class MessageTransformerSpec
     with DefaultAwaitTimeout
     with ScalaFutures {
 
-  private val arrival: Arrival = arbitrary[Arrival].sample.value
+  private val arrival: Arrival                               = arbitrary[Arrival].sample.value
+  private val arrivalWithoutMessages: ArrivalWithoutMessages = arbitrary[ArrivalWithoutMessages].sample.value
 
   private val successfulResponse: Request[NodeSeq] => Future[Result] = {
     _ =>
@@ -74,10 +77,10 @@ class MessageTransformerSpec
     "returns 200 for supported root node" in {
       forAll(arbitrary[ChannelType]) {
         channel =>
-          val arrivalMovement = arrival.copy(status = ArrivalStatus.ArrivalSubmitted)
+          val arrivalMovement = arrivalWithoutMessages.copy(status = ArrivalStatus.ArrivalSubmitted)
 
           val request =
-            ArrivalRequest(
+            ArrivalWithoutMessagesRequest(
               FakeRequest("", "")
                 .withHeaders(
                   "X-Message-Type" -> MessageType.ArrivalRejection.code,
@@ -98,11 +101,11 @@ class MessageTransformerSpec
       forAll(arbitrary[ChannelType]) {
         channel =>
           val request =
-            ArrivalRequest(
+            ArrivalWithoutMessagesRequest(
               FakeRequest("", "")
                 .withHeaders("X-Message-Type" -> "invalid-message-type", "Content-Type" -> "application/xml")
                 .withBody[NodeSeq](<INVALID></INVALID>),
-              arrival,
+              arrivalWithoutMessages,
               channel
             )
 
@@ -115,10 +118,10 @@ class MessageTransformerSpec
     "when the incoming message is an allowable transition from the current status" in {
       forAll(arbitrary[ChannelType]) {
         channel =>
-          val arrivalMovement = arrival.copy(status = ArrivalSubmitted)
+          val arrivalMovement = arrivalWithoutMessages.copy(status = ArrivalSubmitted)
 
           val request =
-            ArrivalRequest(
+            ArrivalWithoutMessagesRequest(
               FakeRequest("", "")
                 .withHeaders("X-Message-Type" -> MessageType.GoodsReleased.code, "Content-Type" -> "application/xml")
                 .withBody[NodeSeq](<CC025A></CC025A>),
@@ -136,10 +139,10 @@ class MessageTransformerSpec
     "when the incoming message is not an allowable transition from the current status" in {
       forAll(arbitrary[ChannelType]) {
         channel =>
-          val arrivalMovement = arrival.copy(status = UnloadingPermission)
+          val arrivalMovement = arrivalWithoutMessages.copy(status = UnloadingPermission)
 
           val request =
-            ArrivalRequest(
+            ArrivalWithoutMessagesRequest(
               FakeRequest("", "")
                 .withHeaders(
                   "X-Message-Type" -> MessageType.ArrivalRejection.code,

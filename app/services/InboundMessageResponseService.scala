@@ -36,7 +36,7 @@ class InboundMessageResponseService @Inject()(xmlValidationService: XmlValidatio
       headNode                <- EitherT.fromOption(xml.headOption, CannotFindRootNodeError(s"[InboundRequest][inboundRequest] Could not find root node"))
       messageResponse         <- EitherT.fromEither(MessageResponse.getMessageResponseFromCode(headNode.label))
       validateInboundResponse <- EitherT.fromEither(MessageValidationService.validateInboundMessage(messageResponse))
-      validateXml <- EitherT.fromEither(
+      _ <- EitherT.fromEither(
         xmlValidationService
           .validate(xml.toString, validateInboundResponse.xsdFile)
           .toOption

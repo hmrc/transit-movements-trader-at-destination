@@ -20,13 +20,13 @@ import controllers.routes
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalStatus
+import models.ArrivalWithoutMessages
 import models.MongoDateTimeFormats
 import models.MovementReferenceNumber
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import play.api.libs.json.OWrites
 import play.api.libs.json.Reads
-
 import java.time.LocalDateTime
 
 case class ResponseArrival(arrivalId: ArrivalId,
@@ -48,6 +48,17 @@ object ResponseArrival {
       arrival.status,
       arrival.created,
       updated = arrival.lastUpdated
+    )
+
+  def build(arrivalWithoutMessages: ArrivalWithoutMessages): ResponseArrival =
+    ResponseArrival(
+      arrivalWithoutMessages.arrivalId,
+      routes.MovementsController.getArrival(arrivalWithoutMessages.arrivalId).url,
+      routes.MessagesController.getMessages(arrivalWithoutMessages.arrivalId).url,
+      arrivalWithoutMessages.movementReferenceNumber,
+      arrivalWithoutMessages.status,
+      arrivalWithoutMessages.created,
+      updated = arrivalWithoutMessages.lastUpdated
     )
 
   val projection: JsObject = Json.obj(

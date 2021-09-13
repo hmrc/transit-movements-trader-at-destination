@@ -24,6 +24,7 @@ import akka.stream.scaladsl.Source
 import akka.stream.testkit.scaladsl.TestSink
 import base._
 import cats.data.NonEmptyList
+import cats.syntax.all._
 import config.AppConfig
 import controllers.routes
 import models.ArrivalStatus.ArrivalSubmitted
@@ -38,8 +39,17 @@ import models.Arrival
 import models.ArrivalId
 import models.ArrivalIdSelector
 import models.ArrivalStatus
+import models.ArrivalStatus.ArrivalSubmitted
+import models.ArrivalStatus.GoodsReleased
+import models.ArrivalStatus.Initialized
+import models.ArrivalStatus.UnloadingRemarksSubmitted
 import models.ArrivalStatusUpdate
+import models.ArrivalWithoutMessages
+import models.ChannelType.api
+import models.ChannelType.web
 import models.MessageId
+import models.MessageStatus.SubmissionPending
+import models.MessageStatus.SubmissionSucceeded
 import models.MessageType
 import models.MongoDateTimeFormats
 import models.MovementMessageWithStatus
@@ -63,13 +73,14 @@ import play.api.test.Helpers.running
 import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 import reactivemongo.play.json.collection.JSONCollection
 import utils.Format
-
 import java.time._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.reflect.ClassTag
 import scala.util.Failure
 import scala.util.Success
+import cats.data.Chain
 
 class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with ScalaFutures with TestSuiteMixin with MongoDateTimeFormats with BeforeAndAfterEach {
 
@@ -98,11 +109,16 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
       )
   }
 
-  def nonEmptyListOfFixSize[T](size: Int, gen: Gen[T]): Gen[NonEmptyList[T]] =
-    for {
-      head <- gen
-      tail <- Gen.listOfN(size - 1, gen)
-    } yield NonEmptyList(head, tail)
+  def nonEmptyListOfNArrivals(size: Int): Gen[NonEmptyList[Arrival]] =
+    Gen.listOfN(size, arbitrary[Arrival])
+      // Don't generate duplicate IDs
+      .map(_.foldLeft((Chain.empty[Arrival], 1)) {
+        case ((arrivals, id), arrival) =>
+          (arrivals :+ arrival.copy(arrivalId = ArrivalId(id)), id + 1)
+      }).map {
+        case (arrivals, _) =>
+          NonEmptyList.fromListUnsafe(arrivals.toList)
+      }
 
   private val eoriNumber: String = arbitrary[String].sample.value
   private val mrn                = arbitrary[MovementReferenceNumber].sample.value
@@ -624,6 +640,121 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
       }
     }
 
+    "getWithoutMessages(arrivalId: ArrivalId)" - {
+      "must get an arrival when it exists" in {
+
+        val app = appBuilder.build()
+        running(app) {
+          val service = app.injector.instanceOf[ArrivalMovementRepository]
+          database.flatMap(_.drop()).futureValue
+
+          val arrival                = arbitrary[Arrival].sample.value
+          val arrivalWithoutMessages = ArrivalWithoutMessages.fromArrival(arrival)
+          service.insert(arrival).futureValue
+          val result = service.getWithoutMessages(arrival.arrivalId)
+
+          whenReady(result) {
+            r =>
+              r.value mustEqual arrivalWithoutMessages
+          }
+        }
+      }
+
+      "must return None when an arrival does not exist" in {
+        val app = appBuilder.build()
+        running(app) {
+          val service = app.injector.instanceOf[ArrivalMovementRepository]
+
+          database.flatMap(_.drop()).futureValue
+
+          val arrival = arbitrary[Arrival].sample.value copy (arrivalId = ArrivalId(1))
+
+          service.insert(arrival).futureValue
+          val result = service.getWithoutMessages(ArrivalId(2), web)
+
+          whenReady(result) {
+            r =>
+              r.isDefined mustBe false
+          }
+        }
+      }
+
+      "must return None when a arrival exists, but with a different channel type" in {
+        val app = appBuilder.build()
+        running(app) {
+          val service = app.injector.instanceOf[ArrivalMovementRepository]
+
+          database.flatMap(_.drop()).futureValue
+
+          val arrival = arbitrary[Arrival].sample.value copy (arrivalId = ArrivalId(1), api)
+
+          service.insert(arrival).futureValue
+          val result = service.get(ArrivalId(1), web)
+
+          whenReady(result) {
+            r =>
+              r.isDefined mustBe false
+          }
+        }
+      }
+    }
+
+    "getWithoutMessages(arrivalId: ArrivalId, channelFilter: ChannelType)" - {
+      "must get an arrival when it exists and has the right channel type" in {
+        val app = appBuilder.build()
+        running(app) {
+          val service = app.injector.instanceOf[ArrivalMovementRepository]
+          database.flatMap(_.drop()).futureValue
+
+          val arrival                = arbitrary[Arrival].sample.value.copy(channel = api)
+          val arrivalWithoutMessages = ArrivalWithoutMessages.fromArrival(arrival)
+          service.insert(arrival).futureValue
+          val result = service.getWithoutMessages(arrival.arrivalId, arrival.channel)
+
+          whenReady(result) {
+            r =>
+              r.value mustEqual arrivalWithoutMessages
+          }
+        }
+      }
+
+      "must return None when an arrival does not exist" in {
+        val app = appBuilder.build()
+        running(app) {
+          val service = app.injector.instanceOf[ArrivalMovementRepository]
+          database.flatMap(_.drop()).futureValue
+
+          val arrival = arbitrary[Arrival].sample.value copy (arrivalId = ArrivalId(1), channel = api)
+
+          service.insert(arrival).futureValue
+          val result = service.getWithoutMessages(ArrivalId(2), web)
+
+          whenReady(result) {
+            r =>
+              r.isDefined mustBe false
+          }
+        }
+      }
+
+      "must return None when an arrival exists, but with a different channel type" in {
+        val app = appBuilder.build()
+        running(app) {
+          val service = app.injector.instanceOf[ArrivalMovementRepository]
+          database.flatMap(_.drop()).futureValue
+
+          val arrival = arbitrary[Arrival].sample.value copy (arrivalId = ArrivalId(1), api)
+
+          service.insert(arrival).futureValue
+          val result = service.get(ArrivalId(1), web)
+
+          whenReady(result) {
+            r =>
+              r.isDefined mustBe false
+          }
+        }
+      }
+    }
+
     "fetchAllArrivals" - {
       "must return Arrival Movements details that match an eoriNumber and channel type" in {
 
@@ -658,6 +789,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
               )
             ),
             1,
+            1,
             1
           )
 
@@ -673,6 +805,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
                 arrivalMovement3.lastUpdated
               )
             ),
+            1,
             1,
             1
           )
@@ -703,7 +836,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
 
           val result = service.fetchAllArrivals(eoriNumber, api, None).futureValue
 
-          result mustBe ResponseArrivals(Seq.empty, 0, 0)
+          result mustBe ResponseArrivals(Seq.empty, 0, 0, 0)
         }
       }
 
@@ -735,7 +868,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
           // We must use the web channel for this test as the API max rows returned in integration test config is 2
           val dateTime = OffsetDateTime.of(LocalDateTime.of(2021, 4, 30, 10, 30, 32), ZoneOffset.ofHours(1))
           val actual   = service.fetchAllArrivals(eoriNumber, web, Some(dateTime)).futureValue
-          val expected = ResponseArrivals(Seq(arrivalMovement3, arrivalMovement4, arrivalMovement2).map(ResponseArrival.build), 3, 4)
+          val expected = ResponseArrivals(Seq(arrivalMovement3, arrivalMovement4, arrivalMovement2).map(ResponseArrival.build), 3, 4, 3)
 
           actual mustEqual expected
         }
@@ -767,7 +900,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
           }.futureValue
 
           val actual   = service.fetchAllArrivals(eoriNumber, web, None, Some(mrn.value)).futureValue
-          val expected = ResponseArrivals(expectedAllMovements, 4, 4, Some(4))
+          val expected = ResponseArrivals(expectedAllMovements, 4, 4, 4)
 
           actual mustEqual expected
         }
@@ -801,14 +934,14 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
 
           val actual = service.fetchAllArrivals(eoriNumber, web, None, Some(mrn.value.substring(3, 9))).futureValue
 
-          val expected = ResponseArrivals(expectedAllMovements, 2, 4, Some(2))
+          val expected = ResponseArrivals(expectedAllMovements, 2, 4, 2)
 
           actual mustEqual expected
         }
       }
 
       "must filter results by mrn when mrn search parameter provided matches return match count" in {
-        val arrivals = nonEmptyListOfFixSize[Arrival](10, arbitrary[Arrival])
+        val arrivals = nonEmptyListOfNArrivals(10)
           .map(_.toList)
           .sample
           .value
@@ -836,15 +969,14 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
 
           val actual = service.fetchAllArrivals(eoriNumber, web, None, Some(mrn.value.substring(4, 9))).futureValue
 
-          val expected = ResponseArrivals(expectedAllMovements, arrivals.size, allArrivals.size, Some(arrivals.size))
+          val expected = ResponseArrivals(expectedAllMovements, arrivals.size, allArrivals.size, arrivals.size)
 
           actual mustEqual expected
         }
       }
-    }
 
-    "must filter results by mrn when mrn search parameter  with case insenitive provided matches return match count" in {
-      val arrivals = nonEmptyListOfFixSize[Arrival](10, arbitrary[Arrival])
+    "must filter results by mrn when mrn search parameter  with case insensitive provided matches return match count" in {
+      val arrivals = nonEmptyListOfNArrivals(20)
         .map(_.toList)
         .sample
         .value
@@ -872,46 +1004,46 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
 
         val actual = service.fetchAllArrivals(eoriNumber, web, None, Some(mrn.value.substring(4, 9).toLowerCase())).futureValue
 
-        val expected = ResponseArrivals(expectedAllMovements, arrivals.size, allArrivals.size, Some(arrivals.size))
+        val expected = ResponseArrivals(expectedAllMovements, arrivals.size, allArrivals.size, arrivals.size)
 
         actual mustEqual expected
       }
     }
 
     "must fetch all results based on pageSize 5 for page number 2" in {
-      val arrivals = nonEmptyListOfFixSize[Arrival](20, arbitrary[Arrival])
+      val arrivals = nonEmptyListOfNArrivals(20)
         .map(_.toList)
         .sample
         .value
         .map(_.copy(eoriNumber = eoriNumber, movementReferenceNumber = mrn, channel = web))
 
-      val pageSize    = 5
-      val page        = 2
-      val allArrivals = arrivals
+        val pageSize    = 5
+        val page        = 2
+        val allArrivals = arrivals
 
-      val aJsonArr = allArrivals.map(Json.toJsObject(_))
-      val app      = appBuilder.build()
-      running(app) {
+        val aJsonArr = allArrivals.map(Json.toJsObject(_))
+        val app      = appBuilder.build()
+        running(app) {
 
-        val service: ArrivalMovementRepository = app.injector.instanceOf[ArrivalMovementRepository]
+          val service: ArrivalMovementRepository = app.injector.instanceOf[ArrivalMovementRepository]
 
-        val allMovementsMatched = arrivals
+          val allMovementsMatched = arrivals
 
-        val expectedAllMovements = allMovementsMatched.map(ResponseArrival.build).sortBy(_.updated)(_ compareTo _).reverse.slice(5, 10)
+          val expectedAllMovements = allMovementsMatched.map(ResponseArrival.build).sortBy(_.updated)(_ compareTo _).reverse.slice(5, 10)
 
-        database.flatMap {
-          db =>
-            db.collection[JSONCollection](ArrivalMovementRepository.collectionName).insert(false).many(aJsonArr)
-        }.futureValue
+          database.flatMap {
+            db =>
+              db.collection[JSONCollection](ArrivalMovementRepository.collectionName).insert(false).many(aJsonArr)
+          }.futureValue
 
-        val actual = service.fetchAllArrivals(eoriNumber, web, None, None, Some(pageSize), Some(page)).futureValue
+          val actual = service.fetchAllArrivals(eoriNumber, web, None, None, Some(pageSize), Some(page)).futureValue
 
-        val expected = ResponseArrivals(expectedAllMovements, pageSize, allArrivals.size, None)
+          val expected = ResponseArrivals(expectedAllMovements, pageSize, allArrivals.size, allArrivals.size)
 
-        actual mustEqual expected
+          actual mustEqual expected
+        }
       }
     }
-
   }
 
   "arrivalsWithoutJsonMessagesSource" - {
