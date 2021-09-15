@@ -17,7 +17,8 @@
 package controllers.actions
 
 import generators.ModelGenerators
-import models.Arrival
+import models.ArrivalStatus.ArrivalSubmitted
+import models.ArrivalStatus.UnloadingPermission
 import models.ArrivalRejectedResponse
 import models.ArrivalStatus
 import models.ArrivalWithoutMessages
@@ -28,9 +29,6 @@ import models.UnloadingPermissionResponse
 import models.UnloadingRemarksRejectedResponse
 import models.UnloadingRemarksResponse
 import models.XMLSubmissionNegativeAcknowledgementResponse
-import models.ArrivalStatus.ArrivalSubmitted
-import models.ArrivalStatus.UnloadingPermission
-import models.request.ArrivalRequest
 import models.request.ArrivalWithoutMessagesRequest
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.EitherValues
@@ -62,7 +60,6 @@ class MessageTransformerSpec
     with DefaultAwaitTimeout
     with ScalaFutures {
 
-  private val arrival: Arrival                               = arbitrary[Arrival].sample.value
   private val arrivalWithoutMessages: ArrivalWithoutMessages = arbitrary[ArrivalWithoutMessages].sample.value
 
   private val successfulResponse: Request[NodeSeq] => Future[Result] = {

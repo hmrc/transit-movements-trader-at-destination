@@ -23,7 +23,7 @@ import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import play.modules.reactivemongo.ReactiveMongoApi
-import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
+import reactivemongo.play.json.collection.Helpers.idWrites
 import reactivemongo.play.json.collection.JSONCollection
 import repositories.ArrivalMovementRepository
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
@@ -43,7 +43,7 @@ class TestOnlyController @Inject()(
   private val featureFlag: Boolean = config.get[Boolean]("feature-flags.testOnly.enabled")
 
   def dropArrivalMovementCollection: Action[AnyContent] = Action.async {
-    implicit request =>
+    _ =>
       if (featureFlag) {
         mongo.database
           .map(_.collection[JSONCollection](ArrivalMovementRepository.collectionName))

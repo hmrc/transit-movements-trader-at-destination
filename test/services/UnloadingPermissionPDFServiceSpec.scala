@@ -51,8 +51,8 @@ class UnloadingPermissionPDFServiceSpec extends SpecBase with ModelGenerators wi
 
         val genErrorResponse = Gen.oneOf(300, 500)
 
-        forAll(genArrivalWithSuccessfulArrival, arbitrary[ResponseMovementMessage], arbitrary[Array[Byte]], genErrorResponse) {
-          (arrival, responseMovementMessage, pdf, errorCode) =>
+        forAll(genArrivalWithSuccessfulArrival, arbitrary[ResponseMovementMessage], genErrorResponse) {
+          (arrival, responseMovementMessage, errorCode) =>
             val expectedHeaders = Map(CONTENT_TYPE -> Seq("application/pdf"), CONTENT_DISPOSITION -> Seq("unloading_permission_123"))
 
             when(mockWSResponse.status) thenReturn errorCode

@@ -20,17 +20,7 @@ import base.SpecBase
 import generators.ModelGenerators
 import models.ArrivalStatus.GoodsReleased
 import models.ChannelType.web
-import models.Arrival
-import models.ArrivalId
-import models.ArrivalNotFoundError
-import models.ArrivalWithoutMessages
-import models.DocumentExistsError
-import models.FailedToLock
-import models.GoodsReleasedResponse
-import models.InboundMessageRequest
-import models.InvalidArrivalRootNodeError
-import models.MessageSender
-import models.MovementMessageWithoutStatus
+import models._
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
 import org.scalacheck.Arbitrary
@@ -42,7 +32,6 @@ import play.api.test.Helpers._
 import services.MovementMessageOrchestratorService
 
 import scala.concurrent.Future
-import utils.Format
 
 class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks with ModelGenerators with BeforeAndAfterEach {
 

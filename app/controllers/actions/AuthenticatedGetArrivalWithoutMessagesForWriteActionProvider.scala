@@ -16,21 +16,17 @@
 
 package controllers.actions
 
-import javax.inject.Inject
 import models.ArrivalId
 import models.request.ArrivalWithoutMessagesRequest
 import play.api.mvc.ActionBuilder
 import play.api.mvc.AnyContent
-import play.api.mvc.BodyParsers
 
-import scala.concurrent.ExecutionContext
+import javax.inject.Inject
 
 class AuthenticatedGetArrivalWithoutMessagesForWriteActionProvider @Inject()(
   lock: LockActionProvider,
   authenticate: AuthenticateActionProvider,
-  getArrivalWithoutMessages: AuthenticatedGetArrivalWithoutMessagesActionProvider,
-  ec: ExecutionContext,
-  parser: BodyParsers.Default
+  getArrivalWithoutMessages: AuthenticatedGetArrivalWithoutMessagesActionProvider
 ) {
 
   def apply(arrivalId: ArrivalId): ActionBuilder[ArrivalWithoutMessagesRequest, AnyContent] =

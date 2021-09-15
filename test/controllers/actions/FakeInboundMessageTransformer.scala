@@ -20,7 +20,6 @@ import com.google.inject.Inject
 import models.ArrivalStatus.GoodsReleased
 import models.GoodsReleasedResponse
 import models.Message
-import models.request.ArrivalRequest
 import models.request.ArrivalWithoutMessagesRequest
 import play.api.mvc.Result
 import play.api.mvc.Results.BadRequest

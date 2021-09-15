@@ -87,7 +87,7 @@ class WorkerLockingServiceSpec extends SpecBase with ScalaCheckPropertyChecks {
     "next" - {
       "throws a NoSuchElementException" in new Fixture(false) {
         forAll(Gen.oneOf(LockResult.values)) {
-          lockResult =>
+          _ =>
             val ex = intercept[NoSuchElementException] {
               workerLockingService.next()
             }

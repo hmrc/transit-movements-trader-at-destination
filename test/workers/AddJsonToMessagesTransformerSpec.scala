@@ -111,7 +111,7 @@ class AddJsonToMessagesTransformerSpec extends SpecBase with ModelGenerators wit
         .map(_.map(_._1))
         .runWith(TestSink.probe[Seq[Arrival]])
         .request(4)
-        .expectNextN(expectedFlowResult.size)
+        .expectNextN(expectedFlowResult.size.toLong)
 
       result must contain theSameElementsInOrderAs expectedFlowResult
 

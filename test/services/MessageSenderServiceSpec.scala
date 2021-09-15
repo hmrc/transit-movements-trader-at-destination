@@ -34,7 +34,7 @@ class MessageSenderServiceSpec extends SpecBase with ModelGenerators with ScalaC
 
         val result = MessageSenderService.validateMessageSenderIsEmpty(nodeSeq)
 
-        result.right.value mustBe (())
+        result.value mustBe (())
       }
 
       "should return MessageSenderError if there is a message sender" in {

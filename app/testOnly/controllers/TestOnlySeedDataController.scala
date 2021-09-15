@@ -29,17 +29,15 @@ import testOnly.models.SeedDataResponse
 import testOnly.services.TestOnlySeedDataService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
-import java.time.Clock
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.util.Success
 import scala.util.Failure
+import scala.util.Success
 
 class TestOnlySeedDataController @Inject()(
   override val messagesApi: MessagesApi,
   cc: ControllerComponents,
-  clock: Clock,
   repository: ArrivalMovementRepository,
   idRepository: ArrivalIdRepository,
   config: Configuration,
@@ -89,7 +87,7 @@ class TestOnlySeedDataController @Inject()(
     Future
       .sequence {
         seedingService
-          .seedArrivals(seedDataParameters, clock)
+          .seedArrivals(seedDataParameters)
           .grouped(50)
           .map(repository.bulkInsert)
       }

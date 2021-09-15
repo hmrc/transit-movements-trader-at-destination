@@ -18,9 +18,10 @@ package repositories
 
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
-import reactivemongo.api.{BSONSerializationPack, FailoverStrategy, ReadPreference}
+import reactivemongo.api.bson.BSONDocument
+import reactivemongo.api.bson.collection.BSONSerializationPack
 import reactivemongo.api.commands.Command
-import reactivemongo.bson.BSONDocument
+import reactivemongo.api.{FailoverStrategy, ReadPreference}
 import reactivemongo.core.errors.ReactiveMongoException
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -54,7 +55,7 @@ trait FailOnUnindexedQueries extends MongoSuite with BeforeAndAfterAll with Scal
     super.withFixture(test) match {
       case Failed(e: ReactiveMongoException) if e.getMessage() contains "No query solutions" =>
         Failed("Mongo query could not be satisfied by an index:\n" + e.getMessage())
-      case thing@Failed(e) =>
+      case thing@Failed(_) =>
         thing
 
       case other => other

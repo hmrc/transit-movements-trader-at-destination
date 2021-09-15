@@ -17,16 +17,15 @@
 package controllers.actions
 
 import logging.Logging
+import models.request.ArrivalWithoutMessagesRequest
 import models.OutboundMessage
 import models.OutboundMessageResponse
-import models.request.ArrivalRequest
-import models.request.ArrivalWithoutMessagesRequest
 import play.api.mvc.Results.BadRequest
 import play.api.mvc.ActionRefiner
 import play.api.mvc.Result
 import play.api.mvc.WrappedRequest
-import javax.inject.Inject
 
+import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 

@@ -21,16 +21,7 @@ import config.Constants
 import connectors.PushPullNotificationConnector
 import generators.ModelGenerators
 import models.MessageType.GoodsReleased
-import models.Arrival
-import models.ArrivalMessageNotification
-import models.ArrivalStatus
-import models.ArrivalWithoutMessages
-import models.Box
-import models.BoxId
-import models.GoodsReleasedResponse
-import models.InboundMessageRequest
-import models.MessageId
-import models.MovementMessageWithoutStatus
+import models._
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers._
 import org.mockito.BDDMockito._
@@ -44,22 +35,19 @@ import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.libs.json.JsObject
 import play.api.mvc.Headers
-import play.api.mvc.Request
-import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.UpstreamErrorResponse
 import utils.Format
+
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.concurrent.duration._
-import scala.xml.NodeSeq
 
 class PushPullNotificationServiceSpec extends SpecBase with BeforeAndAfterEach with ScalaCheckPropertyChecks with ModelGenerators {
 
@@ -127,8 +115,6 @@ class PushPullNotificationServiceSpec extends SpecBase with BeforeAndAfterEach w
             <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
           </CC025A>
 
-        implicit val request: Request[NodeSeq] = FakeRequest().withBody(requestXmlBody)
-
         val successfulResult: Future[Either[UpstreamErrorResponse, Unit]] = Future.successful(Right(()))
 
         when(
@@ -157,8 +143,6 @@ class PushPullNotificationServiceSpec extends SpecBase with BeforeAndAfterEach w
         val arrivalWithoutBox = arrival.copy(notificationBox = None)
 
         val requestXmlBody = <CC025A></CC025A>
-
-        implicit val request: Request[NodeSeq] = FakeRequest().withBody(requestXmlBody)
 
         val successfulResult: Future[Either[UpstreamErrorResponse, Unit]] = Future.successful(Right(()))
 

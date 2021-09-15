@@ -16,21 +16,17 @@
 
 package controllers.actions
 
-import javax.inject.Inject
 import models.ArrivalId
 import models.request.ArrivalRequest
 import play.api.mvc.ActionBuilder
 import play.api.mvc.AnyContent
-import play.api.mvc.BodyParsers
 
-import scala.concurrent.ExecutionContext
+import javax.inject.Inject
 
 class AuthenticatedGetArrivalForWriteActionProvider @Inject()(
   lock: LockActionProvider,
   authenticate: AuthenticateActionProvider,
-  getArrival: AuthenticatedGetArrivalActionProvider,
-  ec: ExecutionContext,
-  parser: BodyParsers.Default
+  getArrival: AuthenticatedGetArrivalActionProvider
 ) {
 
   def apply(arrivalId: ArrivalId): ActionBuilder[ArrivalRequest, AnyContent] =

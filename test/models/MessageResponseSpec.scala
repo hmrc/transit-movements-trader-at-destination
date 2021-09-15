@@ -32,42 +32,42 @@ class MessageResponseSpec extends SpecBase with ModelGenerators {
 
           val result = MessageResponse.getMessageResponseFromCode(GoodsReleased.rootNode)
 
-          result.right.value mustBe GoodsReleasedResponse
+          result.value mustBe GoodsReleasedResponse
         }
 
         "for ArrivalRejection code" in {
 
           val result = MessageResponse.getMessageResponseFromCode(ArrivalRejection.rootNode)
 
-          result.right.value mustBe ArrivalRejectedResponse
+          result.value mustBe ArrivalRejectedResponse
         }
 
         "for UnloadingPermission code" in {
 
           val result = MessageResponse.getMessageResponseFromCode(UnloadingPermission.rootNode)
 
-          result.right.value mustBe UnloadingPermissionResponse
+          result.value mustBe UnloadingPermissionResponse
         }
 
         "for UnloadingRemarks code" in {
 
           val result = MessageResponse.getMessageResponseFromCode(UnloadingRemarks.rootNode)
 
-          result.right.value mustBe UnloadingRemarksResponse
+          result.value mustBe UnloadingRemarksResponse
         }
 
         "for UnloadingRemarksRejection code" in {
 
           val result = MessageResponse.getMessageResponseFromCode(UnloadingRemarksRejection.rootNode)
 
-          result.right.value mustBe UnloadingRemarksRejectedResponse
+          result.value mustBe UnloadingRemarksRejectedResponse
         }
 
         "for XMLSubmissionNegativeAcknowledgement code" in {
 
           val result = MessageResponse.getMessageResponseFromCode(XMLSubmissionNegativeAcknowledgement.rootNode)
 
-          result.right.value mustBe XMLSubmissionNegativeAcknowledgementResponse
+          result.value mustBe XMLSubmissionNegativeAcknowledgementResponse
         }
       }
 

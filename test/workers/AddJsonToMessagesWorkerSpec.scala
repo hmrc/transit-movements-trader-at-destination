@@ -18,14 +18,14 @@ package workers
 
 import akka.Done
 import akka.actor.ActorSystem
+import akka.stream.scaladsl.Source
 import akka.stream.ActorMaterializer
 import akka.stream.Materializer
-import akka.stream.scaladsl.Source
 import generators.ModelGenerators
-import models.Arrival
-import models.LockResult
 import models.LockResult.AlreadyLocked
 import models.LockResult.LockAcquired
+import models.Arrival
+import models.LockResult
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.never
 import org.mockito.Mockito.times
@@ -38,7 +38,6 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.mockito.MockitoSugar
-import play.api.inject.ApplicationLifecycle
 import repositories.ArrivalMovementRepository
 import repositories.LockRepository
 import repositories.WorkerLockRepository
@@ -85,7 +84,6 @@ class AddJsonToMessagesWorkerSpec
 
             val addJsonToMessagesTransformer = new AddJsonToMessagesTransformer(workerConfig, arrivalsRepo, arrivalsLockRepo)
 
-            val mockApplicationLifecycle = mock[ApplicationLifecycle]
             val worker: AddJsonToMessagesWorker =
               new AddJsonToMessagesWorker(workerConfig, arrivalsRepo, addJsonToMessagesTransformer, workerLockingService)
 
@@ -122,7 +120,6 @@ class AddJsonToMessagesWorkerSpec
 
               val addJsonToMessagesTransformer = new AddJsonToMessagesTransformer(workerConfig, arrivalsRepo, arrivalsLockRepo)
 
-              val mockApplicationLifecycle = mock[ApplicationLifecycle]
               val worker: AddJsonToMessagesWorker =
                 new AddJsonToMessagesWorker(workerConfig, arrivalsRepo, addJsonToMessagesTransformer, workerLockingService)
 
@@ -164,7 +161,8 @@ class AddJsonToMessagesWorkerSpec
             val worker: AddJsonToMessagesWorker =
               new AddJsonToMessagesWorker(workerConfig, arrivalsRepo, addJsonToMessagesTransformer, workerLockingService)
 
-            val result = worker.tap.pull.futureValue mustEqual None
+            val result = worker.tap.pull.futureValue
+            result must not be defined
 
 //            verify(lockRepo, atLeastOnce).lock(lockName)
 //            verify(lockRepo, times(1)).unlock(lockName)
@@ -199,7 +197,7 @@ class AddJsonToMessagesWorkerSpec
           val worker: AddJsonToMessagesWorker =
             new AddJsonToMessagesWorker(workerConfig, arrivalsRepo, addJsonToMessagesTransformer, workerLockingService)
 
-          worker.tap.pull.futureValue must not be (defined)
+          worker.tap.pull.futureValue must not be defined
 
           verify(arrivalsLockRepo, never).lock(arrival.arrivalId)
           verify(arrivalsLockRepo, never).unlock(arrival.arrivalId)

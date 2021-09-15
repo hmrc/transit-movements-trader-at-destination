@@ -27,22 +27,7 @@ import com.kenshoo.play.metrics.Metrics
 import config.AppConfig
 import logging.Logging
 import metrics.HasMetrics
-import models.Arrival
-import models.ArrivalId
-import models.ArrivalIdSelector
-import models.ArrivalModifier
-import models.ArrivalSelector
-import models.ArrivalStatus
-import models.ArrivalStatusUpdate
-import models.ArrivalWithoutMessages
-import models.ChannelType
-import models.CompoundStatusUpdate
-import models.MessageId
-import models.MessageStatus
-import models.MessageStatusUpdate
-import models.MongoDateTimeFormats
-import models.MovementMessage
-import models.MovementReferenceNumber
+import models._
 import models.response.ResponseArrival
 import models.response.ResponseArrivals
 import play.api.Configuration
@@ -52,18 +37,18 @@ import play.api.libs.json.OFormat
 import play.modules.reactivemongo.ReactiveMongoApi
 import reactivemongo.akkastream.cursorProducer
 import reactivemongo.api.Cursor
+import reactivemongo.api.bson.BSONDocument
 import reactivemongo.api.bson.collection.BSONSerializationPack
 import reactivemongo.api.indexes.Index.Aux
 import reactivemongo.api.indexes.IndexType
-import reactivemongo.bson.BSONDocument
-import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
+import reactivemongo.play.json.collection.Helpers.idWrites
 import reactivemongo.play.json.collection.JSONCollection
 import utils.IndexUtils
 
+import java.time.format.DateTimeFormatter
 import java.time.Clock
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
-import java.time.format.DateTimeFormatter
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.Failure
@@ -77,11 +62,10 @@ class ArrivalMovementRepository @Inject()(
   clock: Clock,
   val metrics: Metrics
 )(implicit ec: ExecutionContext, m: Materializer)
-    extends MongoDateTimeFormats
+    extends Repository
+    with MongoDateTimeFormats
     with Logging
     with HasMetrics {
-
-  val arrivalsForEoriCount = histo("arrivals-for-eori-count")
 
   val started: Future[Unit] =
     collection
@@ -371,8 +355,8 @@ class ArrivalMovementRepository @Inject()(
 
         collection.flatMap {
           coll =>
-            val fetchCount      = coll.count(Some(baseSelector))
-            val fetchMatchCount = coll.count(Some(fullSelector))
+            val fetchCount      = coll.simpleCount(baseSelector)
+            val fetchMatchCount = coll.simpleCount(fullSelector)
 
             val fetchResults = coll
               .aggregateWith[ArrivalWithoutMessages](allowDiskUse = true) {
@@ -406,22 +390,6 @@ class ArrivalMovementRepository @Inject()(
             }
         }
     }
-
-  @deprecated("Use updateArrival since this will be removed in the next version", "next")
-  def setArrivalStateAndMessageState(
-    arrivalId: ArrivalId,
-    messageId: MessageId,
-    arrivalState: ArrivalStatus,
-    messageState: MessageStatus
-  ): Future[Option[Unit]] = {
-    implicit val modifierClock: Clock = clock
-
-    val selector = ArrivalIdSelector(arrivalId)
-
-    val modifier = CompoundStatusUpdate(ArrivalStatusUpdate(arrivalState), MessageStatusUpdate(messageId, messageState))
-
-    updateArrival(selector, modifier).map(_.toOption)
-  }
 
   def updateArrival[A](selector: ArrivalSelector, modifier: A)(implicit ev: ArrivalModifier[A]): Future[Try[Unit]] = {
 
@@ -465,15 +433,17 @@ class ArrivalMovementRepository @Inject()(
       )
 
     collection.flatMap {
-      _.findAndUpdate(selector, modifier)
-        .map {
-          _.lastError
-            .map {
-              le =>
-                if (le.updatedExisting) Success(()) else Failure(new Exception(s"Could not find arrival $arrivalId"))
-            }
-            .getOrElse(Failure(new Exception("Failed to update arrival")))
-        }
+      _.simpleFindAndUpdate(
+        selector = selector,
+        update = modifier
+      ).map {
+        _.lastError
+          .map {
+            le =>
+              if (le.updatedExisting) Success(()) else Failure(new Exception(s"Could not find arrival $arrivalId"))
+          }
+          .getOrElse(Failure(new Exception("Failed to update arrival")))
+      }
     }
   }
 
@@ -495,15 +465,17 @@ class ArrivalMovementRepository @Inject()(
       )
 
     collection.flatMap {
-      _.findAndUpdate(selector, modifier)
-        .map {
-          _.lastError
-            .map {
-              le =>
-                if (le.updatedExisting) Success(()) else Failure(new Exception(s"Could not find arrival $arrivalId"))
-            }
-            .getOrElse(Failure(new Exception("Failed to update arrival")))
-        }
+      _.simpleFindAndUpdate(
+        selector = selector,
+        update = modifier
+      ).map {
+        _.lastError
+          .map {
+            le =>
+              if (le.updatedExisting) Success(()) else Failure(new Exception(s"Could not find arrival $arrivalId"))
+          }
+          .getOrElse(Failure(new Exception("Failed to update arrival")))
+      }
     }
   }
 
@@ -569,11 +541,13 @@ class ArrivalMovementRepository @Inject()(
     )
 
     collection.flatMap {
-      _.findAndUpdate(selector, modifier)
-        .map {
-          _ =>
-            true // TODO: Handle problems?
-        }
+      _.simpleFindAndUpdate(
+        selector = selector,
+        update = modifier
+      ).map {
+        _ =>
+          true // TODO: Handle problems?
+      }
     }
   }
 

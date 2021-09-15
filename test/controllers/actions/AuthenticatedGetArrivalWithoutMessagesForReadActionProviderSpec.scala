@@ -17,11 +17,10 @@
 package controllers.actions
 
 import generators.ModelGenerators
-import models.Arrival
-import models.ArrivalId
-import models.ArrivalWithoutMessages
 import models.ChannelType.api
 import models.ChannelType.web
+import models.ArrivalId
+import models.ArrivalWithoutMessages
 import org.mockito.ArgumentMatchers.{eq => eqTo, _}
 import org.mockito.Mockito.when
 import org.scalacheck.Arbitrary.arbitrary
