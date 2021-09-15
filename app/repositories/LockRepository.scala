@@ -77,7 +77,7 @@ class LockRepository @Inject()(mongo: ReactiveMongoApi, appConfig: AppConfig, cl
 
   def unlock(arrivalId: ArrivalId): Future[Boolean] =
     collection.flatMap {
-      _.`find+Remove`(
+      _.simpleFindAndRemove(
         selector = Json.obj("_id" -> arrivalId)
       ).map(_ => true)
     }

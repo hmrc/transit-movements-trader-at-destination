@@ -355,8 +355,8 @@ class ArrivalMovementRepository @Inject()(
 
         collection.flatMap {
           coll =>
-            val fetchCount      = coll.countMatches(baseSelector)
-            val fetchMatchCount = coll.countMatches(fullSelector)
+            val fetchCount      = coll.simpleCount(baseSelector)
+            val fetchMatchCount = coll.simpleCount(fullSelector)
 
             val fetchResults = coll
               .aggregateWith[ArrivalWithoutMessages](allowDiskUse = true) {
@@ -433,7 +433,7 @@ class ArrivalMovementRepository @Inject()(
       )
 
     collection.flatMap {
-      _.`find+Update`(
+      _.simpleFindAndUpdate(
         selector = selector,
         update = modifier
       ).map {
@@ -465,7 +465,7 @@ class ArrivalMovementRepository @Inject()(
       )
 
     collection.flatMap {
-      _.`find+Update`(
+      _.simpleFindAndUpdate(
         selector = selector,
         update = modifier
       ).map {
@@ -541,7 +541,7 @@ class ArrivalMovementRepository @Inject()(
     )
 
     collection.flatMap {
-      _.`find+Update`(
+      _.simpleFindAndUpdate(
         selector = selector,
         update = modifier
       ).map {

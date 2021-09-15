@@ -81,7 +81,7 @@ class ArrivalIdRepository @Inject()(mongo: ReactiveMongoApi, config: Configurati
     val selector = Json.obj("_id" -> primaryValue)
 
     collection.flatMap(
-      _.`find+Update`(
+      _.simpleFindAndUpdate(
         selector = selector,
         update = update,
         fetchNewObject = true,

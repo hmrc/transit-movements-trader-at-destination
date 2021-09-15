@@ -31,7 +31,7 @@ trait Repository {
 
   implicit class JSONCollectionImplicits(coll: JSONCollection) {
 
-    def countMatches(
+    def simpleCount(
       selector: JsObject
     )(implicit ec: ExecutionContext): Future[Int] =
       coll
@@ -44,7 +44,7 @@ trait Repository {
         )
         .map(_.toInt)
 
-    def `find+Update`(
+    def simpleFindAndUpdate(
       selector: JsObject,
       update: JsObject,
       fetchNewObject: Boolean = false,
@@ -65,7 +65,7 @@ trait Repository {
           arrayFilters = Nil
         )
 
-    def `find+Remove`(
+    def simpleFindAndRemove(
       selector: JsObject
     )(implicit ec: ExecutionContext): Future[FindAndModifyCommand.Result[JSONSerializationPack.type]] =
       coll

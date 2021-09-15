@@ -77,7 +77,7 @@ class WorkerLockRepository @Inject()(mongo: ReactiveMongoApi, appConfig: AppConf
 
   def unlock(id: String): Future[Boolean] =
     collection.flatMap {
-      _.`find+Remove`(
+      _.simpleFindAndRemove(
         selector = Json.obj("_id" -> id)
       ).map(_ => true)
     }
