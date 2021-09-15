@@ -16,7 +16,7 @@
 
 package models
 
-trait WSError
+sealed trait WSError
 
 object WSError {
 

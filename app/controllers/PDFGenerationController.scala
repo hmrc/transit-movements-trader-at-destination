@@ -29,7 +29,6 @@ import services.UnloadingPermissionPDFService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import javax.inject.Inject
-import scala.annotation.nowarn
 import scala.concurrent.ExecutionContext
 
 class PDFGenerationController @Inject()(
@@ -43,7 +42,6 @@ class PDFGenerationController @Inject()(
     with HasActionMetrics {
 
   // TODO write ticket to improve PDF endpoint by only retrieving required messages in both services
-  @nowarn("msg=match may not be exhaustive.")
   def getPDF(arrivalId: ArrivalId): Action[AnyContent] =
     withMetricsTimerAction("get-unloading-permission-pdf") {
       authenticateForRead(arrivalId).async {
