@@ -17,7 +17,6 @@
 package controllers.actions
 
 import generators.ModelGenerators
-import models.ChannelType.api
 import models.ChannelType.web
 import models.ArrivalId
 import models.ArrivalWithoutMessages

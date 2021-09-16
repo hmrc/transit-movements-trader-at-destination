@@ -65,7 +65,7 @@ class OutboundMessagesApiSpec
   lazy val repo: ArrivalMovementRepository = app.injector.instanceOf[ArrivalMovementRepository]
 
   "postMessage" - {
-    "return a Bad request if a second request comes in for the same unloading remarks" in {
+    "return ACCEPTED if a second request comes in for the same unloading remarks" in {
 
       val movements = NonEmptyList(
         MovementMessageWithStatus(MessageId(1), LocalDateTime.now(), MessageType.ArrivalNotification, <CC007A></CC007A>, MessageStatus.SubmissionSucceeded, 1),
@@ -109,7 +109,7 @@ class OutboundMessagesApiSpec
             "Content-Type" -> "application/xml"
           )
           .post(requestBody)
-      ).status mustBe BAD_REQUEST
+                ).status mustBe ACCEPTED
     }
   }
 
