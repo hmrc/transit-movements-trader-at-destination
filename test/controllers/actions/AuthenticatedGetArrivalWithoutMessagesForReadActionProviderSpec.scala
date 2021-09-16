@@ -18,6 +18,7 @@ package controllers.actions
 
 import generators.ModelGenerators
 import models.ChannelType.web
+import models.ChannelType.api
 import models.ArrivalId
 import models.ArrivalWithoutMessages
 import org.mockito.ArgumentMatchers.{eq => eqTo, _}
