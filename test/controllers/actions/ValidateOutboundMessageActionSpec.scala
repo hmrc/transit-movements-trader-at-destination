@@ -58,7 +58,7 @@ class ValidateOutboundMessageActionSpec
       ArrivalRejectedResponse                      -> ArrivalStatus.ArrivalRejected,
       UnloadingPermissionResponse                  -> ArrivalStatus.UnloadingPermission,
       UnloadingRemarksRejectedResponse             -> ArrivalStatus.UnloadingRemarksRejected,
-      XMLSubmissionNegativeAcknowledgementResponse -> ArrivalStatus.ArrivalXMLSubmissionNegativeAcknowledgement
+      XMLSubmissionNegativeAcknowledgementResponse -> ArrivalStatus.XMLSubmissionNegativeAcknowledgement
     ) foreach {
       case (response, st) =>
         s"return an internal Server if an Inbound message ($response) is found" in {

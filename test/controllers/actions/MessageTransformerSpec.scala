@@ -29,6 +29,8 @@ import models.UnloadingPermissionResponse
 import models.UnloadingRemarksRejectedResponse
 import models.UnloadingRemarksResponse
 import models.XMLSubmissionNegativeAcknowledgementResponse
+import models.ArrivalStatus.ArrivalSubmitted
+import models.ArrivalStatus.UnloadingPermission
 import models.request.ArrivalWithoutMessagesRequest
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.EitherValues
@@ -133,7 +135,7 @@ class MessageTransformerSpec
 
     }
 
-    "when the incoming message is not an allowable transition from the current status" in {
+    "when the incoming message is not an expected transition from the current status" in {
       forAll(arbitrary[ChannelType]) {
         channel =>
           val arrivalMovement = arrivalWithoutMessages.copy(status = UnloadingPermission)
@@ -152,7 +154,7 @@ class MessageTransformerSpec
 
           val testAction = action.invokeBlock(request, successfulResponse)
 
-          testAction.futureValue.header.status mustBe BAD_REQUEST
+          testAction.futureValue.header.status mustBe OK
       }
     }
 
