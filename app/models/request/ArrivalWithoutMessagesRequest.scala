@@ -18,8 +18,7 @@ package models.request
 
 import models.ArrivalWithoutMessages
 import models.ChannelType
-import play.api.mvc.Request
 import play.api.mvc.WrappedRequest
 
-case class ArrivalWithoutMessagesRequest[A](request: Request[A], arrivalWithoutMessages: ArrivalWithoutMessages, channel: ChannelType)
+case class ArrivalWithoutMessagesRequest[A](request: AuthenticatedRequest[A], arrivalWithoutMessages: ArrivalWithoutMessages, channel: ChannelType)
     extends WrappedRequest[A](request)

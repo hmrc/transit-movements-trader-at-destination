@@ -16,19 +16,18 @@
 
 package services
 
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.LocalTime
-
 import base.SpecBase
+import cats.data.Ior
 import cats.data.NonEmptyList
-import models.MessageStatus.SubmissionPending
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalStatus
 import models.ChannelType.api
+import models.EORINumber
+import models.MessageId
 import models.MessageSender
 import models.MessageStatus
+import models.MessageStatus.SubmissionPending
 import models.MessageType
 import models.MovementMessage
 import models.MovementMessageWithStatus
@@ -42,12 +41,14 @@ import play.api.inject.bind
 import repositories.ArrivalIdRepository
 import utils.Format
 
+import java.time.Clock
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.ZoneOffset
 import scala.concurrent.Future
 import scala.xml.NodeSeq
 import scala.xml.Utility.trim
-import java.time.Clock
-import java.time.ZoneOffset
-import models.MessageId
 
 class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatience with StreamlinedXmlEquality {
 
@@ -110,7 +111,7 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
         notificationBox = None
       )
 
-      service.makeArrivalMovement(eori, movement, api, None).futureValue.right.get mustBe expectedArrival
+      service.makeArrivalMovement(Ior.right(EORINumber(eori)), movement, api, None).futureValue.right.get mustBe expectedArrival
 
       application.stop()
     }
@@ -143,7 +144,7 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
           </HEAHEA>
         </Foo>
 
-      service.makeArrivalMovement(eori, invalidPayload, api, None).futureValue.left.get mustBe an[InvalidRootNode]
+      service.makeArrivalMovement(Ior.right(EORINumber(eori)), invalidPayload, api, None).futureValue.left.get mustBe an[InvalidRootNode]
 
       application.stop()
     }

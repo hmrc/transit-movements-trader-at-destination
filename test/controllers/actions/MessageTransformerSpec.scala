@@ -16,13 +16,15 @@
 
 package controllers.actions
 
+import cats.data.Ior
 import generators.ModelGenerators
-import models.ArrivalStatus.ArrivalSubmitted
-import models.ArrivalStatus.UnloadingPermission
 import models.ArrivalRejectedResponse
 import models.ArrivalStatus
+import models.ArrivalStatus.ArrivalSubmitted
+import models.ArrivalStatus.UnloadingPermission
 import models.ArrivalWithoutMessages
 import models.ChannelType
+import models.EORINumber
 import models.GoodsReleasedResponse
 import models.MessageType
 import models.UnloadingPermissionResponse
@@ -30,6 +32,7 @@ import models.UnloadingRemarksRejectedResponse
 import models.UnloadingRemarksResponse
 import models.XMLSubmissionNegativeAcknowledgementResponse
 import models.request.ArrivalWithoutMessagesRequest
+import models.request.AuthenticatedRequest
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.EitherValues
 import org.scalatest.OptionValues
@@ -78,12 +81,16 @@ class MessageTransformerSpec
 
           val request =
             ArrivalWithoutMessagesRequest(
-              FakeRequest("", "")
-                .withHeaders(
-                  "X-Message-Type" -> MessageType.ArrivalRejection.code,
-                  "Content-Type"   -> "application/xml"
-                )
-                .withBody[NodeSeq](<CC008A> </CC008A>),
+              AuthenticatedRequest(
+                FakeRequest("", "")
+                  .withHeaders(
+                    "X-Message-Type" -> MessageType.ArrivalRejection.code,
+                    "Content-Type"   -> "application/xml"
+                  )
+                  .withBody[NodeSeq](<CC008A> </CC008A>),
+                channel,
+                Ior.right(EORINumber("eori"))
+              ),
               arrivalMovement,
               channel
             )
@@ -99,9 +106,13 @@ class MessageTransformerSpec
         channel =>
           val request =
             ArrivalWithoutMessagesRequest(
-              FakeRequest("", "")
-                .withHeaders("X-Message-Type" -> "invalid-message-type", "Content-Type" -> "application/xml")
-                .withBody[NodeSeq](<INVALID></INVALID>),
+              AuthenticatedRequest(
+                FakeRequest("", "")
+                  .withHeaders("X-Message-Type" -> "invalid-message-type", "Content-Type" -> "application/xml")
+                  .withBody[NodeSeq](<INVALID></INVALID>),
+                channel,
+                Ior.right(EORINumber("eori"))
+              ),
               arrivalWithoutMessages,
               channel
             )
@@ -119,9 +130,13 @@ class MessageTransformerSpec
 
           val request =
             ArrivalWithoutMessagesRequest(
-              FakeRequest("", "")
-                .withHeaders("X-Message-Type" -> MessageType.GoodsReleased.code, "Content-Type" -> "application/xml")
-                .withBody[NodeSeq](<CC025A></CC025A>),
+              AuthenticatedRequest(
+                FakeRequest("", "")
+                  .withHeaders("X-Message-Type" -> MessageType.GoodsReleased.code, "Content-Type" -> "application/xml")
+                  .withBody[NodeSeq](<CC025A></CC025A>),
+                channel,
+                Ior.right(EORINumber("eori"))
+              ),
               arrivalMovement,
               channel
             )
@@ -140,12 +155,16 @@ class MessageTransformerSpec
 
           val request =
             ArrivalWithoutMessagesRequest(
-              FakeRequest("", "")
-                .withHeaders(
-                  "X-Message-Type" -> MessageType.ArrivalRejection.code,
-                  "Content-Type"   -> "application/xml"
-                )
-                .withBody[NodeSeq](<CC008A></CC008A>),
+              AuthenticatedRequest(
+                FakeRequest("", "")
+                  .withHeaders(
+                    "X-Message-Type" -> MessageType.ArrivalRejection.code,
+                    "Content-Type"   -> "application/xml"
+                  )
+                  .withBody[NodeSeq](<CC008A></CC008A>),
+                channel,
+                Ior.right(EORINumber("eori"))
+              ),
               arrivalMovement,
               channel
             )

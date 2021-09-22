@@ -16,9 +16,9 @@
 
 package audit
 
+import cats.data.Ior
 import models._
 import play.api.libs.json.Format.GenericFormat
-import play.api.libs.json.Json
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import utils.MessageTranslation
@@ -28,16 +28,16 @@ import scala.concurrent.ExecutionContext
 
 class AuditService @Inject()(auditConnector: AuditConnector, messageTranslation: MessageTranslation)(implicit ec: ExecutionContext) {
 
-  def auditEvent(auditType: String, customerId: String, message: MovementMessage, channel: ChannelType)(implicit hc: HeaderCarrier): Unit = {
-
+  def auditEvent(auditType: String, enrolmentId: Ior[TURN, EORINumber], message: MovementMessage, channel: ChannelType)(implicit hc: HeaderCarrier): Unit = {
     val json    = messageTranslation.translate(message.messageJson)
-    val details = AuditDetails(channel, customerId, json)
-
-    auditConnector.sendExplicitAudit(auditType, Json.toJson(details))
+    val details = AuthenticatedAuditDetails(channel, enrolmentId, json)
+    auditConnector.sendExplicitAudit(auditType, details)
   }
 
   def auditNCTSMessages(channel: ChannelType, customerId: String, messageResponse: MessageResponse, message: MovementMessage)(
-    implicit hc: HeaderCarrier): Unit =
-    auditEvent(messageResponse.auditType, customerId, message, channel)
-
+    implicit hc: HeaderCarrier): Unit = {
+    val json    = messageTranslation.translate(message.messageJson)
+    val details = UnauthenticatedAuditDetails(channel, customerId, json)
+    auditConnector.sendExplicitAudit(messageResponse.auditType, details)
+  }
 }

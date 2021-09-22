@@ -14,19 +14,6 @@
  * limitations under the License.
  */
 
-package controllers.actions
+package models
 
-import javax.inject.Inject
-import models.ArrivalId
-import models.request.ArrivalRequest
-import play.api.mvc.ActionBuilder
-import play.api.mvc.AnyContent
-
-class GetArrivalForWriteActionProvider @Inject()(
-  lock: LockActionProvider,
-  getArrival: GetArrivalActionProvider
-) {
-
-  def apply(arrivalId: ArrivalId): ActionBuilder[ArrivalRequest, AnyContent] =
-    lock(arrivalId) andThen getArrival(arrivalId)
-}
+case class EORINumber(value: String) extends AnyVal
