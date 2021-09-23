@@ -1,0 +1,95 @@
+/*
+ * Copyright 2021 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package models
+
+import base.SpecBase
+import cats.data.NonEmptyList
+import generators.ModelGenerators
+import models.MessageType.ArrivalNotification
+import models.MessageType.GoodsReleased
+import models.MessageType.UnloadingPermission
+import models.MessageType.UnloadingRemarks
+import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks.forAll
+import play.api.libs.json.JsSuccess
+import play.api.libs.json.Json
+import org.scalacheck.Arbitrary.arbitrary
+
+import java.time.LocalDateTime
+
+class ArrivalWithoutMessagesSpec extends SpecBase with MongoDateTimeFormats with ModelGenerators {
+
+  val expectedDateTime             = LocalDateTime.now
+  val expectedDateTimeMinusHours   = LocalDateTime.now.minusHours(1)
+  val expectedDateTimeMinusMinutes = LocalDateTime.now.minusMinutes(30)
+  val expectedDateDays             = LocalDateTime.now.minusDays(2)
+
+  val message1        = MovementMessageWithoutStatus(MessageId(1), expectedDateDays, UnloadingPermission, <foo></foo>, 1)
+  val message2        = MovementMessageWithoutStatus(MessageId(2), expectedDateTimeMinusMinutes, GoodsReleased, <foo></foo>, 2)
+  val message3        = MovementMessageWithoutStatus(MessageId(3), expectedDateTimeMinusHours, UnloadingRemarks, <foo></foo>, 3)
+  val expectedMessage = MovementMessageWithoutStatus(MessageId(4), expectedDateTime, ArrivalNotification, <foo></foo>, 4)
+
+  val messages: Seq[MovementMessageWithoutStatus] = Seq(message1, message2, message3, expectedMessage)
+
+  "ArrivalWithoutMessages" - {
+    "must serialise with latest message type" in {
+
+      val movementMessageInJson = Json.obj(
+        "_id"                      -> ArrivalId(1),
+        "channel"                  -> "web",
+        "movementReferenceNumber"  -> MovementReferenceNumber("mrn"),
+        "eoriNumber"               -> "1234567",
+        "status"                   -> "Initialized",
+        "created"                  -> LocalDateTime.now(),
+        "updated"                  -> LocalDateTime.now(),
+        "lastUpdated"              -> LocalDateTime.now(),
+        "nextMessageId"            -> MessageId(1),
+        "nextMessageCorrelationId" -> 1,
+        "messages"                 -> messages
+      )
+
+      movementMessageInJson.validate[ArrivalWithoutMessages].map(_.latestMessage) mustBe JsSuccess(ArrivalNotification)
+    }
+
+    "must create an arrival movement message" in {
+
+      forAll(arbitrary[Arrival]) {
+        arrival =>
+          val messageList = NonEmptyList(message1, List(message2, message3, expectedMessage))
+
+          val updatedArrival = arrival.copy(messages = messageList)
+
+          val expectedResult =
+            ArrivalWithoutMessages(
+              updatedArrival.arrivalId,
+              updatedArrival.channel,
+              updatedArrival.movementReferenceNumber,
+              updatedArrival.eoriNumber,
+              updatedArrival.status,
+              updatedArrival.created,
+              updatedArrival.updated,
+              updatedArrival.lastUpdated,
+              updatedArrival.notificationBox,
+              updatedArrival.nextMessageId,
+              updatedArrival.nextMessageCorrelationId,
+              ArrivalNotification
+            )
+
+          ArrivalWithoutMessages.fromArrival(updatedArrival) mustBe expectedResult
+      }
+    }
+  }
+}
