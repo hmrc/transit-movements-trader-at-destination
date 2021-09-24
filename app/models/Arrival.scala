@@ -37,6 +37,12 @@ case class Arrival(
   notificationBox: Option[Box]
 ) {
 
+  def latestMessage: MessageType =
+    messages.reduce {
+      (m1: MovementMessage, m2: MovementMessage) =>
+        if (m1.dateTime.isAfter(m2.dateTime)) m1 else m2
+    }.messageType
+
   lazy val nextMessageId: MessageId = MessageId(messages.length + 1)
 
   lazy val messagesWithId: NonEmptyList[(MovementMessage, MessageId)] =

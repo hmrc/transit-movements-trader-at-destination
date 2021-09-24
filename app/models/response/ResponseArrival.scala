@@ -21,12 +21,14 @@ import models.Arrival
 import models.ArrivalId
 import models.ArrivalStatus
 import models.ArrivalWithoutMessages
+import models.MessageType
 import models.MongoDateTimeFormats
 import models.MovementReferenceNumber
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import play.api.libs.json.OWrites
 import play.api.libs.json.Reads
+
 import java.time.LocalDateTime
 
 case class ResponseArrival(arrivalId: ArrivalId,
@@ -35,7 +37,8 @@ case class ResponseArrival(arrivalId: ArrivalId,
                            movementReferenceNumber: MovementReferenceNumber,
                            status: ArrivalStatus,
                            created: LocalDateTime,
-                           updated: LocalDateTime)
+                           updated: LocalDateTime,
+                           latestMessage: MessageType)
 
 object ResponseArrival {
 
@@ -47,7 +50,8 @@ object ResponseArrival {
       arrival.movementReferenceNumber,
       arrival.status,
       arrival.created,
-      updated = arrival.lastUpdated
+      updated = arrival.lastUpdated,
+      arrival.latestMessage
     )
 
   def build(arrivalWithoutMessages: ArrivalWithoutMessages): ResponseArrival =
@@ -58,7 +62,8 @@ object ResponseArrival {
       arrivalWithoutMessages.movementReferenceNumber,
       arrivalWithoutMessages.status,
       arrivalWithoutMessages.created,
-      updated = arrivalWithoutMessages.lastUpdated
+      updated = arrivalWithoutMessages.lastUpdated,
+      arrivalWithoutMessages.latestMessage
     )
 
   val projection: JsObject = Json.obj(
@@ -79,6 +84,7 @@ object ResponseArrival {
         status                  <- (json \ "status").validate[ArrivalStatus]
         created                 <- (json \ "created").validate[LocalDateTime](MongoDateTimeFormats.localDateTimeRead)
         updated                 <- (json \ "lastUpdated").validate[LocalDateTime](MongoDateTimeFormats.localDateTimeRead)
+        latestMessage           <- (json \ "latestMessage").validate[MessageType]
       } yield
         ResponseArrival(
           arrivalId,
@@ -87,7 +93,8 @@ object ResponseArrival {
           movementReferenceNumber,
           status,
           created,
-          updated
+          updated,
+          latestMessage
       )
 
   implicit val writes: OWrites[ResponseArrival] = Json.writes[ResponseArrival]
