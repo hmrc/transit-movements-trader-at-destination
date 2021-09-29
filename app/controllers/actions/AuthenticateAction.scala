@@ -40,8 +40,6 @@ private[actions] class AuthenticateAction @Inject()(override val authConnector: 
     with AuthorisedFunctions
     with Logging {
 
-  private val enrolmentIdentifierKey: String = "VATRegNoTURN"
-
   override protected def refine[A](request: Request[A]): Future[Either[Result, AuthenticatedRequest[A]]] = {
     ChannelUtil.getChannel(request) match {
       case None =>
@@ -49,13 +47,13 @@ private[actions] class AuthenticateAction @Inject()(override val authConnector: 
         Future.successful(Left(BadRequest("Missing channel header or incorrect value specified in channel header")))
       case Some(channel) =>
         implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
-        authorised(Enrolment(config.enrolmentKey))
+        authorised(Enrolment(config.legacyEnrolmentKey))
           .retrieve(Retrievals.authorisedEnrolments) {
             enrolments =>
               val eoriNumber = (for {
-                enrolment  <- enrolments.enrolments.find(_.key.equals(config.enrolmentKey))
-                identifier <- enrolment.getIdentifier(enrolmentIdentifierKey)
-              } yield identifier.value).getOrElse(throw InsufficientEnrolments(s"Unable to retrieve enrolment for $enrolmentIdentifierKey"))
+                enrolment  <- enrolments.enrolments.find(_.key.equals(config.legacyEnrolmentKey))
+                identifier <- enrolment.getIdentifier(config.legacyEnrolmentIdentifierKey)
+              } yield identifier.value).getOrElse(throw InsufficientEnrolments(s"Unable to retrieve enrolment for ${config.legacyEnrolmentIdentifierKey}"))
               Future.successful(Right(AuthenticatedRequest(request, channel, eoriNumber)))
           }
     }

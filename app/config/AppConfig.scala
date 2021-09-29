@@ -43,9 +43,12 @@ class AppConfig @Inject()(config: Configuration, servicesConfig: ServicesConfig)
   private val manageDocumentsBaseUrl: String = servicesConfig.baseUrl("manage-documents")
   val manageDocumentsUrl: String             = manageDocumentsBaseUrl ++ config.get[String]("microservice.services.manage-documents.uri")
 
-  val enrolmentKey: String   = config.get[String]("keys.enrolmentKey")
-  val lockRepositoryTtl: Int = config.get[Int]("mongodb.lockRepository.timeToLiveInSeconds")
-  val cacheTtl: Int          = config.get[Int]("mongodb.timeToLiveInSeconds")
+  val legacyEnrolmentKey: String           = config.get[String]("keys.legacy.enrolmentKey")
+  val legacyEnrolmentIdentifierKey: String = config.get[String]("keys.legacy.enrolmentIdentifierKey")
+  val newEnrolmentKey: String              = config.get[String]("keys.enrolmentKey")
+  val newEnrolmentIdentifierKey: String    = config.get[String]("keys.enrolmentIdentifierKey")
+  val lockRepositoryTtl: Int               = config.get[Int]("mongodb.lockRepository.timeToLiveInSeconds")
+  val cacheTtl: Int                        = config.get[Int]("mongodb.timeToLiveInSeconds")
 
   val messageTranslationFile: String = config.get[String]("message-translation-file")
 

@@ -50,6 +50,11 @@ class AuthenticateActionProviderSpec extends AnyFreeSpec with Matchers with Mock
     }
   }
 
+  val LEGACY_ENROLMENT_KEY    = "HMCE-NCTS-ORG"
+  val LEGACY_ENROLMENT_ID_KEY = "VATRegNoTURN"
+  val NEW_ENROLMENT_KEY       = "HMRC-CTC-ORG"
+  val NEW_ENROLMENT_ID_KEY    = "EORINumber"
+
   "authenticate" - {
 
     "when a user has valid enrolments" - {
@@ -69,10 +74,10 @@ class AuthenticateActionProviderSpec extends AnyFreeSpec with Matchers with Mock
             state = "Activated"
           ),
           Enrolment(
-            key = "HMCE-NCTS-ORG",
+            key = LEGACY_ENROLMENT_KEY,
             identifiers = Seq(
               EnrolmentIdentifier(
-                "VATRegNoTURN",
+                LEGACY_ENROLMENT_ID_KEY,
                 eoriNumber
               )
             ),
@@ -123,10 +128,10 @@ class AuthenticateActionProviderSpec extends AnyFreeSpec with Matchers with Mock
             state = "Activated"
           ),
           Enrolment(
-            key = "HMCE-NCTS-ORG",
+            key = LEGACY_ENROLMENT_KEY,
             identifiers = Seq(
               EnrolmentIdentifier(
-                "VATRegNoTURN",
+                LEGACY_ENROLMENT_ID_KEY,
                 eoriNumber
               )
             ),
@@ -177,10 +182,10 @@ class AuthenticateActionProviderSpec extends AnyFreeSpec with Matchers with Mock
             state = "Activated"
           ),
           Enrolment(
-            key = "HMCE-NCTS-ORG",
+            key = LEGACY_ENROLMENT_KEY,
             identifiers = Seq(
               EnrolmentIdentifier(
-                "VATRegNoTURN",
+                LEGACY_ENROLMENT_ID_KEY,
                 eoriNumber
               )
             ),
