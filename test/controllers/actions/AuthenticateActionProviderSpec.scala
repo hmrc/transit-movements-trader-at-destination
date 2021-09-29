@@ -57,7 +57,61 @@ class AuthenticateActionProviderSpec extends AnyFreeSpec with Matchers with Mock
 
   "authenticate" - {
 
-    "when a user has valid enrolments" - {
+    "when a user has valid legacy enrolments" - {
+
+      val eoriNumber = "EORI"
+
+      val validEnrolments: Enrolments = Enrolments(
+        Set(
+          Enrolment(
+            key = "IR-SA",
+            identifiers = Seq(
+              EnrolmentIdentifier(
+                "UTR",
+                "123"
+              )
+            ),
+            state = "Activated"
+          ),
+          Enrolment(
+            key = LEGACY_ENROLMENT_KEY,
+            identifiers = Seq(
+              EnrolmentIdentifier(
+                LEGACY_ENROLMENT_ID_KEY,
+                eoriNumber
+              )
+            ),
+            state = "Activated"
+          )
+        )
+      )
+
+      "must pass on the user's EORI" in {
+
+        val mockAuthConnector = mock[AuthConnector]
+
+        when(mockAuthConnector.authorise[Enrolments](any(), any())(any(), any()))
+          .thenReturn(Future.successful(validEnrolments))
+
+        val application = new GuiceApplicationBuilder()
+          .overrides(
+            bind[AuthConnector].toInstance(mockAuthConnector)
+          )
+          .build()
+
+        running(application) {
+          val actionProvider = application.injector.instanceOf[AuthenticateActionProvider]
+
+          val controller = new Harness(actionProvider)
+          val result     = controller.action()(fakeRequest)
+
+          status(result) mustEqual OK
+          contentAsString(result) mustEqual eoriNumber
+        }
+      }
+    }
+
+    "when a user has valid new enrolments" - {
 
       val eoriNumber = "EORI"
 
@@ -128,10 +182,10 @@ class AuthenticateActionProviderSpec extends AnyFreeSpec with Matchers with Mock
             state = "Activated"
           ),
           Enrolment(
-            key = LEGACY_ENROLMENT_KEY,
+            key = NEW_ENROLMENT_KEY,
             identifiers = Seq(
               EnrolmentIdentifier(
-                LEGACY_ENROLMENT_ID_KEY,
+                NEW_ENROLMENT_ID_KEY,
                 eoriNumber
               )
             ),

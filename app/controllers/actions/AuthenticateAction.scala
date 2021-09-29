@@ -47,13 +47,24 @@ private[actions] class AuthenticateAction @Inject()(override val authConnector: 
         Future.successful(Left(BadRequest("Missing channel header or incorrect value specified in channel header")))
       case Some(channel) =>
         implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
-        authorised(Enrolment(config.legacyEnrolmentKey))
+        authorised(Enrolment(config.newEnrolmentKey) or Enrolment(config.legacyEnrolmentKey))
           .retrieve(Retrievals.authorisedEnrolments) {
             enrolments =>
-              val eoriNumber = (for {
-                enrolment  <- enrolments.enrolments.find(_.key.equals(config.legacyEnrolmentKey))
-                identifier <- enrolment.getIdentifier(config.legacyEnrolmentIdentifierKey)
-              } yield identifier.value).getOrElse(throw InsufficientEnrolments(s"Unable to retrieve enrolment for ${config.legacyEnrolmentIdentifierKey}"))
+              val legacyEnrolmentId = getEnrolmentIdentifier(
+                enrolments,
+                config.legacyEnrolmentKey,
+                config.legacyEnrolmentIdentifierKey
+              )
+
+              val newEnrolmentId = getEnrolmentIdentifier(
+                enrolments,
+                config.newEnrolmentKey,
+                config.newEnrolmentIdentifierKey
+              )
+
+              val eoriNumber = (newEnrolmentId orElse legacyEnrolmentId).getOrElse {
+                throw InsufficientEnrolments(s"Unable to retrieve enrolment for either ${config.newEnrolmentKey} or ${config.legacyEnrolmentKey}")
+              }
               Future.successful(Right(AuthenticatedRequest(request, channel, eoriNumber)))
           }
     }
@@ -65,4 +76,14 @@ private[actions] class AuthenticateAction @Inject()(override val authConnector: 
       logger.warn(s"Failed to authorise with the following exception: $e")
       Left(Unauthorized)
   }
+
+  private def getEnrolmentIdentifier(
+    enrolments: Enrolments,
+    enrolmentKey: String,
+    enrolmentIdKey: String
+  ): Option[String] =
+    for {
+      enrolment  <- enrolments.getEnrolment(enrolmentKey)
+      identifier <- enrolment.getIdentifier(enrolmentIdKey)
+    } yield identifier.value
 }
