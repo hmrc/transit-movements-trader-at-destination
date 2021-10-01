@@ -28,6 +28,7 @@ import controllers.actions.AuthenticatedGetOptionalArrivalForWriteActionProvider
 import controllers.actions.FakeAuthenticateActionProvider
 import controllers.actions.FakeAuthenticatedGetOptionalArrivalForWriteActionProvider
 import generators.ModelGenerators
+import models.ArrivalStatus.ArrivalSubmitted
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalStatus
@@ -35,6 +36,7 @@ import models.ArrivalWithoutMessages
 import models.Box
 import models.BoxId
 import models.MessageId
+import models.MessageMetaData
 import models.MessageSender
 import models.MessageType
 import models.MovementMessageWithStatus
@@ -45,6 +47,7 @@ import models.ChannelType.web
 import models.MessageStatus.SubmissionFailed
 import models.MessageStatus.SubmissionPending
 import models.MessageStatus.SubmissionSucceeded
+import models.MessageType.ArrivalNotification
 import models.response.ResponseArrival
 import models.response.ResponseArrivals
 import org.mockito.ArgumentCaptor
@@ -66,13 +69,13 @@ import repositories.LockRepository
 import services.PushPullNotificationService
 import services.SubmitMessageService
 import utils.Format
+
 import java.time.Clock
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
-
 import scala.concurrent.Future
 import scala.xml.NodeSeq
 import scala.xml.Utility.trim
@@ -1181,7 +1184,10 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
               MovementReferenceNumber("1234567890"),
               ArrivalStatus.ArrivalSubmitted,
               createdAndUpdatedDate,
-              createdAndUpdatedDate
+              createdAndUpdatedDate,
+              Seq(
+                MessageMetaData(ArrivalNotification, createdAndUpdatedDate)
+              )
             )
           )
           val responseArrivals = ResponseArrivals(arrivals, 1, 1, 1)
@@ -1203,7 +1209,13 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
                |      "movementReferenceNumber": "1234567890",
                |      "status": "ArrivalSubmitted",
                |      "created": "${dateFormat.format(createdAndUpdatedDate)}",
-               |      "updated": "${dateFormat.format(createdAndUpdatedDate)}"
+               |      "updated": "${dateFormat.format(createdAndUpdatedDate)}",
+               |      "messagesMetaData":[
+               |        {
+               |          "messageType": "IE007",
+               |          "dateTime": "$createdAndUpdatedDate"
+               |        }
+               |      ]
                |    }
                |  ],
                |  "retrievedArrivals": 1,

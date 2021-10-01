@@ -37,7 +37,7 @@ case class ArrivalWithoutMessages(
   notificationBox: Option[Box],
   nextMessageId: MessageId,
   nextMessageCorrelationId: Int,
-  latestMessage: MessageType
+  messagesMetaData: Seq[MessageMetaData]
 ) {
   private val obfuscatedEori: String          = s"ending ${eoriNumber.takeRight(7)}"
   private val isoFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
@@ -68,14 +68,8 @@ object ArrivalWithoutMessages {
       arrival.notificationBox,
       arrival.nextMessageId,
       arrival.nextMessageCorrelationId,
-      latestMessage(arrival.messages.toList)
+      arrival.messages.map(x => MessageMetaData(x.messageType, x.dateTime)).toList
     )
-
-  private def latestMessage(messages: Seq[MovementMessage]): MessageType =
-    messages.reduce {
-      (m1, m2) =>
-        if (m1.dateTime.isAfter(m2.dateTime)) m1 else m2
-    }.messageType
 
   implicit val readsArrival: Reads[ArrivalWithoutMessages] = {
     (
@@ -90,7 +84,7 @@ object ArrivalWithoutMessages {
         (__ \ "notificationBox").readNullable[Box] and
         (__ \ "nextMessageId").read[MessageId] and
         (__ \ "nextMessageCorrelationId").read[Int] and
-        (__ \ "messages").read[Seq[MovementMessage]].map(latestMessage)
+        (__ \ "messages").read[Seq[MessageMetaData]]
     )(ArrivalWithoutMessages.apply _)
   }
 

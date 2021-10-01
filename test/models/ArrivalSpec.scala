@@ -17,63 +17,28 @@
 package models
 
 import base.SpecBase
-import cats.data.NonEmptyList
 import generators.ModelGenerators
-import models.MessageType.ArrivalNotification
-import models.MessageType.ArrivalRejection
-import models.MessageType.UnloadingPermission
-import models.MessageType.UnloadingRemarks
-import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
-
-import java.time.LocalDateTime
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
 class ArrivalSpec extends SpecBase with ScalaCheckDrivenPropertyChecks with ModelGenerators {
 
-  val arrivaGenerator: Gen[Arrival] =
+  val arrivalGenerator: Gen[Arrival] =
     for {
       messages <- nonEmptyListOfMaxLength[MovementMessageWithStatus](20)
       arrival  <- arbitrary[Arrival].map(_.copy(messages = messages))
     } yield arrival
 
-  "must return latest message" in {
-    val message = arbitrary[MovementMessageWithoutStatus].sample.value
-
-    val expectedMessage = message
-      .copy(dateTime = LocalDateTime.now)
-      .copy(messageType = ArrivalNotification)
-    val message1 = message
-      .copy(dateTime = LocalDateTime.now.minusMinutes(10))
-      .copy(messageType = ArrivalRejection)
-
-    val message2 = message
-      .copy(dateTime = LocalDateTime.now.minusHours(5))
-      .copy(messageType = UnloadingPermission)
-
-    val message3 = message
-      .copy(dateTime = LocalDateTime.now.minusDays(2))
-      .copy(messageType = UnloadingRemarks)
-
-    val arrivalWithDateTime = NonEmptyList(message1, List(message2, message3, expectedMessage))
-
-    forAll(arrivaGenerator) {
-      arrival =>
-        arrival.copy(messages = arrivalWithDateTime).latestMessage mustBe ArrivalNotification
-
-    }
-
-  }
-
   "nextMessageId returns a MessageId which has value that is 1 larger than the number of messages" in {
-    forAll(arrivaGenerator) {
+    forAll(arrivalGenerator) {
       arrival =>
         (MessageId.unapply(arrival.nextMessageId).value - arrival.messages.length) mustEqual 1
     }
   }
 
   "messageWithId returns a list with the message and its corresponding message ID" in {
-    forAll(arrivaGenerator) {
+    forAll(arrivalGenerator) {
       arrival =>
         arrival.messagesWithId.zipWithIndex.toList.foreach {
           case ((message, messageId), index) =>
@@ -82,5 +47,4 @@ class ArrivalSpec extends SpecBase with ScalaCheckDrivenPropertyChecks with Mode
         }
     }
   }
-
 }

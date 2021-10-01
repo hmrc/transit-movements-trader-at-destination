@@ -37,6 +37,7 @@ import models.ArrivalWithoutMessages
 import models.ChannelType
 import models.CompoundStatusUpdate
 import models.MessageId
+import models.MessageMetaData
 import models.MessageReceivedEvent
 import models.MessageStatus
 import models.MessageStatusUpdate
@@ -278,6 +279,15 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
       )
     )
 
+  implicit val arbitraryMessageMetaData: Arbitrary[MessageMetaData] = {
+    Arbitrary(
+      for {
+        messageType <- arbitrary[MessageType]
+        dateTime    <- arbitrary[LocalDateTime]
+      } yield MessageMetaData(messageType, dateTime)
+    )
+  }
+
   implicit val arbitraryResponseArrival: Arbitrary[ResponseArrival] =
     Arbitrary(
       for {
@@ -288,7 +298,7 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
         status                  <- arbitrary[ArrivalStatus]
         created                 <- arbitrary[LocalDateTime]
         updated                 <- arbitrary[LocalDateTime]
-        latestMessage           <- arbitrary[MessageType]
-      } yield ResponseArrival(arrivalId, location, messagesLocation, movementReferenceNumber, status, created, updated, latestMessage)
+        messageMetaData         <- arbitrary[Seq[MessageMetaData]]
+      } yield ResponseArrival(arrivalId, location, messagesLocation, movementReferenceNumber, status, created, updated, messageMetaData)
     )
 }

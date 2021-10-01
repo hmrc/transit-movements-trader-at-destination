@@ -37,15 +37,15 @@ class ArrivalWithoutMessagesSpec extends SpecBase with MongoDateTimeFormats with
   val expectedDateTimeMinusMinutes = LocalDateTime.now.minusMinutes(30)
   val expectedDateDays             = LocalDateTime.now.minusDays(2)
 
-  val message1        = MovementMessageWithoutStatus(MessageId(1), expectedDateDays, UnloadingPermission, <foo></foo>, 1)
-  val message2        = MovementMessageWithoutStatus(MessageId(2), expectedDateTimeMinusMinutes, GoodsReleased, <foo></foo>, 2)
-  val message3        = MovementMessageWithoutStatus(MessageId(3), expectedDateTimeMinusHours, UnloadingRemarks, <foo></foo>, 3)
-  val expectedMessage = MovementMessageWithoutStatus(MessageId(4), expectedDateTime, ArrivalNotification, <foo></foo>, 4)
+  val message1 = MovementMessageWithoutStatus(MessageId(1), expectedDateDays, UnloadingPermission, <foo></foo>, 1)
+  val message2 = MovementMessageWithoutStatus(MessageId(2), expectedDateTimeMinusMinutes, GoodsReleased, <foo></foo>, 2)
+  val message3 = MovementMessageWithoutStatus(MessageId(3), expectedDateTimeMinusHours, UnloadingRemarks, <foo></foo>, 3)
+  val message4 = MovementMessageWithoutStatus(MessageId(4), expectedDateTime, ArrivalNotification, <foo></foo>, 4)
 
-  val messages: Seq[MovementMessageWithoutStatus] = Seq(message1, message2, message3, expectedMessage)
+  val messages: Seq[MovementMessageWithoutStatus] = Seq(message1, message2, message3, message4)
 
   "ArrivalWithoutMessages" - {
-    "must serialise with latest message type" in {
+    "must serialise with list of messageMetaData" in {
 
       val movementMessageInJson = Json.obj(
         "_id"                      -> ArrivalId(1),
@@ -61,14 +61,23 @@ class ArrivalWithoutMessagesSpec extends SpecBase with MongoDateTimeFormats with
         "messages"                 -> messages
       )
 
-      movementMessageInJson.validate[ArrivalWithoutMessages].map(_.latestMessage) mustBe JsSuccess(ArrivalNotification)
+      val expectedResult = Seq(
+        MessageMetaData(message1.messageType, message1.dateTime),
+        MessageMetaData(message2.messageType, message2.dateTime),
+        MessageMetaData(message3.messageType, message3.dateTime),
+        MessageMetaData(message4.messageType, message4.dateTime)
+      )
+
+      val result = movementMessageInJson.validate[ArrivalWithoutMessages].asOpt.value
+
+      result.messagesMetaData mustBe expectedResult
     }
 
-    "must create an arrival movement message" in {
+    "must create from Arrival" in {
 
       forAll(arbitrary[Arrival]) {
         arrival =>
-          val messageList = NonEmptyList(message1, List(message2, message3, expectedMessage))
+          val messageList = NonEmptyList(message1, List(message2, message3, message4))
 
           val updatedArrival = arrival.copy(messages = messageList)
 
@@ -85,7 +94,12 @@ class ArrivalWithoutMessagesSpec extends SpecBase with MongoDateTimeFormats with
               updatedArrival.notificationBox,
               updatedArrival.nextMessageId,
               updatedArrival.nextMessageCorrelationId,
-              ArrivalNotification
+              Seq(
+                MessageMetaData(message1.messageType, message1.dateTime),
+                MessageMetaData(message2.messageType, message2.dateTime),
+                MessageMetaData(message3.messageType, message3.dateTime),
+                MessageMetaData(message4.messageType, message4.dateTime)
+              )
             )
 
           ArrivalWithoutMessages.fromArrival(updatedArrival) mustBe expectedResult

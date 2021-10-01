@@ -21,6 +21,7 @@ import models.Arrival
 import models.ArrivalId
 import models.ArrivalStatus
 import models.ArrivalWithoutMessages
+import models.MessageMetaData
 import models.MessageType
 import models.MongoDateTimeFormats
 import models.MovementReferenceNumber
@@ -31,14 +32,16 @@ import play.api.libs.json.Reads
 
 import java.time.LocalDateTime
 
-case class ResponseArrival(arrivalId: ArrivalId,
-                           location: String,
-                           messagesLocation: String,
-                           movementReferenceNumber: MovementReferenceNumber,
-                           status: ArrivalStatus,
-                           created: LocalDateTime,
-                           updated: LocalDateTime,
-                           latestMessage: MessageType)
+case class ResponseArrival(
+  arrivalId: ArrivalId,
+  location: String,
+  messagesLocation: String,
+  movementReferenceNumber: MovementReferenceNumber,
+  status: ArrivalStatus,
+  created: LocalDateTime,
+  updated: LocalDateTime,
+  messagesMetaData: Seq[MessageMetaData]
+)
 
 object ResponseArrival {
 
@@ -51,7 +54,7 @@ object ResponseArrival {
       arrival.status,
       arrival.created,
       updated = arrival.lastUpdated,
-      arrival.latestMessage
+      arrival.messages.map(x => MessageMetaData(x.messageType, x.dateTime)).toList
     )
 
   def build(arrivalWithoutMessages: ArrivalWithoutMessages): ResponseArrival =
@@ -63,7 +66,7 @@ object ResponseArrival {
       arrivalWithoutMessages.status,
       arrivalWithoutMessages.created,
       updated = arrivalWithoutMessages.lastUpdated,
-      arrivalWithoutMessages.latestMessage
+      arrivalWithoutMessages.messagesMetaData
     )
 
   val projection: JsObject = Json.obj(
@@ -84,7 +87,7 @@ object ResponseArrival {
         status                  <- (json \ "status").validate[ArrivalStatus]
         created                 <- (json \ "created").validate[LocalDateTime](MongoDateTimeFormats.localDateTimeRead)
         updated                 <- (json \ "lastUpdated").validate[LocalDateTime](MongoDateTimeFormats.localDateTimeRead)
-        latestMessage           <- (json \ "latestMessage").validate[MessageType]
+        latestMessage           <- (json \ "messagesMetaData").validate[Seq[MessageMetaData]]
       } yield
         ResponseArrival(
           arrivalId,
