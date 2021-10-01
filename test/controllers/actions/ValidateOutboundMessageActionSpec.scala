@@ -16,16 +16,18 @@
 
 package controllers.actions
 
+import cats.data.Ior
 import generators.ModelGenerators
 import models._
 import models.request.ArrivalWithoutMessagesRequest
+import models.request.AuthenticatedRequest
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.freespec.AnyFreeSpec
-import org.scalatest.matchers.must.Matchers
 import org.scalatest.EitherValues
 import org.scalatest.OptionValues
 import org.scalatest.TryValues
+import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.mvc.AnyContentAsEmpty
 import play.api.test.DefaultAwaitTimeout
@@ -50,7 +52,11 @@ class ValidateOutboundMessageActionSpec
   val fakeRequest: FakeRequest[AnyContentAsEmpty.type]       = FakeRequest("", "")
 
   val fakeArrivalWithoutMessagesRequest: ArrivalWithoutMessagesRequest[AnyContentAsEmpty.type] =
-    ArrivalWithoutMessagesRequest(fakeRequest, arrivalWithoutMessages, ChannelType.web)
+    ArrivalWithoutMessagesRequest(
+      AuthenticatedRequest(fakeRequest, ChannelType.web, Ior.right(EORINumber("eori"))),
+      arrivalWithoutMessages,
+      ChannelType.web
+    )
 
   "refine" - {
     Seq(
@@ -69,11 +75,12 @@ class ValidateOutboundMessageActionSpec
           status(
             actionRefiner
               .refine(MessageTransformRequest(Message(response, st), fakeArrivalWithoutMessagesRequest))
-              .map(_.left.value)) mustBe BAD_REQUEST
+              .map(_.left.value)
+          ) mustBe BAD_REQUEST
         }
     }
     Seq(
-      UnloadingRemarksResponse -> ArrivalStatus.UnloadingRemarksSubmitted,
+      UnloadingRemarksResponse -> ArrivalStatus.UnloadingRemarksSubmitted
     ) foreach {
       case (response, status) =>
         s"return internal server error if an outbound response ($response) is found" in {

@@ -18,7 +18,6 @@ package models.request
 
 import models.Arrival
 import models.ChannelType
-import play.api.mvc.Request
 import play.api.mvc.WrappedRequest
 
-case class ArrivalRequest[A](request: Request[A], arrival: Arrival, channel: ChannelType) extends WrappedRequest[A](request)
+case class ArrivalRequest[A](request: AuthenticatedRequest[A], arrival: Arrival, channel: ChannelType) extends WrappedRequest[A](request)

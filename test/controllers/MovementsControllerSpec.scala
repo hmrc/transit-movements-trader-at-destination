@@ -19,6 +19,7 @@ package controllers
 import audit.AuditService
 import audit.AuditType
 import base.SpecBase
+import cats.data.Ior
 import cats.data.NonEmptyList
 import config.Constants
 import connectors.MessageConnector
@@ -32,15 +33,16 @@ import models.ArrivalStatus
 import models.ArrivalWithoutMessages
 import models.Box
 import models.BoxId
+import models.ChannelType.api
+import models.ChannelType.web
+import models.EORINumber
 import models.MessageId
 import models.MessageSender
+import models.MessageStatus.SubmissionPending
 import models.MessageType
 import models.MovementMessageWithStatus
 import models.MovementReferenceNumber
 import models.SubmissionProcessingResult
-import models.ChannelType.api
-import models.ChannelType.web
-import models.MessageStatus.SubmissionPending
 import models.response.ResponseArrival
 import models.response.ResponseArrivals
 import org.mockito.ArgumentCaptor
@@ -62,13 +64,13 @@ import repositories.LockRepository
 import services.PushPullNotificationService
 import services.SubmitMessageService
 import utils.Format
+
 import java.time.Clock
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
-
 import scala.concurrent.Future
 import scala.xml.NodeSeq
 import scala.xml.Utility.trim
@@ -177,8 +179,12 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           arrivalMessage.message.map(trim) mustEqual expectedMessage.message.map(trim)
 
           verify(mockSubmitMessageService, times(1)).submitArrival(eqTo(newArrival))(any())
-          verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.ArrivalNotificationSubmitted), eqTo(newArrival.eoriNumber), any(), any())(any())
-          verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.MesSenMES3Added), eqTo(newArrival.eoriNumber), any(), any())(any())
+          verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.ArrivalNotificationSubmitted),
+                                                        eqTo(Ior.right(EORINumber(newArrival.eoriNumber))),
+                                                        any(),
+                                                        any())(any())
+          verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.MesSenMES3Added), eqTo(Ior.right(EORINumber(newArrival.eoriNumber))), any(), any())(
+            any())
           verifyNoInteractions(mockNotificationService)
         }
       }
@@ -232,8 +238,12 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           arrivalMessage.message.map(trim) mustEqual expectedMessage.message.map(trim)
 
           verify(mockSubmitMessageService, times(1)).submitArrival(eqTo(newArrival))(any())
-          verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.ArrivalNotificationSubmitted), eqTo(newArrival.eoriNumber), any(), any())(any())
-          verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.MesSenMES3Added), eqTo(newArrival.eoriNumber), any(), any())(any())
+          verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.ArrivalNotificationSubmitted),
+                                                        eqTo(Ior.right(EORINumber(newArrival.eoriNumber))),
+                                                        any(),
+                                                        any())(any())
+          verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.MesSenMES3Added), eqTo(Ior.right(EORINumber(newArrival.eoriNumber))), any(), any())(
+            any())
         }
       }
 
@@ -533,7 +543,10 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           movement.dateTime mustEqual expectedMessage.dateTime
           movement.message.map(trim) mustEqual expectedMessage.message.map(trim)
 
-          verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.ArrivalNotificationReSubmitted), eqTo(initializedArrival.eoriNumber), any(), any())(
+          verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.ArrivalNotificationReSubmitted),
+                                                        eqTo(Ior.right(EORINumber(initializedArrival.eoriNumber))),
+                                                        any(),
+                                                        any())(
             any()
           )
         }

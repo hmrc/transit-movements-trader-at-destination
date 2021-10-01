@@ -24,13 +24,13 @@ import controllers.actions._
 import logging.Logging
 import metrics.HasActionMetrics
 import metrics.Monitors
+import models.ArrivalId
+import models.MessageId
 import models.MessageStatus.SubmissionFailed
+import models.MessageType
 import models.SubmissionProcessingResult._
 import models.response.ResponseArrivalWithMessages
 import models.response.ResponseMovementMessage
-import models.ArrivalId
-import models.MessageId
-import models.MessageType
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.Action
@@ -100,7 +100,8 @@ class MessagesController @Inject()(
                         case submissionFailureRejected: SubmissionFailureRejected =>
                           BadRequest(submissionFailureRejected.responseBody)
                         case SubmissionSuccess =>
-                          auditService.auditEvent(AuditType.UnloadingRemarksSubmitted, arrival.eoriNumber, message, arrival.channel)
+                          val enrolmentId = request.arrivalWithoutMessageRequest.request.enrolmentId
+                          auditService.auditEvent(AuditType.UnloadingRemarksSubmitted, enrolmentId, message, arrival.channel)
                           Accepted("Message accepted")
                             .withHeaders("Location" -> routes.MessagesController.getMessage(arrival.arrivalId, arrival.nextMessageId).url)
                       }
@@ -119,7 +120,7 @@ class MessagesController @Inject()(
         implicit request =>
           val result = for {
             arrival <- OptionT(arrivalMovementRepository.getWithoutMessages(arrivalId, request.channel))
-            if arrival.eoriNumber == request.eoriNumber
+            if request.hasMatchingEnrolmentId(arrival)
             message <- OptionT(arrivalMovementRepository.getMessage(arrivalId, request.channel, messageId))
             if !message.optStatus.contains(SubmissionFailed)
           } yield Ok(Json.toJsObject(ResponseMovementMessage.build(arrivalId, messageId, message)))

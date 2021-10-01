@@ -19,6 +19,7 @@ package controllers
 import audit.AuditService
 import audit.AuditType
 import base.SpecBase
+import cats.data.Ior
 import cats.data.NonEmptyList
 import connectors.MessageConnector
 import connectors.MessageConnector.EisSubmissionResult.ErrorInPayload
@@ -40,8 +41,8 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.{eq => eqTo}
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
-import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Arbitrary
+import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.IntegrationPatience
@@ -182,7 +183,10 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           val arrivalMessage: MovementMessageWithStatus = captor.getValue
           arrivalMessage mustEqual movementMessage.copy(messageId = MessageId(2))
 
-          verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.UnloadingRemarksSubmitted), eqTo(arrival.eoriNumber), any(), any())(any())
+          verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.UnloadingRemarksSubmitted),
+                                                        eqTo(Ior.right(EORINumber(arrival.eoriNumber))),
+                                                        any(),
+                                                        any())(any())
         }
       }
 

@@ -17,11 +17,9 @@
 package controllers
 
 import base.SpecBase
-import controllers.actions.AuthenticatedGetArrivalForReadActionProvider
-import controllers.actions.FakeAuthenticatedGetArrivalForReadActionProvider
 import generators.ModelGenerators
 import models.WSError._
-import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
@@ -58,17 +56,21 @@ class PDFGenerationControllerSpec extends SpecBase with ScalaCheckPropertyChecks
             when(mockUnloadingPermissionPDFService.getPDF(any())(any(), any()))
               .thenReturn(Future.successful(Right((pdf, headers))))
 
-            val fakeGerArrivalReader = FakeAuthenticatedGetArrivalForReadActionProvider(arrival)
+            when(mockArrivalMovementRepository.get(refEq(arrival.arrivalId), any()))
+              .thenReturn(Future.successful(Some(arrival)))
+
             val application = baseApplicationBuilder
               .overrides(
                 bind[UnloadingPermissionPDFService].toInstance(mockUnloadingPermissionPDFService),
-                bind[AuthenticatedGetArrivalForReadActionProvider].toInstance(fakeGerArrivalReader)
+                bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository)
               )
               .build()
 
             running(application) {
               val request = FakeRequest(GET, routes.PDFGenerationController.getPDF(arrival.arrivalId).url)
-              val result  = route(application, request).value
+                .withHeaders("channel" -> "api")
+
+              val result = route(application, request).value
 
               status(result) mustEqual OK
             }
@@ -81,18 +83,21 @@ class PDFGenerationControllerSpec extends SpecBase with ScalaCheckPropertyChecks
             when(mockUnloadingPermissionPDFService.getPDF(any())(any(), any()))
               .thenReturn(Future.successful(Left(NotFoundError)))
 
-            val fakeGerArrivalReader = FakeAuthenticatedGetArrivalForReadActionProvider(arrival)
+            when(mockArrivalMovementRepository.get(refEq(arrival.arrivalId), any()))
+              .thenReturn(Future.successful(Some(arrival)))
 
             val application = baseApplicationBuilder
               .overrides(
                 bind[UnloadingPermissionPDFService].toInstance(mockUnloadingPermissionPDFService),
-                bind[AuthenticatedGetArrivalForReadActionProvider].toInstance(fakeGerArrivalReader)
+                bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository)
               )
               .build()
 
             running(application) {
               val request = FakeRequest(GET, routes.PDFGenerationController.getPDF(arrival.arrivalId).url)
-              val result  = route(application, request).value
+                .withHeaders("channel" -> "api")
+
+              val result = route(application, request).value
 
               status(result) mustEqual NOT_FOUND
             }
@@ -104,22 +109,24 @@ class PDFGenerationControllerSpec extends SpecBase with ScalaCheckPropertyChecks
 
         forAll(genArrivalWithSuccessfulArrival, genErrorCode) {
           (arrival, errorCode) =>
-            when(mockArrivalMovementRepository.get(any(), any())).thenReturn(Future.successful(Some(arrival)))
             when(mockUnloadingPermissionPDFService.getPDF(any())(any(), any()))
               .thenReturn(Future.successful(Left(OtherError(errorCode, ""))))
 
-            val fakeGerArrivalReader = FakeAuthenticatedGetArrivalForReadActionProvider(arrival)
+            when(mockArrivalMovementRepository.get(refEq(arrival.arrivalId), any()))
+              .thenReturn(Future.successful(Some(arrival)))
 
             val application = baseApplicationBuilder
               .overrides(
-                bind[AuthenticatedGetArrivalForReadActionProvider].toInstance(fakeGerArrivalReader),
-                bind[UnloadingPermissionPDFService].toInstance(mockUnloadingPermissionPDFService)
+                bind[UnloadingPermissionPDFService].toInstance(mockUnloadingPermissionPDFService),
+                bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository)
               )
               .build()
 
             running(application) {
               val request = FakeRequest(GET, routes.PDFGenerationController.getPDF(arrival.arrivalId).url)
-              val result  = route(application, request).value
+                .withHeaders("channel" -> "api")
+
+              val result = route(application, request).value
 
               status(result) mustEqual BAD_GATEWAY
             }

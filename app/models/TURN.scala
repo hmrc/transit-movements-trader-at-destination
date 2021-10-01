@@ -14,19 +14,6 @@
  * limitations under the License.
  */
 
-package controllers.actions
+package models
 
-import javax.inject.Inject
-import models.ArrivalId
-import models.request.ArrivalWithoutMessagesRequest
-import play.api.mvc.ActionBuilder
-import play.api.mvc.AnyContent
-
-class GetArrivalWithoutMessagesForWriteActionProvider @Inject()(
-  lock: LockActionProvider,
-  getArrival: GetArrivalWithoutMessagesActionProvider
-) {
-
-  def apply(arrivalId: ArrivalId): ActionBuilder[ArrivalWithoutMessagesRequest, AnyContent] =
-    lock(arrivalId) andThen getArrival(arrivalId)
-}
+case class TURN(value: String) extends AnyVal
