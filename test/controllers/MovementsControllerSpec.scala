@@ -924,7 +924,6 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
                |      "location": "/some/location",
                |      "messagesLocation": "/messages/location",
                |      "movementReferenceNumber": "1234567890",
-               |      "status": "ArrivalSubmitted",
                |      "created": "${dateFormat.format(createdAndUpdatedDate)}",
                |      "updated": "${dateFormat.format(createdAndUpdatedDate)}",
                |      "messagesMetaData":[
