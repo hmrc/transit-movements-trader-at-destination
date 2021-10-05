@@ -1182,7 +1182,6 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
               "/some/location",
               "/messages/location",
               MovementReferenceNumber("1234567890"),
-              ArrivalStatus.ArrivalSubmitted,
               createdAndUpdatedDate,
               createdAndUpdatedDate,
               Seq(
