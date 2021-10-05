@@ -62,7 +62,7 @@ import scala.util.Success
 
 class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with ScalaFutures with TestSuiteMixin with MongoDateTimeFormats with BeforeAndAfterEach {
 
-  private val instant                   = Instant.now
+  private val instant = Instant.now
   implicit private val stubClock: Clock = Clock.fixed(instant, ZoneId.systemDefault)
 
   private val appBuilder: GuiceApplicationBuilder =
@@ -101,8 +101,8 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
       }
 
   private val eoriNumber: String = arbitrary[String].sample.value
-  private val turn: String       = arbitrary[String].sample.value
-  private val mrn                = arbitrary[MovementReferenceNumber].sample.value
+  private val turn: String = arbitrary[String].sample.value
+  private val mrn = arbitrary[MovementReferenceNumber].sample.value
 
   "ArrivalMovementRepository" - {
     "insert" - {
@@ -135,9 +135,9 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
         running(app) {
 
           val arrivalStatus = ArrivalStatusUpdate(Initialized)
-          val arrival       = arrivalWithOneMessage.sample.value.copy(status = GoodsReleased)
-          val lastUpdated   = LocalDateTime.now(stubClock).withSecond(0).withNano(0)
-          val selector      = ArrivalIdSelector(arrival.arrivalId)
+          val arrival = arrivalWithOneMessage.sample.value.copy(status = GoodsReleased)
+          val lastUpdated = LocalDateTime.now(stubClock).withSecond(0).withNano(0)
+          val selector = ArrivalIdSelector(arrival.arrivalId)
 
           started(app).futureValue
 
@@ -159,8 +159,8 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
         running(app) {
 
           val arrivalStatus = ArrivalStatusUpdate(Initialized)
-          val arrival       = arrivalWithOneMessage.sample.value copy (arrivalId = ArrivalId(1), status = UnloadingRemarksSubmitted)
-          val selector      = ArrivalIdSelector(ArrivalId(2))
+          val arrival = arrivalWithOneMessage.sample.value copy(arrivalId = ArrivalId(1), status = UnloadingRemarksSubmitted)
+          val selector = ArrivalIdSelector(ArrivalId(2))
 
           started(app).futureValue
 
@@ -344,7 +344,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
 
       "must fail if the arrival cannot be found" in {
 
-        val arrival = arbitrary[Arrival].sample.value copy (status = ArrivalStatus.ArrivalSubmitted, arrivalId = ArrivalId(1))
+        val arrival = arbitrary[Arrival].sample.value copy(status = ArrivalStatus.ArrivalSubmitted, arrivalId = ArrivalId(1))
 
         val dateOfPrep = LocalDate.now(stubClock)
         val timeOfPrep = LocalTime.now(stubClock).withHour(1).withMinute(1)
@@ -480,7 +480,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
           val service = app.injector.instanceOf[ArrivalMovementRepository]
           database.flatMap(_.drop()).futureValue
 
-          val arrival                = arbitrary[Arrival].sample.value
+          val arrival = arbitrary[Arrival].sample.value
           val arrivalWithoutMessages = ArrivalWithoutMessages.fromArrival(arrival)
           service.insert(arrival).futureValue
           val result = service.getWithoutMessages(arrival.arrivalId)
@@ -518,7 +518,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
 
           database.flatMap(_.drop()).futureValue
 
-          val arrival = arbitrary[Arrival].sample.value copy (arrivalId = ArrivalId(1), api)
+          val arrival = arbitrary[Arrival].sample.value copy(arrivalId = ArrivalId(1), api)
 
           service.insert(arrival).futureValue
           val result = service.get(ArrivalId(1), web)
@@ -538,7 +538,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
           val service = app.injector.instanceOf[ArrivalMovementRepository]
           database.flatMap(_.drop()).futureValue
 
-          val arrival                = arbitrary[Arrival].sample.value.copy(channel = api)
+          val arrival = arbitrary[Arrival].sample.value.copy(channel = api)
           val arrivalWithoutMessages = ArrivalWithoutMessages.fromArrival(arrival)
           service.insert(arrival).futureValue
           val result = service.getWithoutMessages(arrival.arrivalId, arrival.channel)
@@ -556,7 +556,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
           val service = app.injector.instanceOf[ArrivalMovementRepository]
           database.flatMap(_.drop()).futureValue
 
-          val arrival = arbitrary[Arrival].sample.value copy (arrivalId = ArrivalId(1), channel = api)
+          val arrival = arbitrary[Arrival].sample.value copy(arrivalId = ArrivalId(1), channel = api)
 
           service.insert(arrival).futureValue
           val result = service.getWithoutMessages(ArrivalId(2), web)
@@ -574,7 +574,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
           val service = app.injector.instanceOf[ArrivalMovementRepository]
           database.flatMap(_.drop()).futureValue
 
-          val arrival = arbitrary[Arrival].sample.value copy (arrivalId = ArrivalId(1), api)
+          val arrival = arbitrary[Arrival].sample.value copy(arrivalId = ArrivalId(1), api)
 
           service.insert(arrival).futureValue
           val result = service.get(ArrivalId(1), web)
@@ -615,9 +615,9 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
                 routes.MovementsController.getArrival(arrivalMovement1.arrivalId).url,
                 routes.MessagesController.getMessages(arrivalMovement1.arrivalId).url,
                 arrivalMovement1.movementReferenceNumber,
-                arrivalMovement1.status,
                 arrivalMovement1.created,
-                arrivalMovement1.lastUpdated
+                arrivalMovement1.lastUpdated,
+                arrivalMovement1.messages.map(x => MessageMetaData(x.messageType, x.dateTime)).toList
               )
             ),
             1,
@@ -632,9 +632,9 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
                 routes.MovementsController.getArrival(arrivalMovement3.arrivalId).url,
                 routes.MessagesController.getMessages(arrivalMovement3.arrivalId).url,
                 arrivalMovement3.movementReferenceNumber,
-                arrivalMovement3.status,
                 arrivalMovement3.created,
-                arrivalMovement3.lastUpdated
+                arrivalMovement3.lastUpdated,
+                arrivalMovement3.messages.map(x => MessageMetaData(x.messageType, x.dateTime)).toList
               )
             ),
             1,
@@ -674,13 +674,17 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
                 routes.MovementsController.getArrival(arrivalMovement1.arrivalId).url,
                 routes.MessagesController.getMessages(arrivalMovement1.arrivalId).url,
                 arrivalMovement1.movementReferenceNumber,
-                arrivalMovement1.status,
                 arrivalMovement1.created,
-                arrivalMovement1.lastUpdated
+                arrivalMovement1.lastUpdated,
+                arrivalMovement1.messages.map(x => MessageMetaData(x.messageType, x.dateTime)).toList
+
               )
-            ),
-            1,
-            1,
+            )
+            ,
+            1
+            ,
+            1
+            ,
             1
           )
 
@@ -691,9 +695,9 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
                 routes.MovementsController.getArrival(arrivalMovement3.arrivalId).url,
                 routes.MessagesController.getMessages(arrivalMovement3.arrivalId).url,
                 arrivalMovement3.movementReferenceNumber,
-                arrivalMovement3.status,
                 arrivalMovement3.created,
-                arrivalMovement3.lastUpdated
+                arrivalMovement3.lastUpdated,
+                arrivalMovement3.messages.map(x => MessageMetaData(x.messageType, x.dateTime)).toList
               )
             ),
             1,
@@ -735,9 +739,9 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
                 routes.MovementsController.getArrival(arrivalMovement1.arrivalId).url,
                 routes.MessagesController.getMessages(arrivalMovement1.arrivalId).url,
                 arrivalMovement1.movementReferenceNumber,
-                arrivalMovement1.status,
                 arrivalMovement1.created,
-                arrivalMovement1.lastUpdated
+                arrivalMovement1.lastUpdated,
+                arrivalMovement1.messages.map(x => MessageMetaData(x.messageType, x.dateTime)).toList
               )
             ),
             1,
@@ -752,9 +756,9 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
                 routes.MovementsController.getArrival(arrivalMovement3.arrivalId).url,
                 routes.MessagesController.getMessages(arrivalMovement3.arrivalId).url,
                 arrivalMovement3.movementReferenceNumber,
-                arrivalMovement3.status,
                 arrivalMovement3.created,
-                arrivalMovement3.lastUpdated
+                arrivalMovement3.lastUpdated,
+                arrivalMovement3.messages.map(x => MessageMetaData(x.messageType, x.dateTime)).toList
               )
             ),
             1,
@@ -819,7 +823,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
 
           // We must use the web channel for this test as the API max rows returned in integration test config is 2
           val dateTime = OffsetDateTime.of(LocalDateTime.of(2021, 4, 30, 10, 30, 32), ZoneOffset.ofHours(1))
-          val actual   = service.fetchAllArrivals(Ior.right(EORINumber(eoriNumber)), web, Some(dateTime)).futureValue
+          val actual = service.fetchAllArrivals(Ior.right(EORINumber(eoriNumber)), web, Some(dateTime)).futureValue
           val expected = ResponseArrivals(Seq(arrivalMovement3, arrivalMovement4, arrivalMovement2).map(ResponseArrival.build), 3, 4, 3)
 
           actual mustEqual expected
@@ -844,14 +848,14 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
           val allMovements = Seq(arrivalMovement1, arrivalMovement2, arrivalMovement3, arrivalMovement4)
 
           val expectedAllMovements = allMovements.map(ResponseArrival.build).sortBy(_.updated)(_ compareTo _).reverse
-          val jsonArr              = allMovements.map(Json.toJsObject(_))
+          val jsonArr = allMovements.map(Json.toJsObject(_))
 
           database.flatMap {
             db =>
               db.collection[JSONCollection](ArrivalMovementRepository.collectionName).insert(false).many(jsonArr)
           }.futureValue
 
-          val actual   = service.fetchAllArrivals(Ior.right(EORINumber(eoriNumber)), web, None, Some(mrn.value)).futureValue
+          val actual = service.fetchAllArrivals(Ior.right(EORINumber(eoriNumber)), web, None, Some(mrn.value)).futureValue
           val expected = ResponseArrivals(expectedAllMovements, 4, 4, 4)
 
           actual mustEqual expected
@@ -873,11 +877,11 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
 
           val service: ArrivalMovementRepository = app.injector.instanceOf[ArrivalMovementRepository]
 
-          val allMovements        = Seq(arrivalMovement1, arrivalMovement2, arrivalMovement3, arrivalMovement4)
+          val allMovements = Seq(arrivalMovement1, arrivalMovement2, arrivalMovement3, arrivalMovement4)
           val allMovementsMatched = Seq(arrivalMovement1, arrivalMovement3)
 
           val expectedAllMovements = allMovementsMatched.map(ResponseArrival.build).sortBy(_.updated)(_ compareTo _).reverse
-          val jsonArr              = allMovements.map(Json.toJsObject(_))
+          val jsonArr = allMovements.map(Json.toJsObject(_))
 
           database.flatMap {
             db =>
@@ -911,7 +915,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
         val allArrivals = arrivalMovement1 :: arrivals
 
         val aJsonArr = allArrivals.map(Json.toJsObject(_))
-        val app      = appBuilder.build()
+        val app = appBuilder.build()
         running(app) {
 
           val service: ArrivalMovementRepository = app.injector.instanceOf[ArrivalMovementRepository]
@@ -952,7 +956,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
         val allArrivals = arrivalMovement1 :: arrivals
 
         val aJsonArr = allArrivals.map(Json.toJsObject(_))
-        val app      = appBuilder.build()
+        val app = appBuilder.build()
         running(app) {
 
           val service: ArrivalMovementRepository = app.injector.instanceOf[ArrivalMovementRepository]
@@ -981,12 +985,12 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
           .value
           .map(_.copy(eoriNumber = eoriNumber, movementReferenceNumber = mrn, channel = web))
 
-        val pageSize    = 5
-        val page        = 2
+        val pageSize = 5
+        val page = 2
         val allArrivals = arrivals
 
         val aJsonArr = allArrivals.map(Json.toJsObject(_))
-        val app      = appBuilder.build()
+        val app = appBuilder.build()
         running(app) {
 
           val service: ArrivalMovementRepository = app.injector.instanceOf[ArrivalMovementRepository]
@@ -1012,20 +1016,20 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
     "arrivalsWithoutJsonMessagesSource" - {
       "must return arrivals with any messages that don't have a JSON representation, or whose JSON representation is an empty JSON object" in {
         implicit val actorSystem: ActorSystem = ActorSystem()
-        implicit val mat: Materializer        = ActorMaterializer()
+        implicit val mat: Materializer = ActorMaterializer()
 
         val arrival1 = arbitrary[Arrival].map(_.copy(ArrivalId(1))).sample.value
         val arrival2 = arbitrary[Arrival].map(_.copy(ArrivalId(2))).sample.value
         val arrival3 = arbitrary[Arrival].map(_.copy(ArrivalId(3))).sample.value
         val arrival4 = arbitrary[Arrival].map(_.copy(ArrivalId(4))).sample.value
 
-        val messageWithJson      = Json.toJson(arbitrary[MovementMessageWithStatus].sample.value).as[JsObject] ++ Json.obj("messageJson" -> Json.obj("foo" -> "bar"))
-        val messageWithoutJson   = Json.toJson(arbitrary[MovementMessageWithStatus].sample.value).as[JsObject] - "messageJson"
+        val messageWithJson = Json.toJson(arbitrary[MovementMessageWithStatus].sample.value).as[JsObject] ++ Json.obj("messageJson" -> Json.obj("foo" -> "bar"))
+        val messageWithoutJson = Json.toJson(arbitrary[MovementMessageWithStatus].sample.value).as[JsObject] - "messageJson"
         val messageWithEmptyJson = Json.toJson(arbitrary[MovementMessageWithStatus].sample.value).as[JsObject] ++ Json.obj("messageJson" -> Json.obj())
 
-        val arrivalWithJson      = Json.toJson(arrival1).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithJson))
-        val arrivalWithoutJson   = Json.toJson(arrival2).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithoutJson))
-        val arrivalWithSomeJson  = Json.toJson(arrival3).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithJson, messageWithoutJson))
+        val arrivalWithJson = Json.toJson(arrival1).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithJson))
+        val arrivalWithoutJson = Json.toJson(arrival2).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithoutJson))
+        val arrivalWithSomeJson = Json.toJson(arrival3).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithJson, messageWithoutJson))
         val arrivalWithEmptyJson = Json.toJson(arrival4).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithEmptyJson))
 
         val app = appBuilder.build()
@@ -1052,20 +1056,20 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
 
       "must return a stream that only returns the requested number of results" in {
         implicit val actorSystem: ActorSystem = ActorSystem()
-        implicit val mat: Materializer        = ActorMaterializer()
+        implicit val mat: Materializer = ActorMaterializer()
 
         val arrival1 = arbitrary[Arrival].map(_.copy(ArrivalId(1))).sample.value
         val arrival2 = arbitrary[Arrival].map(_.copy(ArrivalId(2))).sample.value
         val arrival3 = arbitrary[Arrival].map(_.copy(ArrivalId(3))).sample.value
         val arrival4 = arbitrary[Arrival].map(_.copy(ArrivalId(4))).sample.value
 
-        val messageWithJson      = Json.toJson(arbitrary[MovementMessageWithStatus].sample.value).as[JsObject] ++ Json.obj("messageJson" -> Json.obj("foo" -> "bar"))
-        val messageWithoutJson   = Json.toJson(arbitrary[MovementMessageWithStatus].sample.value).as[JsObject] - "messageJson"
+        val messageWithJson = Json.toJson(arbitrary[MovementMessageWithStatus].sample.value).as[JsObject] ++ Json.obj("messageJson" -> Json.obj("foo" -> "bar"))
+        val messageWithoutJson = Json.toJson(arbitrary[MovementMessageWithStatus].sample.value).as[JsObject] - "messageJson"
         val messageWithEmptyJson = Json.toJson(arbitrary[MovementMessageWithStatus].sample.value).as[JsObject] ++ Json.obj("messageJson" -> Json.obj())
 
-        val arrivalWithJson      = Json.toJson(arrival1).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithJson))
-        val arrivalWithoutJson   = Json.toJson(arrival2).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithoutJson))
-        val arrivalWithSomeJson  = Json.toJson(arrival3).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithJson, messageWithoutJson))
+        val arrivalWithJson = Json.toJson(arrival1).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithJson))
+        val arrivalWithoutJson = Json.toJson(arrival2).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithoutJson))
+        val arrivalWithSomeJson = Json.toJson(arrival3).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithJson, messageWithoutJson))
         val arrivalWithEmptyJson = Json.toJson(arrival4).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithEmptyJson))
 
         val app = appBuilder.build()
@@ -1101,13 +1105,13 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
         val arrival3 = arbitrary[Arrival].map(_.copy(ArrivalId(3))).sample.value
         val arrival4 = arbitrary[Arrival].map(_.copy(ArrivalId(4))).sample.value
 
-        val messageWithJson      = Json.toJson(arbitrary[MovementMessageWithStatus].sample.value).as[JsObject] ++ Json.obj("messageJson" -> Json.obj("foo" -> "bar"))
-        val messageWithoutJson   = Json.toJson(arbitrary[MovementMessageWithStatus].sample.value).as[JsObject] - "messageJson"
+        val messageWithJson = Json.toJson(arbitrary[MovementMessageWithStatus].sample.value).as[JsObject] ++ Json.obj("messageJson" -> Json.obj("foo" -> "bar"))
+        val messageWithoutJson = Json.toJson(arbitrary[MovementMessageWithStatus].sample.value).as[JsObject] - "messageJson"
         val messageWithEmptyJson = Json.toJson(arbitrary[MovementMessageWithStatus].sample.value).as[JsObject] ++ Json.obj("messageJson" -> Json.obj())
 
-        val arrivalWithJson      = Json.toJson(arrival1).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithJson))
-        val arrivalWithoutJson   = Json.toJson(arrival2).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithoutJson))
-        val arrivalWithSomeJson  = Json.toJson(arrival3).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithJson, messageWithoutJson))
+        val arrivalWithJson = Json.toJson(arrival1).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithJson))
+        val arrivalWithoutJson = Json.toJson(arrival2).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithoutJson))
+        val arrivalWithSomeJson = Json.toJson(arrival3).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithJson, messageWithoutJson))
         val arrivalWithEmptyJson = Json.toJson(arrival4).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithEmptyJson))
 
         val app = appBuilder.build()
@@ -1145,9 +1149,9 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
 
       "must replace the messages of an arrival with the newly-supplied ones" in {
 
-        val arrival     = arbitrary[Arrival].sample.value
-        val message1    = arbitrary[MovementMessageWithStatus].sample.value
-        val message2    = arbitrary[MovementMessageWithStatus].sample.value
+        val arrival = arbitrary[Arrival].sample.value
+        val message1 = arbitrary[MovementMessageWithStatus].sample.value
+        val message2 = arbitrary[MovementMessageWithStatus].sample.value
         val newMessages = NonEmptyList(message1, List(message2))
 
         val app = appBuilder.build()
@@ -1156,7 +1160,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
 
           repo.insert(arrival).futureValue
 
-          val resetResult    = repo.resetMessages(arrival.arrivalId, newMessages).futureValue
+          val resetResult = repo.resetMessages(arrival.arrivalId, newMessages).futureValue
           val updatedArrival = repo.get(arrival.arrivalId).futureValue
 
           resetResult mustEqual true
@@ -1167,17 +1171,17 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
       "Must return max 2 arrivals when the API maxRowsReturned = 2" in {
         database.flatMap(_.drop()).futureValue
 
-        val app                = new GuiceApplicationBuilder().build()
+        val app = new GuiceApplicationBuilder().build()
         val eoriNumber: String = arbitrary[String].sample.value
-        val appConfig          = app.injector.instanceOf[AppConfig]
+        val appConfig = app.injector.instanceOf[AppConfig]
 
         val lastUpdated = LocalDateTime.now(stubClock).withSecond(0).withNano(0)
-        val id1         = ArrivalId(1)
-        val id2         = ArrivalId(2)
-        val id3         = ArrivalId(3)
-        val movement1   = arbitrary[Arrival].sample.value.copy(arrivalId = id1, eoriNumber = eoriNumber, channel = api, lastUpdated = lastUpdated.withSecond(10))
-        val movement2   = arbitrary[Arrival].sample.value.copy(arrivalId = id2, eoriNumber = eoriNumber, channel = api, lastUpdated = lastUpdated.withSecond(20))
-        val movement3   = arbitrary[Arrival].sample.value.copy(arrivalId = id3, eoriNumber = eoriNumber, channel = api, lastUpdated = lastUpdated.withSecond(30))
+        val id1 = ArrivalId(1)
+        val id2 = ArrivalId(2)
+        val id3 = ArrivalId(3)
+        val movement1 = arbitrary[Arrival].sample.value.copy(arrivalId = id1, eoriNumber = eoriNumber, channel = api, lastUpdated = lastUpdated.withSecond(10))
+        val movement2 = arbitrary[Arrival].sample.value.copy(arrivalId = id2, eoriNumber = eoriNumber, channel = api, lastUpdated = lastUpdated.withSecond(20))
+        val movement3 = arbitrary[Arrival].sample.value.copy(arrivalId = id3, eoriNumber = eoriNumber, channel = api, lastUpdated = lastUpdated.withSecond(30))
 
         running(app) {
           started(app).futureValue
@@ -1206,17 +1210,17 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
       "Must return max 1 arrivals when the WEB maxRowsReturned = 2" in {
         database.flatMap(_.drop()).futureValue
 
-        val app                = new GuiceApplicationBuilder().build()
+        val app = new GuiceApplicationBuilder().build()
         val eoriNumber: String = arbitrary[String].sample.value
-        val appConfig          = app.injector.instanceOf[AppConfig]
+        val appConfig = app.injector.instanceOf[AppConfig]
 
         val lastUpdated = LocalDateTime.now(stubClock).withSecond(0).withNano(0)
-        val id1         = ArrivalId(11)
-        val id2         = ArrivalId(12)
-        val id3         = ArrivalId(13)
-        val movement1   = arbitrary[Arrival].sample.value.copy(arrivalId = id1, eoriNumber = eoriNumber, channel = web, lastUpdated = lastUpdated.withSecond(1))
-        val movement2   = arbitrary[Arrival].sample.value.copy(arrivalId = id2, eoriNumber = eoriNumber, channel = web, lastUpdated = lastUpdated.withSecond(2))
-        val movement3   = arbitrary[Arrival].sample.value.copy(arrivalId = id3, eoriNumber = eoriNumber, channel = web, lastUpdated = lastUpdated.withSecond(3))
+        val id1 = ArrivalId(11)
+        val id2 = ArrivalId(12)
+        val id3 = ArrivalId(13)
+        val movement1 = arbitrary[Arrival].sample.value.copy(arrivalId = id1, eoriNumber = eoriNumber, channel = web, lastUpdated = lastUpdated.withSecond(1))
+        val movement2 = arbitrary[Arrival].sample.value.copy(arrivalId = id2, eoriNumber = eoriNumber, channel = web, lastUpdated = lastUpdated.withSecond(2))
+        val movement3 = arbitrary[Arrival].sample.value.copy(arrivalId = id3, eoriNumber = eoriNumber, channel = web, lastUpdated = lastUpdated.withSecond(3))
 
         running(app) {
           started(app).futureValue
@@ -1253,9 +1257,9 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
           started(app).futureValue
           val repository = app.injector.instanceOf[ArrivalMovementRepository]
 
-          val message  = arbitrary[models.MovementMessageWithStatus].sample.value.copy(messageId = MessageId(1))
+          val message = arbitrary[models.MovementMessageWithStatus].sample.value.copy(messageId = MessageId(1))
           val messages = new NonEmptyList(message, Nil)
-          val arrival  = arbitrary[Arrival].sample.value.copy(channel = api, messages = messages)
+          val arrival = arbitrary[Arrival].sample.value.copy(channel = api, messages = messages)
 
           repository.insert(arrival).futureValue
           val result = repository.getMessage(arrival.arrivalId, arrival.channel, MessageId(1))
@@ -1294,9 +1298,9 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
           started(app).futureValue
           val repository = app.injector.instanceOf[ArrivalMovementRepository]
 
-          val message  = arbitrary[models.MovementMessageWithStatus].sample.value.copy(messageId = MessageId(1))
+          val message = arbitrary[models.MovementMessageWithStatus].sample.value.copy(messageId = MessageId(1))
           val messages = new NonEmptyList(message, Nil)
-          val arrival  = arbitrary[Arrival].sample.value.copy(channel = api, messages = messages)
+          val arrival = arbitrary[Arrival].sample.value.copy(channel = api, messages = messages)
 
           repository.insert(arrival).futureValue
           val result = repository.getMessage(arrival.arrivalId, arrival.channel, MessageId(5))
