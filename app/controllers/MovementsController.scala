@@ -18,22 +18,22 @@ package controllers
 
 import audit.AuditService
 import audit.AuditType
-import cats.data.NonEmptyList
+import cats.data.Ior
 import com.kenshoo.play.metrics.Metrics
 import config.Constants
 import controllers.actions._
 import logging.Logging
 import metrics.HasActionMetrics
 import metrics.Monitors
-import models.MessageStatus.SubmissionSucceeded
 import models.ArrivalId
-import models.ArrivalStatus
 import models.Box
 import models.ChannelType
+import models.EORINumber
 import models.MessageType
 import models.MovementMessage
 import models.SubmissionProcessingResult
 import models.SubmissionProcessingResult._
+import models.TURN
 import models.request.ArrivalRequest
 import models.response.ResponseArrival
 import play.api.Logger
@@ -61,7 +61,6 @@ class MovementsController @Inject()(
   submitMessageService: SubmitMessageService,
   authenticate: AuthenticateActionProvider,
   authenticatedArrivalForReadWithoutMessages: AuthenticatedGetArrivalWithoutMessagesForReadActionProvider,
-  authenticatedOptionalArrival: AuthenticatedGetOptionalArrivalForWriteActionProvider,
   authenticateForWrite: AuthenticatedGetArrivalForWriteActionProvider,
   auditService: AuditService,
   validateMessageSenderNode: ValidateMessageSenderNodeFilter,
@@ -75,12 +74,6 @@ class MovementsController @Inject()(
   private val movementSummaryLogger: Logger =
     Logger(s"application.${this.getClass.getCanonicalName}.movementSummary")
 
-  private val allMessageUnsent: NonEmptyList[MovementMessage] => Boolean =
-    _.map(_.optStatus).forall {
-      case Some(messageStatus) if messageStatus != SubmissionSucceeded => true
-      case _                                                           => false
-    }
-
   lazy val countArrivals = histo("get-all-arrivals-count")
   lazy val messagesCount = histo("get-arrival-by-id-messages-count")
 
@@ -90,7 +83,7 @@ class MovementsController @Inject()(
     message: MovementMessage,
     requestChannel: ChannelType,
     arrivalId: ArrivalId,
-    customerId: String,
+    enrolmentId: Ior[TURN, EORINumber],
     boxOpt: Option[Box]
   )(implicit hc: HeaderCarrier) =
     result match {
@@ -99,8 +92,8 @@ class MovementsController @Inject()(
       case submissionFailureRejected: SubmissionFailureRejected =>
         BadRequest(submissionFailureRejected.responseBody)
       case SubmissionSuccess =>
-        auditService.auditEvent(arrivalNotificationType, customerId, message, requestChannel)
-        auditService.auditEvent(AuditType.MesSenMES3Added, customerId, message, requestChannel)
+        auditService.auditEvent(arrivalNotificationType, enrolmentId, message, requestChannel)
+        auditService.auditEvent(AuditType.MesSenMES3Added, enrolmentId, message, requestChannel)
         Accepted(Json.toJson(boxOpt)).withHeaders("Location" -> routes.MovementsController.getArrival(arrivalId).url)
     }
 
@@ -114,72 +107,43 @@ class MovementsController @Inject()(
 
   def post: Action[NodeSeq] =
     withMetricsTimerAction("post-create-arrival") {
-      (authenticate() andThen authenticatedOptionalArrival() andThen validateMessageSenderNode.filter).async(parse.xml) {
+      (authenticate() andThen validateMessageSenderNode.filter).async(parse.xml) {
         implicit request =>
-          request.arrival match {
-            case Some(arrival) if allMessageUnsent(arrival.messages) =>
+          getBox(request.headers.get(Constants.XClientIdHeader)).flatMap {
+            boxOpt =>
               arrivalMovementService
-                .makeOutboundMessage(arrival.arrivalId, arrival.nextMessageId, arrival.nextMessageCorrelationId, MessageType.ArrivalNotification)(
-                  request.body
-                ) match {
-                case Right(message) =>
-                  submitMessageService
-                    .submitMessage(arrival.arrivalId, arrival.nextMessageId, message, ArrivalStatus.ArrivalSubmitted, request.channel)
-                    .map {
-                      result =>
-                        Monitors.messageReceived(registry, MessageType.ArrivalNotification, request.channel, result)
-                        movementSummaryLogger.info(s"Submitted an arrival with result ${result.toString}\n${arrival.summaryInformation.mkString("\n")}")
-                        handleSubmissionResult(
-                          result,
-                          AuditType.ArrivalNotificationSubmitted,
-                          message,
-                          request.channel,
-                          arrival.arrivalId,
-                          arrival.eoriNumber,
-                          arrival.notificationBox
-                        )
-                    }
-                case Left(error) =>
-                  logger.error(s"Failed to create ArrivalMovementWithStatus with the following error: $error")
-                  Future.successful(BadRequest(s"Failed to create ArrivalMovementWithStatus with the following error: $error"))
-              }
-            case _ =>
-              getBox(request.headers.get(Constants.XClientIdHeader)).flatMap {
-                boxOpt =>
-                  arrivalMovementService
-                    .makeArrivalMovement(request.eoriNumber, request.body, request.channel, boxOpt)
-                    .flatMap {
-                      case Right(arrival) =>
-                        submitMessageService
-                          .submitArrival(arrival)
-                          .map {
-                            result =>
-                              Monitors.messageReceived(registry, MessageType.ArrivalNotification, request.channel, result)
-                              movementSummaryLogger.info(s"Submitted an arrival with result ${result.toString}\n${arrival.summaryInformation.mkString("\n")}")
-                              handleSubmissionResult(
-                                result,
-                                AuditType.ArrivalNotificationSubmitted,
-                                arrival.messages.head,
-                                request.channel,
-                                arrival.arrivalId,
-                                arrival.eoriNumber,
-                                boxOpt
-                              )
-                          }
-                          .recover {
-                            case _ =>
-                              InternalServerError
-                          }
-                      case Left(error) =>
-                        logger.error(s"Failed to create ArrivalMovement with the following error: $error")
-                        Future.successful(BadRequest(s"Failed to create ArrivalMovement with the following error: $error"))
-                    }
-                    .recover {
-                      case error =>
-                        logger.error(s"Failed to create ArrivalMovement with the following error: $error")
-                        InternalServerError
-                    }
-              }
+                .makeArrivalMovement(request.enrolmentId, request.body, request.channel, boxOpt)
+                .flatMap {
+                  case Right(arrival) =>
+                    submitMessageService
+                      .submitArrival(arrival)
+                      .map {
+                        result =>
+                          Monitors.messageReceived(registry, MessageType.ArrivalNotification, request.channel, result)
+                          movementSummaryLogger.info(s"Submitted an arrival with result ${result.toString}\n${arrival.summaryInformation.mkString("\n")}")
+                          handleSubmissionResult(
+                            result,
+                            AuditType.ArrivalNotificationSubmitted,
+                            arrival.messages.head,
+                            request.channel,
+                            arrival.arrivalId,
+                            request.enrolmentId,
+                            boxOpt
+                          )
+                      }
+                      .recover {
+                        case _ =>
+                          InternalServerError
+                      }
+                  case Left(error) =>
+                    logger.error(s"Failed to create ArrivalMovement with the following error: $error")
+                    Future.successful(BadRequest(s"Failed to create ArrivalMovement with the following error: $error"))
+                }
+                .recover {
+                  case error =>
+                    logger.error(s"Failed to create ArrivalMovement with the following error: $error")
+                    InternalServerError
+                }
           }
       }
 
@@ -203,7 +167,7 @@ class MovementsController @Inject()(
                       message,
                       request.channel,
                       request.arrival.arrivalId,
-                      request.arrival.eoriNumber,
+                      request.request.enrolmentId,
                       request.arrival.notificationBox
                     )
                 }
@@ -227,7 +191,7 @@ class MovementsController @Inject()(
       authenticate().async {
         implicit request =>
           arrivalMovementRepository
-            .fetchAllArrivals(request.eoriNumber, request.channel, updatedSince, mrn, pageSize, page)
+            .fetchAllArrivals(request.enrolmentId, request.channel, updatedSince, mrn, pageSize, page)
             .map {
               responseArrivals =>
                 countArrivals.update(responseArrivals.retrievedArrivals)

@@ -16,11 +16,10 @@
 
 package audit
 
-import java.time.LocalDateTime
-
 import base.SpecBase
-import models._
+import cats.data.Ior
 import models.ChannelType.api
+import models._
 import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.{eq => eqTo}
 import org.mockito.Mockito.reset
@@ -33,6 +32,8 @@ import play.api.libs.json.Json
 import play.api.test.Helpers.running
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 
+import java.time.LocalDateTime
+
 class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with BeforeAndAfterEach {
 
   val mockAuditConnector: AuditConnector = mock[AuditConnector]
@@ -44,9 +45,9 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
 
   "AuditService" - {
     "must audit notification message event" in {
-      val requestEori        = "eori"
-      val requestXml         = <xml>test</xml>
-      val requestedXmlToJson = Json.parse("{\"channel\":\"api\",\"customerId\":\"eori\",\"xml\":\"test\"}")
+      val requestEori  = Ior.right(EORINumber("eori"))
+      val requestXml   = <xml>test</xml>
+      val auditDetails = AuthenticatedAuditDetails(ChannelType.api, requestEori, Json.obj("xml" -> "test"))
 
       val movementMessage =
         MovementMessageWithStatus(MessageId(1), LocalDateTime.now, MessageType.ArrivalNotification, requestXml, MessageStatus.SubmissionSucceeded, 1)
@@ -60,14 +61,14 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
         val auditService = application.injector.instanceOf[AuditService]
         auditService.auditEvent(auditType, requestEori, movementMessage, api)
 
-        verify(mockAuditConnector, times(1)).sendExplicitAudit(eqTo(auditType), eqTo(requestedXmlToJson))(any(), any(), any())
+        verify(mockAuditConnector, times(1)).sendExplicitAudit(eqTo(auditType), eqTo(auditDetails))(any(), any(), any())
       }
     }
 
     "must audit NCTS message GoodsReleasedResponse event" in {
-      val requestEori        = "eori"
-      val requestXml         = <xml>test</xml>
-      val requestedXmlToJson = Json.parse("{\"channel\":\"api\",\"customerId\":\"eori\",\"xml\":\"test\"}")
+      val requestEori  = "eori"
+      val requestXml   = <xml>test</xml>
+      val auditDetails = UnauthenticatedAuditDetails(ChannelType.api, requestEori, Json.obj("xml" -> "test"))
 
       val movementMessage = MovementMessageWithoutStatus(MessageId(1), LocalDateTime.now, MessageType.GoodsReleased, requestXml, 1)
 
@@ -80,14 +81,14 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
 
         auditService.auditNCTSMessages(channel = api, customerId = requestEori, GoodsReleasedResponse, movementMessage)
 
-        verify(mockAuditConnector, times(1)).sendExplicitAudit(eqTo(AuditType.GoodsReleased), eqTo(requestedXmlToJson))(any(), any(), any())
+        verify(mockAuditConnector, times(1)).sendExplicitAudit(eqTo(AuditType.GoodsReleased), eqTo(auditDetails))(any(), any(), any())
       }
     }
 
     "must audit NCTS message ArrivalRejectedResponse event" in {
-      val requestEori        = "eori"
-      val requestXml         = <xml>test</xml>
-      val requestedXmlToJson = Json.parse("{\"channel\":\"api\",\"customerId\":\"eori\",\"xml\":\"test\"}")
+      val requestEori  = "eori"
+      val requestXml   = <xml>test</xml>
+      val auditDetails = UnauthenticatedAuditDetails(ChannelType.api, requestEori, Json.obj("xml" -> "test"))
 
       val movementMessage = MovementMessageWithoutStatus(MessageId(1), LocalDateTime.now, MessageType.ArrivalRejection, requestXml, 1)
 
@@ -100,14 +101,14 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
 
         auditService.auditNCTSMessages(channel = api, customerId = requestEori, ArrivalRejectedResponse, movementMessage)
 
-        verify(mockAuditConnector, times(1)).sendExplicitAudit(eqTo(AuditType.ArrivalNotificationRejected), eqTo(requestedXmlToJson))(any(), any(), any())
+        verify(mockAuditConnector, times(1)).sendExplicitAudit(eqTo(AuditType.ArrivalNotificationRejected), eqTo(auditDetails))(any(), any(), any())
       }
     }
 
     "must audit NCTS message UnloadingPermissionResponse event" in {
-      val requestEori        = "eori"
-      val requestXml         = <xml>test</xml>
-      val requestedXmlToJson = Json.parse("{\"channel\":\"api\",\"customerId\":\"eori\",\"xml\":\"test\"}")
+      val requestEori  = "eori"
+      val requestXml   = <xml>test</xml>
+      val auditDetails = UnauthenticatedAuditDetails(ChannelType.api, requestEori, Json.obj("xml" -> "test"))
 
       val movementMessage = MovementMessageWithoutStatus(MessageId(1), LocalDateTime.now, MessageType.UnloadingPermission, requestXml, 1)
 
@@ -120,15 +121,15 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
 
         auditService.auditNCTSMessages(api, requestEori, UnloadingPermissionResponse, movementMessage)
 
-        verify(mockAuditConnector, times(1)).sendExplicitAudit(eqTo(AuditType.UnloadingPermissionReceived), eqTo(requestedXmlToJson))(any(), any(), any())
+        verify(mockAuditConnector, times(1)).sendExplicitAudit(eqTo(AuditType.UnloadingPermissionReceived), eqTo(auditDetails))(any(), any(), any())
       }
 
     }
 
     "must audit NCTS message UnloadingRemarksRejectedResponse event" in {
-      val requestEori        = "eori"
-      val requestXml         = <xml>test</xml>
-      val requestedXmlToJson = Json.parse("{\"channel\":\"api\",\"customerId\":\"eori\",\"xml\":\"test\"}")
+      val requestEori  = "eori"
+      val requestXml   = <xml>test</xml>
+      val auditDetails = UnauthenticatedAuditDetails(ChannelType.api, requestEori, Json.obj("xml" -> "test"))
 
       val movementMessage = MovementMessageWithoutStatus(MessageId(1), LocalDateTime.now, MessageType.UnloadingRemarksRejection, requestXml, 1)
 
@@ -141,7 +142,7 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
 
         auditService.auditNCTSMessages(channel = api, customerId = requestEori, UnloadingRemarksRejectedResponse, movementMessage)
 
-        verify(mockAuditConnector, times(1)).sendExplicitAudit(eqTo(AuditType.UnloadingPermissionRejected), eqTo(requestedXmlToJson))(any(), any(), any())
+        verify(mockAuditConnector, times(1)).sendExplicitAudit(eqTo(AuditType.UnloadingPermissionRejected), eqTo(auditDetails))(any(), any(), any())
       }
 
     }

@@ -16,8 +16,11 @@
 
 package controllers.actions
 
-import config.AppConfig
+import cats.data.Ior
+import config.Constants._
 import logging.Logging
+import models.EORINumber
+import models.TURN
 import models.request.AuthenticatedRequest
 import play.api.mvc.ActionRefiner
 import play.api.mvc.Request
@@ -34,13 +37,20 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-private[actions] class AuthenticateAction @Inject()(override val authConnector: AuthConnector, config: AppConfig)(
-  implicit val executionContext: ExecutionContext)
+private[actions] class AuthenticateAction @Inject()(override val authConnector: AuthConnector)(implicit val executionContext: ExecutionContext)
     extends ActionRefiner[Request, AuthenticatedRequest]
     with AuthorisedFunctions
     with Logging {
 
-  private val enrolmentIdentifierKey: String = "VATRegNoTURN"
+  def getEnrolmentIdentifier(
+    enrolments: Enrolments,
+    enrolmentKey: String,
+    enrolmentIdKey: String
+  ): Option[String] =
+    for {
+      enrolment  <- enrolments.getEnrolment(enrolmentKey)
+      identifier <- enrolment.getIdentifier(enrolmentIdKey)
+    } yield identifier.value
 
   override protected def refine[A](request: Request[A]): Future[Either[Result, AuthenticatedRequest[A]]] = {
     ChannelUtil.getChannel(request) match {
@@ -49,22 +59,39 @@ private[actions] class AuthenticateAction @Inject()(override val authConnector: 
         Future.successful(Left(BadRequest("Missing channel header or incorrect value specified in channel header")))
       case Some(channel) =>
         implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
-        authorised(Enrolment(config.enrolmentKey))
+
+        authorised(Enrolment(NewEnrolmentKey) or Enrolment(LegacyEnrolmentKey))
           .retrieve(Retrievals.authorisedEnrolments) {
             enrolments =>
-              val eoriNumber = (for {
-                enrolment  <- enrolments.enrolments.find(_.key.equals(config.enrolmentKey))
-                identifier <- enrolment.getIdentifier(enrolmentIdentifierKey)
-              } yield identifier.value).getOrElse(throw InsufficientEnrolments(s"Unable to retrieve enrolment for $enrolmentIdentifierKey"))
-              Future.successful(Right(AuthenticatedRequest(request, channel, eoriNumber)))
+              val legacyEnrolmentId = getEnrolmentIdentifier(
+                enrolments,
+                LegacyEnrolmentKey,
+                LegacyEnrolmentIdKey
+              ).map(TURN.apply)
+
+              val newEnrolmentId = getEnrolmentIdentifier(
+                enrolments,
+                NewEnrolmentKey,
+                NewEnrolmentIdKey
+              ).map(EORINumber.apply)
+
+              Ior
+                .fromOptions(legacyEnrolmentId, newEnrolmentId)
+                .map {
+                  enrolmentId =>
+                    Future.successful(Right(AuthenticatedRequest(request, channel, enrolmentId)))
+                }
+                .getOrElse {
+                  Future.failed(InsufficientEnrolments(s"Unable to retrieve enrolment for either $NewEnrolmentKey or $LegacyEnrolmentKey"))
+                }
           }
     }
   }.recover {
     case e: InsufficientEnrolments =>
-      logger.warn(s"Failed to authorise with the following exception: $e")
+      logger.warn(s"Failed to authorise due to insufficient enrolments", e)
       Left(Forbidden)
     case e: AuthorisationException =>
-      logger.warn(s"Failed to authorise with the following exception: $e")
+      logger.warn(s"Failed to authorise", e)
       Left(Unauthorized)
   }
 }

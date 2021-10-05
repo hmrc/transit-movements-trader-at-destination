@@ -16,47 +16,20 @@
 
 package controllers.actions
 
-import javax.inject.Inject
 import logging.Logging
 import models.ArrivalId
 import models.request.ArrivalRequest
 import models.request.AuthenticatedRequest
 import play.api.mvc.ActionRefiner
-import play.api.mvc.Request
 import play.api.mvc.Result
+import play.api.mvc.Results.BadRequest
 import play.api.mvc.Results.InternalServerError
 import play.api.mvc.Results.NotFound
-import play.api.mvc.Results.BadRequest
-import play.api.mvc.Results.Ok
 import repositories.ArrivalMovementRepository
 
+import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-
-private[actions] class GetArrivalActionProvider @Inject()(
-  repository: ArrivalMovementRepository
-)(implicit ec: ExecutionContext) {
-
-  def apply(arrivalId: ArrivalId): ActionRefiner[Request, ArrivalRequest] =
-    new GetArrivalAction(arrivalId, repository)
-}
-
-private[actions] class GetArrivalAction(
-  arrivalId: ArrivalId,
-  repository: ArrivalMovementRepository
-)(implicit val executionContext: ExecutionContext)
-    extends ActionRefiner[Request, ArrivalRequest]
-    with Logging {
-
-  override protected def refine[A](request: Request[A]): Future[Either[Result, ArrivalRequest[A]]] =
-    repository.get(arrivalId).map {
-      case Some(arrival) =>
-        Right(ArrivalRequest(request, arrival, arrival.channel))
-      case None =>
-        logger.info(s"[GetArrivalAction] Unable to retrieve arrival message for arrival id: ${arrivalId.index}")
-        Left(Ok)
-    }
-}
 
 private[actions] class AuthenticatedGetArrivalActionProvider @Inject()(
   repository: ArrivalMovementRepository
@@ -82,8 +55,8 @@ private[actions] class AuthenticatedGetArrivalAction(
         repository
           .get(arrivalId, channel)
           .map {
-            case Some(arrival) if arrival.eoriNumber == request.eoriNumber =>
-              Right(ArrivalRequest(request.request, arrival, channel))
+            case Some(arrival) if request.hasMatchingEnrolmentId(arrival) =>
+              Right(ArrivalRequest(request, arrival, channel))
             case Some(_) =>
               logger.warn("Attempt to retrieve an arrival for another EORI")
               Left(NotFound)

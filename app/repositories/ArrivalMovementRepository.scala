@@ -20,6 +20,7 @@ import akka.Done
 import akka.stream.Materializer
 import akka.stream.scaladsl.Sink
 import akka.stream.scaladsl.Source
+import cats.data.Ior
 import cats.data.NonEmptyList
 import cats.syntax.all._
 import com.google.inject.Inject
@@ -45,10 +46,10 @@ import reactivemongo.play.json.collection.Helpers.idWrites
 import reactivemongo.play.json.collection.JSONCollection
 import utils.IndexUtils
 
-import java.time.format.DateTimeFormatter
 import java.time.Clock
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.Failure
@@ -203,22 +204,6 @@ class ArrivalMovementRepository @Inject()(
     }
   }
 
-  def get(eoriNumber: String, mrn: MovementReferenceNumber, channelFilter: ChannelType): Future[Option[Arrival]] = {
-    val selector = Json.obj(
-      "movementReferenceNumber" -> mrn.value,
-      "eoriNumber"              -> eoriNumber,
-      "channel"                 -> channelFilter
-    )
-
-    withMetricsTimerAsync("mongo-get-arrival-by-mrn") {
-      _ =>
-        collection.flatMap {
-          _.find(selector, None)
-            .one[Arrival]
-        }
-    }
-  }
-
   def getWithoutMessages(arrivalId: ArrivalId, channelFilter: ChannelType): Future[Option[ArrivalWithoutMessages]] = {
     val nextMessageId = Json.obj("nextMessageId" -> Json.obj("$size" -> "$messages"))
 
@@ -313,7 +298,7 @@ class ArrivalMovementRepository @Inject()(
     }
 
   def fetchAllArrivals(
-    eoriNumber: String,
+    enrolmentId: Ior[TURN, EORINumber],
     channelFilter: ChannelType,
     updatedSince: Option[OffsetDateTime],
     movementReference: Option[String] = None,
@@ -322,7 +307,16 @@ class ArrivalMovementRepository @Inject()(
   ): Future[ResponseArrivals] =
     withMetricsTimerAsync("mongo-get-arrivals-for-eori") {
       _ =>
-        val baseSelector = Json.obj("eoriNumber" -> eoriNumber, "channel" -> channelFilter)
+        val enrolmentIds = enrolmentId.fold(
+          turn => List(turn.value),
+          eoriNumber => List(eoriNumber.value),
+          (turn, eoriNumber) => List(eoriNumber.value, turn.value)
+        )
+
+        val baseSelector = Json.obj(
+          "eoriNumber" -> Json.obj("$in" -> enrolmentIds),
+          "channel"    -> channelFilter
+        )
 
         val dateSelector = updatedSince
           .map {

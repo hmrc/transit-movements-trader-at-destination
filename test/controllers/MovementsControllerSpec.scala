@@ -19,14 +19,13 @@ package controllers
 import audit.AuditService
 import audit.AuditType
 import base.SpecBase
+import cats.data.Ior
 import cats.data.NonEmptyList
 import config.Constants
 import connectors.MessageConnector
 import connectors.MessageConnector.EisSubmissionResult.ErrorInPayload
 import controllers.actions.AuthenticateActionProvider
-import controllers.actions.AuthenticatedGetOptionalArrivalForWriteActionProvider
 import controllers.actions.FakeAuthenticateActionProvider
-import controllers.actions.FakeAuthenticatedGetOptionalArrivalForWriteActionProvider
 import generators.ModelGenerators
 import models.ArrivalStatus.ArrivalSubmitted
 import models.Arrival
@@ -35,9 +34,13 @@ import models.ArrivalStatus
 import models.ArrivalWithoutMessages
 import models.Box
 import models.BoxId
+import models.ChannelType.api
+import models.ChannelType.web
+import models.EORINumber
 import models.MessageId
 import models.MessageMetaData
 import models.MessageSender
+import models.MessageStatus.SubmissionPending
 import models.MessageType
 import models.MovementMessageWithStatus
 import models.MovementReferenceNumber
@@ -139,226 +142,227 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
   "MovementsController" - {
 
     "post" - {
-      "when there are no previous failed attempts to submit" - {
-        "must return Accepted, create movement, send the message upstream and set the state to Submitted when there is no notification box" in {
-          val mockArrivalIdRepository  = mock[ArrivalIdRepository]
-          val mockSubmitMessageService = mock[SubmitMessageService]
-          val mockAuditService         = mock[AuditService]
-          val mockNotificationService  = mock[PushPullNotificationService]
+      "must return Accepted, create movement, send the message upstream and set the state to Submitted when there is no notification box" in {
+        val mockArrivalIdRepository  = mock[ArrivalIdRepository]
+        val mockSubmitMessageService = mock[SubmitMessageService]
+        val mockAuditService         = mock[AuditService]
+        val mockNotificationService  = mock[PushPullNotificationService]
 
-          val expectedMessage: MovementMessageWithStatus = movementMessage(1).copy(messageCorrelationId = 1)
-          val newArrival =
-            initializedArrival.copy(messages = NonEmptyList.of[MovementMessageWithStatus](expectedMessage), channel = web)
-          val captor: ArgumentCaptor[Arrival] = ArgumentCaptor.forClass(classOf[Arrival])
+        val expectedMessage: MovementMessageWithStatus = movementMessage(1).copy(messageCorrelationId = 1)
+        val newArrival =
+          initializedArrival.copy(messages = NonEmptyList.of[MovementMessageWithStatus](expectedMessage), channel = web)
+        val captor: ArgumentCaptor[Arrival] = ArgumentCaptor.forClass(classOf[Arrival])
 
-          when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(newArrival.arrivalId))
-          when(mockSubmitMessageService.submitArrival(any())(any())).thenReturn(Future.successful(SubmissionProcessingResult.SubmissionSuccess))
-          when(mockNotificationService.getBox(any())(any())).thenReturn(Future.successful(None))
+        when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(newArrival.arrivalId))
+        when(mockSubmitMessageService.submitArrival(any())(any())).thenReturn(Future.successful(SubmissionProcessingResult.SubmissionSuccess))
+        when(mockNotificationService.getBox(any())(any())).thenReturn(Future.successful(None))
 
-          val application = baseApplicationBuilder
+        val application = baseApplicationBuilder
+          .overrides(
+            bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
+            bind[SubmitMessageService].toInstance(mockSubmitMessageService),
+            bind[PushPullNotificationService].toInstance(mockNotificationService),
+            bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
+            bind[AuditService].toInstance(mockAuditService),
+            bind[Clock].toInstance(stubClock)
+          )
+          .build()
+
+        running(application) {
+
+          val request =
+            FakeRequest(POST, routes.MovementsController.post().url)
+              .withHeaders("channel" -> newArrival.channel.toString)
+              .withXmlBody(requestXmlBody.map(trim))
+
+          val result = route(application, request).value
+
+          status(result) mustEqual ACCEPTED
+          header("Location", result).value must be(routes.MovementsController.getArrival(newArrival.arrivalId).url)
+          contentAsJson(result).as[Option[Box]] must be(None)
+
+          verify(mockSubmitMessageService, times(1)).submitArrival(captor.capture())(any())
+
+          val arrivalMessage: MovementMessageWithStatus = captor.getValue.messages.head.asInstanceOf[MovementMessageWithStatus]
+          arrivalMessage.message.map(trim) mustEqual expectedMessage.message.map(trim)
+
+          verify(mockSubmitMessageService, times(1)).submitArrival(eqTo(newArrival))(any())
+          verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.ArrivalNotificationSubmitted),
+                                                        eqTo(Ior.right(EORINumber(newArrival.eoriNumber))),
+                                                        any(),
+                                                        any())(any())
+          verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.MesSenMES3Added), eqTo(Ior.right(EORINumber(newArrival.eoriNumber))), any(), any())(
+            any())
+          verifyNoInteractions(mockNotificationService)
+        }
+      }
+
+      "must return Accepted, create movement, send the message upstream and set the state to Submitted when there is a notification box" in {
+        val mockArrivalIdRepository  = mock[ArrivalIdRepository]
+        val mockSubmitMessageService = mock[SubmitMessageService]
+        val mockAuditService         = mock[AuditService]
+        val mockNotificationService  = mock[PushPullNotificationService]
+
+        val testClientId = "X5ZasuQLH0xqKooV_IEw6yjQNfEa"
+        val testBoxId    = "1c5b9365-18a6-55a5-99c9-83a091ac7f26"
+        val testBox      = Box(BoxId(testBoxId), Constants.BoxName)
+
+        val expectedMessage: MovementMessageWithStatus = movementMessage(1).copy(messageCorrelationId = 1)
+        val newArrival =
+          initializedArrival.copy(messages = NonEmptyList.of[MovementMessageWithStatus](expectedMessage), channel = web, notificationBox = Some(testBox))
+        val captor: ArgumentCaptor[Arrival] = ArgumentCaptor.forClass(classOf[Arrival])
+
+        when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(newArrival.arrivalId))
+        when(mockSubmitMessageService.submitArrival(any())(any())).thenReturn(Future.successful(SubmissionProcessingResult.SubmissionSuccess))
+        when(mockNotificationService.getBox(any())(any())).thenReturn(Future.successful(Some(testBox)))
+
+        val application = baseApplicationBuilder
+          .overrides(
+            bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
+            bind[SubmitMessageService].toInstance(mockSubmitMessageService),
+            bind[PushPullNotificationService].toInstance(mockNotificationService),
+            bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
+            bind[AuditService].toInstance(mockAuditService),
+            bind[Clock].toInstance(stubClock)
+          )
+          .build()
+
+        running(application) {
+
+          val request =
+            FakeRequest(POST, routes.MovementsController.post().url)
+              .withHeaders("channel" -> newArrival.channel.toString, Constants.XClientIdHeader -> testClientId)
+              .withXmlBody(requestXmlBody.map(trim))
+
+          val result = route(application, request).value
+
+          status(result) mustEqual ACCEPTED
+          header("Location", result).value must be(routes.MovementsController.getArrival(newArrival.arrivalId).url)
+          contentAsJson(result).as[Option[Box]] must be(Some(testBox))
+
+          verify(mockSubmitMessageService, times(1)).submitArrival(captor.capture())(any())
+
+          val arrivalMessage: MovementMessageWithStatus = captor.getValue.messages.head.asInstanceOf[MovementMessageWithStatus]
+          arrivalMessage.message.map(trim) mustEqual expectedMessage.message.map(trim)
+
+          verify(mockSubmitMessageService, times(1)).submitArrival(eqTo(newArrival))(any())
+          verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.ArrivalNotificationSubmitted),
+                                                        eqTo(Ior.right(EORINumber(newArrival.eoriNumber))),
+                                                        any(),
+                                                        any())(any())
+          verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.MesSenMES3Added), eqTo(Ior.right(EORINumber(newArrival.eoriNumber))), any(), any())(
+            any())
+        }
+      }
+
+      "must return InternalServerError if the InternalReference generation fails" in {
+        val mockArrivalIdRepository = mock[ArrivalIdRepository]
+        val mockNotificationService = mock[PushPullNotificationService]
+
+        when(mockArrivalIdRepository.nextId()).thenReturn(Future.failed(new Exception))
+        when(mockNotificationService.getBox(any())(any())).thenReturn(Future.successful(None))
+
+        val application = baseApplicationBuilder
+          .overrides(
+            bind[PushPullNotificationService].toInstance(mockNotificationService),
+            bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
+            bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
+          )
+          .build()
+
+        running(application) {
+
+          val request = FakeRequest(POST, routes.MovementsController.post().url).withHeaders("channel" -> web.toString).withXmlBody(requestXmlBody.map(trim))
+
+          val result = route(application, request).value
+
+          status(result) mustEqual INTERNAL_SERVER_ERROR
+          header("Location", result) must not be defined
+        }
+      }
+
+      "must return InternalServerError if there was an internal failure when saving and sending" in {
+        val mockArrivalIdRepository  = mock[ArrivalIdRepository]
+        val mockSubmitMessageService = mock[SubmitMessageService]
+        val mockNotificationService  = mock[PushPullNotificationService]
+
+        val arrivalId = ArrivalId(1)
+
+        when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
+        when(mockSubmitMessageService.submitArrival(any())(any())).thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureInternal))
+        when(mockNotificationService.getBox(any())(any())).thenReturn(Future.successful(None))
+
+        val application = baseApplicationBuilder
+          .overrides(
+            bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
+            bind[PushPullNotificationService].toInstance(mockNotificationService),
+            bind[SubmitMessageService].toInstance(mockSubmitMessageService),
+            bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
+          )
+          .build()
+
+        running(application) {
+
+          val request = FakeRequest(POST, routes.MovementsController.post().url).withHeaders("channel" -> web.toString).withXmlBody(requestXmlBody.map(trim))
+
+          val result = route(application, request).value
+
+          status(result) mustEqual INTERNAL_SERVER_ERROR
+          header("Location", result) must not be defined
+        }
+      }
+
+      "must return BadGateway if there was an external failure when saving and sending" in {
+        val mockArrivalIdRepository  = mock[ArrivalIdRepository]
+        val mockSubmitMessageService = mock[SubmitMessageService]
+        val mockNotificationService  = mock[PushPullNotificationService]
+
+        val arrivalId = ArrivalId(1)
+
+        when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
+        when(mockSubmitMessageService.submitArrival(any())(any())).thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureExternal))
+        when(mockNotificationService.getBox(any())(any())).thenReturn(Future.successful(None))
+
+        val application = baseApplicationBuilder
+          .overrides(
+            bind[PushPullNotificationService].toInstance(mockNotificationService),
+            bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
+            bind[SubmitMessageService].toInstance(mockSubmitMessageService),
+            bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
+          )
+          .build()
+
+        running(application) {
+
+          val request = FakeRequest(POST, routes.MovementsController.post().url).withHeaders("channel" -> web.toString).withXmlBody(requestXmlBody.map(trim))
+
+          val result = route(application, request).value
+
+          status(result) mustEqual BAD_GATEWAY
+        }
+      }
+
+      "must return BadRequest if the payload is missing SynVerNumMES2 node" in {
+        val mockArrivalIdRepository  = mock[ArrivalIdRepository]
+        val mockSubmitMessageService = mock[SubmitMessageService]
+        val mockNotificationService  = mock[PushPullNotificationService]
+
+        when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
+        when(mockNotificationService.getBox(any())(any())).thenReturn(Future.successful(None))
+
+        val application =
+          baseApplicationBuilder
             .overrides(
+              bind[PushPullNotificationService].toInstance(mockNotificationService),
               bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
               bind[SubmitMessageService].toInstance(mockSubmitMessageService),
-              bind[PushPullNotificationService].toInstance(mockNotificationService),
               bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
-              bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider()),
-              bind[AuditService].toInstance(mockAuditService),
-              bind[Clock].toInstance(stubClock)
             )
             .build()
 
-          running(application) {
-
-            val request =
-              FakeRequest(POST, routes.MovementsController.post().url)
-                .withHeaders("channel" -> newArrival.channel.toString)
-                .withXmlBody(requestXmlBody.map(trim))
-
-            val result = route(application, request).value
-
-            status(result) mustEqual ACCEPTED
-            header("Location", result).value must be(routes.MovementsController.getArrival(newArrival.arrivalId).url)
-            contentAsJson(result).as[Option[Box]] must be(None)
-
-            verify(mockSubmitMessageService, times(1)).submitArrival(captor.capture())(any())
-
-            val arrivalMessage: MovementMessageWithStatus = captor.getValue.messages.head.asInstanceOf[MovementMessageWithStatus]
-            arrivalMessage.message.map(trim) mustEqual expectedMessage.message.map(trim)
-
-            verify(mockSubmitMessageService, times(1)).submitArrival(eqTo(newArrival))(any())
-            verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.ArrivalNotificationSubmitted), eqTo(newArrival.eoriNumber), any(), any())(any())
-            verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.MesSenMES3Added), eqTo(newArrival.eoriNumber), any(), any())(any())
-            verifyNoInteractions(mockNotificationService)
-          }
-        }
-
-        "must return Accepted, create movement, send the message upstream and set the state to Submitted when there is a notification box" in {
-          val mockArrivalIdRepository  = mock[ArrivalIdRepository]
-          val mockSubmitMessageService = mock[SubmitMessageService]
-          val mockAuditService         = mock[AuditService]
-          val mockNotificationService  = mock[PushPullNotificationService]
-
-          val testClientId = "X5ZasuQLH0xqKooV_IEw6yjQNfEa"
-          val testBoxId    = "1c5b9365-18a6-55a5-99c9-83a091ac7f26"
-          val testBox      = Box(BoxId(testBoxId), Constants.BoxName)
-
-          val expectedMessage: MovementMessageWithStatus = movementMessage(1).copy(messageCorrelationId = 1)
-          val newArrival =
-            initializedArrival.copy(messages = NonEmptyList.of[MovementMessageWithStatus](expectedMessage), channel = web, notificationBox = Some(testBox))
-          val captor: ArgumentCaptor[Arrival] = ArgumentCaptor.forClass(classOf[Arrival])
-
-          when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(newArrival.arrivalId))
-          when(mockSubmitMessageService.submitArrival(any())(any())).thenReturn(Future.successful(SubmissionProcessingResult.SubmissionSuccess))
-          when(mockNotificationService.getBox(any())(any())).thenReturn(Future.successful(Some(testBox)))
-
-          val application = baseApplicationBuilder
-            .overrides(
-              bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
-              bind[SubmitMessageService].toInstance(mockSubmitMessageService),
-              bind[PushPullNotificationService].toInstance(mockNotificationService),
-              bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
-              bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider()),
-              bind[AuditService].toInstance(mockAuditService),
-              bind[Clock].toInstance(stubClock)
-            )
-            .build()
-
-          running(application) {
-
-            val request =
-              FakeRequest(POST, routes.MovementsController.post().url)
-                .withHeaders("channel" -> newArrival.channel.toString, Constants.XClientIdHeader -> testClientId)
-                .withXmlBody(requestXmlBody.map(trim))
-
-            val result = route(application, request).value
-
-            status(result) mustEqual ACCEPTED
-            header("Location", result).value must be(routes.MovementsController.getArrival(newArrival.arrivalId).url)
-            contentAsJson(result).as[Option[Box]] must be(Some(testBox))
-
-            verify(mockSubmitMessageService, times(1)).submitArrival(captor.capture())(any())
-
-            val arrivalMessage: MovementMessageWithStatus = captor.getValue.messages.head.asInstanceOf[MovementMessageWithStatus]
-            arrivalMessage.message.map(trim) mustEqual expectedMessage.message.map(trim)
-
-            verify(mockSubmitMessageService, times(1)).submitArrival(eqTo(newArrival))(any())
-            verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.ArrivalNotificationSubmitted), eqTo(newArrival.eoriNumber), any(), any())(any())
-            verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.MesSenMES3Added), eqTo(newArrival.eoriNumber), any(), any())(any())
-          }
-        }
-
-        "must return InternalServerError if the InternalReference generation fails" in {
-          val mockArrivalIdRepository = mock[ArrivalIdRepository]
-          val mockNotificationService = mock[PushPullNotificationService]
-
-          when(mockArrivalIdRepository.nextId()).thenReturn(Future.failed(new Exception))
-          when(mockNotificationService.getBox(any())(any())).thenReturn(Future.successful(None))
-
-          val application = baseApplicationBuilder
-            .overrides(
-              bind[PushPullNotificationService].toInstance(mockNotificationService),
-              bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
-              bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
-              bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider())
-            )
-            .build()
-
-          running(application) {
-
-            val request = FakeRequest(POST, routes.MovementsController.post().url).withHeaders("channel" -> web.toString).withXmlBody(requestXmlBody.map(trim))
-
-            val result = route(application, request).value
-
-            status(result) mustEqual INTERNAL_SERVER_ERROR
-            header("Location", result) must not be defined
-          }
-        }
-
-        "must return InternalServerError if there was an internal failure when saving and sending" in {
-          val mockArrivalIdRepository  = mock[ArrivalIdRepository]
-          val mockSubmitMessageService = mock[SubmitMessageService]
-          val mockNotificationService  = mock[PushPullNotificationService]
-
-          val arrivalId = ArrivalId(1)
-
-          when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
-          when(mockSubmitMessageService.submitArrival(any())(any())).thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureInternal))
-          when(mockNotificationService.getBox(any())(any())).thenReturn(Future.successful(None))
-
-          val application = baseApplicationBuilder
-            .overrides(
-              bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
-              bind[PushPullNotificationService].toInstance(mockNotificationService),
-              bind[SubmitMessageService].toInstance(mockSubmitMessageService),
-              bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
-              bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider())
-            )
-            .build()
-
-          running(application) {
-
-            val request = FakeRequest(POST, routes.MovementsController.post().url).withHeaders("channel" -> web.toString).withXmlBody(requestXmlBody.map(trim))
-
-            val result = route(application, request).value
-
-            status(result) mustEqual INTERNAL_SERVER_ERROR
-            header("Location", result) must not be defined
-          }
-        }
-
-        "must return BadGateway if there was an external failure when saving and sending" in {
-          val mockArrivalIdRepository  = mock[ArrivalIdRepository]
-          val mockSubmitMessageService = mock[SubmitMessageService]
-          val mockNotificationService  = mock[PushPullNotificationService]
-
-          val arrivalId = ArrivalId(1)
-
-          when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
-          when(mockSubmitMessageService.submitArrival(any())(any())).thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureExternal))
-          when(mockNotificationService.getBox(any())(any())).thenReturn(Future.successful(None))
-
-          val application = baseApplicationBuilder
-            .overrides(
-              bind[PushPullNotificationService].toInstance(mockNotificationService),
-              bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
-              bind[SubmitMessageService].toInstance(mockSubmitMessageService),
-              bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
-              bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider())
-            )
-            .build()
-
-          running(application) {
-
-            val request = FakeRequest(POST, routes.MovementsController.post().url).withHeaders("channel" -> web.toString).withXmlBody(requestXmlBody.map(trim))
-
-            val result = route(application, request).value
-
-            status(result) mustEqual BAD_GATEWAY
-          }
-        }
-
-        "must return BadRequest if the payload is missing SynVerNumMES2 node" in {
-          val mockArrivalIdRepository  = mock[ArrivalIdRepository]
-          val mockSubmitMessageService = mock[SubmitMessageService]
-          val mockNotificationService  = mock[PushPullNotificationService]
-
-          when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
-          when(mockNotificationService.getBox(any())(any())).thenReturn(Future.successful(None))
-
-          val application =
-            baseApplicationBuilder
-              .overrides(
-                bind[PushPullNotificationService].toInstance(mockNotificationService),
-                bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
-                bind[SubmitMessageService].toInstance(mockSubmitMessageService),
-                bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
-                bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider())
-              )
-              .build()
-
-          running(application) {
-            val requestXmlBody =
-              <CC007A>
+        running(application) {
+          val requestXmlBody =
+            <CC007A>
                 <DatOfPreMES9>{Format.dateFormatted(localDate)}</DatOfPreMES9>
                 <TimOfPreMES10>{Format.timeFormatted(localTime)}</TimOfPreMES10>
                 <HEAHEA>
@@ -366,422 +370,133 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
                 </HEAHEA>
               </CC007A>
 
-            val request = FakeRequest(POST, routes.MovementsController.post().url).withHeaders("channel" -> web.toString).withXmlBody(requestXmlBody.map(trim))
+          val request = FakeRequest(POST, routes.MovementsController.post().url).withHeaders("channel" -> web.toString).withXmlBody(requestXmlBody.map(trim))
 
-            val result = route(application, request).value
+          val result = route(application, request).value
 
-            status(result) mustEqual BAD_REQUEST
-            header("Location", result) must not be defined
-          }
-        }
-
-        "must return BadRequest if the payload is malformed" in {
-          val mockArrivalIdRepository  = mock[ArrivalIdRepository]
-          val mockSubmitMessageService = mock[SubmitMessageService]
-          val mockNotificationService  = mock[PushPullNotificationService]
-
-          when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
-          when(mockNotificationService.getBox(any())(any())).thenReturn(Future.successful(None))
-
-          val application =
-            baseApplicationBuilder
-              .overrides(
-                bind[PushPullNotificationService].toInstance(mockNotificationService),
-                bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
-                bind[SubmitMessageService].toInstance(mockSubmitMessageService),
-                bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
-                bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider())
-              )
-              .build()
-
-          running(application) {
-            val requestXmlBody =
-              <CC007A><SynVerNumMES2>1</SynVerNumMES2><HEAHEA><DocNumHEA5>MRN</DocNumHEA5></HEAHEA></CC007A>
-
-            val request = FakeRequest(POST, routes.MovementsController.post().url).withHeaders("channel" -> web.toString).withXmlBody(requestXmlBody.map(trim))
-
-            val result = route(application, request).value
-
-            status(result) mustEqual BAD_REQUEST
-            header("Location", result) must not be defined
-          }
-        }
-
-        "must return BadRequest if the message is not an arrival notification" in {
-          val mockArrivalIdRepository = mock[ArrivalIdRepository]
-          val mockNotificationService = mock[PushPullNotificationService]
-
-          when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
-          when(mockNotificationService.getBox(any())(any())).thenReturn(Future.successful(None))
-
-          val application =
-            baseApplicationBuilder
-              .overrides(
-                bind[PushPullNotificationService].toInstance(mockNotificationService),
-                bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
-                bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
-                bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider())
-              )
-              .build()
-
-          running(application) {
-            val requestXmlBody = <InvalidRootNode><SynVerNumMES2>1</SynVerNumMES2></InvalidRootNode>
-
-            val request = FakeRequest(POST, routes.MovementsController.post().url).withHeaders("channel" -> web.toString).withXmlBody(requestXmlBody.map(trim))
-
-            val result = route(application, request).value
-
-            status(result) mustEqual BAD_REQUEST
-            header("Location", result) must not be defined
-          }
-        }
-
-        "must return BadRequest if the message has been rejected from EIS due to error in payload" in {
-          val mockArrivalIdRepository  = mock[ArrivalIdRepository]
-          val mockSubmitMessageService = mock[SubmitMessageService]
-          val mockNotificationService  = mock[PushPullNotificationService]
-
-          val arrivalId = ArrivalId(1)
-
-          when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
-          when(mockSubmitMessageService.submitArrival(any())(any()))
-            .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureRejected(ErrorInPayload.responseBody)))
-          when(mockNotificationService.getBox(any())(any())).thenReturn(Future.successful(None))
-
-          val application = baseApplicationBuilder
-            .overrides(
-              bind[PushPullNotificationService].toInstance(mockNotificationService),
-              bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
-              bind[SubmitMessageService].toInstance(mockSubmitMessageService),
-              bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
-              bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider())
-            )
-            .build()
-
-          running(application) {
-
-            val request = FakeRequest(POST, routes.MovementsController.post().url).withHeaders("channel" -> web.toString).withXmlBody(requestXmlBody.map(trim))
-
-            val result = route(application, request).value
-
-            status(result) mustEqual BAD_REQUEST
-          }
-        }
-
-        "must return InternalServerError if there has been a rejection from EIS due to virus found or invalid token" in {
-          val mockArrivalIdRepository  = mock[ArrivalIdRepository]
-          val mockSubmitMessageService = mock[SubmitMessageService]
-          val mockNotificationService  = mock[PushPullNotificationService]
-
-          val arrivalId = ArrivalId(1)
-
-          when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
-          when(mockSubmitMessageService.submitArrival(any())(any()))
-            .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureInternal))
-          when(mockNotificationService.getBox(any())(any())).thenReturn(Future.successful(None))
-
-          val application = baseApplicationBuilder
-            .overrides(
-              bind[PushPullNotificationService].toInstance(mockNotificationService),
-              bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
-              bind[SubmitMessageService].toInstance(mockSubmitMessageService),
-              bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
-              bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider())
-            )
-            .build()
-
-          running(application) {
-
-            val request = FakeRequest(POST, routes.MovementsController.post().url).withHeaders("channel" -> web.toString).withXmlBody(requestXmlBody.map(trim))
-
-            val result = route(application, request).value
-
-            status(result) mustEqual INTERNAL_SERVER_ERROR
-          }
+          status(result) mustEqual BAD_REQUEST
+          header("Location", result) must not be defined
         }
       }
 
-      "when there has been a previous failed attempt to submit" - {
+      "must return BadRequest if the payload is malformed" in {
+        val mockArrivalIdRepository  = mock[ArrivalIdRepository]
+        val mockSubmitMessageService = mock[SubmitMessageService]
+        val mockNotificationService  = mock[PushPullNotificationService]
 
-        val failedToSubmit007     = movementMessage(1).copy(status = SubmissionFailed)
-        val failedToSubmitArrival = initializedArrival.copy(messages = NonEmptyList.one(failedToSubmit007))
+        when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
+        when(mockNotificationService.getBox(any())(any())).thenReturn(Future.successful(None))
 
-        "must return Accepted when submitted to upstream  against the existing arrival" in {
-
-          val mockSubmitMessageService = mock[SubmitMessageService]
-          val captor                   = ArgumentCaptor.forClass(classOf[MovementMessageWithStatus])
-          val mockAuditService         = mock[AuditService]
-          val mockNotificationService  = mock[PushPullNotificationService]
-
-          when(mockSubmitMessageService.submitMessage(any(), any(), any(), any(), any())(any()))
-            .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionSuccess))
-          when(mockNotificationService.getBox(any())(any())).thenReturn(Future.successful(None))
-
-          val application = baseApplicationBuilder
+        val application =
+          baseApplicationBuilder
             .overrides(
               bind[PushPullNotificationService].toInstance(mockNotificationService),
+              bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
               bind[SubmitMessageService].toInstance(mockSubmitMessageService),
               bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
-              bind[AuthenticatedGetOptionalArrivalForWriteActionProvider]
-                .toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider(failedToSubmitArrival)),
-              bind[AuditService].toInstance(mockAuditService)
             )
             .build()
 
-          running(application) {
+        running(application) {
+          val requestXmlBody =
+            <CC007A><SynVerNumMES2>1</SynVerNumMES2><HEAHEA><DocNumHEA5>MRN</DocNumHEA5></HEAHEA></CC007A>
 
-            val request = FakeRequest(POST, routes.MovementsController.post().url)
-              .withHeaders("channel" -> failedToSubmitArrival.channel.toString)
-              .withXmlBody(requestXmlBody.map(trim))
+          val request = FakeRequest(POST, routes.MovementsController.post().url).withHeaders("channel" -> web.toString).withXmlBody(requestXmlBody.map(trim))
 
-            val result                                     = route(application, request).value
-            val expectedMessage: MovementMessageWithStatus = movementMessage(2).copy(messageCorrelationId = 2)
+          val result = route(application, request).value
 
-            status(result) mustEqual ACCEPTED
-            header("Location", result).value must be(routes.MovementsController.getArrival(initializedArrival.arrivalId).url)
-            verify(mockSubmitMessageService, times(1)).submitMessage(
-              eqTo(initializedArrival.arrivalId),
-              eqTo(MessageId(2)),
-              captor.capture(),
-              eqTo(ArrivalStatus.ArrivalSubmitted),
-              any()
-            )(any())
-
-            val movement: MovementMessageWithStatus = captor.getValue
-            movement.messageCorrelationId mustEqual expectedMessage.messageCorrelationId
-            movement.status mustEqual expectedMessage.status
-            movement.messageType mustEqual expectedMessage.messageType
-            movement.dateTime mustEqual expectedMessage.dateTime
-            movement.message.map(trim) mustEqual expectedMessage.message.map(trim)
-
-            verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.ArrivalNotificationSubmitted), eqTo(failedToSubmitArrival.eoriNumber), any(), any())(
-              any()
-            )
-            verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.MesSenMES3Added), eqTo(failedToSubmitArrival.eoriNumber), any(), any())(any())
-
-          }
+          status(result) mustEqual BAD_REQUEST
+          header("Location", result) must not be defined
         }
+      }
 
-        "must return Accepted when and saved as a new arrival movement when there has been a successful message" in {
-          val captor: ArgumentCaptor[Arrival] = ArgumentCaptor.forClass(classOf[Arrival])
-          val messages = NonEmptyList.of(
-            movementMessage(1).copy(status = SubmissionPending, messageCorrelationId = 1),
-            movementMessage(2).copy(status = SubmissionFailed, messageCorrelationId = 2),
-            movementMessage(3).copy(status = SubmissionSucceeded, messageCorrelationId = 3)
-          )
-          val arrival = initializedArrival.copy(messages = messages, nextMessageCorrelationId = 4)
+      "must return BadRequest if the message is not an arrival notification" in {
+        val mockArrivalIdRepository = mock[ArrivalIdRepository]
+        val mockNotificationService = mock[PushPullNotificationService]
 
-          val expectedArrival = initializedArrival.copy(messages = NonEmptyList.of(movementMessage(1)))
+        when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
+        when(mockNotificationService.getBox(any())(any())).thenReturn(Future.successful(None))
 
-          val mockSubmitMessageService = mock[SubmitMessageService]
-          val mockArrivalIdRepository  = mock[ArrivalIdRepository]
-          val mockNotificationService  = mock[PushPullNotificationService]
-
-          when(mockSubmitMessageService.submitArrival(any())(any()))
-            .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionSuccess))
-
-          when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(expectedArrival.arrivalId))
-          when(mockNotificationService.getBox(any())(any())).thenReturn(Future.successful(None))
-
-          val application = baseApplicationBuilder
+        val application =
+          baseApplicationBuilder
             .overrides(
               bind[PushPullNotificationService].toInstance(mockNotificationService),
-              bind[SubmitMessageService].toInstance(mockSubmitMessageService),
               bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
               bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
-              bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider(arrival))
             )
             .build()
 
-          running(application) {
+        running(application) {
+          val requestXmlBody = <InvalidRootNode><SynVerNumMES2>1</SynVerNumMES2></InvalidRootNode>
 
-            val request =
-              FakeRequest(POST, routes.MovementsController.post().url).withHeaders("channel" -> arrival.channel.toString).withXmlBody(requestXmlBody.map(trim))
+          val request = FakeRequest(POST, routes.MovementsController.post().url).withHeaders("channel" -> web.toString).withXmlBody(requestXmlBody.map(trim))
 
-            val result = route(application, request).value
+          val result = route(application, request).value
 
-            status(result) mustEqual ACCEPTED
-            header("Location", result).value must be(routes.MovementsController.getArrival(expectedArrival.arrivalId).url)
-            verify(mockSubmitMessageService, times(1)).submitArrival(captor.capture())(any())
-
-            val arrivalMessage: MovementMessageWithStatus = captor.getValue.messages.head.asInstanceOf[MovementMessageWithStatus]
-            arrivalMessage.message.map(trim) mustEqual movementMessage(1).message.map(trim)
-          }
+          status(result) mustEqual BAD_REQUEST
+          header("Location", result) must not be defined
         }
+      }
 
-        "must return InternalServerError if there was an internal failure when saving and sending" in {
-          val mockSubmitMessageService = mock[SubmitMessageService]
-          val mockNotificationService  = mock[PushPullNotificationService]
+      "must return BadRequest if the message has been rejected from EIS due to error in payload" in {
+        val mockArrivalIdRepository  = mock[ArrivalIdRepository]
+        val mockSubmitMessageService = mock[SubmitMessageService]
+        val mockNotificationService  = mock[PushPullNotificationService]
 
-          when(mockSubmitMessageService.submitMessage(any(), any(), any(), any(), any())(any()))
-            .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureInternal))
-          when(mockNotificationService.getBox(any())(any())).thenReturn(Future.successful(None))
+        val arrivalId = ArrivalId(1)
 
-          val application = baseApplicationBuilder
-            .overrides(
-              bind[PushPullNotificationService].toInstance(mockNotificationService),
-              bind[SubmitMessageService].toInstance(mockSubmitMessageService),
-              bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
-              bind[AuthenticatedGetOptionalArrivalForWriteActionProvider]
-                .toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider(initializedArrival))
-            )
-            .build()
+        when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
+        when(mockSubmitMessageService.submitArrival(any())(any()))
+          .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureRejected(ErrorInPayload.responseBody)))
+        when(mockNotificationService.getBox(any())(any())).thenReturn(Future.successful(None))
 
-          running(application) {
+        val application = baseApplicationBuilder
+          .overrides(
+            bind[PushPullNotificationService].toInstance(mockNotificationService),
+            bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
+            bind[SubmitMessageService].toInstance(mockSubmitMessageService),
+            bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
+          )
+          .build()
 
-            val request = FakeRequest(POST, routes.MovementsController.post().url)
-              .withHeaders("channel" -> initializedArrival.channel.toString)
-              .withXmlBody(requestXmlBody.map(trim))
+        running(application) {
 
-            val result = route(application, request).value
+          val request = FakeRequest(POST, routes.MovementsController.post().url).withHeaders("channel" -> web.toString).withXmlBody(requestXmlBody.map(trim))
 
-            status(result) mustEqual INTERNAL_SERVER_ERROR
+          val result = route(application, request).value
 
-          }
+          status(result) mustEqual BAD_REQUEST
         }
+      }
 
-        "must return BadGateway if there was an external failure when saving and sending" in {
-          val mockSubmitMessageService = mock[SubmitMessageService]
-          val mockNotificationService  = mock[PushPullNotificationService]
+      "must return InternalServerError if there has been a rejection from EIS due to virus found or invalid token" in {
+        val mockArrivalIdRepository  = mock[ArrivalIdRepository]
+        val mockSubmitMessageService = mock[SubmitMessageService]
+        val mockNotificationService  = mock[PushPullNotificationService]
 
-          when(mockSubmitMessageService.submitMessage(any(), any(), any(), any(), any())(any()))
-            .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureExternal))
-          when(mockNotificationService.getBox(any())(any())).thenReturn(Future.successful(None))
+        val arrivalId = ArrivalId(1)
 
-          val app = baseApplicationBuilder
-            .overrides(
-              bind[PushPullNotificationService].toInstance(mockNotificationService),
-              bind[SubmitMessageService].toInstance(mockSubmitMessageService),
-              bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
-              bind[AuthenticatedGetOptionalArrivalForWriteActionProvider]
-                .toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider(initializedArrival))
-            )
-            .build()
+        when(mockArrivalIdRepository.nextId()).thenReturn(Future.successful(arrivalId))
+        when(mockSubmitMessageService.submitArrival(any())(any()))
+          .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureInternal))
+        when(mockNotificationService.getBox(any())(any())).thenReturn(Future.successful(None))
 
-          running(app) {
+        val application = baseApplicationBuilder
+          .overrides(
+            bind[PushPullNotificationService].toInstance(mockNotificationService),
+            bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
+            bind[SubmitMessageService].toInstance(mockSubmitMessageService),
+            bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
+          )
+          .build()
 
-            val request = FakeRequest(POST, routes.MovementsController.post().url)
-              .withHeaders("channel" -> initializedArrival.channel.toString)
-              .withXmlBody(requestXmlBody.map(trim))
+        running(application) {
 
-            val result = route(app, request).value
+          val request = FakeRequest(POST, routes.MovementsController.post().url).withHeaders("channel" -> web.toString).withXmlBody(requestXmlBody.map(trim))
 
-            status(result) mustEqual BAD_GATEWAY
-          }
-        }
+          val result = route(application, request).value
 
-        "must return BadRequest if the payload is malformed" in {
-          val arrival                 = Arbitrary.arbitrary[Arrival].sample.value.copy(eoriNumber = "eori")
-          val mockNotificationService = mock[PushPullNotificationService]
-          when(mockNotificationService.getBox(any())(any())).thenReturn(Future.successful(None))
-
-          val application =
-            baseApplicationBuilder
-              .overrides(
-                bind[PushPullNotificationService].toInstance(mockNotificationService),
-                bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
-                bind[AuthenticatedGetOptionalArrivalForWriteActionProvider].toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider(arrival))
-              )
-              .build()
-
-          running(application) {
-            val requestXmlBody = <CC007A><SynVerNumMES2>1</SynVerNumMES2><HEAHEA></HEAHEA></CC007A>
-
-            val request =
-              FakeRequest(POST, routes.MovementsController.post().url).withHeaders("channel" -> arrival.channel.toString).withXmlBody(requestXmlBody.map(trim))
-
-            val result = route(application, request).value
-
-            status(result) mustEqual BAD_REQUEST
-          }
-        }
-
-        "must return BadRequest if the message is not an arrival notification" in {
-          val mockNotificationService = mock[PushPullNotificationService]
-          when(mockNotificationService.getBox(any())(any())).thenReturn(Future.successful(None))
-
-          val application =
-            baseApplicationBuilder
-              .overrides(
-                bind[PushPullNotificationService].toInstance(mockNotificationService),
-                bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
-                bind[AuthenticatedGetOptionalArrivalForWriteActionProvider]
-                  .toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider(initializedArrival))
-              )
-              .build()
-
-          running(application) {
-
-            val requestXmlBody = <InvalidRootNode><SynVerNumMES2>1</SynVerNumMES2></InvalidRootNode>
-
-            val request = FakeRequest(POST, routes.MovementsController.post().url)
-              .withHeaders("channel" -> initializedArrival.channel.toString)
-              .withXmlBody(requestXmlBody.map(trim))
-
-            val result = route(application, request).value
-
-            status(result) mustEqual BAD_REQUEST
-          }
-        }
-
-        "must return BadRequest if the message has been rejected from EIS due to error in payload" in {
-          val mockSubmitMessageService = mock[SubmitMessageService]
-          val mockNotificationService  = mock[PushPullNotificationService]
-
-          when(mockSubmitMessageService.submitMessage(any(), any(), any(), any(), any())(any()))
-            .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureRejected(ErrorInPayload.responseBody)))
-          when(mockNotificationService.getBox(any())(any())).thenReturn(Future.successful(None))
-
-          val app = baseApplicationBuilder
-            .overrides(
-              bind[PushPullNotificationService].toInstance(mockNotificationService),
-              bind[SubmitMessageService].toInstance(mockSubmitMessageService),
-              bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
-              bind[AuthenticatedGetOptionalArrivalForWriteActionProvider]
-                .toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider(initializedArrival))
-            )
-            .build()
-
-          running(app) {
-
-            val request = FakeRequest(POST, routes.MovementsController.post().url)
-              .withHeaders("channel" -> initializedArrival.channel.toString)
-              .withXmlBody(requestXmlBody.map(trim))
-
-            val result = route(app, request).value
-
-            status(result) mustEqual BAD_REQUEST
-          }
-        }
-
-        "must return InternalServerError if there has been a rejection from EIS due to virus found or invalid token" in {
-          val mockSubmitMessageService = mock[SubmitMessageService]
-          val mockNotificationService  = mock[PushPullNotificationService]
-
-          when(mockSubmitMessageService.submitMessage(any(), any(), any(), any(), any())(any()))
-            .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureInternal))
-          when(mockNotificationService.getBox(any())(any())).thenReturn(Future.successful(None))
-
-          val app = baseApplicationBuilder
-            .overrides(
-              bind[PushPullNotificationService].toInstance(mockNotificationService),
-              bind[SubmitMessageService].toInstance(mockSubmitMessageService),
-              bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
-              bind[AuthenticatedGetOptionalArrivalForWriteActionProvider]
-                .toInstance(FakeAuthenticatedGetOptionalArrivalForWriteActionProvider(initializedArrival))
-            )
-            .build()
-
-          running(app) {
-
-            val request = FakeRequest(POST, routes.MovementsController.post().url)
-              .withHeaders("channel" -> initializedArrival.channel.toString)
-              .withXmlBody(requestXmlBody.map(trim))
-
-            val result = route(app, request).value
-
-            status(result) mustEqual INTERNAL_SERVER_ERROR
-          }
+          status(result) mustEqual INTERNAL_SERVER_ERROR
         }
       }
     }
@@ -836,7 +551,10 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           movement.dateTime mustEqual expectedMessage.dateTime
           movement.message.map(trim) mustEqual expectedMessage.message.map(trim)
 
-          verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.ArrivalNotificationReSubmitted), eqTo(initializedArrival.eoriNumber), any(), any())(
+          verify(mockAuditService, times(1)).auditEvent(eqTo(AuditType.ArrivalNotificationReSubmitted),
+                                                        eqTo(Ior.right(EORINumber(initializedArrival.eoriNumber))),
+                                                        any(),
+                                                        any())(
             any()
           )
         }

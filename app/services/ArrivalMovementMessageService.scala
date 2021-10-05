@@ -19,32 +19,34 @@ package services
 import cats.data._
 import cats.implicits._
 import com.google.inject.Inject
-import models.ArrivalStatus.Initialized
-import models.MessageStatus.SubmissionPending
-import models.ParseError.EmptyNodeSeq
 import models.Arrival
 import models.ArrivalId
+import models.ArrivalStatus.Initialized
 import models.Box
 import models.ChannelType
+import models.EORINumber
+import models.MessageId
+import models.MessageStatus.SubmissionPending
 import models.MessageType
 import models.MovementMessageWithStatus
 import models.MovementMessageWithoutStatus
 import models.MovementReferenceNumber
+import models.ParseError.EmptyNodeSeq
+import models.TURN
 import repositories.ArrivalIdRepository
 import utils.XMLTransformer
 
+import java.time.Clock
+import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.xml.NodeSeq
-import java.time.LocalDateTime
-import java.time.Clock
-import models.MessageId
 
 class ArrivalMovementMessageService @Inject()(arrivalIdRepository: ArrivalIdRepository, clock: Clock)(implicit ec: ExecutionContext) {
   import XMLTransformer._
   import XmlMessageParser._
 
-  def makeArrivalMovement(eori: String, nodeSeq: NodeSeq, channelType: ChannelType, boxOpt: Option[Box]): Future[ParseHandler[Arrival]] =
+  def makeArrivalMovement(enrolmentId: Ior[TURN, EORINumber], nodeSeq: NodeSeq, channelType: ChannelType, boxOpt: Option[Box]): Future[ParseHandler[Arrival]] =
     arrivalIdRepository.nextId().map {
       arrivalId =>
         (for {
@@ -57,7 +59,12 @@ class ArrivalMovementMessageService @Inject()(arrivalIdRepository: ArrivalIdRepo
             arrivalId,
             channelType,
             mrn,
-            eori,
+            // Prefer to use EORI number
+            enrolmentId.fold(
+              turn => turn.value,
+              eoriNumber => eoriNumber.value,
+              (_, eoriNumber) => eoriNumber.value
+            ),
             Initialized,
             dateTime,
             dateTime,
