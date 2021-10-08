@@ -21,21 +21,26 @@ import models.Arrival
 import models.ArrivalId
 import models.ArrivalStatus
 import models.ArrivalWithoutMessages
+import models.MessageMetaData
+import models.MessageType
 import models.MongoDateTimeFormats
 import models.MovementReferenceNumber
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import play.api.libs.json.OWrites
 import play.api.libs.json.Reads
+
 import java.time.LocalDateTime
 
-case class ResponseArrival(arrivalId: ArrivalId,
-                           location: String,
-                           messagesLocation: String,
-                           movementReferenceNumber: MovementReferenceNumber,
-                           status: ArrivalStatus,
-                           created: LocalDateTime,
-                           updated: LocalDateTime)
+case class ResponseArrival(
+  arrivalId: ArrivalId,
+  location: String,
+  messagesLocation: String,
+  movementReferenceNumber: MovementReferenceNumber,
+  created: LocalDateTime,
+  updated: LocalDateTime,
+  messagesMetaData: Seq[MessageMetaData]
+)
 
 object ResponseArrival {
 
@@ -45,9 +50,9 @@ object ResponseArrival {
       routes.MovementsController.getArrival(arrival.arrivalId).url,
       routes.MessagesController.getMessages(arrival.arrivalId).url,
       arrival.movementReferenceNumber,
-      arrival.status,
       arrival.created,
-      updated = arrival.lastUpdated
+      updated = arrival.lastUpdated,
+      arrival.messages.map(x => MessageMetaData(x.messageType, x.dateTime)).toList
     )
 
   def build(arrivalWithoutMessages: ArrivalWithoutMessages): ResponseArrival =
@@ -56,15 +61,14 @@ object ResponseArrival {
       routes.MovementsController.getArrival(arrivalWithoutMessages.arrivalId).url,
       routes.MessagesController.getMessages(arrivalWithoutMessages.arrivalId).url,
       arrivalWithoutMessages.movementReferenceNumber,
-      arrivalWithoutMessages.status,
       arrivalWithoutMessages.created,
-      updated = arrivalWithoutMessages.lastUpdated
+      updated = arrivalWithoutMessages.lastUpdated,
+      arrivalWithoutMessages.messagesMetaData
     )
 
   val projection: JsObject = Json.obj(
     "_id"                     -> 1,
     "movementReferenceNumber" -> 1,
-    "status"                  -> 1,
     "created"                 -> 1,
     "lastUpdated"             -> 1
   )
@@ -76,18 +80,18 @@ object ResponseArrival {
         location         = routes.MovementsController.getArrival(arrivalId).url
         messagesLocation = routes.MessagesController.getMessages(arrivalId).url
         movementReferenceNumber <- (json \ "movementReferenceNumber").validate[MovementReferenceNumber]
-        status                  <- (json \ "status").validate[ArrivalStatus]
         created                 <- (json \ "created").validate[LocalDateTime](MongoDateTimeFormats.localDateTimeRead)
         updated                 <- (json \ "lastUpdated").validate[LocalDateTime](MongoDateTimeFormats.localDateTimeRead)
+        latestMessage           <- (json \ "messagesMetaData").validate[Seq[MessageMetaData]]
       } yield
         ResponseArrival(
           arrivalId,
           location,
           messagesLocation,
           movementReferenceNumber,
-          status,
           created,
-          updated
+          updated,
+          latestMessage
       )
 
   implicit val writes: OWrites[ResponseArrival] = Json.writes[ResponseArrival]

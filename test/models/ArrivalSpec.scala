@@ -18,27 +18,27 @@ package models
 
 import base.SpecBase
 import generators.ModelGenerators
-import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
 class ArrivalSpec extends SpecBase with ScalaCheckDrivenPropertyChecks with ModelGenerators {
 
-  val arrivaGenerator: Gen[Arrival] =
+  val arrivalGenerator: Gen[Arrival] =
     for {
       messages <- nonEmptyListOfMaxLength[MovementMessageWithStatus](20)
       arrival  <- arbitrary[Arrival].map(_.copy(messages = messages))
     } yield arrival
 
   "nextMessageId returns a MessageId which has value that is 1 larger than the number of messages" in {
-    forAll(arrivaGenerator) {
+    forAll(arrivalGenerator) {
       arrival =>
         (MessageId.unapply(arrival.nextMessageId).value - arrival.messages.length) mustEqual 1
     }
   }
 
   "messageWithId returns a list with the message and its corresponding message ID" in {
-    forAll(arrivaGenerator) {
+    forAll(arrivalGenerator) {
       arrival =>
         arrival.messagesWithId.zipWithIndex.toList.foreach {
           case ((message, messageId), index) =>
@@ -47,5 +47,4 @@ class ArrivalSpec extends SpecBase with ScalaCheckDrivenPropertyChecks with Mode
         }
     }
   }
-
 }

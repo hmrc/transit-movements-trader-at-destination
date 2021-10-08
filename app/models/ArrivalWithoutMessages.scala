@@ -36,7 +36,8 @@ case class ArrivalWithoutMessages(
   lastUpdated: LocalDateTime = LocalDateTime.now,
   notificationBox: Option[Box],
   nextMessageId: MessageId,
-  nextMessageCorrelationId: Int
+  nextMessageCorrelationId: Int,
+  messagesMetaData: Seq[MessageMetaData]
 ) {
   private val obfuscatedEori: String          = s"ending ${eoriNumber.takeRight(7)}"
   private val isoFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
@@ -66,10 +67,11 @@ object ArrivalWithoutMessages {
       arrival.lastUpdated,
       arrival.notificationBox,
       arrival.nextMessageId,
-      arrival.nextMessageCorrelationId
+      arrival.nextMessageCorrelationId,
+      arrival.messages.map(x => MessageMetaData(x.messageType, x.dateTime)).toList
     )
 
-  implicit val readsArrival: Reads[ArrivalWithoutMessages] =
+  implicit val readsArrival: Reads[ArrivalWithoutMessages] = {
     (
       (__ \ "_id").read[ArrivalId] and
         (__ \ "channel").read[ChannelType] and
@@ -81,8 +83,10 @@ object ArrivalWithoutMessages {
         (__ \ "lastUpdated").read(MongoDateTimeFormats.localDateTimeRead) and
         (__ \ "notificationBox").readNullable[Box] and
         (__ \ "nextMessageId").read[MessageId] and
-        (__ \ "nextMessageCorrelationId").read[Int]
+        (__ \ "nextMessageCorrelationId").read[Int] and
+        (__ \ "messages").read[Seq[MessageMetaData]]
     )(ArrivalWithoutMessages.apply _)
+  }
 
   val projection: JsObject = Json.obj(
     "_id"                      -> 1,
@@ -94,6 +98,7 @@ object ArrivalWithoutMessages {
     "updated"                  -> 1,
     "lastUpdated"              -> 1,
     "notificationBox"          -> 1,
-    "nextMessageCorrelationId" -> 1
+    "nextMessageCorrelationId" -> 1,
+    "messages"                 -> 1
   )
 }
