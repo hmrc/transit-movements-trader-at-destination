@@ -16,6 +16,9 @@
 
 package controllers
 
+import java.time._
+import java.time.format.DateTimeFormatter
+
 import audit.AuditService
 import audit.AuditType
 import base.SpecBase
@@ -27,30 +30,24 @@ import connectors.MessageConnector.EisSubmissionResult.ErrorInPayload
 import controllers.actions.AuthenticateActionProvider
 import controllers.actions.FakeAuthenticateActionProvider
 import generators.ModelGenerators
-import models.ArrivalStatus.ArrivalSubmitted
+import models.ChannelType.api
+import models.ChannelType.web
+import models.MessageStatus.SubmissionPending
+import models.MessageType.ArrivalNotification
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalStatus
 import models.ArrivalWithoutMessages
 import models.Box
 import models.BoxId
-import models.ChannelType.api
-import models.ChannelType.web
 import models.EORINumber
 import models.MessageId
 import models.MessageMetaData
 import models.MessageSender
-import models.MessageStatus.SubmissionPending
 import models.MessageType
 import models.MovementMessageWithStatus
 import models.MovementReferenceNumber
 import models.SubmissionProcessingResult
-import models.ChannelType.api
-import models.ChannelType.web
-import models.MessageStatus.SubmissionFailed
-import models.MessageStatus.SubmissionPending
-import models.MessageStatus.SubmissionSucceeded
-import models.MessageType.ArrivalNotification
 import models.response.ResponseArrival
 import models.response.ResponseArrivals
 import org.mockito.ArgumentCaptor
@@ -73,12 +70,6 @@ import services.PushPullNotificationService
 import services.SubmitMessageService
 import utils.Format
 
-import java.time.Clock
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.LocalTime
-import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
 import scala.concurrent.Future
 import scala.xml.NodeSeq
 import scala.xml.Utility.trim
@@ -900,6 +891,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
               "/some/location",
               "/messages/location",
               MovementReferenceNumber("1234567890"),
+              ArrivalStatus.ArrivalSubmitted,
               createdAndUpdatedDate,
               createdAndUpdatedDate,
               Seq(
@@ -924,6 +916,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
                |      "location": "/some/location",
                |      "messagesLocation": "/messages/location",
                |      "movementReferenceNumber": "1234567890",
+               |      "status": "ArrivalSubmitted",
                |      "created": "${dateFormat.format(createdAndUpdatedDate)}",
                |      "updated": "${dateFormat.format(createdAndUpdatedDate)}",
                |      "messagesMetaData":[
