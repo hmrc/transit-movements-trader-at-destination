@@ -441,7 +441,7 @@ class ArrivalMovementRepository @Inject()(
     }
   }
 
-  def addResponseMessage(arrivalId: ArrivalId, message: MovementMessage, status: ArrivalStatus): Future[Try[Unit]] = {
+  def addResponseMessage(arrivalId: ArrivalId, message: MovementMessage): Future[Try[Unit]] = {
     val selector = Json.obj(
       "_id" -> arrivalId
     )
@@ -450,8 +450,7 @@ class ArrivalMovementRepository @Inject()(
       Json.obj(
         "$set" -> Json.obj(
           "updated"     -> message.dateTime,
-          "lastUpdated" -> LocalDateTime.now(clock),
-          "status"      -> status.toString
+          "lastUpdated" -> LocalDateTime.now(clock)
         ),
         "$push" -> Json.obj(
           "messages" -> Json.toJson(message)

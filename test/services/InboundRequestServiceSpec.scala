@@ -20,7 +20,6 @@ import base.SpecBase
 import cats.data.EitherT
 import generators.ModelGenerators
 import models.ArrivalStatus.ArrivalSubmitted
-import models.ArrivalStatus.GoodsReleased
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalWithoutMessages
@@ -97,7 +96,7 @@ class InboundRequestServiceSpec extends SpecBase with ModelGenerators with Scala
 
         val result = service.makeInboundRequest(ArrivalId(0), inboundXml, messageSender)
 
-        val expectedResult = InboundMessageRequest(sampleArrival, GoodsReleased, GoodsReleasedResponse, message)
+        val expectedResult = InboundMessageRequest(sampleArrival, GoodsReleasedResponse, message)
 
         result.futureValue.value mustBe expectedResult
       }
