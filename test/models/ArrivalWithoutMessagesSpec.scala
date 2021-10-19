@@ -24,7 +24,6 @@ import models.MessageType.GoodsReleased
 import models.MessageType.UnloadingPermission
 import models.MessageType.UnloadingRemarks
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks.forAll
-import play.api.libs.json.JsSuccess
 import play.api.libs.json.Json
 import org.scalacheck.Arbitrary.arbitrary
 
