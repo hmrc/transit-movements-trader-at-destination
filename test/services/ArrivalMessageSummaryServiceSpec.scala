@@ -22,7 +22,6 @@ import generators.ModelGenerators
 import models.MessageStatus._
 import models.MessageType._
 import models.Arrival
-import models.ArrivalStatus
 import models.MessageType
 import models.MessagesSummary
 import models.MovementMessage
@@ -509,7 +508,7 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
 
             forAll(arrivalMovement(messages)) {
               arr =>
-                val arrival              = arr.copy(status = ArrivalStatus.UnloadingRemarksRejected)
+                val arrival              = arr
                 val (message, messageId) = service.unloadingRemarksRejectionsR(arrival).value
 
                 message mustEqual ie058
@@ -535,7 +534,7 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
 
             forAll(arrivalMovement(messages)) {
               arr =>
-                val arrival              = arr.copy(status = ArrivalStatus.UnloadingRemarksRejected)
+                val arrival              = arr
                 val (message, messageId) = service.unloadingRemarksRejectionsR(arrival).value
 
                 message mustEqual ie058
@@ -652,6 +651,9 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
 
       }
 
+      /**
+        *
+        * ToDo CTCTRADERS-2643 - Relates to the change in ArrivalMessageSummaryService
       "IE044 and no IE058 when there has been an IE044 correction" in {
         val service = new ArrivalMessageSummaryService
 
@@ -661,7 +663,7 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
 
             forAll(arrivalMovement(messages)) {
               arr =>
-                val arrival = arr.copy(status = ArrivalStatus.UnloadingRemarksSubmitted)
+                val arrival = arr
                 val expectedMessageSummary =
                   MessagesSummary(arrival, ie007.messageId, None, Some(ie043.messageId), Some(ie044.messageId), None)
 
@@ -670,7 +672,7 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
         }
 
       }
-
+        */
       "latest IE044 and IE058 when there has been multiple corrections without a successful IE044 correction and state is UnloadingRemarksRejected" in {
         val service = new ArrivalMessageSummaryService
 
@@ -687,7 +689,7 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
 
             forAll(arrivalMovement(messages)) {
               arr =>
-                val arrival = arr.copy(status = ArrivalStatus.UnloadingRemarksRejected)
+                val arrival = arr
 
                 val expectedMessageSummary =
                   MessagesSummary(arrival, ie007.messageId, None, Some(ie043.messageId), Some(ie044.messageId), Some(ie058.messageId))

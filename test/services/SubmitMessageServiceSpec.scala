@@ -95,7 +95,6 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
   } yield
     arrival.copy(
       eoriNumber = "eori",
-      status = ArrivalStatus.ArrivalSubmitted,
       messages = NonEmptyList.one(movementMessage),
       nextMessageCorrelationId = movementMessage.messageCorrelationId
     )

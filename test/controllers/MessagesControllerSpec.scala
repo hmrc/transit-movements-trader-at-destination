@@ -116,7 +116,6 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
       arrivalId = arrivalId,
       movementReferenceNumber = mrn,
       eoriNumber = "eori",
-      status = ArrivalStatus.Initialized,
       messages = NonEmptyList.one(movementMessage),
       nextMessageCorrelationId = movementMessage.messageCorrelationId,
       created = localDateTime,

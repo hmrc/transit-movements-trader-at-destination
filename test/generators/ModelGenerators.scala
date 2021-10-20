@@ -160,7 +160,6 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
         channel                 <- arbitrary[ChannelType]
         movementReferenceNumber <- arbitrary[MovementReferenceNumber]
         eoriNumber              <- arbitrary[String]
-        status                  <- arbitrary[ArrivalStatus]
         created                 <- arbitrary[LocalDateTime]
         updated                 <- arbitrary[LocalDateTime]
         messages                <- nonEmptyListOfMaxLength[MovementMessageWithStatus](2)
@@ -170,7 +169,6 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
           channel = channel,
           movementReferenceNumber = movementReferenceNumber,
           eoriNumber = eoriNumber,
-          status = status,
           created = created,
           updated = updated,
           lastUpdated = updated,

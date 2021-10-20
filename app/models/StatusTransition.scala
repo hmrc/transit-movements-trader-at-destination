@@ -21,7 +21,6 @@ import models.ArrivalStatus._
 object StatusTransition {
 
   def transitionError(
-    currentStatus: ArrivalStatus,
     requiredStatuses: Set[ArrivalStatus],
     messageReceived: MessageReceivedEvent
   ): Either[TransitionError, ArrivalStatus] = {
@@ -35,12 +34,12 @@ object StatusTransition {
 
     Left(
       TransitionError(
-        s"Can only accept this type of message [$messageType] directly after [$requiredStatusesString] messages. Current message state is [${currentStatus.toString}]."
+        s"Can only accept this type of message [$messageType] directly after [$requiredStatusesString] messages.]."
       )
     )
   }
 
-  def targetStatus(currentStatus: ArrivalStatus, messageReceived: MessageReceivedEvent): Either[TransitionError, ArrivalStatus] =
+  def targetStatus(messageReceived: MessageReceivedEvent): Either[TransitionError, ArrivalStatus] =
     messageReceived match {
       case MessageReceivedEvent.ArrivalSubmitted                     => Right(ArrivalSubmitted)
       case MessageReceivedEvent.ArrivalRejected                      => Right(ArrivalRejected)
@@ -50,7 +49,7 @@ object StatusTransition {
       case MessageReceivedEvent.GoodsReleased                        => Right(GoodsReleased)
       case MessageReceivedEvent.XMLSubmissionNegativeAcknowledgement => Right(XMLSubmissionNegativeAcknowledgement)
       case _ =>
-        transitionError(currentStatus, Set(Initialized, ArrivalSubmitted, UnloadingRemarksSubmitted), messageReceived)
+        transitionError(Set(Initialized, ArrivalSubmitted, UnloadingRemarksSubmitted), messageReceived)
     }
 
 }

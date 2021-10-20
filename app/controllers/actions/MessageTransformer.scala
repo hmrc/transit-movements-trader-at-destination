@@ -36,7 +36,7 @@ class MessageTransformer @Inject()(implicit val executionContext: ExecutionConte
       case x: NodeSeq =>
         x.headOption.flatMap(node => messageResponse(request.channel)(node.label)) match {
           case Some(response) =>
-            StatusTransition.targetStatus(request.arrivalWithoutMessages.status, response.messageReceived) match {
+            StatusTransition.targetStatus(response.messageReceived) match {
               case Right(nextState) =>
                 Future.successful(Right(MessageTransformRequest(Message(response, nextState), request)))
               case Left(error) =>

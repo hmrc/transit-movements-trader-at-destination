@@ -86,7 +86,6 @@ class ArrivalWithoutMessagesSpec extends SpecBase with MongoDateTimeFormats with
               updatedArrival.channel,
               updatedArrival.movementReferenceNumber,
               updatedArrival.eoriNumber,
-              updatedArrival.status,
               updatedArrival.created,
               updatedArrival.updated,
               updatedArrival.lastUpdated,

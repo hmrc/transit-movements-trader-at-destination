@@ -28,7 +28,6 @@ case class Arrival(
   channel: ChannelType,
   movementReferenceNumber: MovementReferenceNumber,
   eoriNumber: String,
-  status: ArrivalStatus,
   created: LocalDateTime,
   updated: LocalDateTime,
   lastUpdated: LocalDateTime = LocalDateTime.now,
@@ -72,7 +71,6 @@ object Arrival {
         (__ \ "channel").read[ChannelType] and
         (__ \ "movementReferenceNumber").read[MovementReferenceNumber] and
         (__ \ "eoriNumber").read[String] and
-        (__ \ "status").read[ArrivalStatus] and
         (__ \ "created").read(MongoDateTimeFormats.localDateTimeRead) and
         (__ \ "updated").read(MongoDateTimeFormats.localDateTimeRead) and
         (__ \ "lastUpdated").read(MongoDateTimeFormats.localDateTimeRead) and
@@ -87,7 +85,6 @@ object Arrival {
         (__ \ "channel").write[ChannelType] and
         (__ \ "movementReferenceNumber").write[MovementReferenceNumber] and
         (__ \ "eoriNumber").write[String] and
-        (__ \ "status").write[ArrivalStatus] and
         (__ \ "created").write(write) and
         (__ \ "updated").write(write) and
         (__ \ "lastUpdated").write(write) and

@@ -36,7 +36,6 @@ import models.MessageStatus.SubmissionPending
 import models.MessageType.ArrivalNotification
 import models.Arrival
 import models.ArrivalId
-import models.ArrivalStatus
 import models.ArrivalWithoutMessages
 import models.Box
 import models.BoxId
@@ -121,7 +120,6 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
     channel = api,
     movementReferenceNumber = mrn,
     eoriNumber = "eori",
-    status = ArrivalStatus.Initialized,
     created = localDateTime,
     updated = localDateTime,
     lastUpdated = localDateTime,
