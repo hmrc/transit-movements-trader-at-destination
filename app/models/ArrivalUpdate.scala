@@ -28,30 +28,22 @@ sealed trait ArrivalUpdate
 object ArrivalUpdate {
 
   implicit val arrivalUpdateSemigroup: Semigroup[ArrivalUpdate] = {
-    case (_: ArrivalStatusUpdate, x: ArrivalStatusUpdate)  => x
-    case (_: ArrivalStatusUpdate, m: MessageStatusUpdate)  => CompoundStatusUpdate(m)
-    case (_: ArrivalStatusUpdate, c: CompoundStatusUpdate) => c
-    case (_: ArrivalStatusUpdate, p: ArrivalPutUpdate)     => p
 
     case (_: MessageStatusUpdate, x: MessageStatusUpdate)  => x
-    case (m: MessageStatusUpdate, _: ArrivalStatusUpdate)  => CompoundStatusUpdate(m)
     case (_: MessageStatusUpdate, c: CompoundStatusUpdate) => c
     case (_: MessageStatusUpdate, p: ArrivalPutUpdate)     => p
 
     case (_: CompoundStatusUpdate, x: CompoundStatusUpdate) => x
-    case (c: CompoundStatusUpdate, _: ArrivalStatusUpdate)  => c
     case (c: CompoundStatusUpdate, m: MessageStatusUpdate)  => c.copy(messageStatusUpdate = m)
     case (_: CompoundStatusUpdate, p: ArrivalPutUpdate)     => p
 
     case (_: ArrivalPutUpdate, x: ArrivalPutUpdate)     => x
-    case (p: ArrivalPutUpdate, _: ArrivalStatusUpdate)  => p.copy(arrivalUpdate = p.arrivalUpdate)
     case (p: ArrivalPutUpdate, m: MessageStatusUpdate)  => p.copy(arrivalUpdate = p.arrivalUpdate.copy(messageStatusUpdate = m))
     case (p: ArrivalPutUpdate, c: CompoundStatusUpdate) => p.copy(arrivalUpdate = c)
   }
 
   implicit def arrivalUpdateArrivalModifier(implicit clock: Clock): ArrivalModifier[ArrivalUpdate] = {
     case x: MessageStatusUpdate  => ArrivalModifier.toJson(x)
-    case x: ArrivalStatusUpdate  => ArrivalModifier.toJson(x)
     case x: CompoundStatusUpdate => ArrivalModifier.toJson(x)
     case x: ArrivalPutUpdate     => ArrivalModifier.toJson(x)
   }
@@ -71,20 +63,6 @@ object MessageStatusUpdate extends MongoDateTimeFormats {
               "lastUpdated"                               -> LocalDateTime.now(clock)
             )
       )
-    )
-}
-
-final case class ArrivalStatusUpdate(arrivalStatus: ArrivalStatus) extends ArrivalUpdate
-
-object ArrivalStatusUpdate extends MongoDateTimeFormats {
-
-  implicit def arrivalStatusUpdate(implicit clock: Clock, writes: Writes[ArrivalStatus]): ArrivalModifier[ArrivalStatusUpdate] =
-    value =>
-      Json.obj(
-        "$set" -> Json.obj(
-          "status"      -> value.arrivalStatus,
-          "lastUpdated" -> LocalDateTime.now(clock)
-        )
     )
 }
 

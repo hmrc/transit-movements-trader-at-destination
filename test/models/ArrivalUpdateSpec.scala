@@ -22,10 +22,8 @@ import cats._
 import cats.kernel.laws.discipline.SemigroupTests
 import generators.ModelGenerators
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalacheck.Gen
 import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 
 import java.time.Clock
@@ -71,7 +69,7 @@ class ArrivalUpdateSpec
     //ToDo - CTCTRADERS-2634 No longer required?
     /**
     "ArrivalModifier for any combination of ArrivalUpdate is the same as the individual ArrivalModifier combined" - {
-      "when combined with an ArrivalStatusUpdate" in {
+      "SubmitMessageServiceSpec.scalawhen combined with an ArrivalStatusUpdate" in {
         forAll(arbitrary[ArrivalUpdate], arbitrary[ArrivalStatusUpdate]) {
           (lhs, rhs) =>
             val result = Semigroup[ArrivalUpdate].combine(lhs, rhs)
@@ -127,22 +125,6 @@ class ArrivalUpdateSpec
           )
 
           ArrivalModifier.toJson(messageStatusUpdate) mustEqual expectedUpdateJson
-      }
-    }
-  }
-
-  "ArrivalStatusUpdate" - {
-    "ArrivalModifier returns modify object that would set the status" in {
-      forAll(arbitrary[ArrivalStatusUpdate]) {
-        arrivalStatusUpdate =>
-          val expectedUpdateJson = Json.obj(
-            "$set" -> Json.obj(
-              "status"      -> arrivalStatusUpdate.arrivalStatus,
-              "lastUpdated" -> LocalDateTime.now(clock).withSecond(0).withNano(0)
-            )
-          )
-
-          ArrivalModifier.toJson(arrivalStatusUpdate) mustEqual expectedUpdateJson
       }
     }
   }

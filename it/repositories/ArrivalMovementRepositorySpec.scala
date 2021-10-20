@@ -127,6 +127,8 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
       }
     }
 
+    /**
+     * ToDo - CTCTRADERS-2634 Remove?
     "updateArrival" - {
       "must update the arrival and return a Success Unit when successful" in {
         val app = appBuilder.build()
@@ -171,6 +173,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
         }
       }
     }
+    */
 
     "getMaxArrivalId" - {
       "must return the highest arrival id in the database" in {

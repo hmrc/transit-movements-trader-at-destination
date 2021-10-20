@@ -31,7 +31,6 @@ import models.Arrival
 import models.ArrivalId
 import models.ArrivalPutUpdate
 import models.ArrivalStatus
-import models.ArrivalStatusUpdate
 import models.ArrivalUpdate
 import models.ArrivalWithoutMessages
 import models.ChannelType
@@ -70,8 +69,6 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
       } yield MessageStatusUpdate(messageId, messageStatus)
     }
 
-  implicit val arbitraryArrivalStatusUpdate: Arbitrary[ArrivalStatusUpdate] = Arbitrary(arbitrary[ArrivalStatus].map(ArrivalStatusUpdate(_)))
-
   implicit val arbitraryCompoundStatusUpdate: Arbitrary[CompoundStatusUpdate] = Arbitrary {
     for {
       messageStatusUpdate <- arbitrary[MessageStatusUpdate]
@@ -88,7 +85,6 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
   val arrivalUpdateTypeGenerator: Gen[Gen[ArrivalUpdate]] =
     Gen.oneOf[Gen[ArrivalUpdate]](
       arbitrary[MessageStatusUpdate],
-      arbitrary[ArrivalStatusUpdate],
       arbitrary[CompoundStatusUpdate],
       arbitrary[ArrivalPutUpdate]
     )
@@ -97,7 +93,6 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
     Arbitrary(
       Gen.oneOf[ArrivalUpdate](
         arbitrary[MessageStatusUpdate],
-        arbitrary[ArrivalStatusUpdate],
         arbitrary[CompoundStatusUpdate],
         arbitrary[ArrivalPutUpdate]
       )

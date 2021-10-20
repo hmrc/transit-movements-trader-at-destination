@@ -32,7 +32,6 @@ import models.Arrival
 import models.ArrivalId
 import models.ArrivalIdSelector
 import models.ArrivalPutUpdate
-import models.ArrivalStatus
 import models.CompoundStatusUpdate
 import models.MessageId
 import models.MessageSelector
