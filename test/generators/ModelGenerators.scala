@@ -74,9 +74,8 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
 
   implicit val arbitraryCompoundStatusUpdate: Arbitrary[CompoundStatusUpdate] = Arbitrary {
     for {
-      arrivalStatusUpdate <- arbitrary[ArrivalStatusUpdate]
       messageStatusUpdate <- arbitrary[MessageStatusUpdate]
-    } yield CompoundStatusUpdate(arrivalStatusUpdate, messageStatusUpdate)
+    } yield CompoundStatusUpdate(messageStatusUpdate)
   }
 
   implicit val arbitraryArrivalPutUpdate: Arbitrary[ArrivalPutUpdate] = Arbitrary {

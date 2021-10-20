@@ -68,6 +68,8 @@ class ArrivalUpdateSpec
       }
     }
 
+    //ToDo - CTCTRADERS-2634 No longer required?
+    /**
     "ArrivalModifier for any combination of ArrivalUpdate is the same as the individual ArrivalModifier combined" - {
       "when combined with an ArrivalStatusUpdate" in {
         forAll(arbitrary[ArrivalUpdate], arbitrary[ArrivalStatusUpdate]) {
@@ -110,7 +112,7 @@ class ArrivalUpdateSpec
 
       }
     }
-
+    */
   }
 
   "MessageStatusUpdate" - {
@@ -151,7 +153,6 @@ class ArrivalUpdateSpec
         compoundStatusUpdate =>
           val expectedUpdateJson = Json.obj(
             "$set" -> Json.obj(
-              "status"                                                                       -> compoundStatusUpdate.arrivalStatusUpdate.arrivalStatus,
               s"messages.${compoundStatusUpdate.messageStatusUpdate.messageId.index}.status" -> compoundStatusUpdate.messageStatusUpdate.messageStatus,
               "lastUpdated"                                                                  -> LocalDateTime.now(clock).withSecond(0).withNano(0)
             )
@@ -170,7 +171,6 @@ class ArrivalUpdateSpec
           val expectedJson = Json.obj(
             "$set" -> Json.obj(
               "movementReferenceNumber"             -> arrivalPutUpdate.movementReferenceNumber,
-              "status"                              -> arrivalPutUpdate.arrivalUpdate.arrivalStatusUpdate.arrivalStatus,
               s"messages.$expectedMessageId.status" -> arrivalPutUpdate.arrivalUpdate.messageStatusUpdate.messageStatus,
               "lastUpdated"                         -> LocalDateTime.now(clock).withSecond(0).withNano(0)
             )

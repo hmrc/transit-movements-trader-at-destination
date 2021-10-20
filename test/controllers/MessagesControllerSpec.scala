@@ -151,7 +151,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           }
         )
 
-        when(mockSubmitMessageService.submitMessage(any(), any(), any(), any(), any())(any()))
+        when(mockSubmitMessageService.submitMessage(any(), any(), any(), any())(any()))
           .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionSuccess))
 
         val application = baseApplicationBuilder
@@ -173,11 +173,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
 
           status(result) mustEqual ACCEPTED
           header("Location", result).value must be(routes.MessagesController.getMessage(arrival.arrivalId, MessageId(2)).url)
-          verify(mockSubmitMessageService, times(1)).submitMessage(eqTo(arrival.arrivalId),
-                                                                   eqTo(MessageId(2)),
-                                                                   captor.capture(),
-                                                                   eqTo(ArrivalStatus.UnloadingRemarksSubmitted),
-                                                                   any())(any())
+          verify(mockSubmitMessageService, times(1)).submitMessage(eqTo(arrival.arrivalId), eqTo(MessageId(2)), captor.capture(), any())(any())
 
           val arrivalMessage: MovementMessageWithStatus = captor.getValue
           arrivalMessage mustEqual movementMessage.copy(messageId = MessageId(2))
@@ -247,7 +243,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           }
         )
 
-        when(mockSubmitMessageService.submitMessage(any(), any(), any(), any(), any())(any()))
+        when(mockSubmitMessageService.submitMessage(any(), any(), any(), any())(any()))
           .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureInternal))
 
         val application = baseApplicationBuilder
@@ -415,7 +411,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           }
         )
 
-        when(mockSubmitMessageService.submitMessage(any(), any(), any(), any(), any())(any()))
+        when(mockSubmitMessageService.submitMessage(any(), any(), any(), any())(any()))
           .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureExternal))
 
         val application = baseApplicationBuilder
@@ -458,7 +454,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           }
         )
 
-        when(mockSubmitMessageService.submitMessage(any(), any(), any(), any(), any())(any()))
+        when(mockSubmitMessageService.submitMessage(any(), any(), any(), any())(any()))
           .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureRejected(ErrorInPayload.responseBody)))
 
         val application = baseApplicationBuilder
@@ -499,7 +495,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           }
         )
 
-        when(mockSubmitMessageService.submitMessage(any(), any(), any(), any(), any())(any()))
+        when(mockSubmitMessageService.submitMessage(any(), any(), any(), any())(any()))
           .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureInternal))
 
         val application = baseApplicationBuilder

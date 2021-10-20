@@ -29,22 +29,22 @@ object ArrivalUpdate {
 
   implicit val arrivalUpdateSemigroup: Semigroup[ArrivalUpdate] = {
     case (_: ArrivalStatusUpdate, x: ArrivalStatusUpdate)  => x
-    case (a: ArrivalStatusUpdate, m: MessageStatusUpdate)  => CompoundStatusUpdate(a, m)
+    case (_: ArrivalStatusUpdate, m: MessageStatusUpdate)  => CompoundStatusUpdate(m)
     case (_: ArrivalStatusUpdate, c: CompoundStatusUpdate) => c
     case (_: ArrivalStatusUpdate, p: ArrivalPutUpdate)     => p
 
     case (_: MessageStatusUpdate, x: MessageStatusUpdate)  => x
-    case (m: MessageStatusUpdate, a: ArrivalStatusUpdate)  => CompoundStatusUpdate(a, m)
+    case (m: MessageStatusUpdate, _: ArrivalStatusUpdate)  => CompoundStatusUpdate(m)
     case (_: MessageStatusUpdate, c: CompoundStatusUpdate) => c
     case (_: MessageStatusUpdate, p: ArrivalPutUpdate)     => p
 
     case (_: CompoundStatusUpdate, x: CompoundStatusUpdate) => x
-    case (c: CompoundStatusUpdate, a: ArrivalStatusUpdate)  => c.copy(arrivalStatusUpdate = a)
+    case (c: CompoundStatusUpdate, _: ArrivalStatusUpdate)  => c
     case (c: CompoundStatusUpdate, m: MessageStatusUpdate)  => c.copy(messageStatusUpdate = m)
     case (_: CompoundStatusUpdate, p: ArrivalPutUpdate)     => p
 
     case (_: ArrivalPutUpdate, x: ArrivalPutUpdate)     => x
-    case (p: ArrivalPutUpdate, a: ArrivalStatusUpdate)  => p.copy(arrivalUpdate = p.arrivalUpdate.copy(arrivalStatusUpdate = a))
+    case (p: ArrivalPutUpdate, _: ArrivalStatusUpdate)  => p.copy(arrivalUpdate = p.arrivalUpdate)
     case (p: ArrivalPutUpdate, m: MessageStatusUpdate)  => p.copy(arrivalUpdate = p.arrivalUpdate.copy(messageStatusUpdate = m))
     case (p: ArrivalPutUpdate, c: CompoundStatusUpdate) => p.copy(arrivalUpdate = c)
   }
@@ -88,12 +88,15 @@ object ArrivalStatusUpdate extends MongoDateTimeFormats {
     )
 }
 
-final case class CompoundStatusUpdate(arrivalStatusUpdate: ArrivalStatusUpdate, messageStatusUpdate: MessageStatusUpdate) extends ArrivalUpdate
+//ToDo - CTCTRADERS-2634 Removed ArrivalStatus but left the CompoundStatusUpdate to not break the database json structure
+//                       for reading existing MessageStatusUpdate
+//                       Can this be removed?
+final case class CompoundStatusUpdate(messageStatusUpdate: MessageStatusUpdate) extends ArrivalUpdate
 
 object CompoundStatusUpdate {
 
   implicit def arrivalUpdate(implicit clock: Clock): ArrivalModifier[CompoundStatusUpdate] =
-    csu => ArrivalModifier.toJson(csu.arrivalStatusUpdate) deepMerge ArrivalModifier.toJson(csu.messageStatusUpdate)
+    csu => ArrivalModifier.toJson(csu.messageStatusUpdate)
 }
 
 final case class ArrivalPutUpdate(movementReferenceNumber: MovementReferenceNumber, arrivalUpdate: CompoundStatusUpdate) extends ArrivalUpdate
