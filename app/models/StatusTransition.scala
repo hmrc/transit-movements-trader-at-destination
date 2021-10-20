@@ -16,14 +16,12 @@
 
 package models
 
-import models.ArrivalStatus._
-
 object StatusTransition {
 
   def transitionError(
-    requiredStatuses: Set[ArrivalStatus],
+    requiredStatuses: Set[MessageReceivedEvent],
     messageReceived: MessageReceivedEvent
-  ): Either[TransitionError, ArrivalStatus] = {
+  ): Either[TransitionError, MessageReceivedEvent] = {
     val messageType = messageReceived.toString
 
     val requiredStatusesString = requiredStatuses
@@ -40,17 +38,17 @@ object StatusTransition {
   }
 
   //ToDo CTCTRADERS-2634 What do I do with this. Delete it?
-  def targetStatus(messageReceived: MessageReceivedEvent): Either[TransitionError, ArrivalStatus] =
+  def targetStatus(messageReceived: MessageReceivedEvent): Either[TransitionError, MessageReceivedEvent] =
     messageReceived match {
-      case MessageReceivedEvent.ArrivalSubmitted                     => Right(ArrivalSubmitted)
-      case MessageReceivedEvent.ArrivalRejected                      => Right(ArrivalRejected)
-      case MessageReceivedEvent.UnloadingPermission                  => Right(UnloadingPermission)
-      case MessageReceivedEvent.UnloadingRemarksSubmitted            => Right(UnloadingRemarksSubmitted)
-      case MessageReceivedEvent.UnloadingRemarksRejected             => Right(UnloadingRemarksRejected)
-      case MessageReceivedEvent.GoodsReleased                        => Right(GoodsReleased)
-      case MessageReceivedEvent.XMLSubmissionNegativeAcknowledgement => Right(XMLSubmissionNegativeAcknowledgement)
+      case MessageReceivedEvent.ArrivalSubmitted                     => Right(messageReceived)
+      case MessageReceivedEvent.ArrivalRejected                      => Right(messageReceived)
+      case MessageReceivedEvent.UnloadingPermission                  => Right(messageReceived)
+      case MessageReceivedEvent.UnloadingRemarksSubmitted            => Right(messageReceived)
+      case MessageReceivedEvent.UnloadingRemarksRejected             => Right(messageReceived)
+      case MessageReceivedEvent.GoodsReleased                        => Right(messageReceived)
+      case MessageReceivedEvent.XMLSubmissionNegativeAcknowledgement => Right(messageReceived)
       case _ =>
-        transitionError(Set(Initialized, ArrivalSubmitted, UnloadingRemarksSubmitted), messageReceived)
+        transitionError(Set(MessageReceivedEvent.ArrivalSubmitted, MessageReceivedEvent.UnloadingRemarksSubmitted), messageReceived)
     }
 
 }

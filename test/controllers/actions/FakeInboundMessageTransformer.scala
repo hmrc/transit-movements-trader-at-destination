@@ -17,7 +17,6 @@
 package controllers.actions
 
 import com.google.inject.Inject
-import models.ArrivalStatus.GoodsReleased
 import models.GoodsReleasedResponse
 import models.Message
 import models.request.ArrivalWithoutMessagesRequest

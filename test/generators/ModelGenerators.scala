@@ -30,7 +30,6 @@ import connectors.MessageConnector.EisSubmissionResult.VirusFoundOrInvalidToken
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalPutUpdate
-import models.ArrivalStatus
 import models.ArrivalUpdate
 import models.ArrivalWithoutMessages
 import models.ChannelType
@@ -135,11 +134,6 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
       for {
         id <- intWithMaxLength(9)
       } yield ArrivalId(id)
-    }
-
-  implicit lazy val arbitraryState: Arbitrary[ArrivalStatus] =
-    Arbitrary {
-      Gen.oneOf(ArrivalStatus.values)
     }
 
   implicit lazy val arbitraryChannel: Arbitrary[ChannelType] =

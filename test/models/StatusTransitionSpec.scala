@@ -18,8 +18,7 @@ package models
 
 import base.SpecBase
 import generators.ModelGenerators
-import models.ArrivalStatus._
-import org.scalacheck.Arbitrary.arbitrary
+import models.MessageReceivedEvent._
 import org.scalatest.EitherValues
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
@@ -64,6 +63,8 @@ class StatusTransitionSpec extends SpecBase with ScalaCheckDrivenPropertyChecks 
       }
     }
 
+    /**
+      * ToDo CTCTRADERS-2634 - Remove?
     "Intitialized should not be transitioned to from any other state" ignore {
       val nonIntializedGen = arbitrary[ArrivalStatus].suchThat(_ != Initialized)
 
@@ -74,7 +75,7 @@ class StatusTransitionSpec extends SpecBase with ScalaCheckDrivenPropertyChecks 
       }
 
     }
-
+      */
     "ArrivalSubmitted must " - {
 
       "transition to GoodsReceived when receiving a GoodsReleased event" in {
