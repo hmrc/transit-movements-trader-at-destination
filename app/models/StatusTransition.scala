@@ -39,6 +39,7 @@ object StatusTransition {
     )
   }
 
+  //ToDo CTCTRADERS-2634 What do I do with this. Delete it?
   def targetStatus(messageReceived: MessageReceivedEvent): Either[TransitionError, ArrivalStatus] =
     messageReceived match {
       case MessageReceivedEvent.ArrivalSubmitted                     => Right(ArrivalSubmitted)

@@ -60,13 +60,13 @@ class ValidateOutboundMessageActionSpec
 
   "refine" - {
     Seq(
-      GoodsReleasedResponse                        -> ArrivalStatus.GoodsReleased,
-      ArrivalRejectedResponse                      -> ArrivalStatus.ArrivalRejected,
-      UnloadingPermissionResponse                  -> ArrivalStatus.UnloadingPermission,
-      UnloadingRemarksRejectedResponse             -> ArrivalStatus.UnloadingRemarksRejected,
-      XMLSubmissionNegativeAcknowledgementResponse -> ArrivalStatus.XMLSubmissionNegativeAcknowledgement
+      GoodsReleasedResponse,
+      ArrivalRejectedResponse,
+      UnloadingPermissionResponse,
+      UnloadingRemarksRejectedResponse,
+      XMLSubmissionNegativeAcknowledgementResponse
     ) foreach {
-      case (response, st) =>
+      case response =>
         s"return an internal Server if an Inbound message ($response) is found" in {
 
           import play.api.test.Helpers.BAD_REQUEST
@@ -74,20 +74,20 @@ class ValidateOutboundMessageActionSpec
 
           status(
             actionRefiner
-              .refine(MessageTransformRequest(Message(response, st), fakeArrivalWithoutMessagesRequest))
+              .refine(MessageTransformRequest(Message(response), fakeArrivalWithoutMessagesRequest))
               .map(_.left.value)
           ) mustBe BAD_REQUEST
         }
     }
     Seq(
-      UnloadingRemarksResponse -> ArrivalStatus.UnloadingRemarksSubmitted
+      UnloadingRemarksResponse
     ) foreach {
-      case (response, status) =>
+      case response =>
         s"return internal server error if an outbound response ($response) is found" in {
 
           actionRefiner
-            .refine(MessageTransformRequest(Message(response, status), fakeArrivalWithoutMessagesRequest))
-            .value mustBe Some(Success(Right(OutboundMessageRequest(OutboundMessage(response, status), fakeArrivalWithoutMessagesRequest))))
+            .refine(MessageTransformRequest(Message(response), fakeArrivalWithoutMessagesRequest))
+            .value mustBe Some(Success(Right(OutboundMessageRequest(OutboundMessage(response), fakeArrivalWithoutMessagesRequest))))
         }
     }
   }

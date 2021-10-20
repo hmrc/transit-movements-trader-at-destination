@@ -28,7 +28,6 @@ import cats.data.Ior
 import cats.data.NonEmptyList
 import config.AppConfig
 import controllers.routes
-import models.ArrivalStatus.Initialized
 import models.ChannelType.api
 import models.ChannelType.web
 import models._

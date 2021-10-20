@@ -37,8 +37,8 @@ class MessageTransformer @Inject()(implicit val executionContext: ExecutionConte
         x.headOption.flatMap(node => messageResponse(request.channel)(node.label)) match {
           case Some(response) =>
             StatusTransition.targetStatus(response.messageReceived) match {
-              case Right(nextState) =>
-                Future.successful(Right(MessageTransformRequest(Message(response, nextState), request)))
+              case Right(_) =>
+                Future.successful(Right(MessageTransformRequest(Message(response), request)))
               case Left(error) =>
                 logger.error(s"Unable to transition movement state ${error.message} for arrival movement ${request.arrivalWithoutMessages.arrivalId.index}")
                 Future.successful(Left(badRequestError(error.message)))

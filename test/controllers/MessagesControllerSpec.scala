@@ -27,7 +27,6 @@ import controllers.actions.MessageTransformRequest
 import controllers.actions.MessageTransformer
 import controllers.actions.MessageTransformerInterface
 import generators.ModelGenerators
-import models.ArrivalStatus.UnloadingRemarksSubmitted
 import models.ChannelType.web
 import models.MessageStatus.SubmissionFailed
 import models.MessageStatus.SubmissionPending
@@ -146,7 +145,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           (invocation: InvocationOnMock) => {
             val arrivalRequest = invocation.getArgument(0).asInstanceOf[ArrivalWithoutMessagesRequest[_]]
             Future.successful(
-              Right(MessageTransformRequest(Message(UnloadingRemarksResponse, UnloadingRemarksSubmitted), arrivalRequest))
+              Right(MessageTransformRequest(Message(UnloadingRemarksResponse), arrivalRequest))
             )
           }
         )
@@ -200,7 +199,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           (invocation: InvocationOnMock) => {
             val arrivalRequest = invocation.getArgument(0).asInstanceOf[ArrivalWithoutMessagesRequest[_]]
             Future.successful(
-              Right(MessageTransformRequest(Message(UnloadingRemarksResponse, UnloadingRemarksSubmitted), arrivalRequest))
+              Right(MessageTransformRequest(Message(UnloadingRemarksResponse), arrivalRequest))
             )
           }
         )
@@ -238,7 +237,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           (invocation: InvocationOnMock) => {
             val arrivalRequest = invocation.getArgument(0).asInstanceOf[ArrivalWithoutMessagesRequest[_]]
             Future.successful(
-              Right(MessageTransformRequest(Message(UnloadingRemarksResponse, UnloadingRemarksSubmitted), arrivalRequest))
+              Right(MessageTransformRequest(Message(UnloadingRemarksResponse), arrivalRequest))
             )
           }
         )
@@ -280,7 +279,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           (invocation: InvocationOnMock) => {
             val arrivalRequest = invocation.getArgument(0).asInstanceOf[ArrivalWithoutMessagesRequest[_]]
             Future.successful(
-              Right(MessageTransformRequest(Message(UnloadingRemarksResponse, UnloadingRemarksSubmitted), arrivalRequest))
+              Right(MessageTransformRequest(Message(UnloadingRemarksResponse), arrivalRequest))
             )
           }
         )
@@ -325,7 +324,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           (invocation: InvocationOnMock) => {
             val arrivalRequest = invocation.getArgument(0).asInstanceOf[ArrivalWithoutMessagesRequest[_]]
             Future.successful(
-              Right(MessageTransformRequest(Message(UnloadingRemarksResponse, UnloadingRemarksSubmitted), arrivalRequest))
+              Right(MessageTransformRequest(Message(UnloadingRemarksResponse), arrivalRequest))
             )
           }
         )
@@ -365,7 +364,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           (invocation: InvocationOnMock) => {
             val arrivalRequest = invocation.getArgument(0).asInstanceOf[ArrivalWithoutMessagesRequest[_]]
             Future.successful(
-              Right(MessageTransformRequest(Message(UnloadingRemarksResponse, UnloadingRemarksSubmitted), arrivalRequest))
+              Right(MessageTransformRequest(Message(UnloadingRemarksResponse), arrivalRequest))
             )
           }
         )
@@ -406,7 +405,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           (invocation: InvocationOnMock) => {
             val arrivalRequest = invocation.getArgument(0).asInstanceOf[ArrivalWithoutMessagesRequest[_]]
             Future.successful(
-              Right(MessageTransformRequest(Message(UnloadingRemarksResponse, UnloadingRemarksSubmitted), arrivalRequest))
+              Right(MessageTransformRequest(Message(UnloadingRemarksResponse), arrivalRequest))
             )
           }
         )
@@ -449,7 +448,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           (invocation: InvocationOnMock) => {
             val arrivalRequest = invocation.getArgument(0).asInstanceOf[ArrivalWithoutMessagesRequest[_]]
             Future.successful(
-              Right(MessageTransformRequest(Message(UnloadingRemarksResponse, UnloadingRemarksSubmitted), arrivalRequest))
+              Right(MessageTransformRequest(Message(UnloadingRemarksResponse), arrivalRequest))
             )
           }
         )
@@ -490,7 +489,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           (invocation: InvocationOnMock) => {
             val arrivalRequest = invocation.getArgument(0).asInstanceOf[ArrivalWithoutMessagesRequest[_]]
             Future.successful(
-              Right(MessageTransformRequest(Message(UnloadingRemarksResponse, UnloadingRemarksSubmitted), arrivalRequest))
+              Right(MessageTransformRequest(Message(UnloadingRemarksResponse), arrivalRequest))
             )
           }
         )
