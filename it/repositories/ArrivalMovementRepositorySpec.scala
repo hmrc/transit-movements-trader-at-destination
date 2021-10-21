@@ -126,54 +126,6 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
       }
     }
 
-    /**
-     * ToDo - CTCTRADERS-2634 Remove?
-    "updateArrival" - {
-      "must update the arrival and return a Success Unit when successful" in {
-        val app = appBuilder.build()
-        running(app) {
-
-          val arrivalStatus = ArrivalStatusUpdate(Initialized)
-          val arrival = arrivalWithOneMessage.sample.value
-          val lastUpdated = LocalDateTime.now(stubClock).withSecond(0).withNano(0)
-          val selector = ArrivalIdSelector(arrival.arrivalId)
-
-          started(app).futureValue
-
-          val repository = app.injector.instanceOf[ArrivalMovementRepository]
-
-          repository.insert(arrival).futureValue
-
-          repository.updateArrival(selector, arrivalStatus).futureValue
-
-          val updatedArrival = repository.get(arrival.arrivalId, arrival.channel).futureValue.value
-
-          updatedArrival.lastUpdated.withSecond(0).withNano(0) mustEqual lastUpdated
-        }
-      }
-
-      "must return a Failure if the selector does not match any documents" in {
-        val app = appBuilder.build()
-        running(app) {
-
-          val arrivalStatus = ArrivalStatusUpdate(Initialized)
-          val arrival = arrivalWithOneMessage.sample.value copy(arrivalId = ArrivalId(1))
-          val selector = ArrivalIdSelector(ArrivalId(2))
-
-          started(app).futureValue
-
-          val repository = app.injector.instanceOf[ArrivalMovementRepository]
-
-          repository.insert(arrival).futureValue
-
-          val result = repository.updateArrival(selector, arrivalStatus).futureValue
-
-          result mustBe a[Failure[_]]
-        }
-      }
-    }
-    */
-
     "getMaxArrivalId" - {
       "must return the highest arrival id in the database" in {
         database.flatMap(_.drop()).futureValue

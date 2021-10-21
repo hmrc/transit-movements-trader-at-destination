@@ -36,14 +36,7 @@ class MessageTransformer @Inject()(implicit val executionContext: ExecutionConte
       case x: NodeSeq =>
         x.headOption.flatMap(node => messageResponse(request.channel)(node.label)) match {
           case Some(response) =>
-            //ToDo CTCTRADERS-2634 Can I remove this?
-            StatusTransition.targetStatus(response.messageReceived) match {
-              case Right(_) =>
-                Future.successful(Right(MessageTransformRequest(Message(response), request)))
-              case Left(error) =>
-                logger.error(s"Unable to transition movement state ${error.message} for arrival movement ${request.arrivalWithoutMessages.arrivalId.index}")
-                Future.successful(Left(badRequestError(error.message)))
-            }
+            Future.successful(Right(MessageTransformRequest(Message(response), request)))
           case None =>
             logger.warn(s"Unsupported root node ${x.headOption.map(_.label)} and message type ${request.headers.get("X-Message-Type")}")
             Future.successful(
