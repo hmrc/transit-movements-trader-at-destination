@@ -127,9 +127,7 @@ class ArrivalMessageSummaryService {
 
         val rejectionNotificationCount = rejectionNotifications.length
 
-        //ToDo CTCTRADERS-2634 - What should I do with this
-        // if (rejectionNotificationCount > 0 && arrival.status == UnloadingRemarksRejected)
-        if (rejectionNotificationCount > 0)
+        if (rejectionNotificationCount > 0 && arrival.latestMessageType == UnloadingRemarksRejection)
           Some(rejectionNotifications.maxBy(_._1.messageCorrelationId))
         else
           None

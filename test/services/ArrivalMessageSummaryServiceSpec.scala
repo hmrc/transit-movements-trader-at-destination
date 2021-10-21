@@ -16,6 +16,8 @@
 
 package services
 
+import java.time.LocalDateTime
+
 import base.SpecBase
 import cats.data._
 import generators.ModelGenerators
@@ -34,22 +36,25 @@ import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators with ScalaCheckDrivenPropertyChecks {
   import ArrivalMessageSummaryServiceSpec.MovementMessagesHelpers._
 
-  def messageGeneratorSent(messageType: MessageType): Gen[MovementMessageWithStatus] = {
+  def messageGeneratorSent(messageType: MessageType, dateTime: LocalDateTime): Gen[MovementMessageWithStatus] = {
     val message = xml.XML.loadString(s"<${messageType.rootNode}>test</${messageType.rootNode}>")
-    arbitrary[MovementMessageWithStatus].map(_.copy(messageType = messageType, message = message, status = SubmissionPending))
+    arbitrary[MovementMessageWithStatus].map(_.copy(messageType = messageType, message = message, status = SubmissionPending, dateTime = dateTime))
   }
 
-  def messageGeneratorResponse(messageType: MessageType): Gen[MovementMessageWithoutStatus] = {
+  def messageGeneratorResponse(messageType: MessageType, dateTime: LocalDateTime): Gen[MovementMessageWithoutStatus] = {
     val message = xml.XML.loadString(s"<${messageType.rootNode}>test</${messageType.rootNode}>")
-    arbitrary[MovementMessageWithoutStatus].map(_.copy(messageType = messageType, message = message))
+    arbitrary[MovementMessageWithoutStatus].map(_.copy(messageType = messageType, message = message, dateTime = dateTime))
   }
 
-  val ie007Gen = messageGeneratorSent(ArrivalNotification)
-  val ie008Gen = messageGeneratorResponse(ArrivalRejection)
-  val ie043Gen = messageGeneratorResponse(UnloadingPermission)
-  val ie044Gen = messageGeneratorSent(UnloadingRemarks)
-  val ie058Gen = messageGeneratorResponse(UnloadingRemarksRejection)
-  val ie917Gen = messageGeneratorResponse(XMLSubmissionNegativeAcknowledgement)
+  val dateTime: LocalDateTime = LocalDateTime.now
+  val ie007Gen                = messageGeneratorSent(ArrivalNotification, dateTime)
+  val ie008Gen                = messageGeneratorResponse(ArrivalRejection, dateTime)
+  val ie043Gen                = messageGeneratorResponse(UnloadingPermission, dateTime)
+  val ie044Gen                = messageGeneratorSent(UnloadingRemarks, dateTime)
+  val ie058Gen                = messageGeneratorResponse(UnloadingRemarksRejection, dateTime)
+  val ie058GenLatest          = messageGeneratorResponse(UnloadingRemarksRejection, dateTime.plusMinutes(3))
+  val ie058GenEarliest        = messageGeneratorResponse(UnloadingRemarksRejection, dateTime.minusMinutes(3))
+  val ie917Gen                = messageGeneratorResponse(XMLSubmissionNegativeAcknowledgement, dateTime)
 
   def arrivalMovement(msgs: NonEmptyList[MovementMessage]): Gen[Arrival] =
     for {
@@ -651,9 +656,6 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
 
       }
 
-      /**
-        *
-        * ToDo CTCTRADERS-2643 - Relates to the change in ArrivalMessageSummaryService
       "IE044 and no IE058 when there has been an IE044 correction" in {
         val service = new ArrivalMessageSummaryService
 
@@ -672,27 +674,52 @@ class ArrivalMessageSummaryServiceSpec extends SpecBase with ModelGenerators wit
         }
 
       }
-        */
-      "latest IE044 and IE058 when there has been multiple corrections without a successful IE044 correction and state is UnloadingRemarksRejected" in {
+
+      "latest IE044 and IE058 when there has been multiple corrections without a successful IE044 correction and the latest state is UnloadingRemarksRejected" in {
         val service = new ArrivalMessageSummaryService
 
         forAll(
           ie007Gen.submitted.msgCorrId(1),
           ie043Gen.msgCorrId(2),
           ie044Gen.msgCorrId(3),
-          ie058Gen.msgCorrId(4),
-          ie044Gen.msgCorrId(5),
-          ie058Gen.msgCorrId(6)
+          ie058GenLatest.msgCorrId(4),
+          ie044Gen.msgCorrId(5)
         ) {
-          case (ie007, ie043, ie044Old, ie058Old, ie044, ie058) =>
-            val messages = NonEmptyList.of(ie007, ie043, ie044Old, ie058Old, ie044, ie058)
+          case (ie007, ie043, ie044Old, ie058Latest, ie044) =>
+            val messages = NonEmptyList.of(ie007, ie043, ie044Old, ie058Latest, ie044)
 
             forAll(arrivalMovement(messages)) {
               arr =>
                 val arrival = arr
 
                 val expectedMessageSummary =
-                  MessagesSummary(arrival, ie007.messageId, None, Some(ie043.messageId), Some(ie044.messageId), Some(ie058.messageId))
+                  MessagesSummary(arrival, ie007.messageId, None, Some(ie043.messageId), Some(ie044.messageId), Some(ie058Latest.messageId))
+
+                service.arrivalMessagesSummary(arrival) mustEqual expectedMessageSummary
+            }
+        }
+
+      }
+
+      "latest IE044 and IE058 when there has been multiple corrections without a successful IE044 correction and the latest state is not UnloadingRemarksRejected" in {
+        val service = new ArrivalMessageSummaryService
+
+        forAll(
+          ie007Gen.submitted.msgCorrId(1),
+          ie043Gen.msgCorrId(2),
+          ie044Gen.msgCorrId(3),
+          ie058GenEarliest.msgCorrId(4),
+          ie044Gen.msgCorrId(5)
+        ) {
+          case (ie007, ie043, ie044Old, ie058Earliest, ie044) =>
+            val messages = NonEmptyList.of(ie007, ie043, ie044Old, ie058Earliest, ie044)
+
+            forAll(arrivalMovement(messages)) {
+              arr =>
+                val arrival = arr
+
+                val expectedMessageSummary =
+                  MessagesSummary(arrival, ie007.messageId, None, Some(ie043.messageId), Some(ie044.messageId), None)
 
                 service.arrivalMessagesSummary(arrival) mustEqual expectedMessageSummary
             }

@@ -19,9 +19,10 @@ package models
 import cats.data._
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
-
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+
+import models.MessageType._
 
 case class Arrival(
   arrivalId: ArrivalId,
@@ -54,6 +55,49 @@ case class Arrival(
     "Messages"                    -> messages.toList.map(_.messageType.toString).mkString(", "),
     "Next message correlation id" -> nextMessageCorrelationId.toString
   )
+
+  def latestMessageType: MessageType = {
+    implicit val localDateOrdering: Ordering[LocalDateTime] = _ compareTo _
+
+    val messagesList             = messages.toList
+    val latestMessage            = messagesList.maxBy(_.dateTime)
+    val messagesWithSameDateTime = messagesList.filter(_.dateTime == latestMessage.dateTime)
+
+    if (messagesWithSameDateTime.size == 1) {
+      latestMessage.messageType
+    } else {
+
+      messagesWithSameDateTime.map(_.messageType).max match {
+        case ArrivalRejection =>
+          if (messagesList.count(_.messageType == ArrivalNotification) > messagesList.count(_.messageType == ArrivalRejection)) {
+            ArrivalNotification
+          } else {
+            ArrivalRejection
+          }
+        case UnloadingRemarksRejection =>
+          if (messagesList.count(_.messageType == UnloadingRemarks) > messagesList.count(_.messageType == UnloadingRemarksRejection)) {
+            UnloadingRemarks
+          } else {
+            UnloadingRemarksRejection
+          }
+        case XMLSubmissionNegativeAcknowledgement if messagesList.count(_.messageType == UnloadingRemarks) >= 1 =>
+          if (messagesList.count(_.messageType == UnloadingRemarks) > messagesList.count(_.messageType == XMLSubmissionNegativeAcknowledgement)) {
+            UnloadingRemarks
+          } else {
+            XMLSubmissionNegativeAcknowledgement
+          }
+        case XMLSubmissionNegativeAcknowledgement =>
+          if (messagesList
+                .count(_.messageType == ArrivalNotification) > messagesList.count(_.messageType == XMLSubmissionNegativeAcknowledgement)) {
+            ArrivalNotification
+          } else {
+            XMLSubmissionNegativeAcknowledgement
+          }
+        case value => value
+      }
+    }
+
+  }
 }
 
 object Arrival {
