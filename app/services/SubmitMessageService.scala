@@ -116,7 +116,7 @@ class SubmitMessageService @Inject()(
                   val newStatus = message.status.transition(submissionResult)
                   val update = ArrivalPutUpdate(
                     mrn,
-                    CompoundStatusUpdate(MessageStatusUpdate(messageId, newStatus)) // TODO: We should use arrival.status.transition here also
+                    MessageStatusUpdate(messageId, newStatus)
                   )
 
                   arrivalMovementRepository
@@ -232,7 +232,7 @@ class SubmitMessageService @Inject()(
     messageState: MessageStatus = MessageStatus.SubmissionSucceeded
   ): Future[Try[Unit]] = {
     val selector = ArrivalIdSelector(arrivalId)
-    val modifier = CompoundStatusUpdate(MessageStatusUpdate(messageId, messageState))
+    val modifier = MessageStatusUpdate(messageId, messageState)
 
     arrivalMovementRepository.updateArrival(selector, modifier)
   }

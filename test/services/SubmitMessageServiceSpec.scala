@@ -32,7 +32,6 @@ import models.Arrival
 import models.ArrivalId
 import models.ArrivalIdSelector
 import models.ArrivalPutUpdate
-import models.CompoundStatusUpdate
 import models.MessageId
 import models.MessageSelector
 import models.MessageStatus
@@ -129,7 +128,7 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
         verify(mockMessageConnector, times(1)).post(eqTo(arrivalId), eqTo(movementMessage), any(), any())(any())
         verify(mockArrivalMovementRepository, times(1)).updateArrival(
           eqTo(ArrivalIdSelector(arrivalId)),
-          eqTo(CompoundStatusUpdate(MessageStatusUpdate(messageId, MessageStatus.SubmissionSucceeded)))
+          eqTo(MessageStatusUpdate(messageId, MessageStatus.SubmissionSucceeded))
         )(any())
 
       }
@@ -165,7 +164,7 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
         verify(mockMessageConnector, times(1)).post(eqTo(arrivalId), eqTo(movementMessage), any(), any())(any())
         verify(mockArrivalMovementRepository, times(1)).updateArrival(
           eqTo(ArrivalIdSelector(arrivalId)),
-          eqTo(CompoundStatusUpdate(MessageStatusUpdate(messageId, MessageStatus.SubmissionSucceeded)))
+          eqTo(MessageStatusUpdate(messageId, MessageStatus.SubmissionSucceeded))
         )(any())
       }
 
@@ -360,7 +359,7 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
 
         val expectedSelector = ArrivalIdSelector(arrivalId)
         val expectedModifier =
-          ArrivalPutUpdate(mrn, CompoundStatusUpdate(MessageStatusUpdate(messageId, SubmissionSucceeded)))
+          ArrivalPutUpdate(mrn, MessageStatusUpdate(messageId, SubmissionSucceeded))
 
         verify(mockArrivalMovementRepository, times(1)).addNewMessage(eqTo(arrivalId), eqTo(movementMessage))
         verify(mockMessageConnector, times(1)).post(eqTo(arrivalId), eqTo(movementMessage), any(), any())(any())
@@ -398,7 +397,7 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
 
         val expectedSelector = ArrivalIdSelector(arrivalId)
         val expectedModifier =
-          ArrivalPutUpdate(mrn, CompoundStatusUpdate(MessageStatusUpdate(messageId, SubmissionSucceeded)))
+          ArrivalPutUpdate(mrn, MessageStatusUpdate(messageId, SubmissionSucceeded))
 
         result.futureValue mustEqual SubmissionProcessingResult.SubmissionSuccess
         verify(mockArrivalMovementRepository, times(1)).addNewMessage(eqTo(arrivalId), eqTo(movementMessage))
@@ -605,7 +604,7 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
         verify(mockMessageConnector, times(1)).post(eqTo(arrival.arrivalId), eqTo(movementMessage), any(), any())(any())
         verify(mockArrivalMovementRepository, times(1)).updateArrival(
           eqTo(ArrivalIdSelector(arrival.arrivalId)),
-          eqTo(CompoundStatusUpdate(MessageStatusUpdate(messageId, MessageStatus.SubmissionSucceeded)))
+          eqTo(MessageStatusUpdate(messageId, MessageStatus.SubmissionSucceeded))
         )(any())
 
       }
@@ -637,7 +636,7 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
         verify(mockMessageConnector, times(1)).post(eqTo(arrival.arrivalId), eqTo(movementMessage), any(), any())(any())
         verify(mockArrivalMovementRepository, times(1)).updateArrival(
           eqTo(ArrivalIdSelector(arrival.arrivalId)),
-          eqTo(CompoundStatusUpdate(MessageStatusUpdate(messageId, MessageStatus.SubmissionSucceeded)))
+          eqTo(MessageStatusUpdate(messageId, MessageStatus.SubmissionSucceeded))
         )(any())
       }
 

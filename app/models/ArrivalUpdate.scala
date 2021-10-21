@@ -29,23 +29,16 @@ object ArrivalUpdate {
 
   implicit val arrivalUpdateSemigroup: Semigroup[ArrivalUpdate] = {
 
-    case (_: MessageStatusUpdate, x: MessageStatusUpdate)  => x
-    case (_: MessageStatusUpdate, c: CompoundStatusUpdate) => c
-    case (_: MessageStatusUpdate, p: ArrivalPutUpdate)     => p
+    case (_: MessageStatusUpdate, x: MessageStatusUpdate) => x
+    case (_: MessageStatusUpdate, p: ArrivalPutUpdate)    => p
 
-    case (_: CompoundStatusUpdate, x: CompoundStatusUpdate) => x
-    case (c: CompoundStatusUpdate, m: MessageStatusUpdate)  => c.copy(messageStatusUpdate = m)
-    case (_: CompoundStatusUpdate, p: ArrivalPutUpdate)     => p
-
-    case (_: ArrivalPutUpdate, x: ArrivalPutUpdate)     => x
-    case (p: ArrivalPutUpdate, m: MessageStatusUpdate)  => p.copy(arrivalUpdate = p.arrivalUpdate.copy(messageStatusUpdate = m))
-    case (p: ArrivalPutUpdate, c: CompoundStatusUpdate) => p.copy(arrivalUpdate = c)
+    case (_: ArrivalPutUpdate, x: ArrivalPutUpdate)    => x
+    case (p: ArrivalPutUpdate, m: MessageStatusUpdate) => p.copy(messageStatusUpdate = m)
   }
 
   implicit def arrivalUpdateArrivalModifier(implicit clock: Clock): ArrivalModifier[ArrivalUpdate] = {
-    case x: MessageStatusUpdate  => ArrivalModifier.toJson(x)
-    case x: CompoundStatusUpdate => ArrivalModifier.toJson(x)
-    case x: ArrivalPutUpdate     => ArrivalModifier.toJson(x)
+    case x: MessageStatusUpdate => ArrivalModifier.toJson(x)
+    case x: ArrivalPutUpdate    => ArrivalModifier.toJson(x)
   }
 }
 
@@ -66,18 +59,7 @@ object MessageStatusUpdate extends MongoDateTimeFormats {
     )
 }
 
-//ToDo - CTCTRADERS-2634 Removed ArrivalStatus but left the CompoundStatusUpdate to not break the database json structure
-//                       for reading existing MessageStatusUpdate
-//                       Can this be removed?
-final case class CompoundStatusUpdate(messageStatusUpdate: MessageStatusUpdate) extends ArrivalUpdate
-
-object CompoundStatusUpdate {
-
-  implicit def arrivalUpdate(implicit clock: Clock): ArrivalModifier[CompoundStatusUpdate] =
-    csu => ArrivalModifier.toJson(csu.messageStatusUpdate)
-}
-
-final case class ArrivalPutUpdate(movementReferenceNumber: MovementReferenceNumber, arrivalUpdate: CompoundStatusUpdate) extends ArrivalUpdate
+final case class ArrivalPutUpdate(movementReferenceNumber: MovementReferenceNumber, messageStatusUpdate: MessageStatusUpdate) extends ArrivalUpdate
 
 object ArrivalPutUpdate extends MongoDateTimeFormats {
 
@@ -88,6 +70,6 @@ object ArrivalPutUpdate extends MongoDateTimeFormats {
           "movementReferenceNumber" -> a.movementReferenceNumber,
           "lastUpdated"             -> LocalDateTime.now(clock)
         )
-      ) deepMerge ArrivalModifier.toJson(a.arrivalUpdate)
+      ) deepMerge ArrivalModifier.toJson(a.messageStatusUpdate)
 
 }

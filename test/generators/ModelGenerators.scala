@@ -33,7 +33,6 @@ import models.ArrivalPutUpdate
 import models.ArrivalUpdate
 import models.ArrivalWithoutMessages
 import models.ChannelType
-import models.CompoundStatusUpdate
 import models.MessageId
 import models.MessageMetaData
 import models.MessageReceivedEvent
@@ -68,23 +67,16 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
       } yield MessageStatusUpdate(messageId, messageStatus)
     }
 
-  implicit val arbitraryCompoundStatusUpdate: Arbitrary[CompoundStatusUpdate] = Arbitrary {
-    for {
-      messageStatusUpdate <- arbitrary[MessageStatusUpdate]
-    } yield CompoundStatusUpdate(messageStatusUpdate)
-  }
-
   implicit val arbitraryArrivalPutUpdate: Arbitrary[ArrivalPutUpdate] = Arbitrary {
     for {
       mrn    <- arbitrary[MovementReferenceNumber]
-      update <- arbitrary[CompoundStatusUpdate]
+      update <- arbitrary[MessageStatusUpdate]
     } yield ArrivalPutUpdate(mrn, update)
   }
 
   val arrivalUpdateTypeGenerator: Gen[Gen[ArrivalUpdate]] =
     Gen.oneOf[Gen[ArrivalUpdate]](
       arbitrary[MessageStatusUpdate],
-      arbitrary[CompoundStatusUpdate],
       arbitrary[ArrivalPutUpdate]
     )
 
@@ -92,7 +84,6 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
     Arbitrary(
       Gen.oneOf[ArrivalUpdate](
         arbitrary[MessageStatusUpdate],
-        arbitrary[CompoundStatusUpdate],
         arbitrary[ArrivalPutUpdate]
       )
     )
