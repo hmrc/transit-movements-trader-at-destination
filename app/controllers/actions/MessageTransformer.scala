@@ -36,6 +36,7 @@ class MessageTransformer @Inject()(implicit val executionContext: ExecutionConte
       case x: NodeSeq =>
         x.headOption.flatMap(node => messageResponse(request.channel)(node.label)) match {
           case Some(response) =>
+            //ToDo CTCTRADERS-2634 Can I remove this?
             StatusTransition.targetStatus(response.messageReceived) match {
               case Right(_) =>
                 Future.successful(Right(MessageTransformRequest(Message(response), request)))
