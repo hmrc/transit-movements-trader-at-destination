@@ -54,6 +54,7 @@ class ArrivalMessageNotificationSpec extends SpecBase with ScalaCheckDrivenPrope
 
       val inboundMessageRequest = InboundMessageRequest(
         arrival = arrival,
+        nextStatus = ArrivalStatus.GoodsReleased,
         inboundMessageResponse = GoodsReleasedResponse,
         movementMessage = MovementMessageWithoutStatus(
           MessageId(0),
@@ -92,6 +93,7 @@ class ArrivalMessageNotificationSpec extends SpecBase with ScalaCheckDrivenPrope
 
       val inboundMessageRequest = InboundMessageRequest(
         arrival = arrival,
+        nextStatus = ArrivalStatus.GoodsReleased,
         inboundMessageResponse = GoodsReleasedResponse,
         movementMessage = MovementMessageWithoutStatus(
           MessageId(0),

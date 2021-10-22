@@ -40,7 +40,7 @@ class SubmitMessageService @Inject()(
 )(implicit clock: Clock, ec: ExecutionContext)
     extends Logging {
 
-  def submitMessage(arrivalId: ArrivalId, messageId: MessageId, message: MovementMessageWithStatus, channelType: ChannelType)(
+  def submitMessage(arrivalId: ArrivalId, messageId: MessageId, message: MovementMessageWithStatus, arrivalStatus: ArrivalStatus, channelType: ChannelType)(
     implicit hc: HeaderCarrier): Future[SubmissionProcessingResult] =
     arrivalMovementRepository.addNewMessage(arrivalId, message) flatMap {
       case Failure(_) =>
@@ -55,7 +55,7 @@ class SubmitMessageService @Inject()(
                 case EisSubmissionSuccessful =>
                   val newStatus = message.status.transition(submissionResult)
 
-                  updateArrivalAndMessage(arrivalId, messageId, newStatus)
+                  updateArrivalAndMessage(arrivalId, messageId, arrivalStatus, newStatus)
                     .map(_ => SubmissionProcessingResult.SubmissionSuccess)
                     .recover({
                       case _ =>
@@ -116,7 +116,7 @@ class SubmitMessageService @Inject()(
                   val newStatus = message.status.transition(submissionResult)
                   val update = ArrivalPutUpdate(
                     mrn,
-                    MessageStatusUpdate(messageId, newStatus)
+                    CompoundStatusUpdate(ArrivalStatusUpdate(ArrivalStatus.ArrivalSubmitted), MessageStatusUpdate(messageId, newStatus)) // TODO: We should use arrival.status.transition here also
                   )
 
                   arrivalMovementRepository
@@ -229,10 +229,11 @@ class SubmitMessageService @Inject()(
   private def updateArrivalAndMessage(
     arrivalId: ArrivalId,
     messageId: MessageId,
+    arrivalState: ArrivalStatus = ArrivalStatus.ArrivalSubmitted,
     messageState: MessageStatus = MessageStatus.SubmissionSucceeded
   ): Future[Try[Unit]] = {
     val selector = ArrivalIdSelector(arrivalId)
-    val modifier = MessageStatusUpdate(messageId, messageState)
+    val modifier = CompoundStatusUpdate(ArrivalStatusUpdate(arrivalState), MessageStatusUpdate(messageId, messageState))
 
     arrivalMovementRepository.updateArrival(selector, modifier)
   }

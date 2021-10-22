@@ -86,6 +86,30 @@ class ArrivalMovementRepository @Inject()(
         _ => ()
       )
 
+  val logSubmittedArrivals: Future[Boolean] = {
+
+    val byId     = Json.obj("_id"    -> -1)
+    val selector = Json.obj("status" -> ArrivalStatus.ArrivalSubmitted.toString)
+
+    collection
+      .flatMap {
+        _.find(selector, None)
+          .sort(byId)
+          .cursor[SubmittedArrivalSummary]()
+          .collect[List](100, Cursor.FailOnError())
+      }
+      .map {
+        results =>
+          results
+            .filter(_.lastUpdated.isBefore(LocalDateTime.now(clock).minusDays(1)))
+            .foreach(
+              result => logger.warn(result.logMessage)
+            )
+
+          true
+      }
+  }
+
   private lazy val eoriNumberIndex: Aux[BSONSerializationPack.type] = IndexUtils.index(
     key = Seq("eoriNumber" -> IndexType.Ascending),
     name = Some("eori-number-index")
@@ -417,7 +441,7 @@ class ArrivalMovementRepository @Inject()(
     }
   }
 
-  def addResponseMessage(arrivalId: ArrivalId, message: MovementMessage): Future[Try[Unit]] = {
+  def addResponseMessage(arrivalId: ArrivalId, message: MovementMessage, status: ArrivalStatus): Future[Try[Unit]] = {
     val selector = Json.obj(
       "_id" -> arrivalId
     )
@@ -426,7 +450,8 @@ class ArrivalMovementRepository @Inject()(
       Json.obj(
         "$set" -> Json.obj(
           "updated"     -> message.dateTime,
-          "lastUpdated" -> LocalDateTime.now(clock)
+          "lastUpdated" -> LocalDateTime.now(clock),
+          "status"      -> status.toString
         ),
         "$push" -> Json.obj(
           "messages" -> Json.toJson(message)

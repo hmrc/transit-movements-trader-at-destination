@@ -19,6 +19,7 @@ package services
 import audit.AuditService
 import base.SpecBase
 import generators.ModelGenerators
+import models.ArrivalStatus._
 import models.ArrivalId
 import models.ArrivalWithoutMessages
 import models.FailedToSaveMessage
@@ -54,7 +55,7 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach with Model
   "validateXmlAndSaveMessage" - {
 
     "must audit the call and returns Success when we successfully save a message" in {
-      when(mockArrivalMovementRepository.addResponseMessage(any(), any())).thenReturn(Future.successful(Success(())))
+      when(mockArrivalMovementRepository.addResponseMessage(any(), any(), any())).thenReturn(Future.successful(Success(())))
       when(mockXmlValidationService.validate(any(), any())).thenReturn(Success(()))
 
       val arrival = arbitrary[ArrivalWithoutMessages].sample.value
@@ -77,19 +78,19 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach with Model
 
         val result: Unit =
           saveMessageService
-            .saveInboundMessage(InboundMessageRequest(arrival, GoodsReleasedResponse, message), messageSender)
+            .saveInboundMessage(InboundMessageRequest(arrival, GoodsReleased, GoodsReleasedResponse, message), messageSender)
             .futureValue
             .value
 
         result mustBe (())
-        verify(mockArrivalMovementRepository, times(1)).addResponseMessage(eqTo(arrivalId), any())
+        verify(mockArrivalMovementRepository, times(1)).addResponseMessage(eqTo(arrivalId), any(), eqTo(GoodsReleased))
         verify(mockAuditService, times(1)).auditNCTSMessages(any(), eqTo(arrival.eoriNumber), any(), any())(any())
       }
     }
 
     "return Failure when we cannot save the message" in {
 
-      when(mockArrivalMovementRepository.addResponseMessage(any(), any())).thenReturn(Future.successful(Failure(new Exception)))
+      when(mockArrivalMovementRepository.addResponseMessage(any(), any(), any())).thenReturn(Future.successful(Failure(new Exception)))
 
       val message = arbitrary[MovementMessageWithoutStatus].sample.value
       val arrival = arbitrary[ArrivalWithoutMessages].sample.value
@@ -105,13 +106,13 @@ class SaveMessageServiceSpec extends SpecBase with BeforeAndAfterEach with Model
 
         val result =
           saveMessageService
-            .saveInboundMessage(InboundMessageRequest(arrival, GoodsReleasedResponse, message), messageSender)
+            .saveInboundMessage(InboundMessageRequest(arrival, GoodsReleased, GoodsReleasedResponse, message), messageSender)
             .futureValue
             .left
             .value
 
         result mustBe an[FailedToSaveMessage]
-        verify(mockArrivalMovementRepository, times(1)).addResponseMessage(any(), any())
+        verify(mockArrivalMovementRepository, times(1)).addResponseMessage(any(), any(), any())
       }
     }
   }

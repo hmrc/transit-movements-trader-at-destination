@@ -17,6 +17,7 @@
 package controllers.actions
 
 import com.google.inject.Inject
+import models.ArrivalStatus.GoodsReleased
 import models.GoodsReleasedResponse
 import models.Message
 import models.request.ArrivalWithoutMessagesRequest
@@ -29,7 +30,7 @@ import scala.concurrent.Future
 class FakeMessageTransformer @Inject()(implicit val executionContext: ExecutionContext) extends MessageTransformerInterface {
   override protected def refine[A](request: ArrivalWithoutMessagesRequest[A]): Future[Either[Result, MessageTransformRequest[A]]] =
     Future.successful(
-      Right(MessageTransformRequest(Message(GoodsReleasedResponse), request))
+      Right(MessageTransformRequest(Message(GoodsReleasedResponse, GoodsReleased), request))
     )
 }
 

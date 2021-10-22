@@ -18,6 +18,7 @@ package services
 
 import base.SpecBase
 import generators.ModelGenerators
+import models.ArrivalStatus.GoodsReleased
 import models.ArrivalId
 import models.ArrivalWithoutMessages
 import models.GoodsReleasedResponse
@@ -51,7 +52,7 @@ class MovementMessageOrchestratorServiceSpec extends SpecBase with ModelGenerato
         val messageSender = MessageSender(arrival.arrivalId, arrival.nextMessageCorrelationId)
         val xml           = <test>TestXml</test>
 
-        val expectedResult = InboundMessageRequest(arrival, GoodsReleasedResponse, message)
+        val expectedResult = InboundMessageRequest(arrival, GoodsReleased, GoodsReleasedResponse, message)
 
         when(mockInboundRequestService.makeInboundRequest(any(), any(), any())(any())).thenReturn(Future.successful(Right(expectedResult)))
         when(mockSaveMessageService.saveInboundMessage(any(), any())(any())).thenReturn(Future.successful(Right(())))
@@ -103,7 +104,7 @@ class MovementMessageOrchestratorServiceSpec extends SpecBase with ModelGenerato
         val messageSender = MessageSender(arrival.arrivalId, arrival.nextMessageCorrelationId)
         val xml           = <test>TestXml</test>
 
-        val inboundMessageRequest = InboundMessageRequest(arrival, GoodsReleasedResponse, message)
+        val inboundMessageRequest = InboundMessageRequest(arrival, GoodsReleased, GoodsReleasedResponse, message)
 
         when(mockInboundRequestService.makeInboundRequest(any(), any(), any())(any())).thenReturn(Future.successful(Right(inboundMessageRequest)))
         when(mockSaveMessageService.saveInboundMessage(any(), any())(any())).thenReturn(Future.successful(Left(ExampleSaveMessageFailure("message"))))

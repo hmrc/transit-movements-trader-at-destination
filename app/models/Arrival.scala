@@ -19,16 +19,16 @@ package models
 import cats.data._
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
+
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-
-import models.MessageType._
 
 case class Arrival(
   arrivalId: ArrivalId,
   channel: ChannelType,
   movementReferenceNumber: MovementReferenceNumber,
   eoriNumber: String,
+  status: ArrivalStatus,
   created: LocalDateTime,
   updated: LocalDateTime,
   lastUpdated: LocalDateTime = LocalDateTime.now,
@@ -55,49 +55,6 @@ case class Arrival(
     "Messages"                    -> messages.toList.map(_.messageType.toString).mkString(", "),
     "Next message correlation id" -> nextMessageCorrelationId.toString
   )
-
-  def latestMessageType: MessageType = {
-    implicit val localDateOrdering: Ordering[LocalDateTime] = _ compareTo _
-
-    val messagesList             = messages.toList
-    val latestMessage            = messagesList.maxBy(_.dateTime)
-    val messagesWithSameDateTime = messagesList.filter(_.dateTime == latestMessage.dateTime)
-
-    if (messagesWithSameDateTime.size == 1) {
-      latestMessage.messageType
-    } else {
-
-      messagesWithSameDateTime.map(_.messageType).max match {
-        case ArrivalRejection =>
-          if (messagesList.count(_.messageType == ArrivalNotification) > messagesList.count(_.messageType == ArrivalRejection)) {
-            ArrivalNotification
-          } else {
-            ArrivalRejection
-          }
-        case UnloadingRemarksRejection =>
-          if (messagesList.count(_.messageType == UnloadingRemarks) > messagesList.count(_.messageType == UnloadingRemarksRejection)) {
-            UnloadingRemarks
-          } else {
-            UnloadingRemarksRejection
-          }
-        case XMLSubmissionNegativeAcknowledgement if messagesList.count(_.messageType == UnloadingRemarks) >= 1 =>
-          if (messagesList.count(_.messageType == UnloadingRemarks) > messagesList.count(_.messageType == XMLSubmissionNegativeAcknowledgement)) {
-            UnloadingRemarks
-          } else {
-            XMLSubmissionNegativeAcknowledgement
-          }
-        case XMLSubmissionNegativeAcknowledgement =>
-          if (messagesList
-                .count(_.messageType == ArrivalNotification) > messagesList.count(_.messageType == XMLSubmissionNegativeAcknowledgement)) {
-            ArrivalNotification
-          } else {
-            XMLSubmissionNegativeAcknowledgement
-          }
-        case value => value
-      }
-    }
-
-  }
 }
 
 object Arrival {
@@ -115,6 +72,7 @@ object Arrival {
         (__ \ "channel").read[ChannelType] and
         (__ \ "movementReferenceNumber").read[MovementReferenceNumber] and
         (__ \ "eoriNumber").read[String] and
+        (__ \ "status").read[ArrivalStatus] and
         (__ \ "created").read(MongoDateTimeFormats.localDateTimeRead) and
         (__ \ "updated").read(MongoDateTimeFormats.localDateTimeRead) and
         (__ \ "lastUpdated").read(MongoDateTimeFormats.localDateTimeRead) and
@@ -129,6 +87,7 @@ object Arrival {
         (__ \ "channel").write[ChannelType] and
         (__ \ "movementReferenceNumber").write[MovementReferenceNumber] and
         (__ \ "eoriNumber").write[String] and
+        (__ \ "status").write[ArrivalStatus] and
         (__ \ "created").write(write) and
         (__ \ "updated").write(write) and
         (__ \ "lastUpdated").write(write) and
