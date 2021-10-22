@@ -21,6 +21,7 @@ import cats.data.Ior
 import cats.data.NonEmptyList
 import models.Arrival
 import models.ArrivalId
+import models.ArrivalStatus
 import models.ChannelType.api
 import models.EORINumber
 import models.MessageId
@@ -99,6 +100,7 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
         channel = api,
         movementReferenceNumber = mrn,
         eoriNumber = eori,
+        status = ArrivalStatus.Initialized,
         dateTime,
         dateTime,
         dateTime,

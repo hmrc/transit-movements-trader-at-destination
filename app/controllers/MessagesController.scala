@@ -84,7 +84,7 @@ class MessagesController @Inject()(
               ) match {
               case Right(message) =>
                 submitMessageService
-                  .submitMessage(arrivalId, arrival.nextMessageId, message, arrival.channel)
+                  .submitMessage(arrivalId, arrival.nextMessageId, message, request.message.nextState, arrival.channel)
                   .map {
                     result =>
                       movementSummaryLogger.info(

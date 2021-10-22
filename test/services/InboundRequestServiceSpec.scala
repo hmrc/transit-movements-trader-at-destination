@@ -19,6 +19,8 @@ package services
 import base.SpecBase
 import cats.data.EitherT
 import generators.ModelGenerators
+import models.ArrivalStatus.ArrivalSubmitted
+import models.ArrivalStatus.GoodsReleased
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalWithoutMessages
@@ -53,7 +55,9 @@ class InboundRequestServiceSpec extends SpecBase with ModelGenerators with Scala
       val inboundXml = <CC025A></CC025A>
 
       val messageSender = MessageSender(ArrivalId(0), 0)
-      val sampleArrival = arbitrary[ArrivalWithoutMessages].sample.value
+      val sampleArrival = arbitrary[ArrivalWithoutMessages].sample.value.copy(
+        status = ArrivalSubmitted
+      )
 
       val message = arbitrary[MovementMessageWithoutStatus].sample.value.copy(messageId = sampleArrival.nextMessageId)
 
@@ -93,7 +97,7 @@ class InboundRequestServiceSpec extends SpecBase with ModelGenerators with Scala
 
         val result = service.makeInboundRequest(ArrivalId(0), inboundXml, messageSender)
 
-        val expectedResult = InboundMessageRequest(sampleArrival, GoodsReleasedResponse, message)
+        val expectedResult = InboundMessageRequest(sampleArrival, GoodsReleased, GoodsReleasedResponse, message)
 
         result.futureValue.value mustBe expectedResult
       }
@@ -129,7 +133,9 @@ class InboundRequestServiceSpec extends SpecBase with ModelGenerators with Scala
       val inboundXml = <CC025A></CC025A>
 
       val messageSender = MessageSender(ArrivalId(0), 0)
-      val sampleArrival = arbitrary[Arrival].sample.value
+      val sampleArrival = arbitrary[Arrival].sample.value.copy(
+        status = ArrivalSubmitted
+      )
 
       val message = arbitrary[MovementMessageWithoutStatus].sample.value.copy(messageId = sampleArrival.nextMessageId)
 
@@ -261,7 +267,9 @@ class InboundRequestServiceSpec extends SpecBase with ModelGenerators with Scala
 
       val messageSender = MessageSender(ArrivalId(0), 0)
 
-      val sampleArrival = arbitrary[ArrivalWithoutMessages].sample.value
+      val sampleArrival = arbitrary[ArrivalWithoutMessages].sample.value.copy(
+        status = ArrivalSubmitted
+      )
 
       val message = arbitrary[MovementMessageWithoutStatus].sample.value.copy(messageCorrelationId = sampleArrival.nextMessageCorrelationId)
 

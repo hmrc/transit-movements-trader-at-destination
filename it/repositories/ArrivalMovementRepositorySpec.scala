@@ -28,6 +28,9 @@ import cats.data.Ior
 import cats.data.NonEmptyList
 import config.AppConfig
 import controllers.routes
+import models.ArrivalStatus.GoodsReleased
+import models.ArrivalStatus.Initialized
+import models.ArrivalStatus.UnloadingRemarksSubmitted
 import models.ChannelType.api
 import models.ChannelType.web
 import models._
@@ -126,6 +129,55 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
       }
     }
 
+    "updateArrival" - {
+      "must update the arrival and return a Success Unit when successful" in {
+        val app = appBuilder.build()
+        running(app) {
+
+          val arrivalStatus = ArrivalStatusUpdate(Initialized)
+          val arrival = arrivalWithOneMessage.sample.value.copy(status = GoodsReleased)
+          val lastUpdated = LocalDateTime.now(stubClock).withSecond(0).withNano(0)
+          val selector = ArrivalIdSelector(arrival.arrivalId)
+
+          started(app).futureValue
+
+          val repository = app.injector.instanceOf[ArrivalMovementRepository]
+
+          repository.insert(arrival).futureValue
+
+          repository.updateArrival(selector, arrivalStatus).futureValue
+
+          val updatedArrival = repository.get(arrival.arrivalId, arrival.channel).futureValue.value
+
+          updatedArrival.status mustEqual arrivalStatus.arrivalStatus
+          updatedArrival.lastUpdated.withSecond(0).withNano(0) mustEqual lastUpdated
+        }
+      }
+
+      "must return a Failure if the selector does not match any documents" in {
+        val app = appBuilder.build()
+        running(app) {
+
+          val arrivalStatus = ArrivalStatusUpdate(Initialized)
+          val arrival = arrivalWithOneMessage.sample.value copy(arrivalId = ArrivalId(1), status = UnloadingRemarksSubmitted)
+          val selector = ArrivalIdSelector(ArrivalId(2))
+
+          started(app).futureValue
+
+          val repository = app.injector.instanceOf[ArrivalMovementRepository]
+
+          repository.insert(arrival).futureValue
+
+          val result = repository.updateArrival(selector, arrivalStatus).futureValue
+
+          val updatedArrival = repository.get(arrival.arrivalId, arrival.channel).futureValue.value
+
+          result mustBe a[Failure[_]]
+          updatedArrival.status must not be arrivalStatus.arrivalStatus
+        }
+      }
+    }
+
     "getMaxArrivalId" - {
       "must return the highest arrival id in the database" in {
         database.flatMap(_.drop()).futureValue
@@ -171,6 +223,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
             messageBody,
             arrival.nextMessageCorrelationId
           )
+        val newState = ArrivalStatus.GoodsReleased
 
         val app = appBuilder.build()
         running(app) {
@@ -178,7 +231,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
           val repository = app.injector.instanceOf[ArrivalMovementRepository]
 
           repository.insert(arrival).futureValue
-          val addMessageResult = repository.addResponseMessage(arrival.arrivalId, goodsReleasedMessage).futureValue
+          val addMessageResult = repository.addResponseMessage(arrival.arrivalId, goodsReleasedMessage, newState).futureValue
 
           val selector = Json.obj("_id" -> arrival.arrivalId)
 
@@ -193,6 +246,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
           updatedArrival.nextMessageCorrelationId - arrival.nextMessageCorrelationId mustBe 0
           updatedArrival.updated mustEqual goodsReleasedMessage.dateTime
           updatedArrival.lastUpdated.withSecond(0).withNano(0) mustEqual lastUpdated
+          updatedArrival.status mustEqual newState
           updatedArrival.messages.size - arrival.messages.size mustEqual 1
           updatedArrival.messages.last mustEqual goodsReleasedMessage
         }
@@ -200,7 +254,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
 
       "must fail if the arrival cannot be found" in {
 
-        val arrival = arbitrary[Arrival].sample.value copy (arrivalId = ArrivalId(1))
+        val arrival = arbitrary[Arrival].sample.value copy (status = ArrivalStatus.ArrivalSubmitted, arrivalId = ArrivalId(1))
 
         val dateOfPrep = LocalDate.now(stubClock)
         val timeOfPrep = LocalTime.now(stubClock).withHour(1).withMinute(1)
@@ -221,6 +275,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
             messageBody,
             messageCorrelationId = 1
           )
+        val newState = ArrivalStatus.GoodsReleased
 
         val app = appBuilder.build()
         running(app) {
@@ -228,7 +283,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
           val repository = app.injector.instanceOf[ArrivalMovementRepository]
 
           repository.insert(arrival).futureValue
-          val result = repository.addResponseMessage(ArrivalId(2), goodsReleasedMessage).futureValue
+          val result = repository.addResponseMessage(ArrivalId(2), goodsReleasedMessage, newState).futureValue
 
           result mustBe a[Failure[_]]
         }
@@ -238,7 +293,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
     "addNewMessage" - {
       "must add a message, update the timestamp and increment nextCorrelationId" in {
 
-        val arrival = arbitrary[Arrival].sample.value
+        val arrival = arbitrary[Arrival].sample.value.copy(status = ArrivalStatus.ArrivalSubmitted)
 
         val dateOfPrep  = LocalDate.now(stubClock)
         val timeOfPrep  = LocalTime.now(stubClock).withHour(1).withMinute(1)
@@ -281,6 +336,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
           updatedArrival.nextMessageCorrelationId - arrival.nextMessageCorrelationId mustBe 1
           updatedArrival.updated mustEqual goodsReleasedMessage.dateTime
           updatedArrival.lastUpdated.withSecond(0).withNano(0) mustEqual lastUpdated
+          updatedArrival.status mustEqual arrival.status
           updatedArrival.messages.size - arrival.messages.size mustEqual 1
           updatedArrival.messages.last mustEqual goodsReleasedMessage
         }
@@ -288,7 +344,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
 
       "must fail if the arrival cannot be found" in {
 
-        val arrival = arbitrary[Arrival].sample.value copy(arrivalId = ArrivalId(1))
+        val arrival = arbitrary[Arrival].sample.value copy(status = ArrivalStatus.ArrivalSubmitted, arrivalId = ArrivalId(1))
 
         val dateOfPrep = LocalDate.now(stubClock)
         val timeOfPrep = LocalTime.now(stubClock).withHour(1).withMinute(1)
@@ -559,6 +615,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
                 routes.MovementsController.getArrival(arrivalMovement1.arrivalId).url,
                 routes.MessagesController.getMessages(arrivalMovement1.arrivalId).url,
                 arrivalMovement1.movementReferenceNumber,
+                arrivalMovement1.status,
                 arrivalMovement1.created,
                 arrivalMovement1.lastUpdated,
                 arrivalMovement1.messages.map(x => MessageMetaData(x.messageType, x.dateTime)).toList
@@ -576,6 +633,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
                 routes.MovementsController.getArrival(arrivalMovement3.arrivalId).url,
                 routes.MessagesController.getMessages(arrivalMovement3.arrivalId).url,
                 arrivalMovement3.movementReferenceNumber,
+                arrivalMovement3.status,
                 arrivalMovement3.created,
                 arrivalMovement3.lastUpdated,
                 arrivalMovement3.messages.map(x => MessageMetaData(x.messageType, x.dateTime)).toList
@@ -618,6 +676,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
                 routes.MovementsController.getArrival(arrivalMovement1.arrivalId).url,
                 routes.MessagesController.getMessages(arrivalMovement1.arrivalId).url,
                 arrivalMovement1.movementReferenceNumber,
+                arrivalMovement1.status,
                 arrivalMovement1.created,
                 arrivalMovement1.lastUpdated,
                 arrivalMovement1.messages.map(x => MessageMetaData(x.messageType, x.dateTime)).toList
@@ -639,6 +698,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
                 routes.MovementsController.getArrival(arrivalMovement3.arrivalId).url,
                 routes.MessagesController.getMessages(arrivalMovement3.arrivalId).url,
                 arrivalMovement3.movementReferenceNumber,
+                arrivalMovement3.status,
                 arrivalMovement3.created,
                 arrivalMovement3.lastUpdated,
                 arrivalMovement3.messages.map(x => MessageMetaData(x.messageType, x.dateTime)).toList
@@ -683,6 +743,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
                 routes.MovementsController.getArrival(arrivalMovement1.arrivalId).url,
                 routes.MessagesController.getMessages(arrivalMovement1.arrivalId).url,
                 arrivalMovement1.movementReferenceNumber,
+                arrivalMovement1.status,
                 arrivalMovement1.created,
                 arrivalMovement1.lastUpdated,
                 arrivalMovement1.messages.map(x => MessageMetaData(x.messageType, x.dateTime)).toList
@@ -700,6 +761,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
                 routes.MovementsController.getArrival(arrivalMovement3.arrivalId).url,
                 routes.MessagesController.getMessages(arrivalMovement3.arrivalId).url,
                 arrivalMovement3.movementReferenceNumber,
+                arrivalMovement3.status,
                 arrivalMovement3.created,
                 arrivalMovement3.lastUpdated,
                 arrivalMovement3.messages.map(x => MessageMetaData(x.messageType, x.dateTime)).toList

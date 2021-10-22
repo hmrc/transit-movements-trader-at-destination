@@ -36,7 +36,7 @@ class ValidateOutboundMessageAction @Inject()(implicit val executionContext: Exe
   override def refine[A](request: MessageTransformRequest[A]): Future[Either[Result, OutboundMessageRequest[A]]] =
     request.message.messageType match {
       case message: OutboundMessageResponse =>
-        Future.successful(Right(OutboundMessageRequest(OutboundMessage(message), request.arrivalRequest)))
+        Future.successful(Right(OutboundMessageRequest(OutboundMessage(message, request.message.nextState), request.arrivalRequest)))
       case message =>
         logger.warn(
           s"Found an inbound message (${message.messageType}) when expecting an outbound message for arrivalId: ${request.arrivalRequest.arrivalWithoutMessages.arrivalId.index} ( INBOUND_MESSAGE_FOUND_FOR_OUTBOUND_MESSAGE )")

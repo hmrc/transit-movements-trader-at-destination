@@ -24,6 +24,7 @@ import models.MessageType.GoodsReleased
 import models.MessageType.UnloadingPermission
 import models.MessageType.UnloadingRemarks
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks.forAll
+import play.api.libs.json.JsSuccess
 import play.api.libs.json.Json
 import org.scalacheck.Arbitrary.arbitrary
 
@@ -86,6 +87,7 @@ class ArrivalWithoutMessagesSpec extends SpecBase with MongoDateTimeFormats with
               updatedArrival.channel,
               updatedArrival.movementReferenceNumber,
               updatedArrival.eoriNumber,
+              updatedArrival.status,
               updatedArrival.created,
               updatedArrival.updated,
               updatedArrival.lastUpdated,

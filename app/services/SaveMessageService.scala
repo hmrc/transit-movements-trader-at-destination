@@ -44,9 +44,9 @@ class SaveMessageService @Inject()(
     messageSender: MessageSender
   )(implicit hc: HeaderCarrier): Future[Either[SubmissionState, Unit]] =
     inboundRequest match {
-      case InboundMessageRequest(arrival, inboundMessageResponse, movementMessage) =>
+      case InboundMessageRequest(arrival, nextStatus, inboundMessageResponse, movementMessage) =>
         arrivalMovementRepository
-          .addResponseMessage(messageSender.arrivalId, movementMessage)
+          .addResponseMessage(messageSender.arrivalId, movementMessage, nextStatus)
           .map {
             case Success(_) =>
               logger.debug(s"Saved message successfully")

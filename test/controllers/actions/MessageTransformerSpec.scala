@@ -19,6 +19,9 @@ package controllers.actions
 import cats.data.Ior
 import generators.ModelGenerators
 import models.ArrivalRejectedResponse
+import models.ArrivalStatus
+import models.ArrivalStatus.ArrivalSubmitted
+import models.ArrivalStatus.UnloadingPermission
 import models.ArrivalWithoutMessages
 import models.ChannelType
 import models.EORINumber
@@ -28,6 +31,8 @@ import models.UnloadingPermissionResponse
 import models.UnloadingRemarksRejectedResponse
 import models.UnloadingRemarksResponse
 import models.XMLSubmissionNegativeAcknowledgementResponse
+import models.ArrivalStatus.ArrivalSubmitted
+import models.ArrivalStatus.UnloadingPermission
 import models.request.ArrivalWithoutMessagesRequest
 import models.request.AuthenticatedRequest
 import org.scalacheck.Arbitrary.arbitrary
@@ -74,7 +79,7 @@ class MessageTransformerSpec
     "returns 200 for supported root node" in {
       forAll(arbitrary[ChannelType]) {
         channel =>
-          val arrivalMovement = arrivalWithoutMessages
+          val arrivalMovement = arrivalWithoutMessages.copy(status = ArrivalStatus.ArrivalSubmitted)
 
           val request =
             ArrivalWithoutMessagesRequest(
@@ -123,7 +128,7 @@ class MessageTransformerSpec
     "when the incoming message is an allowable transition from the current status" in {
       forAll(arbitrary[ChannelType]) {
         channel =>
-          val arrivalMovement = arrivalWithoutMessages
+          val arrivalMovement = arrivalWithoutMessages.copy(status = ArrivalSubmitted)
 
           val request =
             ArrivalWithoutMessagesRequest(
@@ -148,7 +153,7 @@ class MessageTransformerSpec
     "when the incoming message is not an expected transition from the current status" in {
       forAll(arbitrary[ChannelType]) {
         channel =>
-          val arrivalMovement = arrivalWithoutMessages
+          val arrivalMovement = arrivalWithoutMessages.copy(status = UnloadingPermission)
 
           val request =
             ArrivalWithoutMessagesRequest(

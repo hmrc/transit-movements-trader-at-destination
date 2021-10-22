@@ -19,6 +19,7 @@ package migrations
 import base.SpecBase
 import cats.syntax.all._
 import models.ArrivalId
+import models.ArrivalStatus
 import models.ChannelType
 import models.MessageStatus
 import models.MessageType
@@ -72,6 +73,7 @@ class MovementsChangeLogSpec extends SpecBase with IntegrationPatience with Befo
               "channel"                  -> ChannelType.web.toString,
               "eoriNumber"               -> eori,
               "movementReferenceNumber"  -> Random.alphanumeric.take(20).mkString,
+              "status"                   -> ArrivalStatus.ArrivalSubmitted.toString,
               "created"                  -> LocalDateTime.of(2021, 7, 15, 12, 12),
               "updated"                  -> LocalDateTime.of(2021, 7, 15, 12, 13),
               "lastUpdated"              -> LocalDateTime.of(2021, 7, 15, 12, 13),

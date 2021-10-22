@@ -19,6 +19,7 @@ package models.response
 import controllers.routes
 import models.Arrival
 import models.ArrivalId
+import models.ArrivalStatus
 import models.MessageStatus.SubmissionFailed
 import models.MovementReferenceNumber
 import play.api.libs.json.Json
@@ -32,6 +33,7 @@ case class ResponseArrivalWithMessages(
   location: String,
   messagesLocation: String,
   movementReferenceNumber: MovementReferenceNumber,
+  status: ArrivalStatus,
   created: LocalDateTime,
   updated: LocalDateTime,
   messages: Seq[ResponseMovementMessage]
@@ -45,6 +47,7 @@ object ResponseArrivalWithMessages {
       routes.MovementsController.getArrival(arrival.arrivalId).url,
       routes.MessagesController.getMessages(arrival.arrivalId).url,
       arrival.movementReferenceNumber,
+      arrival.status,
       arrival.created,
       updated = arrival.lastUpdated,
       arrival.messagesWithId

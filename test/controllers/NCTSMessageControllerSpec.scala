@@ -18,6 +18,7 @@ package controllers
 
 import base.SpecBase
 import generators.ModelGenerators
+import models.ArrivalStatus.GoodsReleased
 import models.ChannelType.web
 import models._
 import org.mockito.ArgumentMatchers._
@@ -52,7 +53,7 @@ class NCTSMessageControllerSpec extends SpecBase with ScalaCheckPropertyChecks w
       val message = Arbitrary.arbitrary[MovementMessageWithoutStatus].sample.value
 
       when(mockMovementMessageOrchestratorService.saveNCTSMessage(any(), any(), any())(any()))
-        .thenReturn(Future.successful(Right(InboundMessageRequest(arrival, GoodsReleasedResponse, message))))
+        .thenReturn(Future.successful(Right(InboundMessageRequest(arrival, GoodsReleased, GoodsReleasedResponse, message))))
 
       val application = baseApplicationBuilder
         .overrides(bind[MovementMessageOrchestratorService].toInstance(mockMovementMessageOrchestratorService))
