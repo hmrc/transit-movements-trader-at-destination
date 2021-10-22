@@ -27,7 +27,6 @@ import models.MessagesSummary
 import models.MovementMessage
 import models.MovementMessageWithStatus
 import models.MovementMessageWithoutStatus
-import models.ArrivalStatus.UnloadingRemarksRejected
 
 class ArrivalMessageSummaryService {
 
@@ -128,7 +127,7 @@ class ArrivalMessageSummaryService {
 
         val rejectionNotificationCount = rejectionNotifications.length
 
-        if (rejectionNotificationCount > 0 && arrival.status == UnloadingRemarksRejected)
+        if (rejectionNotificationCount > 0 && arrival.latestMessageType == UnloadingRemarksRejection)
           Some(rejectionNotifications.maxBy(_._1.messageCorrelationId))
         else
           None

@@ -21,7 +21,6 @@ import cats.implicits._
 import com.google.inject.Inject
 import models.Arrival
 import models.ArrivalId
-import models.ArrivalStatus.Initialized
 import models.Box
 import models.ChannelType
 import models.EORINumber
@@ -65,7 +64,6 @@ class ArrivalMovementMessageService @Inject()(arrivalIdRepository: ArrivalIdRepo
               eoriNumber => eoriNumber.value,
               (_, eoriNumber) => eoriNumber.value
             ),
-            Initialized,
             dateTime,
             dateTime,
             LocalDateTime.now(clock),
