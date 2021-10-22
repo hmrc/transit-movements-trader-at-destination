@@ -21,7 +21,6 @@ import cats.implicits.catsStdInstancesForFuture
 import models.ArrivalId
 import models.InboundMessageRequest
 import models.MessageSender
-import models.StatusTransition
 import models.SubmissionState
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -46,8 +45,7 @@ class InboundRequestService @Inject()(
         inboundMessage         <- movementMessageService.makeMovementMessage(messageSender.messageCorrelationId, inboundMessageResponse.messageType, xml)
         arrival                <- getArrivalService.getArrivalAndAudit(arrivalId, inboundMessageResponse, inboundMessage)
         updatedInboundMessage = inboundMessage.copy(messageId = arrival.nextMessageId)
-        nextStatus <- EitherT.fromEither(StatusTransition.targetStatus(arrival.status, inboundMessageResponse.messageReceived))
-        _          <- EitherT(lockService.unlock(arrivalId))
-      } yield InboundMessageRequest(arrival, nextStatus, inboundMessageResponse, updatedInboundMessage)
+        _ <- EitherT(lockService.unlock(arrivalId))
+      } yield InboundMessageRequest(arrival, inboundMessageResponse, updatedInboundMessage)
     ).value
 }

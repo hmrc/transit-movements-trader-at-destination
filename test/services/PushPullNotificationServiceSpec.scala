@@ -130,7 +130,7 @@ class PushPullNotificationServiceSpec extends SpecBase with BeforeAndAfterEach w
           JsObject.empty
         )
 
-        val inboundMessageRequest = InboundMessageRequest(arrival, ArrivalStatus.GoodsReleased, GoodsReleasedResponse, movementMessage)
+        val inboundMessageRequest = InboundMessageRequest(arrival, GoodsReleasedResponse, movementMessage)
 
         Await.result(service.sendPushNotification(inboundMessageRequest, Headers(("key", "value"))), 30.seconds).mustEqual(())
 
@@ -159,7 +159,7 @@ class PushPullNotificationServiceSpec extends SpecBase with BeforeAndAfterEach w
           JsObject.empty
         )
 
-        val inboundMessageRequest = InboundMessageRequest(arrivalWithoutBox, ArrivalStatus.GoodsReleased, GoodsReleasedResponse, movementMessage)
+        val inboundMessageRequest = InboundMessageRequest(arrivalWithoutBox, GoodsReleasedResponse, movementMessage)
 
         Await.result(service.sendPushNotification(inboundMessageRequest, Headers(("key", "value"))), 30.seconds).mustEqual(())
 
@@ -192,7 +192,7 @@ class PushPullNotificationServiceSpec extends SpecBase with BeforeAndAfterEach w
           JsObject.empty
         )
 
-        val inboundMessageRequest = InboundMessageRequest(arrival, ArrivalStatus.GoodsReleased, GoodsReleasedResponse, movementMessage)
+        val inboundMessageRequest = InboundMessageRequest(arrival, GoodsReleasedResponse, movementMessage)
 
         Await.result(service.sendPushNotification(inboundMessageRequest, Headers(("key", "value"))), 30.seconds).mustEqual(())
       }

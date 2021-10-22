@@ -23,7 +23,6 @@ import models.ChannelType
 import models.MessageStatus
 import models.MovementMessageWithStatus
 import models.MovementReferenceNumber
-import models.ArrivalStatus.ArrivalSubmitted
 import models.MessageType.ArrivalNotification
 import testOnly.models.SeedEori
 import testOnly.models.SeedMrn
@@ -50,7 +49,6 @@ private[services] class TestDataGenerator @Inject()(clock: Clock) {
       channelType,
       MovementReferenceNumber(mrn.format),
       eori.format,
-      ArrivalSubmitted,
       dateTime,
       dateTime,
       dateTime,

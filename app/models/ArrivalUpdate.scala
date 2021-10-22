@@ -28,32 +28,17 @@ sealed trait ArrivalUpdate
 object ArrivalUpdate {
 
   implicit val arrivalUpdateSemigroup: Semigroup[ArrivalUpdate] = {
-    case (_: ArrivalStatusUpdate, x: ArrivalStatusUpdate)  => x
-    case (a: ArrivalStatusUpdate, m: MessageStatusUpdate)  => CompoundStatusUpdate(a, m)
-    case (_: ArrivalStatusUpdate, c: CompoundStatusUpdate) => c
-    case (_: ArrivalStatusUpdate, p: ArrivalPutUpdate)     => p
 
-    case (_: MessageStatusUpdate, x: MessageStatusUpdate)  => x
-    case (m: MessageStatusUpdate, a: ArrivalStatusUpdate)  => CompoundStatusUpdate(a, m)
-    case (_: MessageStatusUpdate, c: CompoundStatusUpdate) => c
-    case (_: MessageStatusUpdate, p: ArrivalPutUpdate)     => p
+    case (_: MessageStatusUpdate, x: MessageStatusUpdate) => x
+    case (_: MessageStatusUpdate, p: ArrivalPutUpdate)    => p
 
-    case (_: CompoundStatusUpdate, x: CompoundStatusUpdate) => x
-    case (c: CompoundStatusUpdate, a: ArrivalStatusUpdate)  => c.copy(arrivalStatusUpdate = a)
-    case (c: CompoundStatusUpdate, m: MessageStatusUpdate)  => c.copy(messageStatusUpdate = m)
-    case (_: CompoundStatusUpdate, p: ArrivalPutUpdate)     => p
-
-    case (_: ArrivalPutUpdate, x: ArrivalPutUpdate)     => x
-    case (p: ArrivalPutUpdate, a: ArrivalStatusUpdate)  => p.copy(arrivalUpdate = p.arrivalUpdate.copy(arrivalStatusUpdate = a))
-    case (p: ArrivalPutUpdate, m: MessageStatusUpdate)  => p.copy(arrivalUpdate = p.arrivalUpdate.copy(messageStatusUpdate = m))
-    case (p: ArrivalPutUpdate, c: CompoundStatusUpdate) => p.copy(arrivalUpdate = c)
+    case (_: ArrivalPutUpdate, x: ArrivalPutUpdate)    => x
+    case (p: ArrivalPutUpdate, m: MessageStatusUpdate) => p.copy(messageStatusUpdate = m)
   }
 
   implicit def arrivalUpdateArrivalModifier(implicit clock: Clock): ArrivalModifier[ArrivalUpdate] = {
-    case x: MessageStatusUpdate  => ArrivalModifier.toJson(x)
-    case x: ArrivalStatusUpdate  => ArrivalModifier.toJson(x)
-    case x: CompoundStatusUpdate => ArrivalModifier.toJson(x)
-    case x: ArrivalPutUpdate     => ArrivalModifier.toJson(x)
+    case x: MessageStatusUpdate => ArrivalModifier.toJson(x)
+    case x: ArrivalPutUpdate    => ArrivalModifier.toJson(x)
   }
 }
 
@@ -74,29 +59,7 @@ object MessageStatusUpdate extends MongoDateTimeFormats {
     )
 }
 
-final case class ArrivalStatusUpdate(arrivalStatus: ArrivalStatus) extends ArrivalUpdate
-
-object ArrivalStatusUpdate extends MongoDateTimeFormats {
-
-  implicit def arrivalStatusUpdate(implicit clock: Clock, writes: Writes[ArrivalStatus]): ArrivalModifier[ArrivalStatusUpdate] =
-    value =>
-      Json.obj(
-        "$set" -> Json.obj(
-          "status"      -> value.arrivalStatus,
-          "lastUpdated" -> LocalDateTime.now(clock)
-        )
-    )
-}
-
-final case class CompoundStatusUpdate(arrivalStatusUpdate: ArrivalStatusUpdate, messageStatusUpdate: MessageStatusUpdate) extends ArrivalUpdate
-
-object CompoundStatusUpdate {
-
-  implicit def arrivalUpdate(implicit clock: Clock): ArrivalModifier[CompoundStatusUpdate] =
-    csu => ArrivalModifier.toJson(csu.arrivalStatusUpdate) deepMerge ArrivalModifier.toJson(csu.messageStatusUpdate)
-}
-
-final case class ArrivalPutUpdate(movementReferenceNumber: MovementReferenceNumber, arrivalUpdate: CompoundStatusUpdate) extends ArrivalUpdate
+final case class ArrivalPutUpdate(movementReferenceNumber: MovementReferenceNumber, messageStatusUpdate: MessageStatusUpdate) extends ArrivalUpdate
 
 object ArrivalPutUpdate extends MongoDateTimeFormats {
 
@@ -107,6 +70,6 @@ object ArrivalPutUpdate extends MongoDateTimeFormats {
           "movementReferenceNumber" -> a.movementReferenceNumber,
           "lastUpdated"             -> LocalDateTime.now(clock)
         )
-      ) deepMerge ArrivalModifier.toJson(a.arrivalUpdate)
+      ) deepMerge ArrivalModifier.toJson(a.messageStatusUpdate)
 
 }

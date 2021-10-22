@@ -66,7 +66,7 @@ class NCTSMessageController @Inject()(
                       BadRequest
                   }
               }
-            case Right(InboundMessageRequest(arrival, _, inboundMessageResponse, _)) =>
+            case Right(InboundMessageRequest(arrival, inboundMessageResponse, _)) =>
               val summaryInfo: Map[String, String] = Map(
                 "X-Correlation-Id" -> request.headers.get("X-Correlation-ID").getOrElse("undefined"),
                 "X-Request-Id"     -> request.headers.get("X-Request-ID").getOrElse("undefined")

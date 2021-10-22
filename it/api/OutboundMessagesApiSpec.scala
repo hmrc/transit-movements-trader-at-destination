@@ -20,7 +20,6 @@ import cats.data.NonEmptyList
 import cats.syntax.all._
 import generators.ModelGenerators
 import models.Arrival
-import models.ArrivalStatus.UnloadingPermission
 import models.MessageId
 import models.MessageStatus
 import models.MessageType
@@ -73,7 +72,7 @@ class OutboundMessagesApiSpec
       )
 
       val arrival =
-        arbitrary[Arrival].sample.value.copy(messages = movements, status = UnloadingPermission, lastUpdated = LocalDateTime.of(1998, 4, 30, 9, 30, 31))
+        arbitrary[Arrival].sample.value.copy(messages = movements, lastUpdated = LocalDateTime.of(1998, 4, 30, 9, 30, 31))
 
       val requestBody = <CC044A>
         <DatOfPreMES9>{Format.dateFormatted(LocalDateTime.now())}</DatOfPreMES9>

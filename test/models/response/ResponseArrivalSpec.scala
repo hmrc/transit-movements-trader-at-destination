@@ -79,7 +79,6 @@ class ResponseArrivalSpec extends SpecBase with ScalaCheckPropertyChecks with Mo
     channel = api,
     movementReferenceNumber = mrn,
     eoriNumber = "eori",
-    status = ArrivalStatus.Initialized,
     created = localDateTime,
     updated = LocalDateTime.of(2005, Month.FEBRUARY, 4, 0, 0),
     lastUpdated = localDateTime,

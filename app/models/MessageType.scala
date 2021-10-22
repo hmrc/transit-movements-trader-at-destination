@@ -52,6 +52,40 @@ object MessageType extends Enumerable.Implicits {
         values.find(_.rootNode == nodeSeq.head.label)
     }
 
+  implicit val ordering: Ordering[MessageType] = (x: MessageType, y: MessageType) => {
+    (x, y) match {
+      case (ArrivalNotification, _) => -1
+
+      case (ArrivalRejection, ArrivalNotification) => 1
+      case (ArrivalRejection, _)                   => -1
+
+      case (XMLSubmissionNegativeAcknowledgement, ArrivalNotification) => 1
+      case (XMLSubmissionNegativeAcknowledgement, UnloadingRemarks)    => 1
+      case (XMLSubmissionNegativeAcknowledgement, _)                   => -1
+
+      case (UnloadingPermission, ArrivalNotification)                  => 1
+      case (UnloadingPermission, ArrivalRejection)                     => 1
+      case (UnloadingPermission, XMLSubmissionNegativeAcknowledgement) => 1
+      case (UnloadingPermission, _)                                    => -1
+
+      case (UnloadingRemarks, ArrivalNotification) => 1
+      case (UnloadingRemarks, UnloadingPermission) => 1
+      case (UnloadingRemarks, ArrivalRejection)    => 1
+      case (UnloadingRemarks, _)                   => -1
+
+      case (UnloadingRemarksRejection, ArrivalNotification)                  => 1
+      case (UnloadingRemarksRejection, UnloadingPermission)                  => 1
+      case (UnloadingRemarksRejection, UnloadingRemarks)                     => 1
+      case (UnloadingRemarksRejection, ArrivalRejection)                     => 1
+      case (UnloadingRemarksRejection, XMLSubmissionNegativeAcknowledgement) => 1
+      case (UnloadingRemarksRejection, _)                                    => -1
+
+      case (GoodsReleased, _) => 1
+
+      case (_, _) => -1
+    }
+  }
+
   implicit val enumerable: Enumerable[MessageType] =
     Enumerable(values.map(v => v.code -> v): _*)
 }
