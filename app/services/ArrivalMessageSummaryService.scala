@@ -21,6 +21,7 @@ import cats.data._
 import cats.implicits._
 import models.MessageType._
 import models.Arrival
+import models.ArrivalStatus
 import models.MessageId
 import models.MessageType
 import models.MessagesSummary
@@ -127,7 +128,7 @@ class ArrivalMessageSummaryService {
 
         val rejectionNotificationCount = rejectionNotifications.length
 
-        if (rejectionNotificationCount > 0 && arrival.latestMessageType == UnloadingRemarksRejection)
+        if (rejectionNotificationCount > 0 && arrival.currentStatus == ArrivalStatus.UnloadingRemarksRejected)
           Some(rejectionNotifications.maxBy(_._1.messageCorrelationId))
         else
           None

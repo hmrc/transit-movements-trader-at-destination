@@ -30,6 +30,7 @@ import connectors.MessageConnector.EisSubmissionResult.VirusFoundOrInvalidToken
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalPutUpdate
+import models.ArrivalStatus
 import models.ArrivalUpdate
 import models.ArrivalWithoutMessages
 import models.ChannelType
@@ -51,7 +52,6 @@ import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
 import uk.gov.hmrc.http.UpstreamErrorResponse
-
 import java.time._
 
 trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
@@ -125,6 +125,11 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
       for {
         id <- intWithMaxLength(9)
       } yield ArrivalId(id)
+    }
+
+  implicit lazy val arbitraryState: Arbitrary[ArrivalStatus] =
+    Arbitrary {
+      Gen.oneOf(ArrivalStatus.values)
     }
 
   implicit lazy val arbitraryChannel: Arbitrary[ChannelType] =
@@ -272,9 +277,10 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
         location                <- arbitrary[String]
         messagesLocation        <- arbitrary[String]
         movementReferenceNumber <- arbitrary[MovementReferenceNumber]
+        status                  <- arbitrary[ArrivalStatus]
         created                 <- arbitrary[LocalDateTime]
         updated                 <- arbitrary[LocalDateTime]
         messageMetaData         <- arbitrary[Seq[MessageMetaData]]
-      } yield ResponseArrival(arrivalId, location, messagesLocation, movementReferenceNumber, created, updated, messageMetaData)
+      } yield ResponseArrival(arrivalId, location, messagesLocation, movementReferenceNumber, status, created, updated, messageMetaData)
     )
 }

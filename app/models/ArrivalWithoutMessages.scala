@@ -24,6 +24,7 @@ import play.api.libs.json.Json
 import play.api.libs.json.Reads
 import play.api.libs.json.__
 import play.api.libs.functional.syntax._
+import utils.MessageTypeUtils
 
 case class ArrivalWithoutMessages(
   arrivalId: ArrivalId,
@@ -50,6 +51,8 @@ case class ArrivalWithoutMessages(
     "Last updated"                -> isoFormatter.format(lastUpdated),
     "Next message correlation id" -> nextMessageCorrelationId.toString
   )
+
+  def currentStatus: ArrivalStatus = MessageTypeUtils.currentArrivalStatus(messagesMetaData.toList)
 }
 
 object ArrivalWithoutMessages {

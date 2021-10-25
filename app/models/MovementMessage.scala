@@ -30,10 +30,13 @@ import scala.util.Success
 import scala.util.Try
 import scala.xml.NodeSeq
 
-sealed trait MovementMessage {
-  def messageId: MessageId
+trait MessageTypeWithTime {
   def dateTime: LocalDateTime
   def messageType: MessageType
+}
+
+sealed trait MovementMessage extends MessageTypeWithTime {
+  def messageId: MessageId
   def message: NodeSeq
   def optStatus: Option[MessageStatus]
   def messageJson: JsObject
