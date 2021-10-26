@@ -35,14 +35,16 @@ import models.ParseError.EmptyNodeSeq
 import models.TURN
 import repositories.ArrivalIdRepository
 import utils.XMLTransformer
-
+import utils.XmlToJsonConverter
 import java.time.Clock
 import java.time.LocalDateTime
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.xml.NodeSeq
 
-class ArrivalMovementMessageService @Inject()(arrivalIdRepository: ArrivalIdRepository, clock: Clock)(implicit ec: ExecutionContext) {
+class ArrivalMovementMessageService @Inject()(arrivalIdRepository: ArrivalIdRepository, clock: Clock, xmlToJsonConverter: XmlToJsonConverter)(
+  implicit ec: ExecutionContext) {
   import XMLTransformer._
   import XmlMessageParser._
 
@@ -95,7 +97,7 @@ class ArrivalMovementMessageService @Inject()(arrivalIdRepository: ArrivalIdRepo
       _          <- correctRootNodeR(messageType)
       dateTime   <- dateTimeOfPrepR
       xmlMessage <- ReaderT[ParseHandler, NodeSeq, NodeSeq](nodeSeqToEither)
-    } yield MovementMessageWithoutStatus(messageId, dateTime, messageType, xmlMessage, messageCorrelationId)
+    } yield MovementMessageWithoutStatus(messageId, dateTime, messageType, xmlMessage, messageCorrelationId)(xmlToJsonConverter)
 
   def makeOutboundMessage(
     arrivalId: ArrivalId,
@@ -107,7 +109,7 @@ class ArrivalMovementMessageService @Inject()(arrivalIdRepository: ArrivalIdRepo
       _          <- correctRootNodeR(messageType)
       dateTime   <- dateTimeOfPrepR
       xmlMessage <- updateMesSenMES3(arrivalId, messageCorrelationId)
-    } yield MovementMessageWithStatus(messageId, dateTime, messageType, xmlMessage, SubmissionPending, messageCorrelationId)
+    } yield MovementMessageWithStatus(messageId, dateTime, messageType, xmlMessage, SubmissionPending, messageCorrelationId)(xmlToJsonConverter)
 
   private[this] def nodeSeqToEither(xml: NodeSeq): ParseHandler[NodeSeq] =
     Option(xml).fold[ParseHandler[NodeSeq]](

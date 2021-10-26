@@ -41,6 +41,9 @@ import org.scalatestplus.mockito.MockitoSugar
 import repositories.ArrivalMovementRepository
 import repositories.LockRepository
 import repositories.WorkerLockRepository
+import testOnly.utils.ConvertingXmlToJsonConverter
+import testOnly.utils.NoJsonXmlToJsonConverter
+import utils.XmlToJsonConverter
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -82,7 +85,7 @@ class AddJsonToMessagesWorkerSpec
             when(arrivalsLockRepo.lock(any())) thenReturn Future.successful(true)
             when(arrivalsLockRepo.unlock(any())) thenReturn Future.successful(true)
 
-            val addJsonToMessagesTransformer = new AddJsonToMessagesTransformer(workerConfig, arrivalsRepo, arrivalsLockRepo)
+            val addJsonToMessagesTransformer = new AddJsonToMessagesTransformer(workerConfig, arrivalsRepo, arrivalsLockRepo, converter)
 
             val worker: AddJsonToMessagesWorker =
               new AddJsonToMessagesWorker(workerConfig, arrivalsRepo, addJsonToMessagesTransformer, workerLockingService)
@@ -118,7 +121,7 @@ class AddJsonToMessagesWorkerSpec
               when(arrivalsLockRepo.lock(any())) thenReturn Future.successful(true)
               when(arrivalsLockRepo.unlock(any())) thenReturn Future.successful(true)
 
-              val addJsonToMessagesTransformer = new AddJsonToMessagesTransformer(workerConfig, arrivalsRepo, arrivalsLockRepo)
+              val addJsonToMessagesTransformer = new AddJsonToMessagesTransformer(workerConfig, arrivalsRepo, arrivalsLockRepo, converter)
 
               val worker: AddJsonToMessagesWorker =
                 new AddJsonToMessagesWorker(workerConfig, arrivalsRepo, addJsonToMessagesTransformer, workerLockingService)
@@ -156,7 +159,7 @@ class AddJsonToMessagesWorkerSpec
             when(arrivalsLockRepo.lock(any())) thenReturn Future.successful(false)
             when(arrivalsLockRepo.unlock(any())) thenReturn Future.successful(true)
 
-            val addJsonToMessagesTransformer = new AddJsonToMessagesTransformer(workerConfig, arrivalsRepo, arrivalsLockRepo)
+            val addJsonToMessagesTransformer = new AddJsonToMessagesTransformer(workerConfig, arrivalsRepo, arrivalsLockRepo, converter)
 
             val worker: AddJsonToMessagesWorker =
               new AddJsonToMessagesWorker(workerConfig, arrivalsRepo, addJsonToMessagesTransformer, workerLockingService)
@@ -192,7 +195,7 @@ class AddJsonToMessagesWorkerSpec
           when(arrivalsRepo.resetMessages(any(), any())) thenReturn Future.successful(true)
           when(arrivalsLockRepo.lock(any())) thenReturn Future.successful(false)
 
-          val addJsonToMessagesTransformer = new AddJsonToMessagesTransformer(workerConfig, arrivalsRepo, arrivalsLockRepo)
+          val addJsonToMessagesTransformer = new AddJsonToMessagesTransformer(workerConfig, arrivalsRepo, arrivalsLockRepo, converter)
 
           val worker: AddJsonToMessagesWorker =
             new AddJsonToMessagesWorker(workerConfig, arrivalsRepo, addJsonToMessagesTransformer, workerLockingService)
@@ -228,7 +231,7 @@ class AddJsonToMessagesWorkerSpec
         when(arrivalsLockRepo.lock(any())) thenReturn Future.successful(true)
         when(arrivalsLockRepo.unlock(any())) thenReturn Future.successful(true)
 
-        val addJsonToMessagesTransformer = new AddJsonToMessagesTransformer(workerConfig, arrivalsRepo, arrivalsLockRepo)
+        val addJsonToMessagesTransformer = new AddJsonToMessagesTransformer(workerConfig, arrivalsRepo, arrivalsLockRepo, converter)
 
         val worker: AddJsonToMessagesWorker =
           new AddJsonToMessagesWorker(workerConfig, arrivalsRepo, addJsonToMessagesTransformer, workerLockingService)
@@ -261,6 +264,7 @@ class AddJsonToMessagesWorkerSpec
     protected val lockRepo: WorkerLockRepository          = mock[WorkerLockRepository]
     protected val arrivalsRepo: ArrivalMovementRepository = mock[ArrivalMovementRepository]
     protected val arrivalsLockRepo: LockRepository        = mock[LockRepository]
+    protected val converter: XmlToJsonConverter           = new NoJsonXmlToJsonConverter
 
     protected val workerLockingService: WorkerLockingService = new WorkerLockingService {
       override def hasNext: Boolean = lockResults.hasNext

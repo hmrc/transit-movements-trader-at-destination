@@ -24,7 +24,9 @@ import controllers.actions.AuthenticatedGetArrivalForReadActionProviderImpl
 import controllers.actions.AuthenticatedGetArrivalWithoutMessagesForReadActionProvider
 import controllers.actions.AuthenticatedGetArrivalWithoutMessagesForReadActionProviderImpl
 import repositories.ArrivalMovementRepository
+import utils.ConfiguredXmlToJsonConverter
 import utils.MessageTranslation
+import utils.XmlToJsonConverter
 import java.time.Clock
 
 import migrations.MigrationRunner
@@ -41,5 +43,6 @@ class Module extends AbstractModule {
     bind(classOf[StreamLoggingConfig]).to(classOf[StreamLoggingConfigImpl]).asEagerSingleton()
     bind(classOf[Clock]).toInstance(Clock.systemUTC)
     bind(classOf[MigrationRunner]).asEagerSingleton()
+    bind(classOf[XmlToJsonConverter]).to(classOf[ConfiguredXmlToJsonConverter])
   }
 }

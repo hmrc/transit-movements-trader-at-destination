@@ -107,14 +107,15 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
       </HEAHEA>
     </CC007A>
 
-  def movementMessage(messageCorrelationId: Int): MovementMessageWithStatus = MovementMessageWithStatus(
-    MessageId(1),
-    localDateTime,
-    MessageType.ArrivalNotification,
-    savedXmlMessage(messageCorrelationId).map(trim),
-    SubmissionPending,
-    1
-  )
+  def movementMessage(messageCorrelationId: Int): MovementMessageWithStatus =
+    MovementMessageWithStatus(
+      MessageId(1),
+      localDateTime,
+      MessageType.ArrivalNotification,
+      savedXmlMessage(messageCorrelationId).map(trim),
+      SubmissionPending,
+      1
+    )(emptyConverter)
 
   val initializedArrival = Arrival(
     arrivalId = arrivalId,

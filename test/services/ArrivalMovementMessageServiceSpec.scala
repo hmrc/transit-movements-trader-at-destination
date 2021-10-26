@@ -105,7 +105,7 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
         dateTime,
         dateTime,
         messages = NonEmptyList.one(
-          MovementMessageWithStatus(MessageId(1), dateTime, MessageType.ArrivalNotification, savedMovement, MessageStatus.SubmissionPending, 1)
+          MovementMessageWithStatus(MessageId(1), dateTime, MessageType.ArrivalNotification, savedMovement, MessageStatus.SubmissionPending, 1)(emptyConverter)
         ),
         nextMessageCorrelationId = 2,
         notificationBox = None
@@ -172,7 +172,8 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
         val messageCorrelationId = 1
         val messageId            = MessageId(2)
         val expectedMessage =
-          MovementMessageWithoutStatus(messageId, LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.GoodsReleased, movement, messageCorrelationId)
+          MovementMessageWithoutStatus(messageId, LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.GoodsReleased, movement, messageCorrelationId)(
+            emptyConverter)
 
         service.makeInboundMessage(messageId, messageCorrelationId, MessageType.GoodsReleased)(movement).right.get mustEqual expectedMessage
         application.stop()
@@ -221,7 +222,8 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
         val messageCorrelationId = 1
         val messageId            = MessageId(2)
         val expectedMessage =
-          MovementMessageWithoutStatus(messageId, LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.UnloadingPermission, movement, messageCorrelationId)
+          MovementMessageWithoutStatus(messageId, LocalDateTime.of(dateOfPrep, timeOfPrep), MessageType.UnloadingPermission, movement, messageCorrelationId)(
+            emptyConverter)
 
         service.makeInboundMessage(messageId, messageCorrelationId, MessageType.UnloadingPermission)(movement).right.get mustEqual expectedMessage
         application.stop()
@@ -284,7 +286,7 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
           expectedMovement.map(trim),
           SubmissionPending,
           messageCorrelationId
-        )
+        )(emptyConverter)
 
       val result: MovementMessage =
         service.makeOutboundMessage(id, messageId, messageCorrelationId, MessageType.UnloadingRemarks)(movement.map(trim)).right.get
@@ -328,7 +330,7 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
           expectedMovement,
           SubmissionPending,
           messageCorrelationId
-        )
+        )(emptyConverter)
 
       service.makeOutboundMessage(id, messageId, messageCorrelationId, MessageType.UnloadingRemarks)(movement).right.get mustEqual expectedMessage
       application.stop()

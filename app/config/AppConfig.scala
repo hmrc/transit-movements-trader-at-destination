@@ -51,4 +51,6 @@ class AppConfig @Inject()(config: Configuration, servicesConfig: ServicesConfig)
 
   def maxRowsReturned(ct: ChannelType): Int = config.get[Int](s"mongodb.$ct.maxRowsReturned")
 
+  val xmlToJson: Boolean = config.get[Boolean]("feature-flags.xmlToJson.enabled")
+
 }

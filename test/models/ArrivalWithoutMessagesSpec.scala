@@ -37,10 +37,10 @@ class ArrivalWithoutMessagesSpec extends SpecBase with MongoDateTimeFormats with
   val expectedDateTimeMinusMinutes = LocalDateTime.now.minusMinutes(30)
   val expectedDateDays             = LocalDateTime.now.minusDays(2)
 
-  val message1 = MovementMessageWithoutStatus(MessageId(1), expectedDateDays, UnloadingPermission, <foo></foo>, 1)
-  val message2 = MovementMessageWithoutStatus(MessageId(2), expectedDateTimeMinusMinutes, GoodsReleased, <foo></foo>, 2)
-  val message3 = MovementMessageWithoutStatus(MessageId(3), expectedDateTimeMinusHours, UnloadingRemarks, <foo></foo>, 3)
-  val message4 = MovementMessageWithoutStatus(MessageId(4), expectedDateTime, ArrivalNotification, <foo></foo>, 4)
+  val message1 = MovementMessageWithoutStatus(MessageId(1), expectedDateDays, UnloadingPermission, <foo></foo>, 1)(emptyConverter)
+  val message2 = MovementMessageWithoutStatus(MessageId(2), expectedDateTimeMinusMinutes, GoodsReleased, <foo></foo>, 2)(emptyConverter)
+  val message3 = MovementMessageWithoutStatus(MessageId(3), expectedDateTimeMinusHours, UnloadingRemarks, <foo></foo>, 3)(emptyConverter)
+  val message4 = MovementMessageWithoutStatus(MessageId(4), expectedDateTime, ArrivalNotification, <foo></foo>, 4)(emptyConverter)
 
   val messages: Seq[MovementMessageWithoutStatus] = Seq(message1, message2, message3, message4)
 

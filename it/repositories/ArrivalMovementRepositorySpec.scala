@@ -52,8 +52,10 @@ import play.api.test.Helpers.running
 import reactivemongo.play.json.collection.Helpers.idWrites
 import reactivemongo.play.json.collection.JSONCollection
 import utils.Format
-
 import java.time._
+
+import testOnly.utils.NoJsonXmlToJsonConverter
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.reflect.ClassTag
@@ -61,6 +63,8 @@ import scala.util.Failure
 import scala.util.Success
 
 class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with ScalaFutures with TestSuiteMixin with MongoDateTimeFormats with BeforeAndAfterEach {
+
+  private val emptyConverter = new NoJsonXmlToJsonConverter
 
   private val instant = Instant.now
   implicit private val stubClock: Clock = Clock.fixed(instant, ZoneId.systemDefault)
@@ -222,7 +226,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
             MessageType.GoodsReleased,
             messageBody,
             arrival.nextMessageCorrelationId
-          )
+          )(emptyConverter)
         val newState = ArrivalStatus.GoodsReleased
 
         val app = appBuilder.build()
@@ -274,7 +278,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
             MessageType.GoodsReleased,
             messageBody,
             messageCorrelationId = 1
-          )
+          )(emptyConverter)
         val newState = ArrivalStatus.GoodsReleased
 
         val app = appBuilder.build()
@@ -314,7 +318,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
             MessageType.GoodsReleased,
             messageBody,
             arrival.nextMessageCorrelationId
-          )
+          )(emptyConverter)
 
         val app = appBuilder.build()
         running(app) {
@@ -368,7 +372,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
             MessageType.GoodsReleased,
             messageBody,
             messageCorrelationId = 1
-          )
+          )(emptyConverter)
 
         val app = appBuilder.build()
         running(app) {

@@ -107,7 +107,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
     savedXmlMessage.map(trim),
     SubmissionPending,
     2
-  )
+  )(emptyConverter)
 
   val arrivalWithOneMessage: Gen[Arrival] = for {
     arrival <- arbitrary[Arrival]

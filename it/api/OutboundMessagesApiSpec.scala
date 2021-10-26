@@ -38,12 +38,14 @@ import play.api.test.FutureAwaits
 import play.api.test.Helpers._
 import repositories.ArrivalMovementRepository
 import utils.Format
-
 import java.net.URLEncoder
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+
+import testOnly.utils.NoJsonXmlToJsonConverter
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class OutboundMessagesApiSpec
@@ -64,12 +66,14 @@ class OutboundMessagesApiSpec
   lazy val ws: WSClient                    = app.injector.instanceOf[WSClient]
   lazy val repo: ArrivalMovementRepository = app.injector.instanceOf[ArrivalMovementRepository]
 
+  val emptyConverter = new NoJsonXmlToJsonConverter
+
   "postMessage" - {
     "return ACCEPTED if a second request comes in for the same unloading remarks" in {
 
       val movements = NonEmptyList(
-        MovementMessageWithStatus(MessageId(1), LocalDateTime.now(), MessageType.ArrivalNotification, <CC007A></CC007A>, MessageStatus.SubmissionSucceeded, 1),
-        MovementMessageWithoutStatus(MessageId(2), LocalDateTime.now(), MessageType.UnloadingPermission, <CC043A></CC043A>, 1) :: Nil
+        MovementMessageWithStatus(MessageId(1), LocalDateTime.now(), MessageType.ArrivalNotification, <CC007A></CC007A>, MessageStatus.SubmissionSucceeded, 1)(emptyConverter),
+        MovementMessageWithoutStatus(MessageId(2), LocalDateTime.now(), MessageType.UnloadingPermission, <CC043A></CC043A>, 1)(emptyConverter) :: Nil
       )
 
       val arrival =
