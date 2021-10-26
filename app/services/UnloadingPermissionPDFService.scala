@@ -17,33 +17,41 @@
 package services
 
 import connectors.ManageDocumentsConnector
-import controllers.Assets.CONTENT_DISPOSITION
-import controllers.Assets.CONTENT_TYPE
 import models.Arrival
 import models.WSError
 import models.WSError._
 import play.api.mvc.Results
+import play.api.http.Status._
+import play.api.http.HeaderNames._
 import uk.gov.hmrc.http.HeaderCarrier
 
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import models.PdfDocument
 
 class UnloadingPermissionPDFService @Inject()(messageRetrievalService: MessageRetrievalService, manageDocumentsConnector: ManageDocumentsConnector)
     extends Results {
 
-  def getPDF(arrival: Arrival)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Either[WSError, (Array[Byte], Seq[(String, String)])]] =
+  val explicitHeaders = Set(CONTENT_LENGTH, CONTENT_TYPE, CONTENT_DISPOSITION)
+
+  def getPDF(arrival: Arrival)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Either[WSError, PdfDocument]] =
     messageRetrievalService.getUnloadingPermission(arrival) match {
       case Some(unloadingPermission) =>
         manageDocumentsConnector.getUnloadingPermissionPdf(unloadingPermission).map {
           result =>
             result.status match {
-              case 200 =>
-                val contentDisposition = result.headers.get(CONTENT_DISPOSITION).map(value => Seq((CONTENT_DISPOSITION, value.head))).getOrElse(Seq.empty)
-                val contentType        = result.headers.get(CONTENT_TYPE).map(value => Seq((CONTENT_TYPE, value.head))).getOrElse(Seq.empty)
-
-                Right((result.bodyAsBytes.toArray, contentDisposition ++ contentType))
-              case otherErrorCode => Left(OtherError(otherErrorCode, result.body))
+              case OK =>
+                Right(
+                  PdfDocument(
+                    result.bodyAsSource,
+                    result.header(CONTENT_LENGTH).map(_.toLong),
+                    result.header(CONTENT_TYPE),
+                    result.header(CONTENT_DISPOSITION)
+                  )
+                )
+              case otherErrorCode =>
+                Left(OtherError(otherErrorCode, result.body))
             }
         }
       case None => Future.successful(Left(NotFoundError))

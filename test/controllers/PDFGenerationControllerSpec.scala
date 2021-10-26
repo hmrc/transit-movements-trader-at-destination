@@ -16,8 +16,11 @@
 
 package controllers
 
+import akka.stream.scaladsl.Source
+import akka.util.ByteString
 import base.SpecBase
 import generators.ModelGenerators
+import models.PdfDocument
 import models.WSError._
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
@@ -51,10 +54,16 @@ class PDFGenerationControllerSpec extends SpecBase with ScalaCheckPropertyChecks
 
       "must return OK and a PDF" in {
 
-        forAll(genArrivalWithSuccessfulArrival, arbitrary[Array[Byte]], arbitrary[Seq[(String, String)]]) {
-          (arrival, pdf, headers) =>
+        forAll(
+          genArrivalWithSuccessfulArrival,
+          arbitrary[Array[Byte]],
+          arbitrary[Option[Long]],
+          arbitrary[Option[String]],
+          arbitrary[Option[String]]
+        ) {
+          (arrival, pdf, contentLength, contentType, contentDisposition) =>
             when(mockUnloadingPermissionPDFService.getPDF(any())(any(), any()))
-              .thenReturn(Future.successful(Right((pdf, headers))))
+              .thenReturn(Future.successful(Right(PdfDocument(Source.single(ByteString(pdf)), contentLength, contentType, contentDisposition))))
 
             when(mockArrivalMovementRepository.get(refEq(arrival.arrivalId), any()))
               .thenReturn(Future.successful(Some(arrival)))

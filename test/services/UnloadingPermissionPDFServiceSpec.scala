@@ -16,6 +16,10 @@
 
 package services
 
+import akka.actor.ActorSystem
+import akka.stream.scaladsl.Sink
+import akka.stream.scaladsl.Source
+import akka.testkit.TestKit
 import akka.util.ByteString
 import base.SpecBase
 import connectors.ManageDocumentsConnector
@@ -27,17 +31,21 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
+import org.scalatest.BeforeAndAfterAll
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.inject.bind
 import play.api.libs.ws.ahc.AhcWSResponse
-import play.api.test.Helpers.CONTENT_DISPOSITION
-import play.api.test.Helpers.CONTENT_TYPE
+import play.api.test.Helpers._
 import play.api.test.Helpers.running
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class UnloadingPermissionPDFServiceSpec extends SpecBase with ModelGenerators with ScalaCheckDrivenPropertyChecks {
+class UnloadingPermissionPDFServiceSpec extends SpecBase with ModelGenerators with ScalaCheckDrivenPropertyChecks with BeforeAndAfterAll {
+  implicit val system = ActorSystem(suiteName)
+
+  override protected def afterAll(): Unit =
+    TestKit.shutdownActorSystem(system)
 
   "UnloadingPermissionPDFService" - {
 
@@ -85,11 +93,16 @@ class UnloadingPermissionPDFServiceSpec extends SpecBase with ModelGenerators wi
             when(mockMessageRetrievalService.getUnloadingPermission(any()))
               .thenReturn(Some(responseMovementMessage))
 
-            val headers = Map(CONTENT_TYPE -> Seq("application/pdf"), CONTENT_DISPOSITION -> Seq("unloading_permission_123"), "OtherHeader" -> Seq("value"))
-
             when(mockWSResponse.status) thenReturn 200
-            when(mockWSResponse.bodyAsBytes) thenReturn ByteString(pdf)
-            when(mockWSResponse.headers) thenReturn headers
+            when(mockWSResponse.bodyAsSource).thenAnswer(
+              _ => Source.single(ByteString(pdf))
+            )
+            when(mockWSResponse.header(any[String])).thenAnswer(_.getArguments()(0) match {
+              case CONTENT_TYPE        => Some("application/pdf")
+              case CONTENT_DISPOSITION => Some("unloading_permission_123")
+              case CONTENT_LENGTH      => Some(pdf.length.toString)
+              case _                   => None
+            })
 
             val application = baseApplicationBuilder
               .overrides(bind[MessageRetrievalService].toInstance(mockMessageRetrievalService))
@@ -100,10 +113,10 @@ class UnloadingPermissionPDFServiceSpec extends SpecBase with ModelGenerators wi
               val service = application.injector.instanceOf[UnloadingPermissionPDFService]
               val result  = service.getPDF(arrival).futureValue
 
-              val expectedHeaders: Seq[(String, String)] = Seq((CONTENT_DISPOSITION, "unloading_permission_123"), (CONTENT_TYPE, "application/pdf"))
-
-              result.right.get._1 mustBe pdf
-              result.right.get._2 mustBe expectedHeaders
+              result.right.get.dataSource.runWith(Sink.seq).futureValue must contain theSameElementsInOrderAs (Seq(ByteString(pdf)))
+              result.right.get.contentLength mustBe Some(pdf.length)
+              result.right.get.contentType mustBe Some("application/pdf")
+              result.right.get.contentDisposition mustBe Some("unloading_permission_123")
             }
         }
       }
