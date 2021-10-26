@@ -269,6 +269,6 @@ class AddJsonToMessagesTransformerSpec extends SpecBase with ModelGenerators wit
     def sourceOfElements[A](elements: List[A]): Source[A, Future[Done]] =
       Source(elements).mapMaterializedValue(_ => Future.successful(Done))
 
-    def addJsonToMessagesTransformer = new AddJsonToMessagesTransformer(workerConfig, arrivalsRepo, arrivalsLockRepo)
+    def addJsonToMessagesTransformer = new AddJsonToMessagesTransformer(workerConfig, arrivalsRepo, arrivalsLockRepo, emptyConverter)
   }
 }

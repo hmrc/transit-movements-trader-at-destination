@@ -88,7 +88,7 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
     requestXmlBody,
     SubmissionPending,
     2
-  )
+  )(emptyConverter)
 
   val arrivalWithOneMessage: Gen[Arrival] = for {
     arrival <- arbitrary[Arrival]

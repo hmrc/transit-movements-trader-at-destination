@@ -27,15 +27,17 @@ import models.ArrivalStatus.ArrivalSubmitted
 import models.MessageType.ArrivalNotification
 import testOnly.models.SeedEori
 import testOnly.models.SeedMrn
-
 import java.time.Clock
 import java.time.LocalDateTime
+
 import javax.inject.Inject
+
 import scala.xml.Elem
 import scala.xml.XML
 import models.MessageId
+import utils.XmlToJsonConverter
 
-private[services] class TestDataGenerator @Inject()(clock: Clock) {
+private[services] class TestDataGenerator @Inject()(clock: Clock, xmlToJsonConverter: XmlToJsonConverter) {
 
   def arrivalMovement(eori: SeedEori, mrn: SeedMrn, arrivalId: ArrivalId, channelType: ChannelType): Arrival = {
 
@@ -43,7 +45,7 @@ private[services] class TestDataGenerator @Inject()(clock: Clock) {
 
     val xml = TestDataXMLGenerator.arrivalNotification(mrn.format, eori.format)
 
-    val movementMessage = MovementMessageWithStatus(MessageId(1), dateTime, ArrivalNotification, xml, MessageStatus.SubmissionSucceeded, 1)
+    val movementMessage = MovementMessageWithStatus(MessageId(1), dateTime, ArrivalNotification, xml, MessageStatus.SubmissionSucceeded, 1)(xmlToJsonConverter)
 
     Arrival(
       arrivalId,

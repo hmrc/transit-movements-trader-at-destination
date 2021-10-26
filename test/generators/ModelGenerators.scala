@@ -54,13 +54,16 @@ import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
 import uk.gov.hmrc.http.UpstreamErrorResponse
-
 import java.time._
+
+import testOnly.utils.NoJsonXmlToJsonConverter
+import utils.XmlToJsonConverter
 
 trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
 
-  private val pastDate: LocalDate = LocalDate.of(1900, 1, 1)
-  private val dateNow: LocalDate  = LocalDate.now
+  private val pastDate: LocalDate           = LocalDate.of(1900, 1, 1)
+  private val dateNow: LocalDate            = LocalDate.now
+  private val converter: XmlToJsonConverter = new NoJsonXmlToJsonConverter()
 
   implicit val arbitraryMessageStatusUpdate: Arbitrary[MessageStatusUpdate] =
     Arbitrary {
@@ -117,7 +120,7 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
         xml         <- Gen.const(<blankXml>message</blankXml>)
         messageType <- Gen.oneOf(MessageType.values)
         status = MessageStatus.SubmissionPending
-      } yield MovementMessageWithStatus(messageId, dateTime, messageType, xml, status, 1)
+      } yield MovementMessageWithStatus(messageId, dateTime, messageType, xml, status, 1)(converter)
     }
 
   implicit lazy val arbitraryMessageWithoutStateXml: Arbitrary[MovementMessageWithoutStatus] =
@@ -128,7 +131,7 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
         time        <- timesBetween(pastDate, dateNow)
         xml         <- Gen.const(<blankXml>message</blankXml>)
         messageType <- Gen.oneOf(MessageType.values)
-      } yield MovementMessageWithoutStatus(messageId, LocalDateTime.of(date, time), messageType, xml, 1)
+      } yield MovementMessageWithoutStatus(messageId, LocalDateTime.of(date, time), messageType, xml, 1)(converter)
     }
 
   implicit lazy val arbitraryMovementMessage: Arbitrary[MovementMessage] =

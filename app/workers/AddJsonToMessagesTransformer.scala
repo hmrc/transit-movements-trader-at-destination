@@ -28,8 +28,9 @@ import models.MovementMessageWithoutStatus
 import repositories.ArrivalMovementRepository
 import repositories.LockRepository
 import workers.WorkerProcessingException._
-
 import javax.inject.Inject
+import utils.XmlToJsonConverter
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.control.NonFatal
@@ -37,7 +38,8 @@ import scala.util.control.NonFatal
 private[workers] class AddJsonToMessagesTransformer @Inject()(
   workerConfig: WorkerConfig,
   arrivalMovementRepository: ArrivalMovementRepository,
-  arrivalLockRepository: LockRepository
+  arrivalLockRepository: LockRepository,
+  xmlToJsonConverter: XmlToJsonConverter
 )(implicit ec: ExecutionContext)
     extends Logging {
 
@@ -60,9 +62,9 @@ private[workers] class AddJsonToMessagesTransformer @Inject()(
 
         val updatedMessages: NonEmptyList[MovementMessage] = arrival.messages.map {
           case m: MovementMessageWithoutStatus =>
-            MovementMessageWithoutStatus(m.messageId, m.dateTime, m.messageType, m.message, m.messageCorrelationId)
+            MovementMessageWithoutStatus(m.messageId, m.dateTime, m.messageType, m.message, m.messageCorrelationId)(xmlToJsonConverter)
           case m: MovementMessageWithStatus =>
-            MovementMessageWithStatus(m.messageId, m.dateTime, m.messageType, m.message, m.status, m.messageCorrelationId)
+            MovementMessageWithStatus(m.messageId, m.dateTime, m.messageType, m.message, m.status, m.messageCorrelationId)(xmlToJsonConverter)
         }
 
         arrivalMovementRepository.resetMessages(arrival.arrivalId, updatedMessages).flatMap {

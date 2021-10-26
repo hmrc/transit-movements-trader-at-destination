@@ -18,6 +18,7 @@ package models
 
 import java.time.LocalDateTime
 
+import base.SpecBase
 import generators.ModelGenerators
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.freespec.AnyFreeSpec
@@ -26,7 +27,7 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.Json
 
-class MovementMessageSpec extends AnyFreeSpec with Matchers with ScalaCheckPropertyChecks with ModelGenerators {
+class MovementMessageSpec extends SpecBase with Matchers with ScalaCheckPropertyChecks with ModelGenerators {
 
   "MovementMessageWithStatus" - {
 
@@ -46,7 +47,7 @@ class MovementMessageSpec extends AnyFreeSpec with Matchers with ScalaCheckPrope
                   )
               )
 
-            val model = MovementMessageWithStatus(messageId, dateTime, messageType, xml, status, messageCorrelationId)
+            val model = MovementMessageWithStatus(messageId, dateTime, messageType, xml, status, messageCorrelationId)(converter)
 
             model.messageJson mustEqual expectedJson
         }
@@ -126,7 +127,7 @@ class MovementMessageSpec extends AnyFreeSpec with Matchers with ScalaCheckPrope
                   )
               )
 
-            val model = MovementMessageWithoutStatus(messageId, dateTime, messageType, xml, messageCorrelationId)
+            val model = MovementMessageWithoutStatus(messageId, dateTime, messageType, xml, messageCorrelationId)(converter)
 
             model.messageJson mustEqual expectedJson
         }

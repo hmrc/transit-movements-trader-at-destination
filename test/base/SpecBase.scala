@@ -29,7 +29,10 @@ import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.mvc.AnyContentAsEmpty
 import play.api.test.FakeRequest
+import testOnly.utils.ConvertingXmlToJsonConverter
+import testOnly.utils.NoJsonXmlToJsonConverter
 import uk.gov.hmrc.http.HeaderCarrier
+import utils.XmlToJsonConverter
 
 trait SpecBase extends AnyFreeSpec with Matchers with MockitoSugar with ScalaFutures with IntegrationPatience with OptionValues with EitherValues {
 
@@ -37,10 +40,14 @@ trait SpecBase extends AnyFreeSpec with Matchers with MockitoSugar with ScalaFut
 
   def fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest("", "")
 
+  val emptyConverter = new NoJsonXmlToJsonConverter
+  val converter      = new ConvertingXmlToJsonConverter
+
   protected def baseApplicationBuilder: GuiceApplicationBuilder =
     new GuiceApplicationBuilder()
       .overrides(
-        bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider]
+        bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
+        bind[XmlToJsonConverter].to[NoJsonXmlToJsonConverter]
       )
       .configure(
         "metrics.jvm" -> false

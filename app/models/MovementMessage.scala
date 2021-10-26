@@ -21,10 +21,11 @@ import org.json.XML
 import play.api.libs.json.Json
 import play.api.libs.json._
 import utils.NodeSeqFormat
-
+import utils.XmlToJsonConverter
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
+
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
@@ -41,17 +42,6 @@ sealed trait MovementMessage {
 
   def receivedBefore(requestedDate: OffsetDateTime): Boolean =
     dateTime.atOffset(ZoneOffset.UTC).isBefore(requestedDate)
-}
-
-sealed trait XmlToJson extends Logging {
-
-  protected def toJson(xml: NodeSeq): JsObject =
-    Try(Json.parse(XML.toJSONObject(xml.toString).toString).as[JsObject]) match {
-      case Success(data) => data
-      case Failure(error) =>
-        logger.error(s"Failed to convert xml to json with error: ${error.getMessage}")
-        Json.obj()
-    }
 }
 
 final case class MovementMessageWithStatus private (
@@ -91,7 +81,7 @@ object MovementMessage extends NodeSeqFormat with MongoDateTimeFormats {
   }
 }
 
-object MovementMessageWithStatus extends NodeSeqFormat with MongoDateTimeFormats with XmlToJson {
+object MovementMessageWithStatus extends NodeSeqFormat with MongoDateTimeFormats {
 
   val writesMovementMessage: OWrites[MovementMessageWithStatus] =
     Json.writes[MovementMessageWithStatus]
@@ -121,11 +111,11 @@ object MovementMessageWithStatus extends NodeSeqFormat with MongoDateTimeFormats
     message: NodeSeq,
     status: MessageStatus,
     messageCorrelationId: Int
-  ): MovementMessageWithStatus =
-    MovementMessageWithStatus(messageId, dateTime, messageType, message, status, messageCorrelationId, toJson(message))
+  )(xmlToJson: XmlToJsonConverter): MovementMessageWithStatus =
+    MovementMessageWithStatus(messageId, dateTime, messageType, message, status, messageCorrelationId, xmlToJson.toJson(message))
 }
 
-object MovementMessageWithoutStatus extends NodeSeqFormat with MongoDateTimeFormats with XmlToJson {
+object MovementMessageWithoutStatus extends NodeSeqFormat with MongoDateTimeFormats {
 
   val writesMovementMessage: OWrites[MovementMessageWithoutStatus] =
     Json.writes[MovementMessageWithoutStatus]
@@ -153,6 +143,6 @@ object MovementMessageWithoutStatus extends NodeSeqFormat with MongoDateTimeForm
     messageType: MessageType,
     message: NodeSeq,
     messageCorrelationId: Int
-  ): MovementMessageWithoutStatus =
-    MovementMessageWithoutStatus(messageId, dateTime, messageType, message, messageCorrelationId, toJson(message))
+  )(xmlToJson: XmlToJsonConverter): MovementMessageWithoutStatus =
+    MovementMessageWithoutStatus(messageId, dateTime, messageType, message, messageCorrelationId, xmlToJson.toJson(message))
 }
