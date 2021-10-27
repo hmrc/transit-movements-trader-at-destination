@@ -30,6 +30,7 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
+import play.api.http.HeaderNames
 
 class PDFGenerationController @Inject()(
   cc: ControllerComponents,
@@ -47,8 +48,9 @@ class PDFGenerationController @Inject()(
       authenticateForRead(arrivalId).async {
         implicit request =>
           unloadingPermissionPDFService.getPDF(request.arrival).map {
-            case Right((pdf, headers)) =>
-              Ok(pdf).withHeaders(headers: _*)
+            case Right(pdf) =>
+              val responseHeaders = pdf.contentDisposition.map(HeaderNames.CONTENT_DISPOSITION -> _).toList
+              Ok.streamed(pdf.dataSource, pdf.contentLength, pdf.contentType).withHeaders(responseHeaders: _*)
             case Left(NotFoundError) =>
               logger.error(s"Failed to find UnloadingPermission of index: ${request.arrival.arrivalId} ")
               NotFound
