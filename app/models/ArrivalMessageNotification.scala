@@ -61,7 +61,7 @@ object ArrivalMessageNotification {
 
   def fromInboundRequest(inboundMessageRequest: InboundMessageRequest, contentLength: Option[Int]): ArrivalMessageNotification =
     inboundMessageRequest match {
-      case InboundMessageRequest(arrival, _, inboundMessageResponse, movementMessage) =>
+      case InboundMessageRequest(arrival, inboundMessageResponse, movementMessage) =>
         val oneHundredKilobytes = 100000
         val eoriNumber          = arrival.eoriNumber
         val messageId           = arrival.nextMessageId

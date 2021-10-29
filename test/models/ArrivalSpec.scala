@@ -47,4 +47,5 @@ class ArrivalSpec extends SpecBase with ScalaCheckDrivenPropertyChecks with Mode
         }
     }
   }
+
 }

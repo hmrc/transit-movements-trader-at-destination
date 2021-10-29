@@ -22,14 +22,12 @@ import models.ArrivalId
 import models.ArrivalStatus
 import models.ArrivalWithoutMessages
 import models.MessageMetaData
-import models.MessageType
 import models.MongoDateTimeFormats
 import models.MovementReferenceNumber
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import play.api.libs.json.OWrites
 import play.api.libs.json.Reads
-
 import java.time.LocalDateTime
 
 case class ResponseArrival(
@@ -51,7 +49,7 @@ object ResponseArrival {
       routes.MovementsController.getArrival(arrival.arrivalId).url,
       routes.MessagesController.getMessages(arrival.arrivalId).url,
       arrival.movementReferenceNumber,
-      arrival.status,
+      arrival.currentStatus,
       arrival.created,
       updated = arrival.lastUpdated,
       arrival.messages.map(x => MessageMetaData(x.messageType, x.dateTime)).toList
@@ -63,7 +61,7 @@ object ResponseArrival {
       routes.MovementsController.getArrival(arrivalWithoutMessages.arrivalId).url,
       routes.MessagesController.getMessages(arrivalWithoutMessages.arrivalId).url,
       arrivalWithoutMessages.movementReferenceNumber,
-      arrivalWithoutMessages.status,
+      arrivalWithoutMessages.currentStatus,
       arrivalWithoutMessages.created,
       updated = arrivalWithoutMessages.lastUpdated,
       arrivalWithoutMessages.messagesMetaData

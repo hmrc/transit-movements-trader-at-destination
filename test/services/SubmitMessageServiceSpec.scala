@@ -32,9 +32,6 @@ import models.Arrival
 import models.ArrivalId
 import models.ArrivalIdSelector
 import models.ArrivalPutUpdate
-import models.ArrivalStatus
-import models.ArrivalStatusUpdate
-import models.CompoundStatusUpdate
 import models.MessageId
 import models.MessageSelector
 import models.MessageStatus
@@ -95,7 +92,6 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
   } yield
     arrival.copy(
       eoriNumber = "eori",
-      status = ArrivalStatus.ArrivalSubmitted,
       messages = NonEmptyList.one(movementMessage),
       nextMessageCorrelationId = movementMessage.messageCorrelationId
     )
@@ -123,9 +119,8 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
         val arrivalId       = arbitrary[ArrivalId].sample.value
         val messageId       = arbitrary[MessageId].sample.value
         val movementMessage = arbitrary[MovementMessageWithStatus].sample.value
-        val arrivalStatus   = ArrivalStatus.ArrivalSubmitted
 
-        val result = service.submitMessage(arrivalId, messageId, movementMessage, arrivalStatus, web)
+        val result = service.submitMessage(arrivalId, messageId, movementMessage, web)
 
         result.futureValue mustEqual SubmissionProcessingResult.SubmissionSuccess
 
@@ -133,7 +128,7 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
         verify(mockMessageConnector, times(1)).post(eqTo(arrivalId), eqTo(movementMessage), any(), any())(any())
         verify(mockArrivalMovementRepository, times(1)).updateArrival(
           eqTo(ArrivalIdSelector(arrivalId)),
-          eqTo(CompoundStatusUpdate(ArrivalStatusUpdate(ArrivalStatus.ArrivalSubmitted), MessageStatusUpdate(messageId, MessageStatus.SubmissionSucceeded)))
+          eqTo(MessageStatusUpdate(messageId, MessageStatus.SubmissionSucceeded))
         )(any())
 
       }
@@ -161,16 +156,15 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
         val arrivalId       = arbitrary[ArrivalId].sample.value
         val messageId       = arbitrary[MessageId].sample.value
         val movementMessage = arbitrary[MovementMessageWithStatus].sample.value
-        val arrivalStatus   = ArrivalStatus.ArrivalSubmitted
 
-        val result = service.submitMessage(arrivalId, messageId, movementMessage, arrivalStatus, web)
+        val result = service.submitMessage(arrivalId, messageId, movementMessage, web)
 
         result.futureValue mustEqual SubmissionProcessingResult.SubmissionSuccess
         verify(mockArrivalMovementRepository, times(1)).addNewMessage(eqTo(arrivalId), eqTo(movementMessage))
         verify(mockMessageConnector, times(1)).post(eqTo(arrivalId), eqTo(movementMessage), any(), any())(any())
         verify(mockArrivalMovementRepository, times(1)).updateArrival(
           eqTo(ArrivalIdSelector(arrivalId)),
-          eqTo(CompoundStatusUpdate(ArrivalStatusUpdate(ArrivalStatus.ArrivalSubmitted), MessageStatusUpdate(messageId, MessageStatus.SubmissionSucceeded)))
+          eqTo(MessageStatusUpdate(messageId, MessageStatus.SubmissionSucceeded))
         )(any())
       }
 
@@ -195,9 +189,8 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
         val arrivalId       = arbitrary[ArrivalId].sample.value
         val messageId       = arbitrary[MessageId].sample.value
         val movementMessage = arbitrary[MovementMessageWithStatus].sample.value
-        val arrivalStatus   = arbitrary[ArrivalStatus].sample.value
 
-        val result = service.submitMessage(arrivalId, messageId, movementMessage, arrivalStatus, web)
+        val result = service.submitMessage(arrivalId, messageId, movementMessage, web)
 
         result.futureValue mustEqual SubmissionProcessingResult.SubmissionFailureInternal
         verify(mockMessageConnector, never()).post(eqTo(arrivalId), eqTo(movementMessage), any(), any())(any())
@@ -223,17 +216,16 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
           arbitrary[ArrivalId],
           arbitrary[MessageId],
           arbitrary[MovementMessageWithStatus],
-          arbitrary[ArrivalStatus],
           arbitrary[EisSubmissionFailureDownstream]
         ) {
-          (arrivalId, messageId, movementMessage, arrivalStatus, submissionFailure) =>
+          (arrivalId, messageId, movementMessage, submissionFailure) =>
             when(mockArrivalMovementRepository.addNewMessage(any(), any())).thenReturn(Future.successful(Success(())))
             when(mockMessageConnector.post(any(), any(), any(), any())(any())).thenReturn(Future.successful(submissionFailure))
             when(mockArrivalMovementRepository.updateArrival(any(), any())(any())).thenReturn(Future.successful(Success(())))
 
             val expectedModifier = MessageStatusUpdate(messageId, SubmissionFailed)
 
-            val result = service.submitMessage(arrivalId, messageId, movementMessage, arrivalStatus, web)
+            val result = service.submitMessage(arrivalId, messageId, movementMessage, web)
 
             result.futureValue mustEqual SubmissionProcessingResult.SubmissionFailureExternal
 
@@ -262,7 +254,6 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
         val arrivalId       = arbitrary[ArrivalId].sample.value
         val messageId       = arbitrary[MessageId].sample.value
         val movementMessage = arbitrary[MovementMessageWithStatus].sample.value
-        val arrivalStatus   = ArrivalStatus.ArrivalSubmitted
 
         when(mockArrivalMovementRepository.addNewMessage(any(), any())).thenReturn(Future.successful(Success(())))
         when(mockMessageConnector.post(any(), any(), any(), any())(any())).thenReturn(Future.successful(ErrorInPayload))
@@ -270,7 +261,7 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
 
         val expectedModifier = MessageStatusUpdate(messageId, SubmissionFailed)
 
-        val result = service.submitMessage(arrivalId, messageId, movementMessage, arrivalStatus, web)
+        val result = service.submitMessage(arrivalId, messageId, movementMessage, web)
 
         result.futureValue mustEqual SubmissionFailureRejected(ErrorInPayload.responseBody)
 
@@ -301,9 +292,8 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
         val arrivalId       = arbitrary[ArrivalId].sample.value
         val messageId       = arbitrary[MessageId].sample.value
         val movementMessage = arbitrary[MovementMessageWithStatus].sample.value
-        val arrivalStatus   = ArrivalStatus.ArrivalSubmitted
 
-        val result = service.submitMessage(arrivalId, messageId, movementMessage, arrivalStatus, web)
+        val result = service.submitMessage(arrivalId, messageId, movementMessage, web)
 
         result.futureValue mustEqual SubmissionFailureInternal
       }
@@ -330,9 +320,8 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
         val arrivalId       = arbitrary[ArrivalId].sample.value
         val messageId       = arbitrary[MessageId].sample.value
         val movementMessage = arbitrary[MovementMessageWithStatus].sample.value
-        val arrivalStatus   = ArrivalStatus.ArrivalSubmitted
 
-        val result = service.submitMessage(arrivalId, messageId, movementMessage, arrivalStatus, web)
+        val result = service.submitMessage(arrivalId, messageId, movementMessage, web)
 
         result.futureValue mustEqual SubmissionFailureRejected(ErrorInPayload.responseBody)
       }
@@ -362,7 +351,6 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
         val arrivalId       = arbitrary[ArrivalId].sample.value
         val messageId       = arbitrary[MessageId].sample.value
         val movementMessage = arbitrary[MovementMessageWithStatus].sample.value
-        val arrivalStatus   = ArrivalStatus.ArrivalSubmitted
         val mrn             = arbitrary[MovementReferenceNumber].sample.value
 
         val result = service.submitIe007Message(arrivalId, messageId, movementMessage, mrn, web)
@@ -371,7 +359,7 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
 
         val expectedSelector = ArrivalIdSelector(arrivalId)
         val expectedModifier =
-          ArrivalPutUpdate(mrn, CompoundStatusUpdate(ArrivalStatusUpdate(arrivalStatus), MessageStatusUpdate(messageId, SubmissionSucceeded)))
+          ArrivalPutUpdate(mrn, MessageStatusUpdate(messageId, SubmissionSucceeded))
 
         verify(mockArrivalMovementRepository, times(1)).addNewMessage(eqTo(arrivalId), eqTo(movementMessage))
         verify(mockMessageConnector, times(1)).post(eqTo(arrivalId), eqTo(movementMessage), any(), any())(any())
@@ -403,14 +391,13 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
         val arrivalId       = arbitrary[ArrivalId].sample.value
         val messageId       = arbitrary[MessageId].sample.value
         val movementMessage = arbitrary[MovementMessageWithStatus].sample.value
-        val arrivalStatus   = ArrivalStatus.ArrivalSubmitted
         val mrn             = arbitrary[MovementReferenceNumber].sample.value
 
         val result = service.submitIe007Message(arrivalId, messageId, movementMessage, mrn, web)
 
         val expectedSelector = ArrivalIdSelector(arrivalId)
         val expectedModifier =
-          ArrivalPutUpdate(mrn, CompoundStatusUpdate(ArrivalStatusUpdate(arrivalStatus), MessageStatusUpdate(messageId, SubmissionSucceeded)))
+          ArrivalPutUpdate(mrn, MessageStatusUpdate(messageId, SubmissionSucceeded))
 
         result.futureValue mustEqual SubmissionProcessingResult.SubmissionSuccess
         verify(mockArrivalMovementRepository, times(1)).addNewMessage(eqTo(arrivalId), eqTo(movementMessage))
@@ -617,7 +604,7 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
         verify(mockMessageConnector, times(1)).post(eqTo(arrival.arrivalId), eqTo(movementMessage), any(), any())(any())
         verify(mockArrivalMovementRepository, times(1)).updateArrival(
           eqTo(ArrivalIdSelector(arrival.arrivalId)),
-          eqTo(CompoundStatusUpdate(ArrivalStatusUpdate(ArrivalStatus.ArrivalSubmitted), MessageStatusUpdate(messageId, MessageStatus.SubmissionSucceeded)))
+          eqTo(MessageStatusUpdate(messageId, MessageStatus.SubmissionSucceeded))
         )(any())
 
       }
@@ -649,7 +636,7 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
         verify(mockMessageConnector, times(1)).post(eqTo(arrival.arrivalId), eqTo(movementMessage), any(), any())(any())
         verify(mockArrivalMovementRepository, times(1)).updateArrival(
           eqTo(ArrivalIdSelector(arrival.arrivalId)),
-          eqTo(CompoundStatusUpdate(ArrivalStatusUpdate(ArrivalStatus.ArrivalSubmitted), MessageStatusUpdate(messageId, MessageStatus.SubmissionSucceeded)))
+          eqTo(MessageStatusUpdate(messageId, MessageStatus.SubmissionSucceeded))
         )(any())
       }
 

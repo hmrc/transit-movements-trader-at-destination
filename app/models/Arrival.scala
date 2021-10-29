@@ -19,16 +19,17 @@ package models
 import cats.data._
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
-
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+
+import models.MessageType._
+import utils.MessageTypeUtils
 
 case class Arrival(
   arrivalId: ArrivalId,
   channel: ChannelType,
   movementReferenceNumber: MovementReferenceNumber,
   eoriNumber: String,
-  status: ArrivalStatus,
   created: LocalDateTime,
   updated: LocalDateTime,
   lastUpdated: LocalDateTime = LocalDateTime.now,
@@ -55,6 +56,8 @@ case class Arrival(
     "Messages"                    -> messages.toList.map(_.messageType.toString).mkString(", "),
     "Next message correlation id" -> nextMessageCorrelationId.toString
   )
+
+  def currentStatus: ArrivalStatus = MessageTypeUtils.currentArrivalStatus(messages.toList)
 }
 
 object Arrival {
@@ -72,7 +75,6 @@ object Arrival {
         (__ \ "channel").read[ChannelType] and
         (__ \ "movementReferenceNumber").read[MovementReferenceNumber] and
         (__ \ "eoriNumber").read[String] and
-        (__ \ "status").read[ArrivalStatus] and
         (__ \ "created").read(MongoDateTimeFormats.localDateTimeRead) and
         (__ \ "updated").read(MongoDateTimeFormats.localDateTimeRead) and
         (__ \ "lastUpdated").read(MongoDateTimeFormats.localDateTimeRead) and
@@ -87,7 +89,6 @@ object Arrival {
         (__ \ "channel").write[ChannelType] and
         (__ \ "movementReferenceNumber").write[MovementReferenceNumber] and
         (__ \ "eoriNumber").write[String] and
-        (__ \ "status").write[ArrivalStatus] and
         (__ \ "created").write(write) and
         (__ \ "updated").write(write) and
         (__ \ "lastUpdated").write(write) and

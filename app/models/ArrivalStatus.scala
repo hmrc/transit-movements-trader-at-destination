@@ -49,5 +49,4 @@ object ArrivalStatus extends Enumerable.Implicits with MongoDateTimeFormats {
 
   implicit val enumerable: Enumerable[ArrivalStatus] =
     Enumerable(values.map(v => v.toString -> v): _*)
-
 }

@@ -20,11 +20,10 @@ import controllers.routes
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalStatus
-import models.MessageStatus.SubmissionFailed
 import models.MovementReferenceNumber
+import models.MessageStatus.SubmissionFailed
 import play.api.libs.json.Json
 import play.api.libs.json.OWrites
-
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 
@@ -47,7 +46,7 @@ object ResponseArrivalWithMessages {
       routes.MovementsController.getArrival(arrival.arrivalId).url,
       routes.MessagesController.getMessages(arrival.arrivalId).url,
       arrival.movementReferenceNumber,
-      arrival.status,
+      arrival.currentStatus,
       arrival.created,
       updated = arrival.lastUpdated,
       arrival.messagesWithId
@@ -63,5 +62,4 @@ object ResponseArrivalWithMessages {
     )
 
   implicit val writes: OWrites[ResponseArrivalWithMessages] = Json.writes[ResponseArrivalWithMessages]
-
 }

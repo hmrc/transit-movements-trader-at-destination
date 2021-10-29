@@ -31,11 +31,9 @@ import models.Arrival
 import models.ArrivalId
 import models.ArrivalPutUpdate
 import models.ArrivalStatus
-import models.ArrivalStatusUpdate
 import models.ArrivalUpdate
 import models.ArrivalWithoutMessages
 import models.ChannelType
-import models.CompoundStatusUpdate
 import models.MessageId
 import models.MessageMetaData
 import models.MessageReceivedEvent
@@ -54,7 +52,6 @@ import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
 import uk.gov.hmrc.http.UpstreamErrorResponse
-
 import java.time._
 
 trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
@@ -70,27 +67,16 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
       } yield MessageStatusUpdate(messageId, messageStatus)
     }
 
-  implicit val arbitraryArrivalStatusUpdate: Arbitrary[ArrivalStatusUpdate] = Arbitrary(arbitrary[ArrivalStatus].map(ArrivalStatusUpdate(_)))
-
-  implicit val arbitraryCompoundStatusUpdate: Arbitrary[CompoundStatusUpdate] = Arbitrary {
-    for {
-      arrivalStatusUpdate <- arbitrary[ArrivalStatusUpdate]
-      messageStatusUpdate <- arbitrary[MessageStatusUpdate]
-    } yield CompoundStatusUpdate(arrivalStatusUpdate, messageStatusUpdate)
-  }
-
   implicit val arbitraryArrivalPutUpdate: Arbitrary[ArrivalPutUpdate] = Arbitrary {
     for {
       mrn    <- arbitrary[MovementReferenceNumber]
-      update <- arbitrary[CompoundStatusUpdate]
+      update <- arbitrary[MessageStatusUpdate]
     } yield ArrivalPutUpdate(mrn, update)
   }
 
   val arrivalUpdateTypeGenerator: Gen[Gen[ArrivalUpdate]] =
     Gen.oneOf[Gen[ArrivalUpdate]](
       arbitrary[MessageStatusUpdate],
-      arbitrary[ArrivalStatusUpdate],
-      arbitrary[CompoundStatusUpdate],
       arbitrary[ArrivalPutUpdate]
     )
 
@@ -98,8 +84,6 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
     Arbitrary(
       Gen.oneOf[ArrivalUpdate](
         arbitrary[MessageStatusUpdate],
-        arbitrary[ArrivalStatusUpdate],
-        arbitrary[CompoundStatusUpdate],
         arbitrary[ArrivalPutUpdate]
       )
     )
@@ -160,7 +144,6 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
         channel                 <- arbitrary[ChannelType]
         movementReferenceNumber <- arbitrary[MovementReferenceNumber]
         eoriNumber              <- arbitrary[String]
-        status                  <- arbitrary[ArrivalStatus]
         created                 <- arbitrary[LocalDateTime]
         updated                 <- arbitrary[LocalDateTime]
         messages                <- nonEmptyListOfMaxLength[MovementMessageWithStatus](2)
@@ -170,7 +153,6 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
           channel = channel,
           movementReferenceNumber = movementReferenceNumber,
           eoriNumber = eoriNumber,
-          status = status,
           created = created,
           updated = updated,
           lastUpdated = updated,

@@ -121,7 +121,6 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
     channel = api,
     movementReferenceNumber = mrn,
     eoriNumber = "eori",
-    status = ArrivalStatus.Initialized,
     created = localDateTime,
     updated = localDateTime,
     lastUpdated = localDateTime,
