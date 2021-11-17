@@ -12,7 +12,9 @@
 + nocsrf
 DELETE  /test-only/transit-movements-trader-at-destination/dropArrivalMovementCollection testOnly.controllers.TestOnlyController.dropArrivalMovementCollection
 
-POST    /test-only/transit-movements-trader-at-destination/seedData testOnly.controllers.TestOnlySeedDataController.seedData
+POST    /test-only/transit-movements-trader-at-destination/seedData  testOnly.controllers.TestOnlySeedDataController.seedData
+
+GET     /test-only/transit-movements-trader-at-destination/arrivalId testOnly.controllers.TestOnlySeedDataController.getLatestArrivalId
 
 # Add all the application routes to the prod.routes file
 ->         /                          prod.Routes

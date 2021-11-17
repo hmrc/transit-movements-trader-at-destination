@@ -21,6 +21,7 @@ import play.api.Configuration
 import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
 import play.api.mvc.Action
+import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import repositories.ArrivalIdRepository
 import repositories.ArrivalMovementRepository
@@ -75,6 +76,18 @@ class TestOnlySeedDataController @Inject()(
         }
       } else {
         Future.successful(NotImplemented("Feature disabled, could not seed data"))
+      }
+  }
+
+  def getLatestArrivalId: Action[AnyContent] = Action.async {
+    implicit request =>
+      if (featureFlag) {
+        repository.getMaxArrivalId.map {
+          case Some(arrivalId) => Ok(Json.toJson(arrivalId))
+          case None            => NotFound
+        }
+      } else {
+        Future.successful(NotImplemented("Feature disabled, could not retrieve ArrivalId"))
       }
   }
 

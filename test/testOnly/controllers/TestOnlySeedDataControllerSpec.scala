@@ -32,7 +32,9 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.Application
 import play.api.inject._
 import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.libs.json.JsNumber
 import play.api.libs.json.JsObject
+import play.api.libs.json.JsString
 import play.api.libs.json.Json
 import play.api.mvc.AnyContentAsJson
 import play.api.test.FakeRequest
@@ -134,6 +136,32 @@ class TestOnlySeedDataControllerSpec extends SpecBase with ScalaCheckPropertyChe
         verify(mockIdRepository, times(1)).setNextId(eqTo(135))
       }
 
+    }
+  }
+
+  "getLatestArrivalId" - {
+
+    "must return Ok with latest ArrivalId" in {
+
+      when(mockRepository.getMaxArrivalId).thenReturn(Future.successful(Some(ArrivalId(123))))
+
+      val request = FakeRequest(GET, testOnly.controllers.routes.TestOnlySeedDataController.getLatestArrivalId().url)
+
+      val result = route(app, request).value
+
+      status(result) mustEqual OK
+      contentAsJson(result) mustEqual JsNumber(123)
+    }
+
+    "must return NotFound when no ArrivalId's are available" in {
+
+      when(mockRepository.getMaxArrivalId).thenReturn(Future.successful(None))
+
+      val request = FakeRequest(GET, testOnly.controllers.routes.TestOnlySeedDataController.getLatestArrivalId().url)
+
+      val result = route(app, request).value
+
+      status(result) mustEqual NOT_FOUND
     }
   }
 }

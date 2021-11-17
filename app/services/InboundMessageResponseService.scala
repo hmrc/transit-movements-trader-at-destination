@@ -39,7 +39,11 @@ class InboundMessageResponseService @Inject()(xmlValidationService: XmlValidatio
       _ <- EitherT.fromEither(
         xmlValidationService
           .validate(xml.toString, validateInboundResponse.xsdFile)
-          .toOption
-          .toRight[SubmissionState](FailedToValidateMessage(s"[InboundRequest][makeInboundMessageResponse] XML failed to validate against XSD file")))
+          .toEither
+          .left
+          .map[SubmissionState](
+            throwable => FailedToValidateMessage(s"[InboundRequest][makeInboundMessageResponse] XML failed to validate against XSD file with error: $throwable")
+          )
+      )
     } yield validateInboundResponse
 }
