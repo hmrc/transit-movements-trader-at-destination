@@ -79,18 +79,6 @@ class TestOnlySeedDataController @Inject()(
       }
   }
 
-  def getLatestArrivalId: Action[AnyContent] = Action.async {
-    implicit request =>
-      if (featureFlag) {
-        repository.getMaxArrivalId.map {
-          case Some(arrivalId) => Ok(Json.toJson(arrivalId))
-          case None            => NotFound
-        }
-      } else {
-        Future.successful(NotImplemented("Feature disabled, could not retrieve ArrivalId"))
-      }
-  }
-
   private def updateNextId(): Future[Unit] = repository.getMaxArrivalId.flatMap {
     case Some(value) => idRepository.setNextId(value.index + 1)
     case None        => Future.failed(new IllegalStateException("No Arrivals found when retrieving max arrival id"))

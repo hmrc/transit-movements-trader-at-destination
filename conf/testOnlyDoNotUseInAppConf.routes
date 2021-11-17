@@ -14,7 +14,7 @@ DELETE  /test-only/transit-movements-trader-at-destination/dropArrivalMovementCo
 
 POST    /test-only/transit-movements-trader-at-destination/seedData  testOnly.controllers.TestOnlySeedDataController.seedData
 
-GET     /test-only/transit-movements-trader-at-destination/arrivalId testOnly.controllers.TestOnlySeedDataController.getLatestArrivalId
+GET     /test-only/transit-movements-trader-at-destination/getArrivalId testOnly.controllers.TestOnlyGetArrivalIdController.getLatestArrivalId
 
 # Add all the application routes to the prod.routes file
 ->         /                          prod.Routes
