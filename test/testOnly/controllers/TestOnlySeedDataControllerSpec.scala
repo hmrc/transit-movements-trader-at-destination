@@ -72,7 +72,7 @@ class TestOnlySeedDataControllerSpec extends SpecBase with ScalaCheckPropertyChe
         when(mockRepository.getMaxArrivalId).thenReturn(Future.successful(Some(ArrivalId(104))))
         when(mockIdRepository.setNextId(any())).thenReturn(Future.successful(()))
 
-        val request: FakeRequest[AnyContentAsJson] = FakeRequest(POST, testOnly.controllers.routes.TestOnlySeedDataController.seedData().url)
+        val request: FakeRequest[AnyContentAsJson] = FakeRequest(POST, testOnly.controllers.routes.TestOnlySeedDataController.seedData.url)
           .withHeaders("channel" -> ChannelType.web.toString)
           .withJsonBody(Json.parse("""
                                      |{
@@ -105,7 +105,7 @@ class TestOnlySeedDataControllerSpec extends SpecBase with ScalaCheckPropertyChe
         when(mockRepository.getMaxArrivalId).thenReturn(Future.successful(Some(ArrivalId(134))))
         when(mockIdRepository.setNextId(any())).thenReturn(Future.successful(()))
 
-        val request: FakeRequest[AnyContentAsJson] = FakeRequest(POST, testOnly.controllers.routes.TestOnlySeedDataController.seedData().url)
+        val request: FakeRequest[AnyContentAsJson] = FakeRequest(POST, testOnly.controllers.routes.TestOnlySeedDataController.seedData.url)
           .withHeaders("channel" -> ChannelType.web.toString)
           .withJsonBody(Json.parse("""
                                      |{

@@ -161,7 +161,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         running(application) {
 
           val request =
-            FakeRequest(POST, routes.MovementsController.post().url)
+            FakeRequest(POST, routes.MovementsController.post.url)
               .withHeaders("channel" -> newArrival.channel.toString)
               .withXmlBody(requestXmlBody.map(trim))
 
@@ -220,7 +220,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         running(application) {
 
           val request =
-            FakeRequest(POST, routes.MovementsController.post().url)
+            FakeRequest(POST, routes.MovementsController.post.url)
               .withHeaders("channel" -> newArrival.channel.toString, Constants.XClientIdHeader -> testClientId)
               .withXmlBody(requestXmlBody.map(trim))
 
@@ -262,7 +262,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
         running(application) {
 
-          val request = FakeRequest(POST, routes.MovementsController.post().url).withHeaders("channel" -> web.toString).withXmlBody(requestXmlBody.map(trim))
+          val request = FakeRequest(POST, routes.MovementsController.post.url).withHeaders("channel" -> web.toString).withXmlBody(requestXmlBody.map(trim))
 
           val result = route(application, request).value
 
@@ -293,7 +293,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
         running(application) {
 
-          val request = FakeRequest(POST, routes.MovementsController.post().url).withHeaders("channel" -> web.toString).withXmlBody(requestXmlBody.map(trim))
+          val request = FakeRequest(POST, routes.MovementsController.post.url).withHeaders("channel" -> web.toString).withXmlBody(requestXmlBody.map(trim))
 
           val result = route(application, request).value
 
@@ -324,7 +324,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
         running(application) {
 
-          val request = FakeRequest(POST, routes.MovementsController.post().url).withHeaders("channel" -> web.toString).withXmlBody(requestXmlBody.map(trim))
+          val request = FakeRequest(POST, routes.MovementsController.post.url).withHeaders("channel" -> web.toString).withXmlBody(requestXmlBody.map(trim))
 
           val result = route(application, request).value
 
@@ -360,7 +360,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
                 </HEAHEA>
               </CC007A>
 
-          val request = FakeRequest(POST, routes.MovementsController.post().url).withHeaders("channel" -> web.toString).withXmlBody(requestXmlBody.map(trim))
+          val request = FakeRequest(POST, routes.MovementsController.post.url).withHeaders("channel" -> web.toString).withXmlBody(requestXmlBody.map(trim))
 
           val result = route(application, request).value
 
@@ -391,7 +391,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           val requestXmlBody =
             <CC007A><SynVerNumMES2>1</SynVerNumMES2><HEAHEA><DocNumHEA5>MRN</DocNumHEA5></HEAHEA></CC007A>
 
-          val request = FakeRequest(POST, routes.MovementsController.post().url).withHeaders("channel" -> web.toString).withXmlBody(requestXmlBody.map(trim))
+          val request = FakeRequest(POST, routes.MovementsController.post.url).withHeaders("channel" -> web.toString).withXmlBody(requestXmlBody.map(trim))
 
           val result = route(application, request).value
 
@@ -419,7 +419,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
         running(application) {
           val requestXmlBody = <InvalidRootNode><SynVerNumMES2>1</SynVerNumMES2></InvalidRootNode>
 
-          val request = FakeRequest(POST, routes.MovementsController.post().url).withHeaders("channel" -> web.toString).withXmlBody(requestXmlBody.map(trim))
+          val request = FakeRequest(POST, routes.MovementsController.post.url).withHeaders("channel" -> web.toString).withXmlBody(requestXmlBody.map(trim))
 
           val result = route(application, request).value
 
@@ -451,7 +451,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
         running(application) {
 
-          val request = FakeRequest(POST, routes.MovementsController.post().url).withHeaders("channel" -> web.toString).withXmlBody(requestXmlBody.map(trim))
+          val request = FakeRequest(POST, routes.MovementsController.post.url).withHeaders("channel" -> web.toString).withXmlBody(requestXmlBody.map(trim))
 
           val result = route(application, request).value
 
@@ -482,7 +482,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
         running(application) {
 
-          val request = FakeRequest(POST, routes.MovementsController.post().url).withHeaders("channel" -> web.toString).withXmlBody(requestXmlBody.map(trim))
+          val request = FakeRequest(POST, routes.MovementsController.post.url).withHeaders("channel" -> web.toString).withXmlBody(requestXmlBody.map(trim))
 
           val result = route(application, request).value
 
