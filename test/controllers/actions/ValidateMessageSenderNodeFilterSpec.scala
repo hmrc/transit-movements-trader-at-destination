@@ -15,9 +15,8 @@
  */
 
 package controllers.actions
+import base.SpecBase
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.freespec.AnyFreeSpec
-import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.play.guice.GuiceOneAppPerTest
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.mvc.ActionFilter
@@ -33,7 +32,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.xml.NodeSeq
 
-class ValidateMessageSenderNodeFilterSpec extends AnyFreeSpec with Matchers with ScalaCheckPropertyChecks with ScalaFutures with GuiceOneAppPerTest {
+class ValidateMessageSenderNodeFilterSpec extends SpecBase {
 
   def action: ValidateMessageSenderNodeFilter = new ValidateMessageSenderNodeFilter()
 

@@ -20,9 +20,12 @@ import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.common.ConsoleNotifier
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig
+import migrations.FakeMigrationRunner
+import migrations.MigrationRunner
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.Suite
+import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.inject.guice.GuiceableModule
 
@@ -42,7 +45,7 @@ trait WiremockSuite extends BeforeAndAfterAll with BeforeAndAfterEach {
       )
       .overrides(bindings: _*)
 
-  protected def bindings: Seq[GuiceableModule] = Seq.empty
+  protected def bindings: Seq[GuiceableModule] = Seq(bind[MigrationRunner].to[FakeMigrationRunner])
 
   override def beforeAll(): Unit = {
     server.start()

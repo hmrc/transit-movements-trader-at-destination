@@ -39,10 +39,13 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import repositories.ArrivalIdRepository
 import repositories.ArrivalMovementRepository
-
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneId
+
+import migrations.MigrationRunner
+import migrations.MigrationRunnerImpl
+
 import scala.concurrent.Future
 
 class TestOnlySeedDataControllerSpec extends SpecBase with ScalaCheckPropertyChecks with ModelGenerators with GuiceOneAppPerSuite with BeforeAndAfterEach {
@@ -60,6 +63,7 @@ class TestOnlySeedDataControllerSpec extends SpecBase with ScalaCheckPropertyChe
         bind[Clock].toInstance(Clock.fixed(Instant.now(), ZoneId.systemDefault)),
         bind[ArrivalMovementRepository].toInstance(mockRepository),
         bind[ArrivalIdRepository].toInstance(mockIdRepository),
+        bind[MigrationRunner].to(classOf[MigrationRunnerImpl])
       )
       .build()
 

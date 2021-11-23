@@ -28,6 +28,7 @@ import utils.MessageTranslation
 import java.time.Clock
 
 import migrations.MigrationRunner
+import migrations.MigrationRunnerImpl
 
 class Module extends AbstractModule {
 
@@ -40,6 +41,6 @@ class Module extends AbstractModule {
     bind(classOf[MessageTranslation]).asEagerSingleton()
     bind(classOf[StreamLoggingConfig]).to(classOf[StreamLoggingConfigImpl]).asEagerSingleton()
     bind(classOf[Clock]).toInstance(Clock.systemUTC)
-    bind(classOf[MigrationRunner]).asEagerSingleton()
+    bind(classOf[MigrationRunner]).to(classOf[MigrationRunnerImpl]).asEagerSingleton()
   }
 }

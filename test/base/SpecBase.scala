@@ -18,6 +18,8 @@ package base
 
 import controllers.actions.AuthenticateActionProvider
 import controllers.actions.FakeAuthenticateActionProvider
+import migrations.FakeMigrationRunner
+import migrations.MigrationRunner
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.EitherValues
@@ -40,7 +42,8 @@ trait SpecBase extends AnyFreeSpec with Matchers with MockitoSugar with ScalaFut
   protected def baseApplicationBuilder: GuiceApplicationBuilder =
     new GuiceApplicationBuilder()
       .overrides(
-        bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider]
+        bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
+        bind[MigrationRunner].to[FakeMigrationRunner]
       )
       .configure(
         "metrics.jvm" -> false

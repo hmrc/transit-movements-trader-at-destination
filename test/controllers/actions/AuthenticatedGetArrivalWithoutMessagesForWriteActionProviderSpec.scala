@@ -16,7 +16,10 @@
 
 package controllers.actions
 
+import base.SpecBase
 import generators.ModelGenerators
+import migrations.FakeMigrationRunner
+import migrations.MigrationRunner
 import models.ArrivalId
 import models.ArrivalWithoutMessages
 import models.ChannelType.api
@@ -26,13 +29,12 @@ import org.mockito.Mockito._
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.OptionValues
 import org.scalatest.freespec.AnyFreeSpec
-import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.inject.bind
-import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.mvc._
 import play.api.test.FakeRequest
+import play.api.test.Helpers.baseApplicationBuilder
 import play.api.test.Helpers._
 import repositories.ArrivalMovementRepository
 import repositories.LockRepository
@@ -40,6 +42,7 @@ import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.auth.core.Enrolment
 import uk.gov.hmrc.auth.core.EnrolmentIdentifier
 import uk.gov.hmrc.auth.core.Enrolments
+import org.scalatest.matchers.must.Matchers
 
 import scala.concurrent.Future
 
@@ -65,6 +68,10 @@ class AuthenticatedGetArrivalWithoutMessagesForWriteActionProviderSpec
         Future.failed(new Exception)
     }
   }
+
+  val appBuilder = baseApplicationBuilder
+    .configure("metrics.jvm" -> false)
+    .overrides(bind[MigrationRunner].to(classOf[FakeMigrationRunner]))
 
   "authenticated get arrivalWithoutMessages for write" - {
 
@@ -111,7 +118,7 @@ class AuthenticatedGetArrivalWithoutMessagesForWriteActionProviderSpec
         when(mockLockRepository.lock(any())) thenReturn Future.successful(true)
         when(mockLockRepository.unlock(any())) thenReturn Future.successful(true)
 
-        val application = new GuiceApplicationBuilder()
+        val application = appBuilder
           .overrides(
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
             bind[AuthConnector].toInstance(mockAuthConnector),
@@ -146,7 +153,7 @@ class AuthenticatedGetArrivalWithoutMessagesForWriteActionProviderSpec
         when(mockLockRepository.lock(any())) thenReturn Future.successful(true)
         when(mockLockRepository.unlock(any())) thenReturn Future.successful(true)
 
-        val application = new GuiceApplicationBuilder()
+        val application = appBuilder
           .overrides(
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
             bind[AuthConnector].toInstance(mockAuthConnector),
@@ -180,7 +187,7 @@ class AuthenticatedGetArrivalWithoutMessagesForWriteActionProviderSpec
         when(mockLockRepository.lock(any())) thenReturn Future.successful(true)
         when(mockLockRepository.unlock(any())) thenReturn Future.successful(true)
 
-        val application = new GuiceApplicationBuilder()
+        val application = appBuilder
           .overrides(
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
             bind[AuthConnector].toInstance(mockAuthConnector),
@@ -206,15 +213,19 @@ class AuthenticatedGetArrivalWithoutMessagesForWriteActionProviderSpec
 
         val mockAuthConnector: AuthConnector = mock[AuthConnector]
         val mockArrivalMovementRepository    = mock[ArrivalMovementRepository]
+        val mockLockRepository               = mock[LockRepository]
 
         when(mockAuthConnector.authorise[Enrolments](any(), any())(any(), any()))
           .thenReturn(Future.successful(validEnrolments))
         when(mockArrivalMovementRepository.getWithoutMessages(any(), eqTo(api))) thenReturn Future.successful(None)
+        when(mockLockRepository.lock(any())) thenReturn Future.successful(true)
+        when(mockLockRepository.unlock(any())) thenReturn Future.successful(true)
 
-        val application = new GuiceApplicationBuilder()
+        val application = appBuilder
           .overrides(
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
-            bind[AuthConnector].toInstance(mockAuthConnector)
+            bind[AuthConnector].toInstance(mockAuthConnector),
+            bind[LockRepository].toInstance(mockLockRepository)
           )
           .build()
 
@@ -234,15 +245,19 @@ class AuthenticatedGetArrivalWithoutMessagesForWriteActionProviderSpec
 
         val mockAuthConnector: AuthConnector = mock[AuthConnector]
         val mockArrivalMovementRepository    = mock[ArrivalMovementRepository]
+        val mockLockRepository               = mock[LockRepository]
 
         when(mockAuthConnector.authorise[Enrolments](any(), any())(any(), any()))
           .thenReturn(Future.successful(validEnrolments))
         when(mockArrivalMovementRepository.getWithoutMessages(any(), eqTo(api))) thenReturn Future.successful(Some(arrival))
+        when(mockLockRepository.lock(any())) thenReturn Future.successful(true)
+        when(mockLockRepository.unlock(any())) thenReturn Future.successful(true)
 
-        val application = new GuiceApplicationBuilder()
+        val application = appBuilder
           .overrides(
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
-            bind[AuthConnector].toInstance(mockAuthConnector)
+            bind[AuthConnector].toInstance(mockAuthConnector),
+            bind[LockRepository].toInstance(mockLockRepository)
           )
           .build()
 
@@ -270,7 +285,7 @@ class AuthenticatedGetArrivalWithoutMessagesForWriteActionProviderSpec
         when(mockLockRepository.lock(any())) thenReturn Future.successful(true)
         when(mockLockRepository.unlock(any())) thenReturn Future.successful(true)
 
-        val application = new GuiceApplicationBuilder()
+        val application = appBuilder
           .overrides(
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
             bind[AuthConnector].toInstance(mockAuthConnector),
@@ -319,7 +334,7 @@ class AuthenticatedGetArrivalWithoutMessagesForWriteActionProviderSpec
         when(mockLockRepository.lock(any())) thenReturn Future.successful(true)
         when(mockLockRepository.unlock(any())) thenReturn Future.successful(true)
 
-        val application = new GuiceApplicationBuilder()
+        val application = appBuilder
           .overrides(
             bind[AuthConnector].toInstance(mockAuthConnector),
             bind[LockRepository].toInstance(mockLockRepository)
@@ -349,7 +364,7 @@ class AuthenticatedGetArrivalWithoutMessagesForWriteActionProviderSpec
 
         when(mockLockRepository.lock(any())) thenReturn Future.successful(false)
 
-        val application = new GuiceApplicationBuilder()
+        val application = appBuilder
           .overrides(
             bind[LockRepository].toInstance(mockLockRepository)
           )
@@ -399,14 +414,18 @@ class AuthenticatedGetArrivalWithoutMessagesForWriteActionProviderSpec
 
         val arrivalId = arbitrary[ArrivalId].sample.value
 
-        val mockAuthConnector = mock[AuthConnector]
+        val mockAuthConnector  = mock[AuthConnector]
+        val mockLockRepository = mock[LockRepository]
 
         when(mockAuthConnector.authorise[Enrolments](any(), any())(any(), any()))
           .thenReturn(Future.successful(validEnrolments))
+        when(mockLockRepository.lock(any())) thenReturn Future.successful(true)
+        when(mockLockRepository.unlock(any())) thenReturn Future.successful(true)
 
-        val application = new GuiceApplicationBuilder()
+        val application = appBuilder
           .overrides(
-            bind[AuthConnector].toInstance(mockAuthConnector)
+            bind[AuthConnector].toInstance(mockAuthConnector),
+            bind[LockRepository].toInstance(mockLockRepository)
           )
           .build()
 
@@ -455,14 +474,18 @@ class AuthenticatedGetArrivalWithoutMessagesForWriteActionProviderSpec
 
         val arrivalId = arbitrary[ArrivalId].sample.value
 
-        val mockAuthConnector = mock[AuthConnector]
+        val mockAuthConnector  = mock[AuthConnector]
+        val mockLockRepository = mock[LockRepository]
+        when(mockLockRepository.lock(any())) thenReturn Future.successful(true)
+        when(mockLockRepository.unlock(any())) thenReturn Future.successful(true)
 
         when(mockAuthConnector.authorise[Enrolments](any(), any())(any(), any()))
           .thenReturn(Future.successful(validEnrolments))
 
-        val application = new GuiceApplicationBuilder()
+        val application = appBuilder
           .overrides(
-            bind[AuthConnector].toInstance(mockAuthConnector)
+            bind[AuthConnector].toInstance(mockAuthConnector),
+            bind[LockRepository].toInstance(mockLockRepository)
           )
           .build()
 

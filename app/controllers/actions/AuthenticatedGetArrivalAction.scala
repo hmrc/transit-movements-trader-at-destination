@@ -25,6 +25,7 @@ import play.api.mvc.Result
 import play.api.mvc.Results.BadRequest
 import play.api.mvc.Results.InternalServerError
 import play.api.mvc.Results.NotFound
+import play.api.mvc.Results.Forbidden
 import repositories.ArrivalMovementRepository
 
 import javax.inject.Inject
