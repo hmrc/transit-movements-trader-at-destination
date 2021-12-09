@@ -32,6 +32,7 @@ import repositories.ArrivalMovementRepository
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Random
+import scala.xml.NodeSeq
 
 class MovementsChangeLogSpec extends ItSpecBase with IntegrationPatience with BeforeAndAfterAll with GuiceOneAppPerSuite {
 
@@ -78,20 +79,20 @@ class MovementsChangeLogSpec extends ItSpecBase with IntegrationPatience with Be
                 Json.obj(
                   "dateTime"             -> LocalDateTime.of(2021, 7, 15, 12, 12),
                   "messageType"          -> MessageType.ArrivalNotification.toString,
-                  "message"              -> <CC007A></CC007A>,
+                  "message"              -> NodeSeq.fromSeq(Seq(<CC007A></CC007A>)),
                   "status"               -> MessageStatus.SubmissionSucceeded.toString,
                   "messageCorrelationId" -> 1
                 ),
                 Json.obj(
                   "dateTime"             -> LocalDateTime.of(2021, 7, 15, 12, 12),
                   "messageType"          -> MessageType.UnloadingPermission.toString,
-                  "message"              -> <CC043A></CC043A>,
+                  "message"              -> NodeSeq.fromSeq(Seq(<CC043A></CC043A>)),
                   "messageCorrelationId" -> 1
                 ),
                 Json.obj(
                   "dateTime"             -> LocalDateTime.of(2021, 7, 15, 12, 13),
                   "messageType"          -> MessageType.UnloadingRemarks.toString,
-                  "message"              -> <CC044A></CC044A>,
+                  "message"              -> NodeSeq.fromSeq(Seq(<CC044A></CC044A>)),
                   "messageCorrelationId" -> 1
                 )
               )
