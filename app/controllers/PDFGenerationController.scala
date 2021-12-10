@@ -17,11 +17,13 @@
 package controllers
 
 import com.kenshoo.play.metrics.Metrics
-import controllers.actions.AuthenticatedGetArrivalForReadActionProvider
+import controllers.actions.AuthenticatedGetMessagesForReadActionProvider
 import logging.Logging
 import metrics.HasActionMetrics
 import models.ArrivalId
+import models.MessageType
 import models.WSError._
+import play.api.http.HeaderNames
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
@@ -30,11 +32,10 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
-import play.api.http.HeaderNames
 
 class PDFGenerationController @Inject()(
   cc: ControllerComponents,
-  authenticateForRead: AuthenticatedGetArrivalForReadActionProvider,
+  authenticateForRead: AuthenticatedGetMessagesForReadActionProvider,
   unloadingPermissionPDFService: UnloadingPermissionPDFService,
   val metrics: Metrics
 )(implicit ec: ExecutionContext)
@@ -42,17 +43,16 @@ class PDFGenerationController @Inject()(
     with Logging
     with HasActionMetrics {
 
-  // TODO write ticket to improve PDF endpoint by only retrieving required messages in both services
   def getPDF(arrivalId: ArrivalId): Action[AnyContent] =
     withMetricsTimerAction("get-unloading-permission-pdf") {
-      authenticateForRead(arrivalId).async {
+      authenticateForRead(arrivalId, List(MessageType.UnloadingPermission)).async {
         implicit request =>
-          unloadingPermissionPDFService.getPDF(request.arrival).map {
+          unloadingPermissionPDFService.getPDF(request.messages).map {
             case Right(pdf) =>
               val responseHeaders = pdf.contentDisposition.map(HeaderNames.CONTENT_DISPOSITION -> _).toList
               Ok.streamed(pdf.dataSource, pdf.contentLength, pdf.contentType).withHeaders(responseHeaders: _*)
             case Left(NotFoundError) =>
-              logger.error(s"Failed to find UnloadingPermission of index: ${request.arrival.arrivalId} ")
+              logger.error(s"Failed to find UnloadingPermission of index: ${request.arrivalId} ")
               NotFound
             case Left(otherError: OtherError) =>
               logger.error(s"Failed create PDF for the following reason: ${otherError.code} - ${otherError.reason}")

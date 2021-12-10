@@ -29,6 +29,7 @@ import connectors.MessageConnector.EisSubmissionResult.UnexpectedHttpResponse
 import connectors.MessageConnector.EisSubmissionResult.VirusFoundOrInvalidToken
 import models.Arrival
 import models.ArrivalId
+import models.ArrivalMessages
 import models.ArrivalPutUpdate
 import models.ArrivalStatus
 import models.ArrivalUpdate
@@ -52,6 +53,7 @@ import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
 import uk.gov.hmrc.http.UpstreamErrorResponse
+
 import java.time._
 
 trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
@@ -176,6 +178,15 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
       }
     }.arbitrary
 
+  val genArrivalMessagesWithSpecificEori: Gen[ArrivalMessages] =
+    Arbitrary {
+      for {
+        arrivalMessages <- Arbitrary.arbitrary[ArrivalMessages]
+      } yield {
+        arrivalMessages.copy(eoriNumber = "eori")
+      }
+    }.arbitrary
+
   implicit lazy val arbitraryMovementReferenceNumber: Arbitrary[MovementReferenceNumber] =
     Arbitrary {
       for {
@@ -283,4 +294,14 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
         messageMetaData         <- arbitrary[Seq[MessageMetaData]]
       } yield ResponseArrival(arrivalId, location, messagesLocation, movementReferenceNumber, status, created, updated, messageMetaData)
     )
+
+  implicit lazy val arbitaryArrivalMessages: Arbitrary[ArrivalMessages] =
+    Arbitrary(
+      for {
+        arrivalId <- arbitrary[ArrivalId]
+        eori      <- arbitrary[String]
+        message   <- arbitrary[MovementMessageWithStatus]
+      } yield ArrivalMessages(arrivalId, eori, List(message))
+    )
+
 }

@@ -23,6 +23,8 @@ import controllers.actions.AuthenticatedGetArrivalForReadActionProvider
 import controllers.actions.AuthenticatedGetArrivalForReadActionProviderImpl
 import controllers.actions.AuthenticatedGetArrivalWithoutMessagesForReadActionProvider
 import controllers.actions.AuthenticatedGetArrivalWithoutMessagesForReadActionProviderImpl
+import controllers.actions.AuthenticatedGetMessagesForReadActionProvider
+import controllers.actions.AuthenticatedGetMessagesForReadActionProviderImpl
 import repositories.ArrivalMovementRepository
 import utils.MessageTranslation
 import java.time.Clock
@@ -38,6 +40,7 @@ class Module extends AbstractModule {
     bind(classOf[AuthenticateActionProvider]).to(classOf[AuthenticateActionProviderImpl]).asEagerSingleton()
     bind(classOf[AuthenticatedGetArrivalForReadActionProvider]).to(classOf[AuthenticatedGetArrivalForReadActionProviderImpl])
     bind(classOf[AuthenticatedGetArrivalWithoutMessagesForReadActionProvider]).to(classOf[AuthenticatedGetArrivalWithoutMessagesForReadActionProviderImpl])
+    bind(classOf[AuthenticatedGetMessagesForReadActionProvider]).to(classOf[AuthenticatedGetMessagesForReadActionProviderImpl]).asEagerSingleton()
     bind(classOf[MessageTranslation]).asEagerSingleton()
     bind(classOf[StreamLoggingConfig]).to(classOf[StreamLoggingConfigImpl]).asEagerSingleton()
     bind(classOf[Clock]).toInstance(Clock.systemUTC)

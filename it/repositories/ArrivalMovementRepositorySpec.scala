@@ -56,6 +56,7 @@ import scala.concurrent.Future
 import scala.reflect.ClassTag
 import scala.util.Failure
 import scala.util.Success
+import scala.xml.NodeSeq
 
 class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with ScalaFutures with TestSuiteMixin with MongoDateTimeFormats with BeforeAndAfterEach {
 
@@ -414,6 +415,137 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
           result must not be defined
         }
       }
+    }
+
+    "getMessagesOfType(arrivalId: ArrivalId, channelFilter: ChannelType, messageTypes: List[MessageType])" - {
+        
+      val mType = MessageType.UnloadingPermission
+
+      val node = NodeSeq.fromSeq(Seq(<CC043A>m</CC043A>))
+
+      val message = MovementMessageWithStatus(
+          MessageId(1),
+          LocalDateTime.now(),
+          MessageType.UnloadingPermission,
+          node,
+          MessageStatus.SubmissionSucceeded,
+          1
+        )
+
+      val otherMessage = MovementMessageWithStatus(
+          MessageId(2),
+          LocalDateTime.now(),
+          MessageType.GoodsReleased,
+          node,
+          MessageStatus.SubmissionSucceeded,
+          2
+        )
+
+      "must get the appropriate messages when they exist and has the right channel type" in {
+
+        val app = appBuilder.build()
+        running(app) {
+
+          val repository = app.injector.instanceOf[ArrivalMovementRepository]
+
+          val arrival = arbitrary[Arrival].sample.value copy (messages = NonEmptyList[MovementMessage](message, List.empty))
+
+          repository.insert(arrival).futureValue
+
+          // We copy the message node because the returned node isn't equal, even though it's 
+          // identical for our purposes. As it's not what we are really testing, we just copy the
+          // original message across so it doesn't fail the equality check
+          val result = repository.getMessagesOfType(arrival.arrivalId, arrival.channel, List(mType))
+            .map(opt => opt.map(ar => ar.messages.asInstanceOf[List[MovementMessageWithStatus]].map(x => x copy (message = node))))
+            .futureValue
+
+          result mustBe defined
+          result.get must contain theSameElementsAs List(message)
+        }
+      }
+
+      "must only return the appropriate messages when an arrival is matched" in {
+
+        val app = appBuilder.build()
+        running(app) {
+
+          val repository = app.injector.instanceOf[ArrivalMovementRepository]
+
+          val arrival = arbitrary[Arrival].sample.value copy (messages = NonEmptyList[MovementMessage](message, List(otherMessage)))
+
+          repository.insert(arrival).futureValue
+
+          // As in the previous test.
+          val result = repository.getMessagesOfType(arrival.arrivalId, arrival.channel, List(mType))
+            .map(opt => opt.map(ar => ar.messages.asInstanceOf[List[MovementMessageWithStatus]].map(x => x copy (message = node))))
+            .futureValue
+
+          result mustBe defined
+          result.get must contain theSameElementsAs List(message)
+        }
+      }
+
+      "must return an empty list when an arrival exists but no messages match" in {
+        val app = appBuilder.build()
+        running(app) {
+
+          val repository = app.injector.instanceOf[ArrivalMovementRepository]
+
+          val arrival = arbitrary[Arrival].sample.value copy (arrivalId = ArrivalId(1), messages = NonEmptyList[MovementMessage](otherMessage, List.empty))
+
+          repository.insert(arrival).futureValue
+          val result = repository.getMessagesOfType(ArrivalId(1), arrival.channel, List(mType)).futureValue
+
+          result mustBe defined
+          result.get.messages mustEqual List()
+        }
+      }
+
+      "must return None when an arrival does not exist" in {
+        val app = appBuilder.build()
+        running(app) {
+
+          val repository = app.injector.instanceOf[ArrivalMovementRepository]
+
+          val arrival = arbitrary[Arrival].sample.value copy (arrivalId = ArrivalId(1))
+
+          repository.insert(arrival).futureValue
+          val result = repository.getMessagesOfType(ArrivalId(2), arrival.channel, List(mType)).futureValue
+
+          result must not be defined
+        }
+      }
+
+      "must return an empty list when an arrival exists but without any of the message type" in {
+        val app = appBuilder.build()
+        running(app) {
+
+          val repository = app.injector.instanceOf[ArrivalMovementRepository]
+
+          val arrival = arbitrary[Arrival].sample.value copy (arrivalId = ArrivalId(1))
+
+          repository.insert(arrival).futureValue
+          val result = repository.getMessagesOfType(ArrivalId(2), arrival.channel, List(mType)).futureValue
+
+          result mustBe empty
+        } 
+      }
+
+      "must return None when an arrival does exist but with the wrong channel type" in {
+        val app = appBuilder.build()
+        running(app) {
+
+          val repository = app.injector.instanceOf[ArrivalMovementRepository]
+
+          val arrival = arbitrary[Arrival].sample.value copy (channel = api)
+
+          repository.insert(arrival).futureValue
+          val result = repository.getMessagesOfType(arrival.arrivalId, web, List(mType)).futureValue
+
+          result must not be defined
+        }
+      }
+
     }
 
     "getWithoutMessages(arrivalId: ArrivalId)" - {

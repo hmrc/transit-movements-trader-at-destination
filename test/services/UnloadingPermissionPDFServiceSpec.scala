@@ -40,6 +40,7 @@ import play.api.test.Helpers.running
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.xml.NodeSeq
 
 class UnloadingPermissionPDFServiceSpec extends SpecBase with ModelGenerators with ScalaCheckDrivenPropertyChecks with BeforeAndAfterAll {
   implicit val system = ActorSystem(suiteName)
@@ -53,7 +54,10 @@ class UnloadingPermissionPDFServiceSpec extends SpecBase with ModelGenerators wi
     val mockManageDocumentConnector   = mock[ManageDocumentsConnector]
     val mockWSResponse: AhcWSResponse = mock[AhcWSResponse]
 
-    "getPDF" - {
+    when(mockManageDocumentConnector.getUnloadingPermissionPdf(any[NodeSeq])(any()))
+      .thenReturn(Future.successful(mockWSResponse))
+
+    "getPDF(Arrival)" - {
 
       "must return Left with OtherError when connector returns another result" in {
 
@@ -69,9 +73,6 @@ class UnloadingPermissionPDFServiceSpec extends SpecBase with ModelGenerators wi
 
             when(mockMessageRetrievalService.getUnloadingPermission(any()))
               .thenReturn(Some(responseMovementMessage))
-
-            when(mockManageDocumentConnector.getUnloadingPermissionPdf(any())(any()))
-              .thenReturn(Future.successful(mockWSResponse))
 
             val application = baseApplicationBuilder
               .overrides(bind[MessageRetrievalService].toInstance(mockMessageRetrievalService))
@@ -135,6 +136,64 @@ class UnloadingPermissionPDFServiceSpec extends SpecBase with ModelGenerators wi
               val result  = service.getPDF(arrival).futureValue
 
               result.left.get mustBe NotFoundError
+            }
+        }
+      }
+    }
+
+    "getPDF(List[MovementMessage])" - {
+
+      "must return Left with OtherError when connector returns another result" in {
+
+        val genErrorResponse = Gen.oneOf(300, 500)
+
+        forAll(genArrivalMessagesWithSpecificEori, genErrorResponse) {
+          (arrivalMessages, errorCode) =>
+            val expectedHeaders = Map(CONTENT_TYPE -> Seq("application/pdf"), CONTENT_DISPOSITION -> Seq("unloading_permission_123"))
+
+            when(mockWSResponse.status) thenReturn errorCode
+            when(mockWSResponse.body) thenReturn "Error message"
+            when(mockWSResponse.headers) thenReturn expectedHeaders
+
+            val application = baseApplicationBuilder
+              .overrides(bind[ManageDocumentsConnector].toInstance(mockManageDocumentConnector))
+              .build()
+
+            running(application) {
+              val service = application.injector.instanceOf[UnloadingPermissionPDFService]
+              val result  = service.getPDF(arrivalMessages.messages).futureValue
+
+              result.left.get mustBe OtherError(errorCode, "Error message")
+            }
+        }
+      }
+
+      "must return Right with a PDF" in {
+        forAll(genArrivalMessagesWithSpecificEori, arbitrary[Array[Byte]]) {
+          (arrivalMessages, pdf) =>
+            when(mockWSResponse.status) thenReturn 200
+            when(mockWSResponse.bodyAsSource).thenAnswer(
+              _ => Source.single(ByteString(pdf))
+            )
+            when(mockWSResponse.header(any[String])).thenAnswer(_.getArguments()(0) match {
+              case CONTENT_TYPE        => Some("application/pdf")
+              case CONTENT_DISPOSITION => Some("unloading_permission_123")
+              case CONTENT_LENGTH      => Some(pdf.length.toString)
+              case _                   => None
+            })
+
+            val application = baseApplicationBuilder
+              .overrides(bind[ManageDocumentsConnector].toInstance(mockManageDocumentConnector))
+              .build()
+
+            running(application) {
+              val service = application.injector.instanceOf[UnloadingPermissionPDFService]
+              val result  = service.getPDF(arrivalMessages.messages).futureValue
+
+              result.right.get.dataSource.runWith(Sink.seq).futureValue must contain theSameElementsInOrderAs (Seq(ByteString(pdf)))
+              result.right.get.contentLength mustBe Some(pdf.length)
+              result.right.get.contentType mustBe Some("application/pdf")
+              result.right.get.contentDisposition mustBe Some("unloading_permission_123")
             }
         }
       }
