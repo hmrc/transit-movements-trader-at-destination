@@ -27,4 +27,7 @@ object AuditType {
   val UnloadingPermissionRejected          = "UnloadingPermissionRejected"
   val MesSenMES3Added                      = "MesSenMES3Added"
   val XMLSubmissionNegativeAcknowledgement = "XMLSubmissionNegativeAcknowledgement"
+
+  val SuccessfulAuthTracking = "SuccessfulAuthTracking"
+
 }

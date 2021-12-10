@@ -16,12 +16,11 @@
 
 package migrations
 
-import base.SpecBase
+import java.time.LocalDateTime
+
+import base.ItSpecBase
 import cats.syntax.all._
-import models.ArrivalId
-import models.ChannelType
-import models.MessageStatus
-import models.MessageType
+import models.{ArrivalId, ChannelType, MessageStatus, MessageType}
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
@@ -30,13 +29,12 @@ import play.modules.reactivemongo.ReactiveMongoApi
 import reactivemongo.play.json.collection.Helpers.idWrites
 import reactivemongo.play.json.collection.JSONCollection
 import repositories.ArrivalMovementRepository
-import java.time.LocalDateTime
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Random
 import scala.xml.NodeSeq
 
-class MovementsChangeLogSpec extends SpecBase with IntegrationPatience with BeforeAndAfterAll with GuiceOneAppPerSuite {
+class MovementsChangeLogSpec extends ItSpecBase with IntegrationPatience with BeforeAndAfterAll with GuiceOneAppPerSuite {
 
   val arrivalIds = (1 to 20).map(ArrivalId.apply)
   val eori       = "123456789000"
@@ -109,7 +107,7 @@ class MovementsChangeLogSpec extends SpecBase with IntegrationPatience with Befo
     "addMessageIdToMessages" - {
       "should add message ID to messages in the arrivals collection" in {
         val repo   = app.injector.instanceOf[ArrivalMovementRepository]
-        val runner = app.injector.instanceOf[MigrationRunner]
+        val runner = app.injector.instanceOf[MigrationRunnerImpl]
 
         runner.runMigrations().futureValue
 

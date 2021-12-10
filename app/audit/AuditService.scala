@@ -22,8 +22,8 @@ import play.api.libs.json.Format.GenericFormat
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import utils.MessageTranslation
-
 import javax.inject.Inject
+
 import scala.concurrent.ExecutionContext
 
 class AuditService @Inject()(auditConnector: AuditConnector, messageTranslation: MessageTranslation)(implicit ec: ExecutionContext) {
@@ -40,4 +40,8 @@ class AuditService @Inject()(auditConnector: AuditConnector, messageTranslation:
     val details = UnauthenticatedAuditDetails(channel, customerId, json)
     auditConnector.sendExplicitAudit(messageResponse.auditType, details)
   }
+
+  def authAudit(auditType: String, details: AuthenticationDetails)(implicit hc: HeaderCarrier): Unit =
+    auditConnector.sendExplicitAudit(auditType, details)
+
 }

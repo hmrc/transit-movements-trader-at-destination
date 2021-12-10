@@ -17,6 +17,8 @@
 package controllers.actions
 
 import generators.ModelGenerators
+import migrations.MigrationRunner
+import migrations.MigrationRunnerImpl
 import models.Arrival
 import models.ArrivalId
 import models.ChannelType.api
@@ -110,6 +112,7 @@ class AuthenticatedGetArrivalForReadActionProviderSpec
           .overrides(
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
             bind[AuthConnector].toInstance(mockAuthConnector),
+            bind[MigrationRunner].to(classOf[MigrationRunnerImpl])
           )
           .build()
 
@@ -138,7 +141,8 @@ class AuthenticatedGetArrivalForReadActionProviderSpec
         val application = new GuiceApplicationBuilder()
           .overrides(
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
-            bind[AuthConnector].toInstance(mockAuthConnector)
+            bind[AuthConnector].toInstance(mockAuthConnector),
+            bind[MigrationRunner].to(classOf[MigrationRunnerImpl])
           )
           .build()
 
@@ -166,7 +170,8 @@ class AuthenticatedGetArrivalForReadActionProviderSpec
         val application = new GuiceApplicationBuilder()
           .overrides(
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
-            bind[AuthConnector].toInstance(mockAuthConnector)
+            bind[AuthConnector].toInstance(mockAuthConnector),
+            bind[MigrationRunner].to(classOf[MigrationRunnerImpl])
           )
           .build()
 
@@ -194,7 +199,8 @@ class AuthenticatedGetArrivalForReadActionProviderSpec
         val application = new GuiceApplicationBuilder()
           .overrides(
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
-            bind[AuthConnector].toInstance(mockAuthConnector)
+            bind[AuthConnector].toInstance(mockAuthConnector),
+            bind[MigrationRunner].to(classOf[MigrationRunnerImpl])
           )
           .build()
 
@@ -226,7 +232,8 @@ class AuthenticatedGetArrivalForReadActionProviderSpec
         val application = new GuiceApplicationBuilder()
           .overrides(
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
-            bind[AuthConnector].toInstance(mockAuthConnector)
+            bind[AuthConnector].toInstance(mockAuthConnector),
+            bind[MigrationRunner].to(classOf[MigrationRunnerImpl])
           )
           .build()
 
@@ -255,7 +262,8 @@ class AuthenticatedGetArrivalForReadActionProviderSpec
         val application = new GuiceApplicationBuilder()
           .overrides(
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
-            bind[AuthConnector].toInstance(mockAuthConnector)
+            bind[AuthConnector].toInstance(mockAuthConnector),
+            bind[MigrationRunner].to(classOf[MigrationRunnerImpl])
           )
           .build()
 
@@ -298,7 +306,8 @@ class AuthenticatedGetArrivalForReadActionProviderSpec
 
         val application = new GuiceApplicationBuilder()
           .overrides(
-            bind[AuthConnector].toInstance(mockAuthConnector)
+            bind[AuthConnector].toInstance(mockAuthConnector),
+            bind[MigrationRunner].to(classOf[MigrationRunnerImpl])
           )
           .build()
 
@@ -353,7 +362,8 @@ class AuthenticatedGetArrivalForReadActionProviderSpec
 
         val application = new GuiceApplicationBuilder()
           .overrides(
-            bind[AuthConnector].toInstance(mockAuthConnector)
+            bind[AuthConnector].toInstance(mockAuthConnector),
+            bind[MigrationRunner].to(classOf[MigrationRunnerImpl])
           )
           .build()
 
@@ -409,7 +419,8 @@ class AuthenticatedGetArrivalForReadActionProviderSpec
 
         val application = new GuiceApplicationBuilder()
           .overrides(
-            bind[AuthConnector].toInstance(mockAuthConnector)
+            bind[AuthConnector].toInstance(mockAuthConnector),
+            bind[MigrationRunner].to(classOf[MigrationRunnerImpl])
           )
           .build()
 

@@ -25,6 +25,7 @@ import generators.ModelGenerators
 import models.LockResult.AlreadyLocked
 import models.LockResult.LockAcquired
 import models.Arrival
+import models.ArrivalId
 import models.LockResult
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.never
@@ -69,7 +70,7 @@ class AddJsonToMessagesWorkerSpec
           "must update the messages on the items it has to process" in new Fixture {
 
             private val arrival1 = arbitrary[Arrival].sample.value
-            private val arrival2 = arbitrary[Arrival].sample.value
+            private val arrival2 = arbitrary[Arrival].sample.value.copy(arrivalId = ArrivalId(arrival1.arrivalId.index + 2))
 
             override val lockResults: Iterator[LockResult] = Seq(LockAcquired).toIterator
             when(lockRepo.unlock(any())) thenReturn Future.successful(true)

@@ -16,7 +16,10 @@
 
 package controllers.actions
 
+import base.SpecBase
 import generators.ModelGenerators
+import migrations.FakeMigrationRunner
+import migrations.MigrationRunner
 import org.mockito.ArgumentMatchers.{eq => eqTo}
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
@@ -25,19 +28,16 @@ import models.ArrivalId
 import models.ChannelType.api
 import models.ChannelType.web
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalatest.freespec.AnyFreeSpec
-import org.scalatest.matchers.must.Matchers
 import org.scalatest.OptionValues
+import org.scalatest.freespec.AnyFreeSpec
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.inject.bind
-import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.AnyContentAsEmpty
 import play.api.mvc.Headers
 import play.api.mvc.Results
-import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import repositories.ArrivalMovementRepository
 import repositories.LockRepository
@@ -45,6 +45,8 @@ import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.auth.core.Enrolment
 import uk.gov.hmrc.auth.core.EnrolmentIdentifier
 import uk.gov.hmrc.auth.core.Enrolments
+import org.scalatest.matchers.must.Matchers
+import play.api.test.FakeRequest
 
 import scala.concurrent.Future
 
@@ -55,8 +57,6 @@ class AuthenticatedGetArrivalForWriteActionProviderSpec
     with ScalaCheckPropertyChecks
     with ModelGenerators
     with OptionValues {
-
-  def fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest("", "")
 
   class Harness(authLockAndGet: AuthenticatedGetArrivalForWriteActionProvider) {
 
@@ -70,6 +70,12 @@ class AuthenticatedGetArrivalForWriteActionProviderSpec
         Future.failed(new Exception)
     }
   }
+
+  def fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest("", "")
+
+  val appBuilder = baseApplicationBuilder
+    .configure("metrics.jvm" -> false)
+    .overrides(bind[MigrationRunner].to(classOf[FakeMigrationRunner]))
 
   "authenticated get arrival for write" - {
 
@@ -116,7 +122,8 @@ class AuthenticatedGetArrivalForWriteActionProviderSpec
         when(mockLockRepository.lock(any())) thenReturn Future.successful(true)
         when(mockLockRepository.unlock(any())) thenReturn Future.successful(true)
 
-        val application = new GuiceApplicationBuilder()
+        val application = appBuilder
+          .configure("metrics.jvm" -> false)
           .overrides(
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
             bind[AuthConnector].toInstance(mockAuthConnector),
@@ -151,7 +158,7 @@ class AuthenticatedGetArrivalForWriteActionProviderSpec
         when(mockLockRepository.lock(any())) thenReturn Future.successful(true)
         when(mockLockRepository.unlock(any())) thenReturn Future.successful(true)
 
-        val application = new GuiceApplicationBuilder()
+        val application = appBuilder
           .overrides(
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
             bind[AuthConnector].toInstance(mockAuthConnector),
@@ -185,7 +192,7 @@ class AuthenticatedGetArrivalForWriteActionProviderSpec
         when(mockLockRepository.lock(any())) thenReturn Future.successful(true)
         when(mockLockRepository.unlock(any())) thenReturn Future.successful(true)
 
-        val application = new GuiceApplicationBuilder()
+        val application = appBuilder
           .overrides(
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
             bind[AuthConnector].toInstance(mockAuthConnector),
@@ -211,15 +218,19 @@ class AuthenticatedGetArrivalForWriteActionProviderSpec
 
         val mockAuthConnector: AuthConnector = mock[AuthConnector]
         val mockArrivalMovementRepository    = mock[ArrivalMovementRepository]
+        val mockLockRepository               = mock[LockRepository]
 
         when(mockAuthConnector.authorise[Enrolments](any(), any())(any(), any()))
           .thenReturn(Future.successful(validEnrolments))
         when(mockArrivalMovementRepository.get(any(), eqTo(api))) thenReturn Future.successful(None)
+        when(mockLockRepository.lock(any())) thenReturn Future.successful(true)
+        when(mockLockRepository.unlock(any())) thenReturn Future.successful(true)
 
-        val application = new GuiceApplicationBuilder()
+        val application = appBuilder
           .overrides(
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
-            bind[AuthConnector].toInstance(mockAuthConnector)
+            bind[AuthConnector].toInstance(mockAuthConnector),
+            bind[LockRepository].toInstance(mockLockRepository)
           )
           .build()
 
@@ -239,15 +250,19 @@ class AuthenticatedGetArrivalForWriteActionProviderSpec
 
         val mockAuthConnector: AuthConnector = mock[AuthConnector]
         val mockArrivalMovementRepository    = mock[ArrivalMovementRepository]
+        val mockLockRepository               = mock[LockRepository]
 
         when(mockAuthConnector.authorise[Enrolments](any(), any())(any(), any()))
           .thenReturn(Future.successful(validEnrolments))
         when(mockArrivalMovementRepository.get(any(), eqTo(api))) thenReturn Future.successful(Some(arrival))
+        when(mockLockRepository.lock(any())) thenReturn Future.successful(true)
+        when(mockLockRepository.unlock(any())) thenReturn Future.successful(true)
 
-        val application = new GuiceApplicationBuilder()
+        val application = appBuilder
           .overrides(
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
-            bind[AuthConnector].toInstance(mockAuthConnector)
+            bind[AuthConnector].toInstance(mockAuthConnector),
+            bind[LockRepository].toInstance(mockLockRepository)
           )
           .build()
 
@@ -275,7 +290,7 @@ class AuthenticatedGetArrivalForWriteActionProviderSpec
         when(mockLockRepository.lock(any())) thenReturn Future.successful(true)
         when(mockLockRepository.unlock(any())) thenReturn Future.successful(true)
 
-        val application = new GuiceApplicationBuilder()
+        val application = appBuilder
           .overrides(
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
             bind[AuthConnector].toInstance(mockAuthConnector),
@@ -324,7 +339,7 @@ class AuthenticatedGetArrivalForWriteActionProviderSpec
         when(mockLockRepository.lock(any())) thenReturn Future.successful(true)
         when(mockLockRepository.unlock(any())) thenReturn Future.successful(true)
 
-        val application = new GuiceApplicationBuilder()
+        val application = appBuilder
           .overrides(
             bind[AuthConnector].toInstance(mockAuthConnector),
             bind[LockRepository].toInstance(mockLockRepository)
@@ -354,7 +369,7 @@ class AuthenticatedGetArrivalForWriteActionProviderSpec
 
         when(mockLockRepository.lock(any())) thenReturn Future.successful(false)
 
-        val application = new GuiceApplicationBuilder()
+        val application = appBuilder
           .overrides(
             bind[LockRepository].toInstance(mockLockRepository)
           )
@@ -404,14 +419,18 @@ class AuthenticatedGetArrivalForWriteActionProviderSpec
 
         val arrivalId = arbitrary[ArrivalId].sample.value
 
-        val mockAuthConnector = mock[AuthConnector]
+        val mockAuthConnector  = mock[AuthConnector]
+        val mockLockRepository = mock[LockRepository]
 
         when(mockAuthConnector.authorise[Enrolments](any(), any())(any(), any()))
           .thenReturn(Future.successful(validEnrolments))
+        when(mockLockRepository.lock(any())) thenReturn Future.successful(true)
+        when(mockLockRepository.unlock(any())) thenReturn Future.successful(true)
 
-        val application = new GuiceApplicationBuilder()
+        val application = appBuilder
           .overrides(
-            bind[AuthConnector].toInstance(mockAuthConnector)
+            bind[AuthConnector].toInstance(mockAuthConnector),
+            bind[LockRepository].toInstance(mockLockRepository)
           )
           .build()
 
@@ -460,14 +479,18 @@ class AuthenticatedGetArrivalForWriteActionProviderSpec
 
         val arrivalId = arbitrary[ArrivalId].sample.value
 
-        val mockAuthConnector = mock[AuthConnector]
+        val mockAuthConnector  = mock[AuthConnector]
+        val mockLockRepository = mock[LockRepository]
 
         when(mockAuthConnector.authorise[Enrolments](any(), any())(any(), any()))
           .thenReturn(Future.successful(validEnrolments))
+        when(mockLockRepository.lock(any())) thenReturn Future.successful(true)
+        when(mockLockRepository.unlock(any())) thenReturn Future.successful(true)
 
-        val application = new GuiceApplicationBuilder()
+        val application = appBuilder
           .overrides(
-            bind[AuthConnector].toInstance(mockAuthConnector)
+            bind[AuthConnector].toInstance(mockAuthConnector),
+            bind[LockRepository].toInstance(mockLockRepository)
           )
           .build()
 

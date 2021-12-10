@@ -16,16 +16,21 @@
 
 package utils
 
+import migrations.FakeMigrationRunner
+import migrations.MigrationRunner
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import play.api.test.Helpers.running
+import play.api.inject.bind
 
 class MessageTranslationSpec extends AnyFreeSpec with Matchers {
 
   val appBuilder: GuiceApplicationBuilder =
-    new GuiceApplicationBuilder().configure("message-translation-file" -> "TestMessageTranslation.json")
+    new GuiceApplicationBuilder()
+      .configure("message-translation-file" -> "TestMessageTranslation.json")
+      .overrides(bind[MigrationRunner].to(classOf[FakeMigrationRunner]))
 
   ".translate" - {
 

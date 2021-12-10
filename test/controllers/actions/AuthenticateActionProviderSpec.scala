@@ -16,8 +16,13 @@
 
 package controllers.actions
 
+import audit.AuditService
+import audit.AuditType
+import audit.AuthenticationDetails
+import migrations.FakeMigrationRunner
+import migrations.MigrationRunner
+import models.ChannelType
 import models.ChannelType.web
-import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
@@ -35,10 +40,13 @@ import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.auth.core.Enrolment
 import uk.gov.hmrc.auth.core.EnrolmentIdentifier
 import uk.gov.hmrc.auth.core.Enrolments
+import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.{eq => eqTo}
+import org.scalatest.BeforeAndAfterEach
 
 import scala.concurrent.Future
 
-class AuthenticateActionProviderSpec extends AnyFreeSpec with Matchers with MockitoSugar {
+class AuthenticateActionProviderSpec extends AnyFreeSpec with Matchers with MockitoSugar with BeforeAndAfterEach {
 
   def fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest("", "").withHeaders("channel" -> web.toString())
 
@@ -89,6 +97,11 @@ class AuthenticateActionProviderSpec extends AnyFreeSpec with Matchers with Mock
       state = "Activated"
     )
 
+  val mockAuditService = mock[AuditService]
+
+  override def beforeEach(): Unit =
+    reset(mockAuditService)
+
   "authenticate" - {
 
     "when a user has valid enrolments" - {
@@ -106,7 +119,9 @@ class AuthenticateActionProviderSpec extends AnyFreeSpec with Matchers with Mock
 
         val application = new GuiceApplicationBuilder()
           .overrides(
-            bind[AuthConnector].toInstance(mockAuthConnector)
+            bind[AuthConnector].toInstance(mockAuthConnector),
+            bind[MigrationRunner].to(classOf[FakeMigrationRunner]),
+            bind[AuditService].toInstance(mockAuditService)
           )
           .build()
 
@@ -118,6 +133,7 @@ class AuthenticateActionProviderSpec extends AnyFreeSpec with Matchers with Mock
 
           status(result) mustEqual OK
           contentAsString(result) mustEqual eoriNumber
+          verify(mockAuditService, times(1)).authAudit(eqTo(AuditType.SuccessfulAuthTracking), eqTo(AuthenticationDetails(ChannelType.web, "Modern")))(any())
         }
       }
 
@@ -130,7 +146,9 @@ class AuthenticateActionProviderSpec extends AnyFreeSpec with Matchers with Mock
 
         val application = new GuiceApplicationBuilder()
           .overrides(
-            bind[AuthConnector].toInstance(mockAuthConnector)
+            bind[AuthConnector].toInstance(mockAuthConnector),
+            bind[MigrationRunner].to(classOf[FakeMigrationRunner]),
+            bind[AuditService].toInstance(mockAuditService)
           )
           .build()
 
@@ -142,6 +160,7 @@ class AuthenticateActionProviderSpec extends AnyFreeSpec with Matchers with Mock
 
           status(result) mustEqual OK
           contentAsString(result) mustEqual turn
+          verify(mockAuditService, times(1)).authAudit(eqTo(AuditType.SuccessfulAuthTracking), eqTo(AuthenticationDetails(ChannelType.web, "Legacy")))(any())
         }
       }
 
@@ -154,7 +173,9 @@ class AuthenticateActionProviderSpec extends AnyFreeSpec with Matchers with Mock
 
         val application = new GuiceApplicationBuilder()
           .overrides(
-            bind[AuthConnector].toInstance(mockAuthConnector)
+            bind[AuthConnector].toInstance(mockAuthConnector),
+            bind[MigrationRunner].to(classOf[FakeMigrationRunner]),
+            bind[AuditService].toInstance(mockAuditService)
           )
           .build()
 
@@ -166,6 +187,7 @@ class AuthenticateActionProviderSpec extends AnyFreeSpec with Matchers with Mock
 
           status(result) mustEqual OK
           contentAsString(result) mustEqual eoriNumber
+          verify(mockAuditService, times(1)).authAudit(eqTo(AuditType.SuccessfulAuthTracking), eqTo(AuthenticationDetails(ChannelType.web, "Modern")))(any())
         }
       }
     }
@@ -208,7 +230,8 @@ class AuthenticateActionProviderSpec extends AnyFreeSpec with Matchers with Mock
 
         val application = new GuiceApplicationBuilder()
           .overrides(
-            bind[AuthConnector].toInstance(mockAuthConnector)
+            bind[AuthConnector].toInstance(mockAuthConnector),
+            bind[MigrationRunner].to(classOf[FakeMigrationRunner])
           )
           .build()
 
@@ -262,7 +285,8 @@ class AuthenticateActionProviderSpec extends AnyFreeSpec with Matchers with Mock
 
         val application = new GuiceApplicationBuilder()
           .overrides(
-            bind[AuthConnector].toInstance(mockAuthConnector)
+            bind[AuthConnector].toInstance(mockAuthConnector),
+            bind[MigrationRunner].to(classOf[FakeMigrationRunner])
           )
           .build()
 
@@ -304,7 +328,8 @@ class AuthenticateActionProviderSpec extends AnyFreeSpec with Matchers with Mock
 
         val application = new GuiceApplicationBuilder()
           .overrides(
-            bind[AuthConnector].toInstance(mockAuthConnector)
+            bind[AuthConnector].toInstance(mockAuthConnector),
+            bind[MigrationRunner].to(classOf[FakeMigrationRunner])
           )
           .build()
 
