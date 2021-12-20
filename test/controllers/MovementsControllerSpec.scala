@@ -890,12 +890,10 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
               "/some/location",
               "/messages/location",
               MovementReferenceNumber("1234567890"),
+              ArrivalStatus.ArrivalRejected,
               ArrivalStatus.ArrivalSubmitted,
               createdAndUpdatedDate,
-              createdAndUpdatedDate,
-              Seq(
-                MessageMetaData(ArrivalNotification, createdAndUpdatedDate)
-              )
+              createdAndUpdatedDate
             )
           )
           val responseArrivals = ResponseArrivals(arrivals, 1, 1, 1)
@@ -915,15 +913,10 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
                |      "location": "/some/location",
                |      "messagesLocation": "/messages/location",
                |      "movementReferenceNumber": "1234567890",
-               |      "status": "ArrivalSubmitted",
+               |      "status": "ArrivalRejected",
+               |      "previousStatus": "ArrivalSubmitted",
                |      "created": "${dateFormat.format(createdAndUpdatedDate)}",
-               |      "updated": "${dateFormat.format(createdAndUpdatedDate)}",
-               |      "messagesMetaData":[
-               |        {
-               |          "messageType": "IE007",
-               |          "dateTime": "$createdAndUpdatedDate"
-               |        }
-               |      ]
+               |      "updated": "${dateFormat.format(createdAndUpdatedDate)}"
                |    }
                |  ],
                |  "retrievedArrivals": 1,

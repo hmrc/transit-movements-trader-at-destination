@@ -38,9 +38,9 @@ case class ResponseArrival(
   messagesLocation: String,
   movementReferenceNumber: MovementReferenceNumber,
   status: ArrivalStatus,
+  previousStatus: ArrivalStatus,
   created: LocalDateTime,
-  updated: LocalDateTime,
-  messagesMetaData: Seq[MessageMetaData]
+  updated: LocalDateTime
 )
 
 object ResponseArrival {
@@ -52,9 +52,9 @@ object ResponseArrival {
       routes.MessagesController.getMessages(arrival.arrivalId).url,
       arrival.movementReferenceNumber,
       arrival.currentStatus,
+      arrival.previousStatus,
       arrival.created,
-      updated = arrival.lastUpdated,
-      arrival.messages.map(x => MessageMetaData(x.messageType, x.dateTime)).toList
+      updated = arrival.lastUpdated
     )
 
   def build(arrivalWithoutMessages: ArrivalWithoutMessages): ResponseArrival =
@@ -64,9 +64,9 @@ object ResponseArrival {
       routes.MessagesController.getMessages(arrivalWithoutMessages.arrivalId).url,
       arrivalWithoutMessages.movementReferenceNumber,
       arrivalWithoutMessages.currentStatus,
+      arrivalWithoutMessages.previousStatus,
       arrivalWithoutMessages.created,
-      updated = arrivalWithoutMessages.lastUpdated,
-      arrivalWithoutMessages.messagesMetaData
+      updated = arrivalWithoutMessages.lastUpdated
     )
 
   val projection: JsObject = Json.obj(
@@ -86,17 +86,20 @@ object ResponseArrival {
         created                 <- (json \ "created").validate[LocalDateTime](MongoDateTimeFormats.localDateTimeRead)
         updated                 <- (json \ "lastUpdated").validate[LocalDateTime](MongoDateTimeFormats.localDateTimeRead)
         latestMessage           <- (json \ "messagesMetaData").validate[Seq[MessageMetaData]]
-      } yield
+      } yield {
+        val currentStatus  = MessageTypeUtils.currentArrivalStatus(latestMessage.toList)
+        val previousStatus = MessageTypeUtils.previousArrivalStatus(latestMessage.toList, currentStatus)
         ResponseArrival(
           arrivalId,
           location,
           messagesLocation,
           movementReferenceNumber,
-          MessageTypeUtils.currentArrivalStatus(latestMessage.toList),
+          currentStatus,
+          previousStatus,
           created,
-          updated,
-          latestMessage
-      )
+          updated
+        )
+    }
 
   implicit val writes: OWrites[ResponseArrival] = Json.writes[ResponseArrival]
 

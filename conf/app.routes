@@ -2,7 +2,6 @@
 
 POST    /movements/arrivals                                     controllers.MovementsController.post
 GET     /movements/arrivals                                     controllers.MovementsController.getArrivals(updatedSince: Option[OffsetDateTime] ?= None, mrn: Option[String] ?= None, pageSize: Option[Int] ?= None, page: Option[Int] ?= None)
-GET     /movements/arrival-summaries                            controllers.MovementsController.getArrivalSummaries(updatedSince: Option[OffsetDateTime] ?= None, lrn: Option[String] ?= None, pageSize: Option[Int] ?= None, page: Option[Int] ?= None)
 
 GET     /movements/arrivals/:arrivalId                          controllers.MovementsController.getArrival(arrivalId: ArrivalId)
 PUT     /movements/arrivals/:arrivalId                          controllers.MovementsController.putArrival(arrivalId: ArrivalId)
