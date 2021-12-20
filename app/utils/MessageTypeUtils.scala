@@ -67,6 +67,31 @@ object MessageTypeUtils {
     toArrivalStatus(currentMessageType)
   }
 
+  def previousArrivalStatus(messagesList: List[MessageTypeWithTime], currentStatus: ArrivalStatus): ArrivalStatus = {
+
+    implicit val localDateOrdering: Ordering[LocalDateTime] = _ compareTo _
+
+    val previousMessage = messagesList.sortBy(_.dateTime).takeRight(2).head
+
+    val messagesWithSameDateTime = messagesList.filter(_.dateTime == previousMessage.dateTime)
+
+    val previousMessageType = if (messagesWithSameDateTime.size == 1) {
+      previousMessage.messageType
+    } else {
+
+      currentStatus match {
+        case ArrivalStatus.XMLSubmissionNegativeAcknowledgement =>
+          if (previousMessage.messageType == MessageType.ArrivalNotification | previousMessage.messageType == MessageType.UnloadingRemarks) {
+            previousMessage.messageType
+          } else {
+            messagesWithSameDateTime.map(_.messageType).max
+          }
+        case _ => messagesWithSameDateTime.map(_.messageType).max
+      }
+    }
+    toArrivalStatus(previousMessageType)
+  }
+
   def toArrivalStatus(messageType: MessageType): ArrivalStatus =
     messageType match {
       case MessageType.ArrivalNotification                  => ArrivalStatus.ArrivalSubmitted

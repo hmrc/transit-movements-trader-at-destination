@@ -16,7 +16,6 @@
 
 package models.response
 
-import controllers.routes
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalStatus
@@ -32,41 +31,35 @@ import java.time.LocalDateTime
 
 import utils.MessageTypeUtils
 
-case class ResponseArrival(
+case class ResponseArrivalSummary(
   arrivalId: ArrivalId,
-  location: String,
-  messagesLocation: String,
   movementReferenceNumber: MovementReferenceNumber,
-  status: ArrivalStatus,
+  currentStatus: ArrivalStatus,
+  previousStatus: ArrivalStatus,
   created: LocalDateTime,
-  updated: LocalDateTime,
-  messagesMetaData: Seq[MessageMetaData]
+  updated: LocalDateTime
 )
 
-object ResponseArrival {
+object ResponseArrivalSummary {
 
-  def build(arrival: Arrival): ResponseArrival =
-    ResponseArrival(
-      arrival.arrivalId,
-      routes.MovementsController.getArrival(arrival.arrivalId).url,
-      routes.MessagesController.getMessages(arrival.arrivalId).url,
-      arrival.movementReferenceNumber,
-      arrival.currentStatus,
-      arrival.created,
+  def build(arrival: Arrival): ResponseArrivalSummary =
+    ResponseArrivalSummary(
+      arrivalId = arrival.arrivalId,
+      movementReferenceNumber = arrival.movementReferenceNumber,
+      currentStatus = arrival.currentStatus,
+      previousStatus = arrival.previousStatus,
+      created = arrival.created,
       updated = arrival.lastUpdated,
-      arrival.messages.map(x => MessageMetaData(x.messageType, x.dateTime)).toList
     )
 
-  def build(arrivalWithoutMessages: ArrivalWithoutMessages): ResponseArrival =
-    ResponseArrival(
-      arrivalWithoutMessages.arrivalId,
-      routes.MovementsController.getArrival(arrivalWithoutMessages.arrivalId).url,
-      routes.MessagesController.getMessages(arrivalWithoutMessages.arrivalId).url,
-      arrivalWithoutMessages.movementReferenceNumber,
-      arrivalWithoutMessages.currentStatus,
-      arrivalWithoutMessages.created,
-      updated = arrivalWithoutMessages.lastUpdated,
-      arrivalWithoutMessages.messagesMetaData
+  def build(arrivalWithoutMessages: ArrivalWithoutMessages): ResponseArrivalSummary =
+    ResponseArrivalSummary(
+      arrivalId = arrivalWithoutMessages.arrivalId,
+      movementReferenceNumber = arrivalWithoutMessages.movementReferenceNumber,
+      currentStatus = arrivalWithoutMessages.currentStatus,
+      previousStatus = arrivalWithoutMessages.previousStatus,
+      created = arrivalWithoutMessages.created,
+      updated = arrivalWithoutMessages.lastUpdated
     )
 
   val projection: JsObject = Json.obj(
@@ -76,28 +69,27 @@ object ResponseArrival {
     "lastUpdated"             -> 1
   )
 
-  implicit def reads: Reads[ResponseArrival] =
+  implicit def reads: Reads[ResponseArrivalSummary] =
     json =>
       for {
-        arrivalId <- (json \ "_id").validate[ArrivalId]
-        location         = routes.MovementsController.getArrival(arrivalId).url
-        messagesLocation = routes.MessagesController.getMessages(arrivalId).url
+        arrivalId               <- (json \ "_id").validate[ArrivalId]
         movementReferenceNumber <- (json \ "movementReferenceNumber").validate[MovementReferenceNumber]
         created                 <- (json \ "created").validate[LocalDateTime](MongoDateTimeFormats.localDateTimeRead)
         updated                 <- (json \ "lastUpdated").validate[LocalDateTime](MongoDateTimeFormats.localDateTimeRead)
         latestMessage           <- (json \ "messagesMetaData").validate[Seq[MessageMetaData]]
-      } yield
-        ResponseArrival(
+      } yield {
+        val currentStatus: ArrivalStatus  = MessageTypeUtils.currentArrivalStatus(latestMessage.toList)
+        val previousStatus: ArrivalStatus = MessageTypeUtils.previousArrivalStatus(latestMessage.toList, currentStatus)
+        ResponseArrivalSummary(
           arrivalId,
-          location,
-          messagesLocation,
           movementReferenceNumber,
-          MessageTypeUtils.currentArrivalStatus(latestMessage.toList),
+          currentStatus,
+          previousStatus,
           created,
-          updated,
-          latestMessage
-      )
+          updated
+        )
+    }
 
-  implicit val writes: OWrites[ResponseArrival] = Json.writes[ResponseArrival]
+  implicit val writes: OWrites[ResponseArrivalSummary] = Json.writes[ResponseArrivalSummary]
 
 }

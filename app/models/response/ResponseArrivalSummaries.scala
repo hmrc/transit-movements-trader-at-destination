@@ -20,14 +20,14 @@ import models.ArrivalWithoutMessages
 import play.api.libs.json.Json
 import play.api.libs.json.OWrites
 
-case class ResponseArrivals(arrivals: Seq[ResponseArrival], retrievedArrivals: Int, totalArrivals: Int, totalMatched: Int)
+case class ResponseArrivalSummaries(arrivals: Seq[ResponseArrivalSummary], retrievedArrivals: Int, totalArrivals: Int, totalMatched: Int)
 
-object ResponseArrivals {
-  implicit val writes: OWrites[ResponseArrivals] = Json.writes[ResponseArrivals]
+object ResponseArrivalSummaries {
+  implicit val writes: OWrites[ResponseArrivalSummaries] = Json.writes[ResponseArrivalSummaries]
 
-  def build(results: Seq[ArrivalWithoutMessages], totalArrivals: Int, totalMatched: Int): ResponseArrivals =
-    ResponseArrivals(
-      results.map(ResponseArrival.build),
+  def build(results: Seq[ArrivalWithoutMessages], totalArrivals: Int, totalMatched: Int): ResponseArrivalSummaries =
+    ResponseArrivalSummaries(
+      results.map(ResponseArrivalSummary.build),
       results.length,
       totalArrivals = totalArrivals,
       totalMatched = totalMatched

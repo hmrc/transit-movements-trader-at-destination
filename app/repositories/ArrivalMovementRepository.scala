@@ -29,7 +29,7 @@ import config.AppConfig
 import logging.Logging
 import metrics.HasMetrics
 import models._
-import models.response.ResponseArrival
+import models.response.ResponseArrivalSummaries
 import models.response.ResponseArrivals
 import play.api.Configuration
 import play.api.libs.json.JsObject
@@ -45,11 +45,11 @@ import reactivemongo.api.indexes.IndexType
 import reactivemongo.play.json.collection.Helpers.idWrites
 import reactivemongo.play.json.collection.JSONCollection
 import utils.IndexUtils
-
 import java.time.Clock
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.Failure
@@ -277,10 +277,31 @@ class ArrivalMovementRepository @Inject()(
     enrolmentId: Ior[TURN, EORINumber],
     channelFilter: ChannelType,
     updatedSince: Option[OffsetDateTime],
+    lrn: Option[String] = None,
+    pageSize: Option[Int] = None,
+    page: Option[Int] = None,
+  ): Future[ResponseArrivals] =
+    fetchAll(enrolmentId, channelFilter, updatedSince, lrn, pageSize, page, ResponseArrivals.build)
+
+  def fetchAllArrivalSummaries(
+    enrolmentId: Ior[TURN, EORINumber],
+    channelFilter: ChannelType,
+    updatedSince: Option[OffsetDateTime],
+    lrn: Option[String] = None,
+    pageSize: Option[Int] = None,
+    page: Option[Int] = None,
+  ): Future[ResponseArrivalSummaries] =
+    fetchAll(enrolmentId, channelFilter, updatedSince, lrn, pageSize, page, ResponseArrivalSummaries.build)
+
+  def fetchAll[T](
+    enrolmentId: Ior[TURN, EORINumber],
+    channelFilter: ChannelType,
+    updatedSince: Option[OffsetDateTime],
     movementReference: Option[String] = None,
     pageSize: Option[Int] = None,
-    page: Option[Int] = None
-  ): Future[ResponseArrivals] =
+    page: Option[Int] = None,
+    convert: (Seq[ArrivalWithoutMessages], Int, Int) => T
+  ): Future[T] =
     withMetricsTimerAsync("mongo-get-arrivals-for-eori") {
       _ =>
         val enrolmentIds = enrolmentId.fold(
@@ -351,12 +372,7 @@ class ArrivalMovementRepository @Inject()(
 
             (fetchResults, fetchCount, fetchMatchCount).mapN {
               case (results, count, matchCount) =>
-                ResponseArrivals(
-                  results.map(ResponseArrival.build),
-                  results.length,
-                  totalArrivals = count,
-                  totalMatched = matchCount
-                )
+                convert(results, count, matchCount)
             }
         }
     }

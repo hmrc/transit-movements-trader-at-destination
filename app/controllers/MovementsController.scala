@@ -204,4 +204,24 @@ class MovementsController @Inject()(
       }
     }
 
+  def getArrivalSummaries(updatedSince: Option[OffsetDateTime],
+                          mrn: Option[String],
+                          pageSize: Option[Int] = None,
+                          page: Option[Int] = None): Action[AnyContent] =
+    withMetricsTimerAction("get-all-arrival-summaries") {
+      authenticate().async {
+        implicit request =>
+          arrivalMovementRepository
+            .fetchAllArrivalSummaries(request.enrolmentId, request.channel, updatedSince, mrn, pageSize, page)
+            .map {
+              responseArrivals =>
+                countArrivals.update(responseArrivals.retrievedArrivals)
+                Ok(Json.toJsObject(responseArrivals))
+            }
+            .recover {
+              case e =>
+                InternalServerError(s"Failed with the following error: $e")
+            }
+      }
+    }
 }
