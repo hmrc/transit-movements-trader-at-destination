@@ -281,6 +281,7 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
         previousStatus          <- arbitrary[ArrivalStatus]
         created                 <- arbitrary[LocalDateTime]
         updated                 <- arbitrary[LocalDateTime]
-      } yield ResponseArrival(arrivalId, location, messagesLocation, movementReferenceNumber, currentStatus, previousStatus, created, updated)
+        messageMetaData         <- arbitrary[Seq[MessageMetaData]]
+      } yield ResponseArrival(arrivalId, location, messagesLocation, movementReferenceNumber, currentStatus, previousStatus, created, updated, messageMetaData)
     )
 }

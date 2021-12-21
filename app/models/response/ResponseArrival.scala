@@ -40,7 +40,8 @@ case class ResponseArrival(
   status: ArrivalStatus,
   previousStatus: ArrivalStatus,
   created: LocalDateTime,
-  updated: LocalDateTime
+  updated: LocalDateTime,
+  messagesMetaData: Seq[MessageMetaData]
 )
 
 object ResponseArrival {
@@ -54,7 +55,8 @@ object ResponseArrival {
       arrival.currentStatus,
       arrival.previousStatus,
       arrival.created,
-      updated = arrival.lastUpdated
+      updated = arrival.lastUpdated,
+      arrival.messages.map(x => MessageMetaData(x.messageType, x.dateTime)).toList
     )
 
   def build(arrivalWithoutMessages: ArrivalWithoutMessages): ResponseArrival =
@@ -66,7 +68,8 @@ object ResponseArrival {
       arrivalWithoutMessages.currentStatus,
       arrivalWithoutMessages.previousStatus,
       arrivalWithoutMessages.created,
-      updated = arrivalWithoutMessages.lastUpdated
+      updated = arrivalWithoutMessages.lastUpdated,
+      arrivalWithoutMessages.messagesMetaData
     )
 
   val projection: JsObject = Json.obj(
@@ -97,7 +100,8 @@ object ResponseArrival {
           currentStatus,
           previousStatus,
           created,
-          updated
+          updated,
+          latestMessage
         )
     }
 
