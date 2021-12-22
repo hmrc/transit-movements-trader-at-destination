@@ -30,10 +30,14 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.xml.NodeSeq
 
 class ManageDocumentsConnector @Inject()(config: AppConfig, ws: WSClient, val metrics: Metrics)(implicit ec: ExecutionContext) extends HasMetrics {
 
-  def getUnloadingPermissionPdf(movementMessage: ResponseMovementMessage)(implicit hc: HeaderCarrier): Future[WSResponse] = {
+  def getUnloadingPermissionPdf(movementMessage: ResponseMovementMessage)(implicit hc: HeaderCarrier): Future[WSResponse] =
+    getUnloadingPermissionPdf(movementMessage.message)(hc)
+
+  def getUnloadingPermissionPdf(messageBody: NodeSeq)(implicit hc: HeaderCarrier): Future[WSResponse] = {
     val serviceUrl = s"${config.manageDocumentsUrl}/unloading-permission"
 
     val headers = hc.headers(Seq(Constants.XClientIdHeader, Constants.XRequestIdHeader)) ++ Seq(
@@ -44,7 +48,7 @@ class ManageDocumentsConnector @Inject()(config: AppConfig, ws: WSClient, val me
     withMetricsTimerResponse("manage-documents-get-unloading-permission-pdf") {
       ws.url(serviceUrl)
         .withHttpHeaders(headers: _*)
-        .post(movementMessage.message.toString)
+        .post(messageBody.toString)
     }
   }
 }

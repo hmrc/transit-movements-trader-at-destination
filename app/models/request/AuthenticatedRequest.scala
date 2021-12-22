@@ -18,6 +18,7 @@ package models.request
 
 import cats.data.Ior
 import models.Arrival
+import models.ArrivalMessages
 import models.ArrivalWithoutMessages
 import models.ChannelType
 import models.EORINumber
@@ -40,4 +41,8 @@ case class AuthenticatedRequest[A](request: Request[A], channel: ChannelType, en
 
   def hasMatchingEnrolmentId(arrival: ArrivalWithoutMessages): Boolean =
     matchesEnrolmentId(arrival.eoriNumber)
+
+  def hasMatchingEnrolmentId(arrival: ArrivalMessages): Boolean =
+    matchesEnrolmentId(arrival.eoriNumber)
+
 }

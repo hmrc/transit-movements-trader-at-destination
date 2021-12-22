@@ -18,7 +18,8 @@ package controllers.actions
 
 import logging.Logging
 import models.ArrivalId
-import models.request.ArrivalRequest
+import models.MessageType
+import models.request.ArrivalsMessagesRequest
 import models.request.AuthenticatedRequest
 import play.api.mvc.ActionRefiner
 import play.api.mvc.Result
@@ -31,32 +32,37 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-private[actions] class AuthenticatedGetArrivalActionProvider @Inject()(
+private[actions] class AuthenticatedGetMessagesActionProvider @Inject()(
   repository: ArrivalMovementRepository
 )(implicit ec: ExecutionContext) {
 
-  def apply(arrivalId: ArrivalId): ActionRefiner[AuthenticatedRequest, ArrivalRequest] =
-    new AuthenticatedGetArrivalAction(arrivalId, repository)
+  def apply(arrivalId: ArrivalId, messageTypes: List[MessageType]): ActionRefiner[AuthenticatedRequest, ArrivalsMessagesRequest] =
+    new AuthenticatedGetMessagesAction(arrivalId, repository, messageTypes)
+
 }
 
-private[actions] class AuthenticatedGetArrivalAction(
+private[actions] class AuthenticatedGetMessagesAction(
   arrivalId: ArrivalId,
-  repository: ArrivalMovementRepository
+  repository: ArrivalMovementRepository,
+  messageTypes: List[MessageType]
 )(implicit val executionContext: ExecutionContext)
-    extends ActionRefiner[AuthenticatedRequest, ArrivalRequest]
+    extends ActionRefiner[AuthenticatedRequest, ArrivalsMessagesRequest]
     with Logging {
 
-  override protected def refine[A](request: AuthenticatedRequest[A]): Future[Either[Result, ArrivalRequest[A]]] =
+  override protected def refine[A](request: AuthenticatedRequest[A]): Future[Either[Result, ArrivalsMessagesRequest[A]]] =
     ChannelUtil.getChannel(request) match {
       case None =>
         logger.warn(s"Missing channel header for request id ${request.headers.get("http_x_request_id")}")
         Future.successful(Left(BadRequest("Missing channel header or incorrect value specified in channel header")))
       case Some(channel) =>
         repository
-          .get(arrivalId, channel)
+          .getMessagesOfType(arrivalId, channel, messageTypes)
           .map {
-            case Some(arrival) if request.hasMatchingEnrolmentId(arrival) =>
-              Right(ArrivalRequest(request, arrival, channel))
+            case Some(arrivalMessages) if request.hasMatchingEnrolmentId(arrivalMessages) && !arrivalMessages.messages.isEmpty =>
+              Right(ArrivalsMessagesRequest(request, arrivalId, channel, arrivalMessages.messages))
+            case Some(arrivalMessages) if request.hasMatchingEnrolmentId(arrivalMessages) =>
+              logger.warn(s"No messages of types $messageTypes were found for the given movement")
+              Left(NotFound)
             case Some(_) =>
               logger.warn("Attempt to retrieve an arrival for another EORI")
               Left(NotFound)
