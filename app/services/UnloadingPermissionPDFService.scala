@@ -18,6 +18,8 @@ package services
 
 import connectors.ManageDocumentsConnector
 import models.Arrival
+import models.MovementMessage
+import models.PdfDocument
 import models.WSError
 import models.WSError._
 import play.api.mvc.Results
@@ -28,33 +30,38 @@ import uk.gov.hmrc.http.HeaderCarrier
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import models.PdfDocument
+import scala.xml.NodeSeq
 
 class UnloadingPermissionPDFService @Inject()(messageRetrievalService: MessageRetrievalService, manageDocumentsConnector: ManageDocumentsConnector)
     extends Results {
 
   val explicitHeaders = Set(CONTENT_LENGTH, CONTENT_TYPE, CONTENT_DISPOSITION)
 
+  private def generatePDF(messageBody: NodeSeq)(implicit hc: HeaderCarrier, ec: ExecutionContext) =
+    manageDocumentsConnector.getUnloadingPermissionPdf(messageBody).map {
+      result =>
+        result.status match {
+          case OK =>
+            Right(
+              PdfDocument(
+                result.bodyAsSource,
+                result.header(CONTENT_LENGTH).map(_.toLong),
+                result.header(CONTENT_TYPE),
+                result.header(CONTENT_DISPOSITION)
+              )
+            )
+          case otherErrorCode =>
+            Left(OtherError(otherErrorCode, result.body))
+        }
+    }
+
   def getPDF(arrival: Arrival)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Either[WSError, PdfDocument]] =
     messageRetrievalService.getUnloadingPermission(arrival) match {
-      case Some(unloadingPermission) =>
-        manageDocumentsConnector.getUnloadingPermissionPdf(unloadingPermission).map {
-          result =>
-            result.status match {
-              case OK =>
-                Right(
-                  PdfDocument(
-                    result.bodyAsSource,
-                    result.header(CONTENT_LENGTH).map(_.toLong),
-                    result.header(CONTENT_TYPE),
-                    result.header(CONTENT_DISPOSITION)
-                  )
-                )
-              case otherErrorCode =>
-                Left(OtherError(otherErrorCode, result.body))
-            }
-        }
-      case None => Future.successful(Left(NotFoundError))
+      case Some(unloadingPermission) => generatePDF(unloadingPermission.message)
+      case None                      => Future.successful(Left(NotFoundError))
     }
+
+  def getPDF(messages: List[MovementMessage])(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Either[WSError, PdfDocument]] =
+    generatePDF(messages.minBy(_.messageCorrelationId).message)
 
 }
