@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 HM Revenue & Customs
+ * Copyright 2022 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,33 +18,24 @@ package repositories
 
 import akka.Done
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
-import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.stream.testkit.scaladsl.TestSink
 import base._
-import cats.data.Chain
-import cats.data.Ior
-import cats.data.NonEmptyList
+import cats.data.{Chain, Ior, NonEmptyList}
 import config.AppConfig
 import controllers.routes
-import models.ChannelType.api
-import models.ChannelType.web
+import models.ChannelType.{api, web}
 import models._
-import models.response.ResponseArrival
-import models.response.ResponseArrivals
+import models.response.{ResponseArrival, ResponseArrivals}
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
 import org.scalactic.source
-import org.scalatest.BeforeAndAfterEach
-import org.scalatest.TestSuiteMixin
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.exceptions.StackDepthException
-import org.scalatest.exceptions.TestFailedException
+import org.scalatest.exceptions.{StackDepthException, TestFailedException}
+import org.scalatest.{BeforeAndAfterEach, TestSuiteMixin}
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.JsObject
-import play.api.libs.json.Json
+import play.api.libs.json.{JsObject, Json}
 import play.api.test.Helpers.running
 import reactivemongo.play.json.collection.Helpers.idWrites
 import reactivemongo.play.json.collection.JSONCollection
@@ -54,8 +45,7 @@ import java.time._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.reflect.ClassTag
-import scala.util.Failure
-import scala.util.Success
+import scala.util.{Failure, Success}
 import scala.xml.NodeSeq
 
 class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with ScalaFutures with TestSuiteMixin with MongoDateTimeFormats with BeforeAndAfterEach {
@@ -1103,7 +1093,6 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
     "arrivalsWithoutJsonMessagesSource" - {
       "must return arrivals with any messages that don't have a JSON representation, or whose JSON representation is an empty JSON object" in {
         implicit val actorSystem: ActorSystem = ActorSystem()
-        implicit val mat: Materializer = ActorMaterializer()
 
         val arrival1 = arbitrary[Arrival].map(_.copy(ArrivalId(1))).sample.value
         val arrival2 = arbitrary[Arrival].map(_.copy(ArrivalId(2))).sample.value
@@ -1143,7 +1132,6 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
 
       "must return a stream that only returns the requested number of results" in {
         implicit val actorSystem: ActorSystem = ActorSystem()
-        implicit val mat: Materializer = ActorMaterializer()
 
         val arrival1 = arbitrary[Arrival].map(_.copy(ArrivalId(1))).sample.value
         val arrival2 = arbitrary[Arrival].map(_.copy(ArrivalId(2))).sample.value

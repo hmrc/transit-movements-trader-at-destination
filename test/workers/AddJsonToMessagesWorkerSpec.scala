@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 HM Revenue & Customs
+ * Copyright 2022 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,12 @@ package workers
 import akka.Done
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.Source
-import akka.stream.ActorMaterializer
-import akka.stream.Materializer
 import generators.ModelGenerators
-import models.LockResult.AlreadyLocked
-import models.LockResult.LockAcquired
 import models.Arrival
 import models.ArrivalId
 import models.LockResult
+import models.LockResult.AlreadyLocked
+import models.LockResult.LockAcquired
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.never
 import org.mockito.Mockito.times
@@ -57,7 +55,6 @@ class AddJsonToMessagesWorkerSpec
     with ModelGenerators {
 
   implicit private val actorSystem: ActorSystem = ActorSystem()
-  implicit private val mat: Materializer        = ActorMaterializer()
 
   "AddJsonToMessagesWorker" - {
 

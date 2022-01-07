@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 HM Revenue & Customs
+ * Copyright 2022 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,6 @@ package workers
 
 import akka.Done
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
-import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.stream.testkit.scaladsl.TestSink
 import base.SpecBase
@@ -38,14 +36,13 @@ import repositories.ArrivalMovementRepository
 import repositories.LockRepository
 import repositories.WorkerLockRepository
 
+import scala.concurrent.duration.DurationInt
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.concurrent.duration.DurationInt
 
 class AddJsonToMessagesTransformerSpec extends SpecBase with ModelGenerators with ScalaCheckPropertyChecks {
 
   implicit private val actorSystem: ActorSystem             = ActorSystem()
-  implicit private val mat: Materializer                    = ActorMaterializer()
   implicit protected val executionContext: ExecutionContext = actorSystem.dispatcher
 
   implicit val arbArrival: Gen[Arrival] =
