@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 HM Revenue & Customs
+ * Copyright 2022 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,11 +51,7 @@ private[workers] class ArrivalsFlow @Inject()(workerConfig: WorkerConfig, arriva
       .filter(_ == LockAcquired)
       .flatMapConcat {
         _ =>
-          Source
-            .fromFutureSource(
-              arrivalMovementRepository
-                .arrivalsWithoutJsonMessagesSource(settings.groupSize))
-
+          Source.futureSource(arrivalMovementRepository.arrivalsWithoutJsonMessagesSource(settings.groupSize))
       }
       .withAttributes(supervisionStrategy)
 

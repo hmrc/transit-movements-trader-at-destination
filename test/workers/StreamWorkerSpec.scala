@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 HM Revenue & Customs
+ * Copyright 2022 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,6 @@ package workers
 
 import akka.NotUsed
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
-import akka.stream.Materializer
 import akka.stream.scaladsl.Flow
 import base.SpecBase
 import models.LockResult
@@ -33,7 +31,6 @@ import scala.concurrent.duration.DurationInt
 class StreamWorkerSpec extends SpecBase {
 
   implicit private val actorSystem: ActorSystem = ActorSystem()
-  implicit private val mat: Materializer        = ActorMaterializer()
 
   "the flow is run" - {
     "when upstream acquires a lock and passes it downstream to the flow" in new Fixture {

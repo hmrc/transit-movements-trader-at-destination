@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 HM Revenue & Customs
+ * Copyright 2022 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,25 +16,24 @@
 
 package controllers.actions
 
-import base.SpecBase
 import generators.ModelGenerators
 import migrations.FakeMigrationRunner
 import migrations.MigrationRunner
-import models.ArrivalId
-import models.ArrivalWithoutMessages
 import models.ChannelType.api
 import models.ChannelType.web
+import models.ArrivalId
+import models.ArrivalWithoutMessages
 import org.mockito.ArgumentMatchers.{eq => eqTo, _}
 import org.mockito.Mockito._
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.OptionValues
 import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.inject.bind
 import play.api.mvc._
 import play.api.test.FakeRequest
-import play.api.test.Helpers.baseApplicationBuilder
 import play.api.test.Helpers._
 import repositories.ArrivalMovementRepository
 import repositories.LockRepository
@@ -42,7 +41,6 @@ import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.auth.core.Enrolment
 import uk.gov.hmrc.auth.core.EnrolmentIdentifier
 import uk.gov.hmrc.auth.core.Enrolments
-import org.scalatest.matchers.must.Matchers
 
 import scala.concurrent.Future
 

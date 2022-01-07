@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 HM Revenue & Customs
+ * Copyright 2022 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,6 @@ package workers
 
 import akka.Done
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
-import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.stream.testkit.scaladsl.TestSink
 import generators.ModelGenerators
@@ -43,7 +41,6 @@ import scala.concurrent.Future
 class ArrivalsFlowSpec extends AnyFreeSpec with Matchers with MockitoSugar with ScalaFutures with OptionValues with IntegrationPatience with ModelGenerators {
 
   implicit private val actorSystem: ActorSystem = ActorSystem()
-  implicit private val mat: Materializer        = ActorMaterializer()
 
   "when the lock has been acquired (LockAcquired), emits values from the substream of arrivals" in {
     val arrival = arbitrary[Arrival].sample.value

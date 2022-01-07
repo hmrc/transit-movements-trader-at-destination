@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 HM Revenue & Customs
+ * Copyright 2022 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,13 @@
 package repositories
 
 import com.typesafe.config.ConfigFactory
+import migrations.MigrationRunnerImpl
 import org.scalatest._
-import play.api.Application
-import play.api.Configuration
+import play.api.{Application, Configuration}
 import reactivemongo.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import migrations.{MigrationRunner, MigrationRunnerImpl}
 
 object MongoSuite {
 
