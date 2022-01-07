@@ -17,14 +17,17 @@
 package audit
 
 import cats.data.Ior
+import javax.inject.Inject
 import models._
+import models.request.AuthenticatedRequest
 import play.api.libs.json.Format.GenericFormat
+import play.api.libs.json.Json
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import utils.MessageTranslation
-import javax.inject.Inject
 
 import scala.concurrent.ExecutionContext
+import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
 class AuditService @Inject()(auditConnector: AuditConnector, messageTranslation: MessageTranslation)(implicit ec: ExecutionContext) {
 
@@ -39,6 +42,12 @@ class AuditService @Inject()(auditConnector: AuditConnector, messageTranslation:
     val json    = messageTranslation.translate(message.messageJson)
     val details = UnauthenticatedAuditDetails(channel, customerId, json)
     auditConnector.sendExplicitAudit(messageResponse.auditType, details)
+  }
+
+  def auditMissingMovementEvent(request: AuthenticatedRequest[_], arrivalId: ArrivalId): Unit = {
+    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
+    val details                    = AuthenticatedAuditDetails(request.channel, request.enrolmentId, Json.obj("arrivalId" -> arrivalId))
+    auditConnector.sendExplicitAudit(AuditType.MissingMovementRequested, details)
   }
 
   def authAudit(auditType: String, details: AuthenticationDetails)(implicit hc: HeaderCarrier): Unit =

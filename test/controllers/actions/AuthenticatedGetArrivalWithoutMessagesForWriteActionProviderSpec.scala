@@ -43,6 +43,8 @@ import uk.gov.hmrc.auth.core.EnrolmentIdentifier
 import uk.gov.hmrc.auth.core.Enrolments
 
 import scala.concurrent.Future
+import audit.AuditService
+import models.request.AuthenticatedRequest
 
 class AuthenticatedGetArrivalWithoutMessagesForWriteActionProviderSpec
     extends AnyFreeSpec
@@ -171,13 +173,14 @@ class AuthenticatedGetArrivalWithoutMessagesForWriteActionProviderSpec
         }
       }
 
-      "must lock, unlock and return Not Found when the arrival does not exist" in {
+      "must lock, unlock, audit and return Not Found when the arrival does not exist" in {
 
         val arrivalId = arbitrary[ArrivalId].sample.value
 
         val mockAuthConnector: AuthConnector = mock[AuthConnector]
         val mockArrivalMovementRepository    = mock[ArrivalMovementRepository]
         val mockLockRepository               = mock[LockRepository]
+        val mockAuditService: AuditService   = mock[AuditService]
 
         when(mockAuthConnector.authorise[Enrolments](any(), any())(any(), any()))
           .thenReturn(Future.successful(validEnrolments))
@@ -189,7 +192,8 @@ class AuthenticatedGetArrivalWithoutMessagesForWriteActionProviderSpec
           .overrides(
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
             bind[AuthConnector].toInstance(mockAuthConnector),
-            bind[LockRepository].toInstance(mockLockRepository)
+            bind[LockRepository].toInstance(mockLockRepository),
+            bind[AuditService].toInstance(mockAuditService)
           )
           .build()
 
@@ -202,6 +206,7 @@ class AuthenticatedGetArrivalWithoutMessagesForWriteActionProviderSpec
           status(result) mustBe NOT_FOUND
           verify(mockLockRepository, times(1)).lock(eqTo(arrivalId))
           verify(mockLockRepository, times(1)).unlock(eqTo(arrivalId))
+          verify(mockAuditService, times(1)).auditMissingMovementEvent(any[AuthenticatedRequest[_]], eqTo(arrivalId))
         }
       }
 

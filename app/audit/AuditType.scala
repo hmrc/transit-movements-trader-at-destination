@@ -18,6 +18,8 @@ package audit
 
 object AuditType {
 
+  val MissingMovementRequested = "MissingMovementRequested"
+
   val ArrivalNotificationSubmitted         = "ArrivalNotificationSubmitted"
   val ArrivalNotificationReSubmitted       = "ArrivalNotificationReSubmitted"
   val GoodsReleased                        = "GoodsReleased"

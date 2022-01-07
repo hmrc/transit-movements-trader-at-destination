@@ -35,6 +35,8 @@ import java.time.LocalDateTime
 
 import config.Constants
 import org.scalacheck.Gen
+import models.request.AuthenticatedRequest
+import play.api.test.FakeRequest
 
 class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with BeforeAndAfterEach {
 
@@ -163,6 +165,27 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
             auditService.authAudit(AuditType.SuccessfulAuthTracking, details)
 
             verify(mockAuditConnector, times(1)).sendExplicitAudit(eqTo(AuditType.SuccessfulAuthTracking), eqTo(details))(any(), any(), any())
+            reset(mockAuditConnector)
+          }
+
+      }
+    }
+
+    "must audit missing movement events" in {
+      forAll(Gen.oneOf(ChannelType.values)) {
+        (channel) =>
+          val request = new AuthenticatedRequest[Any](FakeRequest(), channel, Ior.right(EORINumber(Constants.NewEnrolmentIdKey)))
+          val application = baseApplicationBuilder
+            .overrides(bind[AuditConnector].toInstance(mockAuditConnector))
+            .build()
+
+          running(application) {
+            val auditService    = application.injector.instanceOf[AuditService]
+            val arrivalId       = ArrivalId(1234)
+            val expectedDetails = AuthenticatedAuditDetails(request.channel, request.enrolmentId, Json.obj("arrivalId" -> arrivalId))
+            auditService.auditMissingMovementEvent(request, arrivalId)
+
+            verify(mockAuditConnector, times(1)).sendExplicitAudit(eqTo(AuditType.MissingMovementRequested), eqTo(expectedDetails))(any(), any(), any())
             reset(mockAuditConnector)
           }
 
