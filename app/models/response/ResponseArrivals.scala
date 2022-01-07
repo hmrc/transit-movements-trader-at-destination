@@ -16,6 +16,7 @@
 
 package models.response
 
+import models.ArrivalWithoutMessages
 import play.api.libs.json.Json
 import play.api.libs.json.OWrites
 
@@ -23,4 +24,12 @@ case class ResponseArrivals(arrivals: Seq[ResponseArrival], retrievedArrivals: I
 
 object ResponseArrivals {
   implicit val writes: OWrites[ResponseArrivals] = Json.writes[ResponseArrivals]
+
+  def build(results: Seq[ArrivalWithoutMessages], totalArrivals: Int, totalMatched: Int): ResponseArrivals =
+    ResponseArrivals(
+      results.map(ResponseArrival.build),
+      results.length,
+      totalArrivals = totalArrivals,
+      totalMatched = totalMatched
+    )
 }

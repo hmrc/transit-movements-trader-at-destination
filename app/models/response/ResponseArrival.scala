@@ -30,12 +30,15 @@ import play.api.libs.json.OWrites
 import play.api.libs.json.Reads
 import java.time.LocalDateTime
 
+import utils.MessageTypeUtils
+
 case class ResponseArrival(
   arrivalId: ArrivalId,
   location: String,
   messagesLocation: String,
   movementReferenceNumber: MovementReferenceNumber,
   status: ArrivalStatus,
+  previousStatus: ArrivalStatus,
   created: LocalDateTime,
   updated: LocalDateTime,
   messagesMetaData: Seq[MessageMetaData]
@@ -50,6 +53,7 @@ object ResponseArrival {
       routes.MessagesController.getMessages(arrival.arrivalId).url,
       arrival.movementReferenceNumber,
       arrival.currentStatus,
+      arrival.previousStatus,
       arrival.created,
       updated = arrival.lastUpdated,
       arrival.messages.map(x => MessageMetaData(x.messageType, x.dateTime)).toList
@@ -62,6 +66,7 @@ object ResponseArrival {
       routes.MessagesController.getMessages(arrivalWithoutMessages.arrivalId).url,
       arrivalWithoutMessages.movementReferenceNumber,
       arrivalWithoutMessages.currentStatus,
+      arrivalWithoutMessages.previousStatus,
       arrivalWithoutMessages.created,
       updated = arrivalWithoutMessages.lastUpdated,
       arrivalWithoutMessages.messagesMetaData
@@ -70,7 +75,6 @@ object ResponseArrival {
   val projection: JsObject = Json.obj(
     "_id"                     -> 1,
     "movementReferenceNumber" -> 1,
-    "status"                  -> 1,
     "created"                 -> 1,
     "lastUpdated"             -> 1
   )
@@ -82,21 +86,24 @@ object ResponseArrival {
         location         = routes.MovementsController.getArrival(arrivalId).url
         messagesLocation = routes.MessagesController.getMessages(arrivalId).url
         movementReferenceNumber <- (json \ "movementReferenceNumber").validate[MovementReferenceNumber]
-        status                  <- (json \ "status").validate[ArrivalStatus]
         created                 <- (json \ "created").validate[LocalDateTime](MongoDateTimeFormats.localDateTimeRead)
         updated                 <- (json \ "lastUpdated").validate[LocalDateTime](MongoDateTimeFormats.localDateTimeRead)
         latestMessage           <- (json \ "messagesMetaData").validate[Seq[MessageMetaData]]
-      } yield
+      } yield {
+        val currentStatus  = MessageTypeUtils.currentArrivalStatus(latestMessage.toList)
+        val previousStatus = MessageTypeUtils.previousArrivalStatus(latestMessage.toList, currentStatus)
         ResponseArrival(
           arrivalId,
           location,
           messagesLocation,
           movementReferenceNumber,
-          status,
+          currentStatus,
+          previousStatus,
           created,
           updated,
           latestMessage
-      )
+        )
+    }
 
   implicit val writes: OWrites[ResponseArrival] = Json.writes[ResponseArrival]
 
