@@ -184,7 +184,7 @@ class AuthenticatedGetArrivalWithoutMessagesForReadActionProviderSpec
           val result     = controller.get(arrivalId)(fakeRequest)
 
           status(result) mustBe NOT_FOUND
-          verify(mockAuditService, times(1)).auditMissingMovementEvent(any[AuthenticatedRequest[_]], eqTo(arrivalId))
+          verify(mockAuditService, times(1)).auditCustomerRequestedMissingMovementEvent(any[AuthenticatedRequest[_]], eqTo(arrivalId))
         }
       }
 

@@ -171,7 +171,7 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
       }
     }
 
-    "must audit missing movement events" in {
+    "must audit customer missing movement events" in {
       forAll(Gen.oneOf(ChannelType.values)) {
         (channel) =>
           val request = new AuthenticatedRequest[Any](FakeRequest(), channel, Ior.right(EORINumber(Constants.NewEnrolmentIdKey)))
@@ -183,14 +183,35 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
             val auditService    = application.injector.instanceOf[AuditService]
             val arrivalId       = ArrivalId(1234)
             val expectedDetails = AuthenticatedAuditDetails(request.channel, request.enrolmentId, Json.obj("arrivalId" -> arrivalId))
-            auditService.auditMissingMovementEvent(request, arrivalId)
+            auditService.auditCustomerRequestedMissingMovementEvent(request, arrivalId)
 
-            verify(mockAuditConnector, times(1)).sendExplicitAudit(eqTo(AuditType.MissingMovementRequested), eqTo(expectedDetails))(any(), any(), any())
+            verify(mockAuditConnector, times(1)).sendExplicitAudit(eqTo(AuditType.CustomerRequestedMissingMovement), eqTo(expectedDetails))(any(), any(), any())
             reset(mockAuditConnector)
           }
 
       }
     }
-  }
 
+    "must audit NCTS missing movement events" in {
+      val application = baseApplicationBuilder
+        .overrides(bind[AuditConnector].toInstance(mockAuditConnector))
+        .build()
+      val messageResponse = UnloadingPermissionResponse
+      val requestXml      = <xml>test</xml>
+      val movementMessage = MovementMessageWithoutStatus(MessageId(1), LocalDateTime.now, MessageType.UnloadingPermission, requestXml, 1)
+      val expectedDetails = Json.obj(
+        "messageResponseType" -> messageResponse.auditType,
+        "message" -> movementMessage.messageJson
+      )
+
+      running(application) {
+        val auditService = application.injector.instanceOf[AuditService]
+        auditService.auditNCTSRequestedMissingMovementEvent(messageResponse, movementMessage)
+
+        verify(mockAuditConnector, times(1)).sendExplicitAudit(eqTo(AuditType.NCTSRequestedMissingMovement), eqTo(expectedDetails))(any(), any())
+        reset(mockAuditConnector)
+      }
+
+    }
+  }
 }

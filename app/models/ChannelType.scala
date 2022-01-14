@@ -21,7 +21,6 @@ sealed trait ChannelType
 object ChannelType extends Enumerable.Implicits {
   case object web     extends ChannelType
   case object api     extends ChannelType
-  case object deleted extends ChannelType
 
   val values: Seq[ChannelType] = Seq(web, api)
 

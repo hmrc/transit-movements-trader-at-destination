@@ -206,7 +206,7 @@ class AuthenticatedGetArrivalWithoutMessagesForWriteActionProviderSpec
           status(result) mustBe NOT_FOUND
           verify(mockLockRepository, times(1)).lock(eqTo(arrivalId))
           verify(mockLockRepository, times(1)).unlock(eqTo(arrivalId))
-          verify(mockAuditService, times(1)).auditMissingMovementEvent(any[AuthenticatedRequest[_]], eqTo(arrivalId))
+          verify(mockAuditService, times(1)).auditCustomerRequestedMissingMovementEvent(any[AuthenticatedRequest[_]], eqTo(arrivalId))
         }
       }
 

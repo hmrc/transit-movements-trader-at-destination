@@ -70,7 +70,7 @@ private[actions] class AuthenticatedGetMessagesAction(
               logger.warn("Attempt to retrieve an arrival for another EORI")
               Left(NotFound)
             case None =>
-              auditService.auditMissingMovementEvent(request, arrivalId)
+              auditService.auditCustomerRequestedMissingMovementEvent(request, arrivalId)
               Left(NotFound)
           }
           .recover {
