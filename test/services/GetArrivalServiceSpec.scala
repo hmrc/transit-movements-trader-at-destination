@@ -122,7 +122,7 @@ class GetArrivalServiceSpec extends SpecBase with ModelGenerators with ScalaChec
           val result = service.getArrivalAndAudit(ArrivalId(0), messageResponse, movementMessage).value.futureValue
 
           result.left.value mustBe an[ArrivalNotFoundError]
-          verify(mockAuditService, times(1)).auditNCTSRequestedMissingMovementEvent(any(), any())(any())
+          verify(mockAuditService, times(1)).auditNCTSRequestedMissingMovementEvent(eqTo(messageResponse), eqTo(movementMessage))(any())
           reset(mockAuditService)
         }
       }

@@ -16,6 +16,7 @@
 
 package controllers.actions
 
+import audit.AuditService
 import generators.ModelGenerators
 import migrations.MigrationRunner
 import migrations.MigrationRunnerImpl
@@ -23,6 +24,7 @@ import models.ChannelType.web
 import models.ChannelType.api
 import models.ArrivalId
 import models.ArrivalWithoutMessages
+import models.request.AuthenticatedRequest
 import org.mockito.ArgumentMatchers.{eq => eqTo, _}
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
@@ -45,8 +47,6 @@ import uk.gov.hmrc.auth.core.EnrolmentIdentifier
 import uk.gov.hmrc.auth.core.Enrolments
 
 import scala.concurrent.Future
-import audit.AuditService
-import models.request.AuthenticatedRequest
 
 class AuthenticatedGetArrivalWithoutMessagesForReadActionProviderSpec
     extends AnyFreeSpec
