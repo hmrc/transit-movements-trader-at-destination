@@ -51,7 +51,8 @@ class GetArrivalService @Inject()(repository: ArrivalMovementRepository, auditSe
     implicit hc: HeaderCarrier): EitherT[Future, SubmissionState, ArrivalWithoutMessages] =
     EitherT(
       getArrivalWithoutMessagesById(arrivalId)
-    ).leftSemiflatTap { _ =>
-      Future.successful(auditService.auditNCTSRequestedMissingMovementEvent(messageResponse, movementMessage))
+    ).leftSemiflatTap {
+      _ =>
+        Future.successful(auditService.auditNCTSRequestedMissingMovementEvent(arrivalId, messageResponse, movementMessage))
     }
 }

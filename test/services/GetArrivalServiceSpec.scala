@@ -90,10 +90,12 @@ class GetArrivalServiceSpec extends SpecBase with ModelGenerators with ScalaChec
           arrival =>
             when(mockArrivalMovementRepository.getWithoutMessages(any())).thenReturn(Future.successful(Some(arrival)))
 
-            val application = baseApplicationBuilder.overrides(
-              bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
-              bind[AuditService].toInstance(mockAuditService)
-            ).build()
+            val application = baseApplicationBuilder
+              .overrides(
+                bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
+                bind[AuditService].toInstance(mockAuditService)
+              )
+              .build()
 
             running(application) {
               val service = application.injector.instanceOf[GetArrivalService]
@@ -101,7 +103,7 @@ class GetArrivalServiceSpec extends SpecBase with ModelGenerators with ScalaChec
               val result = service.getArrivalAndAudit(ArrivalId(0), messageResponse, movementMessage).value.futureValue
 
               result mustBe Right(arrival)
-              verify(mockAuditService, never()).auditNCTSRequestedMissingMovementEvent(any(), any())(any())
+              verify(mockAuditService, never()).auditNCTSRequestedMissingMovementEvent(any(), any(), any())(any())
               reset(mockAuditService)
             }
         }
@@ -111,18 +113,20 @@ class GetArrivalServiceSpec extends SpecBase with ModelGenerators with ScalaChec
 
         when(mockArrivalMovementRepository.getWithoutMessages(any())).thenReturn(Future.successful(None))
 
-        val application = baseApplicationBuilder.overrides(
-          bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
-          bind[AuditService].toInstance(mockAuditService)
-        ).build()
+        val application = baseApplicationBuilder
+          .overrides(
+            bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
+            bind[AuditService].toInstance(mockAuditService)
+          )
+          .build()
 
         running(application) {
-          val service = application.injector.instanceOf[GetArrivalService]
-
-          val result = service.getArrivalAndAudit(ArrivalId(0), messageResponse, movementMessage).value.futureValue
+          val service   = application.injector.instanceOf[GetArrivalService]
+          val arrivalId = ArrivalId(0)
+          val result    = service.getArrivalAndAudit(ArrivalId(0), messageResponse, movementMessage).value.futureValue
 
           result.left.value mustBe an[ArrivalNotFoundError]
-          verify(mockAuditService, times(1)).auditNCTSRequestedMissingMovementEvent(eqTo(messageResponse), eqTo(movementMessage))(any())
+          verify(mockAuditService, times(1)).auditNCTSRequestedMissingMovementEvent(eqTo(arrivalId), eqTo(messageResponse), eqTo(movementMessage))(any())
           reset(mockAuditService)
         }
       }

@@ -44,11 +44,12 @@ class AuditService @Inject()(auditConnector: AuditConnector, messageTranslation:
     auditConnector.sendExplicitAudit(messageResponse.auditType, details)
   }
 
-  def auditNCTSRequestedMissingMovementEvent(messageResponse: MessageResponse, message: MovementMessage)(
+  def auditNCTSRequestedMissingMovementEvent(arrivalId: ArrivalId, messageResponse: MessageResponse, message: MovementMessage)(
     implicit hc: HeaderCarrier): Unit = {
     val details = Json.obj(
+      "arrivalId"           -> arrivalId,
       "messageResponseType" -> messageResponse.auditType,
-      "message" -> messageTranslation.translate(message.messageJson)
+      "message"             -> messageTranslation.translate(message.messageJson)
     )
     auditConnector.sendExplicitAudit(AuditType.NCTSRequestedMissingMovement, details)
   }

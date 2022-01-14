@@ -199,14 +199,16 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
       val messageResponse = UnloadingPermissionResponse
       val requestXml      = <xml>test</xml>
       val movementMessage = MovementMessageWithoutStatus(MessageId(1), LocalDateTime.now, MessageType.UnloadingPermission, requestXml, 1)
+      val arrivalId       = ArrivalId(0)
       val expectedDetails = Json.obj(
+        "arrivalId"           -> arrivalId,
         "messageResponseType" -> messageResponse.auditType,
-        "message" -> movementMessage.messageJson
+        "message"             -> movementMessage.messageJson
       )
 
       running(application) {
         val auditService = application.injector.instanceOf[AuditService]
-        auditService.auditNCTSRequestedMissingMovementEvent(messageResponse, movementMessage)
+        auditService.auditNCTSRequestedMissingMovementEvent(arrivalId, messageResponse, movementMessage)
 
         verify(mockAuditConnector, times(1)).sendExplicitAudit(eqTo(AuditType.NCTSRequestedMissingMovement), eqTo(expectedDetails))(any(), any())
         reset(mockAuditConnector)
