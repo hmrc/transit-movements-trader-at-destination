@@ -7,7 +7,7 @@ object AppDependencies {
   private val mongockVersion = "4.3.8"
 
   val compile: Seq[ModuleID] = Seq(
-    "uk.gov.hmrc"                  %% "bootstrap-backend-play-28"       % "5.16.0",
+    "uk.gov.hmrc"                  %% "bootstrap-backend-play-28"       % "5.19.0",
     "org.reactivemongo"            %% "play2-reactivemongo"             % "0.20.13-play28",
     "org.reactivemongo"            %% "reactivemongo-akkastream"        % "0.20.11",
     "com.typesafe.play"            %% "play-iteratees"                  % "2.6.1",
@@ -21,11 +21,11 @@ object AppDependencies {
   )
 
   val test: Seq[ModuleID] = Seq(
-    "org.mockito"             % "mockito-core"         % "3.3.3",
+    "org.mockito"             % "mockito-core"         % "3.12.4",
     "org.scalatest"          %% "scalatest"            % "3.2.10",
     "com.typesafe.play"      %% "play-test"            % current,
     "org.pegdown"             % "pegdown"              % "1.6.0",
-    "org.scalatestplus.play" %% "scalatestplus-play"   % "4.0.3",
+    "org.scalatestplus.play" %% "scalatestplus-play"   % "5.1.0",
     "org.scalatestplus"      %% "mockito-3-2"          % "3.1.2.0",
     "org.scalacheck"         %% "scalacheck"           % "1.15.4",
     "com.github.tomakehurst"  % "wiremock-standalone"  % "2.27.2",
