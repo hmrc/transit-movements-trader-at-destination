@@ -37,6 +37,7 @@ import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsObject, Json}
 import play.api.test.Helpers.running
+import reactivemongo.api.indexes.IndexType
 import reactivemongo.play.json.collection.Helpers.idWrites
 import reactivemongo.play.json.collection.JSONCollection
 import utils.Format
@@ -93,6 +94,35 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
   private val mrn = arbitrary[MovementReferenceNumber].sample.value
 
   "ArrivalMovementRepository" - {
+
+    "started" - {
+      "must ensure indexes" in {
+
+        val app = appBuilder.build()
+        running(app) {
+
+          val indexes = database.flatMap {
+            result =>
+              result.collection[JSONCollection](ArrivalMovementRepository.collectionName).indexesManager.list()
+          }.futureValue.map {
+            index =>
+              (index.name.get, index.key)
+          }
+
+          indexes must contain theSameElementsAs List(
+            ("movement-reference-number-index", Seq(("movementReferenceNumber", IndexType.Ascending))),
+            ("fetch-all-with-date-and-mrn-filter-index", Seq(("channel", IndexType.Ascending), ("eoriNumber", IndexType.Ascending), ("lastUpdated", IndexType.Descending), ("movementReferenceNumber", IndexType.Ascending))),
+            ("fetch-all-with-date-filter-index", Seq(("channel", IndexType.Ascending), ("eoriNumber", IndexType.Ascending), ("lastUpdated", IndexType.Descending))),
+            ("fetch-all-index", Seq(("channel", IndexType.Ascending), ("eoriNumber", IndexType.Ascending))),
+            ("channel-index", Seq(("channel", IndexType.Ascending))),
+            ("eori-number-index", Seq(("eoriNumber", IndexType.Ascending))),
+            ("last-updated-index", Seq(("lastUpdated", IndexType.Ascending))),
+            ("_id_", Seq(("_id", IndexType.Ascending)))
+          )
+        }
+      }
+    }
+
     "insert" - {
       "must persist ArrivalMovement within mongoDB" in {
 
