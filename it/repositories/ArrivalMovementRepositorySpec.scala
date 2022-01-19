@@ -111,7 +111,6 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
 
           indexes must contain theSameElementsAs List(
             ("movement-reference-number-index", Seq(("movementReferenceNumber", IndexType.Ascending))),
-            ("fetch-all-with-date-and-mrn-filter-index", Seq(("channel", IndexType.Ascending), ("eoriNumber", IndexType.Ascending), ("lastUpdated", IndexType.Descending), ("movementReferenceNumber", IndexType.Ascending))),
             ("fetch-all-with-date-filter-index", Seq(("channel", IndexType.Ascending), ("eoriNumber", IndexType.Ascending), ("lastUpdated", IndexType.Descending))),
             ("fetch-all-index", Seq(("channel", IndexType.Ascending), ("eoriNumber", IndexType.Ascending))),
             ("channel-index", Seq(("channel", IndexType.Ascending))),

@@ -79,7 +79,6 @@ class ArrivalMovementRepository @Inject()(
             _   <- jsonCollection.indexesManager.ensure(channelIndex)
             _   <- jsonCollection.indexesManager.ensure(fetchAllIndex)
             _   <- jsonCollection.indexesManager.ensure(fetchAllWithDateFilterIndex)
-            _   <- jsonCollection.indexesManager.ensure(fetchAllWithDateAndMrnFilterIndex)
             res <- jsonCollection.indexesManager.ensure(movementReferenceNumber)
           } yield res
       }
@@ -121,11 +120,6 @@ class ArrivalMovementRepository @Inject()(
   private lazy val fetchAllWithDateFilterIndex: Aux[BSONSerializationPack.type] = IndexUtils.index(
     key = Seq(channelKey, eoriKey, lastUpdatedKey(IndexType.Descending)),
     name = Some("fetch-all-with-date-filter-index")
-  )
-
-  private lazy val fetchAllWithDateAndMrnFilterIndex: Aux[BSONSerializationPack.type] = IndexUtils.index(
-    key = Seq(channelKey, eoriKey, lastUpdatedKey(IndexType.Descending), mrnKey),
-    name = Some("fetch-all-with-date-and-mrn-filter-index")
   )
 
   private lazy val oldLastUpdatedIndexName = "last-updated-index-6m"
