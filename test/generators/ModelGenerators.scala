@@ -292,8 +292,7 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
         previousStatus          <- arbitrary[ArrivalStatus]
         created                 <- arbitrary[LocalDateTime]
         updated                 <- arbitrary[LocalDateTime]
-        messageMetaData         <- arbitrary[Seq[MessageMetaData]]
-      } yield ResponseArrival(arrivalId, location, messagesLocation, movementReferenceNumber, currentStatus, previousStatus, created, updated, messageMetaData)
+      } yield ResponseArrival(arrivalId, location, messagesLocation, movementReferenceNumber, currentStatus, previousStatus, created, updated)
     )
 
   implicit lazy val arbitaryArrivalMessages: Arbitrary[ArrivalMessages] =

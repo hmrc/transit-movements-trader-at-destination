@@ -16,9 +16,6 @@
 
 package controllers
 
-import java.time._
-import java.time.format.DateTimeFormatter
-
 import audit.AuditService
 import audit.AuditType
 import base.SpecBase
@@ -33,7 +30,8 @@ import generators.ModelGenerators
 import models.ChannelType.api
 import models.ChannelType.web
 import models.MessageStatus.SubmissionPending
-import models.MessageType.ArrivalNotification
+import models.response.ResponseArrival
+import models.response.ResponseArrivals
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalStatus
@@ -42,14 +40,11 @@ import models.Box
 import models.BoxId
 import models.EORINumber
 import models.MessageId
-import models.MessageMetaData
 import models.MessageSender
 import models.MessageType
 import models.MovementMessageWithStatus
 import models.MovementReferenceNumber
 import models.SubmissionProcessingResult
-import models.response.ResponseArrival
-import models.response.ResponseArrivals
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.{eq => eqTo}
@@ -70,6 +65,8 @@ import services.PushPullNotificationService
 import services.SubmitMessageService
 import utils.Format
 
+import java.time._
+import java.time.format.DateTimeFormatter
 import scala.concurrent.Future
 import scala.xml.NodeSeq
 import scala.xml.Utility.trim
@@ -893,10 +890,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
               ArrivalStatus.ArrivalRejected,
               ArrivalStatus.ArrivalSubmitted,
               createdAndUpdatedDate,
-              createdAndUpdatedDate,
-              Seq(
-                MessageMetaData(ArrivalNotification, createdAndUpdatedDate)
-              )
+              createdAndUpdatedDate
             )
           )
           val responseArrivals = ResponseArrivals(arrivals, 1, 1, 1)
@@ -919,13 +913,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
                |      "status": "ArrivalRejected",
                |      "previousStatus": "ArrivalSubmitted",
                |      "created": "${dateFormat.format(createdAndUpdatedDate)}",
-               |      "updated": "${dateFormat.format(createdAndUpdatedDate)}",
-               |      "messagesMetaData":[
-               |       {
-               |         "messageType": "IE007",
-               |          "dateTime": "$createdAndUpdatedDate"
-               |        }
-               |     ]
+               |      "updated": "${dateFormat.format(createdAndUpdatedDate)}"
                |    }
                |  ],
                |  "retrievedArrivals": 1,
