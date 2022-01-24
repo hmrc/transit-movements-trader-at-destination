@@ -86,36 +86,42 @@ class ArrivalMovementRepository @Inject()(
         _ => ()
       )
 
+  private lazy val channelKey: (String, IndexType)                      = "channel"                 -> IndexType.Ascending
+  private lazy val eoriKey: (String, IndexType)                         = "eoriNumber"              -> IndexType.Ascending
+  private lazy val mrnKey: (String, IndexType)                          = "movementReferenceNumber" -> IndexType.Ascending
+  private def lastUpdatedKey(indexType: IndexType): (String, IndexType) = "lastUpdated"             -> indexType
+
   private lazy val eoriNumberIndex: Aux[BSONSerializationPack.type] = IndexUtils.index(
-    key = Seq("eoriNumber" -> IndexType.Ascending),
+    key = Seq(eoriKey),
     name = Some("eori-number-index")
   )
 
   private lazy val movementReferenceNumber: Aux[BSONSerializationPack.type] = IndexUtils.index(
-    key = Seq("movementReferenceNumber" -> IndexType.Ascending),
+    key = Seq(mrnKey),
     name = Some("movement-reference-number-index")
   )
 
   private lazy val lastUpdatedIndex: Aux[BSONSerializationPack.type] = IndexUtils.index(
-    key = Seq("lastUpdated" -> IndexType.Ascending),
+    key = Seq(lastUpdatedKey(IndexType.Ascending)),
     name = Some("last-updated-index"),
     options = BSONDocument("expireAfterSeconds" -> appConfig.cacheTtl)
   )
 
   private lazy val channelIndex: Aux[BSONSerializationPack.type] = IndexUtils.index(
-    key = Seq("channel" -> IndexType.Ascending),
+    key = Seq(channelKey),
     name = Some("channel-index")
   )
 
   private lazy val fetchAllIndex: Aux[BSONSerializationPack.type] = IndexUtils.index(
-    key = Seq("channel" -> IndexType.Ascending, "eoriNumber" -> IndexType.Ascending),
+    key = Seq(channelKey, eoriKey),
     name = Some("fetch-all-index")
   )
 
   private lazy val fetchAllWithDateFilterIndex: Aux[BSONSerializationPack.type] = IndexUtils.index(
-    key = Seq("channel" -> IndexType.Ascending, "eoriNumber" -> IndexType.Ascending, "lastUpdated" -> IndexType.Descending),
+    key = Seq(channelKey, eoriKey, lastUpdatedKey(IndexType.Descending)),
     name = Some("fetch-all-with-date-filter-index")
   )
+
   private lazy val oldLastUpdatedIndexName = "last-updated-index-6m"
   private lazy val collectionName          = ArrivalMovementRepository.collectionName
 
