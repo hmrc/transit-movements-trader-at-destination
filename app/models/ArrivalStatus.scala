@@ -32,6 +32,8 @@ object ArrivalStatus extends Enumerable.Implicits with MongoDateTimeFormats {
 
   case object ArrivalSubmittedNegativeAcknowledgement extends ArrivalStatus
 
+  case object UnloadingRemarksSubmittedNegativeAcknowledgement extends ArrivalStatus
+
   case object XMLSubmissionNegativeAcknowledgement extends ArrivalStatus
 
   case object UnloadingRemarksSubmitted extends ArrivalStatus
@@ -47,7 +49,8 @@ object ArrivalStatus extends Enumerable.Implicits with MongoDateTimeFormats {
     ArrivalRejected,
     UnloadingRemarksRejected,
     XMLSubmissionNegativeAcknowledgement,
-    ArrivalSubmittedNegativeAcknowledgement
+    ArrivalSubmittedNegativeAcknowledgement,
+    UnloadingRemarksSubmittedNegativeAcknowledgement
   )
 
   implicit val enumerable: Enumerable[ArrivalStatus] =

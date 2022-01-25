@@ -220,9 +220,21 @@ class MessageTypeUtilsSpec extends SpecBase with ScalaCheckDrivenPropertyChecks 
 
           "and the current weighted message is XMLSubmissionNegativeAcknowledgement" - {
 
+            "must return XMLSubmissionNegativeAcknowledgement when there are no previous messages" in {
+
+              val localDateTime: LocalDateTime = LocalDateTime.now()
+
+              val movementMessages =
+                List(
+                  createMessageMovement(22, MessageType.XMLSubmissionNegativeAcknowledgement, localDateTime),
+                )
+
+              MessageTypeUtils.status(movementMessages) mustBe ArrivalStatus.XMLSubmissionNegativeAcknowledgement
+            }
+
             "and there are previous unloading remarks" - {
 
-              "must return XMLSubmissionNegativeAcknowledgement when there are equal UnloadingRemarks" in {
+              "must return UnloadingRemarksSubmittedNegativeAcknowledgement when there are equal UnloadingRemarks" in {
 
                 val localDateTime: LocalDateTime = LocalDateTime.now()
 
@@ -232,7 +244,7 @@ class MessageTypeUtilsSpec extends SpecBase with ScalaCheckDrivenPropertyChecks 
                     createMessageMovement(22, MessageType.UnloadingRemarks, localDateTime)
                   )
 
-                MessageTypeUtils.status(movementMessages) mustBe ArrivalStatus.XMLSubmissionNegativeAcknowledgement
+                MessageTypeUtils.status(movementMessages) mustBe ArrivalStatus.UnloadingRemarksSubmittedNegativeAcknowledgement
               }
 
               "must return UnloadingRemarks when there are less XMLSubmissionNegativeAcknowledgement" in {
@@ -252,7 +264,7 @@ class MessageTypeUtilsSpec extends SpecBase with ScalaCheckDrivenPropertyChecks 
 
             "and there are previous arrivals ArrivalNotification" - {
 
-              "must return XMLSubmissionNegativeAcknowledgement when there are equal ArrivalNotification" in {
+              "must return ArrivalSubmittedNegativeAcknowledgement when there are equal ArrivalNotification" in {
 
                 val localDateTime: LocalDateTime = LocalDateTime.now()
 
@@ -262,7 +274,7 @@ class MessageTypeUtilsSpec extends SpecBase with ScalaCheckDrivenPropertyChecks 
                     createMessageMovement(22, MessageType.XMLSubmissionNegativeAcknowledgement, localDateTime)
                   )
 
-                MessageTypeUtils.status(movementMessages) mustBe ArrivalStatus.XMLSubmissionNegativeAcknowledgement
+                MessageTypeUtils.status(movementMessages) mustBe ArrivalStatus.ArrivalSubmittedNegativeAcknowledgement
               }
 
               "must return ArrivalNotification when there are less XMLSubmissionNegativeAcknowledgement" in {
@@ -280,6 +292,38 @@ class MessageTypeUtilsSpec extends SpecBase with ScalaCheckDrivenPropertyChecks 
               }
 
             }
+            "and there are previous arrivals XMLSubmissionNegativeAcknowledgement" - {
+
+              "must return XMLSubmissionNegativeAcknowledgement when there are only XMLSubmissionNegativeAcknowledgement" in {
+
+                val localDateTime: LocalDateTime = LocalDateTime.now()
+
+                val movementMessages =
+                  List(
+                    createMessageMovement(22, MessageType.XMLSubmissionNegativeAcknowledgement, localDateTime.minusSeconds(10)),
+                    createMessageMovement(22, MessageType.XMLSubmissionNegativeAcknowledgement, localDateTime)
+                  )
+
+                MessageTypeUtils.status(movementMessages) mustBe ArrivalStatus.XMLSubmissionNegativeAcknowledgement
+              }
+            }
+
+            "and there are previous arrivals GoodsReleased" - {
+
+              "must return XMLSubmissionNegativeAcknowledgement when there are previous GoodsReleased" in {
+
+                val localDateTime: LocalDateTime = LocalDateTime.now()
+
+                val movementMessages =
+                  List(
+                    createMessageMovement(22, MessageType.GoodsReleased, localDateTime.minusSeconds(10)),
+                    createMessageMovement(22, MessageType.XMLSubmissionNegativeAcknowledgement, localDateTime)
+                  )
+
+                MessageTypeUtils.status(movementMessages) mustBe ArrivalStatus.XMLSubmissionNegativeAcknowledgement
+              }
+            }
+
           }
 
           "must return the latest messageType" in {
@@ -298,22 +342,6 @@ class MessageTypeUtilsSpec extends SpecBase with ScalaCheckDrivenPropertyChecks 
         }
       }
     }
-  }
-
-  "status" - {
-//    "when there is a single response from NCTS" - {
-//      "when current status is XMLSubmissionNegativeAcknowledgement and previous stats is Arrival Submitted status should be ArrivalSubmittedNegativeAcknowledgement" in {
-//        val localDateTime: LocalDateTime = LocalDateTime.now()
-//
-//        val movementMessages =
-//          List(
-//            createMessageMovement(22, MessageType.ArrivalNotification, localDateTime.minusSeconds(10)),
-//            createMessageMovement(22, MessageType.XMLSubmissionNegativeAcknowledgement, localDateTime)
-//          )
-//
-//        MessageTypeUtils.status(movementMessages) mustBe ArrivalStatus.ArrivalSubmittedNegativeAcknowledgement
-//      }
-//    }
   }
 
   def createMessageMovement(messageId: Int, messageType: MessageType, localDateTime: LocalDateTime): MovementMessage =

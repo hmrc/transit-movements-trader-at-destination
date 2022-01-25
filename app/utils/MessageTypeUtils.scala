@@ -16,19 +16,36 @@
 
 package utils
 
-import java.time.LocalDateTime
 import models.ArrivalStatus
 import models.MessageType
 import models.MessageTypeWithTime
 
+import java.time.LocalDateTime
+
 object MessageTypeUtils {
 
   def status(messagesList: List[MessageTypeWithTime]): ArrivalStatus = {
-    val current = currentMessageType(messagesList)
-    toArrivalStatus(current)
+    val current = latestMessageType(messagesList)
+    if (current == MessageType.XMLSubmissionNegativeAcknowledgement && messagesList.length > 1) {
+      val messageListWithOutCurrent = messagesList.filterNot(_.messageType == current)
+      if (messageListWithOutCurrent.nonEmpty) {
+
+        val previous = latestMessageType(messageListWithOutCurrent)
+        previous match {
+          case MessageType.UnloadingRemarks    => ArrivalStatus.UnloadingRemarksSubmittedNegativeAcknowledgement
+          case MessageType.ArrivalNotification => ArrivalStatus.ArrivalSubmittedNegativeAcknowledgement
+          case _                               => toArrivalStatus(current)
+        }
+      } else {
+        toArrivalStatus(current)
+      }
+    } else {
+      toArrivalStatus(current)
+    }
+
   }
 
-  private def currentMessageType(messagesList: List[MessageTypeWithTime]): MessageType = {
+  private def latestMessageType(messagesList: List[MessageTypeWithTime]): MessageType = {
     implicit val localDateOrdering: Ordering[LocalDateTime] = _ compareTo _
 
     val latestMessage            = messagesList.maxBy(_.dateTime)
@@ -51,8 +68,8 @@ object MessageTypeUtils {
             MessageType.UnloadingRemarksRejection
           }
         case MessageType.XMLSubmissionNegativeAcknowledgement if messagesList.count(_.messageType == MessageType.UnloadingRemarks) >= 1 =>
-          if (messagesList.count(_.messageType == MessageType.UnloadingRemarks) > messagesList.count(
-                _.messageType == MessageType.XMLSubmissionNegativeAcknowledgement)) {
+          if (messagesList
+                .count(_.messageType == MessageType.UnloadingRemarks) > messagesList.count(_.messageType == MessageType.XMLSubmissionNegativeAcknowledgement)) {
             MessageType.UnloadingRemarks
           } else {
             MessageType.XMLSubmissionNegativeAcknowledgement
@@ -66,30 +83,6 @@ object MessageTypeUtils {
             MessageType.XMLSubmissionNegativeAcknowledgement
           }
         case value => value
-      }
-    }
-  }
-
-  private def previousMessageType(messagesList: List[MessageTypeWithTime], currentStatus: ArrivalStatus): MessageType = {
-
-    implicit val localDateOrdering: Ordering[LocalDateTime] = _ compareTo _
-
-    val previousMessage = messagesList.sortBy(_.dateTime).takeRight(2).head
-
-    val messagesWithSameDateTime = messagesList.filter(_.dateTime == previousMessage.dateTime)
-
-    if (messagesWithSameDateTime.size == 1) {
-      previousMessage.messageType
-    } else {
-
-      currentStatus match {
-        case ArrivalStatus.XMLSubmissionNegativeAcknowledgement =>
-          if (previousMessage.messageType == MessageType.ArrivalNotification | previousMessage.messageType == MessageType.UnloadingRemarks) {
-            previousMessage.messageType
-          } else {
-            messagesWithSameDateTime.map(_.messageType).max
-          }
-        case _ => messagesWithSameDateTime.map(_.messageType).max
       }
     }
   }
