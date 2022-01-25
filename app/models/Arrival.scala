@@ -57,8 +57,7 @@ case class Arrival(
     "Next message correlation id" -> nextMessageCorrelationId.toString
   )
 
-  val currentStatus: ArrivalStatus  = MessageTypeUtils.currentArrivalStatus(messages.toList)
-  val previousStatus: ArrivalStatus = MessageTypeUtils.previousArrivalStatus(messages.toList, currentStatus)
+  val status: ArrivalStatus = MessageTypeUtils.status(messages.toList)
 }
 
 object Arrival {

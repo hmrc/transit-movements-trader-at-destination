@@ -17,20 +17,24 @@
 package utils
 
 import java.time.LocalDateTime
-
 import models.ArrivalStatus
 import models.MessageType
 import models.MessageTypeWithTime
 
 object MessageTypeUtils {
 
-  def currentArrivalStatus(messagesList: List[MessageTypeWithTime]): ArrivalStatus = {
+  def status(messagesList: List[MessageTypeWithTime]): ArrivalStatus = {
+    val current = currentMessageType(messagesList)
+    toArrivalStatus(current)
+  }
+
+  private def currentMessageType(messagesList: List[MessageTypeWithTime]): MessageType = {
     implicit val localDateOrdering: Ordering[LocalDateTime] = _ compareTo _
 
     val latestMessage            = messagesList.maxBy(_.dateTime)
     val messagesWithSameDateTime = messagesList.filter(_.dateTime == latestMessage.dateTime)
 
-    val currentMessageType = if (messagesWithSameDateTime.size == 1) {
+    if (messagesWithSameDateTime.size == 1) {
       latestMessage.messageType
     } else {
       messagesWithSameDateTime.map(_.messageType).max match {
@@ -64,10 +68,9 @@ object MessageTypeUtils {
         case value => value
       }
     }
-    toArrivalStatus(currentMessageType)
   }
 
-  def previousArrivalStatus(messagesList: List[MessageTypeWithTime], currentStatus: ArrivalStatus): ArrivalStatus = {
+  private def previousMessageType(messagesList: List[MessageTypeWithTime], currentStatus: ArrivalStatus): MessageType = {
 
     implicit val localDateOrdering: Ordering[LocalDateTime] = _ compareTo _
 
@@ -75,7 +78,7 @@ object MessageTypeUtils {
 
     val messagesWithSameDateTime = messagesList.filter(_.dateTime == previousMessage.dateTime)
 
-    val previousMessageType = if (messagesWithSameDateTime.size == 1) {
+    if (messagesWithSameDateTime.size == 1) {
       previousMessage.messageType
     } else {
 
@@ -89,7 +92,6 @@ object MessageTypeUtils {
         case _ => messagesWithSameDateTime.map(_.messageType).max
       }
     }
-    toArrivalStatus(previousMessageType)
   }
 
   def toArrivalStatus(messageType: MessageType): ArrivalStatus =

@@ -128,7 +128,7 @@ class ArrivalMessageSummaryService {
 
         val rejectionNotificationCount = rejectionNotifications.length
 
-        if (rejectionNotificationCount > 0 && arrival.currentStatus == ArrivalStatus.UnloadingRemarksRejected)
+        if (rejectionNotificationCount > 0 && arrival.status == ArrivalStatus.UnloadingRemarksRejected)
           Some(rejectionNotifications.maxBy(_._1.messageCorrelationId))
         else
           None

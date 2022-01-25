@@ -52,8 +52,7 @@ case class ArrivalWithoutMessages(
     "Next message correlation id" -> nextMessageCorrelationId.toString
   )
 
-  val currentStatus: ArrivalStatus  = MessageTypeUtils.currentArrivalStatus(messagesMetaData.toList)
-  val previousStatus: ArrivalStatus = MessageTypeUtils.previousArrivalStatus(messagesMetaData.toList, currentStatus)
+  val status: ArrivalStatus = MessageTypeUtils.status(messagesMetaData.toList)
 }
 
 object ArrivalWithoutMessages {

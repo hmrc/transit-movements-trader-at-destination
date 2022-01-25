@@ -17,7 +17,6 @@
 package utils
 
 import java.time.LocalDateTime
-
 import base.SpecBase
 import generators.ModelGenerators
 import models.ArrivalStatus
@@ -61,7 +60,7 @@ class MessageTypeUtilsSpec extends SpecBase with ScalaCheckDrivenPropertyChecks 
     }
   }
 
-  "currentStatus" - {
+  "status" - {
     "when there is only the message from the user" - {
 
       "must return messageType" in {
@@ -72,7 +71,7 @@ class MessageTypeUtilsSpec extends SpecBase with ScalaCheckDrivenPropertyChecks 
             createMessageMovement(22, MessageType.ArrivalNotification, localDateTime.minusSeconds(10))
           )
 
-        MessageTypeUtils.currentArrivalStatus(movementMessages) mustBe ArrivalStatus.ArrivalSubmitted
+        MessageTypeUtils.status(movementMessages) mustBe ArrivalStatus.ArrivalSubmitted
       }
     }
 
@@ -88,7 +87,7 @@ class MessageTypeUtilsSpec extends SpecBase with ScalaCheckDrivenPropertyChecks 
               createMessageMovement(22, MessageType.UnloadingPermission, localDateTime)
             )
 
-          MessageTypeUtils.currentArrivalStatus(movementMessages) mustBe ArrivalStatus.UnloadingPermission
+          MessageTypeUtils.status(movementMessages) mustBe ArrivalStatus.UnloadingPermission
         }
       }
 
@@ -105,7 +104,7 @@ class MessageTypeUtilsSpec extends SpecBase with ScalaCheckDrivenPropertyChecks 
                 createMessageMovement(22, MessageType.ArrivalRejection, localDateTime)
               )
 
-            MessageTypeUtils.currentArrivalStatus(movementMessages) mustBe ArrivalStatus.ArrivalRejected
+            MessageTypeUtils.status(movementMessages) mustBe ArrivalStatus.ArrivalRejected
           }
         }
 
@@ -124,7 +123,7 @@ class MessageTypeUtilsSpec extends SpecBase with ScalaCheckDrivenPropertyChecks 
                   createMessageMovement(22, MessageType.ArrivalNotification, localDateTime.minusSeconds(10))
                 )
 
-              MessageTypeUtils.currentArrivalStatus(movementMessages) mustBe ArrivalStatus.GoodsReleased
+              MessageTypeUtils.status(movementMessages) mustBe ArrivalStatus.GoodsReleased
             }
 
             "Scenario 2" in {
@@ -138,7 +137,7 @@ class MessageTypeUtilsSpec extends SpecBase with ScalaCheckDrivenPropertyChecks 
                   createMessageMovement(22, MessageType.UnloadingRemarks, localDateTime.minusDays(4))
                 )
 
-              MessageTypeUtils.currentArrivalStatus(movementMessages) mustBe ArrivalStatus.UnloadingPermission
+              MessageTypeUtils.status(movementMessages) mustBe ArrivalStatus.UnloadingPermission
             }
 
             "Scenario 3" in {
@@ -151,7 +150,7 @@ class MessageTypeUtilsSpec extends SpecBase with ScalaCheckDrivenPropertyChecks 
                   createMessageMovement(22, MessageType.ArrivalNotification, localDateTime.minusWeeks(2))
                 )
 
-              MessageTypeUtils.currentArrivalStatus(movementMessages) mustBe ArrivalStatus.GoodsReleased
+              MessageTypeUtils.status(movementMessages) mustBe ArrivalStatus.GoodsReleased
             }
           }
         }
@@ -170,7 +169,7 @@ class MessageTypeUtilsSpec extends SpecBase with ScalaCheckDrivenPropertyChecks 
                   createMessageMovement(22, MessageType.ArrivalRejection, localDateTime)
                 )
 
-              MessageTypeUtils.currentArrivalStatus(movementMessages) mustBe ArrivalStatus.ArrivalRejected
+              MessageTypeUtils.status(movementMessages) mustBe ArrivalStatus.ArrivalRejected
             }
 
             "must return ArrivalNotification when there are less ArrivalRejections" in {
@@ -184,7 +183,7 @@ class MessageTypeUtilsSpec extends SpecBase with ScalaCheckDrivenPropertyChecks 
                   createMessageMovement(22, MessageType.ArrivalNotification, localDateTime.plusSeconds(10))
                 )
 
-              MessageTypeUtils.currentArrivalStatus(movementMessages) mustBe ArrivalStatus.ArrivalSubmitted
+              MessageTypeUtils.status(movementMessages) mustBe ArrivalStatus.ArrivalSubmitted
             }
           }
 
@@ -200,7 +199,7 @@ class MessageTypeUtilsSpec extends SpecBase with ScalaCheckDrivenPropertyChecks 
                   createMessageMovement(22, MessageType.UnloadingRemarks, localDateTime)
                 )
 
-              MessageTypeUtils.currentArrivalStatus(movementMessages) mustBe ArrivalStatus.UnloadingRemarksRejected
+              MessageTypeUtils.status(movementMessages) mustBe ArrivalStatus.UnloadingRemarksRejected
             }
 
             "must return UnloadingRemarks when there are less UnloadingRemarksRejection" in {
@@ -214,7 +213,7 @@ class MessageTypeUtilsSpec extends SpecBase with ScalaCheckDrivenPropertyChecks 
                   createMessageMovement(22, MessageType.UnloadingRemarks, localDateTime.plusSeconds(10))
                 )
 
-              MessageTypeUtils.currentArrivalStatus(movementMessages) mustBe ArrivalStatus.UnloadingRemarksSubmitted
+              MessageTypeUtils.status(movementMessages) mustBe ArrivalStatus.UnloadingRemarksSubmitted
             }
 
           }
@@ -233,7 +232,7 @@ class MessageTypeUtilsSpec extends SpecBase with ScalaCheckDrivenPropertyChecks 
                     createMessageMovement(22, MessageType.UnloadingRemarks, localDateTime)
                   )
 
-                MessageTypeUtils.currentArrivalStatus(movementMessages) mustBe ArrivalStatus.XMLSubmissionNegativeAcknowledgement
+                MessageTypeUtils.status(movementMessages) mustBe ArrivalStatus.XMLSubmissionNegativeAcknowledgement
               }
 
               "must return UnloadingRemarks when there are less XMLSubmissionNegativeAcknowledgement" in {
@@ -247,7 +246,7 @@ class MessageTypeUtilsSpec extends SpecBase with ScalaCheckDrivenPropertyChecks 
                     createMessageMovement(22, MessageType.UnloadingRemarks, localDateTime.plusSeconds(10))
                   )
 
-                MessageTypeUtils.currentArrivalStatus(movementMessages) mustBe ArrivalStatus.UnloadingRemarksSubmitted
+                MessageTypeUtils.status(movementMessages) mustBe ArrivalStatus.UnloadingRemarksSubmitted
               }
             }
 
@@ -263,7 +262,7 @@ class MessageTypeUtilsSpec extends SpecBase with ScalaCheckDrivenPropertyChecks 
                     createMessageMovement(22, MessageType.XMLSubmissionNegativeAcknowledgement, localDateTime)
                   )
 
-                MessageTypeUtils.currentArrivalStatus(movementMessages) mustBe ArrivalStatus.XMLSubmissionNegativeAcknowledgement
+                MessageTypeUtils.status(movementMessages) mustBe ArrivalStatus.XMLSubmissionNegativeAcknowledgement
               }
 
               "must return ArrivalNotification when there are less XMLSubmissionNegativeAcknowledgement" in {
@@ -277,7 +276,7 @@ class MessageTypeUtilsSpec extends SpecBase with ScalaCheckDrivenPropertyChecks 
                     createMessageMovement(22, MessageType.ArrivalNotification, localDateTime.plusSeconds(10))
                   )
 
-                MessageTypeUtils.currentArrivalStatus(movementMessages) mustBe ArrivalStatus.ArrivalSubmitted
+                MessageTypeUtils.status(movementMessages) mustBe ArrivalStatus.ArrivalSubmitted
               }
 
             }
@@ -294,151 +293,27 @@ class MessageTypeUtilsSpec extends SpecBase with ScalaCheckDrivenPropertyChecks 
                 createMessageMovement(22, MessageType.ArrivalRejection, localDateTime.minusSeconds(10))
               )
 
-            MessageTypeUtils.currentArrivalStatus(movementMessages) mustBe ArrivalStatus.GoodsReleased
+            MessageTypeUtils.status(movementMessages) mustBe ArrivalStatus.GoodsReleased
           }
         }
       }
     }
   }
 
-  "previousStatus" - {
-    "when there is only the message from the user" - {
-
-      "must return messageType" in {
-        val localDateTime: LocalDateTime = LocalDateTime.now()
-
-        val movementMessages =
-          List(
-            createMessageMovement(22, MessageType.ArrivalNotification, localDateTime.minusSeconds(10))
-          )
-
-        val currentStatus = MessageTypeUtils.currentArrivalStatus(movementMessages)
-        MessageTypeUtils.previousArrivalStatus(movementMessages, currentStatus) mustBe ArrivalStatus.ArrivalSubmitted
-      }
-    }
-
-    "when there are responses from NCTS for the arrival" - {
-      "when there is a single response from NCTS" - {
-        "must return the messageType for the latest NCTS message" in {
-
-          val localDateTime: LocalDateTime = LocalDateTime.now()
-
-          val movementMessages =
-            List(
-              createMessageMovement(22, MessageType.ArrivalNotification, localDateTime.minusSeconds(10)),
-              createMessageMovement(22, MessageType.UnloadingPermission, localDateTime)
-            )
-
-          val currentStatus = MessageTypeUtils.currentArrivalStatus(movementMessages)
-          MessageTypeUtils.previousArrivalStatus(movementMessages, currentStatus) mustBe ArrivalStatus.ArrivalSubmitted
-        }
-      }
-
-      "when there are multiple responses from NCTS" - {
-
-        "when messages are well ordered" - {
-          "must return the messageType for the second latest NCTS message" in {
-
-            val localDateTime: LocalDateTime = LocalDateTime.now()
-
-            val movementMessages =
-              List(
-                createMessageMovement(22, MessageType.ArrivalNotification, localDateTime.minusSeconds(20)),
-                createMessageMovement(22, MessageType.GoodsReleased, localDateTime.minusSeconds(10)),
-                createMessageMovement(22, MessageType.ArrivalRejection, localDateTime)
-              )
-
-            val currentStatus = MessageTypeUtils.currentArrivalStatus(movementMessages)
-            MessageTypeUtils.previousArrivalStatus(movementMessages, currentStatus) mustBe ArrivalStatus.GoodsReleased
-          }
-        }
-
-        "when messages are not well ordered" - {
-          "must return the messageType for the message with the second latest dateTime" - {
-
-            "Scenario 1" in {
-
-              val localDateTime: LocalDateTime = LocalDateTime.now()
-
-              val movementMessages =
-                List(
-                  createMessageMovement(22, MessageType.ArrivalNotification, localDateTime.minusSeconds(20)),
-                  createMessageMovement(22, MessageType.ArrivalRejection, localDateTime.minusSeconds(15)),
-                  createMessageMovement(22, MessageType.GoodsReleased, localDateTime),
-                  createMessageMovement(22, MessageType.ArrivalNotification, localDateTime.minusSeconds(10))
-                )
-
-              val currentStatus = MessageTypeUtils.currentArrivalStatus(movementMessages)
-              MessageTypeUtils.previousArrivalStatus(movementMessages, currentStatus) mustBe ArrivalStatus.ArrivalSubmitted
-            }
-
-            "Scenario 2" in {
-
-              val localDateTime: LocalDateTime = LocalDateTime.now()
-
-              val movementMessages =
-                List(
-                  createMessageMovement(22, MessageType.ArrivalNotification, localDateTime.minusDays(3)),
-                  createMessageMovement(22, MessageType.UnloadingPermission, localDateTime.minusDays(2)),
-                  createMessageMovement(22, MessageType.UnloadingRemarks, localDateTime.minusDays(4))
-                )
-
-              MessageTypeUtils.currentArrivalStatus(movementMessages) mustBe ArrivalStatus.UnloadingPermission
-
-              val currentStatus = MessageTypeUtils.currentArrivalStatus(movementMessages)
-              MessageTypeUtils.previousArrivalStatus(movementMessages, currentStatus) mustBe ArrivalStatus.ArrivalSubmitted
-            }
-
-            "Scenario 3" in {
-
-              val localDateTime: LocalDateTime = LocalDateTime.now()
-
-              val movementMessages =
-                List(
-                  createMessageMovement(22, MessageType.GoodsReleased, localDateTime),
-                  createMessageMovement(22, MessageType.ArrivalNotification, localDateTime.minusWeeks(2))
-                )
-
-              val currentStatus = MessageTypeUtils.currentArrivalStatus(movementMessages)
-              MessageTypeUtils.previousArrivalStatus(movementMessages, currentStatus) mustBe ArrivalStatus.ArrivalSubmitted
-            }
-          }
-        }
-      }
-    }
-
-    "when currentStatus is XMLSubmissionNegativeAcknowledgement" - {
-
-      "must not weight previous messages when messageType is ArrivalNotificationSubmitted" in {
-
-        val localDateTime: LocalDateTime = LocalDateTime.now()
-
-        val movementMessages =
-          List(
-            createMessageMovement(22, MessageType.ArrivalNotification, localDateTime.minusSeconds(20)),
-            createMessageMovement(22, MessageType.XMLSubmissionNegativeAcknowledgement, localDateTime.minusSeconds(20))
-          )
-
-        val currentStatus = MessageTypeUtils.currentArrivalStatus(movementMessages)
-        currentStatus mustBe ArrivalStatus.XMLSubmissionNegativeAcknowledgement
-        MessageTypeUtils.previousArrivalStatus(movementMessages, currentStatus) mustBe ArrivalStatus.ArrivalSubmitted
-      }
-
-      "must not weight previous messages when messageType is UnloadingRemarksSubmitted" in {
-
-        val localDateTime: LocalDateTime = LocalDateTime.now()
-
-        val movementMessages =
-          List(
-            createMessageMovement(22, MessageType.UnloadingRemarks, localDateTime.minusSeconds(20)),
-            createMessageMovement(22, MessageType.XMLSubmissionNegativeAcknowledgement, localDateTime.minusSeconds(20))
-          )
-
-        val currentStatus = MessageTypeUtils.currentArrivalStatus(movementMessages)
-        currentStatus mustBe ArrivalStatus.XMLSubmissionNegativeAcknowledgement
-        MessageTypeUtils.previousArrivalStatus(movementMessages, currentStatus) mustBe ArrivalStatus.UnloadingRemarksSubmitted
-      }
-    }
+  "status" - {
+//    "when there is a single response from NCTS" - {
+//      "when current status is XMLSubmissionNegativeAcknowledgement and previous stats is Arrival Submitted status should be ArrivalSubmittedNegativeAcknowledgement" in {
+//        val localDateTime: LocalDateTime = LocalDateTime.now()
+//
+//        val movementMessages =
+//          List(
+//            createMessageMovement(22, MessageType.ArrivalNotification, localDateTime.minusSeconds(10)),
+//            createMessageMovement(22, MessageType.XMLSubmissionNegativeAcknowledgement, localDateTime)
+//          )
+//
+//        MessageTypeUtils.status(movementMessages) mustBe ArrivalStatus.ArrivalSubmittedNegativeAcknowledgement
+//      }
+//    }
   }
 
   def createMessageMovement(messageId: Int, messageType: MessageType, localDateTime: LocalDateTime): MovementMessage =
