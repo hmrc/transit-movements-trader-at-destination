@@ -25,8 +25,10 @@ import java.time.LocalDateTime
 object MessageTypeUtils {
 
   def status(messagesList: List[MessageTypeWithTime]): ArrivalStatus = {
-    val current = latestMessageType(messagesList)
-    if (current == MessageType.XMLSubmissionNegativeAcknowledgement && messagesList.length > 1) {
+    implicit val localDateOrdering: Ordering[LocalDateTime] = _ compareTo _
+    val orderedMessages                                     = messagesList.sortBy(_.dateTime)
+    val current                                             = latestMessageType(orderedMessages)
+    if (current == MessageType.XMLSubmissionNegativeAcknowledgement && orderedMessages.length > 1) {
       val messageListWithOutCurrent = messagesList.filterNot(_.messageType == current)
       if (messageListWithOutCurrent.nonEmpty) {
 
@@ -45,38 +47,39 @@ object MessageTypeUtils {
 
   }
 
-  private def latestMessageType(messagesList: List[MessageTypeWithTime]): MessageType = {
-    implicit val localDateOrdering: Ordering[LocalDateTime] = _ compareTo _
+  private def latestMessageType(orderedMessages: List[MessageTypeWithTime]): MessageType = {
 
-    val latestMessage            = messagesList.maxBy(_.dateTime)
-    val messagesWithSameDateTime = messagesList.filter(_.dateTime == latestMessage.dateTime)
+    val latestMessage            = orderedMessages.last
+    val messagesWithSameDateTime = orderedMessages.filter(_.dateTime == latestMessage.dateTime)
 
     if (messagesWithSameDateTime.size == 1) {
       latestMessage.messageType
     } else {
       messagesWithSameDateTime.map(_.messageType).max match {
         case MessageType.ArrivalRejection =>
-          if (messagesList.count(_.messageType == MessageType.ArrivalNotification) > messagesList.count(_.messageType == MessageType.ArrivalRejection)) {
+          if (orderedMessages.count(_.messageType == MessageType.ArrivalNotification) > orderedMessages.count(_.messageType == MessageType.ArrivalRejection)) {
             MessageType.ArrivalNotification
           } else {
             MessageType.ArrivalRejection
           }
         case MessageType.UnloadingRemarksRejection =>
-          if (messagesList.count(_.messageType == MessageType.UnloadingRemarks) > messagesList.count(_.messageType == MessageType.UnloadingRemarksRejection)) {
+          if (orderedMessages.count(_.messageType == MessageType.UnloadingRemarks) > orderedMessages.count(
+                _.messageType == MessageType.UnloadingRemarksRejection)) {
             MessageType.UnloadingRemarks
           } else {
             MessageType.UnloadingRemarksRejection
           }
-        case MessageType.XMLSubmissionNegativeAcknowledgement if messagesList.count(_.messageType == MessageType.UnloadingRemarks) >= 1 =>
-          if (messagesList
-                .count(_.messageType == MessageType.UnloadingRemarks) > messagesList.count(_.messageType == MessageType.XMLSubmissionNegativeAcknowledgement)) {
+        case MessageType.XMLSubmissionNegativeAcknowledgement if orderedMessages.count(_.messageType == MessageType.UnloadingRemarks) >= 1 =>
+          if (orderedMessages
+                .count(_.messageType == MessageType.UnloadingRemarks) > orderedMessages.count(
+                _.messageType == MessageType.XMLSubmissionNegativeAcknowledgement)) {
             MessageType.UnloadingRemarks
           } else {
             MessageType.XMLSubmissionNegativeAcknowledgement
           }
         case MessageType.XMLSubmissionNegativeAcknowledgement =>
-          if (messagesList
-                .count(_.messageType == MessageType.ArrivalNotification) > messagesList.count(
+          if (orderedMessages
+                .count(_.messageType == MessageType.ArrivalNotification) > orderedMessages.count(
                 _.messageType == MessageType.XMLSubmissionNegativeAcknowledgement)) {
             MessageType.ArrivalNotification
           } else {
