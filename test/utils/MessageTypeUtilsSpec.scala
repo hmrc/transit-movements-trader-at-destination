@@ -31,32 +31,40 @@ import scala.xml.NodeSeq
 class MessageTypeUtilsSpec extends SpecBase with ScalaCheckDrivenPropertyChecks with ModelGenerators {
 
   "toArrivalStatus" - {
-    "ArrivalNotification must convert to ArrivalSubmitted" - {
-      MessageTypeUtils.toArrivalStatus(MessageType.ArrivalNotification) mustBe ArrivalStatus.ArrivalSubmitted
+    "ArrivalNotification must convert to ArrivalSubmitted" in {
+      MessageTypeUtils.toArrivalStatus(MessageType.ArrivalNotification, false) mustBe ArrivalStatus.ArrivalSubmitted
     }
 
-    "ArrivalRejection must convert to ArrivalRejected" - {
-      MessageTypeUtils.toArrivalStatus(MessageType.ArrivalRejection) mustBe ArrivalStatus.ArrivalRejected
+    "ArrivalNotification must convert to ArrivalSubmittedNegativeAcknowledgement when failed" in {
+      MessageTypeUtils.toArrivalStatus(MessageType.ArrivalNotification, true) mustBe ArrivalStatus.ArrivalSubmittedNegativeAcknowledgement
     }
 
-    "UnloadingPermission must convert to UnloadingPermission" - {
-      MessageTypeUtils.toArrivalStatus(MessageType.UnloadingPermission) mustBe ArrivalStatus.UnloadingPermission
+    "ArrivalRejection must convert to ArrivalRejected" in {
+      MessageTypeUtils.toArrivalStatus(MessageType.ArrivalRejection, false) mustBe ArrivalStatus.ArrivalRejected
     }
 
-    "UnloadingRemarks must convert to UnloadingRemarksSubmitted" - {
-      MessageTypeUtils.toArrivalStatus(MessageType.UnloadingRemarks) mustBe ArrivalStatus.UnloadingRemarksSubmitted
+    "UnloadingPermission must convert to UnloadingPermission" in {
+      MessageTypeUtils.toArrivalStatus(MessageType.UnloadingPermission, false) mustBe ArrivalStatus.UnloadingPermission
     }
 
-    "UnloadingRemarksRejection must convert to UnloadingRemarksRejected" - {
-      MessageTypeUtils.toArrivalStatus(MessageType.UnloadingRemarksRejection) mustBe ArrivalStatus.UnloadingRemarksRejected
+    "UnloadingRemarks must convert to UnloadingRemarksSubmitted" in {
+      MessageTypeUtils.toArrivalStatus(MessageType.UnloadingRemarks, false) mustBe ArrivalStatus.UnloadingRemarksSubmitted
     }
 
-    "GoodsReleased must convert to GoodsReleased" - {
-      MessageTypeUtils.toArrivalStatus(MessageType.GoodsReleased) mustBe ArrivalStatus.GoodsReleased
+    "UnloadingRemarks must convert to UnloadingRemarksSubmittedNegativeAcknowledgement when failed" in {
+      MessageTypeUtils.toArrivalStatus(MessageType.UnloadingRemarks, true) mustBe ArrivalStatus.UnloadingRemarksSubmittedNegativeAcknowledgement
     }
 
-    "XMLSubmissionNegativeAcknowledgement must convert to XMLSubmissionNegativeAcknowledgement" - {
-      MessageTypeUtils.toArrivalStatus(MessageType.XMLSubmissionNegativeAcknowledgement) mustBe ArrivalStatus.XMLSubmissionNegativeAcknowledgement
+    "UnloadingRemarksRejection must convert to UnloadingRemarksRejected" in {
+      MessageTypeUtils.toArrivalStatus(MessageType.UnloadingRemarksRejection, false) mustBe ArrivalStatus.UnloadingRemarksRejected
+    }
+
+    "GoodsReleased must convert to GoodsReleased" in {
+      MessageTypeUtils.toArrivalStatus(MessageType.GoodsReleased, false) mustBe ArrivalStatus.GoodsReleased
+    }
+
+    "XMLSubmissionNegativeAcknowledgement must convert to XMLSubmissionNegativeAcknowledgement" in {
+      MessageTypeUtils.toArrivalStatus(MessageType.XMLSubmissionNegativeAcknowledgement, false) mustBe ArrivalStatus.XMLSubmissionNegativeAcknowledgement
     }
   }
 

@@ -28,16 +28,26 @@ object MessageTypeUtils {
     implicit val localDateOrdering: Ordering[LocalDateTime] = _ compareTo _
     val orderedMessages                                     = messagesList.sortBy(_.dateTime)
     val current                                             = latestMessageType(orderedMessages)
-    val messageListWithOutCurrent                           = messagesList.filterNot(_.messageType == current)
-    if (current == MessageType.XMLSubmissionNegativeAcknowledgement && orderedMessages.length > 1 && messageListWithOutCurrent.nonEmpty) {
 
+    if (current == MessageType.XMLSubmissionNegativeAcknowledgement && orderedMessages.length > 1) {
+      val previous = previousMessageType(current, orderedMessages)
+      toArrivalStatus(previous, true)
+    } else {
+      toArrivalStatus(current, false)
+    }
+  }
+
+  private def previousMessageType(current: MessageType, orderedMessages: List[MessageTypeWithTime]): MessageType = {
+
+    val messageListWithOutCurrent = orderedMessages.filterNot(_.messageType == current)
+    if (messageListWithOutCurrent.nonEmpty) {
       latestMessageType(messageListWithOutCurrent) match {
-        case MessageType.UnloadingRemarks    => ArrivalStatus.UnloadingRemarksSubmittedNegativeAcknowledgement
-        case MessageType.ArrivalNotification => ArrivalStatus.ArrivalSubmittedNegativeAcknowledgement
-        case _                               => toArrivalStatus(current)
+        case MessageType.UnloadingRemarks    => MessageType.UnloadingRemarks
+        case MessageType.ArrivalNotification => MessageType.ArrivalNotification
+        case _                               => current
       }
     } else {
-      toArrivalStatus(current)
+      current
     }
   }
 
@@ -65,8 +75,7 @@ object MessageTypeUtils {
           }
         case MessageType.XMLSubmissionNegativeAcknowledgement if orderedMessages.count(_.messageType == MessageType.UnloadingRemarks) >= 1 =>
           if (orderedMessages
-                .count(_.messageType == MessageType.UnloadingRemarks) > orderedMessages.count(
-                _.messageType == MessageType.XMLSubmissionNegativeAcknowledgement)) {
+                .count(_.messageType == MessageType.UnloadingRemarks) > orderedMessages.count(_.messageType == MessageType.XMLSubmissionNegativeAcknowledgement)) {
             MessageType.UnloadingRemarks
           } else {
             MessageType.XMLSubmissionNegativeAcknowledgement
@@ -74,7 +83,8 @@ object MessageTypeUtils {
         case MessageType.XMLSubmissionNegativeAcknowledgement =>
           if (orderedMessages
                 .count(_.messageType == MessageType.ArrivalNotification) > orderedMessages.count(
-                _.messageType == MessageType.XMLSubmissionNegativeAcknowledgement)) {
+                _.messageType == MessageType.XMLSubmissionNegativeAcknowledgement
+              )) {
             MessageType.ArrivalNotification
           } else {
             MessageType.XMLSubmissionNegativeAcknowledgement
@@ -84,14 +94,16 @@ object MessageTypeUtils {
     }
   }
 
-  def toArrivalStatus(messageType: MessageType): ArrivalStatus =
+  def toArrivalStatus(messageType: MessageType, isNegativeAcknowledgement: Boolean): ArrivalStatus =
     messageType match {
-      case MessageType.ArrivalNotification                  => ArrivalStatus.ArrivalSubmitted
-      case MessageType.ArrivalRejection                     => ArrivalStatus.ArrivalRejected
-      case MessageType.UnloadingPermission                  => ArrivalStatus.UnloadingPermission
-      case MessageType.UnloadingRemarks                     => ArrivalStatus.UnloadingRemarksSubmitted
-      case MessageType.UnloadingRemarksRejection            => ArrivalStatus.UnloadingRemarksRejected
-      case MessageType.GoodsReleased                        => ArrivalStatus.GoodsReleased
-      case MessageType.XMLSubmissionNegativeAcknowledgement => ArrivalStatus.XMLSubmissionNegativeAcknowledgement
+      case MessageType.ArrivalNotification if isNegativeAcknowledgement => ArrivalStatus.ArrivalSubmittedNegativeAcknowledgement
+      case MessageType.ArrivalNotification                              => ArrivalStatus.ArrivalSubmitted
+      case MessageType.ArrivalRejection                                 => ArrivalStatus.ArrivalRejected
+      case MessageType.UnloadingPermission                              => ArrivalStatus.UnloadingPermission
+      case MessageType.UnloadingRemarks if isNegativeAcknowledgement    => ArrivalStatus.UnloadingRemarksSubmittedNegativeAcknowledgement
+      case MessageType.UnloadingRemarks                                 => ArrivalStatus.UnloadingRemarksSubmitted
+      case MessageType.UnloadingRemarksRejection                        => ArrivalStatus.UnloadingRemarksRejected
+      case MessageType.GoodsReleased                                    => ArrivalStatus.GoodsReleased
+      case MessageType.XMLSubmissionNegativeAcknowledgement             => ArrivalStatus.XMLSubmissionNegativeAcknowledgement
     }
 }
