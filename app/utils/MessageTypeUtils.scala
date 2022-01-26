@@ -28,23 +28,17 @@ object MessageTypeUtils {
     implicit val localDateOrdering: Ordering[LocalDateTime] = _ compareTo _
     val orderedMessages                                     = messagesList.sortBy(_.dateTime)
     val current                                             = latestMessageType(orderedMessages)
-    if (current == MessageType.XMLSubmissionNegativeAcknowledgement && orderedMessages.length > 1) {
-      val messageListWithOutCurrent = messagesList.filterNot(_.messageType == current)
-      if (messageListWithOutCurrent.nonEmpty) {
+    val messageListWithOutCurrent                           = messagesList.filterNot(_.messageType == current)
+    if (current == MessageType.XMLSubmissionNegativeAcknowledgement && orderedMessages.length > 1 && messageListWithOutCurrent.nonEmpty) {
 
-        val previous = latestMessageType(messageListWithOutCurrent)
-        previous match {
-          case MessageType.UnloadingRemarks    => ArrivalStatus.UnloadingRemarksSubmittedNegativeAcknowledgement
-          case MessageType.ArrivalNotification => ArrivalStatus.ArrivalSubmittedNegativeAcknowledgement
-          case _                               => toArrivalStatus(current)
-        }
-      } else {
-        toArrivalStatus(current)
+      latestMessageType(messageListWithOutCurrent) match {
+        case MessageType.UnloadingRemarks    => ArrivalStatus.UnloadingRemarksSubmittedNegativeAcknowledgement
+        case MessageType.ArrivalNotification => ArrivalStatus.ArrivalSubmittedNegativeAcknowledgement
+        case _                               => toArrivalStatus(current)
       }
     } else {
       toArrivalStatus(current)
     }
-
   }
 
   private def latestMessageType(orderedMessages: List[MessageTypeWithTime]): MessageType = {
