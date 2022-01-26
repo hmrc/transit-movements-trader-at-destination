@@ -28,9 +28,9 @@ import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import play.api.libs.json.OWrites
 import play.api.libs.json.Reads
-import java.time.LocalDateTime
-
 import utils.MessageTypeUtils
+
+import java.time.LocalDateTime
 
 case class ResponseArrival(
   arrivalId: ArrivalId,
@@ -40,8 +40,7 @@ case class ResponseArrival(
   status: ArrivalStatus,
   previousStatus: ArrivalStatus,
   created: LocalDateTime,
-  updated: LocalDateTime,
-  messagesMetaData: Seq[MessageMetaData]
+  updated: LocalDateTime
 )
 
 object ResponseArrival {
@@ -55,8 +54,7 @@ object ResponseArrival {
       arrival.currentStatus,
       arrival.previousStatus,
       arrival.created,
-      updated = arrival.lastUpdated,
-      arrival.messages.map(x => MessageMetaData(x.messageType, x.dateTime)).toList
+      updated = arrival.lastUpdated
     )
 
   def build(arrivalWithoutMessages: ArrivalWithoutMessages): ResponseArrival =
@@ -68,8 +66,7 @@ object ResponseArrival {
       arrivalWithoutMessages.currentStatus,
       arrivalWithoutMessages.previousStatus,
       arrivalWithoutMessages.created,
-      updated = arrivalWithoutMessages.lastUpdated,
-      arrivalWithoutMessages.messagesMetaData
+      updated = arrivalWithoutMessages.lastUpdated
     )
 
   val projection: JsObject = Json.obj(
@@ -100,8 +97,7 @@ object ResponseArrival {
           currentStatus,
           previousStatus,
           created,
-          updated,
-          latestMessage
+          updated
         )
     }
 
