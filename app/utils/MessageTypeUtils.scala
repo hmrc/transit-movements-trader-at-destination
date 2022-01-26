@@ -30,24 +30,23 @@ object MessageTypeUtils {
     val current                                             = latestMessageType(orderedMessages)
 
     if (current == MessageType.XMLSubmissionNegativeAcknowledgement && orderedMessages.length > 1) {
-      val previous = previousMessageType(current, orderedMessages)
-      toArrivalStatus(previous, true)
+      previousArrivalStatusIfNegativeAck(current, orderedMessages)
     } else {
-      toArrivalStatus(current, false)
+      toArrivalStatus(current)
     }
   }
 
-  private def previousMessageType(current: MessageType, orderedMessages: List[MessageTypeWithTime]): MessageType = {
+  private def previousArrivalStatusIfNegativeAck(current: MessageType, orderedMessages: List[MessageTypeWithTime]): ArrivalStatus = {
 
     val messageListWithOutCurrent = orderedMessages.filterNot(_.messageType == current)
     if (messageListWithOutCurrent.nonEmpty) {
       latestMessageType(messageListWithOutCurrent) match {
-        case MessageType.UnloadingRemarks    => MessageType.UnloadingRemarks
-        case MessageType.ArrivalNotification => MessageType.ArrivalNotification
-        case _                               => current
+        case MessageType.UnloadingRemarks    => ArrivalStatus.UnloadingRemarksSubmittedNegativeAcknowledgement
+        case MessageType.ArrivalNotification => ArrivalStatus.ArrivalSubmittedNegativeAcknowledgement
+        case _                               => toArrivalStatus(current)
       }
     } else {
-      current
+      toArrivalStatus(current)
     }
   }
 
@@ -94,16 +93,14 @@ object MessageTypeUtils {
     }
   }
 
-  def toArrivalStatus(messageType: MessageType, isNegativeAcknowledgement: Boolean): ArrivalStatus =
+  def toArrivalStatus(messageType: MessageType): ArrivalStatus =
     messageType match {
-      case MessageType.ArrivalNotification if isNegativeAcknowledgement => ArrivalStatus.ArrivalSubmittedNegativeAcknowledgement
-      case MessageType.ArrivalNotification                              => ArrivalStatus.ArrivalSubmitted
-      case MessageType.ArrivalRejection                                 => ArrivalStatus.ArrivalRejected
-      case MessageType.UnloadingPermission                              => ArrivalStatus.UnloadingPermission
-      case MessageType.UnloadingRemarks if isNegativeAcknowledgement    => ArrivalStatus.UnloadingRemarksSubmittedNegativeAcknowledgement
-      case MessageType.UnloadingRemarks                                 => ArrivalStatus.UnloadingRemarksSubmitted
-      case MessageType.UnloadingRemarksRejection                        => ArrivalStatus.UnloadingRemarksRejected
-      case MessageType.GoodsReleased                                    => ArrivalStatus.GoodsReleased
-      case MessageType.XMLSubmissionNegativeAcknowledgement             => ArrivalStatus.XMLSubmissionNegativeAcknowledgement
+      case MessageType.ArrivalNotification                  => ArrivalStatus.ArrivalSubmitted
+      case MessageType.ArrivalRejection                     => ArrivalStatus.ArrivalRejected
+      case MessageType.UnloadingPermission                  => ArrivalStatus.UnloadingPermission
+      case MessageType.UnloadingRemarks                     => ArrivalStatus.UnloadingRemarksSubmitted
+      case MessageType.UnloadingRemarksRejection            => ArrivalStatus.UnloadingRemarksRejected
+      case MessageType.GoodsReleased                        => ArrivalStatus.GoodsReleased
+      case MessageType.XMLSubmissionNegativeAcknowledgement => ArrivalStatus.XMLSubmissionNegativeAcknowledgement
     }
 }
