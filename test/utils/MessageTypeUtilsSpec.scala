@@ -199,7 +199,7 @@ class MessageTypeUtilsSpec extends SpecBase with ScalaCheckDrivenPropertyChecks 
                   createMessageMovement(22, MessageType.XMLSubmissionNegativeAcknowledgement, localDateTime),
                 )
 
-              MessageTypeUtils.status(movementMessages) mustBe ArrivalStatus.NoValidStatus
+              MessageTypeUtils.status(movementMessages) mustBe ArrivalStatus.NoStatusFound
             }
 
             "and there are previous unloading remarks" - {
@@ -274,7 +274,7 @@ class MessageTypeUtilsSpec extends SpecBase with ScalaCheckDrivenPropertyChecks 
                     createMessageMovement(22, MessageType.XMLSubmissionNegativeAcknowledgement, localDateTime)
                   )
 
-                MessageTypeUtils.status(movementMessages) mustBe ArrivalStatus.NoValidStatus
+                MessageTypeUtils.status(movementMessages) mustBe ArrivalStatus.NoStatusFound
               }
             }
 

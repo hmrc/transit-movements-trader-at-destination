@@ -48,7 +48,7 @@ object MessageTypeUtils {
           case _                                     => latestArrivalStatus(messageListWithoutNegAck)
         }
       }
-      case None => ArrivalStatus.NoValidStatus
+      case None => ArrivalStatus.NoStatusFound
     }
 
   private def latestMessageTypeIfAny(orderedMessages: List[MessageTypeWithTime]): Option[MessageType] =
