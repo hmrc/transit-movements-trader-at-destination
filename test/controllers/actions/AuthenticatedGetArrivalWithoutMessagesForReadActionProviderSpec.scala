@@ -16,6 +16,7 @@
 
 package controllers.actions
 
+import audit.AuditService
 import generators.ModelGenerators
 import migrations.MigrationRunner
 import migrations.MigrationRunnerImpl
@@ -23,7 +24,10 @@ import models.ChannelType.web
 import models.ChannelType.api
 import models.ArrivalId
 import models.ArrivalWithoutMessages
+import models.request.AuthenticatedRequest
 import org.mockito.ArgumentMatchers.{eq => eqTo, _}
+import org.mockito.Mockito.times
+import org.mockito.Mockito.verify
 import org.mockito.Mockito.when
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.OptionValues
@@ -152,12 +156,13 @@ class AuthenticatedGetArrivalWithoutMessagesForReadActionProviderSpec
         }
       }
 
-      "must return Not Found when the arrival does not exist" in {
+      "must return Not Found and audit when the arrival does not exist" in {
 
         val arrivalId = arbitrary[ArrivalId].sample.value
 
         val mockAuthConnector: AuthConnector = mock[AuthConnector]
         val mockArrivalMovementRepository    = mock[ArrivalMovementRepository]
+        val mockAuditService: AuditService   = mock[AuditService]
 
         when(mockAuthConnector.authorise[Enrolments](any(), any())(any(), any()))
           .thenReturn(Future.successful(validEnrolments))
@@ -167,7 +172,8 @@ class AuthenticatedGetArrivalWithoutMessagesForReadActionProviderSpec
           .overrides(
             bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
             bind[AuthConnector].toInstance(mockAuthConnector),
-            bind[MigrationRunner].to(classOf[MigrationRunnerImpl])
+            bind[MigrationRunner].to(classOf[MigrationRunnerImpl]),
+            bind[AuditService].toInstance(mockAuditService)
           )
           .build()
 
@@ -178,6 +184,7 @@ class AuthenticatedGetArrivalWithoutMessagesForReadActionProviderSpec
           val result     = controller.get(arrivalId)(fakeRequest)
 
           status(result) mustBe NOT_FOUND
+          verify(mockAuditService, times(1)).auditCustomerRequestedMissingMovementEvent(any[AuthenticatedRequest[_]], eqTo(arrivalId))
         }
       }
 

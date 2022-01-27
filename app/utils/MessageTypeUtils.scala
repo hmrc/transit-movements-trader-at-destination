@@ -74,7 +74,8 @@ object MessageTypeUtils {
           }
         case MessageType.XMLSubmissionNegativeAcknowledgement if orderedMessages.count(_.messageType == MessageType.UnloadingRemarks) >= 1 =>
           if (orderedMessages
-                .count(_.messageType == MessageType.UnloadingRemarks) > orderedMessages.count(_.messageType == MessageType.XMLSubmissionNegativeAcknowledgement)) {
+                .count(_.messageType == MessageType.UnloadingRemarks) > orderedMessages.count(
+                _.messageType == MessageType.XMLSubmissionNegativeAcknowledgement)) {
             MessageType.UnloadingRemarks
           } else {
             MessageType.XMLSubmissionNegativeAcknowledgement

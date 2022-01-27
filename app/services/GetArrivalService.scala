@@ -25,7 +25,6 @@ import models.ArrivalWithoutMessages
 import models.MessageResponse
 import models.MovementMessage
 import models.SubmissionState
-import models.ChannelType.deleted
 import repositories.ArrivalMovementRepository
 import uk.gov.hmrc.http.HeaderCarrier
 import javax.inject.Inject
@@ -51,12 +50,9 @@ class GetArrivalService @Inject()(repository: ArrivalMovementRepository, auditSe
   def getArrivalAndAudit(arrivalId: ArrivalId, messageResponse: MessageResponse, movementMessage: MovementMessage)(
     implicit hc: HeaderCarrier): EitherT[Future, SubmissionState, ArrivalWithoutMessages] =
     EitherT(
-      getArrivalWithoutMessagesById(arrivalId).map {
-        _.left.map {
-          submissionState =>
-            auditService.auditNCTSMessages(deleted, "deleted", messageResponse, movementMessage)
-            submissionState
-        }
-      }
-    )
+      getArrivalWithoutMessagesById(arrivalId)
+    ).leftSemiflatTap {
+      _ =>
+        Future.successful(auditService.auditNCTSRequestedMissingMovementEvent(arrivalId, messageResponse, movementMessage))
+    }
 }

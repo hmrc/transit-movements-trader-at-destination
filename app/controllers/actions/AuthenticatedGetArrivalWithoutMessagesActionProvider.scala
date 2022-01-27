@@ -30,18 +30,21 @@ import repositories.ArrivalMovementRepository
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import audit.AuditService
 
 private[actions] class AuthenticatedGetArrivalWithoutMessagesActionProvider @Inject()(
-  repository: ArrivalMovementRepository
+  repository: ArrivalMovementRepository,
+  auditService: AuditService
 )(implicit ec: ExecutionContext) {
 
   def apply(arrivalId: ArrivalId): ActionRefiner[AuthenticatedRequest, ArrivalWithoutMessagesRequest] =
-    new AuthenticatedGetArrivalWithoutMessagesAction(arrivalId, repository)
+    new AuthenticatedGetArrivalWithoutMessagesAction(arrivalId, repository, auditService)
 }
 
 private[actions] class AuthenticatedGetArrivalWithoutMessagesAction(
   arrivalId: ArrivalId,
-  repository: ArrivalMovementRepository
+  repository: ArrivalMovementRepository,
+  auditService: AuditService
 )(implicit val executionContext: ExecutionContext)
     extends ActionRefiner[AuthenticatedRequest, ArrivalWithoutMessagesRequest]
     with Logging {
@@ -61,6 +64,7 @@ private[actions] class AuthenticatedGetArrivalWithoutMessagesAction(
               logger.warn("Attempt to retrieve an arrival for another EORI")
               Left(NotFound)
             case None =>
+              auditService.auditCustomerRequestedMissingMovementEvent(request, arrivalId)
               Left(NotFound)
           }
           .recover {

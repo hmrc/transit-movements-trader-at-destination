@@ -712,8 +712,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
                 arrivalMovement1.movementReferenceNumber,
                 arrivalMovement1.status,
                 arrivalMovement1.created,
-                arrivalMovement1.lastUpdated,
-                arrivalMovement1.messages.map(x => MessageMetaData(x.messageType, x.dateTime)).toList
+                arrivalMovement1.lastUpdated
               )
             ),
             1,
@@ -730,8 +729,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
                 arrivalMovement3.movementReferenceNumber,
                 arrivalMovement3.status,
                 arrivalMovement3.created,
-                arrivalMovement3.lastUpdated,
-                arrivalMovement3.messages.map(x => MessageMetaData(x.messageType, x.dateTime)).toList
+                arrivalMovement3.lastUpdated
               )
             ),
             1,
@@ -773,8 +771,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
                 arrivalMovement1.movementReferenceNumber,
                 arrivalMovement1.status,
                 arrivalMovement1.created,
-                arrivalMovement1.lastUpdated,
-                arrivalMovement1.messages.map(x => MessageMetaData(x.messageType, x.dateTime)).toList
+                arrivalMovement1.lastUpdated
               )
             )
             ,
@@ -794,8 +791,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
                 arrivalMovement3.movementReferenceNumber,
                 arrivalMovement3.status,
                 arrivalMovement3.created,
-                arrivalMovement3.lastUpdated,
-                arrivalMovement3.messages.map(x => MessageMetaData(x.messageType, x.dateTime)).toList
+                arrivalMovement3.lastUpdated
               )
             ),
             1,
@@ -839,8 +835,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
                 arrivalMovement1.movementReferenceNumber,
                 arrivalMovement1.status,
                 arrivalMovement1.created,
-                arrivalMovement1.lastUpdated,
-                arrivalMovement1.messages.map(x => MessageMetaData(x.messageType, x.dateTime)).toList
+                arrivalMovement1.lastUpdated
               )
             ),
             1,
@@ -857,8 +852,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
                 arrivalMovement3.movementReferenceNumber,
                 arrivalMovement3.status,
                 arrivalMovement3.created,
-                arrivalMovement3.lastUpdated,
-                arrivalMovement3.messages.map(x => MessageMetaData(x.messageType, x.dateTime)).toList
+                arrivalMovement3.lastUpdated
               )
             ),
             1,
