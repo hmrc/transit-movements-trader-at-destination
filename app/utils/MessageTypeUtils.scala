@@ -32,7 +32,7 @@ object MessageTypeUtils {
   }
 
   @tailrec
-  def latestArrivalStatus(orderedMessages: List[MessageTypeWithTime]): ArrivalStatus =
+  private def latestArrivalStatus(orderedMessages: List[MessageTypeWithTime]): ArrivalStatus =
     latestMessageTypeIfAny(orderedMessages) match {
       case Some(MessageType.ArrivalNotification)       => ArrivalStatus.ArrivalSubmitted
       case Some(MessageType.ArrivalRejection)          => ArrivalStatus.ArrivalRejected
@@ -52,7 +52,7 @@ object MessageTypeUtils {
     }
 
   private def latestMessageTypeIfAny(orderedMessages: List[MessageTypeWithTime]): Option[MessageType] =
-    Option(orderedMessages).filter(_.nonEmpty).map(latestMessageType(_))
+    if (orderedMessages.isEmpty) None else Some(latestMessageType(orderedMessages))
 
   private def latestMessageType(orderedMessages: List[MessageTypeWithTime]): MessageType = {
     val latestMessage            = orderedMessages.last
