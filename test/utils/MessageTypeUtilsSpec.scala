@@ -30,36 +30,6 @@ import scala.xml.NodeSeq
 
 class MessageTypeUtilsSpec extends SpecBase with ScalaCheckDrivenPropertyChecks with ModelGenerators {
 
-  "toArrivalStatus" - {
-    "ArrivalNotification must convert to ArrivalSubmitted" in {
-      MessageTypeUtils.toArrivalStatus(MessageType.ArrivalNotification) mustBe ArrivalStatus.ArrivalSubmitted
-    }
-
-    "ArrivalRejection must convert to ArrivalRejected" in {
-      MessageTypeUtils.toArrivalStatus(MessageType.ArrivalRejection) mustBe ArrivalStatus.ArrivalRejected
-    }
-
-    "UnloadingPermission must convert to UnloadingPermission" in {
-      MessageTypeUtils.toArrivalStatus(MessageType.UnloadingPermission) mustBe ArrivalStatus.UnloadingPermission
-    }
-
-    "UnloadingRemarks must convert to UnloadingRemarksSubmitted" in {
-      MessageTypeUtils.toArrivalStatus(MessageType.UnloadingRemarks) mustBe ArrivalStatus.UnloadingRemarksSubmitted
-    }
-
-    "UnloadingRemarksRejection must convert to UnloadingRemarksRejected" in {
-      MessageTypeUtils.toArrivalStatus(MessageType.UnloadingRemarksRejection) mustBe ArrivalStatus.UnloadingRemarksRejected
-    }
-
-    "GoodsReleased must convert to GoodsReleased" in {
-      MessageTypeUtils.toArrivalStatus(MessageType.GoodsReleased) mustBe ArrivalStatus.GoodsReleased
-    }
-
-    "XMLSubmissionNegativeAcknowledgement must convert to XMLSubmissionNegativeAcknowledgement" in {
-      MessageTypeUtils.toArrivalStatus(MessageType.XMLSubmissionNegativeAcknowledgement) mustBe ArrivalStatus.XMLSubmissionNegativeAcknowledgement
-    }
-  }
-
   "status" - {
     "when there is only the message from the user" - {
 
@@ -220,7 +190,7 @@ class MessageTypeUtilsSpec extends SpecBase with ScalaCheckDrivenPropertyChecks 
 
           "and the current weighted message is XMLSubmissionNegativeAcknowledgement" - {
 
-            "must return XMLSubmissionNegativeAcknowledgement when there are no previous messages" in {
+            "must return NoValidStatus when there are no previous messages" in {
 
               val localDateTime: LocalDateTime = LocalDateTime.now()
 
@@ -229,7 +199,7 @@ class MessageTypeUtilsSpec extends SpecBase with ScalaCheckDrivenPropertyChecks 
                   createMessageMovement(22, MessageType.XMLSubmissionNegativeAcknowledgement, localDateTime),
                 )
 
-              MessageTypeUtils.status(movementMessages) mustBe ArrivalStatus.XMLSubmissionNegativeAcknowledgement
+              MessageTypeUtils.status(movementMessages) mustBe ArrivalStatus.NoValidStatus
             }
 
             "and there are previous unloading remarks" - {
@@ -294,7 +264,7 @@ class MessageTypeUtilsSpec extends SpecBase with ScalaCheckDrivenPropertyChecks 
             }
             "and there are previous arrivals XMLSubmissionNegativeAcknowledgement" - {
 
-              "must return XMLSubmissionNegativeAcknowledgement when there are only XMLSubmissionNegativeAcknowledgement" in {
+              "must return NoValidStatus when there are only XMLSubmissionNegativeAcknowledgement" in {
 
                 val localDateTime: LocalDateTime = LocalDateTime.now()
 
@@ -304,7 +274,7 @@ class MessageTypeUtilsSpec extends SpecBase with ScalaCheckDrivenPropertyChecks 
                     createMessageMovement(22, MessageType.XMLSubmissionNegativeAcknowledgement, localDateTime)
                   )
 
-                MessageTypeUtils.status(movementMessages) mustBe ArrivalStatus.XMLSubmissionNegativeAcknowledgement
+                MessageTypeUtils.status(movementMessages) mustBe ArrivalStatus.NoValidStatus
               }
             }
 

@@ -19,39 +19,42 @@ package utils
 import models.ArrivalStatus
 import models.MessageType
 import models.MessageTypeWithTime
-
 import java.time.LocalDateTime
+
+import scala.annotation.tailrec
 
 object MessageTypeUtils {
 
   def status(messagesList: List[MessageTypeWithTime]): ArrivalStatus = {
     implicit val localDateOrdering: Ordering[LocalDateTime] = _ compareTo _
     val orderedMessages                                     = messagesList.sortBy(_.dateTime)
-    val current                                             = latestMessageType(orderedMessages)
-
-    if (current == MessageType.XMLSubmissionNegativeAcknowledgement && orderedMessages.length > 1) {
-      previousArrivalStatusIfNegativeAck(current, orderedMessages)
-    } else {
-      toArrivalStatus(current)
-    }
+    latestArrivalStatus(orderedMessages)
   }
 
-  private def previousArrivalStatusIfNegativeAck(current: MessageType, orderedMessages: List[MessageTypeWithTime]): ArrivalStatus = {
-
-    val messageListWithOutCurrent = orderedMessages.filterNot(_.messageType == current)
-    if (messageListWithOutCurrent.nonEmpty) {
-      latestMessageType(messageListWithOutCurrent) match {
-        case MessageType.UnloadingRemarks    => ArrivalStatus.UnloadingRemarksSubmittedNegativeAcknowledgement
-        case MessageType.ArrivalNotification => ArrivalStatus.ArrivalSubmittedNegativeAcknowledgement
-        case previous                        => toArrivalStatus(previous)
+  @tailrec
+  def latestArrivalStatus(orderedMessages: List[MessageTypeWithTime]): ArrivalStatus =
+    latestMessageTypeIfAny(orderedMessages) match {
+      case Some(MessageType.ArrivalNotification)       => ArrivalStatus.ArrivalSubmitted
+      case Some(MessageType.ArrivalRejection)          => ArrivalStatus.ArrivalRejected
+      case Some(MessageType.UnloadingPermission)       => ArrivalStatus.UnloadingPermission
+      case Some(MessageType.UnloadingRemarks)          => ArrivalStatus.UnloadingRemarksSubmitted
+      case Some(MessageType.UnloadingRemarksRejection) => ArrivalStatus.UnloadingRemarksRejected
+      case Some(MessageType.GoodsReleased)             => ArrivalStatus.GoodsReleased
+      case Some(MessageType.XMLSubmissionNegativeAcknowledgement) => {
+        val messageListWithoutNegAck = orderedMessages.filterNot(_.messageType == MessageType.XMLSubmissionNegativeAcknowledgement)
+        latestMessageTypeIfAny(messageListWithoutNegAck) match {
+          case Some(MessageType.UnloadingRemarks)    => ArrivalStatus.UnloadingRemarksSubmittedNegativeAcknowledgement
+          case Some(MessageType.ArrivalNotification) => ArrivalStatus.ArrivalSubmittedNegativeAcknowledgement
+          case _                                     => latestArrivalStatus(messageListWithoutNegAck)
+        }
       }
-    } else {
-      toArrivalStatus(current)
+      case None => ArrivalStatus.NoValidStatus
     }
-  }
+
+  private def latestMessageTypeIfAny(orderedMessages: List[MessageTypeWithTime]): Option[MessageType] =
+    Option(orderedMessages).filter(_.nonEmpty).map(latestMessageType(_))
 
   private def latestMessageType(orderedMessages: List[MessageTypeWithTime]): MessageType = {
-
     val latestMessage            = orderedMessages.last
     val messagesWithSameDateTime = orderedMessages.filter(_.dateTime == latestMessage.dateTime)
 
@@ -93,15 +96,4 @@ object MessageTypeUtils {
       }
     }
   }
-
-  def toArrivalStatus(messageType: MessageType): ArrivalStatus =
-    messageType match {
-      case MessageType.ArrivalNotification                  => ArrivalStatus.ArrivalSubmitted
-      case MessageType.ArrivalRejection                     => ArrivalStatus.ArrivalRejected
-      case MessageType.UnloadingPermission                  => ArrivalStatus.UnloadingPermission
-      case MessageType.UnloadingRemarks                     => ArrivalStatus.UnloadingRemarksSubmitted
-      case MessageType.UnloadingRemarksRejection            => ArrivalStatus.UnloadingRemarksRejected
-      case MessageType.GoodsReleased                        => ArrivalStatus.GoodsReleased
-      case MessageType.XMLSubmissionNegativeAcknowledgement => ArrivalStatus.XMLSubmissionNegativeAcknowledgement
-    }
 }
