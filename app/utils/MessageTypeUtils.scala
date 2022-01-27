@@ -43,7 +43,7 @@ object MessageTypeUtils {
       latestMessageType(messageListWithOutCurrent) match {
         case MessageType.UnloadingRemarks    => ArrivalStatus.UnloadingRemarksSubmittedNegativeAcknowledgement
         case MessageType.ArrivalNotification => ArrivalStatus.ArrivalSubmittedNegativeAcknowledgement
-        case _                               => toArrivalStatus(current)
+        case previous                        => toArrivalStatus(previous)
       }
     } else {
       toArrivalStatus(current)

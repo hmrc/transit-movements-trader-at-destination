@@ -308,19 +308,32 @@ class MessageTypeUtilsSpec extends SpecBase with ScalaCheckDrivenPropertyChecks 
               }
             }
 
-            "and there are previous arrivals GoodsReleased" - {
+            "and there are previous arrivals that aren't ArrivalNotification or UnloadingRemarks" - {
 
-              "must return XMLSubmissionNegativeAcknowledgement when there are previous GoodsReleased" in {
+              "must return GoodsReleased when there are previous GoodsReleased" in {
 
                 val localDateTime: LocalDateTime = LocalDateTime.now()
 
                 val movementMessages =
                   List(
-                    createMessageMovement(22, MessageType.GoodsReleased, localDateTime.minusSeconds(10)),
+                    createMessageMovement(21, MessageType.GoodsReleased, localDateTime.minusSeconds(10)),
                     createMessageMovement(22, MessageType.XMLSubmissionNegativeAcknowledgement, localDateTime)
                   )
 
-                MessageTypeUtils.status(movementMessages) mustBe ArrivalStatus.XMLSubmissionNegativeAcknowledgement
+                MessageTypeUtils.status(movementMessages) mustBe ArrivalStatus.GoodsReleased
+              }
+
+              "must return ArrivalRejection when there are previous ArrivalRejection" in {
+
+                val localDateTime: LocalDateTime = LocalDateTime.now()
+
+                val movementMessages =
+                  List(
+                    createMessageMovement(21, MessageType.ArrivalRejection, localDateTime.minusSeconds(10)),
+                    createMessageMovement(22, MessageType.XMLSubmissionNegativeAcknowledgement, localDateTime)
+                  )
+
+                MessageTypeUtils.status(movementMessages) mustBe ArrivalStatus.ArrivalRejected
               }
             }
 
