@@ -33,9 +33,13 @@ import utils.XMLTransformer.toJson
 
 class AuditService @Inject()(auditConnector: AuditConnector, messageTranslation: MessageTranslation)(implicit ec: ExecutionContext) {
 
-  def auditEvent(auditType: String, enrolmentId: Ior[TURN, EORINumber], message: MovementMessage, channel: ChannelType)(implicit hc: HeaderCarrier): Unit = {
+  def auditEvent(auditType: String, enrolmentId: Ior[TURN, EORINumber], message: MovementMessage, channel: ChannelType)(implicit hc: HeaderCarrier): Unit =
+    auditEventWithBox(auditType, enrolmentId, message, channel, None)
+
+  def auditEventWithBox(auditType: String, enrolmentId: Ior[TURN, EORINumber], message: MovementMessage, channel: ChannelType, boxOpt: Option[Box] = None)(
+    implicit hc: HeaderCarrier): Unit = {
     val json    = messageTranslation.translate(toJson(message.message))
-    val details = AuthenticatedAuditDetails(channel, enrolmentId, json)
+    val details = AuthenticatedAuditDetails(channel, enrolmentId, json, boxOpt.map(_.boxId))
     auditConnector.sendExplicitAudit(auditType, details)
   }
 
@@ -58,7 +62,7 @@ class AuditService @Inject()(auditConnector: AuditConnector, messageTranslation:
 
   def auditCustomerRequestedMissingMovementEvent(request: AuthenticatedRequest[_], arrivalId: ArrivalId): Unit = {
     implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
-    val details                    = AuthenticatedAuditDetails(request.channel, request.enrolmentId, Json.obj("arrivalId" -> arrivalId))
+    val details                    = AuthenticatedAuditDetails(request.channel, request.enrolmentId, Json.obj("arrivalId" -> arrivalId), None)
     auditConnector.sendExplicitAudit(AuditType.CustomerRequestedMissingMovement, details)
   }
 
@@ -69,9 +73,10 @@ class AuditService @Inject()(auditConnector: AuditConnector, messageTranslation:
                                              enrolmentId: Ior[TURN, EORINumber],
                                              message: MovementMessage,
                                              channel: ChannelType,
-                                             requestLength: Int)(implicit hc: HeaderCarrier): Unit = {
+                                             requestLength: Int,
+                                             boxId: Option[BoxId])(implicit hc: HeaderCarrier): Unit = {
 
-    val details = ArrivalNotificationAuditDetails(channel, enrolmentId, message.message, requestLength, messageTranslation)
+    val details = ArrivalNotificationAuditDetails(channel, enrolmentId, message.message, requestLength, boxId, messageTranslation)
     auditConnector.sendExplicitAudit(auditType, details)
   }
 }

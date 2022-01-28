@@ -16,18 +16,17 @@
 
 package metrics
 
-import java.util.concurrent.atomic.AtomicBoolean
-
 import com.codahale.metrics.MetricRegistry
 import com.kenshoo.play.metrics.Metrics
+import play.api.libs.ws.WSResponse
 import play.api.mvc.Action
 import play.api.mvc.BaseController
 import play.api.mvc.Result
 
+import java.util.concurrent.atomic.AtomicBoolean
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.control.NonFatal
-import play.api.libs.ws.WSResponse
 
 trait HasActionMetrics extends HasMetrics {
   self: BaseController =>
