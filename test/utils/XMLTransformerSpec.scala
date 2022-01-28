@@ -21,6 +21,8 @@ import models.ParseError.MesSenMES3Failure
 import org.scalatest.StreamlinedXmlEquality
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
+import play.api.libs.json.Json
+import utils.XMLTransformer.toJson
 
 import scala.xml.NodeSeq
 
@@ -80,6 +82,25 @@ class XMLTransformerSpec extends AnyFreeSpec with Matchers with StreamlinedXmlEq
         val updatedMovement: NodeSeq = <SynVerNumMES2>test</SynVerNumMES2><MesSenMES3>MDTP-ARR-00000000000000000000001-01</MesSenMES3>
 
         XMLTransformer.updateMesSenMES3(ArrivalId(1), 1)(movement).right.get mustEqual updatedMovement
+      }
+
+    }
+
+    "toJson" - {
+
+      "must create a JSON representation of the XML message" in {
+
+        val xml = <xml><node1>foo</node1><node2>bar</node2></xml>
+        val expectedJson =
+          Json.obj(
+            "xml" ->
+              Json.obj(
+                "node1" -> "foo",
+                "node2" -> "bar"
+              )
+          )
+
+        toJson(xml) mustEqual expectedJson
       }
 
     }

@@ -24,7 +24,6 @@ import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import java.time.LocalDateTime
 
 import org.scalacheck.Arbitrary.arbitrary
-import play.api.libs.json.JsObject
 
 class ArrivalMessageNotificationSpec extends SpecBase with ScalaCheckDrivenPropertyChecks with ModelGenerators {
 
@@ -60,8 +59,7 @@ class ArrivalMessageNotificationSpec extends SpecBase with ScalaCheckDrivenPrope
           dateTimeNow,
           GoodsReleased,
           requestXml,
-          0,
-          JsObject.empty
+          0
         )
       )
 
@@ -98,8 +96,7 @@ class ArrivalMessageNotificationSpec extends SpecBase with ScalaCheckDrivenPrope
           dateTimeNow,
           GoodsReleased,
           requestXml,
-          0,
-          JsObject.empty
+          0
         )
       )
 

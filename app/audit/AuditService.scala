@@ -17,6 +17,7 @@
 package audit
 
 import cats.data.Ior
+
 import javax.inject.Inject
 import models._
 import models.request.AuthenticatedRequest
@@ -28,18 +29,19 @@ import utils.MessageTranslation
 
 import scala.concurrent.ExecutionContext
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
+import utils.XMLTransformer.toJson
 
 class AuditService @Inject()(auditConnector: AuditConnector, messageTranslation: MessageTranslation)(implicit ec: ExecutionContext) {
 
   def auditEvent(auditType: String, enrolmentId: Ior[TURN, EORINumber], message: MovementMessage, channel: ChannelType)(implicit hc: HeaderCarrier): Unit = {
-    val json    = messageTranslation.translate(message.messageJson)
+    val json    = messageTranslation.translate(toJson(message.message))
     val details = AuthenticatedAuditDetails(channel, enrolmentId, json)
     auditConnector.sendExplicitAudit(auditType, details)
   }
 
   def auditNCTSMessages(channel: ChannelType, customerId: String, messageResponse: MessageResponse, message: MovementMessage)(
     implicit hc: HeaderCarrier): Unit = {
-    val json    = messageTranslation.translate(message.messageJson)
+    val json    = messageTranslation.translate(toJson(message.message))
     val details = UnauthenticatedAuditDetails(channel, customerId, json)
     auditConnector.sendExplicitAudit(messageResponse.auditType, details)
   }
@@ -49,7 +51,7 @@ class AuditService @Inject()(auditConnector: AuditConnector, messageTranslation:
     val details = Json.obj(
       "arrivalId"           -> arrivalId,
       "messageResponseType" -> messageResponse.auditType,
-      "message"             -> messageTranslation.translate(message.messageJson)
+      "message"             -> messageTranslation.translate(toJson(message.message))
     )
     auditConnector.sendExplicitAudit(AuditType.NCTSRequestedMissingMovement, details)
   }
