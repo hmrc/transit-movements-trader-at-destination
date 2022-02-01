@@ -46,7 +46,7 @@ object ResponseArrivalWithMessages {
       routes.MovementsController.getArrival(arrival.arrivalId).url,
       routes.MessagesController.getMessages(arrival.arrivalId).url,
       arrival.movementReferenceNumber,
-      arrival.currentStatus,
+      arrival.status,
       arrival.created,
       updated = arrival.lastUpdated,
       arrival.messagesWithId

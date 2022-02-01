@@ -38,7 +38,6 @@ case class ResponseArrival(
   messagesLocation: String,
   movementReferenceNumber: MovementReferenceNumber,
   status: ArrivalStatus,
-  previousStatus: ArrivalStatus,
   created: LocalDateTime,
   updated: LocalDateTime
 )
@@ -51,8 +50,7 @@ object ResponseArrival {
       routes.MovementsController.getArrival(arrival.arrivalId).url,
       routes.MessagesController.getMessages(arrival.arrivalId).url,
       arrival.movementReferenceNumber,
-      arrival.currentStatus,
-      arrival.previousStatus,
+      arrival.status,
       arrival.created,
       updated = arrival.lastUpdated
     )
@@ -63,8 +61,7 @@ object ResponseArrival {
       routes.MovementsController.getArrival(arrivalWithoutMessages.arrivalId).url,
       routes.MessagesController.getMessages(arrivalWithoutMessages.arrivalId).url,
       arrivalWithoutMessages.movementReferenceNumber,
-      arrivalWithoutMessages.currentStatus,
-      arrivalWithoutMessages.previousStatus,
+      arrivalWithoutMessages.status,
       arrivalWithoutMessages.created,
       updated = arrivalWithoutMessages.lastUpdated
     )
@@ -87,15 +84,13 @@ object ResponseArrival {
         updated                 <- (json \ "lastUpdated").validate[LocalDateTime](MongoDateTimeFormats.localDateTimeRead)
         latestMessage           <- (json \ "messagesMetaData").validate[Seq[MessageMetaData]]
       } yield {
-        val currentStatus  = MessageTypeUtils.currentArrivalStatus(latestMessage.toList)
-        val previousStatus = MessageTypeUtils.previousArrivalStatus(latestMessage.toList, currentStatus)
+        val status = MessageTypeUtils.status(latestMessage.toList)
         ResponseArrival(
           arrivalId,
           location,
           messagesLocation,
           movementReferenceNumber,
-          currentStatus,
-          previousStatus,
+          status,
           created,
           updated
         )

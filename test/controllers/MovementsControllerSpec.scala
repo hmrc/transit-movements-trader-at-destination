@@ -888,7 +888,6 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
               "/messages/location",
               MovementReferenceNumber("1234567890"),
               ArrivalStatus.ArrivalRejected,
-              ArrivalStatus.ArrivalSubmitted,
               createdAndUpdatedDate,
               createdAndUpdatedDate
             )
@@ -911,7 +910,6 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
                |      "messagesLocation": "/messages/location",
                |      "movementReferenceNumber": "1234567890",
                |      "status": "ArrivalRejected",
-               |      "previousStatus": "ArrivalSubmitted",
                |      "created": "${dateFormat.format(createdAndUpdatedDate)}",
                |      "updated": "${dateFormat.format(createdAndUpdatedDate)}"
                |    }
