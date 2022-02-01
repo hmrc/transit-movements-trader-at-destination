@@ -33,7 +33,6 @@ import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
 import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import play.api.libs.json.JsObject
 import play.api.mvc.Headers
 import play.api.test.Helpers._
 import uk.gov.hmrc.http.HeaderCarrier
@@ -126,8 +125,7 @@ class PushPullNotificationServiceSpec extends SpecBase with BeforeAndAfterEach w
           LocalDateTime.now(),
           GoodsReleased,
           requestXmlBody,
-          0,
-          JsObject.empty
+          0
         )
 
         val inboundMessageRequest = InboundMessageRequest(arrival, GoodsReleasedResponse, movementMessage)
@@ -155,8 +153,7 @@ class PushPullNotificationServiceSpec extends SpecBase with BeforeAndAfterEach w
           LocalDateTime.now(),
           GoodsReleased,
           requestXmlBody,
-          0,
-          JsObject.empty
+          0
         )
 
         val inboundMessageRequest = InboundMessageRequest(arrivalWithoutBox, GoodsReleasedResponse, movementMessage)
@@ -188,8 +185,7 @@ class PushPullNotificationServiceSpec extends SpecBase with BeforeAndAfterEach w
           LocalDateTime.now(),
           GoodsReleased,
           requestXmlBody,
-          0,
-          JsObject.empty
+          0
         )
 
         val inboundMessageRequest = InboundMessageRequest(arrival, GoodsReleasedResponse, movementMessage)
