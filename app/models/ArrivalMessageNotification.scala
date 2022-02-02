@@ -41,7 +41,7 @@ object ArrivalMessageNotification {
 
   implicit val writesArrivalId: Writes[ArrivalId] = Writes.of[String].contramap(_.index.toString)
 
-  private val writesArrivalMessageNotification: OWrites[ArrivalMessageNotification] =
+  implicit val writesArrivalMessageNotification: OWrites[ArrivalMessageNotification] =
     (
       (__ \ "messageUri").write[String] and
         (__ \ "requestId").write[String] and
@@ -53,19 +53,13 @@ object ArrivalMessageNotification {
         (__ \ "messageBody").writeNullable[NodeSeq]
     )(unlift(ArrivalMessageNotification.unapply))
 
-  implicit val writesArrivalMessageNotificationWithRequestId: OWrites[ArrivalMessageNotification] =
-    OWrites.transform(writesArrivalMessageNotification) {
-      (arrival, obj) =>
-        obj ++ Json.obj("requestId" -> requestId(arrival.arrivalId))
-    }
-
   def fromInboundRequest(inboundMessageRequest: InboundMessageRequest, contentLength: Option[Int]): ArrivalMessageNotification =
     inboundMessageRequest match {
       case InboundMessageRequest(arrival, inboundMessageResponse, movementMessage) =>
-        val oneHundredKilobytes = 100000
-        val eoriNumber          = arrival.eoriNumber
-        val messageId           = arrival.nextMessageId
-        val arrivalUrl          = requestId(arrival.arrivalId)
+        val eightyKilobytes = 80000
+        val eoriNumber      = arrival.eoriNumber
+        val messageId       = arrival.nextMessageId
+        val arrivalUrl      = requestId(arrival.arrivalId)
 
         ArrivalMessageNotification(
           s"$arrivalUrl/messages/${messageId.value}",
@@ -75,7 +69,7 @@ object ArrivalMessageNotification {
           messageId,
           movementMessage.dateTime,
           inboundMessageResponse.messageType,
-          if (contentLength.exists(_ < oneHundredKilobytes)) Some(movementMessage.message) else None
+          if (contentLength.exists(_ < eightyKilobytes)) Some(movementMessage.message) else None
         )
     }
 }
