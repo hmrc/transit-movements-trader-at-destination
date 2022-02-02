@@ -17,7 +17,6 @@
 package models
 
 import java.time.LocalDateTime
-
 import generators.ModelGenerators
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.freespec.AnyFreeSpec
@@ -30,29 +29,6 @@ class MovementMessageSpec extends AnyFreeSpec with Matchers with ScalaCheckPrope
 
   "MovementMessageWithStatus" - {
 
-    ".apply" - {
-
-      "must create a MovementMessageWithStatus that includes a JSON representation of the XML message" in {
-
-        forAll(arbitrary[MessageId], arbitrary[LocalDateTime], arbitrary[MessageType], arbitrary[MessageStatus], arbitrary[Int]) {
-          case (messageId, dateTime, messageType, status, messageCorrelationId) =>
-            val xml = <xml><node1>foo</node1><node2>bar</node2></xml>
-            val expectedJson =
-              Json.obj(
-                "xml" ->
-                  Json.obj(
-                    "node1" -> "foo",
-                    "node2" -> "bar"
-                  )
-              )
-
-            val model = MovementMessageWithStatus(messageId, dateTime, messageType, xml, status, messageCorrelationId)
-
-            model.messageJson mustEqual expectedJson
-        }
-      }
-    }
-
     ".reads" - {
 
       "must succeed when the json contains all of the nodes" in {
@@ -60,14 +36,6 @@ class MovementMessageSpec extends AnyFreeSpec with Matchers with ScalaCheckPrope
         forAll(arbitrary[MessageId], arbitrary[LocalDateTime], arbitrary[MessageType], arbitrary[MessageStatus], arbitrary[Int]) {
           case (messageId, dateTime, messageType, status, messageCorrelationId) =>
             val xml = <xml><node1>foo</node1><node2>bar</node2></xml>
-            val messageJson =
-              Json.obj(
-                "xml" ->
-                  Json.obj(
-                    "node1" -> "foo",
-                    "node2" -> "bar"
-                  )
-              )
 
             val json = Json.obj(
               "messageId"            -> Json.toJson(messageId),
@@ -75,11 +43,10 @@ class MovementMessageSpec extends AnyFreeSpec with Matchers with ScalaCheckPrope
               "messageType"          -> Json.toJson(messageType),
               "message"              -> xml.toString,
               "status"               -> Json.toJson(status),
-              "messageCorrelationId" -> messageCorrelationId,
-              "messageJson"          -> messageJson
+              "messageCorrelationId" -> messageCorrelationId
             )
 
-            val expectedMovementMessage = MovementMessageWithStatus(messageId, dateTime, messageType, xml, status, messageCorrelationId, messageJson)
+            val expectedMovementMessage = MovementMessageWithStatus(messageId, dateTime, messageType, xml, status, messageCorrelationId)
 
             json.validate[MovementMessageWithStatus] mustEqual JsSuccess(expectedMovementMessage)
         }
@@ -100,7 +67,7 @@ class MovementMessageSpec extends AnyFreeSpec with Matchers with ScalaCheckPrope
               "messageCorrelationId" -> messageCorrelationId
             )
 
-            val expectedMovementMessage = MovementMessageWithStatus(messageId, dateTime, messageType, xml, status, messageCorrelationId, Json.obj())
+            val expectedMovementMessage = MovementMessageWithStatus(messageId, dateTime, messageType, xml, status, messageCorrelationId)
 
             json.validate[MovementMessageWithStatus] mustEqual JsSuccess(expectedMovementMessage)
         }
@@ -110,29 +77,6 @@ class MovementMessageSpec extends AnyFreeSpec with Matchers with ScalaCheckPrope
 
   "MovementMessageWithoutStatus" - {
 
-    ".apply" - {
-
-      "must create a MovementMessageWithoutStatus that includes a JSON representation of the XML message" in {
-
-        forAll(arbitrary[MessageId], arbitrary[LocalDateTime], arbitrary[MessageType], arbitrary[Int]) {
-          case (messageId, dateTime, messageType, messageCorrelationId) =>
-            val xml = <xml><node1>foo</node1><node2>bar</node2></xml>
-            val expectedJson =
-              Json.obj(
-                "xml" ->
-                  Json.obj(
-                    "node1" -> "foo",
-                    "node2" -> "bar"
-                  )
-              )
-
-            val model = MovementMessageWithoutStatus(messageId, dateTime, messageType, xml, messageCorrelationId)
-
-            model.messageJson mustEqual expectedJson
-        }
-      }
-    }
-
     ".reads" - {
 
       "must succeed when the json contains all of the nodes" in {
@@ -140,25 +84,16 @@ class MovementMessageSpec extends AnyFreeSpec with Matchers with ScalaCheckPrope
         forAll(arbitrary[MessageId], arbitrary[LocalDateTime], arbitrary[MessageType], arbitrary[Int]) {
           case (messageId, dateTime, messageType, messageCorrelationId) =>
             val xml = <xml><node1>foo</node1><node2>bar</node2></xml>
-            val messageJson =
-              Json.obj(
-                "xml" ->
-                  Json.obj(
-                    "node1" -> "foo",
-                    "node2" -> "bar"
-                  )
-              )
 
             val json = Json.obj(
               "messageId"            -> Json.toJson(messageId),
               "dateTime"             -> Json.toJson(dateTime)(MongoDateTimeFormats.localDateTimeWrite),
               "messageType"          -> Json.toJson(messageType),
               "message"              -> xml.toString,
-              "messageCorrelationId" -> messageCorrelationId,
-              "messageJson"          -> messageJson
+              "messageCorrelationId" -> messageCorrelationId
             )
 
-            val expectedMovementMessage = MovementMessageWithoutStatus(messageId, dateTime, messageType, xml, messageCorrelationId, messageJson)
+            val expectedMovementMessage = MovementMessageWithoutStatus(messageId, dateTime, messageType, xml, messageCorrelationId)
 
             json.validate[MovementMessageWithoutStatus] mustEqual JsSuccess(expectedMovementMessage)
         }
@@ -178,7 +113,7 @@ class MovementMessageSpec extends AnyFreeSpec with Matchers with ScalaCheckPrope
               "messageCorrelationId" -> messageCorrelationId
             )
 
-            val expectedMovementMessage = MovementMessageWithoutStatus(messageId, dateTime, messageType, xml, messageCorrelationId, Json.obj())
+            val expectedMovementMessage = MovementMessageWithoutStatus(messageId, dateTime, messageType, xml, messageCorrelationId)
 
             json.validate[MovementMessageWithoutStatus] mustEqual JsSuccess(expectedMovementMessage)
         }

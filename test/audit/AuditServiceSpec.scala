@@ -31,12 +31,13 @@ import play.api.inject.bind
 import play.api.libs.json.Json
 import play.api.test.Helpers.running
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-import java.time.LocalDateTime
 
+import java.time.LocalDateTime
 import config.Constants
 import org.scalacheck.Gen
 import models.request.AuthenticatedRequest
 import play.api.test.FakeRequest
+import utils.XMLTransformer.toJson
 
 class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with BeforeAndAfterEach {
 
@@ -203,7 +204,7 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
       val expectedDetails = Json.obj(
         "arrivalId"           -> arrivalId,
         "messageResponseType" -> messageResponse.auditType,
-        "message"             -> movementMessage.messageJson
+        "message"             -> toJson(movementMessage.message)
       )
 
       running(application) {
