@@ -19,12 +19,7 @@ package api
 import cats.data.NonEmptyList
 import cats.syntax.all._
 import generators.ModelGenerators
-import models.Arrival
-import models.MessageId
-import models.MessageStatus
-import models.MessageType
-import models.MovementMessageWithStatus
-import models.MovementMessageWithoutStatus
+import models.{Arrival, ArrivalId, MessageId, MessageStatus, MessageType, MovementMessageWithStatus, MovementMessageWithoutStatus}
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.OptionValues
 import org.scalatest.freespec.AnyFreeSpec
@@ -119,13 +114,13 @@ class OutboundMessagesApiSpec
       val eoriNumber: String = arbitrary[String].sample.value
 
       val arrivalMovement1 =
-        arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = api, lastUpdated = LocalDateTime.of(2021, 4, 30, 9, 30, 31))
+        arbitrary[Arrival].sample.value.copy(arrivalId = ArrivalId(0), eoriNumber = eoriNumber, channel = api, lastUpdated = LocalDateTime.of(2021, 4, 30, 9, 30, 31))
       val arrivalMovement2 =
-        arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = api, lastUpdated = LocalDateTime.of(2021, 4, 30, 9, 35, 32))
+        arbitrary[Arrival].sample.value.copy(arrivalId = ArrivalId(1), eoriNumber = eoriNumber, channel = api, lastUpdated = LocalDateTime.of(2021, 4, 30, 9, 35, 32))
       val arrivalMovement3 =
-        arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = api, lastUpdated = LocalDateTime.of(2021, 4, 30, 9, 30, 21))
+        arbitrary[Arrival].sample.value.copy(arrivalId = ArrivalId(2), eoriNumber = eoriNumber, channel = api, lastUpdated = LocalDateTime.of(2021, 4, 30, 9, 30, 21))
       val arrivalMovement4 =
-        arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = api, lastUpdated = LocalDateTime.of(2021, 4, 30, 10, 15, 16))
+        arbitrary[Arrival].sample.value.copy(arrivalId = ArrivalId(3), eoriNumber = eoriNumber, channel = api, lastUpdated = LocalDateTime.of(2021, 4, 30, 10, 15, 16))
 
       await(List(arrivalMovement1, arrivalMovement2, arrivalMovement3, arrivalMovement4).traverse(repo.insert))
 
