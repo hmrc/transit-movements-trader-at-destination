@@ -93,6 +93,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
   private val turn: String = arbitrary[String].sample.value
   private val mrn = arbitrary[MovementReferenceNumber].sample.value
 
+
   "ArrivalMovementRepository" - {
 
     "started" - {
@@ -685,9 +686,9 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
     "fetchAllArrivals" - {
       "must return Arrival Movements that match an eoriNumber and channel type" in {
 
-        val arrivalMovement1 = arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = api)
-        val arrivalMovement2 = arbitrary[Arrival].suchThat(_.eoriNumber != eoriNumber).sample.value.copy(channel = api)
-        val arrivalMovement3 = arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = web)
+        val arrivalMovement1 = arbitrary[Arrival].sample.value.copy(arrivalId = ArrivalId(0), eoriNumber = eoriNumber, channel = api)
+        val arrivalMovement2 = arbitrary[Arrival].suchThat(_.eoriNumber != eoriNumber).sample.value.copy(arrivalId = ArrivalId(1), channel = api)
+        val arrivalMovement3 = arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, arrivalId = ArrivalId(2), channel = web)
 
         val app = appBuilder.build()
         running(app) {
@@ -744,9 +745,9 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
 
       "must return Arrival Movements with eoriNumber that match legacy TURN and channel type" in {
 
-        val arrivalMovement1 = arbitrary[Arrival].sample.value.copy(eoriNumber = turn, channel = api)
-        val arrivalMovement2 = arbitrary[Arrival].suchThat(_.eoriNumber != turn).sample.value.copy(channel = api)
-        val arrivalMovement3 = arbitrary[Arrival].sample.value.copy(eoriNumber = turn, channel = web)
+        val arrivalMovement1 = arbitrary[Arrival].sample.value.copy(arrivalId = ArrivalId(0), eoriNumber = turn, channel = api)
+        val arrivalMovement2 = arbitrary[Arrival].suchThat(_.eoriNumber != turn).sample.value.copy(arrivalId = ArrivalId(1), channel = api)
+        val arrivalMovement3 = arbitrary[Arrival].sample.value.copy(arrivalId = ArrivalId(2), eoriNumber = turn, channel = web)
 
         val app = appBuilder.build()
         running(app) {
@@ -808,9 +809,9 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
 
         val ids: Set[String] = Set(eoriNumber, turn)
 
-        val arrivalMovement1 = arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = api)
-        val arrivalMovement2 = arbitrary[Arrival].suchThat(arrival => !ids.contains(arrival.eoriNumber)).sample.value.copy(channel = api)
-        val arrivalMovement3 = arbitrary[Arrival].sample.value.copy(eoriNumber = turn, channel = web)
+        val arrivalMovement1 = arbitrary[Arrival].sample.value.copy(arrivalId = ArrivalId(0), eoriNumber = eoriNumber, channel = api)
+        val arrivalMovement2 = arbitrary[Arrival].suchThat(arrival => !ids.contains(arrival.eoriNumber)).sample.value.copy(arrivalId = ArrivalId(1), channel = api)
+        val arrivalMovement3 = arbitrary[Arrival].sample.value.copy(arrivalId = ArrivalId(2), eoriNumber = turn, channel = web)
 
         val app = appBuilder.build()
         running(app) {
@@ -893,13 +894,13 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
       "must filter results by lastUpdated when updatedSince parameter is provided" in {
 
         val arrivalMovement1 =
-          arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = web, lastUpdated = LocalDateTime.of(2021, 4, 30, 9, 30, 31))
+          arbitrary[Arrival].sample.value.copy(arrivalId = ArrivalId(0), eoriNumber = eoriNumber, channel = web, lastUpdated = LocalDateTime.of(2021, 4, 30, 9, 30, 31))
         val arrivalMovement2 =
-          arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = web, lastUpdated = LocalDateTime.of(2021, 4, 30, 9, 35, 32))
+          arbitrary[Arrival].sample.value.copy(arrivalId = ArrivalId(1), eoriNumber = eoriNumber, channel = web, lastUpdated = LocalDateTime.of(2021, 4, 30, 9, 35, 32))
         val arrivalMovement3 =
-          arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = web, lastUpdated = LocalDateTime.of(2021, 4, 30, 12, 30, 21))
+          arbitrary[Arrival].sample.value.copy(arrivalId = ArrivalId(2), eoriNumber = eoriNumber, channel = web, lastUpdated = LocalDateTime.of(2021, 4, 30, 12, 30, 21))
         val arrivalMovement4 =
-          arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = web, lastUpdated = LocalDateTime.of(2021, 4, 30, 10, 15, 16))
+          arbitrary[Arrival].sample.value.copy(arrivalId = ArrivalId(3),eoriNumber = eoriNumber, channel = web, lastUpdated = LocalDateTime.of(2021, 4, 30, 10, 15, 16))
 
         val app = appBuilder.build()
         running(app) {
@@ -926,13 +927,13 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
 
       "must filter results by mrn when mrn search parameter provided matches" in {
         val arrivalMovement1 =
-          arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = web, movementReferenceNumber = mrn)
+          arbitrary[Arrival].sample.value.copy(arrivalId = ArrivalId(0), eoriNumber = eoriNumber, channel = web, movementReferenceNumber = mrn)
         val arrivalMovement2 =
-          arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = web, movementReferenceNumber = mrn)
+          arbitrary[Arrival].sample.value.copy(arrivalId = ArrivalId(1), eoriNumber = eoriNumber, channel = web, movementReferenceNumber = mrn)
         val arrivalMovement3 =
-          arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = web, movementReferenceNumber = mrn)
+          arbitrary[Arrival].sample.value.copy(arrivalId = ArrivalId(2), eoriNumber = eoriNumber, channel = web, movementReferenceNumber = mrn)
         val arrivalMovement4 =
-          arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = web, movementReferenceNumber = mrn)
+          arbitrary[Arrival].sample.value.copy(arrivalId = ArrivalId(3), eoriNumber = eoriNumber, channel = web, movementReferenceNumber = mrn)
 
         val app = appBuilder.build()
         running(app) {
@@ -958,13 +959,13 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
 
       "must filter results by mrn when substring of a mrn search parameter provided matches" in {
         val arrivalMovement1 =
-          arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = web, movementReferenceNumber = mrn)
+          arbitrary[Arrival].sample.value.copy(arrivalId = ArrivalId(0), eoriNumber = eoriNumber, channel = web, movementReferenceNumber = mrn)
         val arrivalMovement2 =
-          arbitrary[Arrival].suchThat(_.movementReferenceNumber != mrn).sample.value.copy(eoriNumber = eoriNumber, channel = web)
+          arbitrary[Arrival].suchThat(_.movementReferenceNumber != mrn).sample.value.copy(arrivalId = ArrivalId(1), eoriNumber = eoriNumber, channel = web)
         val arrivalMovement3 =
-          arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, channel = web, movementReferenceNumber = mrn)
+          arbitrary[Arrival].sample.value.copy(arrivalId = ArrivalId(2), eoriNumber = eoriNumber, channel = web, movementReferenceNumber = mrn)
         val arrivalMovement4 =
-          arbitrary[Arrival].suchThat(_.movementReferenceNumber != mrn).sample.value.copy(eoriNumber = eoriNumber, channel = web)
+          arbitrary[Arrival].suchThat(_.movementReferenceNumber != mrn).sample.value.copy(arrivalId = ArrivalId(3), eoriNumber = eoriNumber, channel = web)
 
         val app = appBuilder.build()
         running(app) {
