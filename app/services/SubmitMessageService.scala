@@ -43,168 +43,39 @@ class SubmitMessageService @Inject()(
 
   def submitMessage(arrivalId: ArrivalId, message: MovementMessageWithStatus, channelType: ChannelType)(
     implicit hc: HeaderCarrier): Future[SubmissionProcessingResult] =
-    arrivalMovementRepository.addNewMessage(arrivalId, message) flatMap {
-      case Failure(_) =>
-        Future.successful(SubmissionProcessingResult.SubmissionFailureInternal)
-
-      case Success(_) =>
-        messageConnector
-          .post(arrivalId, message, OffsetDateTime.now, channelType)
-          .flatMap {
-            submissionResult =>
-              submissionResult match {
-                case EisSubmissionSuccessful =>
-                  val newStatus = message.status.transition(submissionResult)
-
-                  updateArrivalAndMessage(arrivalId, message.messageId, newStatus)
-                    .map(_ => SubmissionProcessingResult.SubmissionSuccess)
-                    .recover({
-                      case NonFatal(e) =>
-                        // TODO: Can this recover be moved to the repository layer.
-                        //  Encode the exception in the failed Future that Reactive Mongo returns as an ADT
-                        logger.error("Mongo failure when updating message status", e)
-                        SubmissionProcessingResult.SubmissionFailureInternal
-                    }) // TODO: Should be success?
-
-                case submissionResult: EisSubmissionRejected =>
-                  logger.warn(s"Failure for submitMessage of type: ${message.messageType.code}, and details: " + submissionResult.toString)
-
-                  updateMessage(arrivalId, message, submissionResult)
-                    .map(_ =>
-                      submissionResult match {
-                        case ErrorInPayload =>
-                          SubmissionProcessingResult.SubmissionFailureRejected(submissionResult.responseBody)
-                        case VirusFoundOrInvalidToken =>
-                          SubmissionProcessingResult.SubmissionFailureInternal
-                    })
-                    .recover({
-                      case NonFatal(e) =>
-                        logger.error("Mongo failure when updating message status", e)
-                        SubmissionProcessingResult.SubmissionFailureInternal
-                    })
-
-                case submissionResult: EisSubmissionFailureDownstream =>
-                  logger.warn(s"Failure for submitMessage of type: ${message.messageType.code}, and details: " + submissionResult.toString)
-
-                  updateMessage(arrivalId, message, submissionResult)
-                    .map(_ => SubmissionProcessingResult.SubmissionFailureExternal)
-                    .recover({
-                      case NonFatal(e) =>
-                        logger.error("Mongo failure when updating message status", e)
-                        SubmissionProcessingResult.SubmissionFailureExternal
-                    })
-              }
-          }
-    }
+    arrivalMovementRepository
+      .addNewMessage(arrivalId, message)
+      .flatMap {
+        case Failure(_) =>
+          Future.successful(SubmissionProcessingResult.SubmissionFailureInternal)
+        case Success(_) =>
+          val modifier = MessageStatusUpdate(message.messageId, MessageStatus.SubmissionSucceeded)
+          submitToEis(arrivalId, message, channelType, modifier)("submitMessage")
+      }
 
   def submitIe007Message(arrivalId: ArrivalId, message: MovementMessageWithStatus, mrn: MovementReferenceNumber, channelType: ChannelType)(
     implicit hc: HeaderCarrier): Future[SubmissionProcessingResult] =
-    arrivalMovementRepository.addNewMessage(arrivalId, message) flatMap {
-      case Failure(_) =>
-        Future.successful(SubmissionProcessingResult.SubmissionFailureInternal)
-
-      case Success(_) =>
-        messageConnector
-          .post(arrivalId, message, OffsetDateTime.now, channelType)
-          .flatMap {
-            submissionResult =>
-              submissionResult match {
-                case EisSubmissionSuccessful =>
-                  val selector  = ArrivalIdSelector(arrivalId)
-                  val newStatus = message.status.transition(submissionResult)
-                  val update = ArrivalPutUpdate(
-                    mrn,
-                    MessageStatusUpdate(message.messageId, newStatus)
-                  )
-
-                  arrivalMovementRepository
-                    .updateArrival(selector, update)
-                    .map(_ => SubmissionProcessingResult.SubmissionSuccess)
-                    .recover({
-                      case NonFatal(e) =>
-                        logger.error("Mongo failure when updating message status", e)
-                        SubmissionProcessingResult.SubmissionFailureInternal
-                    })
-
-                case submissionResult: EisSubmissionRejected =>
-                  logger.warn(s"Failure for submitIe007Message of type: ${message.messageType.code}, and details: " + submissionResult.toString)
-
-                  updateMessage(arrivalId, message, submissionResult)
-                    .map(_ =>
-                      submissionResult match {
-                        case ErrorInPayload =>
-                          SubmissionProcessingResult.SubmissionFailureRejected(submissionResult.responseBody)
-                        case VirusFoundOrInvalidToken =>
-                          SubmissionProcessingResult.SubmissionFailureInternal
-                    })
-                    .recover({
-                      case NonFatal(e) =>
-                        logger.error("Mongo failure when updating message status", e)
-                        SubmissionProcessingResult.SubmissionFailureInternal
-                    })
-
-                case submissionResult: EisSubmissionFailureDownstream =>
-                  logger.warn(s"Failure for submitIe007Message of type: ${message.messageType.code}, and details: " + submissionResult.toString)
-
-                  updateMessage(arrivalId, message, submissionResult)
-                    .map(_ => SubmissionProcessingResult.SubmissionFailureExternal)
-                    .recover({
-                      case NonFatal(e) =>
-                        logger.error("Mongo failure when updating message status", e)
-                        SubmissionProcessingResult.SubmissionFailureExternal
-                    })
-              }
-          }
-    }
+    arrivalMovementRepository
+      .addNewMessage(arrivalId, message)
+      .flatMap {
+        case Failure(_) =>
+          Future.successful(SubmissionProcessingResult.SubmissionFailureInternal)
+        case Success(_) =>
+          val modifier = ArrivalPutUpdate(
+            mrn,
+            MessageStatusUpdate(message.messageId, MessageStatus.SubmissionSucceeded)
+          )
+          submitToEis(arrivalId, message, channelType, modifier)("submitIe007Message")
+      }
 
   def submitArrival(arrival: Arrival)(implicit hc: HeaderCarrier): Future[SubmissionProcessingResult] =
     arrivalMovementRepository
       .insert(arrival)
       .flatMap {
         _ =>
-          val (message, messageId) = arrival.messagesWithId.head.leftMap(_.asInstanceOf[MovementMessageWithStatus])
-
-          messageConnector
-            .post(arrival.arrivalId, message, OffsetDateTime.now, arrival.channel)
-            .flatMap {
-              case EisSubmissionSuccessful =>
-                updateArrivalAndMessage(arrival.arrivalId, messageId)
-                  .map(_ => SubmissionProcessingResult.SubmissionSuccess)
-                  .recover({
-                    case NonFatal(e) =>
-                      logger.error("Mongo failure when updating message status", e)
-                      SubmissionProcessingResult.SubmissionFailureInternal
-                  })
-
-              case submissionResult: EisSubmissionRejected =>
-                logger.warn(s"Failure for submitArrival of type: ${message.messageType.code}, and details: " + submissionResult.toString)
-
-                updateMessage(arrival.arrivalId, message, submissionResult)
-                  .map(_ =>
-                    submissionResult match {
-                      case ErrorInPayload =>
-                        SubmissionProcessingResult.SubmissionFailureRejected(submissionResult.responseBody)
-                      case VirusFoundOrInvalidToken =>
-                        SubmissionProcessingResult.SubmissionFailureInternal
-                  })
-                  .recover({
-                    case NonFatal(e) =>
-                      logger.error("Mongo failure when updating message status", e)
-                      SubmissionProcessingResult.SubmissionFailureInternal
-                  })
-
-              case submissionResult: EisSubmissionFailureDownstream =>
-                logger.warn(s"Failure for submitArrival of type: ${message.messageType.code}, and details: " + submissionResult.toString)
-
-                updateMessage(arrival.arrivalId, message, submissionResult)
-                  .map(_ => SubmissionProcessingResult.SubmissionFailureExternal)
-                  .recover({
-                    case NonFatal(e) =>
-                      logger.error("Mongo failure when updating message status", e)
-                      SubmissionProcessingResult.SubmissionFailureExternal
-                  })
-            }
-
+          val (message, _) = arrival.messagesWithId.head.leftMap(_.asInstanceOf[MovementMessageWithStatus])
+          val modifier     = MessageStatusUpdate(message.messageId, MessageStatus.SubmissionSucceeded)
+          submitToEis(arrival.arrivalId, message, arrival.channel, modifier)("submitArrival")
       }
       .recover {
         case NonFatal(e) =>
@@ -212,26 +83,66 @@ class SubmitMessageService @Inject()(
           SubmissionProcessingResult.SubmissionFailureInternal
       }
 
+  private def submitToEis(
+    arrivalId: ArrivalId,
+    message: MovementMessageWithStatus,
+    channel: ChannelType,
+    modifier: ArrivalUpdate
+  )(method: String)(implicit hc: HeaderCarrier): Future[SubmissionProcessingResult] =
+    messageConnector
+      .post(arrivalId, message, OffsetDateTime.now, channel)
+      .flatMap {
+        case EisSubmissionSuccessful =>
+          updateArrivalAndMessage(arrivalId, modifier)
+
+        case submissionResult: EisSubmissionRejected =>
+          logger.warn(s"Failure for $method of type: ${message.messageType.code}, and details: ${submissionResult.toString}")
+          updateMessage(arrivalId, message, submissionResult)(_ =>
+            submissionResult match {
+              case ErrorInPayload =>
+                SubmissionProcessingResult.SubmissionFailureRejected(submissionResult.responseBody)
+              case VirusFoundOrInvalidToken =>
+                SubmissionProcessingResult.SubmissionFailureInternal
+          })(SubmissionProcessingResult.SubmissionFailureInternal)
+
+        case submissionResult: EisSubmissionFailureDownstream =>
+          logger.warn(s"Failure for $method of type: ${message.messageType.code}, and details: ${submissionResult.toString}")
+          updateMessage(arrivalId, message, submissionResult)(
+            _ => SubmissionProcessingResult.SubmissionFailureExternal
+          )(SubmissionProcessingResult.SubmissionFailureExternal)
+      }
+
   private def updateMessage(
     arrivalId: ArrivalId,
     message: MovementMessageWithStatus,
     submissionResult: EisSubmissionResult
-  ): Future[Try[Unit]] = {
+  )(processResult: Try[Unit] => SubmissionProcessingResult)(defaultResult: SubmissionProcessingResult): Future[SubmissionProcessingResult] = {
     val selector = MessageSelector(arrivalId, message.messageId)
     val modifier = MessageStatusUpdate(message.messageId, message.status.transition(submissionResult))
-
-    arrivalMovementRepository.updateArrival(selector, modifier)
+    updateArrival(selector, modifier)(processResult)(defaultResult)
   }
 
   private def updateArrivalAndMessage(
     arrivalId: ArrivalId,
-    messageId: MessageId,
-    messageState: MessageStatus = MessageStatus.SubmissionSucceeded
-  ): Future[Try[Unit]] = {
+    modifier: ArrivalUpdate
+  ): Future[SubmissionProcessingResult] = {
     val selector = ArrivalIdSelector(arrivalId)
-    val modifier = MessageStatusUpdate(messageId, messageState)
-
-    arrivalMovementRepository.updateArrival(selector, modifier)
+    updateArrival(selector, modifier)(
+      _ => SubmissionProcessingResult.SubmissionSuccess
+    )(SubmissionProcessingResult.SubmissionFailureInternal)
   }
+
+  private def updateArrival(
+    selector: ArrivalSelector,
+    modifier: ArrivalUpdate
+  )(processResult: Try[Unit] => SubmissionProcessingResult)(defaultResult: SubmissionProcessingResult): Future[SubmissionProcessingResult] =
+    arrivalMovementRepository
+      .updateArrival(selector, modifier)
+      .map(processResult)
+      .recover({
+        case NonFatal(e) =>
+          logger.error("Mongo failure when updating message status", e)
+          defaultResult
+      })
 
 }
