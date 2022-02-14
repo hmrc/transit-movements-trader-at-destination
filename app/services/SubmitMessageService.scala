@@ -51,8 +51,7 @@ class SubmitMessageService @Inject()(
         case Failure(_) =>
           Future.successful(SubmissionProcessingResult.SubmissionFailureInternal)
         case Success(_) =>
-          val modifier = MessageStatusUpdate(message.messageId, MessageStatus.SubmissionSucceeded)
-          submitToEis(arrivalId, message, channelType, modifier)("submitMessage")
+          submitToEis(arrivalId, message, channelType, identity)("submitMessage")
       }
 
   def submitIe007Message(arrivalId: ArrivalId, message: MovementMessageWithStatus, mrn: MovementReferenceNumber, channelType: ChannelType)(
@@ -63,11 +62,7 @@ class SubmitMessageService @Inject()(
         case Failure(_) =>
           Future.successful(SubmissionProcessingResult.SubmissionFailureInternal)
         case Success(_) =>
-          val modifier = ArrivalPutUpdate(
-            mrn,
-            MessageStatusUpdate(message.messageId, MessageStatus.SubmissionSucceeded)
-          )
-          submitToEis(arrivalId, message, channelType, modifier)("submitIe007Message")
+          submitToEis(arrivalId, message, channelType, modifier => ArrivalPutUpdate(mrn, modifier))("submitIe007Message")
       }
 
   def submitArrival(arrival: Arrival)(implicit hc: HeaderCarrier): Future[SubmissionProcessingResult] =
@@ -76,8 +71,7 @@ class SubmitMessageService @Inject()(
       .flatMap {
         _ =>
           val (message, _) = arrival.messagesWithId.head.leftMap(_.asInstanceOf[MovementMessageWithStatus])
-          val modifier     = MessageStatusUpdate(message.messageId, MessageStatus.SubmissionSucceeded)
-          submitToEis(arrival.arrivalId, message, arrival.channel, modifier)("submitArrival")
+          submitToEis(arrival.arrivalId, message, arrival.channel, identity)("submitArrival")
       }
       .recover {
         case NonFatal(e) =>
@@ -89,13 +83,13 @@ class SubmitMessageService @Inject()(
     arrivalId: ArrivalId,
     message: MovementMessageWithStatus,
     channel: ChannelType,
-    modifier: ArrivalUpdate
+    modifier: MessageStatusUpdate => ArrivalUpdate
   )(method: String)(implicit hc: HeaderCarrier): Future[SubmissionProcessingResult] =
     messageConnector
       .post(arrivalId, message, OffsetDateTime.now, channel)
       .flatMap {
         case EisSubmissionSuccessful =>
-          updateArrivalAndMessage(arrivalId, modifier)
+          updateArrivalAndMessage(arrivalId, modifier(MessageStatusUpdate(message.messageId, MessageStatus.SubmissionSucceeded)))
 
         case submissionResult: EisSubmissionRejected =>
           logger.warn(s"Failure for $method of type: ${message.messageType.code}, and details: ${submissionResult.toString}")
