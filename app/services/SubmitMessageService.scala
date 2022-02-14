@@ -19,6 +19,7 @@ package services
 import cats.implicits._
 import connectors.MessageConnector
 import connectors.MessageConnector.EisSubmissionResult
+import connectors.MessageConnector.EisSubmissionResult.DownstreamGatewayTimeout
 import connectors.MessageConnector.EisSubmissionResult._
 import logging.Logging
 import models._
@@ -27,6 +28,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import java.time.Clock
 import java.time.OffsetDateTime
+import java.util.concurrent.TimeoutException
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -108,6 +110,13 @@ class SubmitMessageService @Inject()(
         case submissionResult: EisSubmissionFailureDownstream =>
           logger.warn(s"Failure for $method of type: ${message.messageType.code}, and details: ${submissionResult.toString}")
           updateMessage(arrivalId, message, submissionResult)(
+            _ => SubmissionProcessingResult.SubmissionFailureExternal
+          )(SubmissionProcessingResult.SubmissionFailureExternal)
+      }
+      .recoverWith {
+        case e: TimeoutException =>
+          logger.error("Submission to EIS timed out", e)
+          updateMessage(arrivalId, message, DownstreamGatewayTimeout)(
             _ => SubmissionProcessingResult.SubmissionFailureExternal
           )(SubmissionProcessingResult.SubmissionFailureExternal)
       }

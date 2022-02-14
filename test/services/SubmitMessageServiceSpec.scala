@@ -58,6 +58,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import scala.concurrent.Future
+import scala.concurrent.TimeoutException
 import scala.util.Failure
 import scala.util.Success
 
@@ -165,7 +166,6 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
           eqTo(MessageStatusUpdate(movementMessage.messageId, MessageStatus.SubmissionSucceeded))
         )(any())
       }
-
     }
 
     "return SubmissionFailureInternal when the message is not saved" in {
@@ -192,7 +192,6 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
         result.futureValue mustEqual SubmissionProcessingResult.SubmissionFailureInternal
         verify(mockMessageConnector, never()).post(eqTo(arrivalId), eqTo(movementMessage), any(), any())(any())
       }
-
     }
 
     "return SubmissionFailureExternal and set the message status to SubmissionFailed when the message successfully saves, but the external service fails on submission" in {
@@ -228,7 +227,6 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
             verify(mockArrivalMovementRepository, times(1)).addNewMessage(eqTo(arrivalId), eqTo(movementMessage))
             verify(mockMessageConnector, times(1)).post(eqTo(arrivalId), eqTo(movementMessage), any(), any())(any())
             verify(mockArrivalMovementRepository, times(1)).updateArrival(any(), eqTo(expectedModifier))(any())
-
         }
       }
     }
@@ -319,6 +317,42 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
         result.futureValue mustEqual SubmissionFailureRejected(ErrorInPayload.responseBody)
       }
     }
+
+    "return SubmissionFailureExternal if there has been a timeout exception" in {
+      val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+      val mockMessageConnector          = mock[MessageConnector]
+
+      val application = baseApplicationBuilder
+        .overrides(
+          bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
+          bind[MessageConnector].toInstance(mockMessageConnector)
+        )
+        .build()
+
+      running(application) {
+        val service = application.injector.instanceOf[SubmitMessageService]
+
+        forAll(
+          arbitrary[ArrivalId],
+          arbitrary[MovementMessageWithStatus]
+        ) {
+          (arrivalId, movementMessage) =>
+            when(mockArrivalMovementRepository.addNewMessage(any(), any())).thenReturn(Future.successful(Success(())))
+            when(mockMessageConnector.post(any(), any(), any(), any())(any())).thenReturn(Future.failed(new TimeoutException("")))
+            when(mockArrivalMovementRepository.updateArrival(any(), any())(any())).thenReturn(Future.successful(Success(())))
+
+            val expectedModifier = MessageStatusUpdate(movementMessage.messageId, SubmissionFailed)
+
+            val result = service.submitMessage(arrivalId, movementMessage, web)
+
+            result.futureValue mustEqual SubmissionProcessingResult.SubmissionFailureExternal
+
+            verify(mockArrivalMovementRepository, times(1)).addNewMessage(eqTo(arrivalId), eqTo(movementMessage))
+            verify(mockMessageConnector, times(1)).post(eqTo(arrivalId), eqTo(movementMessage), any(), any())(any())
+            verify(mockArrivalMovementRepository, times(1)).updateArrival(any(), eqTo(expectedModifier))(any())
+        }
+      }
+    }
   }
 
   "submit a IE007 message" - {
@@ -356,9 +390,7 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
         verify(mockArrivalMovementRepository, times(1)).addNewMessage(eqTo(arrivalId), eqTo(movementMessage))
         verify(mockMessageConnector, times(1)).post(eqTo(arrivalId), eqTo(movementMessage), any(), any())(any())
         verify(mockArrivalMovementRepository, times(1)).updateArrival(eqTo(expectedSelector), eqTo(expectedModifier))(any())
-
       }
-
     }
 
     "return SubmissionSuccess when the message is successfully saved and submitted, but the state of message is not updated" in {
@@ -395,7 +427,6 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
         verify(mockMessageConnector, times(1)).post(eqTo(arrivalId), eqTo(movementMessage), any(), any())(any())
         verify(mockArrivalMovementRepository, times(1)).updateArrival(eqTo(expectedSelector), eqTo(expectedModifier))(any())
       }
-
     }
 
     "return SubmissionFailureInternal when the message is not saved" in {
@@ -423,7 +454,6 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
         result.futureValue mustEqual SubmissionProcessingResult.SubmissionFailureInternal
         verify(mockMessageConnector, never()).post(eqTo(arrivalId), eqTo(movementMessage), any(), any())(any())
       }
-
     }
 
     "return SubmissionFailureExternal and set the message status to SubmissionFailed when the message successfully saves, but the external service fails on submission" in {
@@ -463,7 +493,6 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
             verify(mockArrivalMovementRepository, times(1)).updateArrival(eqTo(expectedSelector), eqTo(expectedModifier))(any())
         }
       }
-
     }
 
     "return SubmissionFailureRejected and set the message status to SubmissionFailed when the message successfully saves, but the external service rejects the message" in {
@@ -557,6 +586,44 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
         result.futureValue mustEqual SubmissionFailureRejected(ErrorInPayload.responseBody)
       }
     }
+
+    "return SubmissionFailureExternal if there has been a timeout exception" in {
+      val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+      val mockMessageConnector          = mock[MessageConnector]
+
+      val application = baseApplicationBuilder
+        .overrides(
+          bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
+          bind[MessageConnector].toInstance(mockMessageConnector)
+        )
+        .build()
+
+      running(application) {
+
+        val service = application.injector.instanceOf[SubmitMessageService]
+
+        forAll(
+          arbitrary[ArrivalId],
+          arbitrary[MovementMessageWithStatus],
+          arbitrary[MovementReferenceNumber]
+        ) {
+          (arrivalId, movementMessage, mrn) =>
+            when(mockArrivalMovementRepository.addNewMessage(any(), any())).thenReturn(Future.successful(Success(())))
+            when(mockMessageConnector.post(any(), any(), any(), any())(any())).thenReturn(Future.failed(new TimeoutException("")))
+            when(mockArrivalMovementRepository.updateArrival(any(), any())(any())).thenReturn(Future.successful(Success(())))
+
+            val result = service.submitIe007Message(arrivalId, movementMessage, mrn, web)
+
+            val expectedSelector = MessageSelector(arrivalId, movementMessage.messageId)
+            val expectedModifier = MessageStatusUpdate(movementMessage.messageId, SubmissionFailed)
+
+            result.futureValue mustEqual SubmissionProcessingResult.SubmissionFailureExternal
+            verify(mockArrivalMovementRepository, times(1)).addNewMessage(eqTo(arrivalId), eqTo(movementMessage))
+            verify(mockMessageConnector, times(1)).post(eqTo(arrivalId), eqTo(movementMessage), any(), any())(any())
+            verify(mockArrivalMovementRepository, times(1)).updateArrival(eqTo(expectedSelector), eqTo(expectedModifier))(any())
+        }
+      }
+    }
   }
 
   "submit a new arrival" - {
@@ -592,7 +659,6 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
           eqTo(ArrivalIdSelector(arrival.arrivalId)),
           eqTo(MessageStatusUpdate(messageId, MessageStatus.SubmissionSucceeded))
         )(any())
-
       }
     }
 
@@ -625,7 +691,6 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
           eqTo(MessageStatusUpdate(messageId, MessageStatus.SubmissionSucceeded))
         )(any())
       }
-
     }
 
     "return SubmissionFailureInternal when the message is not saved" in {
@@ -649,7 +714,6 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
         result.futureValue mustEqual SubmissionProcessingResult.SubmissionFailureInternal
         verify(mockMessageConnector, never()).post(eqTo(arrival.arrivalId), eqTo(movementMessage), any(), any())(any())
       }
-
     }
 
     "return SubmissionFailureExternal and set the message status to SubmissionFailed when the message successfully saves, but the external service fails on submission" in {
@@ -765,5 +829,39 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
       }
     }
 
+    "return SubmissionFailureExternal if there has been a timeout exception" in {
+      val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
+      val mockMessageConnector          = mock[MessageConnector]
+
+      val application = baseApplicationBuilder
+        .overrides(
+          bind[ArrivalMovementRepository].toInstance(mockArrivalMovementRepository),
+          bind[MessageConnector].toInstance(mockMessageConnector)
+        )
+        .build()
+
+      running(application) {
+
+        val service = application.injector.instanceOf[SubmitMessageService]
+
+        forAll(arrivalWithOneMovementGenerator) {
+          arrival =>
+            Mockito.reset(mockArrivalMovementRepository, mockMessageConnector)
+
+            when(mockArrivalMovementRepository.insert(any())).thenReturn(Future.successful(()))
+            when(mockMessageConnector.post(any(), any(), any(), any())(any())).thenReturn(Future.failed(new TimeoutException("")))
+            when(mockArrivalMovementRepository.updateArrival(any(), any())(any())).thenReturn(Future.successful(Success(())))
+
+            val expectedModifier = MessageStatusUpdate(messageId, SubmissionFailed)
+
+            val result = service.submitArrival(arrival)
+
+            result.futureValue mustEqual SubmissionProcessingResult.SubmissionFailureExternal
+            verify(mockArrivalMovementRepository, times(1)).insert(eqTo(arrival))
+            verify(mockMessageConnector, times(1)).post(eqTo(arrival.arrivalId), eqTo(movementMessage), any(), any())(any())
+            verify(mockArrivalMovementRepository, times(1)).updateArrival(any(), eqTo(expectedModifier))(any())
+        }
+      }
+    }
   }
 }

@@ -119,7 +119,8 @@ object MessageConnector {
 
     sealed abstract class EisSubmissionFailureDownstream(statusCode: Int, responseBody: String) extends EisSubmissionFailure(statusCode, responseBody)
     object DownstreamInternalServerError                                                        extends EisSubmissionFailureDownstream(500, "Downstream internal server error")
-    object DownstreamBadGateway                                                                 extends EisSubmissionFailureDownstream(502, "Downstream bad gateway ")
+    object DownstreamBadGateway                                                                 extends EisSubmissionFailureDownstream(502, "Downstream bad gateway")
+    object DownstreamGatewayTimeout                                                             extends EisSubmissionFailureDownstream(504, "Downstream gateway timeout")
 
     case class UnexpectedHttpResponse(errorResponse: UpstreamErrorResponse)
         extends EisSubmissionFailureDownstream(errorResponse.statusCode, "Unexpected HTTP Response received")
