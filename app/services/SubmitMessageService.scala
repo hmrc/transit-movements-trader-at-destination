@@ -41,7 +41,7 @@ class SubmitMessageService @Inject()(
 )(implicit clock: Clock, ec: ExecutionContext)
     extends Logging {
 
-  def submitMessage(arrivalId: ArrivalId, messageId: MessageId, message: MovementMessageWithStatus, channelType: ChannelType)(
+  def submitMessage(arrivalId: ArrivalId, message: MovementMessageWithStatus, channelType: ChannelType)(
     implicit hc: HeaderCarrier): Future[SubmissionProcessingResult] =
     arrivalMovementRepository.addNewMessage(arrivalId, message) flatMap {
       case Failure(_) =>
@@ -56,7 +56,7 @@ class SubmitMessageService @Inject()(
                 case EisSubmissionSuccessful =>
                   val newStatus = message.status.transition(submissionResult)
 
-                  updateArrivalAndMessage(arrivalId, messageId, newStatus)
+                  updateArrivalAndMessage(arrivalId, message.messageId, newStatus)
                     .map(_ => SubmissionProcessingResult.SubmissionSuccess)
                     .recover({
                       case NonFatal(e) =>
@@ -69,7 +69,7 @@ class SubmitMessageService @Inject()(
                 case submissionResult: EisSubmissionRejected =>
                   logger.warn(s"Failure for submitMessage of type: ${message.messageType.code}, and details: " + submissionResult.toString)
 
-                  updateMessage(arrivalId, message, messageId, submissionResult)
+                  updateMessage(arrivalId, message, submissionResult)
                     .map(_ =>
                       submissionResult match {
                         case ErrorInPayload =>
@@ -86,7 +86,7 @@ class SubmitMessageService @Inject()(
                 case submissionResult: EisSubmissionFailureDownstream =>
                   logger.warn(s"Failure for submitMessage of type: ${message.messageType.code}, and details: " + submissionResult.toString)
 
-                  updateMessage(arrivalId, message, messageId, submissionResult)
+                  updateMessage(arrivalId, message, submissionResult)
                     .map(_ => SubmissionProcessingResult.SubmissionFailureExternal)
                     .recover({
                       case NonFatal(e) =>
@@ -97,11 +97,8 @@ class SubmitMessageService @Inject()(
           }
     }
 
-  def submitIe007Message(arrivalId: ArrivalId,
-                         messageId: MessageId,
-                         message: MovementMessageWithStatus,
-                         mrn: MovementReferenceNumber,
-                         channelType: ChannelType)(implicit hc: HeaderCarrier): Future[SubmissionProcessingResult] =
+  def submitIe007Message(arrivalId: ArrivalId, message: MovementMessageWithStatus, mrn: MovementReferenceNumber, channelType: ChannelType)(
+    implicit hc: HeaderCarrier): Future[SubmissionProcessingResult] =
     arrivalMovementRepository.addNewMessage(arrivalId, message) flatMap {
       case Failure(_) =>
         Future.successful(SubmissionProcessingResult.SubmissionFailureInternal)
@@ -117,7 +114,7 @@ class SubmitMessageService @Inject()(
                   val newStatus = message.status.transition(submissionResult)
                   val update = ArrivalPutUpdate(
                     mrn,
-                    MessageStatusUpdate(messageId, newStatus)
+                    MessageStatusUpdate(message.messageId, newStatus)
                   )
 
                   arrivalMovementRepository
@@ -132,7 +129,7 @@ class SubmitMessageService @Inject()(
                 case submissionResult: EisSubmissionRejected =>
                   logger.warn(s"Failure for submitIe007Message of type: ${message.messageType.code}, and details: " + submissionResult.toString)
 
-                  updateMessage(arrivalId, message, messageId, submissionResult)
+                  updateMessage(arrivalId, message, submissionResult)
                     .map(_ =>
                       submissionResult match {
                         case ErrorInPayload =>
@@ -149,7 +146,7 @@ class SubmitMessageService @Inject()(
                 case submissionResult: EisSubmissionFailureDownstream =>
                   logger.warn(s"Failure for submitIe007Message of type: ${message.messageType.code}, and details: " + submissionResult.toString)
 
-                  updateMessage(arrivalId, message, messageId, submissionResult)
+                  updateMessage(arrivalId, message, submissionResult)
                     .map(_ => SubmissionProcessingResult.SubmissionFailureExternal)
                     .recover({
                       case NonFatal(e) =>
@@ -182,7 +179,7 @@ class SubmitMessageService @Inject()(
               case submissionResult: EisSubmissionRejected =>
                 logger.warn(s"Failure for submitArrival of type: ${message.messageType.code}, and details: " + submissionResult.toString)
 
-                updateMessage(arrival.arrivalId, message, messageId, submissionResult)
+                updateMessage(arrival.arrivalId, message, submissionResult)
                   .map(_ =>
                     submissionResult match {
                       case ErrorInPayload =>
@@ -199,7 +196,7 @@ class SubmitMessageService @Inject()(
               case submissionResult: EisSubmissionFailureDownstream =>
                 logger.warn(s"Failure for submitArrival of type: ${message.messageType.code}, and details: " + submissionResult.toString)
 
-                updateMessage(arrival.arrivalId, message, messageId, submissionResult)
+                updateMessage(arrival.arrivalId, message, submissionResult)
                   .map(_ => SubmissionProcessingResult.SubmissionFailureExternal)
                   .recover({
                     case NonFatal(e) =>
@@ -218,11 +215,10 @@ class SubmitMessageService @Inject()(
   private def updateMessage(
     arrivalId: ArrivalId,
     message: MovementMessageWithStatus,
-    messageId: MessageId,
     submissionResult: EisSubmissionResult
   ): Future[Try[Unit]] = {
-    val selector = MessageSelector(arrivalId, messageId)
-    val modifier = MessageStatusUpdate(messageId, message.status.transition(submissionResult))
+    val selector = MessageSelector(arrivalId, message.messageId)
+    val modifier = MessageStatusUpdate(message.messageId, message.status.transition(submissionResult))
 
     arrivalMovementRepository.updateArrival(selector, modifier)
   }

@@ -157,7 +157,7 @@ class MovementsController @Inject()(
             .messageAndMrn(arrivalId, request.arrival.nextMessageId, request.arrival.nextMessageCorrelationId)(request.body) match {
             case Right((message, mrn)) =>
               submitMessageService
-                .submitIe007Message(arrivalId, request.arrival.nextMessageId, message, mrn, request.channel)
+                .submitIe007Message(arrivalId, message, mrn, request.channel)
                 .map {
                   result =>
                     movementSummaryLogger.info(s"Submitted an arrival with result ${result.toString}\n${request.arrival.summaryInformation.mkString("\n")}")
