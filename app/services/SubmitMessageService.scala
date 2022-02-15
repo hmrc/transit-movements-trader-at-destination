@@ -39,7 +39,7 @@ import scala.util.control.NonFatal
 
 class SubmitMessageService @Inject()(
   arrivalMovementRepository: ArrivalMovementRepository,
-  messageConnector: MessageConnector,
+  messageConnector: MessageConnector
 )(implicit clock: Clock, ec: ExecutionContext)
     extends Logging {
 
