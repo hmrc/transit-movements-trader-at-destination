@@ -46,25 +46,26 @@ class SubmitMessageService @Inject()(
   def submitMessage(arrivalId: ArrivalId, message: MovementMessageWithStatus, channelType: ChannelType)(
     implicit hc: HeaderCarrier
   ): Future[SubmissionProcessingResult] =
-    arrivalMovementRepository
-      .addNewMessage(arrivalId, message)
-      .flatMap {
-        case Failure(_) =>
-          Future.successful(SubmissionProcessingResult.SubmissionFailureInternal)
-        case Success(_) =>
-          submitToEis(arrivalId, message, channelType, identity)("submitMessage")
-      }
+    submitMessage(arrivalId, message, channelType, identity)("submitMessage")
 
   def submitIe007Message(arrivalId: ArrivalId, message: MovementMessageWithStatus, mrn: MovementReferenceNumber, channelType: ChannelType)(
     implicit hc: HeaderCarrier
   ): Future[SubmissionProcessingResult] =
+    submitMessage(arrivalId, message, channelType, ArrivalPutUpdate(mrn, _))("submitIe007Message")
+
+  private def submitMessage(
+    arrivalId: ArrivalId,
+    message: MovementMessageWithStatus,
+    channelType: ChannelType,
+    modifier: MessageStatusUpdate => ArrivalUpdate
+  )(method: String)(implicit hc: HeaderCarrier): Future[SubmissionProcessingResult] =
     arrivalMovementRepository
       .addNewMessage(arrivalId, message)
       .flatMap {
         case Failure(_) =>
           Future.successful(SubmissionProcessingResult.SubmissionFailureInternal)
         case Success(_) =>
-          submitToEis(arrivalId, message, channelType, modifier => ArrivalPutUpdate(mrn, modifier))("submitIe007Message")
+          submitToEis(arrivalId, message, channelType, modifier)(method)
       }
 
   def submitArrival(arrival: Arrival)(implicit hc: HeaderCarrier): Future[SubmissionProcessingResult] =
@@ -151,5 +152,4 @@ class SubmitMessageService @Inject()(
           logger.error("Mongo failure when updating message status", e)
           defaultResult
       })
-
 }
