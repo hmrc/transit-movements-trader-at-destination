@@ -89,43 +89,35 @@ class SubmitMessageService @Inject()(
       .post(arrivalId, message, OffsetDateTime.now, channel)
       .flatMap {
         case EisSubmissionSuccessful =>
-          updateArrivalAndMessage(arrivalId, modifier(MessageStatusUpdate(message.messageId, MessageStatus.SubmissionSucceeded)))
+          updateArrivalAfterSuccessfulSubmission(arrivalId, modifier(MessageStatusUpdate(message.messageId, MessageStatus.SubmissionSucceeded)))
 
         case submissionResult: EisSubmissionRejected =>
           logger.warn(s"Failure for $method of type: ${message.messageType.code}, and details: ${submissionResult.toString}")
-          updateMessage(arrivalId, message, submissionResult)(_ =>
-            submissionResult match {
-              case ErrorInPayload =>
-                SubmissionProcessingResult.SubmissionFailureRejected(submissionResult.responseBody)
-              case VirusFoundOrInvalidToken =>
-                SubmissionProcessingResult.SubmissionFailureInternal
-          })(SubmissionProcessingResult.SubmissionFailureInternal)
+          updateArrivalAfterUnsuccessfulSubmission(arrivalId, message, submissionResult)(
+            _ =>
+              submissionResult match {
+                case ErrorInPayload =>
+                  SubmissionProcessingResult.SubmissionFailureRejected(submissionResult.responseBody)
+                case VirusFoundOrInvalidToken =>
+                  SubmissionProcessingResult.SubmissionFailureInternal
+            }
+          )(SubmissionProcessingResult.SubmissionFailureInternal)
 
         case submissionResult: EisSubmissionFailureDownstream =>
           logger.warn(s"Failure for $method of type: ${message.messageType.code}, and details: ${submissionResult.toString}")
-          updateMessage(arrivalId, message, submissionResult)(
+          updateArrivalAfterUnsuccessfulSubmission(arrivalId, message, submissionResult)(
             _ => SubmissionProcessingResult.SubmissionFailureExternal
           )(SubmissionProcessingResult.SubmissionFailureExternal)
       }
       .recoverWith {
         case e: TimeoutException =>
           logger.error("Submission to EIS timed out", e)
-          updateMessage(arrivalId, message, DownstreamGatewayTimeout)(
+          updateArrivalAfterUnsuccessfulSubmission(arrivalId, message, DownstreamGatewayTimeout)(
             _ => SubmissionProcessingResult.SubmissionFailureExternal
           )(SubmissionProcessingResult.SubmissionFailureExternal)
       }
 
-  private def updateMessage(
-    arrivalId: ArrivalId,
-    message: MovementMessageWithStatus,
-    submissionResult: EisSubmissionResult
-  )(processResult: Try[Unit] => SubmissionProcessingResult)(defaultResult: SubmissionProcessingResult): Future[SubmissionProcessingResult] = {
-    val selector = MessageSelector(arrivalId, message.messageId)
-    val modifier = MessageStatusUpdate(message.messageId, message.status.transition(submissionResult))
-    updateArrival(selector, modifier)(processResult)(defaultResult)
-  }
-
-  private def updateArrivalAndMessage(
+  private def updateArrivalAfterSuccessfulSubmission(
     arrivalId: ArrivalId,
     modifier: ArrivalUpdate
   ): Future[SubmissionProcessingResult] = {
@@ -133,6 +125,16 @@ class SubmitMessageService @Inject()(
     updateArrival(selector, modifier)(
       _ => SubmissionProcessingResult.SubmissionSuccess
     )(SubmissionProcessingResult.SubmissionFailureInternal)
+  }
+
+  private def updateArrivalAfterUnsuccessfulSubmission(
+    arrivalId: ArrivalId,
+    message: MovementMessageWithStatus,
+    submissionResult: EisSubmissionResult
+  )(processResult: Try[Unit] => SubmissionProcessingResult)(defaultResult: SubmissionProcessingResult): Future[SubmissionProcessingResult] = {
+    val selector = MessageSelector(arrivalId, message.messageId)
+    val modifier = MessageStatusUpdate(message.messageId, message.status.transition(submissionResult))
+    updateArrival(selector, modifier)(processResult)(defaultResult)
   }
 
   private def updateArrival(
