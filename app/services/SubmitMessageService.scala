@@ -44,7 +44,8 @@ class SubmitMessageService @Inject()(
     extends Logging {
 
   def submitMessage(arrivalId: ArrivalId, message: MovementMessageWithStatus, channelType: ChannelType)(
-    implicit hc: HeaderCarrier): Future[SubmissionProcessingResult] =
+    implicit hc: HeaderCarrier
+  ): Future[SubmissionProcessingResult] =
     arrivalMovementRepository
       .addNewMessage(arrivalId, message)
       .flatMap {
@@ -55,7 +56,8 @@ class SubmitMessageService @Inject()(
       }
 
   def submitIe007Message(arrivalId: ArrivalId, message: MovementMessageWithStatus, mrn: MovementReferenceNumber, channelType: ChannelType)(
-    implicit hc: HeaderCarrier): Future[SubmissionProcessingResult] =
+    implicit hc: HeaderCarrier
+  ): Future[SubmissionProcessingResult] =
     arrivalMovementRepository
       .addNewMessage(arrivalId, message)
       .flatMap {
