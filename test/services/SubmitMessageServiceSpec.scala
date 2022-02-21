@@ -19,29 +19,12 @@ package services
 import base.SpecBase
 import cats.data.NonEmptyList
 import connectors.MessageConnector
-import connectors.MessageConnector.EisSubmissionResult.EisSubmissionFailureDownstream
-import connectors.MessageConnector.EisSubmissionResult.EisSubmissionSuccessful
-import connectors.MessageConnector.EisSubmissionResult.ErrorInPayload
-import connectors.MessageConnector.EisSubmissionResult.VirusFoundOrInvalidToken
+import connectors.MessageConnector.EisSubmissionResult.{EisSubmissionFailureDownstream, EisSubmissionSuccessful, ErrorInPayload, VirusFoundOrInvalidToken}
 import generators.ModelGenerators
 import models.ChannelType.web
-import models.MessageStatus.SubmissionFailed
-import models.MessageStatus.SubmissionPending
-import models.MessageStatus.SubmissionSucceeded
-import models.Arrival
-import models.ArrivalId
-import models.ArrivalIdSelector
-import models.ArrivalPutUpdate
-import models.MessageId
-import models.MessageSelector
-import models.MessageStatus
-import models.MessageStatusUpdate
-import models.MessageType
-import models.MovementMessageWithStatus
-import models.MovementReferenceNumber
-import models.SubmissionProcessingResult
-import models.SubmissionProcessingResult.SubmissionFailureInternal
-import models.SubmissionProcessingResult.SubmissionFailureRejected
+import models.MessageStatus.{SubmissionFailed, SubmissionPending, SubmissionSucceeded}
+import models.{Arrival, ArrivalId, ArrivalIdSelector, ArrivalPutUpdate, MessageId, MessageSelector, MessageStatus, MessageStatusUpdate, MessageType, MovementMessageWithStatus, MovementReferenceNumber, SubmissionProcessingResult}
+import models.SubmissionProcessingResult.{SubmissionFailureInternal, SubmissionFailureRejected}
 import org.mockito.ArgumentMatchers.{eq => eqTo, _}
 import org.mockito.Mockito
 import org.mockito.Mockito._
@@ -52,15 +35,12 @@ import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.inject.bind
 import play.api.test.Helpers.running
 import repositories.ArrivalMovementRepository
+import uk.gov.hmrc.http.GatewayTimeoutException
 import utils.Format
 
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.LocalTime
+import java.time.{LocalDate, LocalDateTime, LocalTime}
 import scala.concurrent.Future
-import scala.concurrent.TimeoutException
-import scala.util.Failure
-import scala.util.Success
+import scala.util.{Failure, Success}
 
 class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChecks with ModelGenerators with IntegrationPatience {
 
@@ -338,7 +318,7 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
         ) {
           (arrivalId, movementMessage) =>
             when(mockArrivalMovementRepository.addNewMessage(any(), any())).thenReturn(Future.successful(Success(())))
-            when(mockMessageConnector.post(any(), any(), any(), any())(any())).thenReturn(Future.failed(new TimeoutException("")))
+            when(mockMessageConnector.post(any(), any(), any(), any())(any())).thenReturn(Future.failed(new GatewayTimeoutException("")))
             when(mockArrivalMovementRepository.updateArrival(any(), any())(any())).thenReturn(Future.successful(Success(())))
 
             val expectedModifier = MessageStatusUpdate(movementMessage.messageId, SubmissionFailed)
@@ -609,7 +589,7 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
         ) {
           (arrivalId, movementMessage, mrn) =>
             when(mockArrivalMovementRepository.addNewMessage(any(), any())).thenReturn(Future.successful(Success(())))
-            when(mockMessageConnector.post(any(), any(), any(), any())(any())).thenReturn(Future.failed(new TimeoutException("")))
+            when(mockMessageConnector.post(any(), any(), any(), any())(any())).thenReturn(Future.failed(new GatewayTimeoutException("")))
             when(mockArrivalMovementRepository.updateArrival(any(), any())(any())).thenReturn(Future.successful(Success(())))
 
             val result = service.submitIe007Message(arrivalId, movementMessage, mrn, web)
@@ -849,7 +829,7 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
             Mockito.reset(mockArrivalMovementRepository, mockMessageConnector)
 
             when(mockArrivalMovementRepository.insert(any())).thenReturn(Future.successful(()))
-            when(mockMessageConnector.post(any(), any(), any(), any())(any())).thenReturn(Future.failed(new TimeoutException("")))
+            when(mockMessageConnector.post(any(), any(), any(), any())(any())).thenReturn(Future.failed(new GatewayTimeoutException("")))
             when(mockArrivalMovementRepository.updateArrival(any(), any())(any())).thenReturn(Future.successful(Success(())))
 
             val expectedModifier = MessageStatusUpdate(messageId, SubmissionFailed)
