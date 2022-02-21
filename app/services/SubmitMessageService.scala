@@ -23,12 +23,17 @@ import connectors.MessageConnector.EisSubmissionResult._
 import logging.Logging
 import models._
 import repositories.ArrivalMovementRepository
-import uk.gov.hmrc.http.{GatewayTimeoutException, HeaderCarrier}
+import uk.gov.hmrc.http.GatewayTimeoutException
+import uk.gov.hmrc.http.HeaderCarrier
 
-import java.time.{Clock, OffsetDateTime}
+import java.time.Clock
+import java.time.OffsetDateTime
 import javax.inject.Inject
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
 import scala.util.control.NonFatal
 
 class SubmitMessageService @Inject()(
