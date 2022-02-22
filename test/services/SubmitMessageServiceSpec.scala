@@ -52,13 +52,13 @@ import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.inject.bind
 import play.api.test.Helpers.running
 import repositories.ArrivalMovementRepository
+import uk.gov.hmrc.http.GatewayTimeoutException
 import utils.Format
 
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import scala.concurrent.Future
-import scala.concurrent.TimeoutException
 import scala.util.Failure
 import scala.util.Success
 
@@ -338,7 +338,7 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
         ) {
           (arrivalId, movementMessage) =>
             when(mockArrivalMovementRepository.addNewMessage(any(), any())).thenReturn(Future.successful(Success(())))
-            when(mockMessageConnector.post(any(), any(), any(), any())(any())).thenReturn(Future.failed(new TimeoutException("")))
+            when(mockMessageConnector.post(any(), any(), any(), any())(any())).thenReturn(Future.failed(new GatewayTimeoutException("")))
             when(mockArrivalMovementRepository.updateArrival(any(), any())(any())).thenReturn(Future.successful(Success(())))
 
             val expectedModifier = MessageStatusUpdate(movementMessage.messageId, SubmissionFailed)
@@ -609,7 +609,7 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
         ) {
           (arrivalId, movementMessage, mrn) =>
             when(mockArrivalMovementRepository.addNewMessage(any(), any())).thenReturn(Future.successful(Success(())))
-            when(mockMessageConnector.post(any(), any(), any(), any())(any())).thenReturn(Future.failed(new TimeoutException("")))
+            when(mockMessageConnector.post(any(), any(), any(), any())(any())).thenReturn(Future.failed(new GatewayTimeoutException("")))
             when(mockArrivalMovementRepository.updateArrival(any(), any())(any())).thenReturn(Future.successful(Success(())))
 
             val result = service.submitIe007Message(arrivalId, movementMessage, mrn, web)
@@ -849,7 +849,7 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
             Mockito.reset(mockArrivalMovementRepository, mockMessageConnector)
 
             when(mockArrivalMovementRepository.insert(any())).thenReturn(Future.successful(()))
-            when(mockMessageConnector.post(any(), any(), any(), any())(any())).thenReturn(Future.failed(new TimeoutException("")))
+            when(mockMessageConnector.post(any(), any(), any(), any())(any())).thenReturn(Future.failed(new GatewayTimeoutException("")))
             when(mockArrivalMovementRepository.updateArrival(any(), any())(any())).thenReturn(Future.successful(Success(())))
 
             val expectedModifier = MessageStatusUpdate(messageId, SubmissionFailed)
