@@ -84,7 +84,8 @@ class MovementsController @Inject()(
     requestChannel: ChannelType,
     arrivalId: ArrivalId,
     enrolmentId: Ior[TURN, EORINumber],
-    boxOpt: Option[Box]
+    boxOpt: Option[Box],
+    requestLength: Int
   )(implicit hc: HeaderCarrier) =
     result match {
       case SubmissionFailureInternal => InternalServerError
@@ -92,8 +93,8 @@ class MovementsController @Inject()(
       case submissionFailureRejected: SubmissionFailureRejected =>
         BadRequest(submissionFailureRejected.responseBody)
       case SubmissionSuccess =>
-        auditService.auditEvent(arrivalNotificationType, enrolmentId, message, requestChannel)
-        auditService.auditEvent(AuditType.MesSenMES3Added, enrolmentId, message, requestChannel)
+        auditService.auditArrivalWithStatistics(requestLength, arrivalNotificationType, enrolmentId, message, requestChannel)
+        auditService.auditArrivalWithStatistics(requestLength, AuditType.MesSenMES3Added, enrolmentId, message, requestChannel)
         Accepted(Json.toJson(boxOpt)).withHeaders("Location" -> routes.MovementsController.getArrival(arrivalId).url)
     }
 
@@ -128,7 +129,8 @@ class MovementsController @Inject()(
                             request.channel,
                             arrival.arrivalId,
                             request.enrolmentId,
-                            boxOpt
+                            boxOpt,
+                            request.headers.get(play.api.http.HeaderNames.CONTENT_LENGTH).get.toInt
                           )
                       }
                       .recover {
@@ -168,7 +170,8 @@ class MovementsController @Inject()(
                       request.channel,
                       request.arrival.arrivalId,
                       request.request.enrolmentId,
-                      request.arrival.notificationBox
+                      request.arrival.notificationBox,
+                      request.headers.get(play.api.http.HeaderNames.CONTENT_LENGTH).get.toInt
                     )
                 }
             case Left(error) =>
