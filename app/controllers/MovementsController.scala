@@ -25,6 +25,7 @@ import controllers.actions._
 import logging.Logging
 import metrics.HasActionMetrics
 import metrics.Monitors
+import models.Arrival
 import models.ArrivalId
 import models.Box
 import models.ChannelType
@@ -32,9 +33,10 @@ import models.EORINumber
 import models.MessageType
 import models.MovementMessage
 import models.SubmissionProcessingResult
-import models.SubmissionProcessingResult._
 import models.TURN
+import models.SubmissionProcessingResult._
 import models.request.ArrivalRequest
+import models.request.AuthenticatedRequest
 import models.response.ResponseArrival
 import play.api.Logger
 import play.api.libs.json.Json
@@ -81,11 +83,9 @@ class MovementsController @Inject()(
     result: SubmissionProcessingResult,
     arrivalNotificationType: String,
     message: MovementMessage,
-    requestChannel: ChannelType,
     arrivalId: ArrivalId,
-    enrolmentId: Ior[TURN, EORINumber],
-    boxOpt: Option[Box],
-    requestLength: Int
+    request: AuthenticatedRequest[NodeSeq],
+    boxOpt: Option[Box]
   )(implicit hc: HeaderCarrier) =
     result match {
       case SubmissionFailureInternal => InternalServerError
@@ -93,8 +93,7 @@ class MovementsController @Inject()(
       case submissionFailureRejected: SubmissionFailureRejected =>
         BadRequest(submissionFailureRejected.responseBody)
       case SubmissionSuccess =>
-        auditService.auditArrivalWithStatistics(requestLength, arrivalNotificationType, enrolmentId, message, requestChannel)
-        auditService.auditArrivalWithStatistics(requestLength, AuditType.MesSenMES3Added, enrolmentId, message, requestChannel)
+        request.auditDeclaration(auditService, arrivalNotificationType, message)
         Accepted(Json.toJson(boxOpt)).withHeaders("Location" -> routes.MovementsController.getArrival(arrivalId).url)
     }
 
@@ -126,11 +125,9 @@ class MovementsController @Inject()(
                             result,
                             AuditType.ArrivalNotificationSubmitted,
                             arrival.messages.head,
-                            request.channel,
                             arrival.arrivalId,
-                            request.enrolmentId,
-                            boxOpt,
-                            request.headers.get(play.api.http.HeaderNames.CONTENT_LENGTH).get.toInt
+                            request,
+                            boxOpt
                           )
                       }
                       .recover {
@@ -167,11 +164,9 @@ class MovementsController @Inject()(
                       result,
                       AuditType.ArrivalNotificationReSubmitted,
                       message,
-                      request.channel,
                       request.arrival.arrivalId,
-                      request.request.enrolmentId,
-                      request.arrival.notificationBox,
-                      request.headers.get(play.api.http.HeaderNames.CONTENT_LENGTH).get.toInt
+                      request.request,
+                      request.arrival.notificationBox
                     )
                 }
             case Left(error) =>

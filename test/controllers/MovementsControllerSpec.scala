@@ -174,16 +174,16 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           arrivalMessage.message.map(trim) mustEqual expectedMessage.message.map(trim)
 
           verify(mockSubmitMessageService, times(1)).submitArrival(eqTo(newArrival))(any())
-          verify(mockAuditService, times(1)).auditArrivalWithStatistics(any(),
-                                                                        eqTo(AuditType.ArrivalNotificationSubmitted),
-                                                                        eqTo(Ior.right(EORINumber(newArrival.eoriNumber))),
-                                                                        any(),
-                                                                        any())(any())
-          verify(mockAuditService, times(1)).auditArrivalWithStatistics(any(),
-                                                                        eqTo(AuditType.MesSenMES3Added),
-                                                                        eqTo(Ior.right(EORINumber(newArrival.eoriNumber))),
-                                                                        any(),
-                                                                        any())(any())
+          verify(mockAuditService, times(1)).auditDeclarationWithStatistics(any(),
+                                                                            eqTo(AuditType.ArrivalNotificationSubmitted),
+                                                                            eqTo(Ior.right(EORINumber(newArrival.eoriNumber))),
+                                                                            any(),
+                                                                            any())(any())
+          verify(mockAuditService, times(1)).auditDeclarationWithStatistics(any(),
+                                                                            eqTo(AuditType.MesSenMES3Added),
+                                                                            eqTo(Ior.right(EORINumber(newArrival.eoriNumber))),
+                                                                            any(),
+                                                                            any())(any())
           verifyNoInteractions(mockNotificationService)
         }
       }
@@ -237,16 +237,16 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           arrivalMessage.message.map(trim) mustEqual expectedMessage.message.map(trim)
 
           verify(mockSubmitMessageService, times(1)).submitArrival(eqTo(newArrival))(any())
-          verify(mockAuditService, times(1)).auditArrivalWithStatistics(any(),
-                                                                        eqTo(AuditType.ArrivalNotificationSubmitted),
-                                                                        eqTo(Ior.right(EORINumber(newArrival.eoriNumber))),
-                                                                        any(),
-                                                                        any())(any())
-          verify(mockAuditService, times(1)).auditArrivalWithStatistics(any(),
-                                                                        eqTo(AuditType.MesSenMES3Added),
-                                                                        eqTo(Ior.right(EORINumber(newArrival.eoriNumber))),
-                                                                        any(),
-                                                                        any())(any())
+          verify(mockAuditService, times(1)).auditDeclarationWithStatistics(any(),
+                                                                            eqTo(AuditType.ArrivalNotificationSubmitted),
+                                                                            eqTo(Ior.right(EORINumber(newArrival.eoriNumber))),
+                                                                            any(),
+                                                                            any())(any())
+          verify(mockAuditService, times(1)).auditDeclarationWithStatistics(any(),
+                                                                            eqTo(AuditType.MesSenMES3Added),
+                                                                            eqTo(Ior.right(EORINumber(newArrival.eoriNumber))),
+                                                                            any(),
+                                                                            any())(any())
         }
       }
 
@@ -545,7 +545,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           movement.dateTime mustEqual expectedMessage.dateTime
           movement.message.map(trim) mustEqual expectedMessage.message.map(trim)
 
-          verify(mockAuditService, times(1)).auditArrivalWithStatistics(
+          verify(mockAuditService, times(1)).auditDeclarationWithStatistics(
             any(),
             eqTo(AuditType.ArrivalNotificationReSubmitted),
             eqTo(Ior.right(EORINumber(initializedArrival.eoriNumber))),

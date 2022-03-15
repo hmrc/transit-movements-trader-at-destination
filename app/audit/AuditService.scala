@@ -22,6 +22,7 @@ import javax.inject.Inject
 import models._
 import models.request.AuthenticatedRequest
 import play.api.libs.json.Format.GenericFormat
+import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
@@ -65,19 +66,10 @@ class AuditService @Inject()(auditConnector: AuditConnector, messageTranslation:
   def authAudit(auditType: String, details: AuthenticationDetails)(implicit hc: HeaderCarrier): Unit =
     auditConnector.sendExplicitAudit(auditType, details)
 
-  val maxContentLength = 20000
-
-  def auditArrivalWithStatistics(requestSize: Int, auditType: String, customerId: Ior[TURN, EORINumber], message: MovementMessage, channel: ChannelType)(
+  def auditDeclarationWithStatistics(requestSize: Int, auditType: String, enrolmentId: Ior[TURN, EORINumber], message: MovementMessage, channel: ChannelType)(
     implicit hc: HeaderCarrier): Unit = {
 
-    val jsonMessage = messageTranslation.translate(toJson(message.message))
-    val statistics = Json.obj(
-      "Declaration request content-length" -> requestSize
-    )
-
-    val messageBody = if (requestSize > maxContentLength) Json.obj("Declaration Data" -> "The declaration data was too large to be included") else jsonMessage
-
-    val details = AuthenticatedAuditDetails(channel, customerId, messageBody ++ statistics)
+    val details = DeclarationAuditDetails(channel, enrolmentId, requestSize, message.message, messageTranslation)
     auditConnector.sendExplicitAudit(auditType, details)
   }
 }
