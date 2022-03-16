@@ -103,7 +103,7 @@ class PushPullNotificationServiceSpec extends SpecBase with BeforeAndAfterEach w
     "sendPushNotification" - {
 
       val smallContentLengthHeader = (CONTENT_LENGTH, "1000") // arbitrary, but will trigger attaching a body to the message.
-      val largeContentLengthHeader = (CONTENT_LENGTH, "850000") // arbitrary, but will trigger attaching a body to the message.
+      val largeContentLengthHeader = (CONTENT_LENGTH, "850000") // arbitrary, but is too large to trigger attaching a body to the message.
       val arrival                  = arbitrary[ArrivalWithoutMessages].sample.value.copy(notificationBox = Some(testBox))
 
       "should return a unit value when connector call succeeds" in {
