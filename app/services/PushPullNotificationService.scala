@@ -64,6 +64,11 @@ class PushPullNotificationService @Inject()(connector: PushPullNotificationConne
 
           connector
             .postNotification(box.boxId, arrivalMessageNotification)
+            .flatMap {
+              case Left(UpstreamErrorResponse(_, REQUEST_ENTITY_TOO_LARGE, _, _)) if arrivalMessageNotification.messageBody.isDefined =>
+                connector.postNotification(box.boxId, arrivalMessageNotification.copy(messageBody = None))
+              case x => Future.successful(x)
+            }
             .map {
               case Left(UpstreamErrorResponse(message, statusCode, _, _)) =>
                 logger.warn(s"Unable to post message to PPNS. Response from PPNS: Error $statusCode $message")
