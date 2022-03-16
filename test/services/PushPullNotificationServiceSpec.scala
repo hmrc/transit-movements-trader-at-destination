@@ -26,6 +26,7 @@ import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers._
 import org.mockito.BDDMockito._
 import org.mockito.Mockito.reset
+import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.verifyNoInteractions
 import org.mockito.Mockito.when
@@ -101,7 +102,9 @@ class PushPullNotificationServiceSpec extends SpecBase with BeforeAndAfterEach w
 
     "sendPushNotification" - {
 
-      val arrival = arbitrary[ArrivalWithoutMessages].sample.value.copy(notificationBox = Some(testBox))
+      val smallContentLengthHeader = (CONTENT_LENGTH, "1000") // arbitrary, but will trigger attaching a body to the message.
+      val largeContentLengthHeader = (CONTENT_LENGTH, "850000") // arbitrary, but will trigger attaching a body to the message.
+      val arrival                  = arbitrary[ArrivalWithoutMessages].sample.value.copy(notificationBox = Some(testBox))
 
       "should return a unit value when connector call succeeds" in {
 
@@ -130,10 +133,115 @@ class PushPullNotificationServiceSpec extends SpecBase with BeforeAndAfterEach w
 
         val inboundMessageRequest = InboundMessageRequest(arrival, GoodsReleasedResponse, movementMessage)
 
-        Await.result(service.sendPushNotification(inboundMessageRequest, Headers(("key", "value"))), 30.seconds).mustEqual(())
+        Await.result(service.sendPushNotification(inboundMessageRequest, Headers(("key", "value"), smallContentLengthHeader)), 30.seconds).mustEqual(())
 
         verify(mockConnector).postNotification(BoxId(ArgumentMatchers.eq(testBoxId)), any[ArrivalMessageNotification])(any[ExecutionContext],
                                                                                                                        any[HeaderCarrier])
+      }
+
+      "should return a unit value when connector call fails with a 413, then succeeds after stripping the message, and calls PPNS twice" in {
+        val dateOfPrep: LocalDate = LocalDate.now()
+        val timeOfPrep: LocalTime = LocalTime.of(1, 1)
+
+        val requestXmlBody =
+          <CC025A>
+            <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+            <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+          </CC025A>
+
+        val successfulResult: Future[Either[UpstreamErrorResponse, Unit]] = Future.successful(Right(()))
+        val failResult: Future[Either[UpstreamErrorResponse, Unit]] =
+          Future.successful(Left(UpstreamErrorResponse("Request Entity Too Large", REQUEST_ENTITY_TOO_LARGE)))
+
+        when(
+          mockConnector.postNotification(BoxId(ArgumentMatchers.eq(testBoxId)), any[ArrivalMessageNotification])(any[ExecutionContext], any[HeaderCarrier])
+        ).thenAnswer {
+          invocation =>
+            if (invocation.getArgument[ArrivalMessageNotification](1).messageBody.isDefined) failResult
+            else successfulResult
+        }
+
+        val movementMessage = MovementMessageWithoutStatus(
+          MessageId(0),
+          LocalDateTime.now(),
+          GoodsReleased,
+          requestXmlBody,
+          0
+        )
+
+        val inboundMessageRequest = InboundMessageRequest(arrival, GoodsReleasedResponse, movementMessage)
+
+        Await.result(service.sendPushNotification(inboundMessageRequest, Headers(("key", "value"), smallContentLengthHeader)), 30.seconds).mustEqual(())
+
+        verify(mockConnector, times(2))
+          .postNotification(BoxId(ArgumentMatchers.eq(testBoxId)), any[ArrivalMessageNotification])(any[ExecutionContext], any[HeaderCarrier])
+      }
+
+      "should return a unit value when connector call fails with a 500, and only call PPNS once" in {
+        val dateOfPrep: LocalDate = LocalDate.now()
+        val timeOfPrep: LocalTime = LocalTime.of(1, 1)
+
+        val requestXmlBody =
+          <CC025A>
+            <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+            <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+          </CC025A>
+
+        val failResult: Future[Either[UpstreamErrorResponse, Unit]] =
+          Future.successful(Left(UpstreamErrorResponse("Internal Server Error", INTERNAL_SERVER_ERROR)))
+
+        when(
+          mockConnector.postNotification(BoxId(ArgumentMatchers.eq(testBoxId)), any[ArrivalMessageNotification])(any[ExecutionContext], any[HeaderCarrier])
+        ).thenReturn(failResult)
+
+        val movementMessage = MovementMessageWithoutStatus(
+          MessageId(0),
+          LocalDateTime.now(),
+          GoodsReleased,
+          requestXmlBody,
+          0
+        )
+
+        val inboundMessageRequest = InboundMessageRequest(arrival, GoodsReleasedResponse, movementMessage)
+
+        Await.result(service.sendPushNotification(inboundMessageRequest, Headers(("key", "value"), smallContentLengthHeader)), 30.seconds).mustEqual(())
+
+        verify(mockConnector).postNotification(BoxId(ArgumentMatchers.eq(testBoxId)), any[ArrivalMessageNotification])(any[ExecutionContext],
+                                                                                                                       any[HeaderCarrier])
+        verify(mockConnector)
+          .postNotification(BoxId(ArgumentMatchers.eq(testBoxId)), any[ArrivalMessageNotification])(any[ExecutionContext], any[HeaderCarrier])
+      }
+
+      "should return a unit value when connector call fails with a 413 and has no message to begin with, and only calls PPNS once" in {
+        val dateOfPrep: LocalDate = LocalDate.now()
+        val timeOfPrep: LocalTime = LocalTime.of(1, 1)
+
+        val requestXmlBody =
+          <CC025A>
+            <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
+            <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)}</TimOfPreMES10>
+          </CC025A>
+
+        val failResult: Future[Either[UpstreamErrorResponse, Unit]] =
+          Future.successful(Left(UpstreamErrorResponse("Request Entity Too Large", REQUEST_ENTITY_TOO_LARGE)))
+
+        when(
+          mockConnector.postNotification(BoxId(ArgumentMatchers.eq(testBoxId)), any[ArrivalMessageNotification])(any[ExecutionContext], any[HeaderCarrier])
+        ).thenReturn(failResult)
+
+        val movementMessage = MovementMessageWithoutStatus(
+          MessageId(0),
+          LocalDateTime.now(),
+          GoodsReleased,
+          requestXmlBody,
+          0
+        )
+
+        val inboundMessageRequest = InboundMessageRequest(arrival, GoodsReleasedResponse, movementMessage)
+
+        Await.result(service.sendPushNotification(inboundMessageRequest, Headers(("key", "value"), largeContentLengthHeader)), 30.seconds).mustEqual(())
+        verify(mockConnector)
+          .postNotification(BoxId(ArgumentMatchers.eq(testBoxId)), any[ArrivalMessageNotification])(any[ExecutionContext], any[HeaderCarrier])
       }
 
       "should not post if no box exists" in {
@@ -158,7 +266,7 @@ class PushPullNotificationServiceSpec extends SpecBase with BeforeAndAfterEach w
 
         val inboundMessageRequest = InboundMessageRequest(arrivalWithoutBox, GoodsReleasedResponse, movementMessage)
 
-        Await.result(service.sendPushNotification(inboundMessageRequest, Headers(("key", "value"))), 30.seconds).mustEqual(())
+        Await.result(service.sendPushNotification(inboundMessageRequest, Headers(("key", "value"), smallContentLengthHeader)), 30.seconds).mustEqual(())
 
         verifyNoInteractions(mockConnector)
       }
@@ -190,7 +298,7 @@ class PushPullNotificationServiceSpec extends SpecBase with BeforeAndAfterEach w
 
         val inboundMessageRequest = InboundMessageRequest(arrival, GoodsReleasedResponse, movementMessage)
 
-        Await.result(service.sendPushNotification(inboundMessageRequest, Headers(("key", "value"))), 30.seconds).mustEqual(())
+        Await.result(service.sendPushNotification(inboundMessageRequest, Headers(("key", "value"), smallContentLengthHeader)), 30.seconds).mustEqual(())
       }
     }
   }
