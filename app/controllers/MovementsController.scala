@@ -25,7 +25,6 @@ import controllers.actions._
 import logging.Logging
 import metrics.HasActionMetrics
 import metrics.Monitors
-import models.Arrival
 import models.ArrivalId
 import models.Box
 import models.ChannelType
@@ -36,7 +35,6 @@ import models.SubmissionProcessingResult
 import models.TURN
 import models.SubmissionProcessingResult._
 import models.request.ArrivalRequest
-import models.request.AuthenticatedRequest
 import models.response.ResponseArrival
 import play.api.Logger
 import play.api.libs.json.Json
@@ -79,21 +77,22 @@ class MovementsController @Inject()(
   lazy val countArrivals = histo("get-all-arrivals-count")
   lazy val messagesCount = histo("get-arrival-by-id-messages-count")
 
-  private def handleSubmissionResult(
-    result: SubmissionProcessingResult,
-    arrivalNotificationType: String,
-    message: MovementMessage,
-    arrivalId: ArrivalId,
-    request: AuthenticatedRequest[NodeSeq],
-    boxOpt: Option[Box]
-  )(implicit hc: HeaderCarrier) =
+  private def handleSubmissionResult(result: SubmissionProcessingResult,
+                                     arrivalNotificationType: String,
+                                     message: MovementMessage,
+                                     requestChannel: ChannelType,
+                                     arrivalId: ArrivalId,
+                                     enrolmentId: Ior[TURN, EORINumber],
+                                     boxOpt: Option[Box],
+                                     requestLength: Int)(implicit hc: HeaderCarrier) =
     result match {
       case SubmissionFailureInternal => InternalServerError
       case SubmissionFailureExternal => BadGateway
       case submissionFailureRejected: SubmissionFailureRejected =>
         BadRequest(submissionFailureRejected.responseBody)
       case SubmissionSuccess =>
-        request.auditDeclaration(auditService, arrivalNotificationType, message)
+        auditService.auditArrivalNotificationWithStatistics(arrivalNotificationType, enrolmentId, message, requestChannel, requestLength)
+        auditService.auditArrivalNotificationWithStatistics(AuditType.MesSenMES3Added, enrolmentId, message, requestChannel, requestLength)
         Accepted(Json.toJson(boxOpt)).withHeaders("Location" -> routes.MovementsController.getArrival(arrivalId).url)
     }
 
@@ -125,9 +124,11 @@ class MovementsController @Inject()(
                             result,
                             AuditType.ArrivalNotificationSubmitted,
                             arrival.messages.head,
+                            request.channel,
                             arrival.arrivalId,
-                            request,
-                            boxOpt
+                            request.enrolmentId,
+                            boxOpt,
+                            request.length
                           )
                       }
                       .recover {
@@ -145,7 +146,6 @@ class MovementsController @Inject()(
                 }
           }
       }
-
     }
 
   def putArrival(arrivalId: ArrivalId): Action[NodeSeq] =
@@ -164,9 +164,11 @@ class MovementsController @Inject()(
                       result,
                       AuditType.ArrivalNotificationReSubmitted,
                       message,
+                      request.channel,
                       request.arrival.arrivalId,
-                      request.request,
-                      request.arrival.notificationBox
+                      request.request.enrolmentId,
+                      request.arrival.notificationBox,
+                      request.request.length
                     )
                 }
             case Left(error) =>

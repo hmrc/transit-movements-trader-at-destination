@@ -16,19 +16,15 @@
 
 package models.request
 
-import audit.AuditService
-import audit.AuditType
 import cats.data.Ior
 import models.Arrival
 import models.ArrivalMessages
 import models.ArrivalWithoutMessages
 import models.ChannelType
 import models.EORINumber
-import models.MovementMessage
 import models.TURN
 import play.api.mvc.Request
 import play.api.mvc.WrappedRequest
-import uk.gov.hmrc.http.HeaderCarrier
 
 case class AuthenticatedRequest[A](request: Request[A], channel: ChannelType, enrolmentId: Ior[TURN, EORINumber]) extends WrappedRequest[A](request) {
   private def matchesEnrolmentId(eoriNumber: String): Boolean =
@@ -49,9 +45,5 @@ case class AuthenticatedRequest[A](request: Request[A], channel: ChannelType, en
   def hasMatchingEnrolmentId(arrival: ArrivalMessages): Boolean =
     matchesEnrolmentId(arrival.eoriNumber)
 
-  def auditDeclaration(auditService: AuditService, arrivalNotificationType: String, message: MovementMessage)(implicit hc: HeaderCarrier): Unit = {
-    val len = request.headers.get(play.api.http.HeaderNames.CONTENT_LENGTH).get.toInt
-    auditService.auditDeclarationWithStatistics(len, arrivalNotificationType, enrolmentId, message, channel)
-    auditService.auditDeclarationWithStatistics(len, AuditType.MesSenMES3Added, enrolmentId, message, channel)
-  }
+  lazy val length: Int = headers.get(play.api.http.HeaderNames.CONTENT_LENGTH).get.toInt
 }

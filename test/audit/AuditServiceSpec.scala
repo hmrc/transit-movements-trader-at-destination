@@ -218,56 +218,36 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
 
     }
 
-    "must adjust declaration audit according to request size" - {
+    "must audit arrival notification events" - {
 
-      val auditType = "Arrival audit"
-      val xml       = <CC007A>test</CC007A>
+      val mockMessageTranslation: MessageTranslation = mock[MessageTranslation]
+
+      val requestXml  = <xml>test</xml>
+      val enrolmentId = Ior.right(EORINumber(Constants.NewEnrolmentIdKey))
       val movementMessage =
-        MovementMessageWithStatus(MessageId(1), LocalDateTime.now, MessageType.ArrivalNotification, xml, MessageStatus.SubmissionSucceeded, 1)
+        MovementMessageWithStatus(MessageId(1), LocalDateTime.now, MessageType.ArrivalNotification, requestXml, MessageStatus.SubmissionSucceeded, 1)
 
-      "when the request is smaller than max size allowed the xml and statistics should be included in the audit detail" in {
+      forAll(Gen.oneOf(ArrivalNotificationAuditDetails.maxRequestLength - 1000, ArrivalNotificationAuditDetails.maxRequestLength + 1000)) {
+        requestLength =>
+          val application = baseApplicationBuilder
+            .overrides(bind[AuditConnector].toInstance(mockAuditConnector))
+            .overrides(bind[MessageTranslation].toInstance(mockMessageTranslation))
+            .build()
 
-        val contentLength = 1000
-        val request       = new AuthenticatedRequest[Any](FakeRequest(), api, Ior.right(EORINumber(Constants.NewEnrolmentIdKey)))
+          running(application) {
+            val auditService = application.injector.instanceOf[AuditService]
 
-        val application = baseApplicationBuilder
-          .configure("message-translation-file" -> "MessageTranslation.json")
-          .overrides(bind[AuditConnector].toInstance(mockAuditConnector))
-          .build()
+            val expectedDetails = ArrivalNotificationAuditDetails(ChannelType.api, enrolmentId, movementMessage.message, requestLength, mockMessageTranslation)
 
-        running(application) {
-          val auditService       = application.injector.instanceOf[AuditService]
-          val messageTranslation = application.injector.instanceOf[MessageTranslation]
+            auditService.auditArrivalNotificationWithStatistics(AuditType.ArrivalNotificationSubmitted,
+                                                                enrolmentId,
+                                                                movementMessage,
+                                                                ChannelType.api,
+                                                                requestLength)
 
-          val expectedDetails = DeclarationAuditDetails(request.channel, request.enrolmentId, contentLength, movementMessage.message, messageTranslation)
-
-          auditService.auditDeclarationWithStatistics(contentLength, auditType, request.enrolmentId, movementMessage, request.channel)
-
-          verify(mockAuditConnector, times(1)).sendExplicitAudit(eqTo(auditType), eqTo(expectedDetails))(any(), any(), any())
-          reset(mockAuditConnector)
-        }
-      }
-
-      "when the request is larger than max size allowed the audit detail should include statistics and replace translated xml with message" in {
-
-        val contentLength = 60000
-        val request       = new AuthenticatedRequest[Any](FakeRequest(), api, Ior.right(EORINumber(Constants.NewEnrolmentIdKey)))
-
-        val application = baseApplicationBuilder
-          .configure("message-translation-file" -> "MessageTranslation.json")
-          .overrides(bind[AuditConnector].toInstance(mockAuditConnector))
-          .build()
-        running(application) {
-
-          val messageTranslation = application.injector.instanceOf[MessageTranslation]
-          val expectedDetails    = DeclarationAuditDetails(request.channel, request.enrolmentId, contentLength, movementMessage.message, messageTranslation)
-
-          val auditService = application.injector.instanceOf[AuditService]
-          auditService.auditDeclarationWithStatistics(contentLength, auditType, request.enrolmentId, movementMessage, request.channel)
-
-          verify(mockAuditConnector, times(1)).sendExplicitAudit(eqTo(auditType), eqTo(expectedDetails))(any(), any(), any())
-          reset(mockAuditConnector)
-        }
+            verify(mockAuditConnector, times(1)).sendExplicitAudit(eqTo(AuditType.ArrivalNotificationSubmitted), eqTo(expectedDetails))(any(), any(), any())
+            reset(mockAuditConnector)
+          }
       }
     }
   }

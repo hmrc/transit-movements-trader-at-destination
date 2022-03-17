@@ -22,7 +22,6 @@ import javax.inject.Inject
 import models._
 import models.request.AuthenticatedRequest
 import play.api.libs.json.Format.GenericFormat
-import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
@@ -66,10 +65,13 @@ class AuditService @Inject()(auditConnector: AuditConnector, messageTranslation:
   def authAudit(auditType: String, details: AuthenticationDetails)(implicit hc: HeaderCarrier): Unit =
     auditConnector.sendExplicitAudit(auditType, details)
 
-  def auditDeclarationWithStatistics(requestSize: Int, auditType: String, enrolmentId: Ior[TURN, EORINumber], message: MovementMessage, channel: ChannelType)(
-    implicit hc: HeaderCarrier): Unit = {
+  def auditArrivalNotificationWithStatistics(auditType: String,
+                                             enrolmentId: Ior[TURN, EORINumber],
+                                             message: MovementMessage,
+                                             channel: ChannelType,
+                                             requestLength: Int)(implicit hc: HeaderCarrier): Unit = {
 
-    val details = DeclarationAuditDetails(channel, enrolmentId, requestSize, message.message, messageTranslation)
+    val details = ArrivalNotificationAuditDetails(channel, enrolmentId, message.message, requestLength, messageTranslation)
     auditConnector.sendExplicitAudit(auditType, details)
   }
 }
