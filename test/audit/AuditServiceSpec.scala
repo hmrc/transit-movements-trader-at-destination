@@ -19,6 +19,7 @@ package audit
 import base.SpecBase
 import cats.data.Ior
 import config.Constants
+import generators.ModelGenerators
 import models.ChannelType.api
 import models._
 import models.request.AuthenticatedRequest
@@ -40,7 +41,7 @@ import utils.XMLTransformer.toJson
 
 import java.time.LocalDateTime
 
-class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with BeforeAndAfterEach {
+class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with BeforeAndAfterEach with ModelGenerators {
 
   val mockAuditConnector: AuditConnector = mock[AuditConnector]
 
@@ -218,7 +219,7 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
 
     }
 
-    "must audit arrival notification events" - Seq(Some(Box(BoxId("box"), "box")), None).foreach {
+    "must audit arrival notification events" - Seq(arbitraryBox.arbitrary.sample, None).foreach {
       boxOpt =>
         val mockMessageTranslation: MessageTranslation = mock[MessageTranslation]
 
