@@ -37,6 +37,7 @@ import config.Constants
 import org.scalacheck.Gen
 import models.request.AuthenticatedRequest
 import play.api.test.FakeRequest
+import utils.MessageTranslation
 import utils.XMLTransformer.toJson
 
 class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with BeforeAndAfterEach {
@@ -215,6 +216,39 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
         reset(mockAuditConnector)
       }
 
+    }
+
+    "must audit arrival notification events" - {
+
+      val mockMessageTranslation: MessageTranslation = mock[MessageTranslation]
+
+      val requestXml  = <xml>test</xml>
+      val enrolmentId = Ior.right(EORINumber(Constants.NewEnrolmentIdKey))
+      val movementMessage =
+        MovementMessageWithStatus(MessageId(1), LocalDateTime.now, MessageType.ArrivalNotification, requestXml, MessageStatus.SubmissionSucceeded, 1)
+
+      forAll(Gen.oneOf(ArrivalNotificationAuditDetails.maxRequestLength - 1000, ArrivalNotificationAuditDetails.maxRequestLength + 1000)) {
+        requestLength =>
+          val application = baseApplicationBuilder
+            .overrides(bind[AuditConnector].toInstance(mockAuditConnector))
+            .overrides(bind[MessageTranslation].toInstance(mockMessageTranslation))
+            .build()
+
+          running(application) {
+            val auditService = application.injector.instanceOf[AuditService]
+
+            val expectedDetails = ArrivalNotificationAuditDetails(ChannelType.api, enrolmentId, movementMessage.message, requestLength, mockMessageTranslation)
+
+            auditService.auditArrivalNotificationWithStatistics(AuditType.ArrivalNotificationSubmitted,
+                                                                enrolmentId,
+                                                                movementMessage,
+                                                                ChannelType.api,
+                                                                requestLength)
+
+            verify(mockAuditConnector, times(1)).sendExplicitAudit(eqTo(AuditType.ArrivalNotificationSubmitted), eqTo(expectedDetails))(any(), any(), any())
+            reset(mockAuditConnector)
+          }
+      }
     }
   }
 }
