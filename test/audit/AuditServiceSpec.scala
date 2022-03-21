@@ -53,7 +53,7 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
     "must audit notification message event" in {
       val requestEori  = Ior.right(EORINumber("eori"))
       val requestXml   = <xml>test</xml>
-      val auditDetails = AuthenticatedAuditDetails(ChannelType.api, requestEori, Json.obj("xml" -> "test"), None)
+      val auditDetails = AuthenticatedAuditDetails(ChannelType.api, requestEori, Json.obj("xml" -> "test"))
 
       val movementMessage =
         MovementMessageWithStatus(MessageId(1), LocalDateTime.now, MessageType.ArrivalNotification, requestXml, MessageStatus.SubmissionSucceeded, 1)
@@ -184,7 +184,7 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
           running(application) {
             val auditService    = application.injector.instanceOf[AuditService]
             val arrivalId       = ArrivalId(1234)
-            val expectedDetails = AuthenticatedAuditDetails(request.channel, request.enrolmentId, Json.obj("arrivalId" -> arrivalId), None)
+            val expectedDetails = AuthenticatedAuditDetails(request.channel, request.enrolmentId, Json.obj("arrivalId" -> arrivalId))
             auditService.auditCustomerRequestedMissingMovementEvent(request, arrivalId)
 
             verify(mockAuditConnector, times(1)).sendExplicitAudit(eqTo(AuditType.CustomerRequestedMissingMovement), eqTo(expectedDetails))(any(), any(), any())

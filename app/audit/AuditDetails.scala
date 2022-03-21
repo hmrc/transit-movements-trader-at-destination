@@ -18,7 +18,6 @@ package audit
 
 import cats.data.Ior
 import config.Constants
-import models.BoxId
 import models.ChannelType
 import models.EORINumber
 import models.TURN
@@ -38,7 +37,7 @@ sealed abstract class AuditDetails {
     ) ++ json
 }
 
-case class AuthenticatedAuditDetails(channel: ChannelType, enrolmentId: Ior[TURN, EORINumber], json: JsObject, boxId: Option[BoxId]) extends AuditDetails {
+case class AuthenticatedAuditDetails(channel: ChannelType, enrolmentId: Ior[TURN, EORINumber], json: JsObject) extends AuditDetails {
 
   lazy val customerId: String =
     enrolmentId.fold(
@@ -56,8 +55,7 @@ case class AuthenticatedAuditDetails(channel: ChannelType, enrolmentId: Ior[TURN
 
   lazy val writeAuthenticatedAuditDetails: JsObject =
     writeAuditDetails ++
-      Json.obj("enrolmentType" -> enrolmentType) ++
-      boxId.fold(JsObject.empty)(id => Json.obj("boxId" -> id))
+      Json.obj("enrolmentType" -> enrolmentType)
 }
 
 object AuthenticatedAuditDetails {
