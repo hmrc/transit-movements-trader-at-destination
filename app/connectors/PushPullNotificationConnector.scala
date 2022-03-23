@@ -17,8 +17,10 @@
 package connectors
 
 import com.google.inject.Inject
+import com.kenshoo.play.metrics.Metrics
 import config.AppConfig
 import config.Constants
+import metrics.HasMetrics
 import models.ArrivalMessageNotification
 import models.Box
 import models.BoxId
@@ -32,25 +34,29 @@ import uk.gov.hmrc.http.UpstreamErrorResponse
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class PushPullNotificationConnector @Inject()(config: AppConfig, http: HttpClient) {
+class PushPullNotificationConnector @Inject()(config: AppConfig, http: HttpClient, val metrics: Metrics) extends HasMetrics {
 
-  def getBox(clientId: String)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Either[UpstreamErrorResponse, Box]] = {
-    val url = s"${config.pushPullUrl}/box"
-    val queryParams = Seq(
-      "boxName"  -> Constants.BoxName,
-      "clientId" -> clientId
-    )
+  def getBox(clientId: String)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Either[UpstreamErrorResponse, Box]] =
+    withMetricsTimerAsync("get-ppns-box") {
+      _ =>
+        val url = s"${config.pushPullUrl}/box"
+        val queryParams = Seq(
+          "boxName"  -> Constants.BoxName,
+          "clientId" -> clientId
+        )
 
-    http.GET[Either[UpstreamErrorResponse, Box]](url, queryParams)
-  }
+        http.GET[Either[UpstreamErrorResponse, Box]](url, queryParams)
+    }
 
   def postNotification(boxId: BoxId, notification: ArrivalMessageNotification)(implicit ec: ExecutionContext,
-                                                                               hc: HeaderCarrier): Future[Either[UpstreamErrorResponse, Unit]] = {
-    val url = s"${config.pushPullUrl}/box/${boxId.value}/notifications"
-    val headers = Seq(
-      HeaderNames.CONTENT_TYPE -> ContentTypes.JSON
-    )
+                                                                               hc: HeaderCarrier): Future[Either[UpstreamErrorResponse, Unit]] =
+    withMetricsTimerAsync("post-ppns-notification") {
+      _ =>
+        val url = s"${config.pushPullUrl}/box/${boxId.value}/notifications"
+        val headers = Seq(
+          HeaderNames.CONTENT_TYPE -> ContentTypes.JSON
+        )
 
-    http.POST[ArrivalMessageNotification, Either[UpstreamErrorResponse, Unit]](url, notification, headers)
-  }
+        http.POST[ArrivalMessageNotification, Either[UpstreamErrorResponse, Unit]](url, notification, headers)
+    }
 }

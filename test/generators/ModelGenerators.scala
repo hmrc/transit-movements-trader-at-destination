@@ -17,6 +17,7 @@
 package generators
 
 import cats.data.NonEmptyList
+import config.Constants
 import connectors.MessageConnector.EisSubmissionResult
 import connectors.MessageConnector.EisSubmissionResult.DownstreamBadGateway
 import connectors.MessageConnector.EisSubmissionResult.DownstreamInternalServerError
@@ -34,6 +35,8 @@ import models.ArrivalPutUpdate
 import models.ArrivalStatus
 import models.ArrivalUpdate
 import models.ArrivalWithoutMessages
+import models.Box
+import models.BoxId
 import models.ChannelType
 import models.MessageId
 import models.MessageMetaData
@@ -137,6 +140,18 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
   implicit lazy val arbitraryChannel: Arbitrary[ChannelType] =
     Arbitrary {
       Gen.oneOf(ChannelType.values)
+    }
+
+  implicit lazy val arbitraryBoxId: Arbitrary[BoxId] =
+    Arbitrary {
+      Gen.uuid.map(_.toString).map(BoxId.apply)
+    }
+
+  implicit lazy val arbitraryBox: Arbitrary[Box] =
+    Arbitrary {
+      for {
+        boxId <- arbitrary[BoxId]
+      } yield Box(boxId, Constants.BoxName)
     }
 
   implicit lazy val arbitraryArrival: Arbitrary[Arrival] =

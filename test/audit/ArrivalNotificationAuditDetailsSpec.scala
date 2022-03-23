@@ -93,7 +93,7 @@ class ArrivalNotificationAuditDetailsSpec extends SpecBase with ScalaCheckProper
         "statistics"    -> statistics(requestSize)
       )
 
-      val details = ArrivalNotificationAuditDetails(ChannelType.api, enrolmentId, movementMessage.message, requestSize, mockMessageTranslation)
+      val details = ArrivalNotificationAuditDetails(ChannelType.api, enrolmentId, movementMessage.message, requestSize, None, mockMessageTranslation)
 
       Json.toJson(details).as[JsObject] mustEqual expectedDetails
     }
@@ -110,7 +110,7 @@ class ArrivalNotificationAuditDetailsSpec extends SpecBase with ScalaCheckProper
         "statistics"    -> statistics(requestSize)
       )
 
-      val details = ArrivalNotificationAuditDetails(ChannelType.api, enrolmentId, movementMessage.message, requestSize, mockMessageTranslation)
+      val details = ArrivalNotificationAuditDetails(ChannelType.api, enrolmentId, movementMessage.message, requestSize, None, mockMessageTranslation)
 
       Json.toJson(details).as[JsObject] mustEqual expectedDetails
     }

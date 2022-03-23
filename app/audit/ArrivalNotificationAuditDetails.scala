@@ -18,6 +18,7 @@ package audit
 
 import cats.data.Ior
 import config.Constants
+import models.BoxId
 import models.ChannelType
 import models.EORINumber
 import models.TURN
@@ -33,6 +34,7 @@ case class ArrivalNotificationAuditDetails(channel: ChannelType,
                                            enrolmentId: Ior[TURN, EORINumber],
                                            message: NodeSeq,
                                            requestLength: Int,
+                                           boxId: Option[BoxId],
                                            messageTranslation: MessageTranslation) {
 
   lazy val customerId: String =
@@ -75,6 +77,6 @@ object ArrivalNotificationAuditDetails {
       "enrolmentType" -> details.enrolmentType,
       "message"       -> details.declaration,
       "statistics"    -> details.statistics
-    )
+    ) ++ details.boxId.fold(JsObject.empty)(id => Json.obj("boxId" -> id))
   }
 }

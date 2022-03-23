@@ -73,7 +73,6 @@ class PushPullNotificationService @Inject()(connector: PushPullNotificationConne
               case Left(UpstreamErrorResponse(message, statusCode, _, _)) =>
                 logger.warn(s"Unable to post message to PPNS. Response from PPNS: Error $statusCode $message")
               case Right(_) => ()
-
             }
             .recover {
               case NonFatal(e) =>

@@ -178,12 +178,14 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
                                                                                     eqTo(Ior.right(EORINumber(newArrival.eoriNumber))),
                                                                                     any(),
                                                                                     any(),
-                                                                                    any())(any())
+                                                                                    any(),
+                                                                                    eqTo(None))(any())
           verify(mockAuditService, times(1)).auditArrivalNotificationWithStatistics(eqTo(AuditType.MesSenMES3Added),
                                                                                     eqTo(Ior.right(EORINumber(newArrival.eoriNumber))),
                                                                                     any(),
                                                                                     any(),
-                                                                                    any())(any())
+                                                                                    any(),
+                                                                                    eqTo(None))(any())
           verifyNoInteractions(mockNotificationService)
         }
       }
@@ -241,12 +243,14 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
                                                                                     eqTo(Ior.right(EORINumber(newArrival.eoriNumber))),
                                                                                     any(),
                                                                                     any(),
-                                                                                    any())(any())
+                                                                                    any(),
+                                                                                    eqTo(Some(testBox.boxId)))(any())
           verify(mockAuditService, times(1)).auditArrivalNotificationWithStatistics(eqTo(AuditType.MesSenMES3Added),
                                                                                     eqTo(Ior.right(EORINumber(newArrival.eoriNumber))),
                                                                                     any(),
                                                                                     any(),
-                                                                                    any())(any())
+                                                                                    any(),
+                                                                                    eqTo(None))(any())
         }
       }
 
@@ -550,7 +554,8 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
             eqTo(Ior.right(EORINumber(initializedArrival.eoriNumber))),
             any(),
             any(),
-            any()
+            any(),
+            eqTo(None)
           )(any())
         }
 

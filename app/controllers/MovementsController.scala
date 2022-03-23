@@ -25,6 +25,7 @@ import controllers.actions._
 import logging.Logging
 import metrics.HasActionMetrics
 import metrics.Monitors
+import metrics.WeekLongCounter
 import models.ArrivalId
 import models.Box
 import models.ChannelType
@@ -48,6 +49,7 @@ import services.SubmitMessageService
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
+import java.time.Clock
 import java.time.OffsetDateTime
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
@@ -74,8 +76,10 @@ class MovementsController @Inject()(
   private val movementSummaryLogger: Logger =
     Logger(s"application.${this.getClass.getCanonicalName}.movementSummary")
 
-  lazy val countArrivals = histo("get-all-arrivals-count")
-  lazy val messagesCount = histo("get-arrival-by-id-messages-count")
+  lazy val countArrivals               = histo("get-all-arrivals-count")
+  lazy val messagesCount               = histo("get-arrival-by-id-messages-count")
+  lazy val acceptedArrivalsWithPPNSBox = new WeekLongCounter(Clock.systemDefaultZone(), counter("accepted-arrivals-with-ppns-box"))
+  lazy val acceptedArrivals            = new WeekLongCounter(Clock.systemDefaultZone(), counter("accepted-arrivals"))
 
   private def handleSubmissionResult(result: SubmissionProcessingResult,
                                      arrivalNotificationType: String,
@@ -91,8 +95,8 @@ class MovementsController @Inject()(
       case submissionFailureRejected: SubmissionFailureRejected =>
         BadRequest(submissionFailureRejected.responseBody)
       case SubmissionSuccess =>
-        auditService.auditArrivalNotificationWithStatistics(arrivalNotificationType, enrolmentId, message, requestChannel, requestLength)
-        auditService.auditArrivalNotificationWithStatistics(AuditType.MesSenMES3Added, enrolmentId, message, requestChannel, requestLength)
+        auditService.auditArrivalNotificationWithStatistics(arrivalNotificationType, enrolmentId, message, requestChannel, requestLength, boxOpt.map(_.boxId))
+        auditService.auditArrivalNotificationWithStatistics(AuditType.MesSenMES3Added, enrolmentId, message, requestChannel, requestLength, None)
         Accepted(Json.toJson(boxOpt)).withHeaders("Location" -> routes.MovementsController.getArrival(arrivalId).url)
     }
 
@@ -120,6 +124,10 @@ class MovementsController @Inject()(
                         result =>
                           Monitors.messageReceived(registry, MessageType.ArrivalNotification, request.channel, result)
                           movementSummaryLogger.info(s"Submitted an arrival with result ${result.toString}\n${arrival.summaryInformation.mkString("\n")}")
+                          if (result == SubmissionSuccess) {
+                            if (boxOpt.isDefined) acceptedArrivalsWithPPNSBox.inc()
+                            acceptedArrivals.inc()
+                          }
                           handleSubmissionResult(
                             result,
                             AuditType.ArrivalNotificationSubmitted,

@@ -18,29 +18,30 @@ package audit
 
 import base.SpecBase
 import cats.data.Ior
+import config.Constants
+import generators.ModelGenerators
 import models.ChannelType.api
 import models._
+import models.request.AuthenticatedRequest
 import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.{eq => eqTo}
 import org.mockito.Mockito.reset
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
+import org.scalacheck.Gen
 import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.inject.bind
 import play.api.libs.json.Json
+import play.api.test.FakeRequest
 import play.api.test.Helpers.running
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-
-import java.time.LocalDateTime
-import config.Constants
-import org.scalacheck.Gen
-import models.request.AuthenticatedRequest
-import play.api.test.FakeRequest
 import utils.MessageTranslation
 import utils.XMLTransformer.toJson
 
-class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with BeforeAndAfterEach {
+import java.time.LocalDateTime
+
+class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with BeforeAndAfterEach with ModelGenerators {
 
   val mockAuditConnector: AuditConnector = mock[AuditConnector]
 
@@ -218,37 +219,43 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
 
     }
 
-    "must audit arrival notification events" - {
+    "must audit arrival notification events" - Seq(arbitraryBox.arbitrary.sample, None).foreach {
+      boxOpt =>
+        val mockMessageTranslation: MessageTranslation = mock[MessageTranslation]
 
-      val mockMessageTranslation: MessageTranslation = mock[MessageTranslation]
+        val requestXml  = <xml>test</xml>
+        val enrolmentId = Ior.right(EORINumber(Constants.NewEnrolmentIdKey))
+        val movementMessage =
+          MovementMessageWithStatus(MessageId(1), LocalDateTime.now, MessageType.ArrivalNotification, requestXml, MessageStatus.SubmissionSucceeded, 1)
 
-      val requestXml  = <xml>test</xml>
-      val enrolmentId = Ior.right(EORINumber(Constants.NewEnrolmentIdKey))
-      val movementMessage =
-        MovementMessageWithStatus(MessageId(1), LocalDateTime.now, MessageType.ArrivalNotification, requestXml, MessageStatus.SubmissionSucceeded, 1)
+        forAll(Gen.oneOf(ArrivalNotificationAuditDetails.maxRequestLength - 1000, ArrivalNotificationAuditDetails.maxRequestLength + 1000)) {
+          requestLength =>
+            val application = baseApplicationBuilder
+              .overrides(bind[AuditConnector].toInstance(mockAuditConnector))
+              .overrides(bind[MessageTranslation].toInstance(mockMessageTranslation))
+              .build()
 
-      forAll(Gen.oneOf(ArrivalNotificationAuditDetails.maxRequestLength - 1000, ArrivalNotificationAuditDetails.maxRequestLength + 1000)) {
-        requestLength =>
-          val application = baseApplicationBuilder
-            .overrides(bind[AuditConnector].toInstance(mockAuditConnector))
-            .overrides(bind[MessageTranslation].toInstance(mockMessageTranslation))
-            .build()
+            running(application) {
+              val auditService = application.injector.instanceOf[AuditService]
 
-          running(application) {
-            val auditService = application.injector.instanceOf[AuditService]
+              val expectedDetails = ArrivalNotificationAuditDetails(ChannelType.api,
+                                                                    enrolmentId,
+                                                                    movementMessage.message,
+                                                                    requestLength,
+                                                                    boxOpt.map(_.boxId),
+                                                                    mockMessageTranslation)
 
-            val expectedDetails = ArrivalNotificationAuditDetails(ChannelType.api, enrolmentId, movementMessage.message, requestLength, mockMessageTranslation)
+              auditService.auditArrivalNotificationWithStatistics(AuditType.ArrivalNotificationSubmitted,
+                                                                  enrolmentId,
+                                                                  movementMessage,
+                                                                  ChannelType.api,
+                                                                  requestLength,
+                                                                  boxOpt.map(_.boxId))
 
-            auditService.auditArrivalNotificationWithStatistics(AuditType.ArrivalNotificationSubmitted,
-                                                                enrolmentId,
-                                                                movementMessage,
-                                                                ChannelType.api,
-                                                                requestLength)
-
-            verify(mockAuditConnector, times(1)).sendExplicitAudit(eqTo(AuditType.ArrivalNotificationSubmitted), eqTo(expectedDetails))(any(), any(), any())
-            reset(mockAuditConnector)
-          }
-      }
+              verify(mockAuditConnector, times(1)).sendExplicitAudit(eqTo(AuditType.ArrivalNotificationSubmitted), eqTo(expectedDetails))(any(), any(), any())
+              reset(mockAuditConnector)
+            }
+        }
     }
   }
 }

@@ -69,9 +69,10 @@ class AuditService @Inject()(auditConnector: AuditConnector, messageTranslation:
                                              enrolmentId: Ior[TURN, EORINumber],
                                              message: MovementMessage,
                                              channel: ChannelType,
-                                             requestLength: Int)(implicit hc: HeaderCarrier): Unit = {
+                                             requestLength: Int,
+                                             boxId: Option[BoxId])(implicit hc: HeaderCarrier): Unit = {
 
-    val details = ArrivalNotificationAuditDetails(channel, enrolmentId, message.message, requestLength, messageTranslation)
+    val details = ArrivalNotificationAuditDetails(channel, enrolmentId, message.message, requestLength, boxId, messageTranslation)
     auditConnector.sendExplicitAudit(auditType, details)
   }
 }
