@@ -18,7 +18,6 @@ package controllers
 
 import audit.AuditService
 import audit.AuditType
-import cats.data.Ior
 import com.kenshoo.play.metrics.Metrics
 import config.Constants
 import controllers.actions._
@@ -30,6 +29,7 @@ import models.ArrivalId
 import models.Box
 import models.ChannelType
 import models.EORINumber
+import models.EnrolmentId
 import models.MessageType
 import models.MovementMessage
 import models.SubmissionProcessingResult
@@ -86,7 +86,7 @@ class MovementsController @Inject()(
                                      message: MovementMessage,
                                      requestChannel: ChannelType,
                                      arrivalId: ArrivalId,
-                                     enrolmentId: Ior[TURN, EORINumber],
+                                     enrolmentId: EnrolmentId,
                                      boxOpt: Option[Box],
                                      requestLength: Int)(implicit hc: HeaderCarrier) =
     result match {
@@ -95,8 +95,20 @@ class MovementsController @Inject()(
       case submissionFailureRejected: SubmissionFailureRejected =>
         BadRequest(submissionFailureRejected.responseBody)
       case SubmissionSuccess =>
-        auditService.auditArrivalNotificationWithStatistics(arrivalNotificationType, enrolmentId, message, requestChannel, requestLength, boxOpt.map(_.boxId))
-        auditService.auditArrivalNotificationWithStatistics(AuditType.MesSenMES3Added, enrolmentId, message, requestChannel, requestLength, None)
+        auditService.auditArrivalNotificationWithStatistics(arrivalNotificationType,
+                                                            enrolmentId.customerId,
+                                                            enrolmentId.enrolmentType,
+                                                            message,
+                                                            requestChannel,
+                                                            requestLength,
+                                                            boxOpt.map(_.boxId))
+        auditService.auditArrivalNotificationWithStatistics(AuditType.MesSenMES3Added,
+                                                            enrolmentId.customerId,
+                                                            enrolmentId.enrolmentType,
+                                                            message,
+                                                            requestChannel,
+                                                            requestLength,
+                                                            None)
         Accepted(Json.toJson(boxOpt)).withHeaders("Location" -> routes.MovementsController.getArrival(arrivalId).url)
     }
 
@@ -115,7 +127,7 @@ class MovementsController @Inject()(
           getBox(request.headers.get(Constants.XClientIdHeader)).flatMap {
             boxOpt =>
               arrivalMovementService
-                .makeArrivalMovement(request.enrolmentId, request.body, request.channel, boxOpt)
+                .makeArrivalMovement(request.enrolmentId.customerId, request.body, request.channel, boxOpt)
                 .flatMap {
                   case Right(arrival) =>
                     submitMessageService
@@ -199,7 +211,7 @@ class MovementsController @Inject()(
       authenticate().async {
         implicit request =>
           arrivalMovementRepository
-            .fetchAllArrivals(request.enrolmentId, request.channel, updatedSince, mrn, pageSize, page)
+            .fetchAllArrivals(request.enrolmentId.value, request.channel, updatedSince, mrn, pageSize, page)
             .map {
               responseArrivals =>
                 countArrivals.update(responseArrivals.retrievedArrivals)

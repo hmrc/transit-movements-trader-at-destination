@@ -16,8 +16,6 @@
 
 package audit
 
-import cats.data.Ior
-
 import javax.inject.Inject
 import models._
 import models.request.AuthenticatedRequest
@@ -33,9 +31,10 @@ import utils.XMLTransformer.toJson
 
 class AuditService @Inject()(auditConnector: AuditConnector, messageTranslation: MessageTranslation)(implicit ec: ExecutionContext) {
 
-  def auditEvent(auditType: String, enrolmentId: Ior[TURN, EORINumber], message: MovementMessage, channel: ChannelType)(implicit hc: HeaderCarrier): Unit = {
+  def auditEvent(auditType: String, customerId: String, enrolmentType: String, message: MovementMessage, channel: ChannelType)(
+    implicit hc: HeaderCarrier): Unit = {
     val json    = messageTranslation.translate(toJson(message.message))
-    val details = AuthenticatedAuditDetails(channel, enrolmentId, json)
+    val details = AuthenticatedAuditDetails(channel, customerId, enrolmentType, json)
     auditConnector.sendExplicitAudit(auditType, details)
   }
 
@@ -58,7 +57,8 @@ class AuditService @Inject()(auditConnector: AuditConnector, messageTranslation:
 
   def auditCustomerRequestedMissingMovementEvent(request: AuthenticatedRequest[_], arrivalId: ArrivalId): Unit = {
     implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
-    val details                    = AuthenticatedAuditDetails(request.channel, request.enrolmentId, Json.obj("arrivalId" -> arrivalId))
+    val details =
+      AuthenticatedAuditDetails(request.channel, request.enrolmentId.customerId, request.enrolmentId.enrolmentType, Json.obj("arrivalId" -> arrivalId))
     auditConnector.sendExplicitAudit(AuditType.CustomerRequestedMissingMovement, details)
   }
 
@@ -66,13 +66,14 @@ class AuditService @Inject()(auditConnector: AuditConnector, messageTranslation:
     auditConnector.sendExplicitAudit(auditType, details)
 
   def auditArrivalNotificationWithStatistics(auditType: String,
-                                             enrolmentId: Ior[TURN, EORINumber],
+                                             customerId: String,
+                                             enrolmentType: String,
                                              message: MovementMessage,
                                              channel: ChannelType,
                                              requestLength: Int,
                                              boxId: Option[BoxId])(implicit hc: HeaderCarrier): Unit = {
 
-    val details = ArrivalNotificationAuditDetails(channel, enrolmentId, message.message, requestLength, boxId, messageTranslation)
+    val details = ArrivalNotificationAuditDetails(channel, customerId, enrolmentType, message.message, requestLength, boxId, messageTranslation)
     auditConnector.sendExplicitAudit(auditType, details)
   }
 }

@@ -21,6 +21,7 @@ import cats.data.Ior
 import generators.ModelGenerators
 import models.ChannelType
 import models.EORINumber
+import models.EnrolmentId
 import models.MessageId
 import models.MessageStatus
 import models.MessageType
@@ -64,7 +65,7 @@ class ArrivalNotificationAuditDetailsSpec extends SpecBase with ScalaCheckProper
         </HEAHEA>
       </CC007A>
 
-    val enrolmentId = Ior.right(EORINumber(Constants.NewEnrolmentIdKey))
+    val enrolmentId = EnrolmentId(Ior.right(EORINumber(Constants.NewEnrolmentIdKey)))
     val movementMessage =
       MovementMessageWithStatus(MessageId(1), LocalDateTime.now, MessageType.ArrivalNotification, requestXml, MessageStatus.SubmissionSucceeded, 1)
 
@@ -93,7 +94,15 @@ class ArrivalNotificationAuditDetailsSpec extends SpecBase with ScalaCheckProper
         "statistics"    -> statistics(requestSize)
       )
 
-      val details = ArrivalNotificationAuditDetails(ChannelType.api, enrolmentId, movementMessage.message, requestSize, None, mockMessageTranslation)
+      val details = ArrivalNotificationAuditDetails(
+        ChannelType.api,
+        enrolmentId.customerId,
+        enrolmentId.enrolmentType,
+        movementMessage.message,
+        requestSize,
+        None,
+        mockMessageTranslation
+      )
 
       Json.toJson(details).as[JsObject] mustEqual expectedDetails
     }
@@ -110,7 +119,15 @@ class ArrivalNotificationAuditDetailsSpec extends SpecBase with ScalaCheckProper
         "statistics"    -> statistics(requestSize)
       )
 
-      val details = ArrivalNotificationAuditDetails(ChannelType.api, enrolmentId, movementMessage.message, requestSize, None, mockMessageTranslation)
+      val details = ArrivalNotificationAuditDetails(
+        ChannelType.api,
+        enrolmentId.customerId,
+        enrolmentId.enrolmentType,
+        movementMessage.message,
+        requestSize,
+        None,
+        mockMessageTranslation
+      )
 
       Json.toJson(details).as[JsObject] mustEqual expectedDetails
     }

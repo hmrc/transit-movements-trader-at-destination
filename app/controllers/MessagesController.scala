@@ -101,7 +101,11 @@ class MessagesController @Inject()(
                           BadRequest(submissionFailureRejected.responseBody)
                         case SubmissionSuccess =>
                           val enrolmentId = request.arrivalWithoutMessageRequest.request.enrolmentId
-                          auditService.auditEvent(AuditType.UnloadingRemarksSubmitted, enrolmentId, message, arrival.channel)
+                          auditService.auditEvent(AuditType.UnloadingRemarksSubmitted,
+                                                  enrolmentId.customerId,
+                                                  enrolmentId.enrolmentType,
+                                                  message,
+                                                  arrival.channel)
                           Accepted("Message accepted")
                             .withHeaders("Location" -> routes.MessagesController.getMessage(arrival.arrivalId, arrival.nextMessageId).url)
                       }

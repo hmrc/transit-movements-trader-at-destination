@@ -16,12 +16,8 @@
 
 package audit
 
-import cats.data.Ior
-import config.Constants
 import models.BoxId
 import models.ChannelType
-import models.EORINumber
-import models.TURN
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import play.api.libs.json.OWrites
@@ -31,25 +27,12 @@ import utils.XMLTransformer.toJson
 import scala.xml.NodeSeq
 
 case class ArrivalNotificationAuditDetails(channel: ChannelType,
-                                           enrolmentId: Ior[TURN, EORINumber],
+                                           customerId: String,
+                                           enrolmentType: String,
                                            message: NodeSeq,
                                            requestLength: Int,
                                            boxId: Option[BoxId],
                                            messageTranslation: MessageTranslation) {
-
-  lazy val customerId: String =
-    enrolmentId.fold(
-      turn => turn.value,
-      eoriNumber => eoriNumber.value,
-      (_, eoriNumber) => eoriNumber.value
-    )
-
-  lazy val enrolmentType: String =
-    enrolmentId.fold(
-      _ => Constants.LegacyEnrolmentKey,
-      _ => Constants.NewEnrolmentKey,
-      (_, _) => Constants.NewEnrolmentKey
-    )
 
   def fieldOccurrenceCount(field: String): Int = (message \\ field).length
   def fieldValue(field: String): String        = if (fieldOccurrenceCount(field) == 0) "NULL" else (message \\ field).text

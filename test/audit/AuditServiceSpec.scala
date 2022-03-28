@@ -52,9 +52,9 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
 
   "AuditService" - {
     "must audit notification message event" in {
-      val requestEori  = Ior.right(EORINumber("eori"))
+      val enrolmentId  = EnrolmentId(Ior.right(EORINumber("eori")))
       val requestXml   = <xml>test</xml>
-      val auditDetails = AuthenticatedAuditDetails(ChannelType.api, requestEori, Json.obj("xml" -> "test"))
+      val auditDetails = AuthenticatedAuditDetails(ChannelType.api, enrolmentId.customerId, enrolmentId.enrolmentType, Json.obj("xml" -> "test"))
 
       val movementMessage =
         MovementMessageWithStatus(MessageId(1), LocalDateTime.now, MessageType.ArrivalNotification, requestXml, MessageStatus.SubmissionSucceeded, 1)
@@ -66,7 +66,7 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
         .build()
       running(application) {
         val auditService = application.injector.instanceOf[AuditService]
-        auditService.auditEvent(auditType, requestEori, movementMessage, api)
+        auditService.auditEvent(auditType, enrolmentId.customerId, enrolmentId.enrolmentType, movementMessage, api)
 
         verify(mockAuditConnector, times(1)).sendExplicitAudit(eqTo(auditType), eqTo(auditDetails))(any(), any(), any())
       }
@@ -176,16 +176,17 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
 
     "must audit customer missing movement events" in {
       forAll(Gen.oneOf(ChannelType.values)) {
-        (channel) =>
-          val request = new AuthenticatedRequest[Any](FakeRequest(), channel, Ior.right(EORINumber(Constants.NewEnrolmentIdKey)))
+        channel =>
+          val request = new AuthenticatedRequest[Any](FakeRequest(), channel, EnrolmentId(Ior.right(EORINumber(Constants.NewEnrolmentIdKey))))
           val application = baseApplicationBuilder
             .overrides(bind[AuditConnector].toInstance(mockAuditConnector))
             .build()
 
           running(application) {
-            val auditService    = application.injector.instanceOf[AuditService]
-            val arrivalId       = ArrivalId(1234)
-            val expectedDetails = AuthenticatedAuditDetails(request.channel, request.enrolmentId, Json.obj("arrivalId" -> arrivalId))
+            val auditService = application.injector.instanceOf[AuditService]
+            val arrivalId    = ArrivalId(1234)
+            val expectedDetails =
+              AuthenticatedAuditDetails(request.channel, request.enrolmentId.customerId, request.enrolmentId.enrolmentType, Json.obj("arrivalId" -> arrivalId))
             auditService.auditCustomerRequestedMissingMovementEvent(request, arrivalId)
 
             verify(mockAuditConnector, times(1)).sendExplicitAudit(eqTo(AuditType.CustomerRequestedMissingMovement), eqTo(expectedDetails))(any(), any(), any())
@@ -224,7 +225,7 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
         val mockMessageTranslation: MessageTranslation = mock[MessageTranslation]
 
         val requestXml  = <xml>test</xml>
-        val enrolmentId = Ior.right(EORINumber(Constants.NewEnrolmentIdKey))
+        val enrolmentId = EnrolmentId(Ior.right(EORINumber(Constants.NewEnrolmentIdKey)))
         val movementMessage =
           MovementMessageWithStatus(MessageId(1), LocalDateTime.now, MessageType.ArrivalNotification, requestXml, MessageStatus.SubmissionSucceeded, 1)
 
@@ -238,19 +239,25 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
             running(application) {
               val auditService = application.injector.instanceOf[AuditService]
 
-              val expectedDetails = ArrivalNotificationAuditDetails(ChannelType.api,
-                                                                    enrolmentId,
-                                                                    movementMessage.message,
-                                                                    requestLength,
-                                                                    boxOpt.map(_.boxId),
-                                                                    mockMessageTranslation)
+              val expectedDetails = ArrivalNotificationAuditDetails(
+                ChannelType.api,
+                enrolmentId.customerId,
+                enrolmentId.enrolmentType,
+                movementMessage.message,
+                requestLength,
+                boxOpt.map(_.boxId),
+                mockMessageTranslation
+              )
 
-              auditService.auditArrivalNotificationWithStatistics(AuditType.ArrivalNotificationSubmitted,
-                                                                  enrolmentId,
-                                                                  movementMessage,
-                                                                  ChannelType.api,
-                                                                  requestLength,
-                                                                  boxOpt.map(_.boxId))
+              auditService.auditArrivalNotificationWithStatistics(
+                AuditType.ArrivalNotificationSubmitted,
+                enrolmentId.customerId,
+                enrolmentId.enrolmentType,
+                movementMessage,
+                ChannelType.api,
+                requestLength,
+                boxOpt.map(_.boxId)
+              )
 
               verify(mockAuditConnector, times(1)).sendExplicitAudit(eqTo(AuditType.ArrivalNotificationSubmitted), eqTo(expectedDetails))(any(), any(), any())
               reset(mockAuditConnector)

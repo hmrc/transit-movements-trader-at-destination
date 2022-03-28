@@ -19,6 +19,7 @@ package controllers.actions
 import cats.data.Ior
 import models.ChannelType.web
 import models.EORINumber
+import models.EnrolmentId
 import models.request.AuthenticatedRequest
 import play.api.mvc._
 
@@ -37,7 +38,7 @@ class FakeAuthenticateActionProvider @Inject()(
 
 class FakeAuthenticateAction extends ActionRefiner[Request, AuthenticatedRequest] {
   override protected def refine[A](request: Request[A]): Future[Either[Result, AuthenticatedRequest[A]]] =
-    Future.successful(Right(AuthenticatedRequest(request, web, Ior.right(EORINumber("eori")))))
+    Future.successful(Right(AuthenticatedRequest(request, web, EnrolmentId(Ior.right(EORINumber("eori"))))))
 
   override protected def executionContext: ExecutionContext =
     scala.concurrent.ExecutionContext.Implicits.global

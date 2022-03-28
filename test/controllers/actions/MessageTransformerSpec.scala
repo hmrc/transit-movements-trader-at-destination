@@ -22,6 +22,7 @@ import models.ArrivalRejectedResponse
 import models.ArrivalWithoutMessages
 import models.ChannelType
 import models.EORINumber
+import models.EnrolmentId
 import models.GoodsReleasedResponse
 import models.MessageType
 import models.UnloadingPermissionResponse
@@ -86,7 +87,7 @@ class MessageTransformerSpec
                   )
                   .withBody[NodeSeq](<CC008A> </CC008A>),
                 channel,
-                Ior.right(EORINumber("eori"))
+                EnrolmentId(Ior.right(EORINumber("eori")))
               ),
               arrivalMovement,
               channel
@@ -108,7 +109,7 @@ class MessageTransformerSpec
                   .withHeaders("X-Message-Type" -> "invalid-message-type", "Content-Type" -> "application/xml")
                   .withBody[NodeSeq](<INVALID></INVALID>),
                 channel,
-                Ior.right(EORINumber("eori"))
+                EnrolmentId(Ior.right(EORINumber("eori")))
               ),
               arrivalWithoutMessages,
               channel
@@ -132,7 +133,7 @@ class MessageTransformerSpec
                   .withHeaders("X-Message-Type" -> MessageType.GoodsReleased.code, "Content-Type" -> "application/xml")
                   .withBody[NodeSeq](<CC025A></CC025A>),
                 channel,
-                Ior.right(EORINumber("eori"))
+                EnrolmentId(Ior.right(EORINumber("eori")))
               ),
               arrivalMovement,
               channel
@@ -160,7 +161,7 @@ class MessageTransformerSpec
                   )
                   .withBody[NodeSeq](<CC008A></CC008A>),
                 channel,
-                Ior.right(EORINumber("eori"))
+                EnrolmentId(Ior.right(EORINumber("eori")))
               ),
               arrivalMovement,
               channel
