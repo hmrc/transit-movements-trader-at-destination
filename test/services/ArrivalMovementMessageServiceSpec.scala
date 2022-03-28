@@ -110,7 +110,7 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
         notificationBox = None
       )
 
-      service.makeArrivalMovement(EnrolmentId(Ior.right(EORINumber(eori))).customerId, movement, api, None).futureValue.right.get mustBe expectedArrival
+      service.makeArrivalMovement(EnrolmentId(Ior.right(EORINumber(eori))), movement, api, None).futureValue.right.get mustBe expectedArrival
 
       application.stop()
     }
@@ -144,7 +144,7 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
         </Foo>
 
       service
-        .makeArrivalMovement(EnrolmentId(Ior.right(EORINumber(eori))).customerId, invalidPayload, api, None)
+        .makeArrivalMovement(EnrolmentId(Ior.right(EORINumber(eori))), invalidPayload, api, None)
         .futureValue
         .left
         .get mustBe an[InvalidRootNode]

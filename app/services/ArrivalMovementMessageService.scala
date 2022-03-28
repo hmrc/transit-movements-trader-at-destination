@@ -23,14 +23,12 @@ import models.Arrival
 import models.ArrivalId
 import models.Box
 import models.ChannelType
-import models.EORINumber
 import models.EnrolmentId
 import models.MessageId
 import models.MessageType
 import models.MovementMessageWithStatus
 import models.MovementMessageWithoutStatus
 import models.MovementReferenceNumber
-import models.TURN
 import models.MessageStatus.SubmissionPending
 import models.ParseError.EmptyNodeSeq
 import repositories.ArrivalIdRepository
@@ -42,11 +40,11 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.xml.NodeSeq
 
-class ArrivalMovementMessageService @Inject()(arrivalIdRepository: ArrivalIdRepository, clock: Clock)(implicit ec: ExecutionContext) {
+class ArrivalMovementMessageService @Inject() (arrivalIdRepository: ArrivalIdRepository, clock: Clock)(implicit ec: ExecutionContext) {
   import XMLTransformer._
   import XmlMessageParser._
 
-  def makeArrivalMovement(customerId: String, nodeSeq: NodeSeq, channelType: ChannelType, boxOpt: Option[Box]): Future[ParseHandler[Arrival]] =
+  def makeArrivalMovement(enrolmentId: EnrolmentId, nodeSeq: NodeSeq, channelType: ChannelType, boxOpt: Option[Box]): Future[ParseHandler[Arrival]] =
     arrivalIdRepository.nextId().map {
       arrivalId =>
         (for {
@@ -54,19 +52,18 @@ class ArrivalMovementMessageService @Inject()(arrivalIdRepository: ArrivalIdRepo
           dateTime <- dateTimeOfPrepR
           message  <- makeOutboundMessage(arrivalId, MessageId(1), messageCorrelationId = 1, messageType = MessageType.ArrivalNotification)
           mrn      <- mrnR
-        } yield
-          Arrival(
-            arrivalId,
-            channelType,
-            mrn,
-            customerId,
-            dateTime,
-            dateTime,
-            LocalDateTime.now(clock),
-            NonEmptyList.one(message),
-            2,
-            boxOpt
-          )).apply(nodeSeq)
+        } yield Arrival(
+          arrivalId,
+          channelType,
+          mrn,
+          enrolmentId.customerId,
+          dateTime,
+          dateTime,
+          LocalDateTime.now(clock),
+          NonEmptyList.one(message),
+          2,
+          boxOpt
+        )).apply(nodeSeq)
     }
 
   def messageAndMrn(
