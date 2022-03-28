@@ -19,6 +19,7 @@ package controllers
 import audit.AuditService
 import audit.AuditType
 import base.SpecBase
+import cats.data.Ior
 import cats.data.NonEmptyList
 import connectors.MessageConnector
 import connectors.MessageConnector.EisSubmissionResult.ErrorInPayload
@@ -177,8 +178,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
 
           verify(mockAuditService, times(1)).auditEvent(
             eqTo(AuditType.UnloadingRemarksSubmitted),
-            any(),
-            any(),
+            EnrolmentId(eqTo(Ior.right(EORINumber("eori")))),
             any(),
             any()
           )(any())
