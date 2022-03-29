@@ -31,7 +31,7 @@ private[workers] trait WorkerLockingService extends Iterator[Future[LockResult]]
 
 }
 
-private[workers] class WorkerLockingServiceImpl @Inject() (
+private[workers] class WorkerLockingServiceImpl @Inject()(
   workerConfig: WorkerConfig,
   workerLockRepository: WorkerLockRepository,
   lifecycle: ApplicationLifecycle

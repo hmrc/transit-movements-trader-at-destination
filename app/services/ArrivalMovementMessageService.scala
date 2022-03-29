@@ -40,7 +40,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.xml.NodeSeq
 
-class ArrivalMovementMessageService @Inject() (arrivalIdRepository: ArrivalIdRepository, clock: Clock)(implicit ec: ExecutionContext) {
+class ArrivalMovementMessageService @Inject()(arrivalIdRepository: ArrivalIdRepository, clock: Clock)(implicit ec: ExecutionContext) {
   import XMLTransformer._
   import XmlMessageParser._
 
@@ -52,18 +52,19 @@ class ArrivalMovementMessageService @Inject() (arrivalIdRepository: ArrivalIdRep
           dateTime <- dateTimeOfPrepR
           message  <- makeOutboundMessage(arrivalId, MessageId(1), messageCorrelationId = 1, messageType = MessageType.ArrivalNotification)
           mrn      <- mrnR
-        } yield Arrival(
-          arrivalId,
-          channelType,
-          mrn,
-          enrolmentId.customerId,
-          dateTime,
-          dateTime,
-          LocalDateTime.now(clock),
-          NonEmptyList.one(message),
-          2,
-          boxOpt
-        )).apply(nodeSeq)
+        } yield
+          Arrival(
+            arrivalId,
+            channelType,
+            mrn,
+            enrolmentId.customerId,
+            dateTime,
+            dateTime,
+            LocalDateTime.now(clock),
+            NonEmptyList.one(message),
+            2,
+            boxOpt
+          )).apply(nodeSeq)
     }
 
   def messageAndMrn(

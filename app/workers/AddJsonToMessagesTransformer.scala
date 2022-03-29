@@ -34,7 +34,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 
-private[workers] class AddJsonToMessagesTransformer @Inject() (
+private[workers] class AddJsonToMessagesTransformer @Inject()(
   workerConfig: WorkerConfig,
   arrivalMovementRepository: ArrivalMovementRepository,
   arrivalLockRepository: LockRepository

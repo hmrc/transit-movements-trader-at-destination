@@ -36,7 +36,7 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class WorkerLockRepository @Inject() (mongo: ReactiveMongoApi, appConfig: AppConfig, clock: Clock)(implicit ec: ExecutionContext) extends Repository {
+class WorkerLockRepository @Inject()(mongo: ReactiveMongoApi, appConfig: AppConfig, clock: Clock)(implicit ec: ExecutionContext) extends Repository {
 
   private val documentExistsErrorCodeValue = 11000
 

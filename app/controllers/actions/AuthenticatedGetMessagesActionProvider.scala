@@ -33,7 +33,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import audit.AuditService
 
-private[actions] class AuthenticatedGetMessagesActionProvider @Inject() (
+private[actions] class AuthenticatedGetMessagesActionProvider @Inject()(
   repository: ArrivalMovementRepository,
   auditService: AuditService
 )(implicit ec: ExecutionContext) {

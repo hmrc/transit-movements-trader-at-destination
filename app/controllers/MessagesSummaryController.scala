@@ -30,7 +30,7 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import scala.concurrent.ExecutionContext
 
-class MessagesSummaryController @Inject() (
+class MessagesSummaryController @Inject()(
   authenticateForReadWithMessages: AuthenticatedGetArrivalForReadActionProvider,
   arrivalMessageSummaryService: ArrivalMessageSummaryService,
   cc: ControllerComponents,

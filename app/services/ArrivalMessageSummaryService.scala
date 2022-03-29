@@ -142,15 +142,16 @@ class ArrivalMessageSummaryService {
       unloadingRemarks                     <- unloadingRemarksR
       unloadingRejections                  <- unloadingRemarksRejectionsR
       xmlSubmissionNegativeAcknowledgement <- xmlSubmissionNegativeAcknowledgementR
-    } yield MessagesSummary(
-      arrival = arrival,
-      arrivalNotification = arrivalNotification._2,
-      arrivalRejection = arrivalRejection.map(_._2),
-      unloadingPermission = unloadingPermission.map(_._2),
-      unloadingRemarks = unloadingRemarks.map(_._2),
-      unloadingRemarksRejection = unloadingRejections.map(_._2),
-      xmlSubmissionNegativeAcknowledgement = xmlSubmissionNegativeAcknowledgement.map(_._2)
-    )).run(arrival)
+    } yield
+      MessagesSummary(
+        arrival = arrival,
+        arrivalNotification = arrivalNotification._2,
+        arrivalRejection = arrivalRejection.map(_._2),
+        unloadingPermission = unloadingPermission.map(_._2),
+        unloadingRemarks = unloadingRemarks.map(_._2),
+        unloadingRemarksRejection = unloadingRejections.map(_._2),
+        xmlSubmissionNegativeAcknowledgement = xmlSubmissionNegativeAcknowledgement.map(_._2)
+      )).run(arrival)
 
 }
 

@@ -40,7 +40,7 @@ object ArrivalIdSelector {
     arrivalIdSelector =>
       Json.obj(
         "_id" -> arrivalIdSelector.arrivalId
-      )
+    )
   )
 }
 
@@ -55,6 +55,6 @@ object MessageSelector {
           Json.obj("_id"                                                 -> messageSelector.arrivalId),
           Json.obj(s"messages.${messageSelector.messageId.index}.status" -> Json.obj("$exists" -> true))
         )
-      )
+    )
   )
 }

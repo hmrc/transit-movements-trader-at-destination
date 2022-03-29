@@ -28,7 +28,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.xml.NodeSeq
 
-class MovementMessageService @Inject() (arrivalMovementMessageService: ArrivalMovementMessageService)(implicit ec: ExecutionContext) {
+class MovementMessageService @Inject()(arrivalMovementMessageService: ArrivalMovementMessageService)(implicit ec: ExecutionContext) {
 
   def makeMovementMessage(messageCorrelationId: Int, messageType: MessageType, xml: NodeSeq): EitherT[Future, SubmissionState, MovementMessageWithoutStatus] =
     EitherT.fromEither(

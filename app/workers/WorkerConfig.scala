@@ -20,7 +20,7 @@ import play.api.Configuration
 
 import javax.inject.Inject
 
-class WorkerConfig @Inject() (config: Configuration) {
+class WorkerConfig @Inject()(config: Configuration) {
 
   val addJsonToMessagesWorkerSettings: WorkerSettings =
     config.get[WorkerSettings]("workers.add-json-to-messages")

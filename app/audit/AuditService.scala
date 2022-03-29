@@ -36,7 +36,7 @@ object AuditService {
   val maxRequestLength = 20000
 }
 
-class AuditService @Inject() (auditConnector: AuditConnector, messageTranslation: MessageTranslation)(implicit ec: ExecutionContext) {
+class AuditService @Inject()(auditConnector: AuditConnector, messageTranslation: MessageTranslation)(implicit ec: ExecutionContext) {
 
   def auditEvent(auditType: String, enrolmentId: EnrolmentId, message: MovementMessage, channel: ChannelType)(implicit hc: HeaderCarrier): Unit = {
     val json    = messageTranslation.translate(toJson(message.message))
@@ -45,16 +45,14 @@ class AuditService @Inject() (auditConnector: AuditConnector, messageTranslation
   }
 
   def auditNCTSMessages(channel: ChannelType, customerId: String, messageResponse: MessageResponse, message: MovementMessage)(implicit
-    hc: HeaderCarrier
-  ): Unit = {
+                                                                                                                              hc: HeaderCarrier): Unit = {
     val json    = messageTranslation.translate(toJson(message.message))
     val details = UnauthenticatedAuditDetails(channel, customerId, json)
     auditConnector.sendExplicitAudit(messageResponse.auditType, details)
   }
 
   def auditNCTSRequestedMissingMovementEvent(arrivalId: ArrivalId, messageResponse: MessageResponse, message: MovementMessage)(implicit
-    hc: HeaderCarrier
-  ): Unit = {
+                                                                                                                               hc: HeaderCarrier): Unit = {
     val details = Json.obj(
       "arrivalId"           -> arrivalId,
       "messageResponseType" -> messageResponse.auditType,

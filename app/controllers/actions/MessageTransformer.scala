@@ -29,7 +29,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.xml.NodeSeq
 
-class MessageTransformer @Inject() (implicit val executionContext: ExecutionContext) extends MessageTransformerInterface with Logging {
+class MessageTransformer @Inject()(implicit val executionContext: ExecutionContext) extends MessageTransformerInterface with Logging {
 
   override def refine[A](request: ArrivalWithoutMessagesRequest[A]): Future[Either[Result, MessageTransformRequest[A]]] =
     request.body match {

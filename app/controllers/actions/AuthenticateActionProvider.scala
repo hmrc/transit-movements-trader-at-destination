@@ -26,7 +26,7 @@ trait AuthenticateActionProvider {
   def apply(): ActionBuilder[AuthenticatedRequest, AnyContent]
 }
 
-class AuthenticateActionProviderImpl @Inject() (
+class AuthenticateActionProviderImpl @Inject()(
   authenticate: AuthenticateAction,
   buildDefault: DefaultActionBuilder
 ) extends AuthenticateActionProvider {

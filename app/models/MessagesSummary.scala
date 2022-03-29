@@ -33,13 +33,13 @@ object MessagesSummary {
   implicit val writes: OWrites[MessagesSummary] =
     OWrites[MessagesSummary] {
       case MessagesSummary(
-            arrival,
-            arrivalNotification,
-            arrivalRejection,
-            unloadingPermission,
-            unloadingRemarks,
-            unloadingRemarksRejection,
-            xmlSubmissionNegativeAcknowledgement
+          arrival,
+          arrivalNotification,
+          arrivalRejection,
+          unloadingPermission,
+          unloadingRemarks,
+          unloadingRemarksRejection,
+          xmlSubmissionNegativeAcknowledgement
           ) =>
         Json
           .obj(

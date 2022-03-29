@@ -32,7 +32,7 @@ import scala.concurrent.Future
 import scala.util.Failure
 import scala.util.Success
 
-class SaveMessageService @Inject() (
+class SaveMessageService @Inject()(
   arrivalMovementRepository: ArrivalMovementRepository,
   auditService: AuditService,
   val metrics: Metrics

@@ -90,6 +90,6 @@ object XmlMessageParser {
         (xml \ "HEAHEA" \ "DocNumHEA5").text.trim match {
           case mrnString if mrnString.nonEmpty => Right(MovementReferenceNumber(mrnString))
           case _                               => Left(EmptyMovementReferenceNumber("DocNumHEA5 was empty"))
-        }
+      }
     )
 }

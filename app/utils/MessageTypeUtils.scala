@@ -68,29 +68,24 @@ object MessageTypeUtils {
             MessageType.ArrivalRejection
           }
         case MessageType.UnloadingRemarksRejection =>
-          if (
-            orderedMessages.count(_.messageType == MessageType.UnloadingRemarks) > orderedMessages.count(_.messageType == MessageType.UnloadingRemarksRejection)
-          ) {
+          if (orderedMessages.count(_.messageType == MessageType.UnloadingRemarks) > orderedMessages.count(
+                _.messageType == MessageType.UnloadingRemarksRejection)) {
             MessageType.UnloadingRemarks
           } else {
             MessageType.UnloadingRemarksRejection
           }
         case MessageType.XMLSubmissionNegativeAcknowledgement if orderedMessages.count(_.messageType == MessageType.UnloadingRemarks) >= 1 =>
-          if (
-            orderedMessages
-              .count(_.messageType == MessageType.UnloadingRemarks) > orderedMessages.count(_.messageType == MessageType.XMLSubmissionNegativeAcknowledgement)
-          ) {
+          if (orderedMessages
+                .count(_.messageType == MessageType.UnloadingRemarks) > orderedMessages.count(_.messageType == MessageType.XMLSubmissionNegativeAcknowledgement)) {
             MessageType.UnloadingRemarks
           } else {
             MessageType.XMLSubmissionNegativeAcknowledgement
           }
         case MessageType.XMLSubmissionNegativeAcknowledgement =>
-          if (
-            orderedMessages
-              .count(_.messageType == MessageType.ArrivalNotification) > orderedMessages.count(
-              _.messageType == MessageType.XMLSubmissionNegativeAcknowledgement
-            )
-          ) {
+          if (orderedMessages
+                .count(_.messageType == MessageType.ArrivalNotification) > orderedMessages.count(
+                _.messageType == MessageType.XMLSubmissionNegativeAcknowledgement
+              )) {
             MessageType.ArrivalNotification
           } else {
             MessageType.XMLSubmissionNegativeAcknowledgement

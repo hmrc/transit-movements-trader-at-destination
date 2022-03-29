@@ -54,7 +54,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.xml.NodeSeq
 
-class MovementsController @Inject() (
+class MovementsController @Inject()(
   cc: ControllerComponents,
   arrivalMovementRepository: ArrivalMovementRepository,
   arrivalMovementService: ArrivalMovementMessageService,

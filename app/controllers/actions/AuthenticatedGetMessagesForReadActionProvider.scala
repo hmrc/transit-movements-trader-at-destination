@@ -29,7 +29,7 @@ trait AuthenticatedGetMessagesForReadActionProvider {
   def apply(arrivalId: ArrivalId, messageTypes: List[MessageType]): ActionBuilder[ArrivalsMessagesRequest, AnyContent]
 }
 
-class AuthenticatedGetMessagesForReadActionProviderImpl @Inject() (
+class AuthenticatedGetMessagesForReadActionProviderImpl @Inject()(
   authenticate: AuthenticateActionProvider,
   getArrivalMessages: AuthenticatedGetMessagesActionProvider,
   buildDefault: DefaultActionBuilder

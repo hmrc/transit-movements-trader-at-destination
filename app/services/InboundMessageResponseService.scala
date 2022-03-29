@@ -29,7 +29,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.xml.NodeSeq
 
-class InboundMessageResponseService @Inject() (xmlValidationService: XmlValidationService)(implicit ec: ExecutionContext) {
+class InboundMessageResponseService @Inject()(xmlValidationService: XmlValidationService)(implicit ec: ExecutionContext) {
 
   def makeInboundMessageResponse(xml: NodeSeq): EitherT[Future, SubmissionState, InboundMessageResponse] =
     for {

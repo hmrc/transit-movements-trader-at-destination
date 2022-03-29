@@ -29,16 +29,16 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.xml.NodeSeq
 
-class InboundRequestService @Inject() (
+class InboundRequestService @Inject()(
   lockService: LockService,
   getArrivalService: GetArrivalService,
   inboundMessageResponseService: InboundMessageResponseService,
   movementMessageService: MovementMessageService
 )(implicit ec: ExecutionContext) {
 
-  def makeInboundRequest(arrivalId: ArrivalId, xml: NodeSeq, messageSender: MessageSender)(implicit
-    hc: HeaderCarrier
-  ): Future[Either[SubmissionState, InboundMessageRequest]] =
+  def makeInboundRequest(arrivalId: ArrivalId, xml: NodeSeq, messageSender: MessageSender)(
+    implicit
+    hc: HeaderCarrier): Future[Either[SubmissionState, InboundMessageRequest]] =
     (
       for {
         _                      <- EitherT(lockService.lock(arrivalId))

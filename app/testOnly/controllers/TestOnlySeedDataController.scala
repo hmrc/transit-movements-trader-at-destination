@@ -35,7 +35,7 @@ import scala.concurrent.Future
 import scala.util.Failure
 import scala.util.Success
 
-class TestOnlySeedDataController @Inject() (
+class TestOnlySeedDataController @Inject()(
   override val messagesApi: MessagesApi,
   cc: ControllerComponents,
   repository: ArrivalMovementRepository,

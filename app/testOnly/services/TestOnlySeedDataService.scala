@@ -21,7 +21,7 @@ import testOnly.models.SeedDataParameters
 
 import javax.inject.Inject
 
-private[testOnly] class TestOnlySeedDataService @Inject() (testDataGenerator: TestDataGenerator) {
+private[testOnly] class TestOnlySeedDataService @Inject()(testDataGenerator: TestDataGenerator) {
 
   def seedArrivals(seedDataParameters: SeedDataParameters): Iterator[Arrival] =
     seedDataParameters.seedData

@@ -35,7 +35,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.xml.NodeSeq
 
-class NCTSMessageController @Inject() (
+class NCTSMessageController @Inject()(
   cc: ControllerComponents,
   inboundRequestSubmissionService: MovementMessageOrchestratorService,
   lockService: LockService,

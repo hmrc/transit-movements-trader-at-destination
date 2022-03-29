@@ -30,7 +30,7 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class ValidateOutboundMessageAction @Inject() (implicit val executionContext: ExecutionContext)
+class ValidateOutboundMessageAction @Inject()(implicit val executionContext: ExecutionContext)
     extends ActionRefiner[MessageTransformRequest, OutboundMessageRequest]
     with Logging {
 

@@ -45,9 +45,10 @@ import metrics.HasMetrics
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-private[actions] class AuthenticateAction @Inject() (override val authConnector: AuthConnector, val metrics: Metrics, auditService: AuditService)(implicit
-  val executionContext: ExecutionContext
-) extends ActionRefiner[Request, AuthenticatedRequest]
+private[actions] class AuthenticateAction @Inject()(override val authConnector: AuthConnector, val metrics: Metrics, auditService: AuditService)(
+  implicit
+  val executionContext: ExecutionContext)
+    extends ActionRefiner[Request, AuthenticatedRequest]
     with AuthorisedFunctions
     with Logging
     with HasMetrics {

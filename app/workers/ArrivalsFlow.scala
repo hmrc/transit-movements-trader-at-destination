@@ -31,7 +31,7 @@ import repositories.ArrivalMovementRepository
 import javax.inject.Inject
 import scala.util.control.NonFatal
 
-private[workers] class ArrivalsFlow @Inject() (workerConfig: WorkerConfig, arrivalMovementRepository: ArrivalMovementRepository)
+private[workers] class ArrivalsFlow @Inject()(workerConfig: WorkerConfig, arrivalMovementRepository: ArrivalMovementRepository)
     extends (() => Flow[LockResult, Arrival, NotUsed])
     with Logging {
 

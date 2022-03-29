@@ -33,7 +33,7 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.util.control.NonFatal
 
-class AddJsonToMessagesWorker @Inject() (
+class AddJsonToMessagesWorker @Inject()(
   workerConfig: WorkerConfig,
   arrivalMovementRepository: ArrivalMovementRepository,
   addJsonToMessagesTransformer: AddJsonToMessagesTransformer,
@@ -70,7 +70,7 @@ class AddJsonToMessagesWorker @Inject() (
             .releaseLock()
             .map(
               _ => x
-            )
+          )
       )
       .withAttributes(supervisionStrategy)
       .wireTapMat(Sink.queue())(Keep.right)

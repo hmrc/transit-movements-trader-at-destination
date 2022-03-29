@@ -27,7 +27,7 @@ trait AuthenticatedGetArrivalForReadActionProvider {
   def apply(arrivalId: ArrivalId): ActionBuilder[ArrivalRequest, AnyContent]
 }
 
-class AuthenticatedGetArrivalForReadActionProviderImpl @Inject() (
+class AuthenticatedGetArrivalForReadActionProviderImpl @Inject()(
   authenticate: AuthenticateActionProvider,
   getArrival: AuthenticatedGetArrivalActionProvider,
   buildDefault: DefaultActionBuilder

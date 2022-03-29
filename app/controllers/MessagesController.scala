@@ -48,7 +48,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.xml.NodeSeq
 
-class MessagesController @Inject() (
+class MessagesController @Inject()(
   arrivalMovementRepository: ArrivalMovementRepository,
   arrivalMovementService: ArrivalMovementMessageService,
   auditService: AuditService,

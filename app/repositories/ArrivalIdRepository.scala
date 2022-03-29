@@ -28,7 +28,7 @@ import reactivemongo.play.json.collection.JSONCollection
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.Future
 
-class ArrivalIdRepository @Inject() (mongo: ReactiveMongoApi, config: Configuration) extends Repository {
+class ArrivalIdRepository @Inject()(mongo: ReactiveMongoApi, config: Configuration) extends Repository {
 
   private val lastIndexKey = "last-index"
   private val primaryValue = "record_id"

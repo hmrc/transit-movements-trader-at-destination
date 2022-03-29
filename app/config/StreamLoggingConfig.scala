@@ -51,7 +51,7 @@ object StreamLoggingConfig {
 
 }
 
-class StreamLoggingConfigImpl @Inject() (config: Configuration) extends StreamLoggingConfig {
+class StreamLoggingConfigImpl @Inject()(config: Configuration) extends StreamLoggingConfig {
 
   private val pathToConfig: String = "data.stream.logging"
 

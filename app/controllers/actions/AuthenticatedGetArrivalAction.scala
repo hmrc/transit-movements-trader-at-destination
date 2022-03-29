@@ -31,7 +31,7 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-private[actions] class AuthenticatedGetArrivalActionProvider @Inject() (
+private[actions] class AuthenticatedGetArrivalActionProvider @Inject()(
   repository: ArrivalMovementRepository
 )(implicit ec: ExecutionContext) {
 

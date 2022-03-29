@@ -28,7 +28,7 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class LockService @Inject() (lockRepository: LockRepository)(implicit ec: ExecutionContext) extends Logging {
+class LockService @Inject()(lockRepository: LockRepository)(implicit ec: ExecutionContext) extends Logging {
 
   def lock(arrivalId: ArrivalId): Future[Either[SubmissionState, Unit]] =
     lockRepository

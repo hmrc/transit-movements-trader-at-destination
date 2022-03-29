@@ -33,7 +33,7 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 
-class PDFGenerationController @Inject() (
+class PDFGenerationController @Inject()(
   cc: ControllerComponents,
   authenticateForRead: AuthenticatedGetMessagesForReadActionProvider,
   unloadingPermissionPDFService: UnloadingPermissionPDFService,

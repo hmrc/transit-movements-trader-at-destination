@@ -27,7 +27,7 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-private[actions] class LockActionProvider @Inject() (
+private[actions] class LockActionProvider @Inject()(
   lockRepository: LockRepository,
   ec: ExecutionContext,
   parser: BodyParsers.Default
