@@ -33,7 +33,7 @@ import scala.concurrent.Future
 import scala.util.Try
 import scala.util.control.NonFatal
 
-class PushPullNotificationService @Inject()(connector: PushPullNotificationConnector)(implicit ec: ExecutionContext) extends Logging {
+class PushPullNotificationService @Inject() (connector: PushPullNotificationConnector)(implicit ec: ExecutionContext) extends Logging {
 
   def getBox(clientId: String)(implicit hc: HeaderCarrier): Future[Option[Box]] =
     connector

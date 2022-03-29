@@ -26,7 +26,7 @@ import play.api.libs.json.OFormat
 import scala.io.Source
 import scala.util.matching.Regex
 
-class MessageTranslation @Inject()(env: Environment, config: AppConfig) {
+class MessageTranslation @Inject() (env: Environment, config: AppConfig) {
 
   private val nodes: List[NodeMap] = {
     val json =

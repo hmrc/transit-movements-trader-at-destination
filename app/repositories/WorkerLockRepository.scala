@@ -36,7 +36,7 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class WorkerLockRepository @Inject()(mongo: ReactiveMongoApi, appConfig: AppConfig, clock: Clock)(implicit ec: ExecutionContext) extends Repository {
+class WorkerLockRepository @Inject() (mongo: ReactiveMongoApi, appConfig: AppConfig, clock: Clock)(implicit ec: ExecutionContext) extends Repository {
 
   private val documentExistsErrorCodeValue = 11000
 
@@ -56,7 +56,9 @@ class WorkerLockRepository @Inject()(mongo: ReactiveMongoApi, appConfig: AppConf
       .flatMap {
         _.indexesManager.ensure(createdIndex)
       }
-      .map(_ => true)
+      .map(
+        _ => true
+      )
 
   def lock(id: String): Future[LockResult] = {
 
@@ -68,7 +70,9 @@ class WorkerLockRepository @Inject()(mongo: ReactiveMongoApi, appConfig: AppConf
     collection.flatMap {
       _.insert(ordered = false)
         .one(lock)
-        .map(_ => LockResult.LockAcquired)
+        .map(
+          _ => LockResult.LockAcquired
+        )
     } recover {
       case e: LastError if e.code.contains(documentExistsErrorCodeValue) =>
         LockResult.AlreadyLocked
@@ -79,7 +83,9 @@ class WorkerLockRepository @Inject()(mongo: ReactiveMongoApi, appConfig: AppConf
     collection.flatMap {
       _.simpleFindAndRemove(
         selector = Json.obj("_id" -> id)
-      ).map(_ => true)
+      ).map(
+        _ => true
+      )
     }
 }
 

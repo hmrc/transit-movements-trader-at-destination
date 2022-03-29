@@ -25,6 +25,7 @@ import play.api.mvc.Results._
 import scala.concurrent.Future
 
 class ErrorHandler extends HttpErrorHandler with Logging {
+
   override def onClientError(request: RequestHeader, statusCode: Int, message: String): Future[Result] = {
     logger.warn(s"[onClientError], error for (${request.method}) [${request.uri}] with status: $statusCode and message: $message")
     Future.successful(Status(statusCode)(message))

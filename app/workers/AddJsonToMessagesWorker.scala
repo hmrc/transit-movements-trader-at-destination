@@ -33,7 +33,7 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.util.control.NonFatal
 
-class AddJsonToMessagesWorker @Inject()(
+class AddJsonToMessagesWorker @Inject() (
   workerConfig: WorkerConfig,
   arrivalMovementRepository: ArrivalMovementRepository,
   addJsonToMessagesTransformer: AddJsonToMessagesTransformer,
@@ -57,12 +57,21 @@ class AddJsonToMessagesWorker @Inject()(
     logger.info("Worker started")
 
     Source
-      .fromIterator(() => workerLockingService)
+      .fromIterator(
+        () => workerLockingService
+      )
       .throttle(1, settings.interval)
       .mapAsync(1)(identity)
       .via((new ArrivalsFlow(workerConfig, arrivalMovementRepository))())
       .via(addJsonToMessagesTransformer.flow)
-      .mapAsync(1)(x => workerLockingService.releaseLock().map(_ => x))
+      .mapAsync(1)(
+        x =>
+          workerLockingService
+            .releaseLock()
+            .map(
+              _ => x
+            )
+      )
       .withAttributes(supervisionStrategy)
       .wireTapMat(Sink.queue())(Keep.right)
       .to(Sink.ignore)

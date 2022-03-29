@@ -28,7 +28,7 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class LockService @Inject()(lockRepository: LockRepository)(implicit ec: ExecutionContext) extends Logging {
+class LockService @Inject() (lockRepository: LockRepository)(implicit ec: ExecutionContext) extends Logging {
 
   def lock(arrivalId: ArrivalId): Future[Either[SubmissionState, Unit]] =
     lockRepository
@@ -44,10 +44,8 @@ class LockService @Inject()(lockRepository: LockRepository)(implicit ec: Executi
         case e: Exception =>
           lockRepository.unlock(arrivalId).map {
             _ =>
-              {
-                logger.error(s"Failed to lock record", e)
-                Left(FailedToLock(s"[LockService][lock] Could not lock for arrival id $arrivalId"))
-              }
+              logger.error(s"Failed to lock record", e)
+              Left(FailedToLock(s"[LockService][lock] Could not lock for arrival id $arrivalId"))
           }
       }
 

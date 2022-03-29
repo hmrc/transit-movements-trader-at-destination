@@ -94,7 +94,7 @@ object ResponseArrival {
           created,
           updated
         )
-    }
+      }
 
   implicit val writes: OWrites[ResponseArrival] = Json.writes[ResponseArrival]
 

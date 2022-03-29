@@ -23,7 +23,7 @@ import play.api.mvc.AnyContent
 
 import javax.inject.Inject
 
-class AuthenticatedGetArrivalForWriteActionProvider @Inject()(
+class AuthenticatedGetArrivalForWriteActionProvider @Inject() (
   lock: LockActionProvider,
   authenticate: AuthenticateActionProvider,
   getArrival: AuthenticatedGetArrivalActionProvider

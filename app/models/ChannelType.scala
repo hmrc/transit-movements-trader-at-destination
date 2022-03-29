@@ -25,6 +25,10 @@ object ChannelType extends Enumerable.Implicits {
   val values: Seq[ChannelType] = Seq(web, api)
 
   implicit val enumerable: Enumerable[ChannelType] =
-    Enumerable(values.map(v => v.toString -> v): _*)
+    Enumerable(
+      values.map(
+        v => v.toString -> v
+      ): _*
+    )
 
 }

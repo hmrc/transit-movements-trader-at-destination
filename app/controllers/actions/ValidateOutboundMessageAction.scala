@@ -30,16 +30,18 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class ValidateOutboundMessageAction @Inject()(implicit val executionContext: ExecutionContext)
+class ValidateOutboundMessageAction @Inject() (implicit val executionContext: ExecutionContext)
     extends ActionRefiner[MessageTransformRequest, OutboundMessageRequest]
     with Logging {
+
   override def refine[A](request: MessageTransformRequest[A]): Future[Either[Result, OutboundMessageRequest[A]]] =
     request.message.messageType match {
       case message: OutboundMessageResponse =>
         Future.successful(Right(OutboundMessageRequest(OutboundMessage(message), request.arrivalRequest)))
       case message =>
         logger.warn(
-          s"Found an inbound message (${message.messageType}) when expecting an outbound message for arrivalId: ${request.arrivalRequest.arrivalWithoutMessages.arrivalId.index} ( INBOUND_MESSAGE_FOUND_FOR_OUTBOUND_MESSAGE )")
+          s"Found an inbound message (${message.messageType}) when expecting an outbound message for arrivalId: ${request.arrivalRequest.arrivalWithoutMessages.arrivalId.index} ( INBOUND_MESSAGE_FOUND_FOR_OUTBOUND_MESSAGE )"
+        )
         Future.successful(Left(BadRequest(s"Unsupported X-Message-Type ${request.headers.get("X-Message-Type")}")))
     }
 

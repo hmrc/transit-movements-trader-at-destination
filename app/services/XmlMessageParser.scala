@@ -47,36 +47,36 @@ object XmlMessageParser {
     }
 
   val dateOfPrepR: ReaderT[ParseHandler, NodeSeq, LocalDate] =
-    ReaderT[ParseHandler, NodeSeq, LocalDate](xml => {
+    ReaderT[ParseHandler, NodeSeq, LocalDate] {
+      xml =>
+        val dateOfPrepString = (xml \ "DatOfPreMES9").text
 
-      val dateOfPrepString = (xml \ "DatOfPreMES9").text
+        val dateFormatterEither = dateOfPrepString.length match {
+          case 6 => Right(Format.dateFormatter6)
+          case 8 => Right(Format.dateFormatter8)
+          case _ => Left(LocalDateParseFailure("The value of element 'DatOfPreMES9' is neither 6 or 8 characters long"))
+        }
 
-      val dateFormatterEither = dateOfPrepString.length match {
-        case 6 => Right(Format.dateFormatter6)
-        case 8 => Right(Format.dateFormatter8)
-        case _ => Left(LocalDateParseFailure("The value of element 'DatOfPreMES9' is neither 6 or 8 characters long"))
-      }
-
-      dateFormatterEither.flatMap {
-        dateFormatter =>
-          Try(LocalDate.parse(dateOfPrepString, dateFormatter)) match {
-            case Success(value) => Right(value)
-            case Failure(_) =>
-              Left(LocalDateParseFailure(s"The value of element 'DatOfPreMES9' is not valid with respect to pattern '${dateFormatter.toFormat.toString}'"))
-          }
-      }
-    })
+        dateFormatterEither.flatMap {
+          dateFormatter =>
+            Try(LocalDate.parse(dateOfPrepString, dateFormatter)) match {
+              case Success(value) => Right(value)
+              case Failure(_) =>
+                Left(LocalDateParseFailure(s"The value of element 'DatOfPreMES9' is not valid with respect to pattern '${dateFormatter.toFormat.toString}'"))
+            }
+        }
+    }
 
   val timeOfPrepR: ReaderT[ParseHandler, NodeSeq, LocalTime] =
-    ReaderT[ParseHandler, NodeSeq, LocalTime](xml => {
+    ReaderT[ParseHandler, NodeSeq, LocalTime] {
+      xml =>
+        val timeOfPrepString = (xml \ "TimOfPreMES10").text
 
-      val timeOfPrepString = (xml \ "TimOfPreMES10").text
-
-      Try(LocalTime.parse(timeOfPrepString, Format.timeFormatter)) match {
-        case Success(value) => Right(value)
-        case Failure(e)     => Left(LocalTimeParseFailure(s"Failed to parse TimOfPreMES10 to LocalTime with error: ${e.getMessage}"))
-      }
-    })
+        Try(LocalTime.parse(timeOfPrepString, Format.timeFormatter)) match {
+          case Success(value) => Right(value)
+          case Failure(e)     => Left(LocalTimeParseFailure(s"Failed to parse TimOfPreMES10 to LocalTime with error: ${e.getMessage}"))
+        }
+    }
 
   val dateTimeOfPrepR: ReaderT[ParseHandler, NodeSeq, LocalDateTime] =
     for {
@@ -85,9 +85,11 @@ object XmlMessageParser {
     } yield LocalDateTime.of(date, time)
 
   val mrnR: ReaderT[ParseHandler, NodeSeq, MovementReferenceNumber] =
-    ReaderT[ParseHandler, NodeSeq, MovementReferenceNumber](xml =>
-      (xml \ "HEAHEA" \ "DocNumHEA5").text.trim match {
-        case mrnString if mrnString.nonEmpty => Right(MovementReferenceNumber(mrnString))
-        case _                               => Left(EmptyMovementReferenceNumber("DocNumHEA5 was empty"))
-    })
+    ReaderT[ParseHandler, NodeSeq, MovementReferenceNumber](
+      xml =>
+        (xml \ "HEAHEA" \ "DocNumHEA5").text.trim match {
+          case mrnString if mrnString.nonEmpty => Right(MovementReferenceNumber(mrnString))
+          case _                               => Left(EmptyMovementReferenceNumber("DocNumHEA5 was empty"))
+        }
+    )
 }

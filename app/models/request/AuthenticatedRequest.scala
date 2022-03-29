@@ -25,6 +25,7 @@ import play.api.mvc.Request
 import play.api.mvc.WrappedRequest
 
 case class AuthenticatedRequest[A](request: Request[A], channel: ChannelType, enrolmentId: EnrolmentId) extends WrappedRequest[A](request) {
+
   private def matchesEnrolmentId(eoriNumber: String): Boolean =
     enrolmentId.value.fold(
       vatReg => eoriNumber == vatReg.value,

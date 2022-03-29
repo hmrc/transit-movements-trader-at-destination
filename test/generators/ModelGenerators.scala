@@ -164,23 +164,22 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
         created                 <- arbitrary[LocalDateTime]
         updated                 <- arbitrary[LocalDateTime]
         messages                <- nonEmptyListOfMaxLength[MovementMessageWithStatus](2)
-      } yield
-        Arrival(
-          arrivalId = arrivalId,
-          channel = channel,
-          movementReferenceNumber = movementReferenceNumber,
-          eoriNumber = eoriNumber,
-          created = created,
-          updated = updated,
-          lastUpdated = updated,
-          messages = messages,
-          nextMessageCorrelationId = messages.length + 1,
-          notificationBox = None
-        )
+      } yield Arrival(
+        arrivalId = arrivalId,
+        channel = channel,
+        movementReferenceNumber = movementReferenceNumber,
+        eoriNumber = eoriNumber,
+        created = created,
+        updated = updated,
+        lastUpdated = updated,
+        messages = messages,
+        nextMessageCorrelationId = messages.length + 1,
+        notificationBox = None
+      )
     }
 
   implicit lazy val arbitraryArrivalWithoutMessages: Arbitrary[ArrivalWithoutMessages] =
-    Arbitrary { ArrivalWithoutMessages.fromArrival(arbitraryArrival.arbitrary.sample.get) }
+    Arbitrary(ArrivalWithoutMessages.fromArrival(arbitraryArrival.arbitrary.sample.get))
 
   val genArrivalWithSuccessfulArrival: Gen[Arrival] =
     Arbitrary {
@@ -197,9 +196,7 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
     Arbitrary {
       for {
         arrivalMessages <- Arbitrary.arbitrary[ArrivalMessages]
-      } yield {
-        arrivalMessages.copy(eoriNumber = "eori")
-      }
+      } yield arrivalMessages.copy(eoriNumber = "eori")
     }.arbitrary
 
   implicit lazy val arbitraryMovementReferenceNumber: Arbitrary[MovementReferenceNumber] =
@@ -287,14 +284,13 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
       )
     )
 
-  implicit val arbitraryMessageMetaData: Arbitrary[MessageMetaData] = {
+  implicit val arbitraryMessageMetaData: Arbitrary[MessageMetaData] =
     Arbitrary(
       for {
         messageType <- arbitrary[MessageType]
         dateTime    <- arbitrary[LocalDateTime]
       } yield MessageMetaData(messageType, dateTime)
     )
-  }
 
   implicit val arbitraryResponseArrival: Arbitrary[ResponseArrival] =
     Arbitrary(

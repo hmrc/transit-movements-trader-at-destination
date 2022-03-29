@@ -32,7 +32,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.xml.NodeSeq
 
-class UnloadingPermissionPDFService @Inject()(messageRetrievalService: MessageRetrievalService, manageDocumentsConnector: ManageDocumentsConnector)
+class UnloadingPermissionPDFService @Inject() (messageRetrievalService: MessageRetrievalService, manageDocumentsConnector: ManageDocumentsConnector)
     extends Results {
 
   val explicitHeaders = Set(CONTENT_LENGTH, CONTENT_TYPE, CONTENT_DISPOSITION)

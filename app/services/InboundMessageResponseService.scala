@@ -29,7 +29,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.xml.NodeSeq
 
-class InboundMessageResponseService @Inject()(xmlValidationService: XmlValidationService)(implicit ec: ExecutionContext) {
+class InboundMessageResponseService @Inject() (xmlValidationService: XmlValidationService)(implicit ec: ExecutionContext) {
 
   def makeInboundMessageResponse(xml: NodeSeq): EitherT[Future, SubmissionState, InboundMessageResponse] =
     for {
@@ -40,6 +40,7 @@ class InboundMessageResponseService @Inject()(xmlValidationService: XmlValidatio
         xmlValidationService
           .validate(xml.toString, validateInboundResponse.xsdFile)
           .toOption
-          .toRight[SubmissionState](FailedToValidateMessage(s"[InboundRequest][makeInboundMessageResponse] XML failed to validate against XSD file")))
+          .toRight[SubmissionState](FailedToValidateMessage(s"[InboundRequest][makeInboundMessageResponse] XML failed to validate against XSD file"))
+      )
     } yield validateInboundResponse
 }

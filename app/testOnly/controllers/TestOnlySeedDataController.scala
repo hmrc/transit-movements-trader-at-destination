@@ -35,7 +35,7 @@ import scala.concurrent.Future
 import scala.util.Failure
 import scala.util.Success
 
-class TestOnlySeedDataController @Inject()(
+class TestOnlySeedDataController @Inject() (
   override val messagesApi: MessagesApi,
   cc: ControllerComponents,
   repository: ArrivalMovementRepository,
@@ -91,9 +91,14 @@ class TestOnlySeedDataController @Inject()(
           .grouped(50)
           .map(repository.bulkInsert)
       }
-      .flatMap(_ => updateNextId())
+      .flatMap(
+        _ => updateNextId()
+      )
       .recoverWith {
-        case e => updateNextId().flatMap(_ => Future.failed(e))
+        case e =>
+          updateNextId().flatMap(
+            _ => Future.failed(e)
+          )
       }
 
 }

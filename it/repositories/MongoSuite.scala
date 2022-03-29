@@ -19,7 +19,8 @@ package repositories
 import com.typesafe.config.ConfigFactory
 import migrations.MigrationRunnerImpl
 import org.scalatest._
-import play.api.{Application, Configuration}
+import play.api.Application
+import play.api.Configuration
 import reactivemongo.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global

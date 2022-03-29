@@ -27,7 +27,7 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class FakeAuthenticateActionProvider @Inject()(
+class FakeAuthenticateActionProvider @Inject() (
   defaultActionBuilder: DefaultActionBuilder,
   auth: FakeAuthenticateAction
 ) extends AuthenticateActionProvider {
@@ -37,6 +37,7 @@ class FakeAuthenticateActionProvider @Inject()(
 }
 
 class FakeAuthenticateAction extends ActionRefiner[Request, AuthenticatedRequest] {
+
   override protected def refine[A](request: Request[A]): Future[Either[Result, AuthenticatedRequest[A]]] =
     Future.successful(Right(AuthenticatedRequest(request, web, EnrolmentId(Ior.right(EORINumber("eori"))))))
 

@@ -34,7 +34,7 @@ import uk.gov.hmrc.http.UpstreamErrorResponse
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class PushPullNotificationConnector @Inject()(config: AppConfig, http: HttpClient, val metrics: Metrics) extends HasMetrics {
+class PushPullNotificationConnector @Inject() (config: AppConfig, http: HttpClient, val metrics: Metrics) extends HasMetrics {
 
   def getBox(clientId: String)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Either[UpstreamErrorResponse, Box]] =
     withMetricsTimerAsync("get-ppns-box") {
@@ -48,8 +48,10 @@ class PushPullNotificationConnector @Inject()(config: AppConfig, http: HttpClien
         http.GET[Either[UpstreamErrorResponse, Box]](url, queryParams)
     }
 
-  def postNotification(boxId: BoxId, notification: ArrivalMessageNotification)(implicit ec: ExecutionContext,
-                                                                               hc: HeaderCarrier): Future[Either[UpstreamErrorResponse, Unit]] =
+  def postNotification(boxId: BoxId, notification: ArrivalMessageNotification)(implicit
+    ec: ExecutionContext,
+    hc: HeaderCarrier
+  ): Future[Either[UpstreamErrorResponse, Unit]] =
     withMetricsTimerAsync("post-ppns-notification") {
       _ =>
         val url = s"${config.pushPullUrl}/box/${boxId.value}/notifications"

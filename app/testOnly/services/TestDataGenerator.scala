@@ -34,7 +34,7 @@ import scala.xml.Elem
 import scala.xml.XML
 import models.MessageId
 
-private[services] class TestDataGenerator @Inject()(clock: Clock) {
+private[services] class TestDataGenerator @Inject() (clock: Clock) {
 
   def arrivalMovement(eori: SeedEori, mrn: SeedMrn, arrivalId: ArrivalId, channelType: ChannelType): Arrival = {
 

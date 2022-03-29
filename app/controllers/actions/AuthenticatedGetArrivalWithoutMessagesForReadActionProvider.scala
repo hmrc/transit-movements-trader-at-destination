@@ -27,7 +27,7 @@ trait AuthenticatedGetArrivalWithoutMessagesForReadActionProvider {
   def apply(arrivalId: ArrivalId): ActionBuilder[ArrivalWithoutMessagesRequest, AnyContent]
 }
 
-class AuthenticatedGetArrivalWithoutMessagesForReadActionProviderImpl @Inject()(
+class AuthenticatedGetArrivalWithoutMessagesForReadActionProviderImpl @Inject() (
   authenticate: AuthenticateActionProvider,
   getArrivalWithoutMessages: AuthenticatedGetArrivalWithoutMessagesActionProvider,
   buildDefault: DefaultActionBuilder

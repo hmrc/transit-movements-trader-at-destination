@@ -273,6 +273,8 @@ class AddJsonToMessagesWorkerSpec
     protected val lockName: String = "add-json-to-messages-worker"
 
     def sourceOfElements[A](elements: List[A]): Source[A, Future[Done]] =
-      Source(elements).mapMaterializedValue(_ => Future.successful(Done))
+      Source(elements).mapMaterializedValue(
+        _ => Future.successful(Done)
+      )
   }
 }

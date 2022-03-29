@@ -25,39 +25,57 @@ import play.api.http.ContentTypes
 import play.api.http.HeaderNames
 import play.api.libs.json.Json
 
-case class Stubs(server: WireMockServer, private val stubs: Seq[() => StubMapping] = Nil){
-    def successfulAuth(eori: String): Stubs = copy(stubs = stubs :+ (() => server.stubFor(
-      post(urlEqualTo("/auth/authorise"))
-        .willReturn(
-          aResponse()
-            .withStatus(200)
-            .withHeader("Content-Type", "application/json")
-            .withBody(Json.obj("authorisedEnrolments" -> Json.arr(
-              Json.obj("key" -> "HMCE-NCTS-ORG",
-                "identifiers" -> Json.arr(
-                  Json.obj("key" -> "VATRegNoTURN",
-                    "value" -> eori)
-                ),
-                "state" -> "Activated"
-              )
-            )).toString().getBytes)))
+case class Stubs(server: WireMockServer, private val stubs: Seq[() => StubMapping] = Nil) {
+
+  def successfulAuth(eori: String): Stubs = copy(stubs =
+    stubs :+ (
+      (
+      ) =>
+        server.stubFor(
+          post(urlEqualTo("/auth/authorise"))
+            .willReturn(
+              aResponse()
+                .withStatus(200)
+                .withHeader("Content-Type", "application/json")
+                .withBody(
+                  Json
+                    .obj(
+                      "authorisedEnrolments" -> Json.arr(
+                        Json.obj(
+                          "key" -> "HMCE-NCTS-ORG",
+                          "identifiers" -> Json.arr(
+                            Json.obj("key" -> "VATRegNoTURN", "value" -> eori)
+                          ),
+                          "state" -> "Activated"
+                        )
+                      )
+                    )
+                    .toString()
+                    .getBytes
+                )
+            )
         )
     )
+  )
 
-    def successfulSubmission(): Stubs = copy(stubs = stubs :+ (() => server.stubFor(
-      post(urlEqualTo("/movements/messages"))
-        .withHeader(HeaderNames.CONTENT_TYPE, equalTo(ContentTypes.XML))
-        .withHeader(HeaderNames.USER_AGENT, equalTo("transit-movements-trader-at-destination"))
-        .withHeader("X-Message-Sender", matching("MDTP-ARR-\\d{23}-\\d{2}"))
-        .withHeader("X-Message-Type", matching(MessageType.values.map(_.code).mkString("(", "|", ")")))
-        .withHeader("channel", matching(ChannelType.values.map(_.toString).mkString("(", "|", ")")))
-        .willReturn(
-          aResponse()
-            .withStatus(202)
-        ))
-      )
+  def successfulSubmission(): Stubs = copy(stubs =
+    stubs :+ (
+      (
+      ) =>
+        server.stubFor(
+          post(urlEqualTo("/movements/messages"))
+            .withHeader(HeaderNames.CONTENT_TYPE, equalTo(ContentTypes.XML))
+            .withHeader(HeaderNames.USER_AGENT, equalTo("transit-movements-trader-at-destination"))
+            .withHeader("X-Message-Sender", matching("MDTP-ARR-\\d{23}-\\d{2}"))
+            .withHeader("X-Message-Type", matching(MessageType.values.map(_.code).mkString("(", "|", ")")))
+            .withHeader("channel", matching(ChannelType.values.map(_.toString).mkString("(", "|", ")")))
+            .willReturn(
+              aResponse()
+                .withStatus(202)
+            )
+        )
     )
+  )
 
-
-    def build(): Seq[StubMapping] = stubs.map(_())
-  }
+  def build(): Seq[StubMapping] = stubs.map(_())
+}

@@ -42,11 +42,11 @@ import scala.concurrent.Future
 import config.Constants
 import play.api.http.MimeTypes
 
-class MessageConnector @Inject()(config: AppConfig, http: HttpClient, val metrics: Metrics)(implicit ec: ExecutionContext) extends HasMetrics {
+class MessageConnector @Inject() (config: AppConfig, http: HttpClient, val metrics: Metrics)(implicit ec: ExecutionContext) extends HasMetrics {
 
-  def post(arrivalId: ArrivalId, message: MovementMessageWithStatus, dateTime: OffsetDateTime, channelType: ChannelType)(
-    implicit
-    hc: HeaderCarrier): Future[EisSubmissionResult] = {
+  def post(arrivalId: ArrivalId, message: MovementMessageWithStatus, dateTime: OffsetDateTime, channelType: ChannelType)(implicit
+    hc: HeaderCarrier
+  ): Future[EisSubmissionResult] = {
 
     val url = config.eisUrl
 

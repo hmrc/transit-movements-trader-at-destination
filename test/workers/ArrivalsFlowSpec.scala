@@ -57,8 +57,12 @@ class ArrivalsFlowSpec extends AnyFreeSpec with Matchers with MockitoSugar with 
       arrival.copy(arrivalId = ArrivalId(6))
     )
 
-    val source1 = Source(arrivalsGroup1).mapMaterializedValue(_ => Future.successful(Done))
-    val source2 = Source(arrivalsGroup2).mapMaterializedValue(_ => Future.successful(Done))
+    val source1 = Source(arrivalsGroup1).mapMaterializedValue(
+      _ => Future.successful(Done)
+    )
+    val source2 = Source(arrivalsGroup2).mapMaterializedValue(
+      _ => Future.successful(Done)
+    )
 
     val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
 
@@ -91,7 +95,9 @@ class ArrivalsFlowSpec extends AnyFreeSpec with Matchers with MockitoSugar with 
       arrival.copy(arrivalId = ArrivalId(3))
     )
 
-    val source1 = Source(arrivalsGroup1).mapMaterializedValue(_ => Future.successful(Done))
+    val source1 = Source(arrivalsGroup1).mapMaterializedValue(
+      _ => Future.successful(Done)
+    )
 
     val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
 
@@ -134,9 +140,15 @@ class ArrivalsFlowSpec extends AnyFreeSpec with Matchers with MockitoSugar with 
       arrival.copy(arrivalId = ArrivalId(6))
     )
 
-    val source1 = Source(arrivalsGroup1).mapMaterializedValue(_ => Future.successful(Done))
-    val source2 = Source(arrivalsGroup2).mapMaterializedValue(_ => Future.successful(Done))
-    val source3 = Source(arrivalsGroup3).mapMaterializedValue(_ => Future.successful(Done))
+    val source1 = Source(arrivalsGroup1).mapMaterializedValue(
+      _ => Future.successful(Done)
+    )
+    val source2 = Source(arrivalsGroup2).mapMaterializedValue(
+      _ => Future.successful(Done)
+    )
+    val source3 = Source(arrivalsGroup3).mapMaterializedValue(
+      _ => Future.successful(Done)
+    )
 
     val mockArrivalMovementRepository = mock[ArrivalMovementRepository]
 

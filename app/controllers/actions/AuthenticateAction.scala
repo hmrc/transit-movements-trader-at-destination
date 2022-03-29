@@ -45,9 +45,9 @@ import metrics.HasMetrics
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-private[actions] class AuthenticateAction @Inject()(override val authConnector: AuthConnector, val metrics: Metrics, auditService: AuditService)(
-  implicit val executionContext: ExecutionContext)
-    extends ActionRefiner[Request, AuthenticatedRequest]
+private[actions] class AuthenticateAction @Inject() (override val authConnector: AuthConnector, val metrics: Metrics, auditService: AuditService)(implicit
+  val executionContext: ExecutionContext
+) extends ActionRefiner[Request, AuthenticatedRequest]
     with AuthorisedFunctions
     with Logging
     with HasMetrics {
@@ -89,11 +89,9 @@ private[actions] class AuthenticateAction @Inject()(override val authConnector: 
                 .fromOptions(legacyEnrolmentId, newEnrolmentId)
                 .map {
                   id =>
-                    {
-                      val enrolmentId = EnrolmentId(id)
-                      track(channel, enrolmentId)
-                      Future.successful(Right(AuthenticatedRequest(request, channel, enrolmentId)))
-                    }
+                    val enrolmentId = EnrolmentId(id)
+                    track(channel, enrolmentId)
+                    Future.successful(Right(AuthenticatedRequest(request, channel, enrolmentId)))
                 }
                 .getOrElse {
                   Future.failed(InsufficientEnrolments(s"Unable to retrieve enrolment for either $NewEnrolmentKey or $LegacyEnrolmentKey"))

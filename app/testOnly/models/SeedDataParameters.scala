@@ -55,7 +55,9 @@ private[testOnly] class SeedDataParameters(
           eori =>
             (startMrn.suffix to (startMrn.suffix + movementsPerUser - 1)).toIterator
               .map(SeedMrn(startMrn.prefix, _, startMrn.padLength))
-              .map(mrn => (eori, mrn))
+              .map(
+                mrn => (eori, mrn)
+              )
         }
 
     arrivalIdIterator.zip(eoriMrnIterator).map {
@@ -67,11 +69,13 @@ private[testOnly] class SeedDataParameters(
 
 object SeedDataParameters {
 
-  def apply(numberOfUsers: Int,
-            movementsPerUser: Int,
-            startArrivalId: ArrivalId,
-            firstEoriValue: Option[SeedEori],
-            channel: Option[ChannelType]): SeedDataParameters =
+  def apply(
+    numberOfUsers: Int,
+    movementsPerUser: Int,
+    startArrivalId: ArrivalId,
+    firstEoriValue: Option[SeedEori],
+    channel: Option[ChannelType]
+  ): SeedDataParameters =
     new SeedDataParameters(numberOfUsers, movementsPerUser, startArrivalId, firstEoriValue, channel)
 
   implicit val reads: Reads[SeedDataParameters] =

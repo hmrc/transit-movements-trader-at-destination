@@ -23,6 +23,7 @@ final case class MovementReferenceNumber(value: String)
 object MovementReferenceNumber {
 
   implicit lazy val reads: Reads[MovementReferenceNumber] = __.read[String].map(MovementReferenceNumber.apply)
+
   implicit lazy val writes: Writes[MovementReferenceNumber] = Writes {
     mrn =>
       JsString(mrn.value)

@@ -56,7 +56,7 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 
-class ArrivalMovementRepository @Inject()(
+class ArrivalMovementRepository @Inject() (
   mongo: ReactiveMongoApi,
   appConfig: AppConfig,
   config: Configuration,
@@ -195,24 +195,23 @@ class ArrivalMovementRepository @Inject()(
       .flatMap {
         c =>
           c.aggregateWith[ArrivalWithoutMessages](allowDiskUse = true) {
-              _ =>
-                import c.aggregationFramework._
+            _ =>
+              import c.aggregationFramework._
 
-                val initialFilter: PipelineOperator =
-                  Match(Json.obj("_id" -> arrivalId, "channel" -> channelFilter))
+              val initialFilter: PipelineOperator =
+                Match(Json.obj("_id" -> arrivalId, "channel" -> channelFilter))
 
-                val transformations = List[PipelineOperator](Project(projection))
-                (initialFilter, transformations)
+              val transformations = List[PipelineOperator](Project(projection))
+              (initialFilter, transformations)
 
-            }
-            .headOption
+          }.headOption
 
       }
       .map(
         opt =>
           opt.map(
             a => a.copy(nextMessageId = MessageId(a.nextMessageId.value + 1))
-        )
+          )
       )
   }
 
@@ -225,24 +224,23 @@ class ArrivalMovementRepository @Inject()(
       .flatMap {
         c =>
           c.aggregateWith[ArrivalWithoutMessages](allowDiskUse = true) {
-              _ =>
-                import c.aggregationFramework._
+            _ =>
+              import c.aggregationFramework._
 
-                val initialFilter: PipelineOperator =
-                  Match(Json.obj("_id" -> arrivalId))
+              val initialFilter: PipelineOperator =
+                Match(Json.obj("_id" -> arrivalId))
 
-                val transformations = List[PipelineOperator](Project(projection))
-                (initialFilter, transformations)
+              val transformations = List[PipelineOperator](Project(projection))
+              (initialFilter, transformations)
 
-            }
-            .headOption
+          }.headOption
 
       }
       .map(
         opt =>
           opt.map(
             a => a.copy(nextMessageId = MessageId(a.nextMessageId.value + 1))
-        )
+          )
       )
   }
 
@@ -250,61 +248,58 @@ class ArrivalMovementRepository @Inject()(
     collection.flatMap {
       c =>
         c.aggregateWith[MovementMessage](allowDiskUse = true) {
-            _ =>
-              import c.aggregationFramework._
+          _ =>
+            import c.aggregationFramework._
 
-              val initialFilter: PipelineOperator =
-                Match(
-                  Json.obj("_id" -> arrivalId, "channel" -> channelFilter, "messages" -> Json.obj("$elemMatch" -> Json.obj("messageId" -> messageId.value))))
+            val initialFilter: PipelineOperator =
+              Match(Json.obj("_id" -> arrivalId, "channel" -> channelFilter, "messages" -> Json.obj("$elemMatch" -> Json.obj("messageId" -> messageId.value))))
 
-              val unwindMessages = List[PipelineOperator](
-                Unwind(
-                  path = "messages",
-                  includeArrayIndex = None,
-                  preserveNullAndEmptyArrays = None
-                )
+            val unwindMessages = List[PipelineOperator](
+              Unwind(
+                path = "messages",
+                includeArrayIndex = None,
+                preserveNullAndEmptyArrays = None
               )
+            )
 
-              val secondaryFilter = List[PipelineOperator](Match(Json.obj("messages.messageId" -> messageId.value)))
+            val secondaryFilter = List[PipelineOperator](Match(Json.obj("messages.messageId" -> messageId.value)))
 
-              val groupById = List[PipelineOperator](GroupField("_id")("messages" -> FirstField("messages")))
+            val groupById = List[PipelineOperator](GroupField("_id")("messages" -> FirstField("messages")))
 
-              val replaceRoot = List[PipelineOperator](ReplaceRootField("messages"))
+            val replaceRoot = List[PipelineOperator](ReplaceRootField("messages"))
 
-              val transformations = unwindMessages ++ secondaryFilter ++ groupById ++ replaceRoot
+            val transformations = unwindMessages ++ secondaryFilter ++ groupById ++ replaceRoot
 
-              (initialFilter, transformations)
+            (initialFilter, transformations)
 
-          }
-          .headOption
+        }.headOption
     }
 
   def getMessagesOfType(arrivalId: ArrivalId, channelFilter: ChannelType, messageTypes: List[MessageType]): Future[Option[ArrivalMessages]] =
     collection.flatMap {
       c =>
         c.aggregateWith[ArrivalMessages](allowDiskUse = true) {
-            _ =>
-              import c.aggregationFramework._
+          _ =>
+            import c.aggregationFramework._
 
-              val initialFilter: PipelineOperator = Match(Json.obj("_id" -> arrivalId, "channel" -> channelFilter))
+            val initialFilter: PipelineOperator = Match(Json.obj("_id" -> arrivalId, "channel" -> channelFilter))
 
-              val project = List[PipelineOperator](Project(Json.obj("_id" -> 1, "eoriNumber" -> 1, "messages" -> 1)))
+            val project = List[PipelineOperator](Project(Json.obj("_id" -> 1, "eoriNumber" -> 1, "messages" -> 1)))
 
-              // Filters out the messages with message types we don't care about, meaning that if we have a
-              // match for the arrival id and the eori number, but not a message type match,
-              // we then get an empty list which indiates an arrival that doesn't have the required message
-              // types as of yet, but would otherwise be valid
-              val inFilter       = Json.obj("$in"     -> Json.arr("$$message.messageType", messageTypes.map(_.code).toSeq))
-              val messagesFilter = Json.obj("$filter" -> Json.obj("input" -> "$messages", "as" -> "message", "cond" -> inFilter))
+            // Filters out the messages with message types we don't care about, meaning that if we have a
+            // match for the arrival id and the eori number, but not a message type match,
+            // we then get an empty list which indiates an arrival that doesn't have the required message
+            // types as of yet, but would otherwise be valid
+            val inFilter       = Json.obj("$in" -> Json.arr("$$message.messageType", messageTypes.map(_.code).toSeq))
+            val messagesFilter = Json.obj("$filter" -> Json.obj("input" -> "$messages", "as" -> "message", "cond" -> inFilter))
 
-              val secondaryFilter = List[PipelineOperator](AddFields(Json.obj("messages" -> messagesFilter)))
+            val secondaryFilter = List[PipelineOperator](AddFields(Json.obj("messages" -> messagesFilter)))
 
-              val transformations = project ++ secondaryFilter
+            val transformations = project ++ secondaryFilter
 
-              (initialFilter, transformations)
+            (initialFilter, transformations)
 
-          }
-          .headOption
+        }.headOption
     }
 
   def fetchAllArrivals(

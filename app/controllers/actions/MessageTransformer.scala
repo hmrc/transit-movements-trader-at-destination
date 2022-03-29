@@ -29,18 +29,21 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.xml.NodeSeq
 
-class MessageTransformer @Inject()(implicit val executionContext: ExecutionContext) extends MessageTransformerInterface with Logging {
+class MessageTransformer @Inject() (implicit val executionContext: ExecutionContext) extends MessageTransformerInterface with Logging {
 
   override def refine[A](request: ArrivalWithoutMessagesRequest[A]): Future[Either[Result, MessageTransformRequest[A]]] =
     request.body match {
       case x: NodeSeq =>
-        x.headOption.flatMap(node => messageResponse(request.channel)(node.label)) match {
+        x.headOption.flatMap(
+          node => messageResponse(request.channel)(node.label)
+        ) match {
           case Some(response) =>
             Future.successful(Right(MessageTransformRequest(Message(response), request)))
           case None =>
             logger.warn(s"Unsupported root node ${x.headOption.map(_.label)} and message type ${request.headers.get("X-Message-Type")}")
             Future.successful(
-              Left(badRequestError(s"Unsupported root node: ${x.headOption.map(_.label)} X-Message-Type: ${request.headers.get("X-Message-Type")}")))
+              Left(badRequestError(s"Unsupported root node: ${x.headOption.map(_.label)} X-Message-Type: ${request.headers.get("X-Message-Type")}"))
+            )
         }
       case invalidBody =>
         logger.warn(s"Invalid request body. Expected XML (NodeSeq) got: ${invalidBody.getClass}")

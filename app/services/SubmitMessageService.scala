@@ -36,19 +36,19 @@ import scala.util.Success
 import scala.util.Try
 import scala.util.control.NonFatal
 
-class SubmitMessageService @Inject()(
+class SubmitMessageService @Inject() (
   arrivalMovementRepository: ArrivalMovementRepository,
   messageConnector: MessageConnector
 )(implicit clock: Clock, ec: ExecutionContext)
     extends Logging {
 
-  def submitMessage(arrivalId: ArrivalId, message: MovementMessageWithStatus, channelType: ChannelType)(
-    implicit hc: HeaderCarrier
+  def submitMessage(arrivalId: ArrivalId, message: MovementMessageWithStatus, channelType: ChannelType)(implicit
+    hc: HeaderCarrier
   ): Future[SubmissionProcessingResult] =
     submitMessage(arrivalId, message, channelType, identity)("submitMessage")
 
-  def submitIe007Message(arrivalId: ArrivalId, message: MovementMessageWithStatus, mrn: MovementReferenceNumber, channelType: ChannelType)(
-    implicit hc: HeaderCarrier
+  def submitIe007Message(arrivalId: ArrivalId, message: MovementMessageWithStatus, mrn: MovementReferenceNumber, channelType: ChannelType)(implicit
+    hc: HeaderCarrier
   ): Future[SubmissionProcessingResult] =
     submitMessage(arrivalId, message, channelType, ArrivalPutUpdate(mrn, _))("submitIe007Message")
 
@@ -102,7 +102,7 @@ class SubmitMessageService @Inject()(
                   SubmissionProcessingResult.SubmissionFailureRejected(submissionResult.responseBody)
                 case VirusFoundOrInvalidToken =>
                   SubmissionProcessingResult.SubmissionFailureInternal
-            }
+              }
           )(SubmissionProcessingResult.SubmissionFailureInternal)
 
         case submissionResult: EisSubmissionFailureDownstream =>

@@ -102,7 +102,7 @@ class PushPullNotificationServiceSpec extends SpecBase with BeforeAndAfterEach w
 
     "sendPushNotification" - {
 
-      val smallContentLengthHeader = (CONTENT_LENGTH, "1000") // arbitrary, but will trigger attaching a body to the message.
+      val smallContentLengthHeader = (CONTENT_LENGTH, "1000")   // arbitrary, but will trigger attaching a body to the message.
       val largeContentLengthHeader = (CONTENT_LENGTH, "850000") // arbitrary, but is too large to trigger attaching a body to the message.
       val arrival                  = arbitrary[ArrivalWithoutMessages].sample.value.copy(notificationBox = Some(testBox))
 
@@ -135,8 +135,8 @@ class PushPullNotificationServiceSpec extends SpecBase with BeforeAndAfterEach w
 
         Await.result(service.sendPushNotification(inboundMessageRequest, Headers(("key", "value"), smallContentLengthHeader)), 30.seconds).mustEqual(())
 
-        verify(mockConnector).postNotification(BoxId(ArgumentMatchers.eq(testBoxId)), any[ArrivalMessageNotification])(any[ExecutionContext],
-                                                                                                                       any[HeaderCarrier])
+        verify(mockConnector)
+          .postNotification(BoxId(ArgumentMatchers.eq(testBoxId)), any[ArrivalMessageNotification])(any[ExecutionContext], any[HeaderCarrier])
       }
 
       "should return a unit value when connector call fails with a 413, then succeeds after stripping the message, and calls PPNS twice" in {
@@ -206,8 +206,8 @@ class PushPullNotificationServiceSpec extends SpecBase with BeforeAndAfterEach w
 
         Await.result(service.sendPushNotification(inboundMessageRequest, Headers(("key", "value"), smallContentLengthHeader)), 30.seconds).mustEqual(())
 
-        verify(mockConnector).postNotification(BoxId(ArgumentMatchers.eq(testBoxId)), any[ArrivalMessageNotification])(any[ExecutionContext],
-                                                                                                                       any[HeaderCarrier])
+        verify(mockConnector)
+          .postNotification(BoxId(ArgumentMatchers.eq(testBoxId)), any[ArrivalMessageNotification])(any[ExecutionContext], any[HeaderCarrier])
         verify(mockConnector)
           .postNotification(BoxId(ArgumentMatchers.eq(testBoxId)), any[ArrivalMessageNotification])(any[ExecutionContext], any[HeaderCarrier])
       }

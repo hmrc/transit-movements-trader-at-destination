@@ -32,7 +32,7 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class GetArrivalService @Inject()(repository: ArrivalMovementRepository, auditService: AuditService)(implicit ec: ExecutionContext) {
+class GetArrivalService @Inject() (repository: ArrivalMovementRepository, auditService: AuditService)(implicit ec: ExecutionContext) {
 
   def getArrivalById(arrivalId: ArrivalId): Future[Either[SubmissionState, Arrival]] =
     repository.get(arrivalId).map {
@@ -47,8 +47,9 @@ class GetArrivalService @Inject()(repository: ArrivalMovementRepository, auditSe
         Left(ArrivalNotFoundError(s"[GetArrivalService][getArrivalWithoutMessagesById] Unable to retrieve arrival movement for arrival id: ${arrivalId.index}"))
     }
 
-  def getArrivalAndAudit(arrivalId: ArrivalId, messageResponse: MessageResponse, movementMessage: MovementMessage)(
-    implicit hc: HeaderCarrier): EitherT[Future, SubmissionState, ArrivalWithoutMessages] =
+  def getArrivalAndAudit(arrivalId: ArrivalId, messageResponse: MessageResponse, movementMessage: MovementMessage)(implicit
+    hc: HeaderCarrier
+  ): EitherT[Future, SubmissionState, ArrivalWithoutMessages] =
     EitherT(
       getArrivalWithoutMessagesById(arrivalId)
     ).leftSemiflatTap {

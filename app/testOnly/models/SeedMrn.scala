@@ -36,12 +36,11 @@ private[testOnly] object SeedMrn {
       __.read[String].map(_.substring(4).length)
   )(SeedMrn(_, _, _))
 
-  implicit val writes: Writes[SeedMrn] = Writes[SeedMrn](
-    x => {
+  implicit val writes: Writes[SeedMrn] = Writes[SeedMrn] {
+    x =>
       val addPadding = s"%0${x.padLength}d".format(x.suffix)
 
       JsString(x.prefix + addPadding)
-    }
-  )
+  }
 
 }

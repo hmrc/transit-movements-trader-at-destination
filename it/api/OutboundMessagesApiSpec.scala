@@ -19,7 +19,13 @@ package api
 import cats.data.NonEmptyList
 import cats.syntax.all._
 import generators.ModelGenerators
-import models.{Arrival, ArrivalId, MessageId, MessageStatus, MessageType, MovementMessageWithStatus, MovementMessageWithoutStatus}
+import models.Arrival
+import models.ArrivalId
+import models.MessageId
+import models.MessageStatus
+import models.MessageType
+import models.MovementMessageWithStatus
+import models.MovementMessageWithoutStatus
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.OptionValues
 import org.scalatest.freespec.AnyFreeSpec
@@ -103,7 +109,7 @@ class OutboundMessagesApiSpec
             "Content-Type" -> "application/xml"
           )
           .post(requestBody)
-                ).status mustBe ACCEPTED
+      ).status mustBe ACCEPTED
     }
   }
 
@@ -114,13 +120,33 @@ class OutboundMessagesApiSpec
       val eoriNumber: String = arbitrary[String].sample.value
 
       val arrivalMovement1 =
-        arbitrary[Arrival].sample.value.copy(arrivalId = ArrivalId(0), eoriNumber = eoriNumber, channel = api, lastUpdated = LocalDateTime.of(2021, 4, 30, 9, 30, 31))
+        arbitrary[Arrival].sample.value.copy(
+          arrivalId = ArrivalId(0),
+          eoriNumber = eoriNumber,
+          channel = api,
+          lastUpdated = LocalDateTime.of(2021, 4, 30, 9, 30, 31)
+        )
       val arrivalMovement2 =
-        arbitrary[Arrival].sample.value.copy(arrivalId = ArrivalId(1), eoriNumber = eoriNumber, channel = api, lastUpdated = LocalDateTime.of(2021, 4, 30, 9, 35, 32))
+        arbitrary[Arrival].sample.value.copy(
+          arrivalId = ArrivalId(1),
+          eoriNumber = eoriNumber,
+          channel = api,
+          lastUpdated = LocalDateTime.of(2021, 4, 30, 9, 35, 32)
+        )
       val arrivalMovement3 =
-        arbitrary[Arrival].sample.value.copy(arrivalId = ArrivalId(2), eoriNumber = eoriNumber, channel = api, lastUpdated = LocalDateTime.of(2021, 4, 30, 9, 30, 21))
+        arbitrary[Arrival].sample.value.copy(
+          arrivalId = ArrivalId(2),
+          eoriNumber = eoriNumber,
+          channel = api,
+          lastUpdated = LocalDateTime.of(2021, 4, 30, 9, 30, 21)
+        )
       val arrivalMovement4 =
-        arbitrary[Arrival].sample.value.copy(arrivalId = ArrivalId(3), eoriNumber = eoriNumber, channel = api, lastUpdated = LocalDateTime.of(2021, 4, 30, 10, 15, 16))
+        arbitrary[Arrival].sample.value.copy(
+          arrivalId = ArrivalId(3),
+          eoriNumber = eoriNumber,
+          channel = api,
+          lastUpdated = LocalDateTime.of(2021, 4, 30, 10, 15, 16)
+        )
 
       await(List(arrivalMovement1, arrivalMovement2, arrivalMovement3, arrivalMovement4).traverse(repo.insert))
 
@@ -128,13 +154,13 @@ class OutboundMessagesApiSpec
         .successfulAuth(eoriNumber)
         .build
 
-      val dateTime = OffsetDateTime.of(LocalDateTime.of(2021, 4, 30, 10, 30, 32), ZoneOffset.ofHours(1))
+      val dateTime    = OffsetDateTime.of(LocalDateTime.of(2021, 4, 30, 10, 30, 32), ZoneOffset.ofHours(1))
       val dateTimeStr = DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(dateTime)
-      val encodedStr = URLEncoder.encode(dateTimeStr, "UTF-8")
+      val encodedStr  = URLEncoder.encode(dateTimeStr, "UTF-8")
 
       val response = await(
         ws
-          .url(s"http://localhost:$port/transit-movements-trader-at-destination/movements/arrivals?updatedSince=${encodedStr}")
+          .url(s"http://localhost:$port/transit-movements-trader-at-destination/movements/arrivals?updatedSince=$encodedStr")
           .withHttpHeaders(
             "Channel"      -> api.toString,
             "Content-Type" -> "application/xml"
@@ -178,13 +204,13 @@ class OutboundMessagesApiSpec
         .successfulAuth(eoriNumber)
         .build
 
-      val dateTime = OffsetDateTime.of(LocalDateTime.of(2021, 4, 30, 10, 30, 32), ZoneOffset.ofHours(1))
+      val dateTime    = OffsetDateTime.of(LocalDateTime.of(2021, 4, 30, 10, 30, 32), ZoneOffset.ofHours(1))
       val dateTimeStr = DateTimeFormatter.RFC_1123_DATE_TIME.format(dateTime)
-      val encodedStr = URLEncoder.encode(dateTimeStr, "UTF-8")
+      val encodedStr  = URLEncoder.encode(dateTimeStr, "UTF-8")
 
       val response = await(
         ws
-          .url(s"http://localhost:$port/transit-movements-trader-at-destination/movements/arrivals?updatedSince=${encodedStr}")
+          .url(s"http://localhost:$port/transit-movements-trader-at-destination/movements/arrivals?updatedSince=$encodedStr")
           .withHttpHeaders(
             "Channel"      -> api.toString,
             "Content-Type" -> "application/xml"

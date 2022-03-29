@@ -55,7 +55,7 @@ object MessageStatusUpdate extends MongoDateTimeFormats {
               s"messages.${value.messageId.index}.status" -> value.messageStatus,
               "lastUpdated"                               -> LocalDateTime.now(clock)
             )
-      )
+        )
     )
 }
 

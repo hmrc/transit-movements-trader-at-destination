@@ -15,6 +15,7 @@
  */
 
 package controllers.actions
+
 import base.SpecBase
 import play.api.mvc.Results._
 import play.api.mvc.ActionFilter

@@ -57,23 +57,20 @@ class InboundRequestServiceSpec extends SpecBase with ModelGenerators with Scala
 
       val message = arbitrary[MovementMessageWithoutStatus].sample.value.copy(messageId = sampleArrival.nextMessageId)
 
-      val movementMessage: EitherT[Future, SubmissionState, MovementMessageWithoutStatus] = {
+      val movementMessage: EitherT[Future, SubmissionState, MovementMessageWithoutStatus] =
         EitherT[Future, SubmissionState, MovementMessageWithoutStatus](
           Future.successful(Right(message))
         )
-      }
 
-      val inboundMessageResponse: EitherT[Future, SubmissionState, InboundMessageResponse] = {
+      val inboundMessageResponse: EitherT[Future, SubmissionState, InboundMessageResponse] =
         EitherT[Future, SubmissionState, InboundMessageResponse](
           Future.successful(Right(GoodsReleasedResponse))
         )
-      }
 
-      val getArrivalWithoutMessages: EitherT[Future, SubmissionState, ArrivalWithoutMessages] = {
+      val getArrivalWithoutMessages: EitherT[Future, SubmissionState, ArrivalWithoutMessages] =
         EitherT[Future, SubmissionState, ArrivalWithoutMessages](
           Future.successful(Right(sampleArrival))
         )
-      }
 
       when(mockLockService.lock(any())).thenReturn(Future.successful(Right(())))
       when(mockGetArrivalService.getArrivalAndAudit(any(), any(), any())(any())).thenReturn(getArrivalWithoutMessages)
@@ -133,23 +130,20 @@ class InboundRequestServiceSpec extends SpecBase with ModelGenerators with Scala
 
       val message = arbitrary[MovementMessageWithoutStatus].sample.value.copy(messageId = sampleArrival.nextMessageId)
 
-      val movementMessage: EitherT[Future, SubmissionState, MovementMessageWithoutStatus] = {
+      val movementMessage: EitherT[Future, SubmissionState, MovementMessageWithoutStatus] =
         EitherT[Future, SubmissionState, MovementMessageWithoutStatus](
           Future.successful(Right(message))
         )
-      }
 
-      val inboundMessageResponse: EitherT[Future, SubmissionState, InboundMessageResponse] = {
+      val inboundMessageResponse: EitherT[Future, SubmissionState, InboundMessageResponse] =
         EitherT[Future, SubmissionState, InboundMessageResponse](
           Future.successful(Right(GoodsReleasedResponse))
         )
-      }
 
-      val getArrivalWithoutMessages: EitherT[Future, SubmissionState, ArrivalWithoutMessages] = {
+      val getArrivalWithoutMessages: EitherT[Future, SubmissionState, ArrivalWithoutMessages] =
         EitherT[Future, SubmissionState, ArrivalWithoutMessages](
           Future.successful(Left(GetArrivalFailure("error")))
         )
-      }
 
       when(mockLockService.lock(any())).thenReturn(Future.successful(Right(())))
       when(mockMovementMessage.makeMovementMessage(any(), any(), any())).thenReturn(movementMessage)
@@ -182,11 +176,10 @@ class InboundRequestServiceSpec extends SpecBase with ModelGenerators with Scala
 
       val messageSender = MessageSender(ArrivalId(0), 0)
 
-      val inboundMessageResponse: EitherT[Future, SubmissionState, InboundMessageResponse] = {
+      val inboundMessageResponse: EitherT[Future, SubmissionState, InboundMessageResponse] =
         EitherT[Future, SubmissionState, InboundMessageResponse](
           Future.successful(Left(InboundMessageFailure("error")))
         )
-      }
 
       when(mockLockService.lock(any())).thenReturn(Future.successful(Right(())))
       when(mockInboundMessageResponseService.makeInboundMessageResponse(any())).thenReturn(inboundMessageResponse)
@@ -216,23 +209,20 @@ class InboundRequestServiceSpec extends SpecBase with ModelGenerators with Scala
       val messageSender = MessageSender(ArrivalId(0), 0)
       val sampleArrival = arbitrary[ArrivalWithoutMessages].sample.value
 
-      val inboundMessageResponse: EitherT[Future, SubmissionState, InboundMessageResponse] = {
+      val inboundMessageResponse: EitherT[Future, SubmissionState, InboundMessageResponse] =
         EitherT[Future, SubmissionState, InboundMessageResponse](
           Future.successful(Right(GoodsReleasedResponse))
         )
-      }
 
-      val movementMessage: EitherT[Future, SubmissionState, MovementMessageWithoutStatus] = {
+      val movementMessage: EitherT[Future, SubmissionState, MovementMessageWithoutStatus] =
         EitherT[Future, SubmissionState, MovementMessageWithoutStatus](
           Future.successful(Left(MovementMessageFailure("error")))
         )
-      }
 
-      val getArrivalWithoutMessages: EitherT[Future, SubmissionState, ArrivalWithoutMessages] = {
+      val getArrivalWithoutMessages: EitherT[Future, SubmissionState, ArrivalWithoutMessages] =
         EitherT[Future, SubmissionState, ArrivalWithoutMessages](
           Future.successful(Right(sampleArrival))
         )
-      }
 
       when(mockLockService.lock(any())).thenReturn(Future.successful(Right(())))
       when(mockGetArrivalService.getArrivalAndAudit(any(), any(), any())(any())).thenReturn(getArrivalWithoutMessages)
@@ -265,23 +255,20 @@ class InboundRequestServiceSpec extends SpecBase with ModelGenerators with Scala
 
       val message = arbitrary[MovementMessageWithoutStatus].sample.value.copy(messageCorrelationId = sampleArrival.nextMessageCorrelationId)
 
-      val movementMessage: EitherT[Future, SubmissionState, MovementMessageWithoutStatus] = {
+      val movementMessage: EitherT[Future, SubmissionState, MovementMessageWithoutStatus] =
         EitherT[Future, SubmissionState, MovementMessageWithoutStatus](
           Future.successful(Right(message))
         )
-      }
 
-      val inboundMessageResponse: EitherT[Future, SubmissionState, InboundMessageResponse] = {
+      val inboundMessageResponse: EitherT[Future, SubmissionState, InboundMessageResponse] =
         EitherT[Future, SubmissionState, InboundMessageResponse](
           Future.successful(Right(GoodsReleasedResponse))
         )
-      }
 
-      val getArrivalWithoutMessages: EitherT[Future, SubmissionState, ArrivalWithoutMessages] = {
+      val getArrivalWithoutMessages: EitherT[Future, SubmissionState, ArrivalWithoutMessages] =
         EitherT[Future, SubmissionState, ArrivalWithoutMessages](
           Future.successful(Right(sampleArrival))
         )
-      }
 
       when(mockLockService.lock(any())).thenReturn(Future.successful(Right(())))
       when(mockGetArrivalService.getArrivalAndAudit(any(), any(), any())(any())).thenReturn(getArrivalWithoutMessages)

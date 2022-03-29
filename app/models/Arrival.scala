@@ -41,7 +41,9 @@ case class Arrival(
   lazy val nextMessageId: MessageId = MessageId(messages.length + 1)
 
   lazy val messagesWithId: NonEmptyList[(MovementMessage, MessageId)] =
-    messages.map(msg => msg -> msg.messageId)
+    messages.map(
+      msg => msg -> msg.messageId
+    )
 
   private val obfuscatedEori: String          = s"ending ${eoriNumber.takeRight(7)}"
   private val isoFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME

@@ -36,7 +36,7 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class LockRepository @Inject()(mongo: ReactiveMongoApi, appConfig: AppConfig, clock: Clock)(implicit ec: ExecutionContext) extends Repository {
+class LockRepository @Inject() (mongo: ReactiveMongoApi, appConfig: AppConfig, clock: Clock)(implicit ec: ExecutionContext) extends Repository {
 
   private val documentExistsErrorCodeValue = 11000
 
@@ -56,7 +56,9 @@ class LockRepository @Inject()(mongo: ReactiveMongoApi, appConfig: AppConfig, cl
       .flatMap {
         _.indexesManager.ensure(createdIndex)
       }
-      .map(_ => ())
+      .map(
+        _ => ()
+      )
 
   def lock(arrivalId: ArrivalId): Future[Boolean] = {
 
@@ -68,7 +70,9 @@ class LockRepository @Inject()(mongo: ReactiveMongoApi, appConfig: AppConfig, cl
     collection.flatMap {
       _.insert(ordered = false)
         .one(lock)
-        .map(_ => true)
+        .map(
+          _ => true
+        )
     } recover {
       case e: LastError if e.code.contains(documentExistsErrorCodeValue) =>
         false
@@ -79,7 +83,9 @@ class LockRepository @Inject()(mongo: ReactiveMongoApi, appConfig: AppConfig, cl
     collection.flatMap {
       _.simpleFindAndRemove(
         selector = Json.obj("_id" -> arrivalId)
-      ).map(_ => true)
+      ).map(
+        _ => true
+      )
     }
 }
 

@@ -49,9 +49,7 @@ class AddJsonToMessagesTransformerSpec extends SpecBase with ModelGenerators wit
     for {
       arrival  <- arbitraryArrival.arbitrary
       messages <- nonEmptyListOfMaxLength[MovementMessage](10)
-    } yield {
-      arrival.copy(messages = messages)
-    }
+    } yield arrival.copy(messages = messages)
 
   "the flow" - {
     def listOfArrivals(count: Int): Gen[List[Arrival]] =
@@ -60,7 +58,9 @@ class AddJsonToMessagesTransformerSpec extends SpecBase with ModelGenerators wit
           Iterator
             .range(1, count + 1)
             .map(ArrivalId(_))
-            .map(arrivalId => arrival.copy(arrivalId = arrivalId))
+            .map(
+              arrivalId => arrival.copy(arrivalId = arrivalId)
+            )
             .toList
       }
 
@@ -264,7 +264,9 @@ class AddJsonToMessagesTransformerSpec extends SpecBase with ModelGenerators wit
     when(arrivalsLockRepo.unlock(any())).thenReturn(Future.successful(true))
 
     def sourceOfElements[A](elements: List[A]): Source[A, Future[Done]] =
-      Source(elements).mapMaterializedValue(_ => Future.successful(Done))
+      Source(elements).mapMaterializedValue(
+        _ => Future.successful(Done)
+      )
 
     def addJsonToMessagesTransformer = new AddJsonToMessagesTransformer(workerConfig, arrivalsRepo, arrivalsLockRepo)
   }

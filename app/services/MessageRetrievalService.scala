@@ -20,19 +20,17 @@ import com.google.inject.Inject
 import models.Arrival
 import models.response.ResponseMovementMessage
 
-class MessageRetrievalService @Inject()(arrivalMessageSummaryService: ArrivalMessageSummaryService) {
+class MessageRetrievalService @Inject() (arrivalMessageSummaryService: ArrivalMessageSummaryService) {
 
   def getUnloadingPermission(arrival: Arrival): Option[ResponseMovementMessage] =
     arrivalMessageSummaryService.arrivalMessagesSummary(arrival).unloadingPermission.flatMap {
       messageId =>
-        {
-          val messages = arrival.messages.toList
+        val messages = arrival.messages.toList
 
-          if (messages.isDefinedAt(messageId.index)) {
-            Some(ResponseMovementMessage.build(arrival.arrivalId, messageId, messages(messageId.index)))
-          } else {
-            None
-          }
+        if (messages.isDefinedAt(messageId.index)) {
+          Some(ResponseMovementMessage.build(arrival.arrivalId, messageId, messages(messageId.index)))
+        } else {
+          None
         }
     }
 

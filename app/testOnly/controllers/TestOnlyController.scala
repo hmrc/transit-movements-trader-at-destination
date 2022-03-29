@@ -32,7 +32,7 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class TestOnlyController @Inject()(
+class TestOnlyController @Inject() (
   override val messagesApi: MessagesApi,
   mongo: ReactiveMongoApi,
   cc: ControllerComponents,
