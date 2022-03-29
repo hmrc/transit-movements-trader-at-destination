@@ -20,6 +20,7 @@ import javax.inject.Inject
 import models._
 import models.request.AuthenticatedRequest
 import play.api.libs.json.Format.GenericFormat
+import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
@@ -29,7 +30,13 @@ import scala.concurrent.ExecutionContext
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import utils.XMLTransformer.toJson
 
-class AuditService @Inject()(auditConnector: AuditConnector, messageTranslation: MessageTranslation)(implicit ec: ExecutionContext) {
+import scala.xml.NodeSeq
+
+object AuditService {
+  val maxRequestLength = 20000
+}
+
+class AuditService @Inject() (auditConnector: AuditConnector, messageTranslation: MessageTranslation)(implicit ec: ExecutionContext) {
 
   def auditEvent(auditType: String, enrolmentId: EnrolmentId, message: MovementMessage, channel: ChannelType)(implicit hc: HeaderCarrier): Unit = {
     val json    = messageTranslation.translate(toJson(message.message))
@@ -38,14 +45,16 @@ class AuditService @Inject()(auditConnector: AuditConnector, messageTranslation:
   }
 
   def auditNCTSMessages(channel: ChannelType, customerId: String, messageResponse: MessageResponse, message: MovementMessage)(implicit
-                                                                                                                              hc: HeaderCarrier): Unit = {
+    hc: HeaderCarrier
+  ): Unit = {
     val json    = messageTranslation.translate(toJson(message.message))
     val details = UnauthenticatedAuditDetails(channel, customerId, json)
     auditConnector.sendExplicitAudit(messageResponse.auditType, details)
   }
 
   def auditNCTSRequestedMissingMovementEvent(arrivalId: ArrivalId, messageResponse: MessageResponse, message: MovementMessage)(implicit
-                                                                                                                               hc: HeaderCarrier): Unit = {
+    hc: HeaderCarrier
+  ): Unit = {
     val details = Json.obj(
       "arrivalId"           -> arrivalId,
       "messageResponseType" -> messageResponse.auditType,
@@ -58,6 +67,7 @@ class AuditService @Inject()(auditConnector: AuditConnector, messageTranslation:
     implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
     val details =
       AuthenticatedAuditDetails(request.channel, request.enrolmentId.customerId, request.enrolmentId.enrolmentType, Json.obj("arrivalId" -> arrivalId))
+
     auditConnector.sendExplicitAudit(AuditType.CustomerRequestedMissingMovement, details)
   }
 
@@ -74,7 +84,24 @@ class AuditService @Inject()(auditConnector: AuditConnector, messageTranslation:
     boxId: Option[BoxId]
   )(implicit hc: HeaderCarrier): Unit = {
 
-    val details = ArrivalNotificationAuditDetails(channel, customerId, enrolmentType, message.message, requestLength, boxId, messageTranslation)
+    lazy val statistics: JsObject = Json.obj(
+      "authorisedLocationOfGoods" -> fieldValue(message.message, "ArrAutLocOfGooHEA65"),
+      "totalNoOfContainers"       -> fieldOccurrenceCount(message.message, "CONNR3"),
+      "requestLength"             -> requestLength
+    )
+
+    lazy val jsonMessage: JsObject =
+      if (requestLength > AuditService.maxRequestLength) Json.obj("arrivalNotification" -> "Arrival notification too large to be included")
+      else messageTranslation.translate(toJson(message.message))
+
+    val details = ArrivalNotificationAuditDetails(channel, customerId, enrolmentType, jsonMessage, statistics, boxId)
+
     auditConnector.sendExplicitAudit(auditType, details)
   }
+
+  private def fieldOccurrenceCount(message: NodeSeq, field: String): Int = (message \\ field).length
+
+  private def fieldValue(message: NodeSeq, field: String): String =
+    if (fieldOccurrenceCount(message, field) == 0) "NULL" else (message \\ field).text
+
 }
