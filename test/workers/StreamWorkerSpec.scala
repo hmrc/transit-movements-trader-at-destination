@@ -41,14 +41,16 @@ class StreamWorkerSpec extends SpecBase {
           LockResult.LockAcquired
         )
 
-      val flow = Flow[LockResult].map(_ => 1)
+      val flow = Flow[LockResult].map(
+        _ => 1
+      )
 
       val stream = streamWorker(flow).tap.value
 
       stream.pull.futureValue.value mustEqual 1
       stream.pull.futureValue.value mustEqual 1
       stream.pull.futureValue.value mustEqual 1
-      stream.pull.futureValue must not be (defined)
+      stream.pull.futureValue must not be defined
     }
   }
 
@@ -63,13 +65,15 @@ class StreamWorkerSpec extends SpecBase {
           LockResult.LockAcquired
         )
 
-      val flow = Flow[LockResult].map(_ => 1)
+      val flow = Flow[LockResult].map(
+        _ => 1
+      )
 
       val stream = streamWorker(flow).tap.value
 
       stream.pull.futureValue.value mustEqual 1
       stream.pull.futureValue.value mustEqual 1
-      stream.pull.futureValue must not be (defined)
+      stream.pull.futureValue must not be defined
     }
 
     "and completes with no work being done by the flow, when upstream never acquire a lock" in new Fixture {
@@ -81,11 +85,13 @@ class StreamWorkerSpec extends SpecBase {
           LockResult.AlreadyLocked
         )
 
-      val flow = Flow[LockResult].map(_ => 1)
+      val flow = Flow[LockResult].map(
+        _ => 1
+      )
 
       val stream = streamWorker(flow).tap.value
 
-      stream.pull.futureValue must not be (defined)
+      stream.pull.futureValue must not be defined
       numberOfUnlocks mustEqual 0
     }
   }
@@ -100,12 +106,14 @@ class StreamWorkerSpec extends SpecBase {
           LockResult.AlreadyLocked
         )
 
-      val flow = Flow[LockResult].map(_ => 1)
+      val flow = Flow[LockResult].map(
+        _ => 1
+      )
 
       val stream = streamWorker(flow).tap.value
 
       numberOfUnlocks mustEqual 0
-      stream.pull.futureValue must not be (defined)
+      stream.pull.futureValue must not be defined
       numberOfUnlocks mustEqual 0
     }
 
@@ -121,7 +129,9 @@ class StreamWorkerSpec extends SpecBase {
           LockResult.LockAcquired
         )
 
-      val flow = Flow[LockResult].map(_ => 1)
+      val flow = Flow[LockResult].map(
+        _ => 1
+      )
 
       val stream = streamWorker(flow).tap.value
 
@@ -129,7 +139,7 @@ class StreamWorkerSpec extends SpecBase {
       stream.pull.futureValue must be(defined)
       stream.pull.futureValue must be(defined)
       stream.pull.futureValue must be(defined)
-      stream.pull.futureValue must not be (defined)
+      stream.pull.futureValue must not be defined
       numberOfUnlocks mustEqual 3
     }
   }

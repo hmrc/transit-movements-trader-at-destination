@@ -57,9 +57,10 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
 
   "AuditService" - {
     "must audit notification message event" in {
-      val requestEori  = Ior.right(EORINumber("eori"))
-      val requestXml   = <xml>test</xml>
-      val auditDetails = AuthenticatedAuditDetails(ChannelType.api, "eori", Constants.NewEnrolmentKey, Json.obj("xml" -> "test"))
+      val enrolmentId = EnrolmentId(Ior.right(EORINumber("eori")))
+      val requestXml  = <xml>test</xml>
+
+      val auditDetails = AuthenticatedAuditDetails(ChannelType.api, enrolmentId.customerId, enrolmentId.enrolmentType, Json.obj("xml" -> "test"))
 
       val movementMessage =
         MovementMessageWithStatus(MessageId(1), LocalDateTime.now, MessageType.ArrivalNotification, requestXml, MessageStatus.SubmissionSucceeded, 1)
@@ -71,7 +72,7 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
         .build()
       running(application) {
         val auditService = application.injector.instanceOf[AuditService]
-        auditService.auditEvent(auditType, requestEori, movementMessage, api)
+        auditService.auditEvent(auditType, enrolmentId, movementMessage, api)
 
         verify(mockAuditConnector, times(1)).sendExplicitAudit(eqTo(auditType), eqTo(auditDetails))(any(), any(), any())
       }
@@ -181,8 +182,8 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
 
     "must audit customer missing movement events" in {
       forAll(Gen.oneOf(ChannelType.values)) {
-        (channel) =>
-          val request = new AuthenticatedRequest[Any](FakeRequest(), channel, Ior.right(EORINumber(Constants.NewEnrolmentIdKey)))
+        channel =>
+          val request = new AuthenticatedRequest[Any](FakeRequest(), channel, EnrolmentId(Ior.right(EORINumber(Constants.NewEnrolmentIdKey))))
           val application = baseApplicationBuilder
             .overrides(bind[AuditConnector].toInstance(mockAuditConnector))
             .build()
@@ -191,7 +192,8 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
             val auditService = application.injector.instanceOf[AuditService]
             val arrivalId    = ArrivalId(1234)
             val expectedDetails =
-              AuthenticatedAuditDetails(request.channel, Constants.NewEnrolmentIdKey, Constants.NewEnrolmentKey, Json.obj("arrivalId" -> arrivalId))
+              AuthenticatedAuditDetails(request.channel, request.enrolmentId.customerId, request.enrolmentId.enrolmentType, Json.obj("arrivalId" -> arrivalId))
+
             auditService.auditCustomerRequestedMissingMovementEvent(request, arrivalId)
 
             verify(mockAuditConnector, times(1)).sendExplicitAudit(eqTo(AuditType.CustomerRequestedMissingMovement), eqTo(expectedDetails))(any(), any(), any())
@@ -249,7 +251,7 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
           </HEAHEA>
         </CC007A>
 
-      val enrolmentId = Ior.right(EORINumber(Constants.NewEnrolmentIdKey))
+      val enrolmentId = EnrolmentId(Ior.right(EORINumber(Constants.NewEnrolmentIdKey)))
       val movementMessage =
         MovementMessageWithStatus(MessageId(1), LocalDateTime.now, MessageType.ArrivalNotification, requestXml, MessageStatus.SubmissionSucceeded, 1)
 
@@ -258,11 +260,15 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
           "authorisedLocationOfGoods" -> "location",
           "totalNoOfContainers"       -> 5,
           "requestLength"             -> requestLength
-      )
+        )
 
       Seq(arbitraryBox.arbitrary.sample, None).foreach {
         boxOpt =>
-          val withBox = boxOpt.map(_ => "with").getOrElse("without")
+          val withBox = boxOpt
+            .map(
+              _ => "with"
+            )
+            .getOrElse("without")
           s"$withBox a box" - {
 
             "must include translated xml when request size is less than max size allowed and generate xml statistics" in {
@@ -278,21 +284,26 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
               val messageTranslation = application.injector.instanceOf[MessageTranslation]
               val jsonMessage        = messageTranslation.translate(toJson(movementMessage.message))
 
-              val expected = ArrivalNotificationAuditDetails(ChannelType.api,
-                                                             Constants.NewEnrolmentIdKey,
-                                                             Constants.NewEnrolmentKey,
-                                                             jsonMessage,
-                                                             statistics(requestSize),
-                                                             boxOpt.map(_.boxId))
+              val expected = ArrivalNotificationAuditDetails(
+                ChannelType.api,
+                Constants.NewEnrolmentIdKey,
+                Constants.NewEnrolmentKey,
+                jsonMessage,
+                statistics(requestSize),
+                boxOpt.map(_.boxId)
+              )
 
               running(application) {
                 val service = application.injector.instanceOf[AuditService]
-                service.auditArrivalNotificationWithStatistics(AuditType.ArrivalNotificationSubmitted,
-                                                               enrolmentId,
-                                                               movementMessage,
-                                                               ChannelType.api,
-                                                               requestSize,
-                                                               boxOpt.map(_.boxId))
+                service.auditArrivalNotificationWithStatistics(
+                  AuditType.ArrivalNotificationSubmitted,
+                  enrolmentId.customerId,
+                  enrolmentId.enrolmentType,
+                  movementMessage,
+                  ChannelType.api,
+                  requestSize,
+                  boxOpt.map(_.boxId)
+                )
 
                 verify(mockAuditConnector).sendExplicitAudit(eqTo(AuditType.ArrivalNotificationSubmitted), eqTo(expected))(any(), any(), any())
               }
@@ -311,21 +322,26 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
 
               val jsonMessage = Json.obj("arrivalNotification" -> "Arrival notification too large to be included")
 
-              val expected = ArrivalNotificationAuditDetails(ChannelType.api,
-                                                             Constants.NewEnrolmentIdKey,
-                                                             Constants.NewEnrolmentKey,
-                                                             jsonMessage,
-                                                             statistics(requestSize),
-                                                             boxOpt.map(_.boxId))
+              val expected = ArrivalNotificationAuditDetails(
+                ChannelType.api,
+                Constants.NewEnrolmentIdKey,
+                Constants.NewEnrolmentKey,
+                jsonMessage,
+                statistics(requestSize),
+                boxOpt.map(_.boxId)
+              )
 
               running(application) {
                 val service = application.injector.instanceOf[AuditService]
-                service.auditArrivalNotificationWithStatistics(AuditType.ArrivalNotificationSubmitted,
-                                                               enrolmentId,
-                                                               movementMessage,
-                                                               ChannelType.api,
-                                                               requestSize,
-                                                               boxOpt.map(_.boxId))
+                service.auditArrivalNotificationWithStatistics(
+                  AuditType.ArrivalNotificationSubmitted,
+                  enrolmentId.customerId,
+                  enrolmentId.enrolmentType,
+                  movementMessage,
+                  ChannelType.api,
+                  requestSize,
+                  boxOpt.map(_.boxId)
+                )
 
                 verify(mockAuditConnector).sendExplicitAudit(eqTo(AuditType.ArrivalNotificationSubmitted), eqTo(expected))(any(), any(), any())
               }

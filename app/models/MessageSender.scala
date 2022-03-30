@@ -21,9 +21,9 @@ import play.api.mvc.PathBindable
 import scala.util.Try
 
 final case class MessageSender(arrivalId: ArrivalId, messageCorrelationId: Int) {
-  override val toString: String = {
+
+  override val toString: String =
     s"MDTP-ARR-${pad(arrivalId.index, 23)}-${pad(messageCorrelationId, 2)}"
-  }
 
   private def pad(value: Int, length: Int): String =
     s"%0${length}d".format(value)
@@ -39,13 +39,12 @@ object MessageSender {
         (for {
           id            <- Try(id.toInt)
           correlationId <- Try(messageCorrelationId.toInt)
-        } yield {
-          MessageSender(ArrivalId(id), correlationId)
-        }).toOption
+        } yield MessageSender(ArrivalId(id), correlationId)).toOption
       case _ => None
     }
 
   implicit lazy val pathBindable: PathBindable[MessageSender] = new PathBindable[MessageSender] {
+
     override def bind(key: String, value: String): Either[String, MessageSender] =
       apply(value) match {
         case Some(messageSender) => Right(messageSender)

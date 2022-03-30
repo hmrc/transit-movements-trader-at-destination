@@ -78,7 +78,9 @@ private[workers] class AddJsonToMessagesTransformer @Inject()(
           case e: Throwable =>
             arrivalLockRepository
               .unlock(arrival.arrivalId)
-              .map(_ => throw WorkerResumeableException(s"Received an error trying to reset messages for arrival s${arrival.arrivalId.index}", e))
+              .map(
+                _ => throw WorkerResumeableException(s"Received an error trying to reset messages for arrival s${arrival.arrivalId.index}", e)
+              )
         }
 
       case false =>

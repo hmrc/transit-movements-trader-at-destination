@@ -69,10 +69,14 @@ object ArrivalWithoutMessages {
       arrival.notificationBox,
       arrival.nextMessageId,
       arrival.nextMessageCorrelationId,
-      arrival.messages.map(x => MessageMetaData(x.messageType, x.dateTime)).toList
+      arrival.messages
+        .map(
+          x => MessageMetaData(x.messageType, x.dateTime)
+        )
+        .toList
     )
 
-  implicit val readsArrival: Reads[ArrivalWithoutMessages] = {
+  implicit val readsArrival: Reads[ArrivalWithoutMessages] =
     (
       (__ \ "_id").read[ArrivalId] and
         (__ \ "channel").read[ChannelType] and
@@ -86,7 +90,6 @@ object ArrivalWithoutMessages {
         (__ \ "nextMessageCorrelationId").read[Int] and
         (__ \ "messages").read[Seq[MessageMetaData]]
     )(ArrivalWithoutMessages.apply _)
-  }
 
   val projection: JsObject = Json.obj(
     "_id"                      -> 1,

@@ -29,11 +29,9 @@ import scala.util.control.NonFatal
 
 abstract private[workers] class WorkerSupervisionDeciderProvider(workerName: String, logger: Logger) {
 
-  /**
-    * The partial function that if supplied will be composed with fatalErrorSupervisionStrategy.
+  /** The partial function that if supplied will be composed with fatalErrorSupervisionStrategy.
     * If no custom supervision strategy is provided, then the defaultSupervisorStrategy and
     * fatalErrorSupervisionStrategy will be used.
-    *
     */
   def customSupervisorDecider: Option[PartialFunction[Throwable, Directive]]
 
@@ -56,8 +54,7 @@ abstract private[workers] class WorkerSupervisionDeciderProvider(workerName: Str
 
 }
 
-/**
-  * A supervision strategy that resumes on non-fatal errors.
+/** A supervision strategy that resumes on non-fatal errors.
   */
 class ResumeNonFatalSupervisionDeciderProvider(workerName: String, logger: Logger) extends WorkerSupervisionDeciderProvider(workerName, logger) {
 

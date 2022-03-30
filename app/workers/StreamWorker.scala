@@ -30,9 +30,7 @@ import models.LockResult.LockAcquired
 import play.api.Configuration
 import workers.WorkerLogKeys._
 
-/**
-  *
-  * This worker coordinates among multiple instance for the same work associated with a workerName, an ensures that
+/** This worker coordinates among multiple instance for the same work associated with a workerName, an ensures that
   * a only a single instance is working at a time.
   *
   * The stream provides a LockResult and only if the there is [[models.LockResult.LockAcquired]] will the flow be run.
@@ -57,7 +55,9 @@ abstract class StreamWorker[A](
 
   final val source: Source[LockResult, NotUsed] =
     Source
-      .fromIterator(() => workerLockingService)
+      .fromIterator(
+        () => workerLockingService
+      )
       .throttle(1, interval)
       .mapAsync(1)(identity)
       .filter(_ == LockAcquired)
@@ -65,9 +65,13 @@ abstract class StreamWorker[A](
 
   final val sink: Sink[A, NotUsed] =
     Flow[A]
-      .map(_ => workerLockingService.releaseLock())
+      .map(
+        _ => workerLockingService.releaseLock()
+      )
       .to(Sink.ignore)
-      .mapMaterializedValue(_ => NotUsed)
+      .mapMaterializedValue(
+        _ => NotUsed
+      )
       .withAttributes(ActorAttributes.supervisionStrategy(supervisionDeciderProvider.supervisionDecider))
 
   val tap: Option[SinkQueueWithCancel[A]] = if (enabled) {

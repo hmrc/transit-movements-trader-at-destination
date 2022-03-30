@@ -48,7 +48,8 @@ class PushPullNotificationConnector @Inject()(config: AppConfig, http: HttpClien
         http.GET[Either[UpstreamErrorResponse, Box]](url, queryParams)
     }
 
-  def postNotification(boxId: BoxId, notification: ArrivalMessageNotification)(implicit ec: ExecutionContext,
+  def postNotification(boxId: BoxId, notification: ArrivalMessageNotification)(implicit
+                                                                               ec: ExecutionContext,
                                                                                hc: HeaderCarrier): Future[Either[UpstreamErrorResponse, Unit]] =
     withMetricsTimerAsync("post-ppns-notification") {
       _ =>

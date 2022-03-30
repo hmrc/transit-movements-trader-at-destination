@@ -20,7 +20,10 @@ import java.time.LocalDateTime
 
 import base.ItSpecBase
 import cats.syntax.all._
-import models.{ArrivalId, ChannelType, MessageStatus, MessageType}
+import models.ArrivalId
+import models.ChannelType
+import models.MessageStatus
+import models.MessageType
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
@@ -65,38 +68,37 @@ class MovementsChangeLogSpec extends ItSpecBase with IntegrationPatience with Be
 
       _ <- coll.insert.many {
         for (id <- arrivalIds)
-          yield
-            Json.obj(
-              "_id"                      -> id.index,
-              "channel"                  -> ChannelType.web.toString,
-              "eoriNumber"               -> eori,
-              "movementReferenceNumber"  -> Random.alphanumeric.take(20).mkString,
-              "created"                  -> LocalDateTime.of(2021, 7, 15, 12, 12),
-              "updated"                  -> LocalDateTime.of(2021, 7, 15, 12, 13),
-              "lastUpdated"              -> LocalDateTime.of(2021, 7, 15, 12, 13),
-              "nextMessageCorrelationId" -> 2,
-              "messages" -> Json.arr(
-                Json.obj(
-                  "dateTime"             -> LocalDateTime.of(2021, 7, 15, 12, 12),
-                  "messageType"          -> MessageType.ArrivalNotification.toString,
-                  "message"              -> NodeSeq.fromSeq(Seq(<CC007A></CC007A>)),
-                  "status"               -> MessageStatus.SubmissionSucceeded.toString,
-                  "messageCorrelationId" -> 1
-                ),
-                Json.obj(
-                  "dateTime"             -> LocalDateTime.of(2021, 7, 15, 12, 12),
-                  "messageType"          -> MessageType.UnloadingPermission.toString,
-                  "message"              -> NodeSeq.fromSeq(Seq(<CC043A></CC043A>)),
-                  "messageCorrelationId" -> 1
-                ),
-                Json.obj(
-                  "dateTime"             -> LocalDateTime.of(2021, 7, 15, 12, 13),
-                  "messageType"          -> MessageType.UnloadingRemarks.toString,
-                  "message"              -> NodeSeq.fromSeq(Seq(<CC044A></CC044A>)),
-                  "messageCorrelationId" -> 1
-                )
+          yield Json.obj(
+            "_id"                      -> id.index,
+            "channel"                  -> ChannelType.web.toString,
+            "eoriNumber"               -> eori,
+            "movementReferenceNumber"  -> Random.alphanumeric.take(20).mkString,
+            "created"                  -> LocalDateTime.of(2021, 7, 15, 12, 12),
+            "updated"                  -> LocalDateTime.of(2021, 7, 15, 12, 13),
+            "lastUpdated"              -> LocalDateTime.of(2021, 7, 15, 12, 13),
+            "nextMessageCorrelationId" -> 2,
+            "messages" -> Json.arr(
+              Json.obj(
+                "dateTime"             -> LocalDateTime.of(2021, 7, 15, 12, 12),
+                "messageType"          -> MessageType.ArrivalNotification.toString,
+                "message"              -> NodeSeq.fromSeq(Seq(<CC007A></CC007A>)),
+                "status"               -> MessageStatus.SubmissionSucceeded.toString,
+                "messageCorrelationId" -> 1
+              ),
+              Json.obj(
+                "dateTime"             -> LocalDateTime.of(2021, 7, 15, 12, 12),
+                "messageType"          -> MessageType.UnloadingPermission.toString,
+                "message"              -> NodeSeq.fromSeq(Seq(<CC043A></CC043A>)),
+                "messageCorrelationId" -> 1
+              ),
+              Json.obj(
+                "dateTime"             -> LocalDateTime.of(2021, 7, 15, 12, 13),
+                "messageType"          -> MessageType.UnloadingRemarks.toString,
+                "message"              -> NodeSeq.fromSeq(Seq(<CC044A></CC044A>)),
+                "messageCorrelationId" -> 1
               )
             )
+          )
       }
     } yield ()
 

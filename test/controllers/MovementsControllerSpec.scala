@@ -19,7 +19,6 @@ package controllers
 import audit.AuditService
 import audit.AuditType
 import base.SpecBase
-import cats.data.Ior
 import cats.data.NonEmptyList
 import config.Constants
 import connectors.MessageConnector
@@ -38,7 +37,6 @@ import models.ArrivalStatus
 import models.ArrivalWithoutMessages
 import models.Box
 import models.BoxId
-import models.EORINumber
 import models.MessageId
 import models.MessageSender
 import models.MessageType
@@ -174,18 +172,24 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           arrivalMessage.message.map(trim) mustEqual expectedMessage.message.map(trim)
 
           verify(mockSubmitMessageService, times(1)).submitArrival(eqTo(newArrival))(any())
-          verify(mockAuditService, times(1)).auditArrivalNotificationWithStatistics(eqTo(AuditType.ArrivalNotificationSubmitted),
-                                                                                    eqTo(Ior.right(EORINumber(newArrival.eoriNumber))),
-                                                                                    any(),
-                                                                                    any(),
-                                                                                    any(),
-                                                                                    eqTo(None))(any())
-          verify(mockAuditService, times(1)).auditArrivalNotificationWithStatistics(eqTo(AuditType.MesSenMES3Added),
-                                                                                    eqTo(Ior.right(EORINumber(newArrival.eoriNumber))),
-                                                                                    any(),
-                                                                                    any(),
-                                                                                    any(),
-                                                                                    eqTo(None))(any())
+          verify(mockAuditService, times(1)).auditArrivalNotificationWithStatistics(
+            eqTo(AuditType.ArrivalNotificationSubmitted),
+            any(),
+            any(),
+            any(),
+            any(),
+            any(),
+            eqTo(None)
+          )(any())
+          verify(mockAuditService, times(1)).auditArrivalNotificationWithStatistics(
+            eqTo(AuditType.MesSenMES3Added),
+            any(),
+            any(),
+            any(),
+            any(),
+            any(),
+            eqTo(None)
+          )(any())
           verifyNoInteractions(mockNotificationService)
         }
       }
@@ -239,18 +243,24 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           arrivalMessage.message.map(trim) mustEqual expectedMessage.message.map(trim)
 
           verify(mockSubmitMessageService, times(1)).submitArrival(eqTo(newArrival))(any())
-          verify(mockAuditService, times(1)).auditArrivalNotificationWithStatistics(eqTo(AuditType.ArrivalNotificationSubmitted),
-                                                                                    eqTo(Ior.right(EORINumber(newArrival.eoriNumber))),
-                                                                                    any(),
-                                                                                    any(),
-                                                                                    any(),
-                                                                                    eqTo(Some(testBox.boxId)))(any())
-          verify(mockAuditService, times(1)).auditArrivalNotificationWithStatistics(eqTo(AuditType.MesSenMES3Added),
-                                                                                    eqTo(Ior.right(EORINumber(newArrival.eoriNumber))),
-                                                                                    any(),
-                                                                                    any(),
-                                                                                    any(),
-                                                                                    eqTo(None))(any())
+          verify(mockAuditService, times(1)).auditArrivalNotificationWithStatistics(
+            eqTo(AuditType.ArrivalNotificationSubmitted),
+            any(),
+            any(),
+            any(),
+            any(),
+            any(),
+            eqTo(Some(testBox.boxId))
+          )(any())
+          verify(mockAuditService, times(1)).auditArrivalNotificationWithStatistics(
+            eqTo(AuditType.MesSenMES3Added),
+            any(),
+            any(),
+            any(),
+            any(),
+            any(),
+            eqTo(None)
+          )(any())
         }
       }
 
@@ -265,7 +275,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
           .overrides(
             bind[PushPullNotificationService].toInstance(mockNotificationService),
             bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
-            bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
+            bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider]
           )
           .build()
 
@@ -296,7 +306,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
             bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
             bind[PushPullNotificationService].toInstance(mockNotificationService),
             bind[SubmitMessageService].toInstance(mockSubmitMessageService),
-            bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
+            bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider]
           )
           .build()
 
@@ -327,7 +337,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
             bind[PushPullNotificationService].toInstance(mockNotificationService),
             bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
             bind[SubmitMessageService].toInstance(mockSubmitMessageService),
-            bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
+            bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider]
           )
           .build()
 
@@ -355,7 +365,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
               bind[PushPullNotificationService].toInstance(mockNotificationService),
               bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
               bind[SubmitMessageService].toInstance(mockSubmitMessageService),
-              bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
+              bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider]
             )
             .build()
 
@@ -392,7 +402,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
               bind[PushPullNotificationService].toInstance(mockNotificationService),
               bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
               bind[SubmitMessageService].toInstance(mockSubmitMessageService),
-              bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
+              bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider]
             )
             .build()
 
@@ -421,7 +431,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
             .overrides(
               bind[PushPullNotificationService].toInstance(mockNotificationService),
               bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
-              bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
+              bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider]
             )
             .build()
 
@@ -454,7 +464,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
             bind[PushPullNotificationService].toInstance(mockNotificationService),
             bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
             bind[SubmitMessageService].toInstance(mockSubmitMessageService),
-            bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
+            bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider]
           )
           .build()
 
@@ -485,7 +495,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
             bind[PushPullNotificationService].toInstance(mockNotificationService),
             bind[ArrivalIdRepository].toInstance(mockArrivalIdRepository),
             bind[SubmitMessageService].toInstance(mockSubmitMessageService),
-            bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider],
+            bind[AuthenticateActionProvider].to[FakeAuthenticateActionProvider]
           )
           .build()
 
@@ -551,7 +561,8 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
 
           verify(mockAuditService, times(1)).auditArrivalNotificationWithStatistics(
             eqTo(AuditType.ArrivalNotificationReSubmitted),
-            eqTo(Ior.right(EORINumber(initializedArrival.eoriNumber))),
+            any(),
+            any(),
             any(),
             any(),
             any(),

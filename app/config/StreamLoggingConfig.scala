@@ -24,8 +24,7 @@ import javax.inject.Inject
 
 trait StreamLoggingConfig {
 
-  /**
-    * Configuration for the logging level of AkkaStream components. This allows for global
+  /** Configuration for the logging level of AkkaStream components. This allows for global
     * application configuration, or stream component specific configuration.
     *
     * @note Valid values are: "error", "warning", "info", "debug"

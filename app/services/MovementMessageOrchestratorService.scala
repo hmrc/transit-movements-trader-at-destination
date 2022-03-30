@@ -37,7 +37,8 @@ class MovementMessageOrchestratorService @Inject()(
     extends Logging {
 
   def saveNCTSMessage(messageSender: MessageSender, requestXml: NodeSeq, headers: Headers)(
-    implicit hc: HeaderCarrier): Future[Either[SubmissionState, InboundMessageRequest]] =
+    implicit
+    hc: HeaderCarrier): Future[Either[SubmissionState, InboundMessageRequest]] =
     (
       for {
         inboundRequest <- EitherT(inboundRequestService.makeInboundRequest(messageSender.arrivalId, requestXml, messageSender))

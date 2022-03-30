@@ -23,15 +23,14 @@ import models.Arrival
 import models.ArrivalId
 import models.Box
 import models.ChannelType
-import models.EORINumber
+import models.EnrolmentId
 import models.MessageId
-import models.MessageStatus.SubmissionPending
 import models.MessageType
 import models.MovementMessageWithStatus
 import models.MovementMessageWithoutStatus
 import models.MovementReferenceNumber
+import models.MessageStatus.SubmissionPending
 import models.ParseError.EmptyNodeSeq
-import models.TURN
 import repositories.ArrivalIdRepository
 import utils.XMLTransformer
 
@@ -45,7 +44,7 @@ class ArrivalMovementMessageService @Inject()(arrivalIdRepository: ArrivalIdRepo
   import XMLTransformer._
   import XmlMessageParser._
 
-  def makeArrivalMovement(enrolmentId: Ior[TURN, EORINumber], nodeSeq: NodeSeq, channelType: ChannelType, boxOpt: Option[Box]): Future[ParseHandler[Arrival]] =
+  def makeArrivalMovement(enrolmentId: EnrolmentId, nodeSeq: NodeSeq, channelType: ChannelType, boxOpt: Option[Box]): Future[ParseHandler[Arrival]] =
     arrivalIdRepository.nextId().map {
       arrivalId =>
         (for {
@@ -58,12 +57,7 @@ class ArrivalMovementMessageService @Inject()(arrivalIdRepository: ArrivalIdRepo
             arrivalId,
             channelType,
             mrn,
-            // Prefer to use EORI number
-            enrolmentId.fold(
-              turn => turn.value,
-              eoriNumber => eoriNumber.value,
-              (_, eoriNumber) => eoriNumber.value
-            ),
+            enrolmentId.customerId,
             dateTime,
             dateTime,
             LocalDateTime.now(clock),

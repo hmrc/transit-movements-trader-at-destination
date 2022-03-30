@@ -40,14 +40,13 @@ object MessageTypeUtils {
       case Some(MessageType.UnloadingRemarks)          => ArrivalStatus.UnloadingRemarksSubmitted
       case Some(MessageType.UnloadingRemarksRejection) => ArrivalStatus.UnloadingRemarksRejected
       case Some(MessageType.GoodsReleased)             => ArrivalStatus.GoodsReleased
-      case Some(MessageType.XMLSubmissionNegativeAcknowledgement) => {
+      case Some(MessageType.XMLSubmissionNegativeAcknowledgement) =>
         val messageListWithoutNegAck = orderedMessages.filterNot(_.messageType == MessageType.XMLSubmissionNegativeAcknowledgement)
         latestMessageTypeIfAny(messageListWithoutNegAck) match {
           case Some(MessageType.UnloadingRemarks)    => ArrivalStatus.UnloadingRemarksSubmittedNegativeAcknowledgement
           case Some(MessageType.ArrivalNotification) => ArrivalStatus.ArrivalSubmittedNegativeAcknowledgement
           case _                                     => latestArrivalStatus(messageListWithoutNegAck)
         }
-      }
       case None => ArrivalStatus.NoStatusFound
     }
 
@@ -77,8 +76,7 @@ object MessageTypeUtils {
           }
         case MessageType.XMLSubmissionNegativeAcknowledgement if orderedMessages.count(_.messageType == MessageType.UnloadingRemarks) >= 1 =>
           if (orderedMessages
-                .count(_.messageType == MessageType.UnloadingRemarks) > orderedMessages.count(
-                _.messageType == MessageType.XMLSubmissionNegativeAcknowledgement)) {
+                .count(_.messageType == MessageType.UnloadingRemarks) > orderedMessages.count(_.messageType == MessageType.XMLSubmissionNegativeAcknowledgement)) {
             MessageType.UnloadingRemarks
           } else {
             MessageType.XMLSubmissionNegativeAcknowledgement

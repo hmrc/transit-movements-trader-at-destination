@@ -206,7 +206,7 @@ class XmlMessageParserSpec extends SpecBase {
       val movement =
         <CC007A>
           <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
-          <TimOfPreMES10>{Format.timeFormatted(timeOfPrep)  ++ "1" }</TimOfPreMES10>
+          <TimOfPreMES10>{Format.timeFormatted(timeOfPrep) ++ "1"}</TimOfPreMES10>
         </CC007A>
 
       XmlMessageParser.dateTimeOfPrepR(movement).left.get mustBe an[LocalTimeParseFailure]

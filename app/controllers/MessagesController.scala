@@ -73,7 +73,9 @@ class MessagesController @Inject()(
 
   def post(arrivalId: ArrivalId): Action[NodeSeq] =
     withMetricsTimerAction("post-submit-message") {
-      (authenticateForWriteWithoutMessages(arrivalId)(parse.xml) andThen validateMessageSenderNode.filter andThen validateTransitionState andThen validateOutboundMessage)
+      (authenticateForWriteWithoutMessages(arrivalId)(
+        parse.xml
+      ) andThen validateMessageSenderNode.filter andThen validateTransitionState andThen validateOutboundMessage)
         .async {
           implicit request: OutboundMessageRequest[NodeSeq] =>
             val arrival     = request.arrivalWithoutMessageRequest.arrivalWithoutMessages

@@ -60,10 +60,11 @@ private[workers] class WorkerLockingServiceImpl @Inject()(
       throw new NoSuchElementException("This worker is disabled in configuration, so there are no more locks to be had")
     }
 
-  lifecycle.addStopHook(() => {
-    workerEnabled = false
-    Future.successful(())
-  })
+  lifecycle.addStopHook {
+    () =>
+      workerEnabled = false
+      Future.successful(())
+  }
 
   def releaseLock(): Future[Boolean] =
     workerLockRepository.unlock(lockId).map {

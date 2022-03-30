@@ -196,7 +196,7 @@ class MessageTypeUtilsSpec extends SpecBase with ScalaCheckDrivenPropertyChecks 
 
               val movementMessages =
                 List(
-                  createMessageMovement(22, MessageType.XMLSubmissionNegativeAcknowledgement, localDateTime),
+                  createMessageMovement(22, MessageType.XMLSubmissionNegativeAcknowledgement, localDateTime)
                 )
 
               MessageTypeUtils.status(movementMessages) mustBe ArrivalStatus.NoStatusFound

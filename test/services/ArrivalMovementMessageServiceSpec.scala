@@ -21,17 +21,18 @@ import cats.data.Ior
 import cats.data.NonEmptyList
 import models.Arrival
 import models.ArrivalId
-import models.ChannelType.api
 import models.EORINumber
+import models.EnrolmentId
 import models.MessageId
 import models.MessageSender
 import models.MessageStatus
-import models.MessageStatus.SubmissionPending
 import models.MessageType
 import models.MovementMessage
 import models.MovementMessageWithStatus
 import models.MovementMessageWithoutStatus
 import models.MovementReferenceNumber
+import models.ChannelType.api
+import models.MessageStatus.SubmissionPending
 import models.ParseError.InvalidRootNode
 import org.mockito.Mockito.when
 import org.scalatest.StreamlinedXmlEquality
@@ -109,7 +110,7 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
         notificationBox = None
       )
 
-      service.makeArrivalMovement(Ior.right(EORINumber(eori)), movement, api, None).futureValue.right.get mustBe expectedArrival
+      service.makeArrivalMovement(EnrolmentId(Ior.right(EORINumber(eori))), movement, api, None).futureValue.right.get mustBe expectedArrival
 
       application.stop()
     }
@@ -142,7 +143,11 @@ class ArrivalMovementMessageServiceSpec extends SpecBase with IntegrationPatienc
           </HEAHEA>
         </Foo>
 
-      service.makeArrivalMovement(Ior.right(EORINumber(eori)), invalidPayload, api, None).futureValue.left.get mustBe an[InvalidRootNode]
+      service
+        .makeArrivalMovement(EnrolmentId(Ior.right(EORINumber(eori))), invalidPayload, api, None)
+        .futureValue
+        .left
+        .get mustBe an[InvalidRootNode]
 
       application.stop()
     }

@@ -40,6 +40,7 @@ class InboundMessageResponseService @Inject()(xmlValidationService: XmlValidatio
         xmlValidationService
           .validate(xml.toString, validateInboundResponse.xsdFile)
           .toOption
-          .toRight[SubmissionState](FailedToValidateMessage(s"[InboundRequest][makeInboundMessageResponse] XML failed to validate against XSD file")))
+          .toRight[SubmissionState](FailedToValidateMessage(s"[InboundRequest][makeInboundMessageResponse] XML failed to validate against XSD file"))
+      )
     } yield validateInboundResponse
 }

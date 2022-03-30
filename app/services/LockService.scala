@@ -44,10 +44,8 @@ class LockService @Inject()(lockRepository: LockRepository)(implicit ec: Executi
         case e: Exception =>
           lockRepository.unlock(arrivalId).map {
             _ =>
-              {
-                logger.error(s"Failed to lock record", e)
-                Left(FailedToLock(s"[LockService][lock] Could not lock for arrival id $arrivalId"))
-              }
+              logger.error(s"Failed to lock record", e)
+              Left(FailedToLock(s"[LockService][lock] Could not lock for arrival id $arrivalId"))
           }
       }
 

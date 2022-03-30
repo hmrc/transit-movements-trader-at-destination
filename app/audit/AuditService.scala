@@ -16,9 +16,6 @@
 
 package audit
 
-import cats.data.Ior
-import config.Constants
-
 import javax.inject.Inject
 import models._
 import models.request.AuthenticatedRequest
@@ -41,21 +38,21 @@ object AuditService {
 
 class AuditService @Inject()(auditConnector: AuditConnector, messageTranslation: MessageTranslation)(implicit ec: ExecutionContext) {
 
-  def auditEvent(auditType: String, enrolmentId: Ior[TURN, EORINumber], message: MovementMessage, channel: ChannelType)(implicit hc: HeaderCarrier): Unit = {
+  def auditEvent(auditType: String, enrolmentId: EnrolmentId, message: MovementMessage, channel: ChannelType)(implicit hc: HeaderCarrier): Unit = {
     val json    = messageTranslation.translate(toJson(message.message))
-    val details = AuthenticatedAuditDetails(channel, customerId(enrolmentId), enrolmentType(enrolmentId), json)
+    val details = AuthenticatedAuditDetails(channel, enrolmentId.customerId, enrolmentId.enrolmentType, json)
     auditConnector.sendExplicitAudit(auditType, details)
   }
 
-  def auditNCTSMessages(channel: ChannelType, customerId: String, messageResponse: MessageResponse, message: MovementMessage)(
-    implicit hc: HeaderCarrier): Unit = {
+  def auditNCTSMessages(channel: ChannelType, customerId: String, messageResponse: MessageResponse, message: MovementMessage)(implicit
+                                                                                                                              hc: HeaderCarrier): Unit = {
     val json    = messageTranslation.translate(toJson(message.message))
     val details = UnauthenticatedAuditDetails(channel, customerId, json)
     auditConnector.sendExplicitAudit(messageResponse.auditType, details)
   }
 
-  def auditNCTSRequestedMissingMovementEvent(arrivalId: ArrivalId, messageResponse: MessageResponse, message: MovementMessage)(
-    implicit hc: HeaderCarrier): Unit = {
+  def auditNCTSRequestedMissingMovementEvent(arrivalId: ArrivalId, messageResponse: MessageResponse, message: MovementMessage)(implicit
+                                                                                                                               hc: HeaderCarrier): Unit = {
     val details = Json.obj(
       "arrivalId"           -> arrivalId,
       "messageResponseType" -> messageResponse.auditType,
@@ -67,19 +64,23 @@ class AuditService @Inject()(auditConnector: AuditConnector, messageTranslation:
   def auditCustomerRequestedMissingMovementEvent(request: AuthenticatedRequest[_], arrivalId: ArrivalId): Unit = {
     implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
     val details =
-      AuthenticatedAuditDetails(request.channel, customerId(request.enrolmentId), enrolmentType(request.enrolmentId), Json.obj("arrivalId" -> arrivalId))
+      AuthenticatedAuditDetails(request.channel, request.enrolmentId.customerId, request.enrolmentId.enrolmentType, Json.obj("arrivalId" -> arrivalId))
+
     auditConnector.sendExplicitAudit(AuditType.CustomerRequestedMissingMovement, details)
   }
 
   def authAudit(auditType: String, details: AuthenticationDetails)(implicit hc: HeaderCarrier): Unit =
     auditConnector.sendExplicitAudit(auditType, details)
 
-  def auditArrivalNotificationWithStatistics(auditType: String,
-                                             enrolmentId: Ior[TURN, EORINumber],
-                                             message: MovementMessage,
-                                             channel: ChannelType,
-                                             requestLength: Int,
-                                             boxId: Option[BoxId])(implicit hc: HeaderCarrier): Unit = {
+  def auditArrivalNotificationWithStatistics(
+    auditType: String,
+    customerId: String,
+    enrolmentType: String,
+    message: MovementMessage,
+    channel: ChannelType,
+    requestLength: Int,
+    boxId: Option[BoxId]
+  )(implicit hc: HeaderCarrier): Unit = {
 
     lazy val statistics: JsObject = Json.obj(
       "authorisedLocationOfGoods" -> fieldValue(message.message, "ArrAutLocOfGooHEA65"),
@@ -91,7 +92,8 @@ class AuditService @Inject()(auditConnector: AuditConnector, messageTranslation:
       if (requestLength > AuditService.maxRequestLength) Json.obj("arrivalNotification" -> "Arrival notification too large to be included")
       else messageTranslation.translate(toJson(message.message))
 
-    val details = ArrivalNotificationAuditDetails(channel, customerId(enrolmentId), enrolmentType(enrolmentId), jsonMessage, statistics, boxId)
+    val details = ArrivalNotificationAuditDetails(channel, customerId, enrolmentType, jsonMessage, statistics, boxId)
+
     auditConnector.sendExplicitAudit(auditType, details)
   }
 
@@ -100,19 +102,4 @@ class AuditService @Inject()(auditConnector: AuditConnector, messageTranslation:
   private def fieldValue(message: NodeSeq, field: String): String =
     if (fieldOccurrenceCount(message, field) == 0) "NULL" else (message \\ field).text
 
-  // Temporary until CTDA-1885 is merged
-
-  def customerId(enrolmentId: Ior[TURN, EORINumber]): String =
-    enrolmentId.fold(
-      turn => turn.value,
-      eoriNumber => eoriNumber.value,
-      (_, eoriNumber) => eoriNumber.value
-    )
-
-  def enrolmentType(enrolmentId: Ior[TURN, EORINumber]): String =
-    enrolmentId.fold(
-      _ => Constants.LegacyEnrolmentKey,
-      _ => Constants.NewEnrolmentKey,
-      (_, _) => Constants.NewEnrolmentKey
-    )
 }

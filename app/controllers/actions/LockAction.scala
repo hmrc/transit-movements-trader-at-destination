@@ -48,7 +48,7 @@ private[actions] class LockAction(
 
   override def invokeBlock[A](request: Request[A], block: Request[A] => Future[Result]): Future[Result] =
     lockRepository.lock(arrivalId).flatMap {
-      case true => {
+      case true =>
         block(request)
           .flatMap {
             result =>
@@ -61,13 +61,10 @@ private[actions] class LockAction(
             case e: Exception =>
               lockRepository.unlock(arrivalId).map {
                 _ =>
-                  {
-                    logger.error(s"Failed to lock record", e)
-                    InternalServerError
-                  }
+                  logger.error(s"Failed to lock record", e)
+                  InternalServerError
               }
           }
-      }
       case false => Future.successful(Locked)
     }
 }

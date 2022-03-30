@@ -42,14 +42,13 @@ class SubmitMessageService @Inject()(
 )(implicit clock: Clock, ec: ExecutionContext)
     extends Logging {
 
-  def submitMessage(arrivalId: ArrivalId, message: MovementMessageWithStatus, channelType: ChannelType)(
-    implicit hc: HeaderCarrier
-  ): Future[SubmissionProcessingResult] =
+  def submitMessage(arrivalId: ArrivalId, message: MovementMessageWithStatus, channelType: ChannelType)(implicit
+                                                                                                        hc: HeaderCarrier): Future[SubmissionProcessingResult] =
     submitMessage(arrivalId, message, channelType, identity)("submitMessage")
 
   def submitIe007Message(arrivalId: ArrivalId, message: MovementMessageWithStatus, mrn: MovementReferenceNumber, channelType: ChannelType)(
-    implicit hc: HeaderCarrier
-  ): Future[SubmissionProcessingResult] =
+    implicit
+    hc: HeaderCarrier): Future[SubmissionProcessingResult] =
     submitMessage(arrivalId, message, channelType, ArrivalPutUpdate(mrn, _))("submitIe007Message")
 
   private def submitMessage(

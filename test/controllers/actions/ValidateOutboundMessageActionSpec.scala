@@ -53,7 +53,7 @@ class ValidateOutboundMessageActionSpec
 
   val fakeArrivalWithoutMessagesRequest: ArrivalWithoutMessagesRequest[AnyContentAsEmpty.type] =
     ArrivalWithoutMessagesRequest(
-      AuthenticatedRequest(fakeRequest, ChannelType.web, Ior.right(EORINumber("eori"))),
+      AuthenticatedRequest(fakeRequest, ChannelType.web, EnrolmentId(Ior.right(EORINumber("eori")))),
       arrivalWithoutMessages,
       ChannelType.web
     )

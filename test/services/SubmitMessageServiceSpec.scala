@@ -90,12 +90,11 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
 
   val arrivalWithOneMessage: Gen[Arrival] = for {
     arrival <- arbitrary[Arrival]
-  } yield
-    arrival.copy(
-      eoriNumber = "eori",
-      messages = NonEmptyList.one(movementMessage),
-      nextMessageCorrelationId = movementMessage.messageCorrelationId
-    )
+  } yield arrival.copy(
+    eoriNumber = "eori",
+    messages = NonEmptyList.one(movementMessage),
+    nextMessageCorrelationId = movementMessage.messageCorrelationId
+  )
 
   "submit a new message" - {
     "return SubmissionSuccess and set the message status to submitted when the message is successfully saved, submitted" in {

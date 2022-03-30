@@ -16,8 +16,8 @@
 
 package audit
 
-import models.BoxId
 import models.ChannelType
+import models.BoxId
 import play.api.libs.functional.syntax.toFunctionalBuilderOps
 import play.api.libs.functional.syntax.unlift
 import play.api.libs.json.JsObject
@@ -53,12 +53,14 @@ object UnauthenticatedAuditDetails {
   )(unlift(UnauthenticatedAuditDetails.unapply))
 }
 
-case class ArrivalNotificationAuditDetails(channel: ChannelType,
-                                           customerId: String,
-                                           enrolmentType: String,
-                                           message: JsObject,
-                                           statistics: JsObject,
-                                           boxId: Option[BoxId])
+case class ArrivalNotificationAuditDetails(
+  channel: ChannelType,
+  customerId: String,
+  enrolmentType: String,
+  message: JsObject,
+  statistics: JsObject,
+  boxId: Option[BoxId]
+)
 
 object ArrivalNotificationAuditDetails {
 

@@ -16,16 +16,20 @@
 
 package models
 
-import play.api.libs.json._
+import cats.data.Ior
+import config.Constants
 
-final case class MovementReferenceNumber(value: String)
+case class EnrolmentId(value: Ior[TURN, EORINumber]) extends AnyVal {
 
-object MovementReferenceNumber {
+  // Prefer to use EORI number
+  def customerId: String = value.fold(
+    turn => turn.value,
+    eoriNumber => eoriNumber.value,
+    (_, eoriNumber) => eoriNumber.value
+  )
 
-  implicit lazy val reads: Reads[MovementReferenceNumber] = __.read[String].map(MovementReferenceNumber.apply)
+  def isModern: Boolean = !value.isLeft
 
-  implicit lazy val writes: Writes[MovementReferenceNumber] = Writes {
-    mrn =>
-      JsString(mrn.value)
-  }
+  def enrolmentType: String = if (isModern) Constants.NewEnrolmentKey else Constants.LegacyEnrolmentKey
+
 }

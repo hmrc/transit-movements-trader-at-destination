@@ -89,7 +89,8 @@ class ArrivalIdRepository @Inject()(mongo: ReactiveMongoApi, config: Configurati
       ).map(
         x =>
           x.result(indexKeyReads)
-            .getOrElse(throw new Exception(s"Unable to generate ArrivalId")))
+            .getOrElse(throw new Exception(s"Unable to generate ArrivalId"))
+      )
     )
   }
 }

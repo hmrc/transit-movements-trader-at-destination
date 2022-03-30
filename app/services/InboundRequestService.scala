@@ -37,7 +37,8 @@ class InboundRequestService @Inject()(
 )(implicit ec: ExecutionContext) {
 
   def makeInboundRequest(arrivalId: ArrivalId, xml: NodeSeq, messageSender: MessageSender)(
-    implicit hc: HeaderCarrier): Future[Either[SubmissionState, InboundMessageRequest]] =
+    implicit
+    hc: HeaderCarrier): Future[Either[SubmissionState, InboundMessageRequest]] =
     (
       for {
         _                      <- EitherT(lockService.lock(arrivalId))

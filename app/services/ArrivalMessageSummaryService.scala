@@ -142,7 +142,7 @@ class ArrivalMessageSummaryService {
       unloadingRemarks                     <- unloadingRemarksR
       unloadingRejections                  <- unloadingRemarksRejectionsR
       xmlSubmissionNegativeAcknowledgement <- xmlSubmissionNegativeAcknowledgementR
-    } yield {
+    } yield
       MessagesSummary(
         arrival = arrival,
         arrivalNotification = arrivalNotification._2,
@@ -151,12 +151,12 @@ class ArrivalMessageSummaryService {
         unloadingRemarks = unloadingRemarks.map(_._2),
         unloadingRemarksRejection = unloadingRejections.map(_._2),
         xmlSubmissionNegativeAcknowledgement = xmlSubmissionNegativeAcknowledgement.map(_._2)
-      )
-    }).run(arrival)
+      )).run(arrival)
 
 }
 
 object ArrivalMessageSummaryService {
+
   private val arrivalNotificationCount: NonEmptyList[MovementMessage] => Int = {
     movementMessages =>
       movementMessages.toList.count {

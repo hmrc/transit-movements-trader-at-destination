@@ -54,7 +54,7 @@ class AuthenticateActionProviderSpec extends AnyFreeSpec with Matchers with Mock
 
     def action(): Action[AnyContent] = authenticate() {
       result =>
-        Results.Ok(result.enrolmentId.fold(_.value, _.value, (_, eori) => eori.value))
+        Results.Ok(result.enrolmentId.customerId)
     }
   }
 

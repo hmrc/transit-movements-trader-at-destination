@@ -17,7 +17,8 @@
 package repositories
 
 import models.ArrivalId
-import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
+import org.scalatest.concurrent.IntegrationPatience
+import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
@@ -56,7 +57,8 @@ class ArrivalIdRepositorySpec extends AnyFreeSpec with Matchers with ScalaFuture
                   Json.obj(
                     "_id"        -> "record_id",
                     "last-index" -> 1
-                  ))
+                  )
+                )
           }
       }.futureValue
 

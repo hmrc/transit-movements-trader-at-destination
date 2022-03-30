@@ -18,7 +18,6 @@ package controllers
 
 import audit.AuditService
 import audit.AuditType
-import cats.data.Ior
 import com.kenshoo.play.metrics.Metrics
 import config.Constants
 import controllers.actions._
@@ -29,11 +28,10 @@ import metrics.WeekLongCounter
 import models.ArrivalId
 import models.Box
 import models.ChannelType
-import models.EORINumber
+import models.EnrolmentId
 import models.MessageType
 import models.MovementMessage
 import models.SubmissionProcessingResult
-import models.TURN
 import models.SubmissionProcessingResult._
 import models.request.ArrivalRequest
 import models.response.ResponseArrival
@@ -81,22 +79,40 @@ class MovementsController @Inject()(
   lazy val acceptedArrivalsWithPPNSBox = new WeekLongCounter(Clock.systemDefaultZone(), counter("accepted-arrivals-with-ppns-box"))
   lazy val acceptedArrivals            = new WeekLongCounter(Clock.systemDefaultZone(), counter("accepted-arrivals"))
 
-  private def handleSubmissionResult(result: SubmissionProcessingResult,
-                                     arrivalNotificationType: String,
-                                     message: MovementMessage,
-                                     requestChannel: ChannelType,
-                                     arrivalId: ArrivalId,
-                                     enrolmentId: Ior[TURN, EORINumber],
-                                     boxOpt: Option[Box],
-                                     requestLength: Int)(implicit hc: HeaderCarrier) =
+  private def handleSubmissionResult(
+    result: SubmissionProcessingResult,
+    arrivalNotificationType: String,
+    message: MovementMessage,
+    requestChannel: ChannelType,
+    arrivalId: ArrivalId,
+    enrolmentId: EnrolmentId,
+    boxOpt: Option[Box],
+    requestLength: Int
+  )(implicit hc: HeaderCarrier) =
     result match {
       case SubmissionFailureInternal => InternalServerError
       case SubmissionFailureExternal => BadGateway
       case submissionFailureRejected: SubmissionFailureRejected =>
         BadRequest(submissionFailureRejected.responseBody)
       case SubmissionSuccess =>
-        auditService.auditArrivalNotificationWithStatistics(arrivalNotificationType, enrolmentId, message, requestChannel, requestLength, boxOpt.map(_.boxId))
-        auditService.auditArrivalNotificationWithStatistics(AuditType.MesSenMES3Added, enrolmentId, message, requestChannel, requestLength, None)
+        auditService.auditArrivalNotificationWithStatistics(
+          arrivalNotificationType,
+          enrolmentId.customerId,
+          enrolmentId.enrolmentType,
+          message,
+          requestChannel,
+          requestLength,
+          boxOpt.map(_.boxId)
+        )
+        auditService.auditArrivalNotificationWithStatistics(
+          AuditType.MesSenMES3Added,
+          enrolmentId.customerId,
+          enrolmentId.enrolmentType,
+          message,
+          requestChannel,
+          requestLength,
+          None
+        )
         Accepted(Json.toJson(boxOpt)).withHeaders("Location" -> routes.MovementsController.getArrival(arrivalId).url)
     }
 
@@ -199,7 +215,7 @@ class MovementsController @Inject()(
       authenticate().async {
         implicit request =>
           arrivalMovementRepository
-            .fetchAllArrivals(request.enrolmentId, request.channel, updatedSince, mrn, pageSize, page)
+            .fetchAllArrivals(request.enrolmentId.value, request.channel, updatedSince, mrn, pageSize, page)
             .map {
               responseArrivals =>
                 countArrivals.update(responseArrivals.retrievedArrivals)

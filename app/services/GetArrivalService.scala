@@ -48,7 +48,8 @@ class GetArrivalService @Inject()(repository: ArrivalMovementRepository, auditSe
     }
 
   def getArrivalAndAudit(arrivalId: ArrivalId, messageResponse: MessageResponse, movementMessage: MovementMessage)(
-    implicit hc: HeaderCarrier): EitherT[Future, SubmissionState, ArrivalWithoutMessages] =
+    implicit
+    hc: HeaderCarrier): EitherT[Future, SubmissionState, ArrivalWithoutMessages] =
     EitherT(
       getArrivalWithoutMessagesById(arrivalId)
     ).leftSemiflatTap {

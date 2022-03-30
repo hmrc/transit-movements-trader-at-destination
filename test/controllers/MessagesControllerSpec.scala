@@ -110,16 +110,15 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
 
   val arrivalWithOneMessage: Gen[Arrival] = for {
     arrival <- arbitrary[Arrival]
-  } yield
-    arrival.copy(
-      arrivalId = arrivalId,
-      movementReferenceNumber = mrn,
-      eoriNumber = "eori",
-      messages = NonEmptyList.one(movementMessage),
-      nextMessageCorrelationId = movementMessage.messageCorrelationId,
-      created = localDateTime,
-      updated = localDateTime
-    )
+  } yield arrival.copy(
+    arrivalId = arrivalId,
+    movementReferenceNumber = mrn,
+    eoriNumber = "eori",
+    messages = NonEmptyList.one(movementMessage),
+    nextMessageCorrelationId = movementMessage.messageCorrelationId,
+    created = localDateTime,
+    updated = localDateTime
+  )
 
   val arrival = arrivalWithOneMessage.sample.value
 
@@ -141,14 +140,13 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
         when(mockArrivalMovementRepository.getWithoutMessages(any(), any())).thenReturn(Future.successful(Some(ArrivalWithoutMessages.fromArrival(arrival))))
 
         when(mockMessageTransformer.executionContext).thenReturn(ExecutionContext.global)
-        when(mockMessageTransformer.refine(any())).thenAnswer(
-          (invocation: InvocationOnMock) => {
+        when(mockMessageTransformer.refine(any())).thenAnswer {
+          (invocation: InvocationOnMock) =>
             val arrivalRequest = invocation.getArgument(0).asInstanceOf[ArrivalWithoutMessagesRequest[_]]
             Future.successful(
               Right(MessageTransformRequest(Message(UnloadingRemarksResponse), arrivalRequest))
             )
-          }
-        )
+        }
 
         when(mockSubmitMessageService.submitMessage(any(), any(), any())(any()))
           .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionSuccess))
@@ -179,7 +177,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
 
           verify(mockAuditService, times(1)).auditEvent(
             eqTo(AuditType.UnloadingRemarksSubmitted),
-            eqTo(Ior.right(EORINumber(arrival.eoriNumber))),
+            EnrolmentId(eqTo(Ior.right(EORINumber("eori")))),
             any(),
             any()
           )(any())
@@ -197,14 +195,13 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
         when(mockArrivalMovementRepository.getWithoutMessages(any(), any())).thenReturn(Future.successful(None))
 
         when(mockMessageTransformer.executionContext).thenReturn(ExecutionContext.global)
-        when(mockMessageTransformer.refine(any())).thenAnswer(
-          (invocation: InvocationOnMock) => {
+        when(mockMessageTransformer.refine(any())).thenAnswer {
+          (invocation: InvocationOnMock) =>
             val arrivalRequest = invocation.getArgument(0).asInstanceOf[ArrivalWithoutMessagesRequest[_]]
             Future.successful(
               Right(MessageTransformRequest(Message(UnloadingRemarksResponse), arrivalRequest))
             )
-          }
-        )
+        }
 
         val application = baseApplicationBuilder
           .overrides(
@@ -235,14 +232,13 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
         when(mockArrivalMovementRepository.getWithoutMessages(any(), any())).thenReturn(Future.successful(Some(ArrivalWithoutMessages.fromArrival(arrival))))
 
         when(mockMessageTransformer.executionContext).thenReturn(ExecutionContext.global)
-        when(mockMessageTransformer.refine(any())).thenAnswer(
-          (invocation: InvocationOnMock) => {
+        when(mockMessageTransformer.refine(any())).thenAnswer {
+          (invocation: InvocationOnMock) =>
             val arrivalRequest = invocation.getArgument(0).asInstanceOf[ArrivalWithoutMessagesRequest[_]]
             Future.successful(
               Right(MessageTransformRequest(Message(UnloadingRemarksResponse), arrivalRequest))
             )
-          }
-        )
+        }
 
         when(mockSubmitMessageService.submitMessage(any(), any(), any())(any()))
           .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureInternal))
@@ -277,14 +273,13 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
         when(mockArrivalMovementRepository.getWithoutMessages(any(), any())).thenReturn(Future.successful(Some(ArrivalWithoutMessages.fromArrival(arrival))))
 
         when(mockMessageTransformer.executionContext).thenReturn(ExecutionContext.global)
-        when(mockMessageTransformer.refine(any())).thenAnswer(
-          (invocation: InvocationOnMock) => {
+        when(mockMessageTransformer.refine(any())).thenAnswer {
+          (invocation: InvocationOnMock) =>
             val arrivalRequest = invocation.getArgument(0).asInstanceOf[ArrivalWithoutMessagesRequest[_]]
             Future.successful(
               Right(MessageTransformRequest(Message(UnloadingRemarksResponse), arrivalRequest))
             )
-          }
-        )
+        }
 
         val application =
           baseApplicationBuilder
@@ -322,14 +317,13 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
         when(mockArrivalMovementRepository.getWithoutMessages(any(), any())).thenReturn(Future.successful(Some(ArrivalWithoutMessages.fromArrival(arrival))))
 
         when(mockMessageTransformer.executionContext).thenReturn(ExecutionContext.global)
-        when(mockMessageTransformer.refine(any())).thenAnswer(
-          (invocation: InvocationOnMock) => {
+        when(mockMessageTransformer.refine(any())).thenAnswer {
+          (invocation: InvocationOnMock) =>
             val arrivalRequest = invocation.getArgument(0).asInstanceOf[ArrivalWithoutMessagesRequest[_]]
             Future.successful(
               Right(MessageTransformRequest(Message(UnloadingRemarksResponse), arrivalRequest))
             )
-          }
-        )
+        }
 
         val application =
           baseApplicationBuilder
@@ -362,14 +356,13 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
         when(mockArrivalMovementRepository.getWithoutMessages(any(), any())).thenReturn(Future.successful(Some(ArrivalWithoutMessages.fromArrival(arrival))))
 
         when(mockMessageTransformer.executionContext).thenReturn(ExecutionContext.global)
-        when(mockMessageTransformer.refine(any())).thenAnswer(
-          (invocation: InvocationOnMock) => {
+        when(mockMessageTransformer.refine(any())).thenAnswer {
+          (invocation: InvocationOnMock) =>
             val arrivalRequest = invocation.getArgument(0).asInstanceOf[ArrivalWithoutMessagesRequest[_]]
             Future.successful(
               Right(MessageTransformRequest(Message(UnloadingRemarksResponse), arrivalRequest))
             )
-          }
-        )
+        }
 
         val application =
           baseApplicationBuilder
@@ -403,14 +396,13 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
         when(mockArrivalMovementRepository.getWithoutMessages(any(), any())).thenReturn(Future.successful(Some(ArrivalWithoutMessages.fromArrival(arrival))))
 
         when(mockMessageTransformer.executionContext).thenReturn(ExecutionContext.global)
-        when(mockMessageTransformer.refine(any())).thenAnswer(
-          (invocation: InvocationOnMock) => {
+        when(mockMessageTransformer.refine(any())).thenAnswer {
+          (invocation: InvocationOnMock) =>
             val arrivalRequest = invocation.getArgument(0).asInstanceOf[ArrivalWithoutMessagesRequest[_]]
             Future.successful(
               Right(MessageTransformRequest(Message(UnloadingRemarksResponse), arrivalRequest))
             )
-          }
-        )
+        }
 
         when(mockSubmitMessageService.submitMessage(any(), any(), any())(any()))
           .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureExternal))
@@ -446,14 +438,13 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
         when(mockArrivalMovementRepository.getWithoutMessages(any(), any())).thenReturn(Future.successful(Some(ArrivalWithoutMessages.fromArrival(arrival))))
 
         when(mockMessageTransformer.executionContext).thenReturn(ExecutionContext.global)
-        when(mockMessageTransformer.refine(any())).thenAnswer(
-          (invocation: InvocationOnMock) => {
+        when(mockMessageTransformer.refine(any())).thenAnswer {
+          (invocation: InvocationOnMock) =>
             val arrivalRequest = invocation.getArgument(0).asInstanceOf[ArrivalWithoutMessagesRequest[_]]
             Future.successful(
               Right(MessageTransformRequest(Message(UnloadingRemarksResponse), arrivalRequest))
             )
-          }
-        )
+        }
 
         when(mockSubmitMessageService.submitMessage(any(), any(), any())(any()))
           .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureRejected(ErrorInPayload.responseBody)))
@@ -487,14 +478,13 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
         when(mockArrivalMovementRepository.getWithoutMessages(any(), any())).thenReturn(Future.successful(Some(ArrivalWithoutMessages.fromArrival(arrival))))
 
         when(mockMessageTransformer.executionContext).thenReturn(ExecutionContext.global)
-        when(mockMessageTransformer.refine(any())).thenAnswer(
-          (invocation: InvocationOnMock) => {
+        when(mockMessageTransformer.refine(any())).thenAnswer {
+          (invocation: InvocationOnMock) =>
             val arrivalRequest = invocation.getArgument(0).asInstanceOf[ArrivalWithoutMessagesRequest[_]]
             Future.successful(
               Right(MessageTransformRequest(Message(UnloadingRemarksResponse), arrivalRequest))
             )
-          }
-        )
+        }
 
         when(mockSubmitMessageService.submitMessage(any(), any(), any())(any()))
           .thenReturn(Future.successful(SubmissionProcessingResult.SubmissionFailureInternal))
