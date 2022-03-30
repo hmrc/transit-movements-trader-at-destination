@@ -164,18 +164,19 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
         created                 <- arbitrary[LocalDateTime]
         updated                 <- arbitrary[LocalDateTime]
         messages                <- nonEmptyListOfMaxLength[MovementMessageWithStatus](2)
-      } yield Arrival(
-        arrivalId = arrivalId,
-        channel = channel,
-        movementReferenceNumber = movementReferenceNumber,
-        eoriNumber = eoriNumber,
-        created = created,
-        updated = updated,
-        lastUpdated = updated,
-        messages = messages,
-        nextMessageCorrelationId = messages.length + 1,
-        notificationBox = None
-      )
+      } yield
+        Arrival(
+          arrivalId = arrivalId,
+          channel = channel,
+          movementReferenceNumber = movementReferenceNumber,
+          eoriNumber = eoriNumber,
+          created = created,
+          updated = updated,
+          lastUpdated = updated,
+          messages = messages,
+          nextMessageCorrelationId = messages.length + 1,
+          notificationBox = None
+        )
     }
 
   implicit lazy val arbitraryArrivalWithoutMessages: Arbitrary[ArrivalWithoutMessages] =

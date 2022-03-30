@@ -26,7 +26,7 @@ import play.api.mvc.Results.BadRequest
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class FakeMessageTransformer @Inject() (implicit val executionContext: ExecutionContext) extends MessageTransformerInterface {
+class FakeMessageTransformer @Inject()(implicit val executionContext: ExecutionContext) extends MessageTransformerInterface {
 
   override protected def refine[A](request: ArrivalWithoutMessagesRequest[A]): Future[Either[Result, MessageTransformRequest[A]]] =
     Future.successful(
@@ -34,7 +34,7 @@ class FakeMessageTransformer @Inject() (implicit val executionContext: Execution
     )
 }
 
-class FakeInboundMessageBadRequestTransformer @Inject() (implicit val executionContext: ExecutionContext) extends MessageTransformerInterface {
+class FakeInboundMessageBadRequestTransformer @Inject()(implicit val executionContext: ExecutionContext) extends MessageTransformerInterface {
 
   override protected def refine[A](request: ArrivalWithoutMessagesRequest[A]): Future[Either[Result, MessageTransformRequest[A]]] =
     Future.successful(
