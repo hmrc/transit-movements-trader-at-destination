@@ -110,15 +110,16 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
 
   val arrivalWithOneMessage: Gen[Arrival] = for {
     arrival <- arbitrary[Arrival]
-  } yield arrival.copy(
-    arrivalId = arrivalId,
-    movementReferenceNumber = mrn,
-    eoriNumber = "eori",
-    messages = NonEmptyList.one(movementMessage),
-    nextMessageCorrelationId = movementMessage.messageCorrelationId,
-    created = localDateTime,
-    updated = localDateTime
-  )
+  } yield
+    arrival.copy(
+      arrivalId = arrivalId,
+      movementReferenceNumber = mrn,
+      eoriNumber = "eori",
+      messages = NonEmptyList.one(movementMessage),
+      nextMessageCorrelationId = movementMessage.messageCorrelationId,
+      created = localDateTime,
+      updated = localDateTime
+    )
 
   val arrival = arrivalWithOneMessage.sample.value
 

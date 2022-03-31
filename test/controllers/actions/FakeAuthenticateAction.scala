@@ -27,7 +27,7 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class FakeAuthenticateActionProvider @Inject() (
+class FakeAuthenticateActionProvider @Inject()(
   defaultActionBuilder: DefaultActionBuilder,
   auth: FakeAuthenticateAction
 ) extends AuthenticateActionProvider {

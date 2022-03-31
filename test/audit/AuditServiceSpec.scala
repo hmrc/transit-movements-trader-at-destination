@@ -260,7 +260,7 @@ class AuditServiceSpec extends SpecBase with ScalaCheckPropertyChecks with Befor
           "authorisedLocationOfGoods" -> "location",
           "totalNoOfContainers"       -> 5,
           "requestLength"             -> requestLength
-        )
+      )
 
       Seq(arbitraryBox.arbitrary.sample, None).foreach {
         boxOpt =>
