@@ -123,7 +123,7 @@ class ArrivalMovementRepository @Inject()(
   )
 
   private lazy val lastUpdatedIndexName = "last-updated-index"
-  private lazy val collectionName       = ArrivalMovementRepository.collectionName
+  lazy val collectionName               = ArrivalMovementRepository.collectionName
 
   def bulkInsert(arrivals: Seq[Arrival]): Future[Unit] =
     collection.flatMap {
