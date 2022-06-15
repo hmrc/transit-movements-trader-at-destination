@@ -174,32 +174,28 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
         )(app.materializer.executionContext, app.materializer)
 
       def runTest(name: String, ttl1: Int, ttl2: Int): Future[List[Index]] = {
-        def callHarness(ttl: Int): (Application, Harness) = {
-          // For this, we'll stick with what app config gives us.
-          val app = appBuilder
+        // avoids starting the "real" repository, as index changes occur in the initialiser.
+        val builder = appBuilder.overrides(bind[ArrivalMovementRepository].to(mock[ArrivalMovementRepository])) 
+        val mongo   = builder.injector.instanceOf[ReactiveMongoApi]
+
+        def callHarness(ttl: Int): Harness = {
+          val app = builder
             .configure(Configuration("mongodb.timeToLiveInSeconds" -> ttl))
-            // avoids starting the "real" repository, as index changes occur in the initialiser.
-            .overrides(bind[ArrivalMovementRepository].to(mock[ArrivalMovementRepository])) 
             .build()
 
-          (app, createHarness(app, name))
+          createHarness(app, name)
         }
 
-        // Create the index
-        Await.ready(callHarness(ttl1)._2.started, 10.seconds)
-       
-        // We now run the harness again to reapply the drop logic
-        val (app, sut) = callHarness(ttl2)
-        val mongo = app.injector.instanceOf[ReactiveMongoApi]
-
-        sut
+        // We run the harness once to create the collection,
+        // then run it again to simulate re-connecting to it.
+        callHarness(ttl1)
           .started
+          .flatMap(_ => callHarness(ttl2).started)
           .flatMap(_ => mongo.database)
           .flatMap(_.collection[JSONCollection](name).indexesManager.list)
       }
 
       "must persist the same TTL if required" in {
-        // For this, we'll stick with what app config gives us.
         whenReady(runTest("ttl-same", 200, 200)) {
           indexes =>
             val filtered: Option[Index] = indexes.filter(_.name.contains(indexUnderTest)).headOption
@@ -213,7 +209,6 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
       }
 
       "must use the new TTL if required" in {
-        // For this, we'll stick with what app config gives us.
         whenReady(runTest("ttl-different", 200, 300)) {
           indexes =>
             val filtered: Option[Index] = indexes.filter(_.name.contains(indexUnderTest)).headOption
