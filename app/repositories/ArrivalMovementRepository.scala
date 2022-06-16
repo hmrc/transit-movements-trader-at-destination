@@ -103,7 +103,7 @@ class ArrivalMovementRepository @Inject()(
 
   private lazy val lastUpdatedIndex: Aux[BSONSerializationPack.type] = IndexUtils.index(
     key = Seq(lastUpdatedKey(IndexType.Ascending)),
-    name = Some("last-updated-index"),
+    name = Some(lastUpdatedIndexName),
     options = BSONDocument("expireAfterSeconds" -> appConfig.cacheTtl)
   )
 
@@ -122,8 +122,8 @@ class ArrivalMovementRepository @Inject()(
     name = Some("fetch-all-with-date-filter-index")
   )
 
-  private lazy val oldLastUpdatedIndexName = "last-updated-index-6m"
-  private lazy val collectionName          = ArrivalMovementRepository.collectionName
+  private lazy val lastUpdatedIndexName = "last-updated-index"
+  lazy val collectionName               = ArrivalMovementRepository.collectionName
 
   def bulkInsert(arrivals: Seq[Arrival]): Future[Unit] =
     collection.flatMap {
@@ -557,18 +557,23 @@ class ArrivalMovementRepository @Inject()(
   private def dropLastUpdatedIndex(collection: JSONCollection): Future[Boolean] =
     collection.indexesManager.list.flatMap {
       indexes =>
-        if (indexes.exists(_.name.contains(oldLastUpdatedIndexName))) {
+        val indexToDrop = indexes
+          .filter(_.name.contains(lastUpdatedIndexName))
+          .filter(x => x.expireAfterSeconds.map(_ != appConfig.cacheTtl).getOrElse(false))
+          .headOption
+        indexToDrop match {
+          case Some(index) =>
+            val ttl = index.expireAfterSeconds.map(x => s"$x seconds").getOrElse("unset")
+            logger.warn(s"Dropping $lastUpdatedIndexName index with TTL $ttl")
 
-          logger.warn(s"Dropping $oldLastUpdatedIndexName index")
-
-          collection.indexesManager
-            .drop(oldLastUpdatedIndexName)
-            .map(
-              _ => true
-            )
-        } else {
-          logger.info(s"$oldLastUpdatedIndexName does not exist or has already been dropped")
-          Future.successful(true)
+            collection.indexesManager
+              .drop(lastUpdatedIndexName)
+              .map(
+                _ => true
+              )
+          case None =>
+            logger.info(s"$lastUpdatedIndexName does not exist or is currently valid")
+            Future.successful(true)
         }
     }
 
