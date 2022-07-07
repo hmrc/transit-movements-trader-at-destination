@@ -95,8 +95,9 @@ class OutboundMessagesApiSpec
         ws
           .url(s"http://localhost:$port/transit-movements-trader-at-destination/movements/arrivals/${arrival.arrivalId.index}/messages")
           .withHttpHeaders(
-            "Channel"      -> arrival.channel.toString,
-            "Content-Type" -> "application/xml"
+            "Channel"       -> arrival.channel.toString,
+            "Content-Type"  -> "application/xml",
+            "Authorization" -> "Bearer token"
           )
           .post(requestBody)
       ).status mustBe ACCEPTED
@@ -105,8 +106,9 @@ class OutboundMessagesApiSpec
         ws
           .url(s"http://localhost:$port/transit-movements-trader-at-destination/movements/arrivals/${arrival.arrivalId.index}/messages")
           .withHttpHeaders(
-            "Channel"      -> arrival.channel.toString,
-            "Content-Type" -> "application/xml"
+            "Channel"       -> arrival.channel.toString,
+            "Content-Type"  -> "application/xml",
+            "Authorization" -> "Bearer token"
           )
           .post(requestBody)
       ).status mustBe ACCEPTED
@@ -162,8 +164,9 @@ class OutboundMessagesApiSpec
         ws
           .url(s"http://localhost:$port/transit-movements-trader-at-destination/movements/arrivals?updatedSince=$encodedStr")
           .withHttpHeaders(
-            "Channel"      -> api.toString,
-            "Content-Type" -> "application/xml"
+            "Channel"       -> api.toString,
+            "Content-Type"  -> "application/xml",
+            "Authorization" -> "Bearer token"
           )
           .get()
       )
@@ -186,8 +189,9 @@ class OutboundMessagesApiSpec
         ws
           .url(s"http://localhost:$port/transit-movements-trader-at-destination/movements/arrivals")
           .withHttpHeaders(
-            "Channel"      -> api.toString,
-            "Content-Type" -> "application/xml"
+            "Channel"       -> api.toString,
+            "Content-Type"  -> "application/xml",
+            "Authorization" -> "Bearer token"
           )
           .get()
       )
@@ -212,8 +216,9 @@ class OutboundMessagesApiSpec
         ws
           .url(s"http://localhost:$port/transit-movements-trader-at-destination/movements/arrivals?updatedSince=$encodedStr")
           .withHttpHeaders(
-            "Channel"      -> api.toString,
-            "Content-Type" -> "application/xml"
+            "Channel"       -> api.toString,
+            "Content-Type"  -> "application/xml",
+            "Authorization" -> "Bearer token"
           )
           .get()
       )
