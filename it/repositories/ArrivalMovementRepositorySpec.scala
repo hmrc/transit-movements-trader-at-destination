@@ -57,6 +57,7 @@ import reactivemongo.play.json.collection.JSONCollection
 import utils.Format
 
 import java.time._
+import java.time.temporal.ChronoUnit
 import scala.concurrent.duration._
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext
@@ -70,7 +71,7 @@ import scala.xml.NodeSeq
 
 class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with ScalaFutures with TestSuiteMixin with MongoDateTimeFormats with BeforeAndAfterEach with MockitoSugar {
 
-  private val instant                   = Instant.now
+  private val instant                   = Instant.now.truncatedTo(ChronoUnit.MILLIS)
   implicit private val stubClock: Clock = Clock.fixed(instant, ZoneId.systemDefault)
 
   private val appBuilder: GuiceApplicationBuilder =
@@ -545,7 +546,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
 
       val message = MovementMessageWithStatus(
         MessageId(1),
-        LocalDateTime.now(),
+        LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS),
         MessageType.UnloadingPermission,
         node,
         MessageStatus.SubmissionSucceeded,
