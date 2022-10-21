@@ -26,15 +26,15 @@ import models.MessageType.UnloadingRemarks
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks.forAll
 import play.api.libs.json.Json
 import org.scalacheck.Arbitrary.arbitrary
-
+import java.time.temporal.ChronoUnit
 import java.time.LocalDateTime
 
 class ArrivalWithoutMessagesSpec extends SpecBase with MongoDateTimeFormats with ModelGenerators {
 
-  val expectedDateTime             = LocalDateTime.now
-  val expectedDateTimeMinusHours   = LocalDateTime.now.minusHours(1)
-  val expectedDateTimeMinusMinutes = LocalDateTime.now.minusMinutes(30)
-  val expectedDateDays             = LocalDateTime.now.minusDays(2)
+  val expectedDateTime             = LocalDateTime.now.truncatedTo(ChronoUnit.MILLIS)
+  val expectedDateTimeMinusHours   = LocalDateTime.now.minusHours(1).truncatedTo(ChronoUnit.MILLIS)
+  val expectedDateTimeMinusMinutes = LocalDateTime.now.minusMinutes(30).truncatedTo(ChronoUnit.MILLIS)
+  val expectedDateDays             = LocalDateTime.now.minusDays(2).truncatedTo(ChronoUnit.MILLIS)
 
   val message1 = MovementMessageWithoutStatus(MessageId(1), expectedDateDays, UnloadingPermission, <foo></foo>, 1)
   val message2 = MovementMessageWithoutStatus(MessageId(2), expectedDateTimeMinusMinutes, GoodsReleased, <foo></foo>, 2)
