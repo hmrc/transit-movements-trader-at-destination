@@ -106,7 +106,7 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
         xml         <- Gen.const(<blankXml>message</blankXml>)
         messageType <- Gen.oneOf(MessageType.values)
         status = MessageStatus.SubmissionPending
-      } yield MovementMessageWithStatus(messageId, dateTime, messageType, xml, status, 1)
+      } yield MovementMessageWithStatus(messageId, dateTime, Some(dateTime), messageType, xml, status, 1)
     }
 
   implicit lazy val arbitraryMessageWithoutStateXml: Arbitrary[MovementMessageWithoutStatus] =
@@ -117,7 +117,7 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
         time        <- timesBetween(pastDate, dateNow)
         xml         <- Gen.const(<blankXml>message</blankXml>)
         messageType <- Gen.oneOf(MessageType.values)
-      } yield MovementMessageWithoutStatus(messageId, LocalDateTime.of(date, time), messageType, xml, 1)
+      } yield MovementMessageWithoutStatus(messageId, LocalDateTime.of(date, time), Some(LocalDateTime.of(date, time)), messageType, xml, 1)
     }
 
   implicit lazy val arbitraryMovementMessage: Arbitrary[MovementMessage] =
@@ -253,7 +253,7 @@ trait ModelGenerators extends BaseGenerators with JavaTimeGenerators {
         dateTime    <- arbitrary[LocalDateTime]
         messageType <- arbitrary[String]
         message     <- Gen.const(<blankXml>message</blankXml>)
-      } yield ResponseMovementMessage(location, dateTime, messageType, message)
+      } yield ResponseMovementMessage(location, dateTime, messageType, message, Some(dateTime))
     }
 
   implicit lazy val arbitrarySubmissionFailure: Arbitrary[EisSubmissionFailure] =

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,9 +60,9 @@ private[workers] class AddJsonToMessagesTransformer @Inject()(
 
         val updatedMessages: NonEmptyList[MovementMessage] = arrival.messages.map {
           case m: MovementMessageWithoutStatus =>
-            MovementMessageWithoutStatus(m.messageId, m.dateTime, m.messageType, m.message, m.messageCorrelationId)
+            MovementMessageWithoutStatus(m.messageId, m.dateTime, m.received, m.messageType, m.message, m.messageCorrelationId)
           case m: MovementMessageWithStatus =>
-            MovementMessageWithStatus(m.messageId, m.dateTime, m.messageType, m.message, m.status, m.messageCorrelationId)
+            MovementMessageWithStatus(m.messageId, m.dateTime, m.received, m.messageType, m.message, m.status, m.messageCorrelationId)
         }
 
         arrivalMovementRepository.resetMessages(arrival.arrivalId, updatedMessages).flatMap {

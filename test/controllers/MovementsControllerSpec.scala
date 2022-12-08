@@ -105,6 +105,7 @@ class MovementsControllerSpec extends SpecBase with ScalaCheckPropertyChecks wit
   def movementMessage(messageCorrelationId: Int): MovementMessageWithStatus = MovementMessageWithStatus(
     MessageId(1),
     localDateTime,
+    Some(localDateTime),
     MessageType.ArrivalNotification,
     savedXmlMessage(messageCorrelationId).map(trim),
     SubmissionPending,

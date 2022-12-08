@@ -58,8 +58,6 @@ import utils.Format
 
 import java.time._
 import java.time.temporal.ChronoUnit
-import scala.concurrent.duration._
-import scala.concurrent.Await
 import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -68,8 +66,14 @@ import scala.util.Failure
 import scala.util.Success
 import scala.xml.NodeSeq
 
-
-class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with ScalaFutures with TestSuiteMixin with MongoDateTimeFormats with BeforeAndAfterEach with MockitoSugar {
+class ArrivalMovementRepositorySpec
+    extends ItSpecBase
+    with MongoSuite
+    with ScalaFutures
+    with TestSuiteMixin
+    with MongoDateTimeFormats
+    with BeforeAndAfterEach
+    with MockitoSugar {
 
   private val instant                   = Instant.now.truncatedTo(ChronoUnit.MILLIS)
   implicit private val stubClock: Clock = Clock.fixed(instant, ZoneId.systemDefault)
@@ -160,8 +164,8 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
         clock: Clock,
         override val metrics: Metrics
       )(implicit ec: ExecutionContext, m: Materializer)
-       extends ArrivalMovementRepository(mongo, appConfig, config, clock, metrics)(ec, m) {
-         override lazy val collectionName: String = cn
+          extends ArrivalMovementRepository(mongo, appConfig, config, clock, metrics)(ec, m) {
+        override lazy val collectionName: String = cn
       }
 
       def createHarness(app: Application, name: String) =
@@ -171,12 +175,12 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
           app.injector.instanceOf[AppConfig],
           app.injector.instanceOf[Configuration],
           app.injector.instanceOf[Clock],
-          app.injector.instanceOf[Metrics],
+          app.injector.instanceOf[Metrics]
         )(app.materializer.executionContext, app.materializer)
 
       def runTest(name: String, ttl1: Int, ttl2: Int): Future[List[Index]] = {
         // avoids starting the "real" repository, as index changes occur in the initialiser.
-        val builder = appBuilder.overrides(bind[ArrivalMovementRepository].to(mock[ArrivalMovementRepository])) 
+        val builder = appBuilder.overrides(bind[ArrivalMovementRepository].to(mock[ArrivalMovementRepository]))
         val mongo   = builder.injector.instanceOf[ReactiveMongoApi]
 
         def callHarness(ttl: Int): Harness = {
@@ -189,10 +193,13 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
 
         // We run the harness once to create the collection,
         // then run it again to simulate re-connecting to it.
-        callHarness(ttl1)
-          .started
-          .flatMap(_ => callHarness(ttl2).started)
-          .flatMap(_ => mongo.database)
+        callHarness(ttl1).started
+          .flatMap(
+            _ => callHarness(ttl2).started
+          )
+          .flatMap(
+            _ => mongo.database
+          )
           .flatMap(_.collection[JSONCollection](name).indexesManager.list)
       }
 
@@ -272,9 +279,8 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
 
         val arrival = arbitrary[Arrival].sample.value
 
-        val dateOfPrep  = LocalDate.now(stubClock)
-        val timeOfPrep  = LocalTime.now(stubClock).withHour(1).withMinute(1)
-        val lastUpdated = LocalDateTime.now(stubClock).withSecond(0).withNano(0)
+        val dateOfPrep = LocalDate.now(stubClock)
+        val timeOfPrep = LocalTime.now(stubClock).withHour(1).withMinute(1)
 
         val messageBody =
           <CC025A>
@@ -289,6 +295,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
           MovementMessageWithoutStatus(
             arrival.nextMessageId,
             LocalDateTime.of(dateOfPrep, timeOfPrep),
+            Some(LocalDateTime.of(dateOfPrep, timeOfPrep)),
             MessageType.GoodsReleased,
             messageBody,
             arrival.nextMessageCorrelationId
@@ -313,8 +320,8 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
 
           addMessageResult mustBe a[Success[_]]
           updatedArrival.nextMessageCorrelationId - arrival.nextMessageCorrelationId mustBe 0
-          updatedArrival.updated mustEqual goodsReleasedMessage.dateTime
-          updatedArrival.lastUpdated.withSecond(0).withNano(0) mustEqual lastUpdated
+          updatedArrival.updated mustEqual goodsReleasedMessage.received.get
+          updatedArrival.lastUpdated mustEqual goodsReleasedMessage.received.get
           updatedArrival.messages.size - arrival.messages.size mustEqual 1
           updatedArrival.messages.last mustEqual goodsReleasedMessage
         }
@@ -339,6 +346,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
           MovementMessageWithoutStatus(
             arrival.nextMessageId,
             LocalDateTime.of(dateOfPrep, timeOfPrep),
+            Some(LocalDateTime.of(dateOfPrep, timeOfPrep)),
             MessageType.GoodsReleased,
             messageBody,
             messageCorrelationId = 1
@@ -362,9 +370,9 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
 
         val arrival = arbitrary[Arrival].sample.value
 
-        val dateOfPrep  = LocalDate.now(stubClock)
-        val timeOfPrep  = LocalTime.now(stubClock).withHour(1).withMinute(1)
-        val lastUpdated = LocalDateTime.now(stubClock).withSecond(0).withNano(0)
+        val dateOfPrep = LocalDate.now(stubClock)
+        val timeOfPrep = LocalTime.now(stubClock).withHour(1).withMinute(1)
+
         val messageBody =
           <CC025A>
             <DatOfPreMES9>{Format.dateFormatted(dateOfPrep)}</DatOfPreMES9>
@@ -378,6 +386,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
           MovementMessageWithoutStatus(
             arrival.nextMessageId,
             LocalDateTime.of(dateOfPrep, timeOfPrep),
+            Some(LocalDateTime.of(dateOfPrep, timeOfPrep)),
             MessageType.GoodsReleased,
             messageBody,
             arrival.nextMessageCorrelationId
@@ -401,8 +410,8 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
           val updatedArrival = result.value
 
           updatedArrival.nextMessageCorrelationId - arrival.nextMessageCorrelationId mustBe 1
-          updatedArrival.updated mustEqual goodsReleasedMessage.dateTime
-          updatedArrival.lastUpdated.withSecond(0).withNano(0) mustEqual lastUpdated
+          updatedArrival.updated mustEqual goodsReleasedMessage.received.get
+          updatedArrival.lastUpdated mustEqual goodsReleasedMessage.received.get
           updatedArrival.messages.size - arrival.messages.size mustEqual 1
           updatedArrival.messages.last mustEqual goodsReleasedMessage
         }
@@ -431,6 +440,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
           MovementMessageWithoutStatus(
             arrival.nextMessageId,
             LocalDateTime.of(dateOfPrep, timeOfPrep),
+            Some(LocalDateTime.of(dateOfPrep, timeOfPrep)),
             MessageType.GoodsReleased,
             messageBody,
             messageCorrelationId = 1
@@ -547,6 +557,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
       val message = MovementMessageWithStatus(
         MessageId(1),
         LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS),
+        Some(LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS)),
         MessageType.UnloadingPermission,
         node,
         MessageStatus.SubmissionSucceeded,
@@ -556,6 +567,7 @@ class ArrivalMovementRepositorySpec extends ItSpecBase with MongoSuite with Scal
       val otherMessage = MovementMessageWithStatus(
         MessageId(2),
         LocalDateTime.now(),
+        Some(LocalDateTime.now()),
         MessageType.GoodsReleased,
         node,
         MessageStatus.SubmissionSucceeded,

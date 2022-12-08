@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ private[services] class TestDataGenerator @Inject()(clock: Clock) {
 
     val xml = TestDataXMLGenerator.arrivalNotification(mrn.format, eori.format)
 
-    val movementMessage = MovementMessageWithStatus(MessageId(1), dateTime, ArrivalNotification, xml, MessageStatus.SubmissionSucceeded, 1)
+    val movementMessage = MovementMessageWithStatus(MessageId(1), dateTime, Some(dateTime), ArrivalNotification, xml, MessageStatus.SubmissionSucceeded, 1)
 
     Arrival(
       arrivalId,

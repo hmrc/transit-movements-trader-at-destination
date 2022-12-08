@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,18 +31,21 @@ trait MessageTypeWithTime {
 }
 
 sealed trait MovementMessage extends MessageTypeWithTime {
+  def dateTime: LocalDateTime
+  def received: Option[LocalDateTime]
   def messageId: MessageId
   def message: NodeSeq
   def optStatus: Option[MessageStatus]
   def messageCorrelationId: Int
 
   def receivedBefore(requestedDate: OffsetDateTime): Boolean =
-    dateTime.atOffset(ZoneOffset.UTC).isBefore(requestedDate)
+    received.getOrElse(dateTime).atOffset(ZoneOffset.UTC).isBefore(requestedDate)
 }
 
 final case class MovementMessageWithStatus private (
   messageId: MessageId,
   dateTime: LocalDateTime,
+  received: Option[LocalDateTime],
   messageType: MessageType,
   message: NodeSeq,
   status: MessageStatus,
@@ -52,6 +55,7 @@ final case class MovementMessageWithStatus private (
 final case class MovementMessageWithoutStatus private (
   messageId: MessageId,
   dateTime: LocalDateTime,
+  received: Option[LocalDateTime],
   messageType: MessageType,
   message: NodeSeq,
   messageCorrelationId: Int
@@ -87,11 +91,12 @@ object MovementMessageWithStatus extends NodeSeqFormat with MongoDateTimeFormats
     (
       (__ \ "messageId").read[MessageId] and
         (__ \ "dateTime").read[LocalDateTime] and
+        (__ \ "received").readNullable[LocalDateTime] and
         (__ \ "messageType").read[MessageType] and
         (__ \ "message").read[NodeSeq] and
         (__ \ "status").read[MessageStatus] and
         (__ \ "messageCorrelationId").read[Int]
-    )(MovementMessageWithStatus(_, _, _, _, _, _))
+    )(MovementMessageWithStatus(_, _, _, _, _, _, _))
   }
 
   implicit val formatsMovementMessage: OFormat[MovementMessageWithStatus] =
@@ -111,10 +116,11 @@ object MovementMessageWithoutStatus extends NodeSeqFormat with MongoDateTimeForm
     (
       (__ \ "messageId").read[MessageId] and
         (__ \ "dateTime").read[LocalDateTime] and
+        (__ \ "received").readNullable[LocalDateTime] and
         (__ \ "messageType").read[MessageType] and
         (__ \ "message").read[NodeSeq] and
         (__ \ "messageCorrelationId").read[Int]
-    )(MovementMessageWithoutStatus(_, _, _, _, _))
+    )(MovementMessageWithoutStatus(_, _, _, _, _, _))
   }
 
   implicit val formatsMovementMessage: OFormat[MovementMessageWithoutStatus] =

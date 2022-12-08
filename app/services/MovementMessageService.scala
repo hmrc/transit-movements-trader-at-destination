@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,11 @@ import scala.xml.NodeSeq
 
 class MovementMessageService @Inject()(arrivalMovementMessageService: ArrivalMovementMessageService)(implicit ec: ExecutionContext) {
 
-  def makeMovementMessage(messageCorrelationId: Int, messageType: MessageType, xml: NodeSeq): EitherT[Future, SubmissionState, MovementMessageWithoutStatus] =
+  def makeMovementMessage(
+    messageCorrelationId: Int,
+    messageType: MessageType,
+    xml: NodeSeq
+  ): EitherT[Future, SubmissionState, MovementMessageWithoutStatus] =
     EitherT.fromEither(
       arrivalMovementMessageService
         .makeInboundMessage(MessageId(0), messageCorrelationId, messageType)(xml)

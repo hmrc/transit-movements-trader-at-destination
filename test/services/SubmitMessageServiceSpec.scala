@@ -82,6 +82,7 @@ class SubmitMessageServiceSpec extends SpecBase with ScalaCheckDrivenPropertyChe
   val movementMessage = MovementMessageWithStatus(
     messageId,
     localDateTime,
+    Some(localDateTime),
     MessageType.ArrivalNotification,
     requestXmlBody,
     SubmissionPending,

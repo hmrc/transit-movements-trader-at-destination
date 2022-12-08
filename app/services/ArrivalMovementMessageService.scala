@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,13 +44,14 @@ class ArrivalMovementMessageService @Inject()(arrivalIdRepository: ArrivalIdRepo
   import XMLTransformer._
   import XmlMessageParser._
 
-  def makeArrivalMovement(enrolmentId: EnrolmentId, nodeSeq: NodeSeq, channelType: ChannelType, boxOpt: Option[Box]): Future[ParseHandler[Arrival]] =
+  def makeArrivalMovement(enrolmentId: EnrolmentId, nodeSeq: NodeSeq, channelType: ChannelType, boxOpt: Option[Box]): Future[ParseHandler[Arrival]] = {
+    val received = LocalDateTime.now(clock)
     arrivalIdRepository.nextId().map {
       arrivalId =>
         (for {
           _        <- correctRootNodeR(MessageType.ArrivalNotification)
           dateTime <- dateTimeOfPrepR
-          message  <- makeOutboundMessage(arrivalId, MessageId(1), messageCorrelationId = 1, messageType = MessageType.ArrivalNotification)
+          message  <- makeOutboundMessage(arrivalId, MessageId(1), 1, MessageType.ArrivalNotification, received)
           mrn      <- mrnR
         } yield
           Arrival(
@@ -60,12 +61,13 @@ class ArrivalMovementMessageService @Inject()(arrivalIdRepository: ArrivalIdRepo
             enrolmentId.customerId,
             dateTime,
             dateTime,
-            LocalDateTime.now(clock),
+            received,
             NonEmptyList.one(message),
             2,
             boxOpt
           )).apply(nodeSeq)
     }
+  }
 
   def messageAndMrn(
     arrivalId: ArrivalId,
@@ -74,7 +76,7 @@ class ArrivalMovementMessageService @Inject()(arrivalIdRepository: ArrivalIdRepo
   ): ReaderT[ParseHandler, NodeSeq, (MovementMessageWithStatus, MovementReferenceNumber)] =
     for {
       _       <- correctRootNodeR(MessageType.ArrivalNotification)
-      message <- makeOutboundMessage(arrivalId, messageId, messageCorrectionId, MessageType.ArrivalNotification)
+      message <- makeOutboundMessage(arrivalId, messageId, messageCorrectionId, MessageType.ArrivalNotification, LocalDateTime.now(clock))
       mrn     <- mrnR
     } yield (message, mrn)
 
@@ -87,19 +89,20 @@ class ArrivalMovementMessageService @Inject()(arrivalIdRepository: ArrivalIdRepo
       _          <- correctRootNodeR(messageType)
       dateTime   <- dateTimeOfPrepR
       xmlMessage <- ReaderT[ParseHandler, NodeSeq, NodeSeq](nodeSeqToEither)
-    } yield MovementMessageWithoutStatus(messageId, dateTime, messageType, xmlMessage, messageCorrelationId)
+    } yield MovementMessageWithoutStatus(messageId, dateTime, Some(LocalDateTime.now(clock)), messageType, xmlMessage, messageCorrelationId)
 
   def makeOutboundMessage(
     arrivalId: ArrivalId,
     messageId: MessageId,
     messageCorrelationId: Int,
-    messageType: MessageType
+    messageType: MessageType,
+    received: LocalDateTime
   ): ReaderT[ParseHandler, NodeSeq, MovementMessageWithStatus] =
     for {
       _          <- correctRootNodeR(messageType)
       dateTime   <- dateTimeOfPrepR
       xmlMessage <- updateMesSenMES3(arrivalId, messageCorrelationId)
-    } yield MovementMessageWithStatus(messageId, dateTime, messageType, xmlMessage, SubmissionPending, messageCorrelationId)
+    } yield MovementMessageWithStatus(messageId, dateTime, Some(received), messageType, xmlMessage, SubmissionPending, messageCorrelationId)
 
   private[this] def nodeSeqToEither(xml: NodeSeq): ParseHandler[NodeSeq] =
     Option(xml).fold[ParseHandler[NodeSeq]](

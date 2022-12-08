@@ -331,6 +331,7 @@ class MessageTypeUtilsSpec extends SpecBase with ScalaCheckDrivenPropertyChecks 
     MovementMessageWithoutStatus(
       messageId = MessageId(messageId),
       dateTime = localDateTime,
+      received = Some(localDateTime),
       messageType = messageType,
       message = NodeSeq.Empty,
       messageCorrelationId = messageId

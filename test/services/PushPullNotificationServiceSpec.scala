@@ -126,6 +126,7 @@ class PushPullNotificationServiceSpec extends SpecBase with BeforeAndAfterEach w
         val movementMessage = MovementMessageWithoutStatus(
           MessageId(0),
           LocalDateTime.now(),
+          Some(LocalDateTime.now()),
           GoodsReleased,
           requestXmlBody,
           0
@@ -164,6 +165,7 @@ class PushPullNotificationServiceSpec extends SpecBase with BeforeAndAfterEach w
         val movementMessage = MovementMessageWithoutStatus(
           MessageId(0),
           LocalDateTime.now(),
+          Some(LocalDateTime.now()),
           GoodsReleased,
           requestXmlBody,
           0
@@ -197,6 +199,7 @@ class PushPullNotificationServiceSpec extends SpecBase with BeforeAndAfterEach w
         val movementMessage = MovementMessageWithoutStatus(
           MessageId(0),
           LocalDateTime.now(),
+          Some(LocalDateTime.now()),
           GoodsReleased,
           requestXmlBody,
           0
@@ -232,6 +235,7 @@ class PushPullNotificationServiceSpec extends SpecBase with BeforeAndAfterEach w
         val movementMessage = MovementMessageWithoutStatus(
           MessageId(0),
           LocalDateTime.now(),
+          Some(LocalDateTime.now()),
           GoodsReleased,
           requestXmlBody,
           0
@@ -259,6 +263,7 @@ class PushPullNotificationServiceSpec extends SpecBase with BeforeAndAfterEach w
         val movementMessage = MovementMessageWithoutStatus(
           MessageId(0),
           LocalDateTime.now(),
+          Some(LocalDateTime.now()),
           GoodsReleased,
           requestXmlBody,
           0
@@ -291,6 +296,7 @@ class PushPullNotificationServiceSpec extends SpecBase with BeforeAndAfterEach w
         val movementMessage = MovementMessageWithoutStatus(
           MessageId(0),
           LocalDateTime.now(),
+          Some(LocalDateTime.now()),
           GoodsReleased,
           requestXmlBody,
           0
