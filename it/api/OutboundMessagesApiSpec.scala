@@ -66,14 +66,22 @@ class OutboundMessagesApiSpec
 
   "postMessage" - {
     "return ACCEPTED if a second request comes in for the same unloading remarks" in {
-
+      val received = LocalDateTime.now()
       val movements = NonEmptyList(
-        MovementMessageWithStatus(MessageId(1), LocalDateTime.now(), MessageType.ArrivalNotification, <CC007A></CC007A>, MessageStatus.SubmissionSucceeded, 1),
-        MovementMessageWithoutStatus(MessageId(2), LocalDateTime.now(), MessageType.UnloadingPermission, <CC043A></CC043A>, 1) :: Nil
+        MovementMessageWithStatus(
+          MessageId(1),
+          LocalDateTime.now(),
+          Some(LocalDateTime.now()),
+          MessageType.ArrivalNotification,
+          <CC007A></CC007A>,
+          MessageStatus.SubmissionSucceeded,
+          1
+        ),
+        MovementMessageWithoutStatus(MessageId(2), received, Some(LocalDateTime.now()), MessageType.UnloadingPermission, <CC043A></CC043A>, 1) :: Nil
       )
 
       val arrival =
-        arbitrary[Arrival].sample.value.copy(messages = movements, lastUpdated = LocalDateTime.of(1998, 4, 30, 9, 30, 31))
+        arbitrary[Arrival].sample.value.copy(messages = movements, lastUpdated = received)
 
       val requestBody = <CC044A>
         <DatOfPreMES9>{Format.dateFormatted(LocalDateTime.now())}</DatOfPreMES9>

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -425,8 +425,8 @@ class ArrivalMovementRepository @Inject()(
     val modifier =
       Json.obj(
         "$set" -> Json.obj(
-          "updated"     -> message.dateTime,
-          "lastUpdated" -> LocalDateTime.now(clock)
+          "updated"     -> message.received.get,
+          "lastUpdated" -> message.received.get
         ),
         "$inc" -> Json.obj(
           "nextMessageCorrelationId" -> 1
@@ -459,8 +459,8 @@ class ArrivalMovementRepository @Inject()(
     val modifier =
       Json.obj(
         "$set" -> Json.obj(
-          "updated"     -> message.dateTime,
-          "lastUpdated" -> LocalDateTime.now(clock)
+          "updated"     -> message.received.get,
+          "lastUpdated" -> message.received.get
         ),
         "$push" -> Json.obj(
           "messages" -> Json.toJson(message)
@@ -559,11 +559,17 @@ class ArrivalMovementRepository @Inject()(
       indexes =>
         val indexToDrop = indexes
           .filter(_.name.contains(lastUpdatedIndexName))
-          .filter(x => x.expireAfterSeconds.map(_ != appConfig.cacheTtl).getOrElse(false))
+          .filter(
+            x => x.expireAfterSeconds.map(_ != appConfig.cacheTtl).getOrElse(false)
+          )
           .headOption
         indexToDrop match {
           case Some(index) =>
-            val ttl = index.expireAfterSeconds.map(x => s"$x seconds").getOrElse("unset")
+            val ttl = index.expireAfterSeconds
+              .map(
+                x => s"$x seconds"
+              )
+              .getOrElse("unset")
             logger.warn(s"Dropping $lastUpdatedIndexName index with TTL $ttl")
 
             collection.indexesManager

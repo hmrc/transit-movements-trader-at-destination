@@ -102,6 +102,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
   val movementMessage = MovementMessageWithStatus(
     messageId,
     localDateTime,
+    Some(localDateTime),
     MessageType.UnloadingRemarks,
     savedXmlMessage.map(trim),
     SubmissionPending,
@@ -174,7 +175,7 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
           verify(mockSubmitMessageService, times(1)).submitMessage(eqTo(arrival.arrivalId), captor.capture(), any())(any())
 
           val arrivalMessage: MovementMessageWithStatus = captor.getValue
-          arrivalMessage mustEqual movementMessage.copy(messageId = MessageId(2))
+          arrivalMessage mustEqual movementMessage.copy(messageId = MessageId(2), received = arrivalMessage.received)
 
           verify(mockAuditService, times(1)).auditEvent(
             eqTo(AuditType.UnloadingRemarksSubmitted),
@@ -786,18 +787,18 @@ class MessagesControllerSpec extends SpecBase with ScalaCheckPropertyChecks with
               .arbitrary[MovementMessageWithStatus]
               .sample
               .value
-              .copy(messageId = MessageId(1), status = SubmissionSucceeded, dateTime = LocalDateTime.of(2021, 5, 11, 15, 10, 32))
+              .copy(messageId = MessageId(1), status = SubmissionSucceeded, received = Some(LocalDateTime.of(2021, 5, 11, 15, 10, 32)))
           val message2 = Arbitrary
             .arbitrary[MovementMessageWithStatus]
             .sample
             .value
-            .copy(messageId = MessageId(2), status = SubmissionSucceeded, dateTime = requestedDateTime)
+            .copy(messageId = MessageId(2), status = SubmissionSucceeded, received = Some(requestedDateTime))
           val message3 =
             Arbitrary
               .arbitrary[MovementMessageWithStatus]
               .sample
               .value
-              .copy(messageId = MessageId(3), status = SubmissionSucceeded, dateTime = LocalDateTime.of(2021, 5, 12, 17, 5, 24))
+              .copy(messageId = MessageId(3), status = SubmissionSucceeded, received = Some(LocalDateTime.of(2021, 5, 12, 17, 5, 24)))
 
           val arrival = Arbitrary.arbitrary[Arrival].sample.value.copy(messages = NonEmptyList.of(message1, message2, message3), eoriNumber = "eori")
 

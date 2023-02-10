@@ -80,6 +80,7 @@ class MovementsChangeLogSpec extends ItSpecBase with IntegrationPatience with Be
             "messages" -> Json.arr(
               Json.obj(
                 "dateTime"             -> LocalDateTime.of(2021, 7, 15, 12, 12),
+                "received"             -> LocalDateTime.of(2021, 7, 15, 12, 12),
                 "messageType"          -> MessageType.ArrivalNotification.toString,
                 "message"              -> NodeSeq.fromSeq(Seq(<CC007A></CC007A>)),
                 "status"               -> MessageStatus.SubmissionSucceeded.toString,
@@ -87,12 +88,14 @@ class MovementsChangeLogSpec extends ItSpecBase with IntegrationPatience with Be
               ),
               Json.obj(
                 "dateTime"             -> LocalDateTime.of(2021, 7, 15, 12, 12),
+                "received"             -> LocalDateTime.of(2021, 7, 15, 12, 12),
                 "messageType"          -> MessageType.UnloadingPermission.toString,
                 "message"              -> NodeSeq.fromSeq(Seq(<CC043A></CC043A>)),
                 "messageCorrelationId" -> 1
               ),
               Json.obj(
                 "dateTime"             -> LocalDateTime.of(2021, 7, 15, 12, 13),
+                "received"             -> LocalDateTime.of(2021, 7, 15, 12, 12),
                 "messageType"          -> MessageType.UnloadingRemarks.toString,
                 "message"              -> NodeSeq.fromSeq(Seq(<CC044A></CC044A>)),
                 "messageCorrelationId" -> 1

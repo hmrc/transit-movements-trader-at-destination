@@ -68,6 +68,7 @@ class ResponseArrivalSpec extends SpecBase with ScalaCheckPropertyChecks with Mo
   def movementMessage(messageCorrelationId: Int): MovementMessageWithStatus = MovementMessageWithStatus(
     MessageId(1),
     localDateTime,
+    Some(localDateTime),
     MessageType.ArrivalNotification,
     savedXmlMessage(messageCorrelationId).map(trim),
     SubmissionPending,

@@ -57,6 +57,7 @@ class ArrivalMessageNotificationSpec extends SpecBase with ScalaCheckDrivenPrope
         movementMessage = MovementMessageWithoutStatus(
           MessageId(0),
           dateTimeNow,
+          Some(dateTimeNow),
           GoodsReleased,
           requestXml,
           0
@@ -94,6 +95,7 @@ class ArrivalMessageNotificationSpec extends SpecBase with ScalaCheckDrivenPrope
         movementMessage = MovementMessageWithoutStatus(
           MessageId(0),
           dateTimeNow,
+          Some(dateTimeNow),
           GoodsReleased,
           requestXml,
           0

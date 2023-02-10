@@ -80,9 +80,10 @@ class GetArrivalServiceSpec extends SpecBase with ModelGenerators with ScalaChec
 
     "getArrivalAndAudit" - {
 
-      val messageResponse  = UnloadingPermissionResponse
-      val requestXml       = <xml>test</xml>
-      val movementMessage  = MovementMessageWithoutStatus(MessageId(1), LocalDateTime.now, MessageType.UnloadingPermission, requestXml, 1)
+      val messageResponse = UnloadingPermissionResponse
+      val requestXml      = <xml>test</xml>
+      val movementMessage =
+        MovementMessageWithoutStatus(MessageId(1), LocalDateTime.now, Some(LocalDateTime.now), MessageType.UnloadingPermission, requestXml, 1)
       val mockAuditService = mock[AuditService]
 
       "must return an Arrival and not audit" in {

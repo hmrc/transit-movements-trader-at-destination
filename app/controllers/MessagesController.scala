@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,8 @@ import services.ArrivalMovementMessageService
 import services.SubmitMessageService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
+import java.time.Clock
+import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import javax.inject.Inject
 import scala.annotation.nowarn
@@ -61,7 +63,7 @@ class MessagesController @Inject()(
   validateOutboundMessage: ValidateOutboundMessageAction,
   validateTransitionState: MessageTransformerInterface,
   val metrics: Metrics
-)(implicit ec: ExecutionContext)
+)(implicit ec: ExecutionContext, clock: Clock)
     extends BackendController(cc)
     with Logging
     with HasActionMetrics {
@@ -81,7 +83,7 @@ class MessagesController @Inject()(
             val arrival     = request.arrivalWithoutMessageRequest.arrivalWithoutMessages
             val messageType = request.message.messageType.messageType
             arrivalMovementService
-              .makeOutboundMessage(arrivalId, arrival.nextMessageId, arrival.nextMessageCorrelationId, messageType)(
+              .makeOutboundMessage(arrivalId, arrival.nextMessageId, arrival.nextMessageCorrelationId, messageType, LocalDateTime.now(clock))(
                 request.arrivalWithoutMessageRequest.request.body
               ) match {
               case Right(message) =>

@@ -40,13 +40,14 @@ class MovementMessageSpec extends AnyFreeSpec with Matchers with ScalaCheckPrope
             val json = Json.obj(
               "messageId"            -> Json.toJson(messageId),
               "dateTime"             -> Json.toJson(dateTime)(MongoDateTimeFormats.localDateTimeWrite),
+              "received"             -> Json.toJson(dateTime)(MongoDateTimeFormats.localDateTimeWrite),
               "messageType"          -> Json.toJson(messageType),
               "message"              -> xml.toString,
               "status"               -> Json.toJson(status),
               "messageCorrelationId" -> messageCorrelationId
             )
 
-            val expectedMovementMessage = MovementMessageWithStatus(messageId, dateTime, messageType, xml, status, messageCorrelationId)
+            val expectedMovementMessage = MovementMessageWithStatus(messageId, dateTime, Some(dateTime), messageType, xml, status, messageCorrelationId)
 
             json.validate[MovementMessageWithStatus] mustEqual JsSuccess(expectedMovementMessage)
         }
@@ -61,13 +62,14 @@ class MovementMessageSpec extends AnyFreeSpec with Matchers with ScalaCheckPrope
             val json = Json.obj(
               "messageId"            -> Json.toJson(messageId),
               "dateTime"             -> Json.toJson(dateTime)(MongoDateTimeFormats.localDateTimeWrite),
+              "received"             -> Json.toJson(dateTime)(MongoDateTimeFormats.localDateTimeWrite),
               "messageType"          -> Json.toJson(messageType),
               "message"              -> xml.toString,
               "status"               -> Json.toJson(status),
               "messageCorrelationId" -> messageCorrelationId
             )
 
-            val expectedMovementMessage = MovementMessageWithStatus(messageId, dateTime, messageType, xml, status, messageCorrelationId)
+            val expectedMovementMessage = MovementMessageWithStatus(messageId, dateTime, Some(dateTime), messageType, xml, status, messageCorrelationId)
 
             json.validate[MovementMessageWithStatus] mustEqual JsSuccess(expectedMovementMessage)
         }
@@ -88,12 +90,13 @@ class MovementMessageSpec extends AnyFreeSpec with Matchers with ScalaCheckPrope
             val json = Json.obj(
               "messageId"            -> Json.toJson(messageId),
               "dateTime"             -> Json.toJson(dateTime)(MongoDateTimeFormats.localDateTimeWrite),
+              "received"             -> Json.toJson(dateTime)(MongoDateTimeFormats.localDateTimeWrite),
               "messageType"          -> Json.toJson(messageType),
               "message"              -> xml.toString,
               "messageCorrelationId" -> messageCorrelationId
             )
 
-            val expectedMovementMessage = MovementMessageWithoutStatus(messageId, dateTime, messageType, xml, messageCorrelationId)
+            val expectedMovementMessage = MovementMessageWithoutStatus(messageId, dateTime, Some(dateTime), messageType, xml, messageCorrelationId)
 
             json.validate[MovementMessageWithoutStatus] mustEqual JsSuccess(expectedMovementMessage)
         }
@@ -108,12 +111,13 @@ class MovementMessageSpec extends AnyFreeSpec with Matchers with ScalaCheckPrope
             val json = Json.obj(
               "messageId"            -> Json.toJson(messageId),
               "dateTime"             -> Json.toJson(dateTime)(MongoDateTimeFormats.localDateTimeWrite),
+              "received"             -> Json.toJson(dateTime)(MongoDateTimeFormats.localDateTimeWrite),
               "messageType"          -> Json.toJson(messageType),
               "message"              -> xml.toString,
               "messageCorrelationId" -> messageCorrelationId
             )
 
-            val expectedMovementMessage = MovementMessageWithoutStatus(messageId, dateTime, messageType, xml, messageCorrelationId)
+            val expectedMovementMessage = MovementMessageWithoutStatus(messageId, dateTime, Some(dateTime), messageType, xml, messageCorrelationId)
 
             json.validate[MovementMessageWithoutStatus] mustEqual JsSuccess(expectedMovementMessage)
         }
