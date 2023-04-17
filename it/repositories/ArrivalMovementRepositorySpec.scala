@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,6 +84,11 @@ class ArrivalMovementRepositorySpec
       .configure(
         "metrics.jvm" -> false
       )
+
+  val localDate         = LocalDate.now()
+  val localTime         = LocalTime.of(1, 1)
+  val localDateTime     = LocalDateTime.of(localDate, localTime)
+  implicit val clock    = Clock.fixed(localDateTime.toInstant(ZoneOffset.UTC), ZoneOffset.UTC)
 
   override def beforeEach(): Unit = {
     database.flatMap(_.drop).futureValue
@@ -1228,6 +1233,150 @@ class ArrivalMovementRepositorySpec
           val expected = ResponseArrivals(expectedAllMovements, arrivals.size, allArrivals.size, arrivals.size)
 
           actual mustEqual expected
+        }
+      }
+
+      "must return no results when an attempt at a regex is provided to the mrn search parameter" in {
+
+        database.flatMap(_.drop()).futureValue
+
+        val app = new GuiceApplicationBuilder()
+          .overrides(bind[Clock].toInstance(clock))
+          .configure("metrics.jvm" -> false)
+          .build()
+
+        val arrival1 = arbitrary[Arrival].sample.value.copy(
+          arrivalId = ArrivalId(1),
+          eoriNumber = eoriNumber,
+          channel = ChannelType.web,
+          lastUpdated = LocalDateTime.of(2021, 4, 30, 9, 30, 31),
+          movementReferenceNumber = mrn
+        )
+
+        val arrival2 = arbitrary[Arrival]
+          .suchThat(_.movementReferenceNumber != mrn)
+          .sample
+          .value
+          .copy(
+            arrivalId = ArrivalId(2),
+            eoriNumber = eoriNumber,
+            channel = ChannelType.web,
+            lastUpdated = LocalDateTime.of(2021, 5, 30, 9, 35, 32)
+          )
+
+        val arrival3 = arbitrary[Arrival].sample.value.copy(
+          arrivalId = ArrivalId(3),
+          eoriNumber = eoriNumber,
+          channel = ChannelType.web,
+          lastUpdated = LocalDateTime.of(2021, 6, 30, 9, 30, 21),
+          movementReferenceNumber = mrn
+        )
+        val arrival4 = arbitrary[Arrival]
+          .suchThat(_.movementReferenceNumber != mrn)
+          .sample
+          .value
+          .copy(
+            arrivalId = ArrivalId(4),
+            eoriNumber = eoriNumber,
+            channel = ChannelType.web,
+            lastUpdated = LocalDateTime.of(2021, 7, 30, 10, 15, 16)
+          )
+
+        running(app) {
+          started(app).futureValue
+
+          val service: ArrivalMovementRepository = app.injector.instanceOf[ArrivalMovementRepository]
+
+          val allMovements = Seq(arrival1, arrival2, arrival3, arrival4)
+
+          val jsonArr = allMovements.map(Json.toJsObject(_))
+
+          database.flatMap {
+            db =>
+              db.collection[JSONCollection](ArrivalMovementRepository.collectionName).insert(false).many(jsonArr)
+          }.futureValue
+
+          val arrivals =
+            service.fetchAllArrivals(Ior.right(EORINumber(eoriNumber)), ChannelType.web, None, Some(s"+$mrn"), Some(5)).futureValue
+
+          arrivals mustBe ResponseArrivals(
+            Seq(),
+            0,
+            4,
+            0
+          )
+        }
+      }
+
+      "must return no results when an invalid regex is provided" in {
+
+        database.flatMap(_.drop()).futureValue
+
+        val app = new GuiceApplicationBuilder()
+          .overrides(bind[Clock].toInstance(clock))
+          .configure("metrics.jvm" -> false)
+          .build()
+
+        val arrival1 = arbitrary[Arrival].sample.value.copy(
+          arrivalId = ArrivalId(1),
+          eoriNumber = eoriNumber,
+          channel = ChannelType.web,
+          lastUpdated = LocalDateTime.of(2021, 4, 30, 9, 30, 31),
+          movementReferenceNumber = mrn
+        )
+
+        val arrival2 = arbitrary[Arrival]
+          .suchThat(_.movementReferenceNumber != mrn)
+          .sample
+          .value
+          .copy(
+            arrivalId = ArrivalId(2),
+            eoriNumber = eoriNumber,
+            channel = ChannelType.web,
+            lastUpdated = LocalDateTime.of(2021, 5, 30, 9, 35, 32)
+          )
+
+        val arrival3 = arbitrary[Arrival].sample.value.copy(
+          arrivalId = ArrivalId(3),
+          eoriNumber = eoriNumber,
+          channel = ChannelType.web,
+          lastUpdated = LocalDateTime.of(2021, 6, 30, 9, 30, 21),
+          movementReferenceNumber = mrn
+        )
+        val arrival4 = arbitrary[Arrival]
+          .suchThat(_.movementReferenceNumber != mrn)
+          .sample
+          .value
+          .copy(
+            arrivalId = ArrivalId(4),
+            eoriNumber = eoriNumber,
+            channel = ChannelType.web,
+            lastUpdated = LocalDateTime.of(2021, 7, 30, 10, 15, 16)
+          )
+
+        running(app) {
+          started(app).futureValue
+
+          val service: ArrivalMovementRepository = app.injector.instanceOf[ArrivalMovementRepository]
+
+          val allMovements = Seq(arrival1, arrival2, arrival3, arrival4)
+
+          val jsonArr = allMovements.map(Json.toJsObject(_))
+
+          database.flatMap {
+            db =>
+              db.collection[JSONCollection](ArrivalMovementRepository.collectionName).insert(false).many(jsonArr)
+          }.futureValue
+
+          val arrivals =
+            service.fetchAllArrivals(Ior.right(EORINumber(eoriNumber)), ChannelType.web, None, Some("a.+"), Some(5)).futureValue
+
+          arrivals mustBe ResponseArrivals(
+            Seq(),
+            0,
+            4,
+            0
+          )
         }
       }
 
