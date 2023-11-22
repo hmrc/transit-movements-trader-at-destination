@@ -27,6 +27,7 @@ import models.MessageType
 import models.MovementMessageWithStatus
 import models.MovementMessageWithoutStatus
 import org.scalacheck.Arbitrary.arbitrary
+import org.scalacheck.Gen
 import org.scalatest.OptionValues
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
@@ -129,30 +130,32 @@ class OutboundMessagesApiSpec
 
       val eoriNumber: String = arbitrary[String].sample.value
 
+      val randomInt = Gen.chooseNum(0, Int.MaxValue).sample.get
+
       val arrivalMovement1 =
         arbitrary[Arrival].sample.value.copy(
-          arrivalId = ArrivalId(0),
+          arrivalId = ArrivalId(randomInt),
           eoriNumber = eoriNumber,
           channel = api,
           lastUpdated = LocalDateTime.of(2021, 4, 30, 9, 30, 31)
         )
       val arrivalMovement2 =
         arbitrary[Arrival].sample.value.copy(
-          arrivalId = ArrivalId(1),
+          arrivalId = ArrivalId(randomInt + 1),
           eoriNumber = eoriNumber,
           channel = api,
           lastUpdated = LocalDateTime.of(2021, 4, 30, 9, 35, 32)
         )
       val arrivalMovement3 =
         arbitrary[Arrival].sample.value.copy(
-          arrivalId = ArrivalId(2),
+          arrivalId = ArrivalId(randomInt + 2),
           eoriNumber = eoriNumber,
           channel = api,
           lastUpdated = LocalDateTime.of(2021, 4, 30, 9, 30, 21)
         )
       val arrivalMovement4 =
         arbitrary[Arrival].sample.value.copy(
-          arrivalId = ArrivalId(3),
+          arrivalId = ArrivalId(randomInt + 3),
           eoriNumber = eoriNumber,
           channel = api,
           lastUpdated = LocalDateTime.of(2021, 4, 30, 10, 15, 16)
