@@ -16,30 +16,63 @@
 
 package repositories
 
+import config.AppConfig
 import models.ArrivalId
+import org.mockito.Mockito
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
+import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import play.api.Application
+import play.api.Configuration
+import play.api.Logging
+import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
-import reactivemongo.play.json.collection.Helpers.idWrites
-import reactivemongo.play.json.collection.JSONCollection
+import play.api.test.DefaultAwaitTimeout
+import play.api.test.FutureAwaits
+import uk.gov.hmrc.mongo.MongoComponent
+import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
+import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
+import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class ArrivalIdRepositorySpec extends AnyFreeSpec with Matchers with ScalaFutures with MongoSuite with GuiceOneAppPerSuite with IntegrationPatience {
+class ArrivalIdRepositorySpec
+    extends AnyFreeSpec
+    with Matchers
+    with FutureAwaits
+    with DefaultAwaitTimeout
+    with Logging
+    with DefaultPlayMongoRepositorySupport[ArrivalId] {
 
-  private val service = app.injector.instanceOf[ArrivalIdRepository]
+  override lazy val mongoComponent: MongoComponent = {
+    val databaseName: String = "arrival-ids-hmrc-mongo-test"
+    val mongoUri: String     = s"mongodb://localhost:27017/$databaseName?retryWrites=false"
+    MongoComponent(mongoUri)
+  }
+
+  implicit lazy val app: Application = GuiceApplicationBuilder()
+    .configure("feature-flags.testOnly.enabled" -> true)
+    .build()
+
+  private val config = app.injector.instanceOf[Configuration]
+
+  override protected def repository = new ArrivalIdRepositoryImpl(mongoComponent, config)
+
+  override def beforeEach(): Unit = repository.collection.drop()
 
   "ArrivalIdRepository" - {
 
+    "should have the correct name" in {
+      repository.collectionName shouldBe "arrival-ids"
+    }
+
     "must generate sequential ArrivalIds starting at 1 when no record exists within the database" in {
-
-      database.flatMap(_.drop()).futureValue
-
-      val first  = service.nextId().futureValue
-      val second = service.nextId().futureValue
+      val first  = repository.nextId().futureValue
+      val second = repository.nextId().futureValue
 
       first mustBe ArrivalId(1)
       second mustBe ArrivalId(2)
@@ -47,26 +80,15 @@ class ArrivalIdRepositorySpec extends AnyFreeSpec with Matchers with ScalaFuture
 
     "must generate sequential ArrivalIds when a record exists within the database" in {
 
-      database.flatMap {
-        db =>
-          db.drop().flatMap {
-            _ =>
-              db.collection[JSONCollection](ArrivalIdRepository.collectionName)
-                .insert(ordered = false)
-                .one(
-                  Json.obj(
-                    "_id"        -> "record_id",
-                    "last-index" -> 1
-                  )
-                )
-          }
-      }.futureValue
+      repository.collection.drop().flatMap {
+        _ => repository.collection.insertOne(ArrivalId(12))
+      }
 
-      val first  = service.nextId().futureValue
-      val second = service.nextId().futureValue
+      val first  = repository.nextId().futureValue
+      val second = repository.nextId().futureValue
 
-      first mustBe ArrivalId(2)
-      second mustBe ArrivalId(3)
+      first mustBe ArrivalId(13)
+      second mustBe ArrivalId(14)
     }
   }
 }
