@@ -22,10 +22,8 @@ import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
-import play.modules.reactivemongo.ReactiveMongoApi
-import reactivemongo.play.json.collection.Helpers.idWrites
-import reactivemongo.play.json.collection.JSONCollection
 import repositories.ArrivalMovementRepository
+import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import javax.inject.Inject
@@ -34,7 +32,7 @@ import scala.concurrent.Future
 
 class TestOnlyController @Inject()(
   override val messagesApi: MessagesApi,
-  mongo: ReactiveMongoApi,
+  mongo: MongoComponent,
   cc: ControllerComponents,
   config: Configuration
 )(implicit ec: ExecutionContext)
@@ -42,26 +40,27 @@ class TestOnlyController @Inject()(
 
   private val featureFlag: Boolean = config.get[Boolean]("feature-flags.testOnly.enabled")
 
-  def dropArrivalMovementCollection: Action[AnyContent] = Action.async {
-    _ =>
-      if (featureFlag) {
-        mongo.database
-          .map(_.collection[JSONCollection](ArrivalMovementRepository.collectionName))
-          .flatMap(
-            _.delete(ordered = false).one(Json.obj()).map {
-              result =>
-                if (result.ok) {
-                  Ok(s"Cleared '${ArrivalMovementRepository.collectionName}' Mongo collection")
-                } else {
-                  Ok(
-                    s"Collection '${ArrivalMovementRepository.collectionName}' does not exist or something gone wrong: ${result.writeErrors.map(_.errmsg).mkString("[", ", ", "]")}"
-                  )
-                }
-            }
-          )
-      } else {
-        Future.successful(NotImplemented(s"Feature disabled, cannot drop ${ArrivalMovementRepository.collectionName}"))
-      }
-  }
+  def dropArrivalMovementCollection: Action[AnyContent] = ???
+//  Action.async {
+//    _ =>
+//      if (featureFlag) {
+//        mongo.database
+//          .map(_.collection[JSONCollection](ArrivalMovementRepository.collectionName))
+//          .flatMap(
+//            _.delete(ordered = false).one(Json.obj()).map {
+//              result =>
+//                if (result.ok) {
+//                  Ok(s"Cleared '${ArrivalMovementRepository.collectionName}' Mongo collection")
+//                } else {
+//                  Ok(
+//                    s"Collection '${ArrivalMovementRepository.collectionName}' does not exist or something gone wrong: ${result.writeErrors.map(_.errmsg).mkString("[", ", ", "]")}"
+//                  )
+//                }
+//            }
+//          )
+//      } else {
+//        Future.successful(NotImplemented(s"Feature disabled, cannot drop ${ArrivalMovementRepository.collectionName}"))
+//      }
+//  }
 
 }

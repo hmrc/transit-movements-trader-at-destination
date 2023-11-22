@@ -16,18 +16,17 @@
 
 package repositories
 
+import com.google.inject.ImplementedBy
 import config.AppConfig
+import models.ArrivalId
 import models.LockResult
 import models.MongoDateTimeFormats._
+import org.mongodb.scala.model.IndexModel
+import org.mongodb.scala.model.Indexes
+import play.api.libs.json.Format
 import play.api.libs.json.Json
-import play.modules.reactivemongo.ReactiveMongoApi
-import reactivemongo.api.bson.BSONDocument
-import reactivemongo.api.bson.collection.BSONSerializationPack
-import reactivemongo.api.commands.LastError
-import reactivemongo.api.indexes.Index.Aux
-import reactivemongo.api.indexes.IndexType
-import reactivemongo.play.json.collection.Helpers.idWrites
-import reactivemongo.play.json.collection.JSONCollection
+import uk.gov.hmrc.mongo.MongoComponent
+import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import utils.IndexUtils
 
 import java.time.Clock
@@ -36,60 +35,70 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class WorkerLockRepository @Inject()(mongo: ReactiveMongoApi, appConfig: AppConfig, clock: Clock)(implicit ec: ExecutionContext) extends Repository {
-
-  private val documentExistsErrorCodeValue = 11000
-
-  private val ttl = appConfig.lockRepositoryTtl
-
-  private def collection: Future[JSONCollection] =
-    mongo.database.map(_.collection[JSONCollection](WorkerLockRepository.collectionName))
-
-  private val createdIndex: Aux[BSONSerializationPack.type] = IndexUtils.index(
-    key = Seq("created" -> IndexType.Ascending),
-    name = Some("created-index"),
-    options = BSONDocument("expireAfterSeconds" -> ttl)
-  )
-
-  val started: Future[Boolean] =
-    collection
-      .flatMap {
-        _.indexesManager.ensure(createdIndex)
-      }
-      .map(
-        _ => true
-      )
-
-  def lock(id: String): Future[LockResult] = {
-
-    val lock = Json.obj(
-      "_id"     -> id,
-      "created" -> LocalDateTime.now(clock)
-    )
-
-    collection.flatMap {
-      _.insert(ordered = false)
-        .one(lock)
-        .map(
-          _ => LockResult.LockAcquired
-        )
-    } recover {
-      case e: LastError if e.code.contains(documentExistsErrorCodeValue) =>
-        LockResult.AlreadyLocked
-    }
-  }
-
-  def unlock(id: String): Future[Boolean] =
-    collection.flatMap {
-      _.simpleFindAndRemove(
-        selector = Json.obj("_id" -> id)
-      ).map(
-        _ => true
-      )
-    }
+@ImplementedBy(classOf[WorkerLockRepositoryImpl])
+trait WorkerLockRepository {
+  def lock(id: String): Future[LockResult]
+  def unlock(id: String): Future[Boolean]
 }
 
-object WorkerLockRepository {
+//@Singleton
+class WorkerLockRepositoryImpl @Inject()(mongo: MongoComponent, appConfig: AppConfig, clock: Clock)(implicit ec: ExecutionContext)
+    extends PlayMongoRepository(
+      mongoComponent = mongo,
+      collectionName = "worker-locks",
+      domainFormat = ArrivalId.formatsArrivalId,
+      indexes = Seq(IndexModel(Indexes.ascending("created")))
+    )
+    with WorkerLockRepository {
 
-  val collectionName = "worker-locks"
+//  private val documentExistsErrorCodeValue = 11000
+//
+//  private val ttl = appConfig.lockRepositoryTtl
+//
+//  private def collection: Future[JSONCollection] =
+//    mongo.database.map(_.collection[JSONCollection](WorkerLockRepository.collectionName))
+//
+//  private val createdIndex: Aux[BSONSerializationPack.type] = IndexUtils.index(
+//    key = Seq("created" -> IndexType.Ascending),
+//    name = Some("created-index"),
+//    options = BSONDocument("expireAfterSeconds" -> ttl)
+//  )
+
+  val started: Future[Boolean] = Future.successful(true)
+//    collection
+//      .flatMap {
+//        _.indexesManager.ensure(createdIndex)
+//      }
+//      .map(
+//        _ => true
+//      )
+
+  def lock(id: String): Future[LockResult] = Future.successful(LockResult.LockAcquired)
+//  {
+//
+//    val lock = Json.obj(
+//      "_id"     -> id,
+//      "created" -> LocalDateTime.now(clock)
+//    )
+//
+//    collection.flatMap {
+//      _.insert(ordered = false)
+//        .one(lock)
+//        .map(
+//          _ => LockResult.LockAcquired
+//        )
+//    } recover {
+//      case e: LastError if e.code.contains(documentExistsErrorCodeValue) =>
+//        LockResult.AlreadyLocked
+//    }
+//  }
+
+  def unlock(id: String): Future[Boolean] = Future.successful(true)
+//    collection.flatMap {
+//      _.simpleFindAndRemove(
+//        selector = Json.obj("_id" -> id)
+//      ).map(
+//        _ => true
+//      )
+//    }
 }
