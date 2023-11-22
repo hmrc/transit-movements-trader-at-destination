@@ -16,86 +16,68 @@
 
 package repositories
 
-import com.google.inject.Inject
+import com.google.inject._
+import com.mongodb.client.model.Filters
+import com.mongodb.client.model.Updates
 import models.ArrivalId
+import org.mongodb.scala.model.FindOneAndUpdateOptions
+import org.mongodb.scala.model._
 import play.api.Configuration
-import play.api.libs.json.Json
-import play.api.libs.json.Reads
-import play.modules.reactivemongo.ReactiveMongoApi
-import reactivemongo.play.json.collection.Helpers.idWrites
-import reactivemongo.play.json.collection.JSONCollection
+import uk.gov.hmrc.mongo.MongoComponent
+import uk.gov.hmrc.mongo.play.json._
 
-import scala.concurrent.ExecutionContext.Implicits._
-import scala.concurrent.Future
+import scala.concurrent._
 
-class ArrivalIdRepository @Inject()(mongo: ReactiveMongoApi, config: Configuration) extends Repository {
+@ImplementedBy(classOf[ArrivalIdRepositoryImpl])
+trait ArrivalIdRepository {
+  def setNextId(nextId: Int): Future[Unit]
+  def nextId(): Future[ArrivalId]
+}
+
+@Singleton
+class ArrivalIdRepositoryImpl @Inject() (mongo: MongoComponent, config: Configuration)(implicit ec: ExecutionContext)
+    extends PlayMongoRepository[ArrivalId](
+      mongoComponent = mongo,
+      collectionName = "arrival-ids-hmrc-mongo",
+      domainFormat = ArrivalId.formatsArrivalId,
+      indexes = Seq(IndexModel(Indexes.ascending("last-index"))),
+      extraCodecs = Seq(
+        Codecs.playFormatCodec(ArrivalId.formatsArrivalId) //TODO: needed?
+      )
+    )
+    with ArrivalIdRepository {
+
+  val featureFlag: Boolean = config.get[Boolean]("feature-flags.testOnly.enabled")
 
   private val lastIndexKey = "last-index"
   private val primaryValue = "record_id"
 
-  private val collectionName: String = ArrivalIdRepository.collectionName
-
-  private val indexKeyReads: Reads[ArrivalId] = {
-    import play.api.libs.json._
-    (__ \ lastIndexKey).read[ArrivalId]
-  }
-
-  private val featureFlag: Boolean = config.get[Boolean]("feature-flags.testOnly.enabled")
-
-  private def collection: Future[JSONCollection] =
-    mongo.database.map(_.collection[JSONCollection](collectionName))
-
   def setNextId(nextId: Int): Future[Unit] =
     if (featureFlag) {
-      val update = Json.obj(
-        "$set" -> Json.obj(lastIndexKey -> nextId)
-      )
-
-      val selector = Json.obj("_id" -> primaryValue)
-
-      collection.flatMap(
-        _.update(ordered = false)
-          .one(selector, update, upsert = true)
-          .flatMap {
-            result =>
-              if (result.ok)
-                Future.unit
+      val update   = Updates.set(lastIndexKey, nextId)
+      val selector = Filters.eq("_id", primaryValue)
+      collection
+        .updateOne(selector, update)
+        .toFuture
+        .map {
+          result =>
+            if (result.wasAcknowledged()) {
+              if (result.getModifiedCount == 0)
+                Future.failed(new Exception("No document modified: count is zero"))
               else
-                result.errmsg
-                  .map(
-                    x => Future.failed(new Exception(x))
-                  )
-                  .getOrElse(Future.failed(new Exception("Unable to set next ArrivalId")))
-          }
-      )
-    } else {
+                Future.successful(())
+            } else
+              Future.failed(new Exception("Unable to set next ArrivalId"))
+        }
+    } else
       Future.failed(new Exception("Feature disabled, cannot set next ArrivalId"))
-    }
 
   def nextId(): Future[ArrivalId] = {
-
-    val update = Json.obj(
-      "$inc" -> Json.obj(lastIndexKey -> 1)
-    )
-
-    val selector = Json.obj("_id" -> primaryValue)
-
-    collection.flatMap(
-      _.simpleFindAndUpdate(
-        selector = selector,
-        update = update,
-        fetchNewObject = true,
-        upsert = true
-      ).map(
-        x =>
-          x.result(indexKeyReads)
-            .getOrElse(throw new Exception(s"Unable to generate ArrivalId"))
-      )
-    )
+    val update   = Updates.inc(lastIndexKey, 1)
+    val selector = Filters.eq("_id", primaryValue)
+    collection
+      .findOneAndUpdate(selector, update, FindOneAndUpdateOptions().upsert(true))
+      .toFuture()
   }
-}
 
-object ArrivalIdRepository {
-
-  val collectionName = "arrival-ids"
 }
