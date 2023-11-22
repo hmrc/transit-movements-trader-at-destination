@@ -17,67 +17,61 @@
 package repositories
 
 import play.api.libs.json.JsObject
-import reactivemongo.api.ReadConcern
-import reactivemongo.api.WriteConcern
-import reactivemongo.api.commands.FindAndModifyCommand
-import reactivemongo.play.json.JSONSerializationPack
-import reactivemongo.play.json.collection.Helpers.idWrites
-import reactivemongo.play.json.collection.JSONCollection
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 trait Repository {
 
-  implicit class JSONCollectionImplicits(coll: JSONCollection) {
-
-    def simpleCount(
-      selector: JsObject
-    )(implicit ec: ExecutionContext): Future[Int] =
-      coll
-        .count(
-          selector = Some(selector),
-          limit = None,
-          skip = 0,
-          hint = None,
-          readConcern = ReadConcern.Local
-        )
-        .map(_.toInt)
-
-    def simpleFindAndUpdate(
-      selector: JsObject,
-      update: JsObject,
-      fetchNewObject: Boolean = false,
-      upsert: Boolean = false
-    )(implicit ec: ExecutionContext): Future[FindAndModifyCommand.Result[JSONSerializationPack.type]] =
-      coll
-        .findAndUpdate(
-          selector = selector,
-          update = update,
-          fetchNewObject = fetchNewObject,
-          upsert = upsert,
-          sort = None,
-          fields = None,
-          bypassDocumentValidation = false,
-          writeConcern = WriteConcern.Default,
-          maxTime = None,
-          collation = None,
-          arrayFilters = Nil
-        )
-
-    def simpleFindAndRemove(
-      selector: JsObject
-    )(implicit ec: ExecutionContext): Future[FindAndModifyCommand.Result[JSONSerializationPack.type]] =
-      coll
-        .findAndRemove(
-          selector = selector,
-          sort = None,
-          fields = None,
-          writeConcern = WriteConcern.Default,
-          maxTime = None,
-          collation = None,
-          arrayFilters = Nil
-        )
-  }
+//  implicit class JSONCollectionImplicits(coll: JSONCollection) {
+//
+//    def simpleCount(
+//      selector: JsObject
+//    )(implicit ec: ExecutionContext): Future[Int] =
+//      coll
+//        .count(
+//          selector = Some(selector),
+//          limit = None,
+//          skip = 0,
+//          hint = None,
+//          readConcern = ReadConcern.Local
+//        )
+//        .map(_.toInt)
+//
+//    def simpleFindAndUpdate(
+//      selector: JsObject,
+//      update: JsObject,
+//      fetchNewObject: Boolean = false,
+//      upsert: Boolean = false
+//    )(implicit ec: ExecutionContext): Future[FindAndModifyCommand.Result[JSONSerializationPack.type]] =
+//      coll
+//        .findAndUpdate(
+//          selector = selector,
+//          update = update,
+//          fetchNewObject = fetchNewObject,
+//          upsert = upsert,
+//          sort = None,
+//          fields = None,
+//          bypassDocumentValidation = false,
+//          writeConcern = WriteConcern.Default,
+//          maxTime = None,
+//          collation = None,
+//          arrayFilters = Nil
+//        )
+//
+//    def simpleFindAndRemove(
+//      selector: JsObject
+//    )(implicit ec: ExecutionContext): Future[FindAndModifyCommand.Result[JSONSerializationPack.type]] =
+//      coll
+//        .findAndRemove(
+//          selector = selector,
+//          sort = None,
+//          fields = None,
+//          writeConcern = WriteConcern.Default,
+//          maxTime = None,
+//          collation = None,
+//          arrayFilters = Nil
+//        )
+//  }
 
 }
