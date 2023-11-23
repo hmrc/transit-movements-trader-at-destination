@@ -18,7 +18,6 @@ package models
 
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
-
 import models.MessageType._
 
 case class ArrivalMessages(
@@ -29,11 +28,26 @@ case class ArrivalMessages(
 
 object ArrivalMessages {
 
-  implicit val readsArrivalMessages: Reads[ArrivalMessages] =
+  implicit val reads: Reads[ArrivalMessages] =
     (
       (__ \ "_id").read[ArrivalId] and
         (__ \ "eoriNumber").read[String] and
         (__ \ "messages").read[List[MovementMessage]]
     )(ArrivalMessages.apply _)
 
+  implicit val writes: OWrites[ArrivalMessages] =
+    (
+      (__ \ "_id").write[ArrivalId] and
+        (__ \ "eoriNumber").write[String] and
+        (__ \ "messages").write[List[MovementMessage]]
+    )(unlift(ArrivalMessages.unapply))
+
+  implicit val formatsArrival: Format[ArrivalMessages] =
+    Format(reads, writes)
+
+  val projection: JsObject = Json.obj(
+    "_id"        -> 1,
+    "eoriNumber" -> 1,
+    "messages"   -> 1
+  )
 }
