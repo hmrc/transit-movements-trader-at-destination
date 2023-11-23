@@ -26,27 +26,57 @@ import cats.syntax.all._
 import com.google.inject.ImplementedBy
 import com.google.inject.Inject
 import com.kenshoo.play.metrics.Metrics
+import com.mongodb.client.model.Filters.empty
+import com.mongodb.client.model.Updates
 import config.AppConfig
 import logging.Logging
 import metrics.HasMetrics
-import models._
+import models.Arrival
+import models.ArrivalId
+import models.ArrivalMessages
+import models.ArrivalModifier
+import models.ArrivalSelector
+import models.ArrivalWithoutMessages
+import models.ChannelType
+import models.EORINumber
+import models.MessageId
+import models.MessageType
+import models.MongoDateTimeFormats
+import models.MovementMessage
+import models.MovementReferenceNumber
+import models.TURN
 import models.response.ResponseArrival
 import models.response.ResponseArrivals
+import org.bson.conversions.Bson
+import org.mongodb.scala.bson.BsonArray
+import org.mongodb.scala.bson.BsonDocument
+import org.mongodb.scala.bson.Document
+import org.mongodb.scala.model.Aggregates
+import org.mongodb.scala.model.BulkWriteOptions
+import org.mongodb.scala.model.Field
+import org.mongodb.scala.model.Filters
 import org.mongodb.scala.model.IndexModel
 import org.mongodb.scala.model.IndexOptions
 import org.mongodb.scala.model.Indexes
+import org.mongodb.scala.model.InsertOneModel
+import org.mongodb.scala.model.UpdateOptions
+import org.mongodb.scala.model.Sorts.descending
 import play.api.Configuration
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
+import repositories.ArrivalMovementRepositoryImpl.EPOCH_TIME
 import uk.gov.hmrc.mongo.MongoComponent
+import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import utils.IndexUtils
 
 import java.time.Clock
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
+import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+import java.util.Collections
 import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -57,6 +87,7 @@ import scala.util.matching.Regex
 
 @ImplementedBy(classOf[ArrivalMovementRepositoryImpl])
 trait ArrivalMovementRepository {
+  val started: Future[Unit]
   def bulkInsert(arrivals: Seq[Arrival]): Future[Unit]
   def insert(arrival: Arrival): Future[Unit]
   def getMaxArrivalId: Future[Option[ArrivalId]]
@@ -83,7 +114,11 @@ trait ArrivalMovementRepository {
   def resetMessages(arrivalId: ArrivalId, messages: NonEmptyList[MovementMessage]): Future[Boolean]
 }
 
-//@Singleton
+object ArrivalMovementRepositoryImpl {
+  val EPOCH_TIME: LocalDateTime = LocalDateTime.ofEpochSecond(0, 0, ZoneOffset.UTC)
+}
+
+//@Singleton  TODO:sort compilation error
 class ArrivalMovementRepositoryImpl @Inject()(
   mongo: MongoComponent,
   appConfig: AppConfig,
@@ -140,6 +175,12 @@ class ArrivalMovementRepositoryImpl @Inject()(
             .name("movement-reference-number-index")
             .background(true)
         )
+      ),
+      extraCodecs = Seq(
+        Codecs.playFormatCodec(ArrivalId.formatsArrivalId)
+//        TODO: finish,
+//        Codecs.playFormatCodec(ChannelType),
+//        Codecs.playFormatCode(MovementReferenceNumber.mrnFormat)
       )
     )
     with ArrivalMovementRepository
@@ -147,184 +188,126 @@ class ArrivalMovementRepositoryImpl @Inject()(
     with Logging
     with HasMetrics {
 
+  private val featureFlag: Boolean = config.get[Boolean]("feature-flags.testOnly.enabled")
+
   val started: Future[Unit] = ensureIndexes.map(
     _ => ()
   ) // TODO: dropLastUpdatedIndex(jsonCollection) ?
 
-  def bulkInsert(arrivals: Seq[Arrival]): Future[Unit] = ???
-//    collection.flatMap {
-//      _.insert(ordered = false)
-//        .many(arrivals.map(Json.toJsObject[Arrival]))
-//        .map(
-//          _ => ()
-//        )
-//    }
+  def bulkInsert(arrivals: Seq[Arrival]): Future[Unit] = {
+    val insertModels = arrivals.map(
+      arrival => InsertOneModel(arrival)
+    )
+    collection
+      .bulkWrite(insertModels, BulkWriteOptions().ordered(false))
+      .toFuture()
+      .map(
+        _ => ()
+      )
+  }
 
-  def insert(arrival: Arrival): Future[Unit] = ???
-//    collection.flatMap {
-//      _.insert(false)
-//        .one(Json.toJsObject(arrival))
-//        .map(
-//          _ => ()
-//        )
-//    }
+  def insert(arrival: Arrival): Future[Unit] =
+    collection
+      .insertOne(arrival)
+      .toFuture()
+      .map(
+        _ => ()
+      )
 
-  private val featureFlag: Boolean = config.get[Boolean]("feature-flags.testOnly.enabled")
+  def getMaxArrivalId: Future[Option[ArrivalId]] =
+    if (featureFlag) {
+      collection.find().sort(descending("_id")).limit(1).headOption().map(_.map(_.arrivalId))
+    } else Future.successful(None)
 
-  def getMaxArrivalId: Future[Option[ArrivalId]] = ???
-//    if (featureFlag) {
-//      collection.flatMap(
-//        _.find(Json.obj(), None)
-//          .sort(Json.obj("_id" -> -1))
-//          .one[Arrival]
-//          .map(_.map(_.arrivalId))
-//      )
+  def get(arrivalId: ArrivalId, channelFilter: ChannelType): Future[Option[Arrival]] =
+    withMetricsTimerAsync("mongo-get-arrival-by-id") {
+      _ =>
+        collection
+          .find(Filters.and(Filters.eq("_id", arrivalId), Filters.eq("channel", channelFilter.toString)))
+          .headOption()
+    }
 
-  def get(arrivalId: ArrivalId, channelFilter: ChannelType): Future[Option[Arrival]] = ???
-//    val selector = Json.obj(
-//      "_id"     -> arrivalId,
-//      "channel" -> channelFilter
-//    )
-//
-//    withMetricsTimerAsync("mongo-get-arrival-by-id") {
-//      _ =>
-//        collection.flatMap {
-//          _.find(selector, None)
-//            .one[Arrival]
-//        }
-//    }
+  def get(arrivalId: ArrivalId): Future[Option[Arrival]] =
+    withMetricsTimerAsync("mongo-get-arrival-by-id") {
+      _ =>
+        collection
+          .find(Filters.eq("_id", arrivalId))
+          .headOption()
+    }
 
-  def get(arrivalId: ArrivalId): Future[Option[Arrival]] = ???
-//    val selector = Json.obj(
-//      "_id" -> arrivalId
-//    )
-//
-//    withMetricsTimerAsync("mongo-get-arrival-by-id") {
-//      _ =>
-//        collection.flatMap {
-//          _.find(selector, None)
-//            .one[Arrival]
-//        }
-//    }
+  def getWithoutMessages(arrivalId: ArrivalId, channelFilter: ChannelType): Future[Option[ArrivalWithoutMessages]] = {
+    val nextMessageId = Json.obj("nextMessageId" -> Json.obj("$size" -> "$messages"))
 
-  def getWithoutMessages(arrivalId: ArrivalId, channelFilter: ChannelType): Future[Option[ArrivalWithoutMessages]] = ???
-//    val nextMessageId = Json.obj("nextMessageId" -> Json.obj("$size" -> "$messages"))
-//
-//    val projection = ArrivalWithoutMessages.projection ++ nextMessageId
-//
-//    collection
-//      .flatMap {
-//        c =>
-//          c.aggregateWith[ArrivalWithoutMessages](allowDiskUse = true) {
-//              _ =>
-//                import c.aggregationFramework._
-//
-//                val initialFilter: PipelineOperator =
-//                  Match(Json.obj("_id" -> arrivalId, "channel" -> channelFilter))
-//
-//                val transformations = List[PipelineOperator](Project(projection))
-//                (initialFilter, transformations)
-//
-//            }
-//            .headOption
-//
-//      }
-//      .map(
-//        opt =>
-//          opt.map(
-//            a => a.copy(nextMessageId = MessageId(a.nextMessageId.value + 1))
-//        )
-//      )
+    val projection       = ArrivalWithoutMessages.projection ++ nextMessageId
+    val filter           = Filters.and(Filters.eq("_id", arrivalId), Filters.eq("channel", channelFilter.toString))
+    val aggregatesFilter = Aggregates.filter(filter)
+    val aggregates       = Seq(aggregatesFilter, Aggregates.project(Codecs.toBson(projection).asDocument()))
 
-  def getWithoutMessages(arrivalId: ArrivalId): Future[Option[ArrivalWithoutMessages]] = ???
-//    val nextMessageId = Json.obj("nextMessageId" -> Json.obj("$size" -> "$messages"))
-//
-//    val projection = ArrivalWithoutMessages.projection ++ nextMessageId
-//
-//    collection
-//      .flatMap {
-//        c =>
-//          c.aggregateWith[ArrivalWithoutMessages](allowDiskUse = true) {
-//              _ =>
-//                import c.aggregationFramework._
-//
-//                val initialFilter: PipelineOperator =
-//                  Match(Json.obj("_id" -> arrivalId))
-//
-//                val transformations = List[PipelineOperator](Project(projection))
-//                (initialFilter, transformations)
-//
-//            }
-//            .headOption
-//
-//      }
-//      .map(
-//        opt =>
-//          opt.map(
-//            a => a.copy(nextMessageId = MessageId(a.nextMessageId.value + 1))
-//        )
-//      )
+    collection
+      .aggregate[ArrivalWithoutMessages](aggregates)
+      .allowDiskUse(true)
+      .headOption()
+      .map(
+        opt =>
+          opt.map(
+            a => a.copy(nextMessageId = MessageId(a.nextMessageId.value + 1))
+        )
+      )
+  }
 
-  def getMessage(arrivalId: ArrivalId, channelFilter: ChannelType, messageId: MessageId): Future[Option[MovementMessage]] = ???
-//    collection.flatMap {
-//      c =>
-//        c.aggregateWith[MovementMessage](allowDiskUse = true) {
-//            _ =>
-//              import c.aggregationFramework._
-//
-//              val initialFilter: PipelineOperator =
-//                Match(
-//                  Json.obj("_id" -> arrivalId, "channel" -> channelFilter, "messages" -> Json.obj("$elemMatch" -> Json.obj("messageId" -> messageId.value))))
-//
-//              val unwindMessages = List[PipelineOperator](
-//                Unwind(
-//                  path = "messages",
-//                  includeArrayIndex = None,
-//                  preserveNullAndEmptyArrays = None
-//                )
-//              )
-//
-//              val secondaryFilter = List[PipelineOperator](Match(Json.obj("messages.messageId" -> messageId.value)))
-//
-//              val groupById = List[PipelineOperator](GroupField("_id")("messages" -> FirstField("messages")))
-//
-//              val replaceRoot = List[PipelineOperator](ReplaceRootField("messages"))
-//
-//              val transformations = unwindMessages ++ secondaryFilter ++ groupById ++ replaceRoot
-//
-//              (initialFilter, transformations)
-//
-//          }
-//          .headOption
-//    }
+  def getWithoutMessages(arrivalId: ArrivalId): Future[Option[ArrivalWithoutMessages]] = {
+    val nextMessageId = Json.obj("nextMessageId" -> Json.obj("$size" -> "$messages"))
+    val projection    = ArrivalWithoutMessages.projection ++ nextMessageId
+    val filter        = Aggregates.filter(Filters.eq("_id", arrivalId))
+    val aggregates    = Seq(filter, Aggregates.project(Codecs.toBson(projection).asDocument()))
+    collection
+      .aggregate[ArrivalWithoutMessages](aggregates)
+      .allowDiskUse(true)
+      .headOption()
+      .map(
+        opt =>
+          opt.map(
+            d => d.copy(nextMessageId = MessageId(d.nextMessageId.value + 1))
+        )
+      )
+  }
 
-  def getMessagesOfType(arrivalId: ArrivalId, channelFilter: ChannelType, messageTypes: List[MessageType]): Future[Option[ArrivalMessages]] = ???
-//    collection.flatMap {
-//      c =>
-//        c.aggregateWith[ArrivalMessages](allowDiskUse = true) {
-//            _ =>
-//              import c.aggregationFramework._
-//
-//              val initialFilter: PipelineOperator = Match(Json.obj("_id" -> arrivalId, "channel" -> channelFilter))
-//
-//              val project = List[PipelineOperator](Project(Json.obj("_id" -> 1, "eoriNumber" -> 1, "messages" -> 1)))
-//
-//              // Filters out the messages with message types we don't care about, meaning that if we have a
-//              // match for the arrival id and the eori number, but not a message type match,
-//              // we then get an empty list which indiates an arrival that doesn't have the required message
-//              // types as of yet, but would otherwise be valid
-//              val inFilter       = Json.obj("$in"     -> Json.arr("$$message.messageType", messageTypes.map(_.code).toSeq))
-//              val messagesFilter = Json.obj("$filter" -> Json.obj("input" -> "$messages", "as" -> "message", "cond" -> inFilter))
-//
-//              val secondaryFilter = List[PipelineOperator](AddFields(Json.obj("messages" -> messagesFilter)))
-//
-//              val transformations = project ++ secondaryFilter
-//
-//              (initialFilter, transformations)
-//
-//          }
-//          .headOption
-//    }
+  def getMessage(arrivalId: ArrivalId, channelFilter: ChannelType, messageId: MessageId): Future[Option[MovementMessage]] = {
+    val initialFilter = Aggregates.filter(
+      Filters.and(
+        Filters.eq("_id", arrivalId),
+        Filters.eq("channel", channelFilter.toString),
+        Filters.elemMatch("messages", Filters.eq("messageId", messageId.value))
+      )
+    )
+    val unwindMessages  = Aggregates.unwind("$messages")
+    val secondaryFilter = Aggregates.filter(Filters.eq("messages.messageId", messageId.value))
+    val replaceRoot     = Aggregates.replaceRoot("$messages")
+    val aggregates      = Seq(initialFilter, unwindMessages, secondaryFilter, replaceRoot)
+    collection.aggregate[MovementMessage](aggregates).allowDiskUse(true).headOption()
+  }
+
+  def getMessagesOfType(arrivalId: ArrivalId, channelFilter: ChannelType, messageTypes: List[MessageType]): Future[Option[ArrivalMessages]] = {
+    val filter  = Aggregates.filter(Filters.and(Filters.eq("_id", arrivalId), Filters.eq("channel", channelFilter.toString)))
+    val project = Aggregates.project(Codecs.toBson(ArrivalMessages.projection).asDocument())
+    val messagesFilter = BsonDocument(
+      "$filter" -> Document(
+        "input" -> "$messages",
+        "as"    -> "message",
+        "cond"  -> Document("$in" -> BsonArray("$$message.messageType", messageTypes.map(_.code).toSeq))
+      )
+    )
+    val secondaryFilter = Aggregates.addFields(Field("messages", messagesFilter))
+
+    val aggregates = Seq(filter, project, secondaryFilter)
+    collection.aggregate[ArrivalMessages](aggregates).allowDiskUse(true).headOption()
+  }
+
+  private def mrnFilter(movementReferenceNumber: Option[String]): Bson =
+    movementReferenceNumber match {
+      case Some(movementReferenceNumber) => Filters.regex("movementReferenceNumber", s"\\Q$movementReferenceNumber\\E", "i")
+      case _                             => empty()
+    }
 
   def fetchAllArrivals(
     enrolmentId: Ior[TURN, EORINumber],
@@ -333,170 +316,117 @@ class ArrivalMovementRepositoryImpl @Inject()(
     movementReference: Option[String] = None,
     pageSize: Option[Int] = None,
     page: Option[Int] = None
-  ): Future[ResponseArrivals] = ???
-//    withMetricsTimerAsync("mongo-get-arrivals-for-eori") {
-//      _ =>
-//        val enrolmentIds = enrolmentId.fold(
-//          turn => List(turn.value),
-//          eoriNumber => List(eoriNumber.value),
-//          (turn, eoriNumber) => List(eoriNumber.value, turn.value)
-//        )
-//
-//        val baseSelector = Json.obj(
-//          "eoriNumber" -> Json.obj("$in" -> enrolmentIds),
-//          "channel"    -> channelFilter
-//        )
-//
-//        val dateSelector = updatedSince
-//          .map {
-//            dateTime =>
-//              Json.obj("lastUpdated" -> Json.obj("$gte" -> dateTime))
-//          }
-//          .getOrElse {
-//            Json.obj()
-//          }
-//
-//        val mrnSelector = movementReference
-//          .map(Regex.quote)
-//          .map {
-//            mrn =>
-//              Json.obj("movementReferenceNumber" -> Json.obj("$regex" -> mrn, "$options" -> "i"))
-//          }
-//          .getOrElse {
-//            Json.obj()
-//          }
-//
-//        val fullSelector =
-//          baseSelector ++ dateSelector ++ mrnSelector
-//
-//        val nextMessageId = Json.obj("nextMessageId" -> Json.obj("$size" -> "$messages"))
-//
-//        val projection = ArrivalWithoutMessages.projection ++ nextMessageId
-//
-//        val limit = pageSize.map(Math.max(1, _)).getOrElse(appConfig.maxRowsReturned(channelFilter))
-//
-//        val skip = Math.abs(page.getOrElse(1) - 1) * limit
-//
-//        collection.flatMap {
-//          coll =>
-//            val fetchCount      = coll.simpleCount(baseSelector)
-//            val fetchMatchCount = coll.simpleCount(fullSelector)
-//
-//            val fetchResults = coll
-//              .aggregateWith[ArrivalWithoutMessages](allowDiskUse = true) {
-//                _ =>
-//                  import coll.aggregationFramework._
-//
-//                  val matchStage   = Match(fullSelector)
-//                  val projectStage = Project(projection)
-//                  val sortStage    = Sort(Descending("lastUpdated"))
-//                  val skipStage    = Skip(skip)
-//                  val limitStage   = Limit(limit)
-//
-//                  val restStages =
-//                    if (skip > 0)
-//                      List[PipelineOperator](projectStage, sortStage, skipStage, limitStage)
-//                    else
-//                      List[PipelineOperator](projectStage, sortStage, limitStage)
-//
-//                  (matchStage, restStages)
-//              }
-//              .collect[Seq](limit, Cursor.FailOnError())
-//
-//            (fetchResults, fetchCount, fetchMatchCount).mapN {
-//              case (results, count, matchCount) =>
-//                ResponseArrivals(
-//                  results.map(ResponseArrival.build),
-//                  results.length,
-//                  totalArrivals = count,
-//                  totalMatched = matchCount
-//                )
-//            }
-//        }
-//    }
+  ): Future[ResponseArrivals] = withMetricsTimerAsync("mongo-get-arrivals-for-eori") {
+    _ =>
+      val enrolmentIds = enrolmentId.fold(
+        turn => List(turn.value),
+        eoriNumber => List(eoriNumber.value),
+        (turn, eoriNumber) => List(eoriNumber.value, turn.value)
+      )
+
+      val baseSelector = Filters.and(Filters.in("eoriNumber", enrolmentIds.map(_.toString): _*), Filters.eq("channel", channelFilter.toString))
+
+      val dateTimeFilter: Bson =
+        Filters.gte("lastUpdated", updatedSince.map(_.toLocalDateTime).getOrElse(EPOCH_TIME))
+      val fullSelector =
+        Filters.and(
+          Filters.in("eoriNumber", enrolmentIds.map(_.toString): _*),
+          Filters.eq("channel", channelFilter.toString),
+          mrnFilter(movementReference),
+          dateTimeFilter
+        )
+
+      val nextMessageId = Json.obj("nextMessageId" -> Json.obj("$size" -> "$messages"))
+
+      val projection = ArrivalWithoutMessages.projection ++ nextMessageId
+      val limit      = pageSize.map(Math.max(1, _)).getOrElse(appConfig.maxRowsReturned(channelFilter))
+
+      val skip            = Math.abs(page.getOrElse(1) - 1) * limit
+      val fetchCount      = collection.countDocuments(baseSelector).toFuture().map(_.toInt)
+      val fetchMatchCount = collection.countDocuments(fullSelector).toFuture().map(_.toInt)
+      val matchStage      = Aggregates.filter(fullSelector)
+      val projectStage    = Aggregates.project(Codecs.toBson(projection).asDocument())
+      val sortStage       = Aggregates.sort(descending("lastUpdated"))
+      val skipStage       = Aggregates.skip(skip)
+      val limitStage      = Aggregates.limit(limit)
+      val restStages =
+        if (skip > 0)
+          Seq(matchStage) ++ Seq(projectStage, sortStage, skipStage, limitStage)
+        else
+          Seq(matchStage) ++ Seq(projectStage, sortStage, limitStage)
+      val fetchResults = collection
+        .aggregate[ArrivalWithoutMessages](restStages)
+        .allowDiskUse(true)
+        .toFuture()
+        .map {
+          response =>
+            response.map(ResponseArrival.build(_))
+        }
+
+      for {
+        fetchResults    <- fetchResults
+        fetchCount      <- fetchCount
+        fetchMatchCount <- fetchMatchCount
+      } yield ResponseArrivals(fetchResults, fetchResults.length, fetchCount, fetchMatchCount)
+  }
 
   def updateArrival[A](selector: ArrivalSelector, modifier: A)(implicit ev: ArrivalModifier[A]): Future[Try[Unit]] = ???
-  Future.successful(Success(()))
-//    import models.ArrivalModifier.toJson
+//  {
+//    val filter     = Filters.eq("_id", selector)
+//    val setUpdated = Updates.set("lastUpdated", LocalDateTime.now(clock))
 //
-//    collection.flatMap {
-//      _.update(false)
-//        .one[JsObject, JsObject](Json.toJsObject(selector), modifier)
-//        .map {
-//          writeResult =>
-//            if (writeResult.n > 0)
-//              Success(())
-//            else
-//              writeResult.errmsg
-//                .map(
-//                  x => Failure(new Exception(x))
-//                )
-//                .getOrElse(Failure(new Exception("Unable to update message status")))
-//        }
+//    val arrayFilters = new UpdateOptions().arrayFilters(Collections.singletonList(Filters.in("element.messageId", modifier.messageId.value)))
+//    val setStatus    = Updates.set("messages.$[element].status", modifier.messageStatus.toString)
+//    collection.updateOne(filter = filter, update = Updates.combine(setStatus, setUpdated), options = arrayFilters).toFuture().map {
+//      result =>
+//        if (result.wasAcknowledged()) {
+//          if (result.getModifiedCount == 0) Failure(new Exception("Unable to update message status"))
+//          else Success(())
+//        } else Failure(new Exception("Unable to update message status"))
+//
 //    }
+//  }
 
-  def addNewMessage(arrivalId: ArrivalId, message: MovementMessage): Future[Try[Unit]] = ???
-//    val selector = Json.obj(
-//      "_id" -> arrivalId
-//    )
-//
-//    val modifier =
-//      Json.obj(
-//        "$set" -> Json.obj(
-//          "updated"     -> message.received.get,
-//          "lastUpdated" -> message.received.get
-//        ),
-//        "$inc" -> Json.obj(
-//          "nextMessageCorrelationId" -> 1
-//        ),
-//        "$push" -> Json.obj(
-//          "messages" -> Json.toJson(message)
-//        )
-//      )
-//
-//    collection.flatMap {
-//      _.simpleFindAndUpdate(
-//        selector = selector,
-//        update = modifier
-//      ).map {
-//        _.lastError
-//          .map {
-//            le =>
-//              if (le.updatedExisting) Success(()) else Failure(new Exception(s"Could not find arrival $arrivalId"))
-//          }
-//          .getOrElse(Failure(new Exception("Failed to update arrival")))
-//      }
-//    }
+  def addNewMessage(arrivalId: ArrivalId, message: MovementMessage): Future[Try[Unit]] =
+    collection
+      .updateOne(
+        filter = Filters.eq("_id", arrivalId),
+        update = Updates.combine(
+          Updates.set("updated", message.received.get),
+          Updates.set("lastUpdated", message.received.get),
+          Updates.inc("nextMessageCorrelationId", 1),
+          Updates.push("messages", message)
+        )
+      )
+      .toFuture()
+      .map {
+        result =>
+          if (result.wasAcknowledged()) {
+            if (result.getModifiedCount == 0) Failure(new Exception(s"Could not find arrival $arrivalId"))
+            else Success(())
+          } else Failure(new Exception("Failed to update arrival"))
 
-  def addResponseMessage(arrivalId: ArrivalId, message: MovementMessage): Future[Try[Unit]] = ???
-//    val selector = Json.obj(
-//      "_id" -> arrivalId
-//    )
-//
-//    val modifier =
-//      Json.obj(
-//        "$set" -> Json.obj(
-//          "updated"     -> message.received.get,
-//          "lastUpdated" -> message.received.get
-//        ),
-//        "$push" -> Json.obj(
-//          "messages" -> Json.toJson(message)
-//        )
-//      )
-//
-//    collection.flatMap {
-//      _.simpleFindAndUpdate(
-//        selector = selector,
-//        update = modifier
-//      ).map {
-//        _.lastError
-//          .map {
-//            le =>
-//              if (le.updatedExisting) Success(()) else Failure(new Exception(s"Could not find arrival $arrivalId"))
-//          }
-//          .getOrElse(Failure(new Exception("Failed to update arrival")))
-//      }
-//    }
+      }
+
+  def addResponseMessage(arrivalId: ArrivalId, message: MovementMessage): Future[Try[Unit]] = {
+    val selector = Filters.eq("_id", arrivalId)
+    val modifier = Updates.combine(
+      Updates.set("updated", message.received.get),
+      Updates.set("lastUpdated", message.received.get),
+      Updates.push("messages", message)
+    )
+    collection
+      .updateOne(filter = selector, update = modifier)
+      .toFuture()
+      .map {
+        result =>
+          if (result.wasAcknowledged()) {
+            if (result.getModifiedCount == 0) Failure(new Exception(s"Could not find arrival $arrivalId"))
+            else Success(())
+          } else Failure(new Exception("Failed to update arrival"))
+
+      }
+  }
 
   def arrivalsWithoutJsonMessagesSource(limit: Int): Future[Source[Arrival, Future[Done]]] = ???
 //    val messagesWithNoJson =
@@ -533,14 +463,14 @@ class ArrivalMovementRepositoryImpl @Inject()(
 //          )
 //      }
 
-  def arrivalsWithoutJsonMessages(limit: Int): Future[Seq[Arrival]] = ???
-//    arrivalsWithoutJsonMessagesSource(limit).flatMap(
-//      _.runWith(Sink.seq[Arrival])
-//        .map {
-//          x =>
-//            logger.info(s"Found ${x.size} arrivals without JSON to process"); x
-//        }
-//    )
+  def arrivalsWithoutJsonMessages(limit: Int): Future[Seq[Arrival]] =
+    arrivalsWithoutJsonMessagesSource(limit).flatMap(
+      _.runWith(Sink.seq[Arrival])
+        .map {
+          x =>
+            logger.info(s"Found ${x.size} arrivals without JSON to process"); x
+        }
+    )
 
   //  private def collection: Future[JSONCollection] =
 //    mongo.database.map(_.collection[JSONCollection](collectionName))
@@ -564,35 +494,6 @@ class ArrivalMovementRepositoryImpl @Inject()(
 //        _ =>
 //          true // TODO: Handle problems?
 //      }
-//    }
-
-//  private def dropLastUpdatedIndex(collection: JSONCollection): Future[Boolean] =
-//    collection.indexesManager.list.flatMap {
-//      indexes =>
-//        val indexToDrop = indexes
-//          .filter(_.name.contains(lastUpdatedIndexName))
-//          .filter(
-//            x => x.expireAfterSeconds.map(_ != appConfig.cacheTtl).getOrElse(false)
-//          )
-//          .headOption
-//        indexToDrop match {
-//          case Some(index) =>
-//            val ttl = index.expireAfterSeconds
-//              .map(
-//                x => s"$x seconds"
-//              )
-//              .getOrElse("unset")
-//            logger.warn(s"Dropping $lastUpdatedIndexName index with TTL $ttl")
-//
-//            collection.indexesManager
-//              .drop(lastUpdatedIndexName)
-//              .map(
-//                _ => true
-//              )
-//          case None =>
-//            logger.info(s"$lastUpdatedIndexName does not exist or is currently valid")
-//            Future.successful(true)
-//        }
 //    }
 
 }
