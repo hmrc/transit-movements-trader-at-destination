@@ -141,7 +141,8 @@ class SubmitMessageService @Inject()(
   private def updateArrival(
     selector: ArrivalSelector,
     modifier: ArrivalUpdate
-  )(processResult: Try[Unit] => SubmissionProcessingResult)(defaultResult: SubmissionProcessingResult): Future[SubmissionProcessingResult] =
+  )(processResult: Try[Unit] => SubmissionProcessingResult)(defaultResult: SubmissionProcessingResult): Future[SubmissionProcessingResult] = {
+    val msgUpdate
     arrivalMovementRepository
       .updateArrival(selector, modifier)
       .map(processResult)
@@ -150,4 +151,5 @@ class SubmitMessageService @Inject()(
           logger.error("Mongo failure when updating message status", e)
           defaultResult
       })
+  }
 }
