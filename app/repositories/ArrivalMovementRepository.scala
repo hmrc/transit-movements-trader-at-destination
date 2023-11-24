@@ -120,7 +120,7 @@ object ArrivalMovementRepositoryImpl {
   val EPOCH_TIME: LocalDateTime = LocalDateTime.ofEpochSecond(0, 0, ZoneOffset.UTC)
 }
 
-@Singleton
+//@Singleton
 class ArrivalMovementRepositoryImpl @Inject()(
   mongo: MongoComponent,
   appConfig: AppConfig,
