@@ -37,9 +37,11 @@ import models.ArrivalMessages
 import models.ArrivalModifier
 import models.ArrivalSelector
 import models.ArrivalWithoutMessages
+import models.Box
 import models.ChannelType
 import models.EORINumber
 import models.MessageId
+import models.MessageStatusUpdate
 import models.MessageType
 import models.MongoDateTimeFormats
 import models.MovementMessage
@@ -106,7 +108,7 @@ trait ArrivalMovementRepository {
     pageSize: Option[Int] = None,
     page: Option[Int] = None
   ): Future[ResponseArrivals]
-  def updateArrival[A](selector: ArrivalSelector, modifier: A)(implicit ev: ArrivalModifier[A]): Future[Try[Unit]]
+  def updateArrival(selector: ArrivalSelector, modifier: MessageStatusUpdate): Future[Try[Unit]]
   def addNewMessage(arrivalId: ArrivalId, message: MovementMessage): Future[Try[Unit]]
   def addResponseMessage(arrivalId: ArrivalId, message: MovementMessage): Future[Try[Unit]]
   def arrivalsWithoutJsonMessagesSource(limit: Int): Future[Source[Arrival, Future[Done]]]
@@ -118,7 +120,7 @@ object ArrivalMovementRepositoryImpl {
   val EPOCH_TIME: LocalDateTime = LocalDateTime.ofEpochSecond(0, 0, ZoneOffset.UTC)
 }
 
-//@Singleton  TODO:sort compilation error
+@Singleton
 class ArrivalMovementRepositoryImpl @Inject()(
   mongo: MongoComponent,
   appConfig: AppConfig,
@@ -177,10 +179,11 @@ class ArrivalMovementRepositoryImpl @Inject()(
         )
       ),
       extraCodecs = Seq(
-        Codecs.playFormatCodec(ArrivalId.formatsArrivalId)
+        Codecs.playFormatCodec(ArrivalId.formatsArrivalId),
 //        TODO: finish,
-//        Codecs.playFormatCodec(ChannelType),
-//        Codecs.playFormatCode(MovementReferenceNumber.mrnFormat)
+        Codecs.playFormatCodec(ChannelType.formats),
+        Codecs.playFormatCodec(MovementReferenceNumber.mrnFormat),
+        Codecs.playFormatCodec(Box.formatsBox)
       )
     )
     with ArrivalMovementRepository
@@ -192,7 +195,7 @@ class ArrivalMovementRepositoryImpl @Inject()(
 
   val started: Future[Unit] = ensureIndexes.map(
     _ => ()
-  ) // TODO: dropLastUpdatedIndex(jsonCollection) ?
+  )
 
   def bulkInsert(arrivals: Seq[Arrival]): Future[Unit] = {
     val insertModels = arrivals.map(
@@ -370,22 +373,21 @@ class ArrivalMovementRepositoryImpl @Inject()(
       } yield ResponseArrivals(fetchResults, fetchResults.length, fetchCount, fetchMatchCount)
   }
 
-  def updateArrival[A](selector: ArrivalSelector, modifier: A)(implicit ev: ArrivalModifier[A]): Future[Try[Unit]] = ???
-//  {
-//    val filter     = Filters.eq("_id", selector)
-//    val setUpdated = Updates.set("lastUpdated", LocalDateTime.now(clock))
-//
-//    val arrayFilters = new UpdateOptions().arrayFilters(Collections.singletonList(Filters.in("element.messageId", modifier.messageId.value)))
-//    val setStatus    = Updates.set("messages.$[element].status", modifier.messageStatus.toString)
-//    collection.updateOne(filter = filter, update = Updates.combine(setStatus, setUpdated), options = arrayFilters).toFuture().map {
-//      result =>
-//        if (result.wasAcknowledged()) {
-//          if (result.getModifiedCount == 0) Failure(new Exception("Unable to update message status"))
-//          else Success(())
-//        } else Failure(new Exception("Unable to update message status"))
-//
-//    }
-//  }
+  def updateArrival(selector: ArrivalSelector, modifier: MessageStatusUpdate): Future[Try[Unit]] = {
+    val filter     = Filters.eq("_id", selector)
+    val setUpdated = Updates.set("lastUpdated", LocalDateTime.now(clock))
+
+    val arrayFilters = new UpdateOptions().arrayFilters(Collections.singletonList(Filters.in("element.messageId", modifier.messageId.value)))
+    val setStatus    = Updates.set("messages.$[element].status", modifier.messageStatus.toString)
+    collection.updateOne(filter = filter, update = Updates.combine(setStatus, setUpdated), options = arrayFilters).toFuture().map {
+      result =>
+        if (result.wasAcknowledged()) {
+          if (result.getModifiedCount == 0) Failure(new Exception("Unable to update message status"))
+          else Success(())
+        } else Failure(new Exception("Unable to update message status"))
+
+    }
+  }
 
   def addNewMessage(arrivalId: ArrivalId, message: MovementMessage): Future[Try[Unit]] =
     collection
@@ -429,6 +431,7 @@ class ArrivalMovementRepositoryImpl @Inject()(
   }
 
   def arrivalsWithoutJsonMessagesSource(limit: Int): Future[Source[Arrival, Future[Done]]] = ???
+//{
 //    val messagesWithNoJson =
 //      Json.obj(
 //        "messages" -> Json.obj(
@@ -449,7 +452,9 @@ class ArrivalMovementRepositoryImpl @Inject()(
 //        )
 //      )
 //
-//    val query = Json.obj("$or" -> Json.arr(messagesWithNoJson, messagesWithEmptyJson))
+//    //    val query = Json.obj("$or" -> Json.arr(messagesWithNoJson, messagesWithEmptyJson))
+//    val selector = Filters.or(Filters.equal("???", messagesWithNoJson), Filters.equal("???", messagesWithEmptyJson))
+//    collection.find() // HERE
 //
 //    collection
 //      .map {
@@ -461,7 +466,7 @@ class ArrivalMovementRepositoryImpl @Inject()(
 //              _ => Done
 //            )
 //          )
-//      }
+//  }
 
   def arrivalsWithoutJsonMessages(limit: Int): Future[Seq[Arrival]] =
     arrivalsWithoutJsonMessagesSource(limit).flatMap(
@@ -471,9 +476,6 @@ class ArrivalMovementRepositoryImpl @Inject()(
             logger.info(s"Found ${x.size} arrivals without JSON to process"); x
         }
     )
-
-  //  private def collection: Future[JSONCollection] =
-//    mongo.database.map(_.collection[JSONCollection](collectionName))
 
   def resetMessages(arrivalId: ArrivalId, messages: NonEmptyList[MovementMessage]): Future[Boolean] = ???
 //    val selector = Json.obj(
