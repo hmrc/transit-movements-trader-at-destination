@@ -16,6 +16,13 @@
 
 package models
 
+import play.api.libs.json.Format
+import play.api.libs.json.JsError
+import play.api.libs.json.JsResult
+import play.api.libs.json.JsString
+import play.api.libs.json.JsSuccess
+import play.api.libs.json.JsValue
+
 sealed trait ChannelType
 
 object ChannelType extends Enumerable.Implicits {
@@ -31,4 +38,14 @@ object ChannelType extends Enumerable.Implicits {
       ): _*
     )
 
+  implicit val formats: Format[ChannelType] = new Format[ChannelType] {
+
+    override def reads(json: JsValue): JsResult[ChannelType] = json match {
+      case JsString("web") => JsSuccess(web)
+      case JsString("api") => JsSuccess(api)
+      case _               => JsError("error.invalid")
+    }
+
+    override def writes(o: ChannelType): JsValue = JsString(o.toString)
+  }
 }

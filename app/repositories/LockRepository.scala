@@ -18,19 +18,24 @@ package repositories
 
 import com.google.inject.ImplementedBy
 import com.google.inject.Singleton
+import com.mongodb.MongoWriteException
 import config.AppConfig
 import models.ArrivalId
-import models.MongoDateTimeFormats._
+import models.ArrivalLock
+import org.mongodb.scala.model.Filters
 import org.mongodb.scala.model.IndexModel
+import org.mongodb.scala.model.IndexOptions
 import org.mongodb.scala.model.Indexes
 import play.api.libs.json.Format
 import play.api.libs.json.Json
 import uk.gov.hmrc.mongo.MongoComponent
+import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import utils.IndexUtils
 
 import java.time.Clock
 import java.time.LocalDateTime
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -43,67 +48,44 @@ trait LockRepository {
 
 @Singleton
 class LockRepositoryImpl @Inject()(appConfig: AppConfig, mongo: MongoComponent, clock: Clock)(implicit ec: ExecutionContext)
-    extends PlayMongoRepository(
+    extends PlayMongoRepository[ArrivalLock](
       mongoComponent = mongo,
       collectionName = "locks-hmrc-mongo",
-      domainFormat = ArrivalId.formatsArrivalId,
-      indexes = Seq(IndexModel(Indexes.ascending("created-index")))
+      domainFormat = ArrivalLock.format,
+      indexes = Seq(
+        IndexModel(
+          Indexes.ascending("created"),
+          IndexOptions()
+            .name("created-index")
+            .expireAfter(appConfig.lockRepositoryTtl, TimeUnit.SECONDS)
+            .unique(false)
+            .sparse(false)
+            .background(false)
+        )
+      ),
+      extraCodecs = Seq(Codecs.playFormatCodec(ArrivalId.formatsArrivalId))
     )
     with LockRepository {
 
-//  private val documentExistsErrorCodeValue = 11000
-//
-//  private val ttl = appConfig.lockRepositoryTtl
-//
-//  private def collection: Future[JSONCollection] =
-//    mongo.database.map(_.collection[JSONCollection](LockRepository.collectionName))
-//
-//  private val createdIndex: Aux[BSONSerializationPack.type] = IndexUtils.index(
-//    key = Seq("created" -> IndexType.Ascending),
-//    name = Some("created-index"),
-//    options = BSONDocument("expireAfterSeconds" -> ttl)
-//  )
+  private val documentExistsErrorCodeValue = 11000
 
-  val started: Future[Unit] = ???
-//    collection
-//      .flatMap {
-//        _.indexesManager.ensure(createdIndex)
-//      }
-//      .map(
-//        _ => ()
-//      )
+  def lock(arrivalId: ArrivalId): Future[Boolean] =
+    collection
+      .insertOne(ArrivalLock(arrivalId.index.toString, LocalDateTime.now(clock)))
+      .head()
+      .map(
+        result => result.wasAcknowledged()
+      ) recover {
+      case e: MongoWriteException if e.getError.getCode == documentExistsErrorCodeValue =>
+        false
+    }
 
-  def lock(arrivalId: ArrivalId): Future[Boolean] = ???
-//  {
-//
-//    val lock = Json.obj(
-//      "_id"     -> arrivalId,
-//      "created" -> LocalDateTime.now(clock)
-//    )
-//
-//    collection.flatMap {
-//      _.insert(ordered = false)
-//        .one(lock)
-//        .map(
-//          _ => true
-//        )
-//    } recover {
-//      case e: LastError if e.code.contains(documentExistsErrorCodeValue) =>
-//        false
-//    }
-//  }
+  def unlock(arrivalId: ArrivalId): Future[Boolean] =
+    collection
+      .findOneAndDelete(Filters.eq("_id", arrivalId))
+      .toFuture()
+      .map(
+        _ => true
+      )
 
-  def unlock(arrivalId: ArrivalId): Future[Boolean] = ???
-//    collection.flatMap {
-//      _.simpleFindAndRemove(
-//        selector = Json.obj("_id" -> arrivalId)
-//      ).map(
-//        _ => true
-//      )
-//    }
 }
-
-//object LockRepository {
-//
-//  val collectionName = "locks"
-//}
