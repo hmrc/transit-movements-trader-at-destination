@@ -77,6 +77,8 @@ object MovementMessage extends NodeSeqFormat with MongoDateTimeFormats {
     case ns: MovementMessageWithStatus    => Json.toJsObject(ns)(MovementMessageWithStatus.formatsMovementMessage)
     case ws: MovementMessageWithoutStatus => Json.toJsObject(ws)(MovementMessageWithoutStatus.formatsMovementMessage)
   }
+
+  implicit lazy val format: Format[MovementMessage] = Format(reads, writes)
 }
 
 object MovementMessageWithStatus extends NodeSeqFormat with MongoDateTimeFormats {

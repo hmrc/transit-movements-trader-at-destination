@@ -51,6 +51,9 @@ trait MongoDateTimeFormats {
 
   implicit val offsetDateTimeWrite: Writes[OffsetDateTime] =
     localDateTimeWrite.contramap(_.atZoneSameInstant(ZoneOffset.UTC).toLocalDateTime)
+
+  implicit val offsetDateTimeFormat: Format[OffsetDateTime] =
+    Format(offsetDateTimeRead, offsetDateTimeWrite)
 }
 
 object MongoDateTimeFormats extends MongoDateTimeFormats
