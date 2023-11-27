@@ -45,6 +45,8 @@ import models.MessageStatusUpdate
 import models.MessageType
 import models.MongoDateTimeFormats
 import models.MovementMessage
+import models.MovementMessageWithStatus
+import models.MovementMessageWithoutStatus
 import models.MovementReferenceNumber
 import models.TURN
 import models.response.ResponseArrival
@@ -121,7 +123,7 @@ object ArrivalMovementRepositoryImpl {
 }
 
 //@Singleton
-class ArrivalMovementRepositoryImpl @Inject()(
+class ArrivalMovementRepositoryImpl @Inject() (
   mongo: MongoComponent,
   appConfig: AppConfig,
   config: Configuration,
@@ -180,9 +182,13 @@ class ArrivalMovementRepositoryImpl @Inject()(
       ),
       extraCodecs = Seq(
         Codecs.playFormatCodec(ArrivalId.formatsArrivalId),
-//        TODO: finish,
         Codecs.playFormatCodec(ChannelType.formats),
         Codecs.playFormatCodec(MovementReferenceNumber.mrnFormat),
+        Codecs.playFormatCodec(MongoDateTimeFormats.locateDateTimeFormat),
+        Codecs.playFormatCodec(MongoDateTimeFormats.offsetDateTimeFormat),
+        Codecs.playFormatCodec(MovementMessage.format),
+        Codecs.playFormatCodec(MovementMessageWithStatus.formatsMovementMessage),
+        Codecs.playFormatCodec(MovementMessageWithoutStatus.formatsMovementMessage),
         Codecs.playFormatCodec(Box.formatsBox)
       )
     )
@@ -254,7 +260,7 @@ class ArrivalMovementRepositoryImpl @Inject()(
         opt =>
           opt.map(
             a => a.copy(nextMessageId = MessageId(a.nextMessageId.value + 1))
-        )
+          )
       )
   }
 
@@ -271,7 +277,7 @@ class ArrivalMovementRepositoryImpl @Inject()(
         opt =>
           opt.map(
             d => d.copy(nextMessageId = MessageId(d.nextMessageId.value + 1))
-        )
+          )
       )
   }
 
