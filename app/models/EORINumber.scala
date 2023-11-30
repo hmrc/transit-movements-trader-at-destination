@@ -16,4 +16,25 @@
 
 package models
 
+import play.api.libs.json.Format
+import play.api.libs.json.JsError
+import play.api.libs.json.JsResult
+import play.api.libs.json.JsString
+import play.api.libs.json.JsSuccess
+import play.api.libs.json.JsValue
+
 case class EORINumber(value: String) extends AnyVal
+
+object EORINumber {
+
+  implicit val format: Format[EORINumber] = new Format[EORINumber] {
+
+    override def reads(json: JsValue): JsResult[EORINumber] = json match {
+      case JsString(eori) => JsSuccess(EORINumber(eori))
+      case e              => JsError(s"Error in deserialization of Json value to an EORINumber, expected JsString got ${e.getClass}")
+    }
+
+    override def writes(eoriNumber: EORINumber): JsString = JsString(eoriNumber.value)
+  }
+
+}

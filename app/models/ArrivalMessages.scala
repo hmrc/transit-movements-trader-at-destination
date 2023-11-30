@@ -16,9 +16,10 @@
 
 package models
 
+import models.MovementMessage.format
 import play.api.libs.functional.syntax._
+import play.api.libs.json.Reads._
 import play.api.libs.json._
-import models.MessageType._
 
 case class ArrivalMessages(
   arrivalId: ArrivalId,

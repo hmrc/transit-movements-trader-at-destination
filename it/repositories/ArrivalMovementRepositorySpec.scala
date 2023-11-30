@@ -26,6 +26,7 @@ import cats.data.Chain
 import cats.data.Ior
 import cats.data.NonEmptyList
 import com.kenshoo.play.metrics.Metrics
+import com.mongodb.client.model.Filters
 import config.AppConfig
 import controllers.routes
 import models.ChannelType.api
@@ -33,7 +34,6 @@ import models.ChannelType.web
 import models._
 import models.response.ResponseArrival
 import models.response.ResponseArrivals
-import org.mockito.Mockito
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
 import org.scalactic.source
@@ -42,21 +42,17 @@ import org.scalatest.exceptions.StackDepthException
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.TestSuiteMixin
-import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.Application
 import play.api.Configuration
-import play.api.Logging
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
-import play.api.test.FutureAwaits
 import play.api.test.Helpers.running
+import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
-import org.mongodb.scala.model._
-import uk.gov.hmrc.mongo.MongoComponent
 import utils.Format
 
 import java.time._
@@ -69,22 +65,25 @@ import scala.util.Failure
 import scala.util.Success
 import scala.xml.NodeSeq
 
-class ArrivalMovementRepositorySpec extends AnyFreeSpec with Matchers with Logging with DefaultPlayMongoRepositorySupport[Arrival] {
+class ArrivalMovementRepositorySpec
+    extends ItSpecBase
+    with ScalaFutures
+    with TestSuiteMixin
+    with Matchers
+    with MongoDateTimeFormats
+    with BeforeAndAfterEach
+    with MockitoSugar
+    with DefaultPlayMongoRepositorySupport[Arrival] {
 
-  override lazy val mongoComponent: MongoComponent = {
-    val databaseName: String = "arrival-movements-hmrc-mongo-test"
-    val mongoUri: String     = s"mongodb://localhost:27017/$databaseName?retryWrites=false"
-    MongoComponent(mongoUri)
-  }
-
-  private val instant = Instant.now.truncatedTo(ChronoUnit.MILLIS)
-
+  private val instant                   = Instant.now.truncatedTo(ChronoUnit.MILLIS)
   implicit private val stubClock: Clock = Clock.fixed(instant, ZoneId.systemDefault)
 
-  implicit lazy val app: Application =
-    GuiceApplicationBuilder(overrides = Seq(bind[Clock].toInstance(stubClock)))
+  private val app: Application =
+    GuiceApplicationBuilder()
+      .overrides(bind[Clock].toInstance(stubClock))
       .configure(
-        "metrics.jvm" -> false
+        "metrics.jvm"                    -> false,
+        "feature-flags.testOnly.enabled" -> true
       )
       .build
 
@@ -97,183 +96,66 @@ class ArrivalMovementRepositorySpec extends AnyFreeSpec with Matchers with Loggi
   val localDateTime  = LocalDateTime.of(localDate, localTime)
   implicit val clock = Clock.fixed(localDateTime.toInstant(ZoneOffset.UTC), ZoneOffset.UTC)
 
+  override val databaseName: String = "arrival-movements-hmrc-mongo-test"
+
   override lazy val repository =
     new ArrivalMovementRepositoryImpl(mongoComponent, appConfig, config, clock, metrics)(app.materializer.executionContext, app.materializer)
 
-  //  private val appBuilder: GuiceApplicationBuilder =
-  //    new GuiceApplicationBuilder()
-  //      .overrides(bind[Clock].toInstance(stubClock))
-  //      .configure(
-  //        "metrics.jvm" -> false
-  //      )
+  override def beforeEach(): Unit =
+///    database.flatMap(_.drop).futureValue
+    super.beforeEach()
 
-  override def beforeEach(): Unit = ???
-//
-//  def typeMatchOnTestValue[A, B](testValue: A)(test: B => Unit)(implicit bClassTag: ClassTag[B]) = testValue match {
-//    case result: B => test(result)
-//    case failedResult =>
-//      throw new TestFailedException(
-//        (_: StackDepthException) => Some(s"Test for ${bClassTag.runtimeClass}, but got a ${failedResult.getClass}"),
-//        None,
-//        implicitly[source.Position]
-//      )
-//  }
-//
-//  def nonEmptyListOfNArrivals(size: Int): Gen[NonEmptyList[Arrival]] =
-//    Gen
-//      .listOfN(size, arbitrary[Arrival])
-//      // Don't generate duplicate IDs
-//      .map(_.foldLeft((Chain.empty[Arrival], 1)) {
-//        case ((arrivals, id), arrival) =>
-//          (arrivals :+ arrival.copy(arrivalId = ArrivalId(id)), id + 1)
-//      })
-//      .map {
-//        case (arrivals, _) =>
-//          NonEmptyList.fromListUnsafe(arrivals.toList)
-//      }
-//
-//  private val eoriNumber: String = arbitrary[String].sample.value
-//  private val turn: String       = arbitrary[String].sample.value
-//  private val mrn                = arbitrary[MovementReferenceNumber].sample.value
+  def typeMatchOnTestValue[A, B](testValue: A)(test: B => Unit)(implicit bClassTag: ClassTag[B]) = testValue match {
+    case result: B => test(result)
+    case failedResult =>
+      throw new TestFailedException(
+        (_: StackDepthException) => Some(s"Test for ${bClassTag.runtimeClass}, but got a ${failedResult.getClass}"),
+        None,
+        implicitly[source.Position]
+      )
+  }
+
+  def nonEmptyListOfNArrivals(size: Int): Gen[NonEmptyList[Arrival]] =
+    Gen
+      .listOfN(size, arbitrary[Arrival])
+      // Don't generate duplicate IDs
+      .map(_.foldLeft((Chain.empty[Arrival], 1)) {
+        case ((arrivals, id), arrival) =>
+          (arrivals :+ arrival.copy(arrivalId = ArrivalId(id)), id + 1)
+      })
+      .map {
+        case (arrivals, _) =>
+          NonEmptyList.fromListUnsafe(arrivals.toList)
+      }
+
+  private val eoriNumber: String = arbitrary[String].sample.value
+  private val turn: String       = arbitrary[String].sample.value
+  private val mrn                = arbitrary[MovementReferenceNumber].sample.value
 
   "ArrivalMovementRepository" - {
 
-    "started" - {
-      "must ensure indexes" in {
-
-//        val app = appBuilder.build()
-        running(app) {
-//
-//          val indexes = database
-//            .flatMap {
-//              result =>
-//                result.collection[JSONCollection](ArrivalMovementRepository.collectionName).indexesManager.list()
-//            }
-//            .futureValue
-//            .map {
-//              index =>
-//                (index.name.get, index.key)
-        }
-
-        val indexes = List("????")
-        indexes must contain theSameElementsAs List(
-          ("movement-reference-number-index", Seq(Indexes.ascending("movementReferenceNumber"))),
-          ("fetch-all-with-date-filter-index", Seq(Indexes.ascending("channel"), Indexes.ascending("eoriNumber"), Indexes.descending("lastUpdated"))),
-          ("fetch-all-index", Seq(Indexes.ascending("channel"), Indexes.ascending("eoriNumber"))),
-          ("channel-index", Seq(Indexes.ascending("channel"))),
-          ("eori-number-index", Seq(Indexes.ascending("eoriNumber"))),
-          ("last-updated-index", Seq(Indexes.ascending("lastUpdated"))),
-          ("_id_", Seq(Indexes.ascending("_id")))
-        )
-      }
-    }
-
-    "started -- testing change in TTL" - {
-//
-//      val indexUnderTest = "last-updated-index";
-//
-//      class Harness(
-//        cn: String,
-//        mongo: ReactiveMongoApi,
-//        appConfig: AppConfig,
-//        config: Configuration,
-//        clock: Clock,
-//        override val metrics: Metrics
-//      )(implicit ec: ExecutionContext, m: Materializer)
-//          extends ArrivalMovementRepository(mongo, appConfig, config, clock, metrics)(ec, m) {
-//        override lazy val collectionName: String = cn
-//      }
-//
-//      def createHarness(app: Application, name: String) =
-//        new Harness(
-//          name,
-//          app.injector.instanceOf[ReactiveMongoApi],
-//          app.injector.instanceOf[AppConfig],
-//          app.injector.instanceOf[Configuration],
-//          app.injector.instanceOf[Clock],
-//          app.injector.instanceOf[Metrics]
-//        )(app.materializer.executionContext, app.materializer)
-//
-//      def runTest(name: String, ttl1: Int, ttl2: Int): Future[List[Index]] = {
-//        // avoids starting the "real" repository, as index changes occur in the initialiser.
-//        val builder = appBuilder.overrides(bind[ArrivalMovementRepository].to(mock[ArrivalMovementRepository]))
-//        val mongo   = builder.injector.instanceOf[ReactiveMongoApi]
-//
-//        def callHarness(ttl: Int): Harness = {
-//          val app = builder
-//            .configure(Configuration("mongodb.timeToLiveInSeconds" -> ttl))
-//            .build()
-//
-//          createHarness(app, name)
-//        }
-//
-//        // We run the harness once to create the collection,
-//        // then run it again to simulate re-connecting to it.
-//        callHarness(ttl1).started
-//          .flatMap(
-//            _ => callHarness(ttl2).started
-//          )
-//          .flatMap(
-//            _ => mongo.database
-//          )
-//          .flatMap(_.collection[JSONCollection](name).indexesManager.list)
-//  }
-//
-      "must persist the same TTL if required" in {
-////        whenReady(runTest("ttl-same", 200, 200)) {
-////          indexes =>
-////            val filtered: Option[Index] = indexes.filter(_.name.contains(indexUnderTest)).headOption
-////            filtered match {
-////              case Some(x) =>
-////                x.expireAfterSeconds.get mustBe 200
-////              case None =>
-////                fail(s"Index $indexUnderTest does not exist or does not have a TTL")
-////            }
-//        }
-      }
-
-      "must use the new TTL if required" in {
-//        whenReady(runTest("ttl-different", 200, 300)) {
-//          indexes =>
-//            val filtered: Option[Index] = indexes.filter(_.name.contains(indexUnderTest)).headOption
-//            filtered match {
-//              case Some(x) =>
-//                x.expireAfterSeconds.get mustBe 300
-//              case None =>
-//                fail(s"Index $indexUnderTest does not exist or does not have a TTL")
-//            }
-//        }
-      }
-
-    }
-
     "insert" - {
       "must persist ArrivalMovement within mongoDB" in {
-//
-//        val arrivalArb = arbitrary[Arrival].sample.value
-//        val arrival    = arrivalArb.copy(eoriNumber = "1234567")
-//        val app        = appBuilder.build()
-//        running(app) {
-//
-//          val repository = app.injector.instanceOf[ArrivalMovementRepository]
-//
-//          repository.insert(arrival).futureValue
-//
-//          val selector = Json.obj("eoriNumber" -> arrival.eoriNumber)
-//          println(s"selector: $selector")
-//          println(s"arrival: $arrival")
-//          val result = database.flatMap {
-//            result =>
-//              result.collection[JSONCollection](ArrivalMovementRepository.collectionName).find(selector, None).one[Arrival]
-//          }.futureValue
-//
-//          result.value mustBe arrival.copy(lastUpdated = result.value.lastUpdated)
-//        }
+
+        val arrivalArb = arbitrary[Arrival].sample.value
+        val arrival    = arrivalArb.copy(eoriNumber = "1234567")
+
+        repository.insert(arrival).futureValue
+
+        val selector = Filters.eq("eoriNumber" -> arrival.eoriNumber)
+
+        val result = repository.collection.find(selector).head()
+
+        whenReady(result) {
+          _ mustBe arrival
+        }
+
       }
     }
 
     "getMaxArrivalId" - {
       "must return the highest arrival id in the database" in {
+
 //        database.flatMap(_.drop()).futureValue
 //        val app = appBuilder.configure("feature-flags.testOnly.enabled" -> true).build()
 //        running(app) {
@@ -1737,4 +1619,5 @@ class ArrivalMovementRepositorySpec extends AnyFreeSpec with Matchers with Loggi
 //        }
     }
   }
+
 }

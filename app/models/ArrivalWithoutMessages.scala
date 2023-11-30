@@ -18,9 +18,10 @@ package models
 
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
+import play.api.libs.json.OFormat
+import play.api.libs.json.OWrites
 import play.api.libs.json.Reads
 import play.api.libs.json.__
 import play.api.libs.functional.syntax._
@@ -90,6 +91,24 @@ object ArrivalWithoutMessages {
         (__ \ "nextMessageCorrelationId").read[Int] and
         (__ \ "messages").read[Seq[MessageMetaData]]
     )(ArrivalWithoutMessages.apply _)
+
+  implicit val writesArrival: OWrites[ArrivalWithoutMessages] =
+    (
+      (__ \ "_id").write[ArrivalId] and
+        (__ \ "channel").write[ChannelType] and
+        (__ \ "movementReferenceNumber").write[MovementReferenceNumber] and
+        (__ \ "eoriNumber").write[String] and
+        (__ \ "created").write(MongoDateTimeFormats.localDateTimeWrite) and
+        (__ \ "updated").write(MongoDateTimeFormats.localDateTimeWrite) and
+        (__ \ "lastUpdated").write(MongoDateTimeFormats.localDateTimeWrite) and
+        (__ \ "notificationBox").writeNullable[Box] and
+        (__ \ "nextMessageId").write[MessageId] and
+        (__ \ "nextMessageCorrelationId").write[Int] and
+        (__ \ "messages").write[Seq[MessageMetaData]]
+    )(unlift(ArrivalWithoutMessages.unapply))
+
+  implicit val formatsArrival: OFormat[ArrivalWithoutMessages] =
+    OFormat(readsArrival, writesArrival)
 
   val projection: JsObject = Json.obj(
     "_id"                      -> 1,
