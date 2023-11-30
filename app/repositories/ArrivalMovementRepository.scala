@@ -123,7 +123,7 @@ object ArrivalMovementRepositoryImpl {
 }
 
 //@Singleton
-class ArrivalMovementRepositoryImpl @Inject() (
+class ArrivalMovementRepositoryImpl @Inject()(
   mongo: MongoComponent,
   appConfig: AppConfig,
   config: Configuration,
@@ -140,56 +140,65 @@ class ArrivalMovementRepositoryImpl @Inject() (
           IndexOptions()
             .name("lastUpdatedIndex")
             .expireAfter(appConfig.cacheTtl, TimeUnit.SECONDS)
-            .background(true)
+            .unique(false)
+            .background(false)
         ),
         IndexModel(
           Indexes.ascending("eoriNumber"),
           IndexOptions()
             .name("eori-number-index")
-            .background(true)
+            .unique(false)
+            .background(false)
         ),
         IndexModel(
           Indexes.ascending("channel"),
           IndexOptions()
             .name("channel-index")
-            .background(true)
+            .unique(false)
+            .background(false)
         ),
+//        IndexModel(
+//          Indexes.compoundIndex(
+//            Indexes.ascending("channel"),
+//            Indexes.ascending("eoriNumber"),
+//            Indexes.descending("lastUpdated")
+//          ),
+//          IndexOptions()
+//            .name("fetch-all-with-date-filter-index")   // TODO:already exists with a different name' on server ??
+//            .unique(false)
+//            .background(false)
+//        ),
         IndexModel(
           Indexes.ascending("channel", "eoriNumber"),
           IndexOptions()
             .name("fetch-all-index")
-            .background(true)
-        ),
-        IndexModel(
-          Indexes.ascending("channel", "eoriNumber"),
-          IndexOptions()
-            .name("fetch-all-with-date-filter-index")
-            .background(true)
-        ),
-        IndexModel(
-          Indexes.compoundIndex(
-            Indexes.ascending("channel"),
-            Indexes.ascending("eoriNumber"),
-            Indexes.descending("lastUpdated")
-          )
+            .unique(false)
+            .background(false)
         ),
         IndexModel(
           Indexes.ascending("movementReferenceNumber"),
           IndexOptions()
             .name("movement-reference-number-index")
-            .background(true)
+            .unique(false)
+            .background(false)
         )
       ),
       extraCodecs = Seq(
         Codecs.playFormatCodec(ArrivalId.formatsArrivalId),
         Codecs.playFormatCodec(ChannelType.formats),
         Codecs.playFormatCodec(MovementReferenceNumber.mrnFormat),
-        Codecs.playFormatCodec(MongoDateTimeFormats.locateDateTimeFormat),
-        Codecs.playFormatCodec(MongoDateTimeFormats.offsetDateTimeFormat),
+        Codecs.playFormatCodec(Box.formatsBox),
+        Codecs.playFormatCodec(Box.optionBoxFormats),
+        Codecs.playFormatCodec(MessageId.formatMessageId),
+        Codecs.playFormatCodec(EORINumber.format),
+        Codecs.playFormatCodec(Arrival.formatsArrival),
         Codecs.playFormatCodec(MovementMessage.format),
         Codecs.playFormatCodec(MovementMessageWithStatus.formatsMovementMessage),
         Codecs.playFormatCodec(MovementMessageWithoutStatus.formatsMovementMessage),
-        Codecs.playFormatCodec(Box.formatsBox)
+        Codecs.playFormatCodec(ArrivalWithoutMessages.formatsArrival),
+        Codecs.playFormatCodec(MongoDateTimeFormats.locateDateTimeFormat),
+        Codecs.playFormatCodec(MongoDateTimeFormats.offsetDateTimeFormat),
+        Codecs.playFormatCodec(ArrivalMessages.formatsArrival)
       )
     )
     with ArrivalMovementRepository
@@ -219,9 +228,10 @@ class ArrivalMovementRepositoryImpl @Inject() (
     collection
       .insertOne(arrival)
       .toFuture()
-      .map(
-        _ => ()
-      )
+      .map {
+        _ =>
+          ()
+      }
 
   def getMaxArrivalId: Future[Option[ArrivalId]] =
     if (featureFlag) {
@@ -260,7 +270,7 @@ class ArrivalMovementRepositoryImpl @Inject() (
         opt =>
           opt.map(
             a => a.copy(nextMessageId = MessageId(a.nextMessageId.value + 1))
-          )
+        )
       )
   }
 
@@ -277,7 +287,7 @@ class ArrivalMovementRepositoryImpl @Inject() (
         opt =>
           opt.map(
             d => d.copy(nextMessageId = MessageId(d.nextMessageId.value + 1))
-          )
+        )
       )
   }
 

@@ -41,8 +41,8 @@ trait WorkerLockRepository {
   def unlock(id: String): Future[Boolean]
 }
 
-@Singleton
-class WorkerLockRepositoryImpl @Inject() (mongo: MongoComponent, appConfig: AppConfig, clock: Clock)(implicit ec: ExecutionContext)
+//@Singleton
+class WorkerLockRepositoryImpl @Inject()(mongo: MongoComponent, appConfig: AppConfig, clock: Clock)(implicit ec: ExecutionContext)
     extends PlayMongoRepository(
       mongoComponent = mongo,
       collectionName = "worker-locks-hmrc-mongo",

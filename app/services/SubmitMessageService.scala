@@ -141,15 +141,16 @@ class SubmitMessageService @Inject()(
   private def updateArrival(
     selector: ArrivalSelector,
     modifier: ArrivalUpdate
-  )(processResult: Try[Unit] => SubmissionProcessingResult)(defaultResult: SubmissionProcessingResult): Future[SubmissionProcessingResult] = {
-    val msgUpdate
-    arrivalMovementRepository
-      .updateArrival(selector, modifier)
-      .map(processResult)
-      .recover({
-        case NonFatal(e) =>
-          logger.error("Mongo failure when updating message status", e)
-          defaultResult
-      })
-  }
+  )(processResult: Try[Unit] => SubmissionProcessingResult)(defaultResult: SubmissionProcessingResult): Future[SubmissionProcessingResult] = ???
+//  {
+//    val msgUpdate
+//    arrivalMovementRepository
+//      .updateArrival(selector, modifier)
+//      .map(processResult)
+//      .recover({
+//        case NonFatal(e) =>
+//          logger.error("Mongo failure when updating message status", e)
+//          defaultResult
+//      })
+//  }
 }

@@ -64,12 +64,13 @@ case class Arrival(
 
 object Arrival {
 
-  implicit def formatsNonEmptyList[A](implicit listReads: Reads[List[A]], listWrites: Writes[List[A]]): Format[NonEmptyList[A]] =
-    new Format[NonEmptyList[A]] {
-      override def writes(o: NonEmptyList[A]): JsValue = Json.toJson(o.toList)
-
-      override def reads(json: JsValue): JsResult[NonEmptyList[A]] = json.validate(listReads).map(NonEmptyList.fromListUnsafe)
-    }
+  implicit def nonEmptyListFormat[A: Format]: Format[NonEmptyList[A]] =
+    Format
+      .of[List[A]]
+      .inmap(
+        NonEmptyList.fromListUnsafe,
+        _.toList
+      )
 
   implicit val readsArrival: Reads[Arrival] =
     (

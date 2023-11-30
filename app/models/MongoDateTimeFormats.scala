@@ -31,10 +31,19 @@ import java.time.OffsetDateTime
 trait MongoDateTimeFormats {
 
   implicit val localDateTimeRead: Reads[LocalDateTime] =
-    (__ \ "$date").read[Long].map {
-      millis =>
-        LocalDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneOffset.UTC)
-    }
+    (__ \ "$date")
+      .read[Long]
+      .map {
+        millis =>
+          LocalDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneOffset.UTC)
+      }
+      .orElse(
+        Reads
+          .at[String](__ \ "$date" \ "$numberLong")
+          .map(
+            dateTime => Instant.ofEpochMilli(dateTime.toLong).atZone(ZoneOffset.UTC).toLocalDateTime
+          )
+      )
 
   implicit val localDateTimeWrite: Writes[LocalDateTime] = new Writes[LocalDateTime] {
 
