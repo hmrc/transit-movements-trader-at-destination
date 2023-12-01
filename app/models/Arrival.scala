@@ -72,6 +72,13 @@ object Arrival {
         _.toList
       )
 
+  implicit def formatsNonEmptyList[A](implicit listReads: Reads[List[A]], listWrites: Writes[List[A]]): Format[NonEmptyList[A]] =
+    new Format[NonEmptyList[A]] {
+      override def writes(o: NonEmptyList[A]): JsValue = Json.toJson(o.toList)
+
+      override def reads(json: JsValue): JsResult[NonEmptyList[A]] = json.validate(listReads).map(NonEmptyList.fromListUnsafe)
+    }
+
   implicit val readsArrival: Reads[Arrival] =
     (
       (__ \ "_id").read[ArrivalId] and
@@ -92,9 +99,9 @@ object Arrival {
         (__ \ "channel").write[ChannelType] and
         (__ \ "movementReferenceNumber").write[MovementReferenceNumber] and
         (__ \ "eoriNumber").write[String] and
-        (__ \ "created").write(write) and
-        (__ \ "updated").write(write) and
-        (__ \ "lastUpdated").write(write) and
+        (__ \ "created").write(MongoDateTimeFormats.localDateTimeWrite) and
+        (__ \ "updated").write(MongoDateTimeFormats.localDateTimeWrite) and
+        (__ \ "lastUpdated").write(MongoDateTimeFormats.localDateTimeWrite) and
         (__ \ "messages").write[NonEmptyList[MovementMessage]] and
         (__ \ "nextMessageCorrelationId").write[Int] and
         (__ \ "notificationBox").writeNullable[Box]

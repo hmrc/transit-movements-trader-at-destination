@@ -447,7 +447,7 @@ class ArrivalMovementRepositoryImpl @Inject()(
   }
 
   def arrivalsWithoutJsonMessagesSource(limit: Int): Future[Source[Arrival, Future[Done]]] = ???
-//{
+//  {
 //    val messagesWithNoJson =
 //      Json.obj(
 //        "messages" -> Json.obj(
@@ -468,10 +468,9 @@ class ArrivalMovementRepositoryImpl @Inject()(
 //        )
 //      )
 //
-//    //    val query = Json.obj("$or" -> Json.arr(messagesWithNoJson, messagesWithEmptyJson))
-//    val selector = Filters.or(Filters.equal("???", messagesWithNoJson), Filters.equal("???", messagesWithEmptyJson))
-//    collection.find() // HERE
-//
+//    val selector = Filters.or(Filters.equal("messages", messagesWithNoJson), Filters.equal("messages", messagesWithEmptyJson))
+//    collection.find(selector). // HERE
+
 //    collection
 //      .map {
 //        _.find[JsObject, Arrival](query, None)
