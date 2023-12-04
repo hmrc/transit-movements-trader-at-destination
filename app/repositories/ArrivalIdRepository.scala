@@ -20,6 +20,7 @@ import com.google.inject._
 import com.mongodb.client.model.Filters
 import com.mongodb.client.model.Updates
 import models.ArrivalId
+import models.ArrivalIdWrapper
 import org.mongodb.scala.model.FindOneAndUpdateOptions
 import org.mongodb.scala.model._
 import play.api.Configuration
@@ -35,14 +36,14 @@ trait ArrivalIdRepository {
 }
 
 @Singleton
-class ArrivalIdRepositoryImpl @Inject() (mongo: MongoComponent, config: Configuration)(implicit ec: ExecutionContext)
-    extends PlayMongoRepository[ArrivalId](
+class ArrivalIdRepositoryImpl @Inject()(mongo: MongoComponent, config: Configuration)(implicit ec: ExecutionContext)
+    extends PlayMongoRepository[ArrivalIdWrapper](
       mongoComponent = mongo,
       collectionName = "arrival-ids-hmrc-mongo",
-      domainFormat = ArrivalId.formatsArrivalId,
+      domainFormat = ArrivalIdWrapper.mongoFormat,
       indexes = Seq(IndexModel(Indexes.ascending("last-index"))),
       extraCodecs = Seq(
-        Codecs.playFormatCodec(ArrivalId.formatsArrivalId) //TODO: needed?
+        Codecs.playFormatCodec(ArrivalId.formatsArrivalId)
       )
     )
     with ArrivalIdRepository {
@@ -78,6 +79,10 @@ class ArrivalIdRepositoryImpl @Inject() (mongo: MongoComponent, config: Configur
     collection
       .findOneAndUpdate(selector, update, FindOneAndUpdateOptions().upsert(true))
       .toFuture()
+      .map {
+        lastIndex =>
+          ArrivalId(lastIndex.recordId)
+      }
   }
 
 }
