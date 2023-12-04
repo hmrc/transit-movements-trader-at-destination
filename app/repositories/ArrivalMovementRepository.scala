@@ -123,7 +123,7 @@ object ArrivalMovementRepositoryImpl {
 }
 
 //@Singleton
-class ArrivalMovementRepositoryImpl @Inject() (
+class ArrivalMovementRepositoryImpl @Inject()(
   mongo: MongoComponent,
   appConfig: AppConfig,
   config: Configuration,
@@ -271,7 +271,7 @@ class ArrivalMovementRepositoryImpl @Inject() (
         opt =>
           opt.map(
             a => a.copy(nextMessageId = MessageId(a.nextMessageId.value + 1))
-          )
+        )
       )
   }
 
@@ -288,7 +288,7 @@ class ArrivalMovementRepositoryImpl @Inject() (
         opt =>
           opt.map(
             d => d.copy(nextMessageId = MessageId(d.nextMessageId.value + 1))
-          )
+        )
       )
   }
 
@@ -462,7 +462,7 @@ class ArrivalMovementRepositoryImpl @Inject() (
           Source(arrivals.toList)
             .mapMaterializedValue(
               _ => Future.successful(Done)
-            )
+          )
       )
   }
 
