@@ -90,7 +90,7 @@ class SubmitMessageService @Inject()(
       .post(arrivalId, message, OffsetDateTime.now, channel)
       .flatMap {
         case EisSubmissionSuccessful =>
-          updateArrivalAfterSuccessfulSubmission(arrivalId, modifier(MessageStatusUpdate(message.messageId, MessageStatus.SubmissionSucceeded)))
+          updateArrivalAfterSuccessfulSubmission(arrivalId, MessageStatusUpdate(message.messageId, MessageStatus.SubmissionSucceeded))
 
         case submissionResult: EisSubmissionRejected =>
           logger.warn(s"Failure for $method of type: ${message.messageType.code}, and details: ${submissionResult.toString}")
@@ -120,10 +120,10 @@ class SubmitMessageService @Inject()(
 
   private def updateArrivalAfterSuccessfulSubmission(
     arrivalId: ArrivalId,
-    modifier: ArrivalUpdate
+    modifier: MessageStatusUpdate
   ): Future[SubmissionProcessingResult] = {
     val selector = ArrivalIdSelector(arrivalId)
-    updateArrival(selector, modifier)(
+    updateArrival(arrivalId, modifier)(
       _ => SubmissionProcessingResult.SubmissionSuccess
     )(SubmissionProcessingResult.SubmissionFailureInternal)
   }
@@ -133,24 +133,20 @@ class SubmitMessageService @Inject()(
     message: MovementMessageWithStatus,
     submissionResult: EisSubmissionResult
   )(processResult: Try[Unit] => SubmissionProcessingResult)(defaultResult: SubmissionProcessingResult): Future[SubmissionProcessingResult] = {
-    val selector = MessageSelector(arrivalId, message.messageId)
     val modifier = MessageStatusUpdate(message.messageId, message.status.transition(submissionResult))
-    updateArrival(selector, modifier)(processResult)(defaultResult)
+    updateArrival(arrivalId, modifier)(processResult)(defaultResult)
   }
 
   private def updateArrival(
-    selector: ArrivalSelector,
-    modifier: ArrivalUpdate
-  )(processResult: Try[Unit] => SubmissionProcessingResult)(defaultResult: SubmissionProcessingResult): Future[SubmissionProcessingResult] = ???
-//  {
-//    val msgUpdate
-//    arrivalMovementRepository
-//      .updateArrival(selector, modifier)
-//      .map(processResult)
-//      .recover({
-//        case NonFatal(e) =>
-//          logger.error("Mongo failure when updating message status", e)
-//          defaultResult
-//      })
-//  }
+    selector: ArrivalId,
+    modifier: MessageStatusUpdate
+  )(processResult: Try[Unit] => SubmissionProcessingResult)(defaultResult: SubmissionProcessingResult): Future[SubmissionProcessingResult] =
+    arrivalMovementRepository
+      .updateArrival(selector, modifier)
+      .map(processResult)
+      .recover({
+        case NonFatal(e) =>
+          logger.error("Mongo failure when updating message status", e)
+          defaultResult
+      })
 }

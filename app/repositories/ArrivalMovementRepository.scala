@@ -110,7 +110,7 @@ trait ArrivalMovementRepository {
     pageSize: Option[Int] = None,
     page: Option[Int] = None
   ): Future[ResponseArrivals]
-  def updateArrival(selector: ArrivalSelector, modifier: MessageStatusUpdate): Future[Try[Unit]]
+  def updateArrival(selector: ArrivalId, modifier: MessageStatusUpdate): Future[Try[Unit]]
   def addNewMessage(arrivalId: ArrivalId, message: MovementMessage): Future[Try[Unit]]
   def addResponseMessage(arrivalId: ArrivalId, message: MovementMessage): Future[Try[Unit]]
   def arrivalsWithoutJsonMessagesSource(limit: Int): Future[Source[Arrival, Future[Done]]]
@@ -390,7 +390,7 @@ class ArrivalMovementRepositoryImpl @Inject()(
       } yield ResponseArrivals(fetchResults, fetchResults.length, fetchCount, fetchMatchCount)
   }
 
-  def updateArrival(selector: ArrivalSelector, modifier: MessageStatusUpdate): Future[Try[Unit]] = {
+  def updateArrival(selector: ArrivalId, modifier: MessageStatusUpdate): Future[Try[Unit]] = {
     val filter     = Filters.eq("_id", selector)
     val setUpdated = Updates.set("lastUpdated", LocalDateTime.now(clock))
 
