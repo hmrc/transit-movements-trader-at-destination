@@ -35,7 +35,7 @@ trait ArrivalIdRepository {
 }
 
 @Singleton
-class ArrivalIdRepositoryImpl @Inject()(mongo: MongoComponent, config: Configuration)(implicit ec: ExecutionContext)
+class ArrivalIdRepositoryImpl @Inject() (mongo: MongoComponent, config: Configuration)(implicit ec: ExecutionContext)
     extends PlayMongoRepository[ArrivalId](
       mongoComponent = mongo,
       collectionName = "arrival-ids-hmrc-mongo",

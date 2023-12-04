@@ -123,7 +123,7 @@ object ArrivalMovementRepositoryImpl {
 }
 
 //@Singleton
-class ArrivalMovementRepositoryImpl @Inject()(
+class ArrivalMovementRepositoryImpl @Inject() (
   mongo: MongoComponent,
   appConfig: AppConfig,
   config: Configuration,
@@ -157,6 +157,7 @@ class ArrivalMovementRepositoryImpl @Inject()(
             .unique(false)
             .background(false)
         ),
+        // TODO: investigate as getting error, already exists with a different name' on server ??
 //        IndexModel(
 //          Indexes.compoundIndex(
 //            Indexes.ascending("channel"),
@@ -164,7 +165,7 @@ class ArrivalMovementRepositoryImpl @Inject()(
 //            Indexes.descending("lastUpdated")
 //          ),
 //          IndexOptions()
-//            .name("fetch-all-with-date-filter-index")   // TODO:already exists with a different name' on server ??
+//            .name("fetch-all-with-date-filter-index")
 //            .unique(false)
 //            .background(false)
 //        ),
@@ -270,7 +271,7 @@ class ArrivalMovementRepositoryImpl @Inject()(
         opt =>
           opt.map(
             a => a.copy(nextMessageId = MessageId(a.nextMessageId.value + 1))
-        )
+          )
       )
   }
 
@@ -287,7 +288,7 @@ class ArrivalMovementRepositoryImpl @Inject()(
         opt =>
           opt.map(
             d => d.copy(nextMessageId = MessageId(d.nextMessageId.value + 1))
-        )
+          )
       )
   }
 
@@ -446,42 +447,24 @@ class ArrivalMovementRepositoryImpl @Inject()(
       }
   }
 
-  def arrivalsWithoutJsonMessagesSource(limit: Int): Future[Source[Arrival, Future[Done]]] = ???
-//  {
-//    val messagesWithNoJson =
-//      Json.obj(
-//        "messages" -> Json.obj(
-//          "$elemMatch" -> Json.obj(
-//            "messageJson" -> Json.obj(
-//              "$exists" -> false
-//            )
-//          )
-//        )
-//      )
-//
-//    val messagesWithEmptyJson =
-//      Json.obj(
-//        "messages" -> Json.obj(
-//          "$elemMatch" -> Json.obj(
-//            "messageJson" -> Json.obj()
-//          )
-//        )
-//      )
-//
-//    val selector = Filters.or(Filters.equal("messages", messagesWithNoJson), Filters.equal("messages", messagesWithEmptyJson))
-//    collection.find(selector). // HERE
+  def arrivalsWithoutJsonMessagesSource(limit: Int): Future[Source[Arrival, Future[Done]]] = {
 
-//    collection
-//      .map {
-//        _.find[JsObject, Arrival](query, None)
-//          .cursor[Arrival]()
-//          .documentSource(maxDocs = limit)
-//          .mapMaterializedValue(
-//            _.map(
-//              _ => Done
-//            )
-//          )
-//  }
+    val messagesWithNoJson    = Filters.eq("messages", null)
+    val messagesWithEmptyJson = Filters.eq("messages", Json.obj())
+    val selector              = Filters.or(Filters.equal("messages", messagesWithNoJson), Filters.equal("messages", messagesWithEmptyJson))
+
+    collection
+      .find(selector)
+      .limit(limit)
+      .toFuture()
+      .map(
+        arrivals =>
+          Source(arrivals.toList)
+            .mapMaterializedValue(
+              _ => Future.successful(Done)
+            )
+      )
+  }
 
   def arrivalsWithoutJsonMessages(limit: Int): Future[Seq[Arrival]] =
     arrivalsWithoutJsonMessagesSource(limit).flatMap(
@@ -492,26 +475,18 @@ class ArrivalMovementRepositoryImpl @Inject()(
         }
     )
 
-  def resetMessages(arrivalId: ArrivalId, messages: NonEmptyList[MovementMessage]): Future[Boolean] = ???
-//    val selector = Json.obj(
-//      "_id" -> arrivalId
-//    )
-//
-//    val modifier = Json.obj(
-//      "$set" -> Json.obj(
-//        "messages" -> Json.toJson(messages.toList)
-//      )
-//    )
-//
-//    collection.flatMap {
-//      _.simpleFindAndUpdate(
-//        selector = selector,
-//        update = modifier
-//      ).map {
-//        _ =>
-//          true // TODO: Handle problems?
-//      }
-//    }
+  def resetMessages(arrivalId: ArrivalId, messages: NonEmptyList[MovementMessage]): Future[Boolean] = {
+    val selector = Filters.eq("_id", arrivalId)
+    val update   = Updates.set("messages", messages)
+
+    collection
+      .updateOne(filter = selector, update = update)
+      .toFuture()
+      .map {
+        _ =>
+          true // TODO: Handle problems?
+      }
+  }
 
 }
 
