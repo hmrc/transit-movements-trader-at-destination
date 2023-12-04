@@ -44,10 +44,11 @@ import scala.concurrent.Future
 trait LockRepository {
   def lock(arrivalId: ArrivalId): Future[Boolean]
   def unlock(arrivalId: ArrivalId): Future[Boolean]
+  val started: Future[Unit]
 }
 
 @Singleton
-class LockRepositoryImpl @Inject()(appConfig: AppConfig, mongo: MongoComponent, clock: Clock)(implicit ec: ExecutionContext)
+class LockRepositoryImpl @Inject() (appConfig: AppConfig, mongo: MongoComponent, clock: Clock)(implicit ec: ExecutionContext)
     extends PlayMongoRepository[ArrivalLock](
       mongoComponent = mongo,
       collectionName = "locks-hmrc-mongo",
@@ -68,6 +69,10 @@ class LockRepositoryImpl @Inject()(appConfig: AppConfig, mongo: MongoComponent, 
     with LockRepository {
 
   private val documentExistsErrorCodeValue = 11000
+
+  override val started: Future[Unit] = ensureIndexes.map(
+    _ => ()
+  )
 
   def lock(arrivalId: ArrivalId): Future[Boolean] =
     collection
