@@ -18,6 +18,7 @@ package repositories
 
 import com.google.inject._
 import com.mongodb.client.model.Filters
+import com.mongodb.client.model.ReturnDocument
 import com.mongodb.client.model.Updates
 import models.ArrivalId
 import models.ArrivalIdWrapper
@@ -58,7 +59,7 @@ class ArrivalIdRepositoryImpl @Inject()(mongo: MongoComponent, config: Configura
       val update   = Updates.set(lastIndexKey, nextId)
       val selector = Filters.eq("_id", primaryValue)
       collection
-        .updateOne(selector, update)
+        .updateOne(selector, update, UpdateOptions().upsert(true))
         .toFuture
         .map {
           result =>
@@ -77,7 +78,13 @@ class ArrivalIdRepositoryImpl @Inject()(mongo: MongoComponent, config: Configura
     val update   = Updates.inc(lastIndexKey, 1)
     val selector = Filters.eq("_id", primaryValue)
     collection
-      .findOneAndUpdate(selector, update, FindOneAndUpdateOptions().upsert(true))
+      .findOneAndUpdate(
+        selector,
+        update,
+        FindOneAndUpdateOptions()
+          .upsert(true)
+          .returnDocument(ReturnDocument.AFTER)
+      )
       .toFuture()
       .map {
         lastIndex =>
