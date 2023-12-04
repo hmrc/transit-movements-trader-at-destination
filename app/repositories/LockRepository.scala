@@ -87,7 +87,7 @@ class LockRepositoryImpl @Inject() (appConfig: AppConfig, mongo: MongoComponent,
 
   def unlock(arrivalId: ArrivalId): Future[Boolean] =
     collection
-      .findOneAndDelete(Filters.eq("_id", arrivalId))
+      .findOneAndDelete(Filters.eq("_id", arrivalId.index.toString))
       .toFuture()
       .map(
         _ => true
