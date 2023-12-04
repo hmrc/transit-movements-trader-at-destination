@@ -39,10 +39,11 @@ import scala.concurrent.Future
 trait WorkerLockRepository {
   def lock(id: String): Future[LockResult]
   def unlock(id: String): Future[Boolean]
+  val started: Future[Boolean]
 }
 
 //@Singleton
-class WorkerLockRepositoryImpl @Inject()(mongo: MongoComponent, appConfig: AppConfig, clock: Clock)(implicit ec: ExecutionContext)
+class WorkerLockRepositoryImpl @Inject() (mongo: MongoComponent, appConfig: AppConfig, clock: Clock)(implicit ec: ExecutionContext)
     extends PlayMongoRepository(
       mongoComponent = mongo,
       collectionName = "worker-locks-hmrc-mongo",
@@ -63,13 +64,16 @@ class WorkerLockRepositoryImpl @Inject()(mongo: MongoComponent, appConfig: AppCo
 
   private val documentExistsErrorCodeValue = 11000
 
+  override val started: Future[Boolean] = ensureIndexes.map(
+    _ => true
+  )
+
   def lock(id: String): Future[LockResult] =
     collection
       .insertOne(ArrivalWorkerLock(id, LocalDateTime.now()))
       .head()
       .map(
         _ => LockResult.LockAcquired
-        //result => result.wasAcknowledged()
       ) recover {
       case e: MongoWriteException if e.getError.getCode == documentExistsErrorCodeValue =>
         LockResult.AlreadyLocked
