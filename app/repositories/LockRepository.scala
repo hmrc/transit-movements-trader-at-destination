@@ -26,12 +26,9 @@ import org.mongodb.scala.model.Filters
 import org.mongodb.scala.model.IndexModel
 import org.mongodb.scala.model.IndexOptions
 import org.mongodb.scala.model.Indexes
-import play.api.libs.json.Format
-import play.api.libs.json.Json
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
-import utils.IndexUtils
 
 import java.time.Clock
 import java.time.LocalDateTime
@@ -48,7 +45,7 @@ trait LockRepository {
 }
 
 @Singleton
-class LockRepositoryImpl @Inject() (appConfig: AppConfig, mongo: MongoComponent, clock: Clock)(implicit ec: ExecutionContext)
+class LockRepositoryImpl @Inject()(appConfig: AppConfig, mongo: MongoComponent, clock: Clock)(implicit ec: ExecutionContext)
     extends PlayMongoRepository[ArrivalLock](
       mongoComponent = mongo,
       collectionName = "locks-hmrc-mongo",
