@@ -132,7 +132,7 @@ class ArrivalMovementRepositoryImpl @Inject()(
 )(implicit ec: ExecutionContext, m: Materializer)
     extends PlayMongoRepository[Arrival](
       mongoComponent = mongo,
-      collectionName = "arrival-movements-hmrc-mongo",
+      collectionName = "arrival-movements-hmrc-mongo-06Dec",
       domainFormat = Arrival.formatsArrival,
       indexes = Seq(
         IndexModel(
