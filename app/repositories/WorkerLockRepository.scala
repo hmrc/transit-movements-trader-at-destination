@@ -43,7 +43,7 @@ trait WorkerLockRepository {
 }
 
 //@Singleton
-class WorkerLockRepositoryImpl @Inject() (mongo: MongoComponent, appConfig: AppConfig, clock: Clock)(implicit ec: ExecutionContext)
+class WorkerLockRepositoryImpl @Inject()(mongo: MongoComponent, appConfig: AppConfig, clock: Clock)(implicit ec: ExecutionContext)
     extends PlayMongoRepository(
       mongoComponent = mongo,
       collectionName = "worker-locks-hmrc-mongo",
