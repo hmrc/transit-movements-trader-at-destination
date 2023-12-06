@@ -147,9 +147,10 @@ class ArrivalMovementRepositorySpec
 
         repository.insert(arrival).futureValue
 
-        val selector = Filters.eq("eoriNumber" -> arrival.arrivalId.index.toString)
+        val selector = Filters.eq("eoriNumber" -> arrival.eoriNumber)
+        val result   = repository.collection.find(selector).head()
 
-        val result = repository.collection.find(selector).head()
+//        val result = repository.get(arrival.arrivalId)  //TODO: This is what I would have expected to retrieve
 
         whenReady(result) {
           _ mustBe arrival
