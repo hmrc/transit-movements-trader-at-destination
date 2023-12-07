@@ -122,7 +122,7 @@ object ArrivalMovementRepositoryImpl {
   val EPOCH_TIME: LocalDateTime = LocalDateTime.ofEpochSecond(0, 0, ZoneOffset.UTC)
 }
 
-//@Singleton
+//@Singleton - TODO: determine why thinks it's abstract as all implemented !
 class ArrivalMovementRepositoryImpl @Inject()(
   mongo: MongoComponent,
   appConfig: AppConfig,
@@ -449,6 +449,7 @@ class ArrivalMovementRepositoryImpl @Inject()(
 
   def arrivalsWithoutJsonMessagesSource(limit: Int): Future[Source[Arrival, Future[Done]]] = {
 
+    // TODO: is this correct?
     val messagesWithNoJson    = Filters.eq("messages", null)
     val messagesWithEmptyJson = Filters.eq("messages", Json.obj())
     val selector              = Filters.or(Filters.equal("messages", messagesWithNoJson), Filters.equal("messages", messagesWithEmptyJson))
