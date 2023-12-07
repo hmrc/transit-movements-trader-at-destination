@@ -1077,17 +1077,18 @@ class ArrivalMovementRepositorySpec
 //        val arrivalWithEmptyJson      = Json.toJson(arrival4).as[JsObject] ++ Json.obj("messages" -> Json.arr(messageWithEmptyJson))
 //
 //
-////        database.flatMap {
-////          db =>
-////            db.collection[JSONCollection](ArrivalMovementRepository.collectionName)
-////              .insert(false)
-////              .many(Seq(arrivalWithJson, arrivalWithoutJson, arrivalWithSomeJson, arrivalWithEmptyJson))
-////        }.futureValue
+//        database.flatMap {
+//          db =>
+//            db.collection[JSONCollection](ArrivalMovementRepository.collectionName)
+//              .insert(false)
+//              .many(Seq(arrivalWithJson, arrivalWithoutJson, arrivalWithSomeJson, arrivalWithEmptyJson))
+//        }.futureValue
 //
 //        await(
 //          repository.collection
 //            .insertMany(
-//              Seq(arrival1, arrival2, arrival3, arrival4) // TODO: Should be Json
+//              TODO: Should be Seq(arrivalWithJson, arrivalWithoutJson, arrivalWithSomeJson, arrivalWithEmptyJson)
+//              Seq(arrival1, arrival2, arrival3, arrival4)
 //            )
 //            .toFuture()
 //        )
