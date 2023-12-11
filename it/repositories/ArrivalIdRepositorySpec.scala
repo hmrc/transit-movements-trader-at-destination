@@ -16,26 +16,13 @@
 
 package repositories
 
-//import config.AppConfig
 import models.ArrivalId
 import models.ArrivalIdWrapper
-//import org.mockito.Mockito
-//import org.scalatest.concurrent.IntegrationPatience
-//import org.scalatest.concurrent.ScalaFutures
-//import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
-//import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
-//import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import play.api.Application
-import play.api.Configuration
-import play.api.Logging
+import play.api._
 import play.api.inject.guice.GuiceApplicationBuilder
-//import play.api.libs.json.Json
-import play.api.test.DefaultAwaitTimeout
-import play.api.test.FutureAwaits
-import uk.gov.hmrc.mongo.MongoComponent
-//import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
+import play.api.test._
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
 import scala.concurrent.ExecutionContext.Implicits.global

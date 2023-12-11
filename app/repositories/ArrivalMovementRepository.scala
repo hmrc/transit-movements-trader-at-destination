@@ -20,11 +20,8 @@ import akka.Done
 import akka.stream.Materializer
 import akka.stream.scaladsl.Sink
 import akka.stream.scaladsl.Source
-import cats.data.Ior
-import cats.data.NonEmptyList
-import cats.syntax.all._
+import cats.data._
 import com.google.inject.ImplementedBy
-import com.google.inject.Inject
 import com.kenshoo.play.metrics.Metrics
 import com.mongodb.client.model.Filters.empty
 import com.mongodb.client.model.Updates
@@ -34,8 +31,6 @@ import metrics.HasMetrics
 import models.Arrival
 import models.ArrivalId
 import models.ArrivalMessages
-import models.ArrivalModifier
-import models.ArrivalSelector
 import models.ArrivalWithoutMessages
 import models.Box
 import models.ChannelType
@@ -49,45 +44,26 @@ import models.MovementMessageWithStatus
 import models.MovementMessageWithoutStatus
 import models.MovementReferenceNumber
 import models.TURN
-import models.response.ResponseArrival
-import models.response.ResponseArrivals
+import models.response._
 import org.bson.conversions.Bson
 import org.mongodb.scala.bson.BsonArray
 import org.mongodb.scala.bson.BsonDocument
 import org.mongodb.scala.bson.Document
-import org.mongodb.scala.model.Aggregates
-import org.mongodb.scala.model.BulkWriteOptions
-import org.mongodb.scala.model.Field
-import org.mongodb.scala.model.Filters
-import org.mongodb.scala.model.IndexModel
-import org.mongodb.scala.model.IndexOptions
-import org.mongodb.scala.model.Indexes
-import org.mongodb.scala.model.InsertOneModel
-import org.mongodb.scala.model.UpdateOptions
 import org.mongodb.scala.model.Sorts.descending
+import org.mongodb.scala.model._
 import play.api.Configuration
-import play.api.libs.json.JsObject
-import play.api.libs.json.Json
-import play.api.libs.json.OFormat
+import play.api.libs.json._
 import repositories.ArrivalMovementRepositoryImpl.EPOCH_TIME
 import uk.gov.hmrc.mongo.MongoComponent
-import uk.gov.hmrc.mongo.play.json.Codecs
-import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
-import utils.IndexUtils
+import uk.gov.hmrc.mongo.play.json._
 
-import java.time.Clock
-import java.time.LocalDateTime
-import java.time.OffsetDateTime
-import java.time.ZoneOffset
+import java.time._
 import java.time.format.DateTimeFormatter
 import java.util.Collections
 import java.util.concurrent.TimeUnit
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.util.Failure
-import scala.util.Success
-import scala.util.Try
-import scala.util.matching.Regex
+import javax.inject._
+import scala.concurrent._
+import scala.util._
 
 @ImplementedBy(classOf[ArrivalMovementRepositoryImpl])
 trait ArrivalMovementRepository {
@@ -120,9 +96,10 @@ trait ArrivalMovementRepository {
 
 object ArrivalMovementRepositoryImpl {
   val EPOCH_TIME: LocalDateTime = LocalDateTime.ofEpochSecond(0, 0, ZoneOffset.UTC)
+  val collectionName            = "arrival-movements-hmrc-mongo"
 }
 
-//@Singleton - TODO: determine why thinks it's abstract as all implemented !
+@Singleton
 class ArrivalMovementRepositoryImpl @Inject()(
   mongo: MongoComponent,
   appConfig: AppConfig,
