@@ -609,12 +609,22 @@ class ArrivalMovementRepositorySpec
     }
 
     "fetchAllArrivals" - {
+
+      val now               = LocalDateTime.now(clock)
+      val oneMinuteLater    = now.withMinute(1)
+      val twoMinutesLater   = now.withMinute(2)
+      val threeMinutesLater = now.withMinute(3)
+      val fourMinutesLater  = now.withMinute(4)
+
       "must return Arrival Movements that match an eoriNumber and channel type" in {
 
-        val arrivalMovement1 = arbitrary[Arrival].sample.value.copy(arrivalId = ArrivalId(0), eoriNumber = eoriNumber, channel = api)
-        val arrivalMovement2 = arbitrary[Arrival].suchThat(_.eoriNumber != eoriNumber).sample.value.copy(arrivalId = ArrivalId(1), channel = api)
-        val arrivalMovement3 = arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, arrivalId = ArrivalId(2), channel = web)
-        val allMovements     = Seq(arrivalMovement1, arrivalMovement2, arrivalMovement3)
+        val arrivalMovement1 =
+          arbitrary[Arrival].sample.value.copy(arrivalId = ArrivalId(0), eoriNumber = eoriNumber, channel = api, lastUpdated = oneMinuteLater)
+        val arrivalMovement2 =
+          arbitrary[Arrival].suchThat(_.eoriNumber != eoriNumber).sample.value.copy(arrivalId = ArrivalId(1), channel = api, lastUpdated = twoMinutesLater)
+        val arrivalMovement3 =
+          arbitrary[Arrival].sample.value.copy(eoriNumber = eoriNumber, arrivalId = ArrivalId(2), channel = web, lastUpdated = threeMinutesLater)
+        val allMovements = Seq(arrivalMovement1, arrivalMovement2, arrivalMovement3)
 
         await(repository.bulkInsert(allMovements))
 
@@ -658,12 +668,15 @@ class ArrivalMovementRepositorySpec
 
       "must return Arrival Movements with eoriNumber that match legacy TURN and channel type" in {
 
-        val arrivalMovement1 = arbitrary[Arrival].sample.value.copy(arrivalId = ArrivalId(0), eoriNumber = turn, channel = api)
-        val arrivalMovement2 = arbitrary[Arrival].suchThat(_.eoriNumber != turn).sample.value.copy(arrivalId = ArrivalId(1), channel = api)
-        val arrivalMovement3 = arbitrary[Arrival].sample.value.copy(arrivalId = ArrivalId(2), eoriNumber = turn, channel = web)
+        val arrivalMovement1 =
+          arbitrary[Arrival].sample.value.copy(arrivalId = ArrivalId(0), eoriNumber = turn, channel = api, lastUpdated = oneMinuteLater)
+        val arrivalMovement2 =
+          arbitrary[Arrival].suchThat(_.eoriNumber != turn).sample.value.copy(arrivalId = ArrivalId(1), channel = api, lastUpdated = twoMinutesLater)
+        val arrivalMovement3 =
+          arbitrary[Arrival].sample.value.copy(arrivalId = ArrivalId(2), eoriNumber = turn, channel = web, lastUpdated = threeMinutesLater)
 
         val allMovements = Seq(arrivalMovement1, arrivalMovement2, arrivalMovement3)
-        repository.bulkInsert(allMovements)
+        await(repository.bulkInsert(allMovements))
 
         val expectedApiFetchAll1 = ResponseArrivals(
           Seq(
@@ -708,15 +721,16 @@ class ArrivalMovementRepositorySpec
 
         val ids: Set[String] = Set(eoriNumber, turn)
 
-        val arrivalMovement1 = arbitrary[Arrival].sample.value.copy(arrivalId = ArrivalId(0), eoriNumber = eoriNumber, channel = api)
+        val arrivalMovement1 =
+          arbitrary[Arrival].sample.value.copy(arrivalId = ArrivalId(0), eoriNumber = eoriNumber, channel = api, lastUpdated = oneMinuteLater)
         val arrivalMovement2 = arbitrary[Arrival]
           .suchThat(
             arrival => !ids.contains(arrival.eoriNumber)
           )
           .sample
           .value
-          .copy(arrivalId = ArrivalId(1), channel = api)
-        val arrivalMovement3 = arbitrary[Arrival].sample.value.copy(arrivalId = ArrivalId(2), eoriNumber = turn, channel = web)
+          .copy(arrivalId = ArrivalId(1), channel = api, lastUpdated = twoMinutesLater)
+        val arrivalMovement3 = arbitrary[Arrival].sample.value.copy(arrivalId = ArrivalId(2), eoriNumber = turn, channel = web, lastUpdated = threeMinutesLater)
 
         val allMovements = Seq(arrivalMovement1, arrivalMovement2, arrivalMovement3)
         await(repository.bulkInsert(allMovements))
@@ -809,7 +823,8 @@ class ArrivalMovementRepositorySpec
         await(repository.bulkInsert(allMovements))
 
         // We must use the web channel for this test as the API max rows returned in integration test config is 2
-        val dateTime = OffsetDateTime.of(LocalDateTime.of(2021, 4, 30, 10, 30, 32), ZoneOffset.ofHours(1))
+//        val dateTime = OffsetDateTime.of(LocalDateTime.of(2021, 4, 30, 10, 30, 32), ZoneOffset.ofHours(1))
+        val dateTime = OffsetDateTime.of(LocalDateTime.of(2021, 4, 30, 9, 30, 32), ZoneOffset.ofHours(1)) // Offset not registering?
         val actual   = await(repository.fetchAllArrivals(Ior.right(EORINumber(eoriNumber)), web, Some(dateTime)))
         val expected = ResponseArrivals(Seq(arrivalMovement3, arrivalMovement4, arrivalMovement2).map(ResponseArrival.build), 3, 4, 3)
 
@@ -839,17 +854,38 @@ class ArrivalMovementRepositorySpec
 
       "must filter results by mrn when substring of a mrn search parameter provided matches" in {
         val arrivalMovement1 =
-          arbitrary[Arrival].sample.value.copy(arrivalId = ArrivalId(0), eoriNumber = eoriNumber, channel = web, movementReferenceNumber = mrn)
+          arbitrary[Arrival].sample.value.copy(
+            arrivalId = ArrivalId(0),
+            eoriNumber = eoriNumber,
+            channel = web,
+            movementReferenceNumber = mrn,
+            lastUpdated = oneMinuteLater
+          )
         val arrivalMovement2 =
-          arbitrary[Arrival].suchThat(_.movementReferenceNumber != mrn).sample.value.copy(arrivalId = ArrivalId(1), eoriNumber = eoriNumber, channel = web)
+          arbitrary[Arrival]
+            .suchThat(_.movementReferenceNumber != mrn)
+            .sample
+            .value
+            .copy(arrivalId = ArrivalId(1), eoriNumber = eoriNumber, channel = web, lastUpdated = twoMinutesLater)
         val arrivalMovement3 =
-          arbitrary[Arrival].sample.value.copy(arrivalId = ArrivalId(2), eoriNumber = eoriNumber, channel = web, movementReferenceNumber = mrn)
+          arbitrary[Arrival].sample.value.copy(
+            arrivalId = ArrivalId(2),
+            eoriNumber = eoriNumber,
+            channel = web,
+            movementReferenceNumber = mrn,
+            lastUpdated = threeMinutesLater
+          )
         val arrivalMovement4 =
-          arbitrary[Arrival].suchThat(_.movementReferenceNumber != mrn).sample.value.copy(arrivalId = ArrivalId(3), eoriNumber = eoriNumber, channel = web)
+          arbitrary[Arrival]
+            .suchThat(_.movementReferenceNumber != mrn)
+            .sample
+            .value
+            .copy(arrivalId = ArrivalId(3), eoriNumber = eoriNumber, channel = web, lastUpdated = fourMinutesLater)
 
         val allMovements        = Seq(arrivalMovement1, arrivalMovement2, arrivalMovement3, arrivalMovement4)
         val allMovementsMatched = Seq(arrivalMovement1, arrivalMovement3)
 
+        await(repository.bulkInsert(allMovements))
         val expectedAllMovements = allMovementsMatched.map(ResponseArrival.build).sortBy(_.updated)(_ compareTo _).reverse
 
         val actual = await(repository.fetchAllArrivals(Ior.right(EORINumber(eoriNumber)), web, None, Some(mrn.value.substring(3, 9))))
@@ -1053,7 +1089,7 @@ class ArrivalMovementRepositorySpec
       }
     }
 
-    // TODO: Json repo into rather than Arrivals & Streams ???
+    // TODO: I think these are NOT REQUIRED ???
 //    "arrivalsWithoutJsonMessagesSource" - {
 //
 //      import Arrival.nonEmptyListFormat
@@ -1199,7 +1235,7 @@ class ArrivalMovementRepositorySpec
 //      }
 //    }
 
-//    ".resetMessages" - {  // TODO: use implicitly to get visibility ?
+//    ".resetMessages" - {
 //
 //      "must replace the messages of an arrival with the newly-supplied ones" in {
 //
