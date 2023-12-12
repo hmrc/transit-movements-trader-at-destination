@@ -164,7 +164,7 @@ class OutboundMessagesApiSpec
         .successfulAuth(eoriNumber)
         .build
 
-      val dateTime    = OffsetDateTime.of(LocalDateTime.of(2021, 4, 30, 10, 30, 32), ZoneOffset.ofHours(1))
+      val dateTime    = OffsetDateTime.of(LocalDateTime.of(2021, 4, 30, 9, 30, 32), ZoneOffset.ofHours(1))
       val dateTimeStr = DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(dateTime)
       val encodedStr  = URLEncoder.encode(dateTimeStr, "UTF-8")
 
