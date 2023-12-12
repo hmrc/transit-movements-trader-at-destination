@@ -20,133 +20,87 @@ import base.ItSpecBase
 import models.LockResult
 import models.LockResult.LockAcquired
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.JsObject
-import play.api.libs.json.JsSuccess
-import play.api.libs.json.Json
-import play.api.test.Helpers._
-//import reactivemongo.play.json.collection.Helpers.idWrites
-//import reactivemongo.play.json.collection.JSONCollection
-//
+import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
+
 import scala.concurrent.ExecutionContext.Implicits.global
-//
-//class WorkerLockRepositorySpec extends ItSpecBase with MongoSuite with ScalaCheckPropertyChecks {
-//
-//  "lock" - {
-//    "must lock an id when it is not already locked" in {
-//      database.flatMap(_.drop()).futureValue
-//
-//      val app = new GuiceApplicationBuilder().build()
-//
-//      val id = "foo"
-//
-//      running(app) {
-//        started(app).futureValue
-//
-//        val repository = app.injector.instanceOf[WorkerLockRepository]
-//
-//        val result = repository.lock(id).futureValue
-//
-//        result mustEqual LockResult.LockAcquired
-//
-//        val selector = Json.obj("_id" -> id)
-//        val lock = database.flatMap {
-//          db =>
-//            db.collection[JSONCollection](WorkerLockRepository.collectionName).find(selector, None).one[JsObject]
-//        }.futureValue
-//
-//        lock.value("_id").validate[String] mustEqual JsSuccess(id)
-//      }
-//    }
-//
-//    "must not lock an id that is already locked" in {
-//      database.flatMap(_.drop()).futureValue
-//
-//      val app = new GuiceApplicationBuilder().build()
-//
-//      val id = "foo"
-//
-//      running(app) {
-//        started(app).futureValue
-//
-//        val repository = app.injector.instanceOf[WorkerLockRepository]
-//
-//        val result1 = repository.lock(id).futureValue
-//        val result2 = repository.lock(id).futureValue
-//
-//        result1 mustEqual LockResult.LockAcquired
-//        result2 mustEqual LockResult.AlreadyLocked
-//      }
-//    }
-//  }
-//
-//  "unlock" - {
-//    "must remove an existing lock" in {
-//      database.flatMap(_.drop()).futureValue
-//
-//      val app = new GuiceApplicationBuilder().build()
-//
-//      val id = "foo"
-//
-//      running(app) {
-//        started(app).futureValue
-//
-//        val repository = app.injector.instanceOf[WorkerLockRepository]
-//
-//        repository.lock(id).futureValue
-//        repository.unlock(id).futureValue
-//
-//        val selector = Json.obj("_id" -> id)
-//        val remainingLock = database.flatMap {
-//          db =>
-//            db.collection[JSONCollection](WorkerLockRepository.collectionName).find(selector, None).one[JsObject]
-//        }.futureValue
-//
-//        remainingLock must not be defined
-//      }
-//    }
-//
-//    "must not fail when asked to remove a lock that doesn't exist" in {
-//      database.flatMap(_.drop()).futureValue
-//
-//      val app = new GuiceApplicationBuilder().build()
-//
-//      val id = "foo"
-//
-//      running(app) {
-//        started(app).futureValue
-//
-//        val repository = app.injector.instanceOf[WorkerLockRepository]
-//
-//        repository.unlock(id).futureValue
-//      }
-//    }
-//  }
-//
-//  "BSON formatting for ttl index" - {
-//    "a lock's created field must be a date for the ttl index" in {
-//      database.flatMap(_.drop()).futureValue
-//
-//      val app = new GuiceApplicationBuilder().build()
-//
-//      val id = "foo"
-//
-//      running(app) {
-//        started(app).futureValue
-//
-//        val repository = app.injector.instanceOf[WorkerLockRepository]
-//
-//        val result = repository.lock(id).futureValue
-//
-//        result mustEqual LockAcquired
-//
-//        val selector = Json.obj("_id" -> id, "created" -> Json.obj("$type" -> "date"))
-//
-//        val lock = database.flatMap(_.collection[JSONCollection](WorkerLockRepository.collectionName).find(selector, None).one[JsObject]).futureValue
-//
-//        lock must be(defined)
-//      }
-//
-//    }
-//  }
-//}
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import models.ArrivalWorkerLock
+import java.time.Instant
+import java.time.temporal.ChronoUnit
+import java.time.ZoneId
+import java.time.Clock
+import config.AppConfig
+import com.mongodb.client.model.Filters
+
+class WorkerLockRepositorySpec
+    extends ItSpecBase
+    with GuiceOneAppPerSuite
+    with ScalaCheckPropertyChecks
+    with DefaultPlayMongoRepositorySupport[ArrivalWorkerLock] {
+
+  private val appConfig                 = app.injector.instanceOf[AppConfig]
+  private val instant                   = Instant.now.truncatedTo(ChronoUnit.MILLIS)
+  implicit private val stubClock: Clock = Clock.fixed(instant, ZoneId.systemDefault)
+
+  override lazy val repository = new WorkerLockRepositoryImpl(mongoComponent, appConfig, stubClock)
+
+  "lock" - {
+    "must lock an id when it is not already locked" in {
+      val id     = "foo"
+      val result = repository.lock(id).futureValue
+
+      result mustEqual LockResult.LockAcquired
+
+      val selector = Filters.eq("_id", id)
+      val lock     = repository.collection.find(selector).head().futureValue
+
+      lock.id mustEqual id
+    }
+
+    "must not lock an id that is already locked" in {
+      val id = "foo"
+
+      val result1 = repository.lock(id).futureValue
+      val result2 = repository.lock(id).futureValue
+
+      result1 mustEqual LockResult.LockAcquired
+      result2 mustEqual LockResult.AlreadyLocked
+    }
+  }
+
+  "unlock" - {
+    "must remove an existing lock" in {
+      val id = "foo"
+
+      repository.lock(id).futureValue
+      repository.unlock(id).futureValue
+
+      val selector      = Filters.eq("_id", id)
+      val remainingLock = repository.collection.find(selector).headOption().futureValue
+
+      remainingLock mustEqual None
+    }
+
+    "must not fail when asked to remove a lock that doesn't exist" in {
+      val id = "foo"
+      repository.unlock(id).futureValue
+    }
+  }
+
+  "BSON formatting for ttl index" - {
+    "a lock's created field must be a date for the ttl index" in {
+      val id = "foo"
+
+      val result = repository.lock(id).futureValue
+
+      result mustEqual LockAcquired
+
+      val selector = Filters.and(Filters.eq("_id", id), Filters.`type`("created", "date"))
+
+      val lock = repository.collection.find(selector).head().futureValue
+
+      lock.id mustEqual id
+    }
+
+  }
+}
