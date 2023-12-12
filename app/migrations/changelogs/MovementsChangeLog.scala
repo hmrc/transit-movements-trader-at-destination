@@ -22,7 +22,7 @@ import com.github.cloudyrock.mongock.ChangeSet
 import com.mongodb.client.MongoDatabase
 import com.mongodb.client.model._
 import org.bson.Document
-import repositories.ArrivalMovementRepository
+import repositories.ArrivalMovementRepositoryImpl
 
 import scala.collection.JavaConverters._
 import org.bson.BsonNull
@@ -31,31 +31,30 @@ import org.bson.BsonNull
 class MovementsChangeLog {
 
   @ChangeSet(order = "001", id = "addMessageIdToMessages", author = "transit-movements-trader-at-destination", runAlways = true)
-  def addMessageIdToMessages(mongo: MongoDatabase): Unit = ???
-//  {
-//    val collection = mongo.getCollection(ArrivalMovementRepository.collectionName)
-//
-//    collection
-//      .find(Filters.eq("messages.messageId", BsonNull.VALUE))
-//      .asScala
-//      .foreach {
-//        doc =>
-//          val messages = doc
-//            .getList("messages", classOf[Document])
-//            .asScala
-//            .toList
-//
-//          if (messages.nonEmpty) {
-//            collection.updateOne(
-//              Filters.eq("_id", doc.getInteger("_id")),
-//              Updates.combine(
-//                messages.mapWithIndex {
-//                  case (_, index) =>
-//                    Updates.set(s"messages.$index.messageId", index + 1)
-//                }.asJava
-//              )
-//            )
-//          }
-//      }
-//  }
+  def addMessageIdToMessages(mongo: MongoDatabase): Unit = {
+    val collection = mongo.getCollection(ArrivalMovementRepositoryImpl.collectionName)
+
+    collection
+      .find(Filters.eq("messages.messageId", BsonNull.VALUE))
+      .asScala
+      .foreach {
+        doc =>
+          val messages = doc
+            .getList("messages", classOf[Document])
+            .asScala
+            .toList
+
+          if (messages.nonEmpty) {
+            collection.updateOne(
+              Filters.eq("_id", doc.getInteger("_id")),
+              Updates.combine(
+                messages.mapWithIndex {
+                  case (_, index) =>
+                    Updates.set(s"messages.$index.messageId", index + 1)
+                }.asJava
+              )
+            )
+          }
+      }
+  }
 }

@@ -134,18 +134,17 @@ class ArrivalMovementRepositoryImpl @Inject()(
             .unique(false)
             .background(false)
         ),
-        // TODO: investigate as getting error, already exists with a different name' on server ??
-//        IndexModel(
-//          Indexes.compoundIndex(
-//            Indexes.ascending("channel"),
-//            Indexes.ascending("eoriNumber"),
-//            Indexes.descending("lastUpdated")
-//          ),
-//          IndexOptions()
-//            .name("fetch-all-with-date-filter-index")
-//            .unique(false)
-//            .background(false)
-//        ),
+        IndexModel(
+          Indexes.compoundIndex(
+            Indexes.ascending("channel"),
+            Indexes.ascending("eoriNumber"),
+            Indexes.descending("lastUpdated")
+          ),
+          IndexOptions()
+            .name("fetch-all-with-date-filter-index")
+            .unique(false)
+            .background(false)
+        ),
         IndexModel(
           Indexes.ascending("channel", "eoriNumber"),
           IndexOptions()
