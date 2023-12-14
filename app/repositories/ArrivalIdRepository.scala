@@ -40,7 +40,7 @@ trait ArrivalIdRepository {
 class ArrivalIdRepositoryImpl @Inject()(mongo: MongoComponent, config: Configuration)(implicit ec: ExecutionContext)
     extends PlayMongoRepository[ArrivalIdWrapper](
       mongoComponent = mongo,
-      collectionName = "arrival-ids-hmrc-mongo",
+      collectionName = "arrival-ids",
       domainFormat = ArrivalIdWrapper.mongoFormat,
       indexes = Seq(IndexModel(Indexes.ascending("last-index"))),
       extraCodecs = Seq(

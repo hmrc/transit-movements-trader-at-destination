@@ -263,7 +263,7 @@ class ArrivalMovementRepositorySpec
 
         repository.insert(arrival).futureValue
 
-        val addMessageResult = repository.addNewMessage(arrival.arrivalId, goodsReleasedMessage).futureValue
+        repository.addNewMessage(arrival.arrivalId, goodsReleasedMessage).futureValue
 
         val selector = Filters.eq("_id", arrival.arrivalId)
 

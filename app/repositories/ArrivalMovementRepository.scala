@@ -96,7 +96,7 @@ trait ArrivalMovementRepository {
 
 object ArrivalMovementRepositoryImpl {
   val EPOCH_TIME: LocalDateTime = LocalDateTime.ofEpochSecond(0, 0, ZoneOffset.UTC)
-  val collectionName            = "arrival-movements-hmrc-mongo"
+  val collectionName            = "arrival-movements"
 }
 
 @Singleton
