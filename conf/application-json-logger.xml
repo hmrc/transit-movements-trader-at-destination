@@ -5,24 +5,24 @@
         <encoder class="uk.gov.hmrc.play.logging.JsonEncoder"/>
     </appender>
 
-    <logger name="uk.gov" level="${logger.uk.gov:-WARN}"/>
-    <logger name="helpers.XmlBuilderHelper" level="${logger.XmlBuilderService:-INFO}"/>
-    <logger name="controllers.NCTSMessageController" level="${logger.GoodsReleasedController:-ERROR}"/>
-    <logger name="controllers.MovementsController" level="${logger.MovementsController:-ERROR}"/>
-    <logger name="controllers.PDFGenerationController" level="${logger.UnloadingRemarksPDF:-ERROR}"/>
-    <logger name="services.UnloadingPermissionPDFService" level="${logger.UnloadingPermissionPDFService:-ERROR}"/>
-    <logger name="controllers.actions.MessageTransformer" level="${logger.MessageTransformer:-ERROR}"/>
-    <logger name="controllers.actions.ValidateInboundMessageAction" level="${logger.ValidateInboundMessageAction:-WARN}"/>
-    <logger name="controllers.actions.ValidateOutboundMessageAction" level="${logger.ValidateOutboundMessageAction:-WARN}"/>
-    <logger name="migrations.MigrationRunner" level="${logger.MigrationRunner:-INFO}"/>
+    <logger name="uk.gov" level="WARN"/>
+    <logger name="helpers.XmlBuilderHelper" level="INFO"/>
+    <logger name="controllers.NCTSMessageController" level="ERROR"/>
+    <logger name="controllers.MovementsController" level="ERROR"/>
+    <logger name="controllers.PDFGenerationController" level="ERROR"/>
+    <logger name="services.UnloadingPermissionPDFService" level="ERROR"/>
+    <logger name="controllers.actions.MessageTransformer" level="ERROR"/>
+    <logger name="controllers.actions.ValidateInboundMessageAction" level="WARN"/>
+    <logger name="controllers.actions.ValidateOutboundMessageAction" level="WARN"/>
+    <logger name="migrations.MigrationRunner" level="INFO"/>
 
-    <logger name="application.workers.AddJsonToMessagesWorker" level="${logger.application.workers.AddJsonToMessagesWorker:-INFO}"/>
+    <logger name="application.workers.AddJsonToMessagesWorker" level="$INFO"/>
 
-    <logger name="application.controllers.MessagesController.movementSummary" level="${logger.application.controllers.MessagesController.movementSummary:-INFO}"/>
-    <logger name="application.controllers.NCTSMessageController.movementSummary" level="${logger.application.controllers.NCTSMessageController.movementSummary:-INFO}"/>
-    <logger name="application.controllers.MovementsController.movementSummary" level="${logger.application.controllers.MovementsController.movementSummary:-INFO}"/>
+    <logger name="application.controllers.MessagesController.movementSummary" level="INFO"/>
+    <logger name="application.controllers.NCTSMessageController.movementSummary" level="INFO"/>
+    <logger name="application.controllers.MovementsController.movementSummary" level="INFO"/>
 
-    <root level="${logger.application:-WARN}">
+    <root level="WARN">
         <appender-ref ref="STDOUT"/>
     </root>
 </configuration>
