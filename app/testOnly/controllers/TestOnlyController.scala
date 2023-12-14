@@ -51,26 +51,5 @@ class TestOnlyController @Inject()(
         Future.successful(NotImplemented(s"Feature disabled, cannot drop ${mongo.collectionName}"))
       }
   }
-//  Action.async {
-//    _ =>
-//      if (featureFlag) {
-//        mongo.database
-//          .map(_.collection[JSONCollection](ArrivalMovementRepository.collectionName))
-//          .flatMap(
-//            _.delete(ordered = false).one(Json.obj()).map {
-//              result =>
-//                if (result.ok) {
-//                  Ok(s"Cleared '${ArrivalMovementRepository.collectionName}' Mongo collection")
-//                } else {
-//                  Ok(
-//                    s"Collection '${ArrivalMovementRepository.collectionName}' does not exist or something gone wrong: ${result.writeErrors.map(_.errmsg).mkString("[", ", ", "]")}"
-//                  )
-//                }
-//            }
-//          )
-//      } else {
-//        Future.successful(NotImplemented(s"Feature disabled, cannot drop ${ArrivalMovementRepository.collectionName}"))
-//      }
-//  }
 
 }
