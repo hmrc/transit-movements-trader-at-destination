@@ -18,12 +18,10 @@ package testOnly.controllers
 
 import play.api.Configuration
 import play.api.i18n.MessagesApi
-import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
-import repositories.ArrivalMovementRepository
-import uk.gov.hmrc.mongo.MongoComponent
+import repositories.ArrivalMovementRepositoryImpl
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import javax.inject.Inject
@@ -32,7 +30,7 @@ import scala.concurrent.Future
 
 class TestOnlyController @Inject()(
   override val messagesApi: MessagesApi,
-  mongo: MongoComponent,
+  mongo: ArrivalMovementRepositoryImpl,
   cc: ControllerComponents,
   config: Configuration
 )(implicit ec: ExecutionContext)
@@ -40,7 +38,19 @@ class TestOnlyController @Inject()(
 
   private val featureFlag: Boolean = config.get[Boolean]("feature-flags.testOnly.enabled")
 
-  def dropArrivalMovementCollection: Action[AnyContent] = ???
+  def dropArrivalMovementCollection: Action[AnyContent] = Action.async {
+    _ =>
+      if (featureFlag) {
+        mongo.collection
+          .drop()
+          .toFuture()
+          .map(
+            _ => Ok(s"Cleared '${mongo.collectionName}' Mongo collection")
+          )
+      } else {
+        Future.successful(NotImplemented(s"Feature disabled, cannot drop ${mongo.collectionName}"))
+      }
+  }
 //  Action.async {
 //    _ =>
 //      if (featureFlag) {

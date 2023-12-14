@@ -121,12 +121,10 @@ class SubmitMessageService @Inject()(
   private def updateArrivalAfterSuccessfulSubmission(
     arrivalId: ArrivalId,
     modifier: MessageStatusUpdate
-  ): Future[SubmissionProcessingResult] = {
-    val selector = ArrivalIdSelector(arrivalId)
+  ): Future[SubmissionProcessingResult] =
     updateArrival(arrivalId, modifier)(
       _ => SubmissionProcessingResult.SubmissionSuccess
     )(SubmissionProcessingResult.SubmissionFailureInternal)
-  }
 
   private def updateArrivalAfterUnsuccessfulSubmission(
     arrivalId: ArrivalId,

@@ -46,7 +46,7 @@ trait WorkerLockRepository {
 class WorkerLockRepositoryImpl @Inject()(mongo: MongoComponent, appConfig: AppConfig, clock: Clock)(implicit ec: ExecutionContext)
     extends PlayMongoRepository(
       mongoComponent = mongo,
-      collectionName = "worker-locks-hmrc-mongo",
+      collectionName = "worker-locks",
       domainFormat = ArrivalWorkerLock.format,
       indexes = Seq(
         IndexModel(
