@@ -5,7 +5,7 @@ object AppDependencies {
 
   private val catsVersion          = "2.9.0"
   private val mongockVersion       = "4.3.8"
-  private val hmrcMongoVersion     = "0.73.0"
+  private val hmrcMongoVersion     = "0.74.0"
   private val hmrcBootstrapVersion = "7.23.0"
 
   val compile: Seq[ModuleID] = Seq(
