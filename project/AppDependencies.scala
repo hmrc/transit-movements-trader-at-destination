@@ -7,6 +7,7 @@ object AppDependencies {
   private val mongockVersion       = "4.3.8"
   private val hmrcMongoVersion     = "0.74.0"
   private val hmrcBootstrapVersion = "7.23.0"
+  private val akkaVersion          = "2.6.21"
 
   val compile: Seq[ModuleID] = Seq(
     "uk.gov.hmrc"                  %% "bootstrap-backend-play-28" % hmrcBootstrapVersion,
@@ -33,10 +34,10 @@ object AppDependencies {
     "org.typelevel"          %% "discipline-core"            % "1.1.5",
     "org.typelevel"          %% "discipline-scalatest"       % "2.1.5",
     "com.vladsch.flexmark"    % "flexmark-all"               % "0.64.6",
-    "com.typesafe.akka"      %% "akka-testkit"               % "2.6.21",
-    "com.typesafe.akka"      %% "akka-stream-testkit"        % "2.6.21",
-    "com.typesafe.akka"      %% "akka-actor-typed"           % "2.6.21",
-    "com.typesafe.akka"      %% "akka-serialization-jackson" % "2.6.21",
-    "com.typesafe.akka"      %% "akka-slf4j"                 % "2.6.21"
+    "com.typesafe.akka"      %% "akka-testkit"               % akkaVersion,
+    "com.typesafe.akka"      %% "akka-stream-testkit"        % akkaVersion,
+    "com.typesafe.akka"      %% "akka-actor-typed"           % akkaVersion,
+    "com.typesafe.akka"      %% "akka-serialization-jackson" % akkaVersion,
+    "com.typesafe.akka"      %% "akka-slf4j"                 % akkaVersion
   ).map(_ % "test, it")
 }
