@@ -2,7 +2,6 @@ import play.core.PlayVersion.current
 import sbt._
 
 object AppDependencies {
-
   private val catsVersion          = "2.9.0"
   private val mongockVersion       = "4.3.8"
   private val hmrcMongoVersion     = "0.74.0"
