@@ -4,3 +4,4 @@ test-repositories:
   - common-transit-convention-traders-perf-tests
   - common-transit-convention-traders-postman
   - transit-movements-trader-postman
+deprecated: true
